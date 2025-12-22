@@ -1,5 +1,9 @@
 {
   "name": "sarawak-medchain",
   "version": "1.0.0",
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "hardhat": "^3.1.0"
+  }
 }
