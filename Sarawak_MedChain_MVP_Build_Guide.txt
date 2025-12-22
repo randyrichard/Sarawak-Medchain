@@ -1,0 +1,141 @@
+
+Sarawak MedChain — MVP Build Guide (AI-Oriented)
+
+PURPOSE
+Build a Minimum Viable Product (MVP) that proves patient-controlled access to medical records using cryptographic enforcement.
+This document is written to guide an AI system to build the MVP step by step.
+
+CORE MVP OBJECTIVE
+Prove the following end-to-end:
+1. Only verified doctors can write medical records.
+2. Patients explicitly control who can read their records.
+3. Access revocation is enforced by code, not policy.
+4. Every write and access attempt is auditable.
+
+If these four conditions are met, the MVP is successful.
+
+SCOPE BOUNDARIES (CRITICAL)
+The AI MUST NOT implement:
+- Payments or tokens
+- Insurance logic
+- AI diagnostics
+- National-scale identity systems
+- Mobile apps
+- Hospital billing systems
+- Automation with SMC or government APIs
+
+Focus ONLY on trust, access, and auditability.
+
+SYSTEM ARCHITECTURE
+Frontend: React (or Next.js)
+Backend: Node.js
+Blockchain: Solidity smart contract (EVM-compatible)
+Storage: IPFS (encrypted files)
+Identity: Wallet-based (MetaMask)
+
+HIGH-LEVEL FLOW
+Doctor uploads document →
+Backend encrypts document →
+Encrypted file uploaded to IPFS →
+IPFS hash written to blockchain →
+Patient controls access to that hash
+
+PHASE 1 — SMART CONTRACT (FOUNDATION)
+
+Deliverable:
+SarawakMedMVP.sol
+
+Roles:
+- Admin (simulates Sarawak Medical Council)
+- Verified Doctor
+- Patient
+
+Smart Contract Requirements:
+1. Admin can add/remove verified doctors.
+2. Verified doctors can write a record reference for a patient.
+3. A record consists of:
+   - Patient address
+   - IPFS hash
+   - Timestamp
+   - Doctor address
+4. Patients can grant and revoke read access to doctors.
+5. Unauthorized access attempts must fail.
+6. Emit events for:
+   - RecordWritten
+   - AccessGranted
+   - AccessRevoked
+   - AccessAttempted
+
+Non-Functional Requirements:
+- No financial logic.
+- Gas-efficient but readable code.
+- Fully testable using Hardhat.
+
+PHASE 2 — HYBRID STORAGE & ENCRYPTION
+
+Backend Responsibilities:
+1. Accept file upload (PDF only for MVP).
+2. Encrypt file using symmetric encryption (AES).
+3. Upload encrypted file to IPFS.
+4. Return IPFS hash to frontend.
+5. NEVER store plaintext medical data.
+
+Key Handling (MVP):
+- Encryption key is generated per file.
+- Key is temporarily stored server-side or returned to patient.
+- Long-term key management is out of scope.
+
+PHASE 3 — USER INTERFACES
+
+PATIENT PORTAL (MINIMUM)
+Features:
+- Connect wallet
+- View list of own records:
+  - Date
+  - Writing doctor
+  - Record type
+- Grant access to a doctor (toggle)
+- Revoke access from a doctor
+- View access history (events)
+
+DOCTOR PORTAL (MINIMUM)
+Features:
+- Connect wallet
+- Upload medical document
+- Select patient wallet
+- Submit record
+- View records ONLY if access granted
+
+UI Requirements:
+- No styling polish required
+- Functional clarity over aesthetics
+- Errors must be explicit (e.g. "Access Denied")
+
+PHASE 4 — INTEGRATION LOGIC
+
+Rules that MUST be enforced:
+1. Backend must check smart contract permissions before serving files.
+2. If access is revoked on-chain, file access must fail immediately.
+3. UI must reflect on-chain truth, not cached state.
+
+DEPLOYMENT TARGET
+- Testnet or low-cost EVM chain
+- No mainnet assumptions
+- Environment variables for keys and endpoints
+
+MVP VALIDATION CHECKLIST
+The MVP is complete ONLY IF:
+- An unverified doctor cannot write a record.
+- A doctor without permission cannot read a record.
+- A patient revokes access and it works immediately.
+- All actions are visible in blockchain event logs.
+- A non-technical reviewer can understand the flow in 10 minutes.
+
+DESIGN PHILOSOPHY
+This MVP is not a product.
+It is a proof of trust.
+Do not optimize prematurely.
+Do not add features outside scope.
+Clarity beats cleverness.
+
+END OF BUILD GUIDE
