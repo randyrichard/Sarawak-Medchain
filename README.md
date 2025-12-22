@@ -109,7 +109,10 @@ cd backend && npm start
 cd frontend && npm run dev
 ```
 
-**For detailed setup instructions, see [MVP_SETUP_GUIDE.md](./MVP_SETUP_GUIDE.md)**
+**For detailed setup instructions:**
+- **Windows Users (Git Bash)**: [SETUP_WINDOWS.md](./SETUP_WINDOWS.md)
+- **Linux/macOS Users**: [SETUP.md](./SETUP.md)
+- **Comprehensive Guide**: [MVP_SETUP_GUIDE.md](./MVP_SETUP_GUIDE.md)
 
 ## Testing
 
@@ -132,7 +135,13 @@ Expected output: **31 passing tests**
 
 ## Documentation
 
-- [MVP Setup Guide](./MVP_SETUP_GUIDE.md) - Complete setup and testing instructions
+### Setup Guides
+- [SETUP_WINDOWS.md](./SETUP_WINDOWS.md) - Complete setup for Windows (Git Bash)
+- [SETUP.md](./SETUP.md) - Complete setup for Linux/macOS
+- [MVP_SETUP_GUIDE.md](./MVP_SETUP_GUIDE.md) - Comprehensive setup and testing instructions
+- [QUICKSTART.md](./QUICKSTART.md) - Quick reference guide
+
+### Technical Documentation
 - [Backend README](./backend/README.md) - Backend API documentation
 - [Build Guide](./Sarawak_MedChain_MVP_Build_Guide.txt) - Original MVP requirements
 
