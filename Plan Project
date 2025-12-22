@@ -1,0 +1,37 @@
+arawak MedChain: Strategic Project Plan (2025)
+Phase 1: Infrastructure & "The Vault" (Months 1–2)
+Goal: Build a secure, error-free blockchain backend.
+
+Environment Stabilisation: Fix the npm and node issues by manually configuring the Hardhat environment (skipping the broken automated Git-based templates).
+
+Smart Contract (Solidity): Develop the "Access Control" logic.
+
+Feature: Only doctors verified by the Sarawak Medical Council (SMC) can "write" data.
+
+Feature: Only the patient can "authorize" a new clinic to view their history.
+
+Local Simulation: Use Hardhat’s local network to test thousands of transactions without spending real currency.
+
+Milestone: A successfully compiled and tested SarawakMed.sol contract.
+
+Phase 2: Hybrid Data Storage (Months 3–4)
+Goal: Solve the "Big Data" problem.
+
+IPFS Integration: Large files like MRIs or X-rays are too expensive to put directly on the blockchain. You will store the actual file on IPFS (InterPlanetary File System) and store only the "Digital Receipt" (Hash) on the blockchain.
+
+Encryption Engine (Node.js): Build a backend service that encrypts patient files before they are uploaded, ensuring even if someone hacks IPFS, they see only gibberish.
+
+Milestone: A "File-to-Hash" pipeline where a document is uploaded and its unique ID is recorded on-chain.
+
+Phase 3: The User Experience (Months 5–7)
+Goal: Turn the code into a "Web App" that anyone in Kuching or Miri can use.
+
+Frontend (React/Next.js): Build two distinct dashboards:
+
+Patient Portal: View history, manage permissions, and see which doctors have accessed your data.
+
+Doctor Portal: Upload records, request access to a new patient, and view verified history.
+
+Wallet Integration: Connect MetaMask or S-PayGlobal (if APIs allow) to handle digital identity and transaction signatures.
+
+Milestone: A working website that talks to your smart contract in real-time.
