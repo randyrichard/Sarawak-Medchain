@@ -1,0 +1,139 @@
+========================================
+  SARAWAK MEDCHAIN MVP - START HERE
+========================================
+
+📋 COMPLETE SETUP INSTRUCTIONS
+
+Follow these steps IN ORDER:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ AUTOMATED SETUP (RECOMMENDED)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Run this command from the project directory:
+
+    ./setup.sh
+
+This will:
+✓ Install IPFS if not already installed
+✓ Initialize IPFS
+✓ Install all project dependencies (root, backend, frontend)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ MANUAL SETUP (IF SCRIPT FAILS)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Install IPFS:
+   sudo snap install ipfs
+   ipfs init
+
+2. Install dependencies:
+   npm install
+   cd backend && npm install && cd ..
+   cd frontend && npm install && cd ..
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ START THE SYSTEM (5 TERMINALS)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Terminal 1 - IPFS:
+    ipfs daemon
+
+Terminal 2 - Blockchain:
+    npx hardhat node
+    (Keep this open! Save the account addresses!)
+
+Terminal 3 - Deploy Contract:
+    node scripts/deploy.cjs
+    (Copy the contract address shown at the end)
+
+Terminal 4 - Backend:
+    cd backend
+    npm start
+
+Terminal 5 - Frontend:
+    cd frontend
+    
+    # First, create .env file with contract address:
+    echo "VITE_API_BASE_URL=http://localhost:3001" > .env
+    echo "VITE_CONTRACT_ADDRESS=YOUR_CONTRACT_ADDRESS_HERE" >> .env
+    # (Replace YOUR_CONTRACT_ADDRESS_HERE with actual address from Terminal 3)
+    
+    npm run dev
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ CONFIGURE METAMASK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Install MetaMask browser extension: https://metamask.io
+
+2. Add Hardhat Local network in MetaMask:
+   Network Name: Hardhat Local
+   RPC URL: http://127.0.0.1:8545
+   Chain ID: 31337
+   Currency: ETH
+
+3. Import test accounts using private keys from Terminal 2:
+   - Account #0 (Admin)
+   - Account #1 (Doctor 1 - Verified)
+   - Account #2 (Doctor 2 - Verified)  
+   - Account #3 (Patient 1)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ ACCESS THE APPLICATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Open browser: http://localhost:5173
+Click "Connect MetaMask Wallet"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ DETAILED GUIDES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📖 QUICKSTART.md
+   → Step-by-step instructions with testing scenarios
+   → Troubleshooting guide
+   → Quick restart instructions
+
+📖 MVP_SETUP_GUIDE.md  
+   → Comprehensive setup and architecture
+   → MVP validation checklist
+   → Security considerations
+
+📖 README.md
+   → Project overview
+   → Tech stack
+   → API documentation
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ QUICK TEST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Switch MetaMask to Account #1 (Doctor 1)
+2. Go to "Doctor Portal"
+3. Upload a PDF for Patient (Account #3)
+4. Copy the encryption key
+5. Switch to Account #3 (Patient)
+6. View your records with the encryption key
+7. Grant/revoke access to doctors
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ NEED HELP?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+If you encounter issues:
+1. Read QUICKSTART.md → Troubleshooting section
+2. Check all 5 terminals are running
+3. Verify IPFS: curl http://127.0.0.1:5001/api/v0/version
+4. Verify backend: curl http://localhost:3001/health
+5. Reset MetaMask if transactions fail
+
+========================================
+
+Ready to start? Run:
+
+    ./setup.sh
+
+Then follow the "START THE SYSTEM" instructions above.
+
+========================================

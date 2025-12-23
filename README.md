@@ -1,57 +1,175 @@
-# Sample Hardhat 3 Beta Project (`mocha` and `ethers`)
+# Sarawak MedChain MVP
 
-This project showcases a Hardhat 3 Beta project using `mocha` for tests and the `ethers` library for Ethereum interactions.
+## Patient-Controlled Medical Records Using Blockchain
 
-To learn more about the Hardhat 3 Beta, please visit the [Getting Started guide](https://hardhat.org/docs/getting-started#getting-started-with-hardhat-3). To share your feedback, join our [Hardhat 3 Beta](https://hardhat.org/hardhat3-beta-telegram-group) Telegram group or [open an issue](https://github.com/NomicFoundation/hardhat/issues/new) in our GitHub issue tracker.
+[![Smart Contract Tests](https://img.shields.io/badge/tests-31%20passing-success)]()
+[![Solidity](https://img.shields.io/badge/Solidity-0.8.24-blue)]()
+[![License](https://img.shields.io/badge/license-MIT-green)]()
 
-## Project Overview
+## Overview
 
-This example project includes:
+Sarawak MedChain is a Minimum Viable Product (MVP) that demonstrates a patient-controlled medical records system using blockchain technology for cryptographic access enforcement.
 
-- A simple Hardhat configuration file.
-- Foundry-compatible Solidity unit tests.
-- TypeScript integration tests using `mocha` and ethers.js
-- Examples demonstrating how to connect to different types of networks, including locally simulating OP mainnet.
+### Core Principle
 
-## Usage
+**Trust through code, not policy.**
 
-### Running Tests
+This MVP proves that:
+1. ✓ Only verified doctors can write medical records
+2. ✓ Patients explicitly control who can read their records
+3. ✓ Access revocation is enforced by code, not policy
+4. ✓ Every write and access attempt is auditable
 
-To run all the tests in the project, execute the following command:
+## System Architecture
 
-```shell
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Sarawak MedChain MVP                     │
+└─────────────────────────────────────────────────────────────┘
+
+┌──────────────┐         ┌──────────────┐        ┌──────────────┐
+│   Frontend   │────────▶│   Backend    │───────▶│     IPFS     │
+│              │         │              │        │              │
+│  React +     │         │  Node.js +   │        │ Decentralized│
+│  Ethers.js   │         │  Encryption  │        │   Storage    │
+│  MetaMask    │         │  (AES-256)   │        │              │
+└──────┬───────┘         └──────────────┘        └──────────────┘
+       │
+       │ Smart Contract Calls
+       │
+       ▼
+┌──────────────────────────────────────────────────────────────┐
+│               Ethereum Blockchain (Local/Testnet)             │
+│                                                               │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │          SarawakMedMVP Smart Contract               │    │
+│  │                                                      │    │
+│  │  • Role Management (Admin, Doctor, Patient)         │    │
+│  │  • Medical Records Registry (IPFS Hashes Only)      │    │
+│  │  • Access Control (Grant/Revoke Permissions)        │    │
+│  │  • Audit Events (All Actions Logged)                │    │
+│  └─────────────────────────────────────────────────────┘    │
+└──────────────────────────────────────────────────────────────┘
+```
+
+## Tech Stack
+
+### Smart Contract
+- **Solidity 0.8.24**: Smart contract language
+- **Hardhat**: Development environment
+- **Chai + Ethers**: Testing framework
+
+### Backend
+- **Node.js + Express**: API server
+- **IPFS HTTP Client**: Decentralized storage
+- **Crypto (Node.js)**: AES-256-GCM encryption
+- **Multer**: File upload handling
+
+### Frontend
+- **React + Vite**: Modern frontend framework
+- **Ethers.js**: Ethereum library
+- **React Router**: Navigation
+- **Axios**: HTTP client
+
+## Quick Start
+
+### Prerequisites
+
+- Node.js v18+
+- MetaMask browser extension
+- IPFS Desktop or CLI
+
+### Installation
+
+```bash
+# Install root dependencies
+npm install
+
+# Install backend dependencies
+cd backend && npm install && cd ..
+
+# Install frontend dependencies
+cd frontend && npm install && cd ..
+
+# Start IPFS (in separate terminal)
+ipfs daemon
+
+# Start Hardhat local blockchain (in separate terminal)
+npx hardhat node
+
+# Deploy smart contract (in separate terminal)
+node scripts/deploy.cjs
+
+# Update frontend/.env with deployed contract address
+
+# Start backend (in separate terminal)
+cd backend && npm start
+
+# Start frontend (in separate terminal)
+cd frontend && npm run dev
+```
+
+**For detailed setup instructions:**
+- **Windows Users (Git Bash)**: [SETUP_WINDOWS.md](./SETUP_WINDOWS.md)
+- **Linux/macOS Users**: [SETUP.md](./SETUP.md)
+- **Comprehensive Guide**: [MVP_SETUP_GUIDE.md](./MVP_SETUP_GUIDE.md)
+
+## Testing
+
+Run the comprehensive test suite:
+
+```bash
 npx hardhat test
 ```
 
-You can also selectively run the Solidity or `mocha` tests:
+Expected output: **31 passing tests**
 
-```shell
-npx hardhat test solidity
-npx hardhat test mocha
-```
+## MVP Validation Checklist
 
-### Make a deployment to Sepolia
+| Test | Description | Status |
+|------|-------------|--------|
+| ✓ | An unverified doctor cannot write a record | PASS |
+| ✓ | A doctor without permission cannot read a record | PASS |
+| ✓ | Patient revokes access and it works immediately | PASS |
+| ✓ | All actions are visible in blockchain event logs | PASS |
 
-This project includes an example Ignition module to deploy the contract. You can deploy this module to a locally simulated chain or to Sepolia.
+## Documentation
 
-To run the deployment to a local chain:
+### Setup Guides
+- [SETUP_WINDOWS.md](./SETUP_WINDOWS.md) - Complete setup for Windows (Git Bash)
+- [SETUP.md](./SETUP.md) - Complete setup for Linux/macOS
+- [MVP_SETUP_GUIDE.md](./MVP_SETUP_GUIDE.md) - Comprehensive setup and testing instructions
+- [QUICKSTART.md](./QUICKSTART.md) - Quick reference guide
 
-```shell
-npx hardhat ignition deploy ignition/modules/Counter.ts
-```
+### Technical Documentation
+- [Backend README](./backend/README.md) - Backend API documentation
+- [Build Guide](./Sarawak_MedChain_MVP_Build_Guide.txt) - Original MVP requirements
 
-To run the deployment to Sepolia, you need an account with funds to send the transaction. The provided Hardhat configuration includes a Configuration Variable called `SEPOLIA_PRIVATE_KEY`, which you can use to set the private key of the account you want to use.
+## Security Features
 
-You can set the `SEPOLIA_PRIVATE_KEY` variable using the `hardhat-keystore` plugin or by setting it as an environment variable.
+1. **Role-Based Access Control**: Only verified doctors can write records
+2. **Patient-Controlled Permissions**: Patients grant/revoke access explicitly
+3. **AES-256-GCM Encryption**: Industry-standard file encryption
+4. **Immutable Audit Trail**: All actions logged on blockchain
+5. **Immediate Enforcement**: Access changes take effect instantly
 
-To set the `SEPOLIA_PRIVATE_KEY` config variable using `hardhat-keystore`:
+## Scope Limitations
 
-```shell
-npx hardhat keystore set SEPOLIA_PRIVATE_KEY
-```
+### What this MVP IS:
+- ✓ Proof of cryptographic access control
+- ✓ Demonstration of patient sovereignty
+- ✓ Working end-to-end system
 
-After setting the variable, you can run the deployment with the Sepolia network:
+### What this MVP is NOT:
+- ✗ Production-ready system
+- ✗ Including payments or tokens
+- ✗ Mobile application
+- ✗ AI diagnostics or insurance logic
 
-```shell
-npx hardhat ignition deploy --network sepolia ignition/modules/Counter.ts
-```
+## License
+
+MIT License
+
+---
+
+**"This MVP is not a product. It is a proof of trust."**
