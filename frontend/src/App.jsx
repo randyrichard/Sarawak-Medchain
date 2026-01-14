@@ -4,6 +4,7 @@ import { connectWallet } from './utils/contract';
 import PatientPortal from './pages/PatientPortal';
 import DoctorPortal from './pages/DoctorPortal';
 import AdminPortal from './pages/AdminPortal';
+import CEODashboard from './pages/CEODashboard';
 import './App.css';
 
 function App() {
@@ -81,6 +82,7 @@ function App() {
             <Link to="/patient">Patient Portal</Link>
             <Link to="/doctor">Doctor Portal</Link>
             <Link to="/admin">Admin Portal</Link>
+            <Link to="/ceo">CEO Dashboard</Link>
           </div>
           <div className="wallet-info">
             <span>{walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</span>
@@ -96,6 +98,7 @@ function App() {
             <Route path="/patient" element={<PatientPortal walletAddress={walletAddress} />} />
             <Route path="/doctor" element={<DoctorPortal walletAddress={walletAddress} />} />
             <Route path="/admin" element={<AdminPortal walletAddress={walletAddress} />} />
+            <Route path="/ceo" element={<CEODashboard walletAddress={walletAddress} />} />
           </Routes>
         </div>
       </div>
