@@ -4,6 +4,19 @@ import ContractABI from '../SarawakMedMVP.json';
 // Update this with your deployed contract address
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '0x5FbDB2315678afecb367f032d93F642f64180aa3';
 
+/**
+ * Validate Ethereum address format
+ */
+function validateAddress(address) {
+  if (!address || typeof address !== 'string') {
+    throw new Error('Address is required');
+  }
+  if (!ethers.isAddress(address)) {
+    throw new Error(`Invalid Ethereum address: ${address}`);
+  }
+  return ethers.getAddress(address); // Returns checksummed address
+}
+
 let provider;
 let signer;
 let contract;
@@ -61,16 +74,18 @@ export function getContract() {
  * Check if an address is a verified doctor
  */
 export async function isVerifiedDoctor(address) {
+  const validAddress = validateAddress(address);
   const contract = getContract();
-  return await contract.isVerifiedDoctor(address);
+  return await contract.isVerifiedDoctor(validAddress);
 }
 
 /**
  * Write a medical record (Doctor only)
  */
 export async function writeRecord(patientAddress, ipfsHash) {
+  const validAddress = validateAddress(patientAddress);
   const contract = getContract();
-  const tx = await contract.writeRecord(patientAddress, ipfsHash);
+  const tx = await contract.writeRecord(validAddress, ipfsHash);
   const receipt = await tx.wait();
   return receipt;
 }
@@ -87,8 +102,9 @@ export async function getMyRecords() {
  * Read a patient's records (requires permission)
  */
 export async function readRecords(patientAddress) {
+  const validAddress = validateAddress(patientAddress);
   const contract = getContract();
-  const tx = await contract.readRecords(patientAddress);
+  const tx = await contract.readRecords(validAddress);
   return await tx.wait();
 }
 
@@ -96,8 +112,9 @@ export async function readRecords(patientAddress) {
  * Grant access to a doctor
  */
 export async function grantAccess(doctorAddress) {
+  const validAddress = validateAddress(doctorAddress);
   const contract = getContract();
-  const tx = await contract.grantAccess(doctorAddress);
+  const tx = await contract.grantAccess(validAddress);
   const receipt = await tx.wait();
   return receipt;
 }
@@ -106,8 +123,9 @@ export async function grantAccess(doctorAddress) {
  * Revoke access from a doctor
  */
 export async function revokeAccess(doctorAddress) {
+  const validAddress = validateAddress(doctorAddress);
   const contract = getContract();
-  const tx = await contract.revokeAccess(doctorAddress);
+  const tx = await contract.revokeAccess(validAddress);
   const receipt = await tx.wait();
   return receipt;
 }
@@ -116,8 +134,9 @@ export async function revokeAccess(doctorAddress) {
  * Check if a doctor has access to my records
  */
 export async function hasAccess(doctorAddress) {
+  const validAddress = validateAddress(doctorAddress);
   const contract = getContract();
-  return await contract.hasAccess(doctorAddress);
+  return await contract.hasAccess(validAddress);
 }
 
 /**
