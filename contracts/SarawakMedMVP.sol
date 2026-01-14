@@ -2,6 +2,14 @@
 pragma solidity ^0.8.24;
 
 /**
+ * @title IBillingHistory
+ * @notice Interface for BillingHistory contract
+ */
+interface IBillingHistory {
+    function issueDigitalMC() external;
+}
+
+/**
  * @title SarawakMedMVP
  * @notice Patient-controlled medical records with cryptographic access enforcement
  * @dev MVP contract for proving:
@@ -15,6 +23,7 @@ contract SarawakMedMVP {
     // ========== STATE VARIABLES ==========
 
     address public admin; // Simulates Sarawak Medical Council
+    IBillingHistory public billingContract; // Reference to BillingHistory contract
 
     // ========== STRUCTS ==========
 
@@ -62,6 +71,7 @@ contract SarawakMedMVP {
         bool success,
         uint256 timestamp
     );
+    event BillingContractSet(address indexed billingAddress, uint256 timestamp);
 
     // ========== MODIFIERS ==========
 
@@ -111,6 +121,16 @@ contract SarawakMedMVP {
         emit DoctorRemoved(_doctorAddress, block.timestamp);
     }
 
+    /**
+     * @notice Set the BillingHistory contract address
+     * @param _billingAddress Address of the BillingHistory contract
+     */
+    function setBillingContract(address _billingAddress) external onlyAdmin {
+        require(_billingAddress != address(0), "Invalid billing address");
+        billingContract = IBillingHistory(_billingAddress);
+        emit BillingContractSet(_billingAddress, block.timestamp);
+    }
+
     // ========== DOCTOR FUNCTIONS ==========
 
     /**
@@ -133,6 +153,11 @@ contract SarawakMedMVP {
         });
 
         patientRecords[_patientAddress].push(newRecord);
+
+        // Bill the doctor/hospital for issuing this record
+        if (address(billingContract) != address(0)) {
+            billingContract.issueDigitalMC();
+        }
 
         emit RecordWritten(
             _patientAddress,
