@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { isVerifiedDoctor, writeRecord, readRecords } from '../utils/contract';
+import { isVerifiedDoctor, writeRecord, readRecords, getMyBalance } from '../utils/contract';
 import { uploadMedicalRecord, checkStatus } from '../utils/api';
 
 export default function DoctorPortal({ walletAddress }) {
@@ -7,6 +7,7 @@ export default function DoctorPortal({ walletAddress }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [backendStatus, setBackendStatus] = useState(null);
+  const [creditBalance, setCreditBalance] = useState(null);
 
   // Upload form state
   const [patientAddress, setPatientAddress] = useState('');
@@ -19,7 +20,17 @@ export default function DoctorPortal({ walletAddress }) {
   useEffect(() => {
     checkDoctorStatus();
     checkBackendStatus();
+    fetchCreditBalance();
   }, [walletAddress]);
+
+  const fetchCreditBalance = async () => {
+    try {
+      const balance = await getMyBalance();
+      setCreditBalance(balance);
+    } catch (error) {
+      console.error('Error fetching credit balance:', error);
+    }
+  };
 
   const checkDoctorStatus = async () => {
     try {
@@ -90,6 +101,9 @@ export default function DoctorPortal({ walletAddress }) {
 
       setMessage(`✓ Record uploaded successfully!\n\nIPFS Hash: ${ipfsHash}\nEncryption Key: ${encryptionKey}\n\n⚠️ IMPORTANT: Give this encryption key to the patient to decrypt their record!`);
 
+      // Refresh credit balance after upload
+      await fetchCreditBalance();
+
       // Reset form
       setSelectedFile(null);
       setPatientAddress('');
@@ -137,6 +151,12 @@ export default function DoctorPortal({ walletAddress }) {
       <p>Status: <strong className={isVerified ? 'success' : 'error'}>
         {isVerified ? 'Verified Doctor ✓' : 'Not Verified ✗'}
       </strong></p>
+
+      {creditBalance !== null && (
+        <p>Credits: <strong className={creditBalance >= 0 ? 'success' : 'error'}>
+          {creditBalance} {creditBalance < 0 ? '(owes payment)' : 'available'}
+        </strong></p>
+      )}
 
       {backendStatus && (
         <p>Backend: <strong>{backendStatus.backend}</strong> | IPFS: <strong>{backendStatus.ipfs}</strong></p>

@@ -1,8 +1,10 @@
 import { ethers } from 'ethers';
 import ContractABI from '../SarawakMedMVP.json';
+import BillingABI from '../BillingHistory.json';
 
 // Update this with your deployed contract address
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+const BILLING_CONTRACT_ADDRESS = import.meta.env.VITE_BILLING_CONTRACT_ADDRESS || '0x9A676e781A523b5d0C0e43731313A708CB607508';
 
 /**
  * Validate Ethereum address format
@@ -20,6 +22,7 @@ function validateAddress(address) {
 let provider;
 let signer;
 let contract;
+let billingContract;
 
 /**
  * Initialize Web3 connection with MetaMask
@@ -37,13 +40,15 @@ export async function connectWallet() {
     signer = await provider.getSigner();
     const address = await signer.getAddress();
 
-    // Initialize contract
+    // Initialize contracts
     contract = new ethers.Contract(CONTRACT_ADDRESS, ContractABI.abi, signer);
+    billingContract = new ethers.Contract(BILLING_CONTRACT_ADDRESS, BillingABI.abi, signer);
 
     console.log('Connected to wallet:', address);
     console.log('Contract address:', CONTRACT_ADDRESS);
+    console.log('Billing contract address:', BILLING_CONTRACT_ADDRESS);
 
-    return { address, contract };
+    return { address, contract, billingContract };
   } catch (error) {
     console.error('Wallet connection error:', error);
     throw error;
@@ -162,4 +167,49 @@ export function listenToEvents(eventName, callback) {
  */
 export function formatTimestamp(timestamp) {
   return new Date(Number(timestamp) * 1000).toLocaleString();
+}
+
+// ========== BILLING FUNCTIONS ==========
+
+/**
+ * Get billing contract instance
+ */
+export function getBillingContract() {
+  if (!billingContract) {
+    throw new Error('Billing contract not initialized. Connect wallet first.');
+  }
+  return billingContract;
+}
+
+/**
+ * Get hospital/doctor credit balance
+ * @param {string} address - Hospital/doctor address
+ * @returns {number} Credit balance (negative = owes money)
+ */
+export async function getHospitalBalance(address) {
+  const validAddress = validateAddress(address);
+  const billing = getBillingContract();
+  const balance = await billing.getHospitalBalance(validAddress);
+  return Number(balance);
+}
+
+/**
+ * Get current user's credit balance
+ * @returns {number} Credit balance (negative = owes money)
+ */
+export async function getMyBalance() {
+  const address = await getCurrentAddress();
+  return await getHospitalBalance(address);
+}
+
+/**
+ * Get total MC count issued by a hospital
+ * @param {string} address - Hospital/doctor address
+ * @returns {number} Number of MCs issued
+ */
+export async function getHospitalMCCount(address) {
+  const validAddress = validateAddress(address);
+  const billing = getBillingContract();
+  const history = await billing.getHospitalMCHistory(validAddress);
+  return history.length;
 }
