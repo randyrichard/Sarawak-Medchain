@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { connectWallet } from './utils/contract';
 import PatientPortal from './pages/PatientPortal';
 import DoctorPortal from './pages/DoctorPortal';
+import AdminPortal from './pages/AdminPortal';
 import './App.css';
 
 function App() {
@@ -79,6 +80,7 @@ function App() {
           <div className="nav-links">
             <Link to="/patient">Patient Portal</Link>
             <Link to="/doctor">Doctor Portal</Link>
+            <Link to="/admin">Admin Portal</Link>
           </div>
           <div className="wallet-info">
             <span>{walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</span>
@@ -93,6 +95,7 @@ function App() {
             <Route path="/" element={<Navigate to="/patient" replace />} />
             <Route path="/patient" element={<PatientPortal walletAddress={walletAddress} />} />
             <Route path="/doctor" element={<DoctorPortal walletAddress={walletAddress} />} />
+            <Route path="/admin" element={<AdminPortal walletAddress={walletAddress} />} />
           </Routes>
         </div>
       </div>
