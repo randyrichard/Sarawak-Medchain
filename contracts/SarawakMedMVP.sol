@@ -23,6 +23,7 @@ contract SarawakMedMVP {
     // ========== STATE VARIABLES ==========
 
     address public admin; // Simulates Sarawak Medical Council
+    address public pendingAdmin; // For 2-step admin transfer
     IBillingHistory public billingContract; // Reference to BillingHistory contract
 
     // ========== STRUCTS ==========
@@ -75,6 +76,8 @@ contract SarawakMedMVP {
         uint256 timestamp
     );
     event BillingContractSet(address indexed billingAddress, uint256 timestamp);
+    event AdminTransferProposed(address indexed currentAdmin, address indexed pendingAdmin, uint256 timestamp);
+    event AdminTransferCompleted(address indexed previousAdmin, address indexed newAdmin, uint256 timestamp);
     event EmergencyAccessLog(
         address indexed doctorAddress,
         address indexed patientAddress,
@@ -138,6 +141,40 @@ contract SarawakMedMVP {
         require(_billingAddress != address(0), "Invalid billing address");
         billingContract = IBillingHistory(_billingAddress);
         emit BillingContractSet(_billingAddress, block.timestamp);
+    }
+
+    /**
+     * @notice Propose a new admin (Step 1 of 2-step transfer)
+     * @param _newAdmin Address of the proposed new admin
+     */
+    function proposeAdmin(address _newAdmin) external onlyAdmin {
+        require(_newAdmin != address(0), "Invalid admin address");
+        require(_newAdmin != admin, "New admin must be different");
+
+        pendingAdmin = _newAdmin;
+        emit AdminTransferProposed(admin, _newAdmin, block.timestamp);
+    }
+
+    /**
+     * @notice Accept admin role (Step 2 of 2-step transfer)
+     * @dev Only the pending admin can call this
+     */
+    function acceptAdmin() external {
+        require(msg.sender == pendingAdmin, "Only pending admin can accept");
+
+        address previousAdmin = admin;
+        admin = pendingAdmin;
+        pendingAdmin = address(0);
+
+        emit AdminTransferCompleted(previousAdmin, admin, block.timestamp);
+    }
+
+    /**
+     * @notice Cancel a pending admin transfer
+     */
+    function cancelAdminTransfer() external onlyAdmin {
+        require(pendingAdmin != address(0), "No pending admin transfer");
+        pendingAdmin = address(0);
     }
 
     // ========== DOCTOR FUNCTIONS ==========
