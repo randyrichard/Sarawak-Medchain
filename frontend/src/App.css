@@ -406,6 +406,25 @@ button:disabled {
   background: #7f8c8d;
 }
 
+/* Emergency Access Section */
+.emergency-section {
+  border: 2px solid #e74c3c;
+  background: #fdf2f2;
+}
+
+.emergency-section h2 {
+  color: #c0392b;
+}
+
+.emergency-btn {
+  background: #e74c3c;
+  margin-top: 10px;
+}
+
+.emergency-btn:hover:not(:disabled) {
+  background: #c0392b;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .navbar {

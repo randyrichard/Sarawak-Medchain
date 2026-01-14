@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { isVerifiedDoctor, writeRecord, readRecords, getMyBalance } from '../utils/contract';
+import { isVerifiedDoctor, writeRecord, readRecords, getMyBalance, requestEmergencyAccess } from '../utils/contract';
 import { uploadMedicalRecord, checkStatus } from '../utils/api';
 
 export default function DoctorPortal({ walletAddress }) {
@@ -21,6 +21,9 @@ export default function DoctorPortal({ walletAddress }) {
   // Read records state
   const [readPatientAddress, setReadPatientAddress] = useState('');
   const [patientRecords, setPatientRecords] = useState([]);
+
+  // Emergency access state
+  const [emergencyPatientAddress, setEmergencyPatientAddress] = useState('');
 
   useEffect(() => {
     checkDoctorStatus();
@@ -190,6 +193,38 @@ export default function DoctorPortal({ walletAddress }) {
     }
   };
 
+  const handleEmergencyAccess = async () => {
+    if (!emergencyPatientAddress) {
+      setMessage('Error: Please enter patient address');
+      return;
+    }
+
+    if (!isVerified) {
+      setMessage('Error: You must be a verified doctor to request emergency access');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setMessage('Requesting emergency access...');
+
+      const receipt = await requestEmergencyAccess(emergencyPatientAddress);
+
+      const expiryTime = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+      setMessage(`✓ Emergency access granted until ${expiryTime.toLocaleTimeString()}. This has been logged on-chain for auditing.`);
+      console.log('Emergency access receipt:', receipt);
+
+      // Clear the input
+      setEmergencyPatientAddress('');
+
+    } catch (error) {
+      console.error('Emergency access error:', error);
+      setMessage(`Error: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="portal-container">
       <h1>Doctor Portal</h1>
@@ -307,6 +342,34 @@ export default function DoctorPortal({ walletAddress }) {
         </div>
         <p className="info-text">
           Note: You can only read records if the patient has granted you access.
+        </p>
+      </div>
+
+      {/* Emergency Access Section */}
+      <div className="section emergency-section">
+        <h2>Emergency Access</h2>
+        <p className="warning-text">
+          ⚠️ Use only in medical emergencies. All emergency access requests are logged on-chain for auditing.
+        </p>
+        <div className="form-group">
+          <label>Patient Wallet Address:</label>
+          <input
+            type="text"
+            placeholder="0x..."
+            value={emergencyPatientAddress}
+            onChange={(e) => setEmergencyPatientAddress(e.target.value)}
+            className="input-field"
+          />
+          <button
+            onClick={handleEmergencyAccess}
+            disabled={loading || !isVerified || !emergencyPatientAddress}
+            className="emergency-btn"
+          >
+            {loading ? 'Requesting...' : 'Request Emergency Access'}
+          </button>
+        </div>
+        <p className="info-text">
+          Emergency access grants temporary 1-hour view rights to the patient's records without their explicit consent.
         </p>
       </div>
     </div>

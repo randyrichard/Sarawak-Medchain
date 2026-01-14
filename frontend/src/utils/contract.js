@@ -145,6 +145,28 @@ export async function hasAccess(doctorAddress) {
 }
 
 /**
+ * Request emergency access to a patient's records (1-hour temporary access)
+ * Only verified doctors can call this
+ */
+export async function requestEmergencyAccess(patientAddress) {
+  const validAddress = validateAddress(patientAddress);
+  const contract = getContract();
+  const tx = await contract.emergencyAccess(validAddress);
+  const receipt = await tx.wait();
+  return receipt;
+}
+
+/**
+ * Check if a doctor has valid emergency access to a patient's records
+ */
+export async function checkEmergencyAccess(patientAddress, doctorAddress) {
+  const validPatient = validateAddress(patientAddress);
+  const validDoctor = validateAddress(doctorAddress);
+  const contract = getContract();
+  return await contract.hasEmergencyAccess(validPatient, validDoctor);
+}
+
+/**
  * Get count of patient's records
  */
 export async function getMyRecordsCount() {
