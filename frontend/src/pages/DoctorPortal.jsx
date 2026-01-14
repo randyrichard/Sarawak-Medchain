@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { isVerifiedDoctor, writeRecord, readRecords, getMyBalance } from '../utils/contract';
 import { uploadMedicalRecord, checkStatus } from '../utils/api';
 
@@ -12,6 +13,10 @@ export default function DoctorPortal({ walletAddress }) {
   // Upload form state
   const [patientAddress, setPatientAddress] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
+
+  // MC Success state for QR code
+  const [mcSuccess, setMcSuccess] = useState(null);
+  const qrRef = useRef(null);
 
   // Read records state
   const [readPatientAddress, setReadPatientAddress] = useState('');
@@ -60,6 +65,39 @@ export default function DoctorPortal({ walletAddress }) {
     }
   };
 
+  // Download QR code as image
+  const downloadQRCode = () => {
+    if (!qrRef.current || !mcSuccess) return;
+
+    const svg = qrRef.current.querySelector('svg');
+    if (!svg) return;
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+
+      const link = document.createElement('a');
+      link.download = `MC-${mcSuccess.ipfsHash.slice(0, 8)}-QR.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    };
+
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+  };
+
+  // Close MC success modal
+  const closeMcSuccess = () => {
+    setMcSuccess(null);
+  };
+
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (file && file.type === 'application/pdf') {
@@ -99,7 +137,15 @@ export default function DoctorPortal({ walletAddress }) {
       // Write record reference to blockchain
       await writeRecord(patientAddress, ipfsHash);
 
-      setMessage(`✓ Record uploaded successfully!\n\nIPFS Hash: ${ipfsHash}\nEncryption Key: ${encryptionKey}\n\n⚠️ IMPORTANT: Give this encryption key to the patient to decrypt their record!`);
+      setMessage(`✓ Record uploaded successfully!`);
+
+      // Set MC success data for QR code display
+      setMcSuccess({
+        ipfsHash,
+        encryptionKey,
+        patientAddress,
+        timestamp: new Date().toISOString()
+      });
 
       // Refresh credit balance after upload
       await fetchCreditBalance();
@@ -165,6 +211,48 @@ export default function DoctorPortal({ walletAddress }) {
       {message && (
         <div className={`message ${message.includes('Error') || message.includes('⚠️') ? 'error' : 'success'}`}>
           <pre>{message}</pre>
+        </div>
+      )}
+
+      {/* MC Issued Success Modal */}
+      {mcSuccess && (
+        <div className="mc-success-modal">
+          <div className="mc-success-content">
+            <h2>MC Issued Successfully!</h2>
+
+            <div className="qr-section" ref={qrRef}>
+              <QRCodeSVG
+                value={`${window.location.origin}/verify/${mcSuccess.ipfsHash}`}
+                size={200}
+                level="H"
+                includeMargin={true}
+              />
+            </div>
+
+            <div className="mc-details">
+              <p><strong>Verification URL:</strong></p>
+              <code className="url-display">{window.location.origin}/verify/{mcSuccess.ipfsHash}</code>
+
+              <p><strong>IPFS Hash:</strong></p>
+              <code className="hash-display">{mcSuccess.ipfsHash}</code>
+
+              <p><strong>Encryption Key:</strong></p>
+              <code className="key-display">{mcSuccess.encryptionKey}</code>
+
+              <p className="warning-text">
+                ⚠️ IMPORTANT: Give this encryption key to the patient to decrypt their record!
+              </p>
+            </div>
+
+            <div className="mc-actions">
+              <button onClick={downloadQRCode} className="download-btn">
+                Download QR Code
+              </button>
+              <button onClick={closeMcSuccess} className="close-btn">
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

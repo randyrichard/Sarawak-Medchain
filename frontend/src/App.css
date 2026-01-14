@@ -300,6 +300,112 @@ button:disabled {
   margin-top: 10px;
 }
 
+/* MC Success Modal */
+.mc-success-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.mc-success-content {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.mc-success-content h2 {
+  color: #27ae60;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.qr-section {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.mc-details {
+  margin-bottom: 20px;
+}
+
+.mc-details p {
+  margin: 10px 0 5px 0;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.mc-details code {
+  display: block;
+  background: #ecf0f1;
+  padding: 10px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+  word-break: break-all;
+  margin-bottom: 10px;
+}
+
+.url-display {
+  color: #3498db;
+}
+
+.hash-display {
+  color: #8e44ad;
+}
+
+.key-display {
+  color: #e67e22;
+}
+
+.warning-text {
+  background: #fff3cd;
+  color: #856404;
+  padding: 12px;
+  border-radius: 4px;
+  border: 1px solid #ffc107;
+  font-size: 14px;
+  margin-top: 15px;
+}
+
+.mc-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.download-btn {
+  background: #27ae60;
+}
+
+.download-btn:hover {
+  background: #1e8449;
+}
+
+.close-btn {
+  background: #95a5a6;
+}
+
+.close-btn:hover {
+  background: #7f8c8d;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .navbar {
