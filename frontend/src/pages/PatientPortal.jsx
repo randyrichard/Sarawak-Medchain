@@ -82,7 +82,8 @@ export default function PatientPortal({ walletAddress }) {
       setLoading(true);
       setMessage('Retrieving and decrypting record...');
 
-      const pdfBlob = await retrieveMedicalRecord(ipfsHash, key);
+      // Pass walletAddress for blockchain permission verification
+      const pdfBlob = await retrieveMedicalRecord(ipfsHash, key, walletAddress);
       openPDFInNewTab(pdfBlob);
       setMessage('Record opened in new tab');
     } catch (error) {
