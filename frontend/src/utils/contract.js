@@ -259,3 +259,77 @@ export async function getTotalOwed() {
     .filter(b => b.balance < 0)
     .reduce((sum, b) => sum + Math.abs(b.balance), 0);
 }
+
+// ========== ADMIN FUNCTIONS ==========
+
+/**
+ * Get the current admin address
+ * @returns {string} Admin address
+ */
+export async function getAdmin() {
+  const contract = getContract();
+  return await contract.admin();
+}
+
+/**
+ * Get the pending admin address (if any)
+ * @returns {string} Pending admin address or zero address
+ */
+export async function getPendingAdmin() {
+  const contract = getContract();
+  return await contract.pendingAdmin();
+}
+
+/**
+ * Propose a new admin (Step 1 of 2-step transfer)
+ * Only current admin can call this
+ * @param {string} newAdminAddress - Address of proposed new admin
+ */
+export async function proposeAdmin(newAdminAddress) {
+  const validAddress = validateAddress(newAdminAddress);
+  const contract = getContract();
+  const tx = await contract.proposeAdmin(validAddress);
+  return await tx.wait();
+}
+
+/**
+ * Accept admin role (Step 2 of 2-step transfer)
+ * Only pending admin can call this
+ */
+export async function acceptAdmin() {
+  const contract = getContract();
+  const tx = await contract.acceptAdmin();
+  return await tx.wait();
+}
+
+/**
+ * Cancel a pending admin transfer
+ * Only current admin can call this
+ */
+export async function cancelAdminTransfer() {
+  const contract = getContract();
+  const tx = await contract.cancelAdminTransfer();
+  return await tx.wait();
+}
+
+/**
+ * Add a verified doctor (admin only)
+ * @param {string} doctorAddress - Address of doctor to verify
+ */
+export async function addVerifiedDoctor(doctorAddress) {
+  const validAddress = validateAddress(doctorAddress);
+  const contract = getContract();
+  const tx = await contract.addVerifiedDoctor(validAddress);
+  return await tx.wait();
+}
+
+/**
+ * Remove a verified doctor (admin only)
+ * @param {string} doctorAddress - Address of doctor to remove
+ */
+export async function removeVerifiedDoctor(doctorAddress) {
+  const validAddress = validateAddress(doctorAddress);
+  const contract = getContract();
+  const tx = await contract.removeVerifiedDoctor(validAddress);
+  return await tx.wait();
+}

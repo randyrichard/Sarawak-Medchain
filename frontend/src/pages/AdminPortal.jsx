@@ -1,5 +1,16 @@
 import { useState, useEffect } from 'react';
-import { getAllHospitalBalances, getBillingContract } from '../utils/contract';
+import {
+  getAllHospitalBalances,
+  getBillingContract,
+  getAdmin,
+  getPendingAdmin,
+  proposeAdmin,
+  acceptAdmin,
+  cancelAdminTransfer,
+  addVerifiedDoctor,
+  removeVerifiedDoctor,
+  isVerifiedDoctor
+} from '../utils/contract';
 
 export default function AdminPortal({ walletAddress }) {
   const [totalMCs, setTotalMCs] = useState(0);
@@ -8,6 +19,19 @@ export default function AdminPortal({ walletAddress }) {
   const [totalOwed, setTotalOwed] = useState(0);
   const [hospitalBalances, setHospitalBalances] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Admin state
+  const [currentAdmin, setCurrentAdmin] = useState('');
+  const [pendingAdminAddr, setPendingAdminAddr] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isPendingAdmin, setIsPendingAdmin] = useState(false);
+
+  // Form state
+  const [newAdminAddress, setNewAdminAddress] = useState('');
+  const [newDoctorAddress, setNewDoctorAddress] = useState('');
+  const [removeDoctorAddress, setRemoveDoctorAddress] = useState('');
+  const [message, setMessage] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -40,6 +64,14 @@ export default function AdminPortal({ walletAddress }) {
       setTotalCredits(credits);
       setTotalOwed(owed);
 
+      // Get admin info
+      const admin = await getAdmin();
+      const pending = await getPendingAdmin();
+      setCurrentAdmin(admin);
+      setPendingAdminAddr(pending);
+      setIsAdmin(admin.toLowerCase() === walletAddress.toLowerCase());
+      setIsPendingAdmin(pending.toLowerCase() === walletAddress.toLowerCase() && pending !== '0x0000000000000000000000000000000000000000');
+
     } catch (error) {
       console.error('Error fetching admin data:', error);
     } finally {
@@ -47,7 +79,93 @@ export default function AdminPortal({ walletAddress }) {
     }
   };
 
+  const handleProposeAdmin = async () => {
+    if (!newAdminAddress) {
+      setMessage('Error: Please enter new admin address');
+      return;
+    }
+    try {
+      setActionLoading(true);
+      setMessage('Proposing new admin...');
+      await proposeAdmin(newAdminAddress);
+      setMessage('New admin proposed successfully! They must call acceptAdmin() to complete transfer.');
+      setNewAdminAddress('');
+      await fetchData();
+    } catch (error) {
+      setMessage(`Error: ${error.message}`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleAcceptAdmin = async () => {
+    try {
+      setActionLoading(true);
+      setMessage('Accepting admin role...');
+      await acceptAdmin();
+      setMessage('You are now the admin!');
+      await fetchData();
+    } catch (error) {
+      setMessage(`Error: ${error.message}`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCancelTransfer = async () => {
+    try {
+      setActionLoading(true);
+      setMessage('Cancelling admin transfer...');
+      await cancelAdminTransfer();
+      setMessage('Admin transfer cancelled.');
+      await fetchData();
+    } catch (error) {
+      setMessage(`Error: ${error.message}`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleAddDoctor = async () => {
+    if (!newDoctorAddress) {
+      setMessage('Error: Please enter doctor address');
+      return;
+    }
+    try {
+      setActionLoading(true);
+      setMessage('Adding verified doctor...');
+      await addVerifiedDoctor(newDoctorAddress);
+      setMessage('Doctor verified successfully!');
+      setNewDoctorAddress('');
+      await fetchData();
+    } catch (error) {
+      setMessage(`Error: ${error.message}`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRemoveDoctor = async () => {
+    if (!removeDoctorAddress) {
+      setMessage('Error: Please enter doctor address');
+      return;
+    }
+    try {
+      setActionLoading(true);
+      setMessage('Removing doctor...');
+      await removeVerifiedDoctor(removeDoctorAddress);
+      setMessage('Doctor removed successfully!');
+      setRemoveDoctorAddress('');
+      await fetchData();
+    } catch (error) {
+      setMessage(`Error: ${error.message}`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const formatAddress = (addr) => {
+    if (!addr || addr === '0x0000000000000000000000000000000000000000') return 'None';
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
@@ -58,6 +176,143 @@ export default function AdminPortal({ walletAddress }) {
         <div className="mb-10">
           <h1 className="text-4xl font-bold text-white mb-2">Hospital Admin Portal</h1>
           <p className="text-slate-400">Sarawak MedChain Billing Dashboard</p>
+          <div className="mt-2 flex items-center gap-4">
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+              isAdmin
+                ? 'bg-emerald-500/20 text-emerald-400'
+                : isPendingAdmin
+                  ? 'bg-yellow-500/20 text-yellow-400'
+                  : 'bg-slate-500/20 text-slate-400'
+            }`}>
+              {isAdmin ? 'You are Admin' : isPendingAdmin ? 'Pending Admin (Accept to complete)' : 'Not Admin'}
+            </span>
+          </div>
+        </div>
+
+        {/* Message */}
+        {message && (
+          <div className={`mb-6 p-4 rounded-xl ${
+            message.includes('Error')
+              ? 'bg-red-500/10 border border-red-500/30 text-red-400'
+              : 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
+          }`}>
+            {message}
+          </div>
+        )}
+
+        {/* Admin Management Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+          {/* Admin Transfer Card */}
+          <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
+            <h2 className="text-xl font-semibold text-white mb-4">Admin Transfer</h2>
+            <div className="space-y-4">
+              <div>
+                <p className="text-slate-400 text-sm mb-1">Current Admin</p>
+                <code className="text-emerald-400 bg-slate-700/50 px-3 py-2 rounded block text-sm">
+                  {formatAddress(currentAdmin)}
+                </code>
+              </div>
+              <div>
+                <p className="text-slate-400 text-sm mb-1">Pending Admin</p>
+                <code className="text-yellow-400 bg-slate-700/50 px-3 py-2 rounded block text-sm">
+                  {formatAddress(pendingAdminAddr)}
+                </code>
+              </div>
+
+              {isAdmin && (
+                <div className="pt-4 border-t border-slate-700">
+                  <label className="text-slate-300 text-sm mb-2 block">Propose New Admin</label>
+                  <input
+                    type="text"
+                    placeholder="0x..."
+                    value={newAdminAddress}
+                    onChange={(e) => setNewAdminAddress(e.target.value)}
+                    className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-500 mb-3"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleProposeAdmin}
+                      disabled={actionLoading}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      {actionLoading ? 'Processing...' : 'Propose Admin'}
+                    </button>
+                    {pendingAdminAddr !== '0x0000000000000000000000000000000000000000' && (
+                      <button
+                        onClick={handleCancelTransfer}
+                        disabled={actionLoading}
+                        className="bg-red-600 hover:bg-red-700 disabled:bg-slate-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {isPendingAdmin && (
+                <div className="pt-4 border-t border-slate-700">
+                  <p className="text-yellow-400 text-sm mb-3">You have been proposed as the new admin!</p>
+                  <button
+                    onClick={handleAcceptAdmin}
+                    disabled={actionLoading}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                  >
+                    {actionLoading ? 'Processing...' : 'Accept Admin Role'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Doctor Management Card */}
+          <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
+            <h2 className="text-xl font-semibold text-white mb-4">Doctor Management</h2>
+
+            {isAdmin ? (
+              <div className="space-y-6">
+                {/* Add Doctor */}
+                <div>
+                  <label className="text-slate-300 text-sm mb-2 block">Add Verified Doctor</label>
+                  <input
+                    type="text"
+                    placeholder="0x..."
+                    value={newDoctorAddress}
+                    onChange={(e) => setNewDoctorAddress(e.target.value)}
+                    className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-500 mb-3"
+                  />
+                  <button
+                    onClick={handleAddDoctor}
+                    disabled={actionLoading}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                  >
+                    {actionLoading ? 'Processing...' : 'Verify Doctor'}
+                  </button>
+                </div>
+
+                {/* Remove Doctor */}
+                <div className="pt-4 border-t border-slate-700">
+                  <label className="text-slate-300 text-sm mb-2 block">Remove Verified Doctor</label>
+                  <input
+                    type="text"
+                    placeholder="0x..."
+                    value={removeDoctorAddress}
+                    onChange={(e) => setRemoveDoctorAddress(e.target.value)}
+                    className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-500 mb-3"
+                  />
+                  <button
+                    onClick={handleRemoveDoctor}
+                    disabled={actionLoading}
+                    className="w-full bg-red-600 hover:bg-red-700 disabled:bg-slate-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                  >
+                    {actionLoading ? 'Processing...' : 'Remove Doctor'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-slate-400">Only the admin can manage doctors.</p>
+            )}
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -199,7 +454,7 @@ export default function AdminPortal({ walletAddress }) {
 
         {/* Footer */}
         <div className="mt-8 text-center text-slate-500 text-sm">
-          <p>Sarawak MedChain Admin Portal &copy; 2026</p>
+          <p>Sarawak MedChain Admin Portal</p>
         </div>
       </div>
     </div>
