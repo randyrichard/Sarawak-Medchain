@@ -35,19 +35,22 @@ contract BillingHistory {
 
     /**
      * @dev Issue a digital MC. Records timestamp and hospital, deducts 1 credit.
+     * @param _hospital Address of the hospital/doctor to charge
      */
-    function issueDigitalMC() external {
+    function issueDigitalMC(address _hospital) external {
+        require(_hospital != address(0), "Invalid hospital address");
+
         // Record the MC issuance
         mcHistory.push(MCRecord({
-            hospital: msg.sender,
+            hospital: _hospital,
             timestamp: block.timestamp
         }));
 
         // Deduct 1 credit (can go negative = debt)
-        hospitalCredits[msg.sender] -= 1;
+        hospitalCredits[_hospital] -= 1;
 
-        emit MCIssued(msg.sender, block.timestamp);
-        emit CreditsDeducted(msg.sender, 1, hospitalCredits[msg.sender]);
+        emit MCIssued(_hospital, block.timestamp);
+        emit CreditsDeducted(_hospital, 1, hospitalCredits[_hospital]);
     }
 
     /**

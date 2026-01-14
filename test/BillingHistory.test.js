@@ -30,7 +30,7 @@ describe("BillingHistory", function () {
 
   describe("issueDigitalMC", function () {
     it("Should record MC issuance and deduct 1 credit", async function () {
-      await expect(billing.connect(hospital1).issueDigitalMC())
+      await expect(billing.connect(hospital1).issueDigitalMC(hospital1.address))
         .to.emit(billing, "MCIssued");
 
       expect(await billing.getHospitalBalance(hospital1.address)).to.equal(-1);
@@ -38,17 +38,17 @@ describe("BillingHistory", function () {
     });
 
     it("Should allow multiple MC issuances", async function () {
-      await billing.connect(hospital1).issueDigitalMC();
-      await billing.connect(hospital1).issueDigitalMC();
-      await billing.connect(hospital1).issueDigitalMC();
+      await billing.issueDigitalMC(hospital1.address);
+      await billing.issueDigitalMC(hospital1.address);
+      await billing.issueDigitalMC(hospital1.address);
 
       expect(await billing.getHospitalBalance(hospital1.address)).to.equal(-3);
       expect(await billing.getMCCount()).to.equal(3);
     });
 
     it("Should track MC history correctly", async function () {
-      await billing.connect(hospital1).issueDigitalMC();
-      await billing.connect(hospital2).issueDigitalMC();
+      await billing.issueDigitalMC(hospital1.address);
+      await billing.issueDigitalMC(hospital2.address);
 
       const history = await billing.getMCHistory();
       expect(history.length).to.equal(2);
@@ -62,9 +62,9 @@ describe("BillingHistory", function () {
       expect(await billing.getHospitalBalance(hospital1.address)).to.equal(5);
 
       // Hospital issues 3 MCs
-      await billing.connect(hospital1).issueDigitalMC();
-      await billing.connect(hospital1).issueDigitalMC();
-      await billing.connect(hospital1).issueDigitalMC();
+      await billing.issueDigitalMC(hospital1.address);
+      await billing.issueDigitalMC(hospital1.address);
+      await billing.issueDigitalMC(hospital1.address);
 
       expect(await billing.getHospitalBalance(hospital1.address)).to.equal(2);
     });
@@ -74,10 +74,16 @@ describe("BillingHistory", function () {
 
       // Issue 5 MCs (2 prepaid + 3 debt)
       for (let i = 0; i < 5; i++) {
-        await billing.connect(hospital1).issueDigitalMC();
+        await billing.issueDigitalMC(hospital1.address);
       }
 
       expect(await billing.getHospitalBalance(hospital1.address)).to.equal(-3);
+    });
+
+    it("Should reject zero address", async function () {
+      await expect(
+        billing.issueDigitalMC(ethers.ZeroAddress)
+      ).to.be.revertedWith("Invalid hospital address");
     });
   });
 
@@ -88,8 +94,8 @@ describe("BillingHistory", function () {
     });
 
     it("Should return negative balance (debt)", async function () {
-      await billing.connect(hospital1).issueDigitalMC();
-      await billing.connect(hospital1).issueDigitalMC();
+      await billing.issueDigitalMC(hospital1.address);
+      await billing.issueDigitalMC(hospital1.address);
       expect(await billing.getHospitalBalance(hospital1.address)).to.equal(-2);
     });
   });
@@ -123,8 +129,8 @@ describe("BillingHistory", function () {
 
     it("Should allow adding credits to pay off debt", async function () {
       // Hospital goes into debt
-      await billing.connect(hospital1).issueDigitalMC();
-      await billing.connect(hospital1).issueDigitalMC();
+      await billing.issueDigitalMC(hospital1.address);
+      await billing.issueDigitalMC(hospital1.address);
       expect(await billing.getHospitalBalance(hospital1.address)).to.equal(-2);
 
       // Admin adds credits to cover debt
@@ -135,11 +141,11 @@ describe("BillingHistory", function () {
 
   describe("getHospitalMCHistory", function () {
     it("Should return only MCs for specific hospital", async function () {
-      await billing.connect(hospital1).issueDigitalMC();
-      await billing.connect(hospital2).issueDigitalMC();
-      await billing.connect(hospital1).issueDigitalMC();
-      await billing.connect(hospital2).issueDigitalMC();
-      await billing.connect(hospital1).issueDigitalMC();
+      await billing.issueDigitalMC(hospital1.address);
+      await billing.issueDigitalMC(hospital2.address);
+      await billing.issueDigitalMC(hospital1.address);
+      await billing.issueDigitalMC(hospital2.address);
+      await billing.issueDigitalMC(hospital1.address);
 
       const hospital1History = await billing.getHospitalMCHistory(hospital1.address);
       const hospital2History = await billing.getHospitalMCHistory(hospital2.address);

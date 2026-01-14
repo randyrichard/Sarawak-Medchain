@@ -6,7 +6,7 @@ pragma solidity ^0.8.24;
  * @notice Interface for BillingHistory contract
  */
 interface IBillingHistory {
-    function issueDigitalMC() external;
+    function issueDigitalMC(address _hospital) external;
 }
 
 /**
@@ -156,7 +156,7 @@ contract SarawakMedMVP {
 
         // Bill the doctor/hospital for issuing this record
         if (address(billingContract) != address(0)) {
-            billingContract.issueDigitalMC();
+            billingContract.issueDigitalMC(msg.sender);
         }
 
         emit RecordWritten(
