@@ -45,6 +45,9 @@ contract SarawakMedMVP {
     // Access control: patient => doctor => has access
     mapping(address => mapping(address => bool)) public accessPermissions;
 
+    // Emergency access: patient => doctor => expiry timestamp
+    mapping(address => mapping(address => uint256)) public emergencyAccessExpiry;
+
     // ========== EVENTS ==========
 
     event DoctorVerified(address indexed doctorAddress, uint256 timestamp);
@@ -72,6 +75,12 @@ contract SarawakMedMVP {
         uint256 timestamp
     );
     event BillingContractSet(address indexed billingAddress, uint256 timestamp);
+    event EmergencyAccessLog(
+        address indexed doctorAddress,
+        address indexed patientAddress,
+        uint256 expiryTime,
+        uint256 timestamp
+    );
 
     // ========== MODIFIERS ==========
 
@@ -168,6 +177,38 @@ contract SarawakMedMVP {
     }
 
     /**
+     * @notice Request emergency access to a patient's records (1-hour temporary access)
+     * @dev Only verified doctors can call this. Access is logged for auditing.
+     * @param _patient Address of the patient whose records are needed
+     */
+    function emergencyAccess(address _patient) external onlyVerifiedDoctor {
+        require(_patient != address(0), "Invalid patient address");
+
+        // Set emergency access expiry to 1 hour from now
+        uint256 expiryTime = block.timestamp + 1 hours;
+        emergencyAccessExpiry[_patient][msg.sender] = expiryTime;
+
+        // Emit event for auditing
+        emit EmergencyAccessLog(
+            msg.sender,
+            _patient,
+            expiryTime,
+            block.timestamp
+        );
+    }
+
+    /**
+     * @notice Check if a doctor has valid emergency access to a patient's records
+     * @param _patient Address of the patient
+     * @param _doctor Address of the doctor
+     * @return bool indicating if emergency access is currently valid
+     */
+    function hasEmergencyAccess(address _patient, address _doctor) public view returns (bool) {
+        uint256 expiry = emergencyAccessExpiry[_patient][_doctor];
+        return expiry > 0 && block.timestamp < expiry;
+    }
+
+    /**
      * @notice Read a patient's medical records (requires permission)
      * @param _patientAddress Address of the patient
      * @return Array of medical records
@@ -177,16 +218,17 @@ contract SarawakMedMVP {
         returns (MedicalRecord[] memory)
     {
         bool _hasAccess = accessPermissions[_patientAddress][msg.sender];
+        bool _hasEmergencyAccess = hasEmergencyAccess(_patientAddress, msg.sender);
 
         emit AccessAttempted(
             msg.sender,
             _patientAddress,
-            _hasAccess,
+            _hasAccess || _hasEmergencyAccess,
             block.timestamp
         );
 
         require(
-            _hasAccess || msg.sender == _patientAddress,
+            _hasAccess || _hasEmergencyAccess || msg.sender == _patientAddress,
             "Access denied: No permission to read these records"
         );
 
