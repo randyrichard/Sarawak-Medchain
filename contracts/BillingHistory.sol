@@ -11,10 +11,20 @@ contract BillingHistory {
     // Hospital credits: positive = prepaid credits, negative = owes money
     mapping(address => int256) public hospitalCredits;
 
+    // Track all hospitals for admin queries
+    address[] public allHospitals;
+    mapping(address => bool) public isRegisteredHospital;
+
     // Record of each MC issued
     struct MCRecord {
         address hospital;
         uint256 timestamp;
+    }
+
+    // Hospital balance info for batch queries
+    struct HospitalBalance {
+        address hospital;
+        int256 balance;
     }
 
     MCRecord[] public mcHistory;
@@ -34,11 +44,24 @@ contract BillingHistory {
     }
 
     /**
+     * @dev Register a hospital if not already registered
+     */
+    function _registerHospital(address _hospital) internal {
+        if (!isRegisteredHospital[_hospital]) {
+            allHospitals.push(_hospital);
+            isRegisteredHospital[_hospital] = true;
+        }
+    }
+
+    /**
      * @dev Issue a digital MC. Records timestamp and hospital, deducts 1 credit.
      * @param _hospital Address of the hospital/doctor to charge
      */
     function issueDigitalMC(address _hospital) external {
         require(_hospital != address(0), "Invalid hospital address");
+
+        // Register hospital if new
+        _registerHospital(_hospital);
 
         // Record the MC issuance
         mcHistory.push(MCRecord({
@@ -70,6 +93,9 @@ contract BillingHistory {
     function addCredits(address _hospital, uint256 _amount) external onlyAdmin {
         require(_hospital != address(0), "Invalid hospital address");
         require(_amount > 0, "Amount must be greater than 0");
+
+        // Register hospital if new
+        _registerHospital(_hospital);
 
         hospitalCredits[_hospital] += int256(_amount);
 
@@ -117,5 +143,36 @@ contract BillingHistory {
         }
 
         return records;
+    }
+
+    /**
+     * @dev Get list of all registered hospitals
+     * @return hospitals Array of all hospital addresses
+     */
+    function getAllHospitals() external view returns (address[] memory hospitals) {
+        return allHospitals;
+    }
+
+    /**
+     * @dev Get number of registered hospitals
+     * @return count Number of hospitals
+     */
+    function getHospitalCount() external view returns (uint256 count) {
+        return allHospitals.length;
+    }
+
+    /**
+     * @dev Get all hospital balances (admin view)
+     * @return balances Array of all hospital addresses and their balances
+     */
+    function getAllHospitalBalances() external view returns (HospitalBalance[] memory balances) {
+        balances = new HospitalBalance[](allHospitals.length);
+        for (uint256 i = 0; i < allHospitals.length; i++) {
+            balances[i] = HospitalBalance({
+                hospital: allHospitals[i],
+                balance: hospitalCredits[allHospitals[i]]
+            });
+        }
+        return balances;
     }
 }

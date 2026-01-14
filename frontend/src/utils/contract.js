@@ -213,3 +213,27 @@ export async function getHospitalMCCount(address) {
   const history = await billing.getHospitalMCHistory(validAddress);
   return history.length;
 }
+
+/**
+ * Get all hospital balances (admin view)
+ * @returns {Array} Array of {hospital, balance} objects
+ */
+export async function getAllHospitalBalances() {
+  const billing = getBillingContract();
+  const balances = await billing.getAllHospitalBalances();
+  return balances.map(item => ({
+    hospital: item.hospital,
+    balance: Number(item.balance)
+  }));
+}
+
+/**
+ * Get total amount owed by all hospitals
+ * @returns {number} Total credits owed (sum of negative balances)
+ */
+export async function getTotalOwed() {
+  const balances = await getAllHospitalBalances();
+  return balances
+    .filter(b => b.balance < 0)
+    .reduce((sum, b) => sum + Math.abs(b.balance), 0);
+}
