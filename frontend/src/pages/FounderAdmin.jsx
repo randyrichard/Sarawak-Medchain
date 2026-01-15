@@ -1,4 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 // Midnight Navy Theme Colors
 const theme = {
@@ -13,7 +16,35 @@ const theme = {
   success: '#10b981',
   warning: '#f59e0b',
   danger: '#ef4444',
+  purple: '#8b5cf6',
 };
+
+// Market data
+const TOTAL_SARAWAK_HOSPITALS = 24;
+const TOTAL_SARAWAK_CLINICS = 180;
+const TARGET_CLIENTS = 200;
+const REVENUE_TARGET = 500000;
+
+// Revenue projection data (path to RM500k)
+const projectionData = [
+  { month: 'Jan', clients: 6, revenue: 36000, projected: false },
+  { month: 'Feb', clients: 12, revenue: 72000, projected: true },
+  { month: 'Mar', clients: 25, revenue: 150000, projected: true },
+  { month: 'Apr', clients: 45, revenue: 270000, projected: true },
+  { month: 'May', clients: 80, revenue: 400000, projected: true },
+  { month: 'Jun', clients: 120, revenue: 480000, projected: true },
+  { month: 'Jul', clients: 160, revenue: 520000, projected: true },
+  { month: 'Aug', clients: 200, revenue: 560000, projected: true },
+];
+
+// Blockchain nodes across Sarawak
+const blockchainNodes = [
+  { id: 1, city: 'Kuching', status: 'online', latency: 12, blocks: 15847, peers: 8 },
+  { id: 2, city: 'Miri', status: 'online', latency: 24, blocks: 15847, peers: 6 },
+  { id: 3, city: 'Sibu', status: 'online', latency: 18, blocks: 15847, peers: 5 },
+  { id: 4, city: 'Bintulu', status: 'online', latency: 31, blocks: 15846, peers: 4 },
+  { id: 5, city: 'Kuching (Backup)', status: 'standby', latency: 15, blocks: 15847, peers: 3 },
+];
 
 // Mock data generators
 const generateMockMCFeed = () => {
@@ -56,7 +87,7 @@ function SarawakMap({ clients }) {
   };
 
   return (
-    <div className="relative w-full h-64">
+    <div className="relative w-full h-48">
       <svg viewBox="0 0 100 100" className="w-full h-full">
         {/* Simplified Sarawak outline */}
         <path
@@ -115,6 +146,27 @@ function SarawakMap({ clients }) {
   );
 }
 
+// Custom tooltip for the chart
+function CustomTooltip({ active, payload, label }) {
+  if (active && payload && payload.length) {
+    return (
+      <div
+        className="rounded-lg p-3 border shadow-xl"
+        style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}
+      >
+        <p className="font-bold" style={{ color: theme.textPrimary }}>{label}</p>
+        <p style={{ color: theme.success }}>
+          Revenue: RM {payload[0].value.toLocaleString()}
+        </p>
+        <p style={{ color: theme.accent }}>
+          Clients: {payload[0].payload.clients}
+        </p>
+      </div>
+    );
+  }
+  return null;
+}
+
 export default function FounderAdmin() {
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -127,10 +179,18 @@ export default function FounderAdmin() {
   const [pendingPayments, setPendingPayments] = useState([]);
   const [mcFeed, setMcFeed] = useState([]);
   const [totalProfit, setTotalProfit] = useState(0);
+  const [exportingDeck, setExportingDeck] = useState(false);
   const feedRef = useRef(null);
 
   // Super Admin password (in production, this would be server-side)
   const SUPER_ADMIN_PASSWORD = 'founder2026';
+
+  // Calculate market share
+  const connectedHospitals = mockHospitals.filter(h => h.tier === 'Hospital').length;
+  const connectedClinics = mockHospitals.filter(h => h.tier === 'Clinic').length;
+  const hospitalMarketShare = Math.round((connectedHospitals / TOTAL_SARAWAK_HOSPITALS) * 100);
+  const clinicMarketShare = Math.round((connectedClinics / TOTAL_SARAWAK_CLINICS) * 100);
+  const totalMarketShare = Math.round((mockHospitals.length / (TOTAL_SARAWAK_HOSPITALS + TOTAL_SARAWAK_CLINICS)) * 100);
 
   // Handle login
   const handleLogin = (e) => {
@@ -140,6 +200,144 @@ export default function FounderAdmin() {
       setLoginError('');
     } else {
       setLoginError('Invalid Super Admin credentials');
+    }
+  };
+
+  // Export Investor Deck PDF
+  const exportInvestorDeck = async () => {
+    setExportingDeck(true);
+
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+
+      // Header
+      doc.setFillColor(10, 22, 40);
+      doc.rect(0, 0, pageWidth, 45, 'F');
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(28);
+      doc.setFont('helvetica', 'bold');
+      doc.text('SARAWAK MEDCHAIN', pageWidth / 2, 22, { align: 'center' });
+
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Investor Summary Deck', pageWidth / 2, 32, { align: 'center' });
+
+      doc.setFontSize(10);
+      doc.setTextColor(148, 163, 184);
+      doc.text(`Generated: ${new Date().toLocaleDateString('en-MY')}`, pageWidth / 2, 40, { align: 'center' });
+
+      // Section 1: Key Metrics
+      doc.setTextColor(59, 130, 246);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('KEY METRICS', 14, 58);
+
+      doc.setDrawColor(30, 58, 95);
+      doc.line(14, 62, pageWidth - 14, 62);
+
+      autoTable(doc, {
+        startY: 68,
+        head: [['Metric', 'Current', 'Target', 'Progress']],
+        body: [
+          ['Monthly Recurring Revenue', `RM ${mrr.toLocaleString()}`, 'RM 500,000', `${Math.round((mrr / REVENUE_TARGET) * 100)}%`],
+          ['Active Clients', mockHospitals.length.toString(), TARGET_CLIENTS.toString(), `${Math.round((mockHospitals.length / TARGET_CLIENTS) * 100)}%`],
+          ['Hospital Market Share', `${connectedHospitals}/${TOTAL_SARAWAK_HOSPITALS}`, '24/24', `${hospitalMarketShare}%`],
+          ['Clinic Market Share', `${connectedClinics}/${TOTAL_SARAWAK_CLINICS}`, '176/180', `${clinicMarketShare}%`],
+          ['Payment Collection Rate', `${Math.round((mockHospitals.filter(h => h.paid).length / mockHospitals.length) * 100)}%`, '95%', 'On Track'],
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: [15, 31, 56], textColor: [255, 255, 255] },
+        alternateRowStyles: { fillColor: [240, 245, 250] },
+      });
+
+      // Section 2: Revenue Model
+      const currentY = doc.lastAutoTable.finalY + 15;
+      doc.setTextColor(59, 130, 246);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('REVENUE MODEL', 14, currentY);
+
+      doc.setDrawColor(30, 58, 95);
+      doc.line(14, currentY + 4, pageWidth - 14, currentY + 4);
+
+      autoTable(doc, {
+        startY: currentY + 10,
+        head: [['Revenue Stream', 'Unit Price', 'Current Units', 'Monthly Revenue']],
+        body: [
+          ['Hospital Subscription', 'RM 10,000/mo', connectedHospitals.toString(), `RM ${(connectedHospitals * 10000).toLocaleString()}`],
+          ['Clinic Subscription', 'RM 2,000/mo', connectedClinics.toString(), `RM ${(connectedClinics * 2000).toLocaleString()}`],
+          ['MC Transaction Fee', 'RM 1.00/MC', mockHospitals.reduce((sum, h) => sum + h.mcs, 0).toString(), `RM ${mockHospitals.reduce((sum, h) => sum + h.mcs, 0).toLocaleString()}`],
+          ['Total MRR', '', '', `RM ${mrr.toLocaleString()}`],
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: [15, 31, 56], textColor: [255, 255, 255] },
+        alternateRowStyles: { fillColor: [240, 245, 250] },
+      });
+
+      // Section 3: Infrastructure
+      const infraY = doc.lastAutoTable.finalY + 15;
+      doc.setTextColor(59, 130, 246);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('BLOCKCHAIN INFRASTRUCTURE', 14, infraY);
+
+      doc.setDrawColor(30, 58, 95);
+      doc.line(14, infraY + 4, pageWidth - 14, infraY + 4);
+
+      autoTable(doc, {
+        startY: infraY + 10,
+        head: [['Node Location', 'Status', 'Latency', 'Block Height', 'Peers']],
+        body: blockchainNodes.map(node => [
+          node.city,
+          node.status.toUpperCase(),
+          `${node.latency}ms`,
+          node.blocks.toLocaleString(),
+          node.peers.toString()
+        ]),
+        theme: 'grid',
+        headStyles: { fillColor: [15, 31, 56], textColor: [255, 255, 255] },
+        alternateRowStyles: { fillColor: [240, 245, 250] },
+      });
+
+      // Section 4: Path to RM500k
+      const pathY = doc.lastAutoTable.finalY + 15;
+      doc.setTextColor(59, 130, 246);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('PATH TO RM500,000 MRR', 14, pathY);
+
+      doc.setDrawColor(30, 58, 95);
+      doc.line(14, pathY + 4, pageWidth - 14, pathY + 4);
+
+      autoTable(doc, {
+        startY: pathY + 10,
+        head: [['Month', 'Projected Clients', 'Projected Revenue', 'Growth']],
+        body: projectionData.map((item, index) => [
+          item.month,
+          item.clients.toString(),
+          `RM ${item.revenue.toLocaleString()}`,
+          index === 0 ? 'Current' : `+${Math.round(((item.clients - projectionData[index - 1].clients) / projectionData[index - 1].clients) * 100)}%`
+        ]),
+        theme: 'grid',
+        headStyles: { fillColor: [16, 185, 129], textColor: [255, 255, 255] },
+        alternateRowStyles: { fillColor: [240, 255, 250] },
+      });
+
+      // Footer
+      const footerY = doc.internal.pageSize.getHeight() - 15;
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Confidential - Sarawak MedChain Investor Deck', pageWidth / 2, footerY, { align: 'center' });
+
+      // Save
+      doc.save(`SarawakMedChain_InvestorDeck_${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (error) {
+      console.error('Error generating investor deck:', error);
+      alert('Error generating PDF: ' + error.message);
+    } finally {
+      setExportingDeck(false);
     }
   };
 
@@ -231,7 +429,6 @@ export default function FounderAdmin() {
                   backgroundColor: theme.bg,
                   borderColor: theme.border,
                   color: theme.textPrimary,
-                  focusRingColor: theme.accent
                 }}
                 placeholder="Enter password..."
               />
@@ -286,11 +483,36 @@ export default function FounderAdmin() {
             </h1>
           </div>
           <p style={{ color: theme.textSecondary }}>
-            Sarawak MedChain Revenue Intelligence
+            Path to RM500,000 MRR
           </p>
         </div>
 
         <div className="flex items-center gap-4">
+          {/* Export Investor Deck Button */}
+          <button
+            onClick={exportInvestorDeck}
+            disabled={exportingDeck}
+            className="flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all hover:opacity-90 disabled:opacity-50"
+            style={{ backgroundColor: theme.purple, color: theme.textPrimary }}
+          >
+            {exportingDeck ? (
+              <>
+                <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Generating...
+              </>
+            ) : (
+              <>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Export Investor Deck
+              </>
+            )}
+          </button>
+
           <div
             className="flex items-center gap-2 px-4 py-2 rounded-full"
             style={{ backgroundColor: `${theme.success}20`, color: theme.success }}
@@ -309,7 +531,7 @@ export default function FounderAdmin() {
       </div>
 
       {/* Revenue Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
         {/* Total Bank Balance */}
         <div
           className="rounded-2xl p-6 border"
@@ -328,7 +550,7 @@ export default function FounderAdmin() {
               </svg>
             </div>
           </div>
-          <p className="text-4xl font-black mb-2" style={{ color: theme.success }}>
+          <p className="text-3xl font-black mb-2" style={{ color: theme.success }}>
             RM {bankBalance.toLocaleString()}
           </p>
           <p className="text-sm" style={{ color: theme.textMuted }}>
@@ -354,12 +576,13 @@ export default function FounderAdmin() {
               </svg>
             </div>
           </div>
-          <p className="text-4xl font-black mb-2" style={{ color: theme.accent }}>
+          <p className="text-3xl font-black mb-2" style={{ color: theme.accent }}>
             RM {mrr.toLocaleString()}
           </p>
-          <div className="flex items-center gap-4 text-sm" style={{ color: theme.textMuted }}>
-            <span>{mockHospitals.filter(h => h.tier === 'Hospital').length} Hospitals × RM10k</span>
-            <span>{mockHospitals.filter(h => h.tier === 'Clinic').length} Clinics × RM2k</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: `${theme.accent}20`, color: theme.accent }}>
+              {Math.round((mrr / REVENUE_TARGET) * 100)}% to goal
+            </span>
           </div>
         </div>
 
@@ -381,22 +604,214 @@ export default function FounderAdmin() {
               </svg>
             </div>
           </div>
-          <p className="text-4xl font-black mb-2" style={{ color: theme.warning }}>
+          <p className="text-3xl font-black mb-2" style={{ color: theme.warning }}>
             RM {pendingPayments.reduce((sum, h) => sum + h.monthlyFee, 0).toLocaleString()}
           </p>
-          <div className="space-y-1">
-            {pendingPayments.map(hospital => (
-              <div key={hospital.id} className="flex items-center justify-between text-sm">
-                <span style={{ color: theme.textSecondary }}>{hospital.name}</span>
-                <span style={{ color: theme.warning }}>RM {hospital.monthlyFee.toLocaleString()}</span>
+          <p className="text-sm" style={{ color: theme.textMuted }}>
+            {pendingPayments.length} clients overdue
+          </p>
+        </div>
+
+        {/* Market Share */}
+        <div
+          className="rounded-2xl p-6 border"
+          style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-medium" style={{ color: theme.textSecondary }}>
+              Sarawak Market Share
+            </p>
+            <div
+              className="w-10 h-10 rounded-lg flex items-center justify-center"
+              style={{ backgroundColor: `${theme.purple}20` }}
+            >
+              <svg className="w-5 h-5" fill={theme.purple} viewBox="0 0 20 20">
+                <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" />
+                <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" />
+              </svg>
+            </div>
+          </div>
+          <p className="text-3xl font-black mb-2" style={{ color: theme.purple }}>
+            {totalMarketShare}%
+          </p>
+          <div className="text-xs space-y-1" style={{ color: theme.textMuted }}>
+            <p>Hospitals: {connectedHospitals}/{TOTAL_SARAWAK_HOSPITALS} ({hospitalMarketShare}%)</p>
+            <p>Clinics: {connectedClinics}/{TOTAL_SARAWAK_CLINICS} ({clinicMarketShare}%)</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Revenue Projection Chart & Market Share */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {/* Revenue Projection Chart */}
+        <div
+          className="lg:col-span-2 rounded-2xl p-6 border"
+          style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-bold" style={{ color: theme.textPrimary }}>
+                Path to RM500,000
+              </h2>
+              <p className="text-sm" style={{ color: theme.textSecondary }}>
+                Revenue projection: 6 clients → 200 clients
+              </p>
+            </div>
+            <div
+              className="px-4 py-2 rounded-xl"
+              style={{ backgroundColor: `${theme.success}20` }}
+            >
+              <p className="text-sm font-bold" style={{ color: theme.success }}>Target: RM500k MRR</p>
+            </div>
+          </div>
+
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={projectionData}>
+                <defs>
+                  <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={theme.success} stopOpacity={0.3} />
+                    <stop offset="95%" stopColor={theme.success} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke={theme.border} />
+                <XAxis dataKey="month" stroke={theme.textMuted} fontSize={12} />
+                <YAxis
+                  stroke={theme.textMuted}
+                  fontSize={12}
+                  tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke={theme.success}
+                  strokeWidth={3}
+                  fill="url(#revenueGradient)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Milestones */}
+          <div className="grid grid-cols-4 gap-4 mt-6 pt-6" style={{ borderTop: `1px solid ${theme.border}` }}>
+            <div className="text-center">
+              <p className="text-2xl font-black" style={{ color: theme.textPrimary }}>6</p>
+              <p className="text-xs" style={{ color: theme.textMuted }}>Current Clients</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-black" style={{ color: theme.accent }}>50</p>
+              <p className="text-xs" style={{ color: theme.textMuted }}>Q2 Target</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-black" style={{ color: theme.warning }}>120</p>
+              <p className="text-xs" style={{ color: theme.textMuted }}>Q3 Target</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-black" style={{ color: theme.success }}>200</p>
+              <p className="text-xs" style={{ color: theme.textMuted }}>Year-End Goal</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Node Status */}
+        <div
+          className="rounded-2xl p-6 border"
+          style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-bold" style={{ color: theme.textPrimary }}>
+                Node Status
+              </h2>
+              <p className="text-sm" style={{ color: theme.textSecondary }}>
+                Distributed blockchain network
+              </p>
+            </div>
+            <div
+              className="w-10 h-10 rounded-lg flex items-center justify-center"
+              style={{ backgroundColor: `${theme.success}20` }}
+            >
+              <svg className="w-5 h-5" fill={theme.success} viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm14 1a1 1 0 11-2 0 1 1 0 012 0zM2 13a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2zm14 1a1 1 0 11-2 0 1 1 0 012 0z" clipRule="evenodd" />
+              </svg>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {blockchainNodes.map((node) => (
+              <div
+                key={node.id}
+                className="p-3 rounded-xl"
+                style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`w-2 h-2 rounded-full ${node.status === 'online' ? 'animate-pulse' : ''}`}
+                      style={{ backgroundColor: node.status === 'online' ? theme.success : theme.warning }}
+                    ></span>
+                    <span className="font-medium text-sm" style={{ color: theme.textPrimary }}>
+                      {node.city}
+                    </span>
+                  </div>
+                  <span
+                    className="text-xs px-2 py-1 rounded-full uppercase font-bold"
+                    style={{
+                      backgroundColor: node.status === 'online' ? `${theme.success}20` : `${theme.warning}20`,
+                      color: node.status === 'online' ? theme.success : theme.warning
+                    }}
+                  >
+                    {node.status}
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <p style={{ color: theme.textMuted }}>Latency</p>
+                    <p style={{ color: theme.textSecondary }}>{node.latency}ms</p>
+                  </div>
+                  <div>
+                    <p style={{ color: theme.textMuted }}>Blocks</p>
+                    <p style={{ color: theme.textSecondary }}>{node.blocks.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p style={{ color: theme.textMuted }}>Peers</p>
+                    <p style={{ color: theme.textSecondary }}>{node.peers}</p>
+                  </div>
+                </div>
               </div>
             ))}
+          </div>
+
+          {/* Network Summary */}
+          <div
+            className="mt-4 pt-4 flex items-center justify-between"
+            style={{ borderTop: `1px solid ${theme.border}` }}
+          >
+            <div className="text-center">
+              <p className="text-lg font-bold" style={{ color: theme.success }}>
+                {blockchainNodes.filter(n => n.status === 'online').length}/{blockchainNodes.length}
+              </p>
+              <p className="text-xs" style={{ color: theme.textMuted }}>Nodes Online</p>
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-bold" style={{ color: theme.accent }}>
+                {blockchainNodes[0].blocks.toLocaleString()}
+              </p>
+              <p className="text-xs" style={{ color: theme.textMuted }}>Block Height</p>
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-bold" style={{ color: theme.purple }}>
+                {blockchainNodes.reduce((sum, n) => sum + n.peers, 0)}
+              </p>
+              <p className="text-xs" style={{ color: theme.textMuted }}>Total Peers</p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Map and Live Feed Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Hospital Map */}
         <div
           className="rounded-2xl p-6 border"
@@ -421,15 +836,27 @@ export default function FounderAdmin() {
 
           <SarawakMap clients={mockHospitals} />
 
-          {/* Legend */}
-          <div className="flex items-center justify-center gap-6 mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme.accent }}></div>
-              <span className="text-sm" style={{ color: theme.textSecondary }}>Active Client</span>
+          {/* Market Share Visual */}
+          <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium" style={{ color: theme.textSecondary }}>Connected vs Target</span>
+              <span className="text-sm font-bold" style={{ color: theme.accent }}>{mockHospitals.length} / {TARGET_CLIENTS}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full animate-pulse" style={{ backgroundColor: theme.success }}></div>
-              <span className="text-sm" style={{ color: theme.textSecondary }}>Revenue Flowing</span>
+            <div className="h-3 rounded-full overflow-hidden" style={{ backgroundColor: theme.bg }}>
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${(mockHospitals.length / TARGET_CLIENTS) * 100}%`,
+                  background: `linear-gradient(90deg, ${theme.accent}, ${theme.success})`
+                }}
+              ></div>
+            </div>
+            <div className="flex justify-between mt-2 text-xs" style={{ color: theme.textMuted }}>
+              <span>0</span>
+              <span>50</span>
+              <span>100</span>
+              <span>150</span>
+              <span>200</span>
             </div>
           </div>
         </div>
@@ -459,7 +886,7 @@ export default function FounderAdmin() {
           {/* Feed List */}
           <div
             ref={feedRef}
-            className="space-y-2 h-64 overflow-y-auto pr-2"
+            className="space-y-2 h-48 overflow-y-auto pr-2"
             style={{ scrollbarWidth: 'thin' }}
           >
             {mcFeed.map((item, index) => (
@@ -516,10 +943,10 @@ export default function FounderAdmin() {
 
       {/* Footer Stats */}
       <div
-        className="mt-8 rounded-2xl p-6 border"
+        className="rounded-2xl p-6 border"
         style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}
       >
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-6">
           <div className="text-center">
             <p className="text-sm" style={{ color: theme.textSecondary }}>Total MCs Issued</p>
             <p className="text-2xl font-bold" style={{ color: theme.textPrimary }}>
@@ -542,6 +969,12 @@ export default function FounderAdmin() {
             <p className="text-sm" style={{ color: theme.textSecondary }}>Payment Rate</p>
             <p className="text-2xl font-bold" style={{ color: theme.success }}>
               {Math.round((mockHospitals.filter(h => h.paid).length / mockHospitals.length) * 100)}%
+            </p>
+          </div>
+          <div className="text-center">
+            <p className="text-sm" style={{ color: theme.textSecondary }}>Revenue Goal</p>
+            <p className="text-2xl font-bold" style={{ color: theme.purple }}>
+              {Math.round((mrr / REVENUE_TARGET) * 100)}%
             </p>
           </div>
         </div>
