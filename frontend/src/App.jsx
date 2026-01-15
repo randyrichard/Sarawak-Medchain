@@ -9,6 +9,7 @@ import CEODashboard from './pages/CEODashboard';
 import FounderAdmin from './pages/FounderAdmin';
 import BusinessOverview from './pages/BusinessOverview';
 import LandingPage from './pages/LandingPage';
+import VerificationPage from './pages/VerificationPage';
 import './App.css';
 
 // Sticky Credit Balance Header Component (shows at top of main content)
@@ -647,6 +648,7 @@ function AppRoutes() {
   // Public routes that don't need wallet
   const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview'];
   const isPublicRoute = publicPaths.includes(location.pathname);
+  const isVerificationRoute = location.pathname.startsWith('/verify/');
 
   // For public routes, render directly
   if (isPublicRoute) {
@@ -655,6 +657,15 @@ function AppRoutes() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/founder-admin-secret-99" element={<FounderAdmin />} />
         <Route path="/business-overview" element={<BusinessOverview />} />
+      </Routes>
+    );
+  }
+
+  // Verification page is public (for employers to verify MCs)
+  if (isVerificationRoute) {
+    return (
+      <Routes>
+        <Route path="/verify/:txHash" element={<VerificationPage />} />
       </Routes>
     );
   }

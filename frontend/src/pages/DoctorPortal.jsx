@@ -80,6 +80,8 @@ export default function DoctorPortal({ walletAddress }) {
   const [isSigning, setIsSigning] = useState(false);
   const [transactionHash, setTransactionHash] = useState(null);
   const [isMinting, setIsMinting] = useState(false);
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [receiptData, setReceiptData] = useState(null);
 
   // Live feed for recently issued certificates
   const [liveFeed, setLiveFeed] = useState([
@@ -159,18 +161,32 @@ export default function DoctorPortal({ walletAddress }) {
 
       setMessage('✓ Medical Certificate secured on blockchain!');
 
-      // Reset form after success
-      setTimeout(() => {
-        setMcFormData({
-          patientIC: '',
-          patientName: '',
-          diagnosis: '',
-          duration: '1',
-          remarks: '',
-        });
-        clearSignature();
-        setTransactionHash(null);
-      }, 5000);
+      // Show receipt modal with QR code
+      setReceiptData({
+        txHash: mockTxHash,
+        patientName: mcFormData.patientName,
+        patientIC: mcFormData.patientIC,
+        diagnosis: mcFormData.diagnosis,
+        duration: parseInt(mcFormData.duration),
+        hospital: hospitalName,
+        issueDate: new Date().toLocaleDateString('en-MY', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        }),
+        verificationUrl: `${window.location.origin}/verify/${mockTxHash}`,
+      });
+      setShowReceipt(true);
+
+      // Reset form after showing receipt
+      setMcFormData({
+        patientIC: '',
+        patientName: '',
+        diagnosis: '',
+        duration: '1',
+        remarks: '',
+      });
+      clearSignature();
 
     } catch (error) {
       setMessage(`Error: ${error.message}`);
@@ -382,8 +398,145 @@ export default function DoctorPortal({ walletAddress }) {
     }
   };
 
+  // Close receipt modal
+  const closeReceipt = () => {
+    setShowReceipt(false);
+    setReceiptData(null);
+    setTransactionHash(null);
+  };
+
   return (
     <div className="min-h-screen font-sans" style={{ backgroundColor: terminalTheme.bg }}>
+      {/* QR Code Receipt Modal */}
+      {showReceipt && receiptData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto border border-white/10 shadow-2xl">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-emerald-600 to-cyan-600 px-6 py-5 rounded-t-3xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-white">MC Issued Successfully!</h2>
+                    <p className="text-emerald-100 text-sm">Secured on Blockchain</p>
+                  </div>
+                </div>
+                <button
+                  onClick={closeReceipt}
+                  className="text-white/70 hover:text-white transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* QR Code Section */}
+            <div className="p-6">
+              <div className="bg-white rounded-2xl p-6 mb-6 text-center">
+                <QRCodeSVG
+                  value={receiptData.verificationUrl}
+                  size={180}
+                  level="H"
+                  includeMargin={true}
+                />
+                <p className="text-slate-600 text-sm mt-3">Scan to verify this certificate</p>
+              </div>
+
+              {/* Patient Details */}
+              <div className="space-y-4 mb-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">Patient Name</p>
+                    <p className="text-white font-semibold">{receiptData.patientName}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">IC Number</p>
+                    <p className="text-white font-mono">{receiptData.patientIC}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">Duration</p>
+                    <p className="text-cyan-400 font-bold text-lg">{receiptData.duration} Day{receiptData.duration > 1 ? 's' : ''}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">Issue Date</p>
+                    <p className="text-white font-semibold">{receiptData.issueDate}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">Healthcare Facility</p>
+                  <p className="text-white font-semibold">{receiptData.hospital}</p>
+                </div>
+
+                {/* Blockchain Hash */}
+                <div className="bg-slate-800/50 rounded-xl p-4">
+                  <p className="text-slate-500 text-xs uppercase tracking-wider mb-2">Blockchain Transaction Hash</p>
+                  <code className="text-cyan-400 text-xs font-mono break-all block">
+                    {receiptData.txHash}
+                  </code>
+                </div>
+
+                {/* Verification URL */}
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
+                  <p className="text-blue-400 text-xs uppercase tracking-wider mb-2">Verification URL</p>
+                  <code className="text-blue-300 text-xs font-mono break-all block">
+                    {receiptData.verificationUrl}
+                  </code>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(receiptData.verificationUrl)}
+                    className="mt-2 text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Copy URL
+                  </button>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => window.open(receiptData.verificationUrl, '_blank')}
+                  className="flex-1 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-bold rounded-xl hover:from-cyan-500 hover:to-blue-500 transition-all flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  View Certificate
+                </button>
+                <button
+                  onClick={closeReceipt}
+                  className="flex-1 py-3 bg-white/10 border border-white/20 text-white font-bold rounded-xl hover:bg-white/20 transition-all"
+                >
+                  Issue Another
+                </button>
+              </div>
+
+              {/* Branding Footer */}
+              <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-center gap-2">
+                <div className="w-6 h-6 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center">
+                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <span className="text-slate-400 text-xs">Secured by Sarawak MedChain</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Terminal Header */}
       <header className="border-b px-8 py-4" style={{ borderColor: terminalTheme.border, backgroundColor: terminalTheme.bgCard }}>
         <div className="flex items-center justify-between">
