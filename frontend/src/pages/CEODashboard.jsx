@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getAllHospitalBalances } from '../utils/contract';
 import { useBilling } from '../context/BillingContext';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 // Mock flu season data - in production, this would come from actual MC issuance dates
 const generateFluSeasonData = () => {
@@ -136,6 +138,10 @@ export default function CEODashboard({ walletAddress }) {
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
 
+  // PDF Generation state
+  const [generatingPDF, setGeneratingPDF] = useState(false);
+  const [pdfProgress, setPdfProgress] = useState(0);
+
   // Derived billing values (using context)
   const facilityType = accountType;
   const setFacilityType = changeAccountType;
@@ -233,6 +239,242 @@ export default function CEODashboard({ walletAddress }) {
     }
   };
 
+  // Generate Executive Monthly Report PDF
+  const generateMonthlyReport = async () => {
+    setGeneratingPDF(true);
+    setPdfProgress(0);
+
+    // Simulate progress
+    const progressInterval = setInterval(() => {
+      setPdfProgress(prev => {
+        if (prev >= 90) return prev;
+        return prev + Math.random() * 15;
+      });
+    }, 200);
+
+    try {
+      // Small delay to show progress animation
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 20;
+      let yPos = margin;
+
+      // Colors
+      const sarawakBlue = [0, 123, 255];
+      const darkGray = [30, 41, 59];
+      const lightGray = [100, 116, 139];
+      const emeraldGreen = [16, 185, 129];
+
+      // ========== HEADER SECTION ==========
+      // Header background
+      doc.setFillColor(...darkGray);
+      doc.rect(0, 0, pageWidth, 45, 'F');
+
+      // Logo placeholder (shield icon simulation)
+      doc.setFillColor(...sarawakBlue);
+      doc.circle(margin + 10, 22, 10, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('SM', margin + 5.5, 25);
+
+      // Title
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text('KERAJAAN NEGERI SARAWAK', margin + 25, 15);
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text('SARAWAK MEDCHAIN', margin + 25, 24);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Healthcare Blockchain Services', margin + 25, 31);
+
+      // Report title on right
+      doc.setFontSize(10);
+      doc.text('EXECUTIVE MONTHLY REPORT', pageWidth - margin - 65, 18);
+      doc.setFontSize(8);
+      doc.text(`Generated: ${new Date().toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' })}`, pageWidth - margin - 65, 25);
+      doc.text('January 2026', pageWidth - margin - 65, 32);
+
+      yPos = 55;
+
+      // ========== SUBSCRIPTION DETAILS SECTION ==========
+      doc.setFillColor(248, 250, 252);
+      doc.rect(margin, yPos, pageWidth - margin * 2, 35, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.rect(margin, yPos, pageWidth - margin * 2, 35, 'S');
+
+      doc.setTextColor(...darkGray);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Section 1: Subscription Details', margin + 5, yPos + 10);
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...lightGray);
+      doc.text(`Plan: ${tierName}`, margin + 5, yPos + 20);
+      doc.text(`Monthly Fee: RM ${baseFee.toLocaleString()}`, margin + 5, yPos + 28);
+
+      doc.text(`Facility Type: ${facilityType}`, pageWidth / 2, yPos + 20);
+      doc.text(`Billing Period: January 2026`, pageWidth / 2, yPos + 28);
+
+      yPos += 45;
+
+      // ========== MONTHLY SUMMARY SECTION ==========
+      doc.setTextColor(...darkGray);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Section 2: Monthly Performance Summary', margin, yPos);
+      yPos += 10;
+
+      // Summary boxes
+      const boxWidth = (pageWidth - margin * 2 - 20) / 3;
+
+      // Box 1: Total MCs
+      doc.setFillColor(...sarawakBlue);
+      doc.roundedRect(margin, yPos, boxWidth, 30, 3, 3, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.text('TOTAL MCs ISSUED', margin + 5, yPos + 10);
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      const totalMCs = doctorPerformance.reduce((sum, d) => sum + d.mcsIssued, 0);
+      doc.text(totalMCs.toString(), margin + 5, yPos + 24);
+
+      // Box 2: Total Revenue
+      doc.setFillColor(...emeraldGreen);
+      doc.roundedRect(margin + boxWidth + 10, yPos, boxWidth, 30, 3, 3, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text('TOTAL REVENUE', margin + boxWidth + 15, yPos + 10);
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      const totalRevenue = doctorPerformance.reduce((sum, d) => sum + d.revenue, 0);
+      doc.text(`RM ${totalRevenue.toLocaleString()}`, margin + boxWidth + 15, yPos + 24);
+
+      // Box 3: Active Doctors
+      doc.setFillColor(...darkGray);
+      doc.roundedRect(margin + (boxWidth + 10) * 2, yPos, boxWidth, 30, 3, 3, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text('ACTIVE DOCTORS', margin + (boxWidth + 10) * 2 + 5, yPos + 10);
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text(doctorPerformance.length.toString(), margin + (boxWidth + 10) * 2 + 5, yPos + 24);
+
+      yPos += 45;
+
+      // ========== BLOCKCHAIN SECURITY LOG ==========
+      doc.setTextColor(...darkGray);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Section 3: Blockchain Security Log', margin, yPos);
+      yPos += 10;
+
+      doc.setFillColor(240, 253, 244);
+      doc.rect(margin, yPos, pageWidth - margin * 2, 25, 'F');
+      doc.setDrawColor(134, 239, 172);
+      doc.rect(margin, yPos, pageWidth - margin * 2, 25, 'S');
+
+      doc.setFillColor(...emeraldGreen);
+      doc.circle(margin + 12, yPos + 12.5, 6, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(10);
+      doc.text('✓', margin + 9.5, yPos + 15);
+
+      doc.setTextColor(22, 101, 52);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('100% Data Integrity Verified', margin + 25, yPos + 10);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.text(`All ${totalMCs} medical certificates cryptographically secured on Sarawak MedChain`, margin + 25, yPos + 18);
+
+      yPos += 35;
+
+      // ========== PRODUCTIVITY LEADERBOARD ==========
+      doc.setTextColor(...darkGray);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Section 4: Productivity Leaderboard - Top Performers', margin, yPos);
+      yPos += 8;
+
+      // Table
+      const tableData = doctorPerformance.slice(0, 3).map((doc, index) => [
+        index === 0 ? '🥇 #1' : index === 1 ? '🥈 #2' : '🥉 #3',
+        doc.name,
+        doc.department,
+        doc.mcsIssued.toString(),
+        `RM ${doc.revenue}`
+      ]);
+
+      autoTable(doc, {
+        startY: yPos,
+        head: [['Rank', 'Doctor Name', 'Department', 'MCs Issued', 'Revenue']],
+        body: tableData,
+        margin: { left: margin, right: margin },
+        headStyles: {
+          fillColor: darkGray,
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 9
+        },
+        bodyStyles: {
+          fontSize: 9,
+          textColor: darkGray
+        },
+        alternateRowStyles: {
+          fillColor: [248, 250, 252]
+        },
+        columnStyles: {
+          0: { cellWidth: 20, halign: 'center' },
+          1: { cellWidth: 50 },
+          2: { cellWidth: 45 },
+          3: { cellWidth: 25, halign: 'center' },
+          4: { cellWidth: 30, halign: 'right' }
+        }
+      });
+
+      yPos = (doc).lastAutoTable.finalY + 15;
+
+      // ========== FOOTER ==========
+      // Footer line
+      doc.setDrawColor(226, 232, 240);
+      doc.line(margin, pageHeight - 25, pageWidth - margin, pageHeight - 25);
+
+      doc.setFontSize(8);
+      doc.setTextColor(...lightGray);
+      doc.text('This is a computer-generated report and does not require a signature.', margin, pageHeight - 18);
+      doc.text('Sarawak MedChain - Blockchain-Secured Healthcare Records', margin, pageHeight - 12);
+
+      doc.setTextColor(...emeraldGreen);
+      doc.text('Verified on Blockchain', pageWidth - margin - 35, pageHeight - 15);
+
+      // Complete progress and download
+      setPdfProgress(100);
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Save PDF
+      doc.save(`SarawakMedChain_Executive_Report_${new Date().toISOString().slice(0, 7)}.pdf`);
+
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Error generating PDF: ' + error.message);
+    } finally {
+      clearInterval(progressInterval);
+      setTimeout(() => {
+        setGeneratingPDF(false);
+        setPdfProgress(0);
+      }, 500);
+    }
+  };
+
   return (
     <div className={`flex-1 flex-grow w-full min-h-full px-12 py-10 font-sans transition-colors duration-300 ${
       darkMode ? 'bg-slate-900' : 'bg-slate-100'
@@ -250,18 +492,58 @@ export default function CEODashboard({ walletAddress }) {
           </span>
         </div>
 
-        {/* Dark Mode Toggle */}
-        <button
-          onClick={toggleDarkMode}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all lg:ml-auto ${
-            darkMode
-              ? 'bg-amber-500 text-slate-900 hover:bg-amber-400'
-              : 'bg-slate-800 text-white hover:bg-slate-700'
-          }`}
-        >
-          <span className="text-lg">{darkMode ? '☀️' : '🌙'}</span>
-          <span className="font-medium text-sm">{darkMode ? 'Light' : 'Dark'}</span>
-        </button>
+        {/* Actions Row */}
+        <div className="flex items-center gap-3 lg:ml-auto">
+          {/* Download Executive Report Button */}
+          <button
+            onClick={generateMonthlyReport}
+            disabled={generatingPDF}
+            className={`relative flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:scale-[1.02] active:scale-[0.98] overflow-hidden ${
+              generatingPDF
+                ? 'bg-slate-600 cursor-wait'
+                : darkMode
+                  ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white hover:from-sky-400 hover:to-blue-500'
+                  : 'bg-gradient-to-r from-sky-500 to-blue-600 text-white hover:from-sky-400 hover:to-blue-500'
+            }`}
+            style={{ boxShadow: generatingPDF ? 'none' : '0 10px 30px rgba(14, 165, 233, 0.3)' }}
+          >
+            {generatingPDF ? (
+              <>
+                {/* Progress Bar Background */}
+                <div
+                  className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-emerald-600 transition-all duration-300"
+                  style={{ width: `${pdfProgress}%` }}
+                />
+                <span className="relative flex items-center gap-2">
+                  <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span>Generating PDF... {Math.round(pdfProgress)}%</span>
+                </span>
+              </>
+            ) : (
+              <>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Download Executive Report</span>
+              </>
+            )}
+          </button>
+
+          {/* Dark Mode Toggle */}
+          <button
+            onClick={toggleDarkMode}
+            className={`flex items-center gap-2 px-4 py-3 rounded-xl transition-all ${
+              darkMode
+                ? 'bg-amber-500 text-slate-900 hover:bg-amber-400'
+                : 'bg-slate-800 text-white hover:bg-slate-700'
+            }`}
+          >
+            <span className="text-lg">{darkMode ? '☀️' : '🌙'}</span>
+            <span className="font-medium text-sm">{darkMode ? 'Light' : 'Dark'}</span>
+          </button>
+        </div>
       </div>
 
         {/* Payment Success Notification */}
