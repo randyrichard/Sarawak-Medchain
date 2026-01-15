@@ -31,13 +31,8 @@ const generateBlockchainRef = () => {
 };
 
 // Request Access Modal Component
-function RequestAccessModal({ isOpen, onClose }) {
-  const navigate = useNavigate();
-  const [step, setStep] = useState(1);
+function RequestAccessModal({ isOpen, onClose, onSubmitSuccess }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [verificationProgress, setVerificationProgress] = useState(0);
-  const [blockchainRef, setBlockchainRef] = useState('');
   const [formData, setFormData] = useState({
     facilityName: '',
     facilityType: '',
@@ -63,12 +58,9 @@ function RequestAccessModal({ isOpen, onClose }) {
     setIsSubmitting(true);
 
     // Simulate blockchain transaction
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
     const ref = generateBlockchainRef();
-    setBlockchainRef(ref);
-    setStep(2);
-    setIsSubmitting(false);
 
     // Store pending admin session data
     const pendingAdminData = {
@@ -80,40 +72,18 @@ function RequestAccessModal({ isOpen, onClose }) {
       email: formData.email,
       blockchainRef: ref,
       submittedAt: new Date().toISOString(),
+      autoConnect: true, // Flag to auto-trigger MetaMask
     };
     localStorage.setItem('medchain_pending_admin', JSON.stringify(pendingAdminData));
 
-    // Start verification simulation after a brief pause
-    setTimeout(() => {
-      setIsVerifying(true);
-      setVerificationProgress(0);
+    setIsSubmitting(false);
 
-      // Animate progress bar
-      const progressInterval = setInterval(() => {
-        setVerificationProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(progressInterval);
-            return 100;
-          }
-          return prev + 5;
-        });
-      }, 100);
-
-      // After 2 seconds, redirect to MVP
-      setTimeout(() => {
-        clearInterval(progressInterval);
-        setVerificationProgress(100);
-        setTimeout(() => {
-          navigate('/mvp');
-        }, 500);
-      }, 2000);
-    }, 1500);
+    // Close modal and trigger full-screen provisioning overlay
+    onClose();
+    onSubmitSuccess(formData.facilityName, ref);
   };
 
   const handleClose = () => {
-    setStep(1);
-    setIsVerifying(false);
-    setVerificationProgress(0);
     setFormData({
       facilityName: '',
       facilityType: '',
@@ -141,293 +111,172 @@ function RequestAccessModal({ isOpen, onClose }) {
         <div className="h-1 bg-slate-800">
           <div
             className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-500"
-            style={{ width: step === 2 ? '100%' : `${calculateProgress()}%` }}
+            style={{ width: `${calculateProgress()}%` }}
           />
         </div>
 
         {/* Close Button */}
         <button
           onClick={handleClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+          className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors z-10"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
 
-        {step === 1 ? (
-          /* Form Step */
-          <form onSubmit={handleSubmit} className="p-8">
-            {/* Header */}
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold text-white">Request Hospital Access</h2>
-              <p className="text-slate-400 mt-2">Join Sarawak's blockchain healthcare network</p>
-            </div>
-
-            {/* Form Fields */}
-            <div className="space-y-5">
-              {/* Facility Name */}
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Facility Name
-                </label>
-                <input
-                  type="text"
-                  name="facilityName"
-                  value={formData.facilityName}
-                  onChange={handleInputChange}
-                  placeholder="e.g., KPJ Kuching, Rejang Medical"
-                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
-                  required
-                />
-              </div>
-
-              {/* Facility Type */}
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Facility Type
-                </label>
-                <select
-                  name="facilityType"
-                  value={formData.facilityType}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-colors appearance-none cursor-pointer"
-                  required
-                >
-                  <option value="" className="text-slate-500">Select facility type</option>
-                  {FACILITY_TYPES.map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Estimated Monthly MCs */}
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Estimated Monthly MCs
-                </label>
-                <input
-                  type="number"
-                  name="estimatedMCs"
-                  value={formData.estimatedMCs}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 500"
-                  min="1"
-                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
-                  required
-                />
-                {formData.estimatedMCs && (
-                  <p className="text-xs text-emerald-400 mt-2">
-                    💰 Estimated variable fee: RM{Number(formData.estimatedMCs).toLocaleString()}/month
-                  </p>
-                )}
-              </div>
-
-              {/* Decision Maker Role */}
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Your Role
-                </label>
-                <select
-                  name="decisionMakerRole"
-                  value={formData.decisionMakerRole}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-colors appearance-none cursor-pointer"
-                  required
-                >
-                  <option value="" className="text-slate-500">Select your role</option>
-                  {DECISION_MAKER_ROLES.map(role => (
-                    <option key={role} value={role}>{role}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Contact Info Row */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    placeholder="you@hospital.com"
-                    className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Phone
-                  </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    placeholder="+60 12-345 6789"
-                    className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full mt-8 py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Recording on Blockchain...
-                </>
-              ) : (
-                <>
-                  Submit Application
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </>
-              )}
-            </button>
-
-            <p className="text-center text-slate-500 text-xs mt-4">
-              🔐 Your information is encrypted and secured on the blockchain
-            </p>
-          </form>
-        ) : (
-          /* Success Step */
-          <div className="p-8 text-center">
-            {/* Success Icon */}
-            <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-10 h-10 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-8">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
+            <h2 className="text-2xl font-bold text-white">Request Hospital Access</h2>
+            <p className="text-slate-400 mt-2">Join Sarawak's blockchain healthcare network</p>
+          </div>
 
-            <h2 className="text-2xl font-bold text-white mb-2">Application Received!</h2>
-            <p className="text-slate-400 mb-8">
-              Your request has been logged on the Sarawak MedChain network.
-            </p>
-
-            {/* Blockchain Reference Card */}
-            <div className="bg-slate-800/50 border border-white/10 rounded-xl p-6 mb-6">
-              <p className="text-slate-400 text-sm mb-2">Blockchain Reference ID</p>
-              <div className="flex items-center justify-center gap-2">
-                <code className="text-lg font-mono text-emerald-400">{blockchainRef}</code>
-                <button
-                  onClick={() => navigator.clipboard.writeText(blockchainRef)}
-                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                  title="Copy to clipboard"
-                >
-                  <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                </button>
-              </div>
-              <p className="text-slate-500 text-xs mt-3">
-                ⛓️ Recorded at block #{Math.floor(Math.random() * 1000000 + 8000000)}
-              </p>
+          {/* Form Fields */}
+          <div className="space-y-5">
+            {/* Facility Name */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Facility Name
+              </label>
+              <input
+                type="text"
+                name="facilityName"
+                value={formData.facilityName}
+                onChange={handleInputChange}
+                placeholder="e.g., KPJ Kuching, Rejang Medical"
+                className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                required
+              />
             </div>
 
-            {/* Verification Progress - Shows after application received */}
-            {isVerifying && (
-              <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-xl p-6 mb-6 animate-pulse">
-                <div className="flex items-center justify-center gap-3 mb-4">
-                  <svg className="w-6 h-6 text-blue-400 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  <p className="text-blue-300 font-semibold">
-                    Verifying Medical Credentials on Blockchain...
-                  </p>
-                </div>
+            {/* Facility Type */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Facility Type
+              </label>
+              <select
+                name="facilityType"
+                value={formData.facilityType}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-colors appearance-none cursor-pointer"
+                required
+              >
+                <option value="" className="text-slate-500">Select facility type</option>
+                {FACILITY_TYPES.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
 
-                {/* Progress Bar */}
-                <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-100"
-                    style={{ width: `${verificationProgress}%` }}
-                  />
-                </div>
+            {/* Estimated Monthly MCs */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Estimated Monthly MCs
+              </label>
+              <input
+                type="number"
+                name="estimatedMCs"
+                value={formData.estimatedMCs}
+                onChange={handleInputChange}
+                placeholder="e.g., 500"
+                min="1"
+                className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                required
+              />
+              {formData.estimatedMCs && (
+                <p className="text-xs text-emerald-400 mt-2">
+                  Estimated variable fee: RM{Number(formData.estimatedMCs).toLocaleString()}/month
+                </p>
+              )}
+            </div>
 
-                <div className="flex justify-between mt-2 text-xs text-slate-500">
-                  <span>Querying blockchain nodes...</span>
-                  <span>{verificationProgress}%</span>
-                </div>
+            {/* Decision Maker Role */}
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Your Role
+              </label>
+              <select
+                name="decisionMakerRole"
+                value={formData.decisionMakerRole}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-colors appearance-none cursor-pointer"
+                required
+              >
+                <option value="" className="text-slate-500">Select your role</option>
+                {DECISION_MAKER_ROLES.map(role => (
+                  <option key={role} value={role}>{role}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Contact Info Row */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  placeholder="you@hospital.com"
+                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  required
+                />
               </div>
-            )}
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Phone
+                </label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  placeholder="+60 12-345 6789"
+                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  required
+                />
+              </div>
+            </div>
+          </div>
 
-            {/* Summary - Hide when verifying */}
-            {!isVerifying && (
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full mt-8 py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2"
+          >
+            {isSubmitting ? (
               <>
-                <div className="bg-slate-800/30 rounded-xl p-4 mb-6 text-left">
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <p className="text-slate-500">Facility</p>
-                      <p className="text-white font-medium">{formData.facilityName}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500">Type</p>
-                      <p className="text-white font-medium">{formData.facilityType}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500">Est. Monthly MCs</p>
-                      <p className="text-white font-medium">{Number(formData.estimatedMCs).toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500">Contact Role</p>
-                      <p className="text-white font-medium">{formData.decisionMakerRole}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Next Steps */}
-                <div className="text-left bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 mb-6">
-                  <p className="text-blue-400 font-semibold text-sm mb-2">What happens next?</p>
-                  <ul className="text-slate-400 text-sm space-y-1">
-                    <li>✓ Our team will review your application within 24 hours</li>
-                    <li>✓ You'll receive onboarding materials via email</li>
-                    <li>✓ A dedicated account manager will contact you</li>
-                  </ul>
-                </div>
+                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Recording on Blockchain...
+              </>
+            ) : (
+              <>
+                Submit Application
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
               </>
             )}
+          </button>
 
-            {/* Redirect Notice when verifying */}
-            {isVerifying && verificationProgress >= 100 && (
-              <div className="flex items-center justify-center gap-2 text-emerald-400 font-medium">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>Verified! Redirecting to dashboard...</span>
-              </div>
-            )}
-
-            {/* Close button - only show when not verifying */}
-            {!isVerifying && (
-              <button
-                onClick={handleClose}
-                className="w-full py-4 bg-white/5 border border-white/10 text-white font-bold rounded-xl hover:bg-white/10 transition-all"
-              >
-                Close
-              </button>
-            )}
-          </div>
-        )}
+          <p className="text-center text-slate-500 text-xs mt-4">
+            Your information is encrypted and secured on the blockchain
+          </p>
+        </form>
       </div>
     </div>
   );
@@ -508,17 +357,191 @@ function SocialProofToast() {
   );
 }
 
+// Full-screen Provisioning Overlay Component
+function ProvisioningOverlay({ isVisible, facilityName, blockchainRef, onComplete }) {
+  const [progress, setProgress] = useState(0);
+  const [currentStep, setCurrentStep] = useState(0);
+
+  const steps = [
+    'Initializing blockchain node...',
+    'Allocating secure storage...',
+    'Configuring encryption keys...',
+    'Connecting to Sarawak MedChain network...',
+  ];
+
+  useEffect(() => {
+    if (!isVisible) return;
+
+    // Animate progress
+    const progressInterval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(progressInterval);
+          return 100;
+        }
+        return prev + 2;
+      });
+    }, 30);
+
+    // Cycle through steps
+    const stepInterval = setInterval(() => {
+      setCurrentStep(prev => (prev + 1) % steps.length);
+    }, 400);
+
+    // Complete after 1.5 seconds
+    const completeTimeout = setTimeout(() => {
+      onComplete();
+    }, 1500);
+
+    return () => {
+      clearInterval(progressInterval);
+      clearInterval(stepInterval);
+      clearTimeout(completeTimeout);
+    };
+  }, [isVisible, onComplete]);
+
+  if (!isVisible) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-[#030712] flex items-center justify-center">
+      {/* Animated grid background */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px)
+            `,
+            backgroundSize: '50px 50px',
+            animation: 'grid-move 20s linear infinite',
+          }}
+        />
+        {/* Radial glow */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: 'radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 50%)',
+          }}
+        />
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 text-center max-w-lg px-8">
+        {/* Success checkmark animation */}
+        <div className="w-24 h-24 mx-auto mb-8 relative">
+          <div
+            className="absolute inset-0 rounded-full border-4 border-emerald-500/30"
+            style={{
+              animation: 'pulse-ring 1.5s ease-out infinite',
+            }}
+          />
+          <div className="absolute inset-0 rounded-full bg-emerald-500/20 flex items-center justify-center">
+            <svg className="w-12 h-12 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={3}
+                d="M5 13l4 4L19 7"
+                style={{
+                  strokeDasharray: 30,
+                  strokeDashoffset: 30,
+                  animation: 'checkmark-draw 0.5s ease-out 0.2s forwards',
+                }}
+              />
+            </svg>
+          </div>
+        </div>
+
+        {/* Main message */}
+        <h1 className="text-3xl font-bold text-white mb-3">Application Received</h1>
+        <p className="text-xl text-emerald-400 font-semibold mb-8">
+          Your unique Hospital Blockchain Node is being provisioned...
+        </p>
+
+        {/* Facility name */}
+        <div className="bg-slate-800/50 border border-white/10 rounded-xl p-4 mb-6">
+          <p className="text-slate-400 text-sm">Provisioning node for</p>
+          <p className="text-white text-xl font-bold">{facilityName}</p>
+          <p className="text-emerald-400 font-mono text-xs mt-2">{blockchainRef}</p>
+        </div>
+
+        {/* Progress bar */}
+        <div className="mb-4">
+          <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-100"
+              style={{
+                width: `${progress}%`,
+                background: 'linear-gradient(90deg, #3b82f6, #10b981)',
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Current step */}
+        <div className="flex items-center justify-center gap-2 text-slate-400 text-sm">
+          <svg className="w-4 h-4 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+          <span>{steps[currentStep]}</span>
+        </div>
+      </div>
+
+      {/* CSS animations */}
+      <style>{`
+        @keyframes grid-move {
+          0% { transform: translate(0, 0); }
+          100% { transform: translate(50px, 50px); }
+        }
+        @keyframes pulse-ring {
+          0% { transform: scale(1); opacity: 1; }
+          100% { transform: scale(1.5); opacity: 0; }
+        }
+        @keyframes checkmark-draw {
+          to { stroke-dashoffset: 0; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 export default function LandingPage() {
+  const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showProvisioning, setShowProvisioning] = useState(false);
+  const [provisioningData, setProvisioningData] = useState({ facilityName: '', blockchainRef: '' });
 
   const handleGetStarted = () => {
     setIsModalOpen(true);
   };
 
+  const handleSubmitSuccess = (facilityName, blockchainRef) => {
+    setProvisioningData({ facilityName, blockchainRef });
+    setShowProvisioning(true);
+  };
+
+  const handleProvisioningComplete = () => {
+    navigate('/mvp');
+  };
+
   return (
     <div className="min-h-screen bg-[#030712]" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+      {/* Full-screen Provisioning Overlay */}
+      <ProvisioningOverlay
+        isVisible={showProvisioning}
+        facilityName={provisioningData.facilityName}
+        blockchainRef={provisioningData.blockchainRef}
+        onComplete={handleProvisioningComplete}
+      />
+
       {/* Request Access Modal */}
-      <RequestAccessModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <RequestAccessModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmitSuccess={handleSubmitSuccess}
+      />
 
       {/* Social Proof Toast */}
       <SocialProofToast />

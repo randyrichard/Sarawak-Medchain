@@ -445,17 +445,31 @@ function ProtectedApp({ walletAddress, handleDisconnect }) {
 function ConnectScreen({ onConnect, loading, error }) {
   // Check for pending admin status from application submission
   const [pendingAdmin, setPendingAdmin] = useState(null);
+  const [autoConnectTriggered, setAutoConnectTriggered] = useState(false);
 
   useEffect(() => {
     const storedData = localStorage.getItem('medchain_pending_admin');
     if (storedData) {
       try {
-        setPendingAdmin(JSON.parse(storedData));
+        const data = JSON.parse(storedData);
+        setPendingAdmin(data);
+
+        // Auto-trigger MetaMask if autoConnect flag is set
+        if (data.autoConnect && !autoConnectTriggered) {
+          setAutoConnectTriggered(true);
+          // Clear the autoConnect flag to prevent re-triggering
+          const updatedData = { ...data, autoConnect: false };
+          localStorage.setItem('medchain_pending_admin', JSON.stringify(updatedData));
+          // Trigger MetaMask after a brief delay for visual smoothness
+          setTimeout(() => {
+            onConnect();
+          }, 500);
+        }
       } catch (e) {
         console.error('Error parsing pending admin data:', e);
       }
     }
-  }, []);
+  }, [onConnect, autoConnectTriggered]);
 
   // If pending admin, show special UI
   if (pendingAdmin) {
