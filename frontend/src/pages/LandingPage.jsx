@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // Facility types for dropdown
 const FACILITY_TYPES = [
@@ -31,8 +32,11 @@ const generateBlockchainRef = () => {
 
 // Request Access Modal Component
 function RequestAccessModal({ isOpen, onClose }) {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationProgress, setVerificationProgress] = useState(0);
   const [blockchainRef, setBlockchainRef] = useState('');
   const [formData, setFormData] = useState({
     facilityName: '',
@@ -61,13 +65,55 @@ function RequestAccessModal({ isOpen, onClose }) {
     // Simulate blockchain transaction
     await new Promise(resolve => setTimeout(resolve, 2000));
 
-    setBlockchainRef(generateBlockchainRef());
+    const ref = generateBlockchainRef();
+    setBlockchainRef(ref);
     setStep(2);
     setIsSubmitting(false);
+
+    // Store pending admin session data
+    const pendingAdminData = {
+      status: 'pending_admin',
+      facilityName: formData.facilityName,
+      facilityType: formData.facilityType,
+      estimatedMCs: formData.estimatedMCs,
+      decisionMakerRole: formData.decisionMakerRole,
+      email: formData.email,
+      blockchainRef: ref,
+      submittedAt: new Date().toISOString(),
+    };
+    localStorage.setItem('medchain_pending_admin', JSON.stringify(pendingAdminData));
+
+    // Start verification simulation after a brief pause
+    setTimeout(() => {
+      setIsVerifying(true);
+      setVerificationProgress(0);
+
+      // Animate progress bar
+      const progressInterval = setInterval(() => {
+        setVerificationProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(progressInterval);
+            return 100;
+          }
+          return prev + 5;
+        });
+      }, 100);
+
+      // After 2 seconds, redirect to MVP
+      setTimeout(() => {
+        clearInterval(progressInterval);
+        setVerificationProgress(100);
+        setTimeout(() => {
+          navigate('/mvp');
+        }, 500);
+      }, 2000);
+    }, 1500);
   };
 
   const handleClose = () => {
     setStep(1);
+    setIsVerifying(false);
+    setVerificationProgress(0);
     setFormData({
       facilityName: '',
       facilityType: '',
@@ -297,44 +343,89 @@ function RequestAccessModal({ isOpen, onClose }) {
               </p>
             </div>
 
-            {/* Summary */}
-            <div className="bg-slate-800/30 rounded-xl p-4 mb-6 text-left">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <p className="text-slate-500">Facility</p>
-                  <p className="text-white font-medium">{formData.facilityName}</p>
+            {/* Verification Progress - Shows after application received */}
+            {isVerifying && (
+              <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-xl p-6 mb-6 animate-pulse">
+                <div className="flex items-center justify-center gap-3 mb-4">
+                  <svg className="w-6 h-6 text-blue-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <p className="text-blue-300 font-semibold">
+                    Verifying Medical Credentials on Blockchain...
+                  </p>
                 </div>
-                <div>
-                  <p className="text-slate-500">Type</p>
-                  <p className="text-white font-medium">{formData.facilityType}</p>
+
+                {/* Progress Bar */}
+                <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-100"
+                    style={{ width: `${verificationProgress}%` }}
+                  />
                 </div>
-                <div>
-                  <p className="text-slate-500">Est. Monthly MCs</p>
-                  <p className="text-white font-medium">{Number(formData.estimatedMCs).toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-slate-500">Contact Role</p>
-                  <p className="text-white font-medium">{formData.decisionMakerRole}</p>
+
+                <div className="flex justify-between mt-2 text-xs text-slate-500">
+                  <span>Querying blockchain nodes...</span>
+                  <span>{verificationProgress}%</span>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Next Steps */}
-            <div className="text-left bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 mb-6">
-              <p className="text-blue-400 font-semibold text-sm mb-2">What happens next?</p>
-              <ul className="text-slate-400 text-sm space-y-1">
-                <li>✓ Our team will review your application within 24 hours</li>
-                <li>✓ You'll receive onboarding materials via email</li>
-                <li>✓ A dedicated account manager will contact you</li>
-              </ul>
-            </div>
+            {/* Summary - Hide when verifying */}
+            {!isVerifying && (
+              <>
+                <div className="bg-slate-800/30 rounded-xl p-4 mb-6 text-left">
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-slate-500">Facility</p>
+                      <p className="text-white font-medium">{formData.facilityName}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-500">Type</p>
+                      <p className="text-white font-medium">{formData.facilityType}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-500">Est. Monthly MCs</p>
+                      <p className="text-white font-medium">{Number(formData.estimatedMCs).toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-500">Contact Role</p>
+                      <p className="text-white font-medium">{formData.decisionMakerRole}</p>
+                    </div>
+                  </div>
+                </div>
 
-            <button
-              onClick={handleClose}
-              className="w-full py-4 bg-white/5 border border-white/10 text-white font-bold rounded-xl hover:bg-white/10 transition-all"
-            >
-              Close
-            </button>
+                {/* Next Steps */}
+                <div className="text-left bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 mb-6">
+                  <p className="text-blue-400 font-semibold text-sm mb-2">What happens next?</p>
+                  <ul className="text-slate-400 text-sm space-y-1">
+                    <li>✓ Our team will review your application within 24 hours</li>
+                    <li>✓ You'll receive onboarding materials via email</li>
+                    <li>✓ A dedicated account manager will contact you</li>
+                  </ul>
+                </div>
+              </>
+            )}
+
+            {/* Redirect Notice when verifying */}
+            {isVerifying && verificationProgress >= 100 && (
+              <div className="flex items-center justify-center gap-2 text-emerald-400 font-medium">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Verified! Redirecting to dashboard...</span>
+              </div>
+            )}
+
+            {/* Close button - only show when not verifying */}
+            {!isVerifying && (
+              <button
+                onClick={handleClose}
+                className="w-full py-4 bg-white/5 border border-white/10 text-white font-bold rounded-xl hover:bg-white/10 transition-all"
+              >
+                Close
+              </button>
+            )}
           </div>
         )}
       </div>

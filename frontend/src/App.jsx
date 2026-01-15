@@ -443,6 +443,127 @@ function ProtectedApp({ walletAddress, handleDisconnect }) {
 
 // Connect Wallet Screen
 function ConnectScreen({ onConnect, loading, error }) {
+  // Check for pending admin status from application submission
+  const [pendingAdmin, setPendingAdmin] = useState(null);
+
+  useEffect(() => {
+    const storedData = localStorage.getItem('medchain_pending_admin');
+    if (storedData) {
+      try {
+        setPendingAdmin(JSON.parse(storedData));
+      } catch (e) {
+        console.error('Error parsing pending admin data:', e);
+      }
+    }
+  }, []);
+
+  // If pending admin, show special UI
+  if (pendingAdmin) {
+    return (
+      <div className="min-h-screen bg-[#030712] flex items-center justify-center p-6">
+        <div className="max-w-lg w-full">
+          {/* Pending Admin Card */}
+          <div className="bg-slate-900 border border-amber-500/30 rounded-2xl p-8 shadow-2xl">
+            {/* Status Badge */}
+            <div className="flex justify-center mb-6">
+              <span className="px-4 py-2 bg-amber-500/20 border border-amber-500/30 rounded-full text-amber-400 text-sm font-bold flex items-center gap-2">
+                <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></span>
+                Pending Admin Verification
+              </span>
+            </div>
+
+            {/* Hospital Icon */}
+            <div className="w-20 h-20 bg-gradient-to-br from-amber-500/20 to-orange-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </div>
+
+            <h1 className="text-2xl font-bold text-white text-center mb-2">
+              Welcome, {pendingAdmin.facilityName}
+            </h1>
+            <p className="text-slate-400 text-center mb-8">
+              Your application is being reviewed by our team
+            </p>
+
+            {/* Application Details */}
+            <div className="bg-slate-800/50 rounded-xl p-4 mb-6">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-slate-500">Facility Type</p>
+                  <p className="text-white font-medium">{pendingAdmin.facilityType}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500">Your Role</p>
+                  <p className="text-white font-medium">{pendingAdmin.decisionMakerRole}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500">Blockchain Ref</p>
+                  <p className="text-emerald-400 font-mono text-xs">{pendingAdmin.blockchainRef}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500">Submitted</p>
+                  <p className="text-white font-medium">
+                    {new Date(pendingAdmin.submittedAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Connect Wallet Section */}
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 mb-6">
+              <p className="text-blue-400 font-semibold text-sm mb-2">Next Step: Connect Your Wallet</p>
+              <p className="text-slate-400 text-sm">
+                Connect your MetaMask wallet to complete the onboarding process. This wallet will become your hospital's admin wallet.
+              </p>
+            </div>
+
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-xl mb-6 text-sm">
+                {error}
+              </div>
+            )}
+
+            <button
+              onClick={onConnect}
+              disabled={loading}
+              className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-900 font-bold rounded-xl hover:from-amber-400 hover:to-orange-400 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Connecting...
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20.5 12l-1.5-1.5-6 6V3h-2v13.5l-6-6L3.5 12 12 20.5 20.5 12z" />
+                  </svg>
+                  Connect MetaMask Wallet
+                </>
+              )}
+            </button>
+
+            {/* Clear Application Link */}
+            <button
+              onClick={() => {
+                localStorage.removeItem('medchain_pending_admin');
+                setPendingAdmin(null);
+              }}
+              className="w-full mt-4 text-slate-500 hover:text-slate-400 text-sm transition-colors"
+            >
+              Not {pendingAdmin.facilityName}? Start fresh
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Default connect screen for non-pending users
   return (
     <div className="connect-container">
       <div className="connect-card">
@@ -522,6 +643,15 @@ function AppRoutes() {
         <Route path="/business-overview" element={<BusinessOverview />} />
       </Routes>
     );
+  }
+
+  // /mvp route - shows Connect Wallet screen (with pending admin detection)
+  if (location.pathname === '/mvp') {
+    if (!walletAddress) {
+      return <ConnectScreen onConnect={handleConnectWallet} loading={loading} error={error} />;
+    }
+    // If wallet connected, redirect to patient portal
+    return <ProtectedApp walletAddress={walletAddress} handleDisconnect={handleDisconnect} />;
   }
 
   // For protected routes, check wallet
