@@ -193,17 +193,46 @@ const generateHashId = () => {
   return hash;
 };
 
+// City coordinates for Sarawak map
+const SARAWAK_CITIES = {
+  'Kuching': { x: 25, y: 78, label: 'Kuching' },
+  'Sibu': { x: 52, y: 48, label: 'Sibu' },
+  'Miri': { x: 78, y: 22, label: 'Miri' },
+  'Bintulu': { x: 65, y: 38, label: 'Bintulu' },
+};
+
+// Protocol check steps
+const PROTOCOL_STEPS = [
+  { id: 1, text: 'Establishing Secure Tunnel...', duration: 1200 },
+  { id: 2, text: 'Generating 256-bit Encryption Keys...', duration: 1500 },
+  { id: 3, text: 'Syncing with MedChain Mainnet...', duration: 1800 },
+  { id: 4, text: 'Hospital Node #SC-{nodeId} Active.', duration: 1000, isFinal: true },
+];
+
 // Proposal Modal with Digital Signature
 function ProposalModal({ isOpen, onClose, lead, onDealClosed }) {
   const sigCanvas = useRef(null);
   const [isSigned, setIsSigned] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [verificationData, setVerificationData] = useState(null);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [completedSteps, setCompletedSteps] = useState([]);
+  const [nodeId, setNodeId] = useState('004');
 
   if (!isOpen || !lead) return null;
 
   const leadValue = (lead.estimatedMCs * 1.00) + 10000;
+
+  // Determine city from facility name
+  const getCity = () => {
+    const name = lead.facilityName.toLowerCase();
+    if (name.includes('miri')) return 'Miri';
+    if (name.includes('sibu') || name.includes('rejang')) return 'Sibu';
+    if (name.includes('bintulu')) return 'Bintulu';
+    return 'Kuching'; // Default
+  };
 
   const clearSignature = () => {
     sigCanvas.current?.clear();
@@ -216,13 +245,29 @@ function ProposalModal({ isOpen, onClose, lead, onDealClosed }) {
     }
   };
 
+  const runProtocolSequence = async () => {
+    const newNodeId = String(Math.floor(Math.random() * 900) + 100).padStart(3, '0');
+    setNodeId(newNodeId);
+
+    for (let i = 0; i < PROTOCOL_STEPS.length; i++) {
+      setCurrentStep(i);
+      await new Promise(resolve => setTimeout(resolve, PROTOCOL_STEPS[i].duration));
+      setCompletedSteps(prev => [...prev, i]);
+    }
+
+    // Small delay before showing final screen
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setIsInitializing(false);
+    setIsComplete(true);
+  };
+
   const handleConfirmPayment = async () => {
     if (!isSigned) return;
 
     setIsProcessing(true);
 
     // Simulate blockchain transaction
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
     const verification = {
       hashId: generateHashId(),
@@ -234,8 +279,8 @@ function ProposalModal({ isOpen, onClose, lead, onDealClosed }) {
     };
 
     setVerificationData(verification);
-    setIsComplete(true);
     setIsProcessing(false);
+    setIsInitializing(true);
 
     // Notify parent component about the closed deal
     onDealClosed({
@@ -243,15 +288,23 @@ function ProposalModal({ isOpen, onClose, lead, onDealClosed }) {
       verification,
       closedAt: new Date()
     });
+
+    // Start protocol sequence
+    runProtocolSequence();
   };
 
   const handleClose = () => {
     setIsSigned(false);
     setIsProcessing(false);
+    setIsInitializing(false);
     setIsComplete(false);
     setVerificationData(null);
+    setCurrentStep(0);
+    setCompletedSteps([]);
     onClose();
   };
+
+  const city = getCity();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -292,7 +345,224 @@ function ProposalModal({ isOpen, onClose, lead, onDealClosed }) {
           </div>
         </div>
 
-        {!isComplete ? (
+        {isInitializing ? (
+          /* Cinematic Initialization Screen */
+          <div
+            className="relative overflow-hidden"
+            style={{ backgroundColor: '#000', minHeight: '500px' }}
+          >
+            {/* Animated grid background */}
+            <div
+              className="absolute inset-0 opacity-20"
+              style={{
+                backgroundImage: `
+                  linear-gradient(${theme.accent}40 1px, transparent 1px),
+                  linear-gradient(90deg, ${theme.accent}40 1px, transparent 1px)
+                `,
+                backgroundSize: '50px 50px',
+                animation: 'gridMove 20s linear infinite'
+              }}
+            />
+
+            {/* Radial glow from city */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: `radial-gradient(circle at ${SARAWAK_CITIES[city].x}% ${SARAWAK_CITIES[city].y}%, ${theme.success}30 0%, transparent 50%)`
+              }}
+            />
+
+            <div className="relative z-10 p-8">
+              {/* Header */}
+              <div className="text-center mb-8">
+                <p
+                  className="text-xs font-bold tracking-[0.3em] uppercase mb-2"
+                  style={{ color: theme.accent }}
+                >
+                  Sarawak MedChain
+                </p>
+                <h2 className="text-3xl font-black" style={{ color: theme.textPrimary }}>
+                  INITIALIZING NODE
+                </h2>
+                <p className="text-sm mt-2" style={{ color: theme.textSecondary }}>
+                  {lead.facilityName}
+                </p>
+              </div>
+
+              {/* 3D-style Sarawak Map */}
+              <div className="relative mx-auto mb-8" style={{ maxWidth: '400px', height: '200px' }}>
+                <svg viewBox="0 0 100 100" className="w-full h-full" style={{ filter: 'drop-shadow(0 0 20px rgba(16, 185, 129, 0.3))' }}>
+                  {/* Sarawak outline with gradient */}
+                  <defs>
+                    <linearGradient id="mapGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor={theme.accent} stopOpacity="0.3" />
+                      <stop offset="100%" stopColor={theme.success} stopOpacity="0.1" />
+                    </linearGradient>
+                    <filter id="glow">
+                      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                      <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                      </feMerge>
+                    </filter>
+                  </defs>
+
+                  {/* Sarawak shape */}
+                  <path
+                    d="M 5 80 Q 15 90 25 85 Q 35 80 45 70 Q 55 60 65 50 Q 75 40 85 30 Q 90 25 95 20 L 95 35 Q 85 45 75 55 Q 65 65 55 75 Q 45 85 35 90 Q 25 95 15 90 Q 5 85 5 80 Z"
+                    fill="url(#mapGradient)"
+                    stroke={theme.accent}
+                    strokeWidth="0.5"
+                    opacity="0.8"
+                  />
+
+                  {/* Connection lines to other cities */}
+                  {Object.entries(SARAWAK_CITIES).filter(([name]) => name !== city).map(([name, coords]) => (
+                    <line
+                      key={name}
+                      x1={SARAWAK_CITIES[city].x}
+                      y1={SARAWAK_CITIES[city].y}
+                      x2={coords.x}
+                      y2={coords.y}
+                      stroke={theme.accent}
+                      strokeWidth="0.3"
+                      strokeDasharray="2,2"
+                      opacity="0.4"
+                    />
+                  ))}
+
+                  {/* Other city dots (dimmed) */}
+                  {Object.entries(SARAWAK_CITIES).filter(([name]) => name !== city).map(([name, coords]) => (
+                    <g key={name}>
+                      <circle cx={coords.x} cy={coords.y} r="1.5" fill={theme.accent} opacity="0.3" />
+                      <text x={coords.x} y={coords.y + 5} textAnchor="middle" fill={theme.textMuted} fontSize="3">
+                        {name}
+                      </text>
+                    </g>
+                  ))}
+
+                  {/* Main city - glowing point */}
+                  <g filter="url(#glow)">
+                    {/* Outer pulse ring */}
+                    <circle
+                      cx={SARAWAK_CITIES[city].x}
+                      cy={SARAWAK_CITIES[city].y}
+                      r="8"
+                      fill="none"
+                      stroke={theme.success}
+                      strokeWidth="0.5"
+                      opacity="0.5"
+                      className="animate-ping"
+                    />
+                    {/* Middle ring */}
+                    <circle
+                      cx={SARAWAK_CITIES[city].x}
+                      cy={SARAWAK_CITIES[city].y}
+                      r="5"
+                      fill={theme.success}
+                      opacity="0.3"
+                    />
+                    {/* Core dot */}
+                    <circle
+                      cx={SARAWAK_CITIES[city].x}
+                      cy={SARAWAK_CITIES[city].y}
+                      r="2.5"
+                      fill={theme.success}
+                    />
+                  </g>
+
+                  {/* City label */}
+                  <text
+                    x={SARAWAK_CITIES[city].x}
+                    y={SARAWAK_CITIES[city].y + 10}
+                    textAnchor="middle"
+                    fill={theme.success}
+                    fontSize="4"
+                    fontWeight="bold"
+                  >
+                    {city.toUpperCase()}
+                  </text>
+                </svg>
+              </div>
+
+              {/* Protocol Checks */}
+              <div
+                className="mx-auto rounded-xl p-6"
+                style={{
+                  maxWidth: '400px',
+                  backgroundColor: 'rgba(10, 22, 40, 0.8)',
+                  border: `1px solid ${theme.border}`
+                }}
+              >
+                <p className="text-xs font-bold tracking-wider uppercase mb-4" style={{ color: theme.textMuted }}>
+                  Protocol Initialization
+                </p>
+
+                <div className="space-y-3">
+                  {PROTOCOL_STEPS.map((step, index) => {
+                    const isCompleted = completedSteps.includes(index);
+                    const isCurrent = currentStep === index && !isCompleted;
+                    const stepText = step.text.replace('{nodeId}', nodeId);
+
+                    return (
+                      <div
+                        key={step.id}
+                        className="flex items-center gap-3 transition-all duration-300"
+                        style={{ opacity: index <= currentStep ? 1 : 0.3 }}
+                      >
+                        {/* Status indicator */}
+                        <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
+                          {isCompleted ? (
+                            <div
+                              className="w-5 h-5 rounded-full flex items-center justify-center"
+                              style={{ backgroundColor: theme.success }}
+                            >
+                              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                          ) : isCurrent ? (
+                            <div
+                              className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin"
+                              style={{ borderColor: theme.accent, borderTopColor: 'transparent' }}
+                            />
+                          ) : (
+                            <div
+                              className="w-5 h-5 rounded-full"
+                              style={{ border: `2px solid ${theme.border}` }}
+                            />
+                          )}
+                        </div>
+
+                        {/* Step text */}
+                        <p
+                          className={`text-sm font-mono ${step.isFinal && isCompleted ? 'font-bold' : ''}`}
+                          style={{
+                            color: isCompleted
+                              ? (step.isFinal ? theme.success : theme.textPrimary)
+                              : isCurrent
+                                ? theme.accent
+                                : theme.textMuted
+                          }}
+                        >
+                          {stepText}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Grid animation styles */}
+            <style>{`
+              @keyframes gridMove {
+                0% { transform: translate(0, 0); }
+                100% { transform: translate(50px, 50px); }
+              }
+            `}</style>
+          </div>
+        ) : !isComplete ? (
           <>
             {/* Proposal Details */}
             <div className="px-8 py-6">
@@ -427,108 +697,169 @@ function ProposalModal({ isOpen, onClose, lead, onDealClosed }) {
             </div>
           </>
         ) : (
-          /* Success State with Verification Seal */
-          <div className="px-8 py-10 text-center">
-            {/* Success Animation */}
-            <div
-              className="w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center"
-              style={{ backgroundColor: `${theme.success}20`, border: `3px solid ${theme.success}` }}
-            >
-              <svg className="w-12 h-12" fill={theme.success} viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
+          /* Cinematic Success State */
+          <div
+            className="relative overflow-hidden"
+            style={{ backgroundColor: '#000', minHeight: '550px' }}
+          >
+            {/* Animated success particles */}
+            <div className="absolute inset-0 overflow-hidden">
+              {[...Array(20)].map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute w-1 h-1 rounded-full"
+                  style={{
+                    backgroundColor: theme.success,
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                    opacity: Math.random() * 0.5 + 0.2,
+                    animation: `float ${3 + Math.random() * 4}s ease-in-out infinite`,
+                    animationDelay: `${Math.random() * 2}s`
+                  }}
+                />
+              ))}
             </div>
 
-            <h3 className="text-2xl font-bold mb-2" style={{ color: theme.success }}>
-              Deal Closed!
-            </h3>
-            <p className="mb-8" style={{ color: theme.textSecondary }}>
-              Partnership with {lead.facilityName} has been recorded on the blockchain
-            </p>
-
-            {/* Blockchain Verification Seal */}
+            {/* Radial glow */}
             <div
-              className="rounded-2xl p-6 mb-6 relative overflow-hidden"
+              className="absolute inset-0"
               style={{
-                backgroundColor: theme.bg,
-                border: `2px solid ${theme.success}`,
-                boxShadow: `0 0 30px ${theme.success}30`
+                background: `radial-gradient(circle at 50% 30%, ${theme.success}25 0%, transparent 60%)`
               }}
-            >
-              {/* Seal Badge */}
-              <div className="absolute top-4 right-4">
+            />
+
+            <div className="relative z-10 p-8 text-center">
+              {/* Success Badge */}
+              <div className="mb-6">
                 <div
-                  className="px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1"
-                  style={{ backgroundColor: `${theme.success}20`, color: theme.success }}
+                  className="w-28 h-28 rounded-full mx-auto flex items-center justify-center relative"
+                  style={{
+                    background: `linear-gradient(135deg, ${theme.success}40, ${theme.success}10)`,
+                    boxShadow: `0 0 60px ${theme.success}40`
+                  }}
                 >
-                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <div
+                    className="absolute inset-2 rounded-full"
+                    style={{ border: `3px solid ${theme.success}` }}
+                  />
+                  <svg className="w-14 h-14" fill={theme.success} viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Node Active Status */}
+              <div
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4"
+                style={{ backgroundColor: `${theme.success}20`, border: `1px solid ${theme.success}` }}
+              >
+                <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: theme.success }} />
+                <span className="text-sm font-bold" style={{ color: theme.success }}>
+                  NODE SC-{nodeId} ONLINE
+                </span>
+              </div>
+
+              <h3 className="text-3xl font-black mb-2" style={{ color: theme.textPrimary }}>
+                {lead.facilityName}
+              </h3>
+              <p className="text-lg mb-6" style={{ color: theme.success }}>
+                Successfully Connected to MedChain Network
+              </p>
+
+              {/* Stats Row */}
+              <div
+                className="grid grid-cols-3 gap-4 mb-8 mx-auto"
+                style={{ maxWidth: '450px' }}
+              >
+                <div
+                  className="p-4 rounded-xl"
+                  style={{ backgroundColor: 'rgba(10, 22, 40, 0.8)', border: `1px solid ${theme.border}` }}
+                >
+                  <p className="text-2xl font-black" style={{ color: theme.success }}>
+                    +RM{(10000).toLocaleString()}
+                  </p>
+                  <p className="text-xs" style={{ color: theme.textMuted }}>Subscription</p>
+                </div>
+                <div
+                  className="p-4 rounded-xl"
+                  style={{ backgroundColor: 'rgba(10, 22, 40, 0.8)', border: `1px solid ${theme.border}` }}
+                >
+                  <p className="text-2xl font-black" style={{ color: theme.accent }}>
+                    {lead.estimatedMCs}
+                  </p>
+                  <p className="text-xs" style={{ color: theme.textMuted }}>Est. MCs/mo</p>
+                </div>
+                <div
+                  className="p-4 rounded-xl"
+                  style={{ backgroundColor: 'rgba(10, 22, 40, 0.8)', border: `1px solid ${theme.border}` }}
+                >
+                  <p className="text-2xl font-black" style={{ color: theme.purple }}>
+                    {city}
+                  </p>
+                  <p className="text-xs" style={{ color: theme.textMuted }}>Region</p>
+                </div>
+              </div>
+
+              {/* Blockchain Verification */}
+              <div
+                className="rounded-xl p-4 mb-8 mx-auto text-left"
+                style={{
+                  maxWidth: '450px',
+                  backgroundColor: 'rgba(10, 22, 40, 0.8)',
+                  border: `1px solid ${theme.border}`
+                }}
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <svg className="w-4 h-4" fill={theme.success} viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  BLOCKCHAIN VERIFIED
+                  <span className="text-xs font-bold" style={{ color: theme.success }}>BLOCKCHAIN VERIFIED</span>
+                </div>
+                <p className="text-xs font-mono break-all mb-2" style={{ color: theme.textMuted }}>
+                  {verificationData?.hashId}
+                </p>
+                <div className="flex justify-between text-xs">
+                  <span style={{ color: theme.textMuted }}>Block #{verificationData?.blockNumber?.toLocaleString()}</span>
+                  <span style={{ color: theme.textMuted }}>{new Date(verificationData?.timestamp).toLocaleString('en-MY')}</span>
                 </div>
               </div>
 
-              <div className="flex items-start gap-4">
-                {/* Signature Preview */}
-                {verificationData?.signatureData && (
-                  <div
-                    className="w-32 h-20 rounded-lg overflow-hidden flex-shrink-0"
-                    style={{ backgroundColor: '#ffffff', border: `1px solid ${theme.border}` }}
-                  >
-                    <img
-                      src={verificationData.signatureData}
-                      alt="Signature"
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                )}
+              {/* Action Buttons */}
+              <div className="flex flex-col gap-3 mx-auto" style={{ maxWidth: '350px' }}>
+                <button
+                  onClick={() => window.open('/ceo-dashboard', '_blank')}
+                  className="w-full py-4 rounded-xl font-bold text-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  style={{
+                    background: `linear-gradient(135deg, ${theme.success}, ${theme.accent})`,
+                    color: theme.textPrimary,
+                    boxShadow: `0 4px 20px ${theme.success}40`
+                  }}
+                >
+                  <span className="flex items-center justify-center gap-3">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    Enter Hospital Dashboard
+                  </span>
+                </button>
 
-                {/* Verification Details */}
-                <div className="flex-1 text-left">
-                  <div className="space-y-2">
-                    <div>
-                      <p className="text-xs" style={{ color: theme.textMuted }}>Transaction Hash</p>
-                      <p className="text-xs font-mono break-all" style={{ color: theme.accent }}>
-                        {verificationData?.hashId}
-                      </p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-xs" style={{ color: theme.textMuted }}>Block Number</p>
-                        <p className="text-sm font-bold" style={{ color: theme.textPrimary }}>
-                          #{verificationData?.blockNumber?.toLocaleString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs" style={{ color: theme.textMuted }}>Timestamp</p>
-                        <p className="text-sm font-bold" style={{ color: theme.textPrimary }}>
-                          {new Date(verificationData?.timestamp).toLocaleString('en-MY')}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <button
+                  onClick={handleClose}
+                  className="w-full py-3 rounded-xl font-semibold transition-all hover:opacity-80"
+                  style={{ backgroundColor: theme.bgCard, color: theme.textSecondary, border: `1px solid ${theme.border}` }}
+                >
+                  Back to Founder Dashboard
+                </button>
               </div>
             </div>
 
-            {/* Revenue Impact */}
-            <div
-              className="rounded-xl p-4 mb-6"
-              style={{ backgroundColor: `${theme.success}10`, border: `1px solid ${theme.success}` }}
-            >
-              <p className="text-sm" style={{ color: theme.success }}>Monthly Revenue Added</p>
-              <p className="text-3xl font-black" style={{ color: theme.success }}>
-                +RM {leadValue.toLocaleString()}
-              </p>
-            </div>
-
-            <button
-              onClick={handleClose}
-              className="px-8 py-3 rounded-xl font-semibold transition-all hover:opacity-80"
-              style={{ backgroundColor: theme.accent, color: theme.textPrimary }}
-            >
-              Back to Dashboard
-            </button>
+            {/* Float animation */}
+            <style>{`
+              @keyframes float {
+                0%, 100% { transform: translateY(0px) scale(1); opacity: 0.3; }
+                50% { transform: translateY(-20px) scale(1.5); opacity: 0.6; }
+              }
+            `}</style>
           </div>
         )}
       </div>
