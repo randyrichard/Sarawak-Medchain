@@ -382,7 +382,7 @@ function ProposalModal({ isOpen, onClose, lead, onDealClosed }) {
                 </div>
                 {!isSigned && (
                   <p className="text-xs mt-2 text-center" style={{ color: theme.textMuted }}>
-                    Please sign above to authorize the partnership agreement
+                    Hospital representative signs here to authorize partnership
                   </p>
                 )}
                 {isSigned && (
@@ -416,12 +416,12 @@ function ProposalModal({ isOpen, onClose, lead, onDealClosed }) {
                     Recording on Blockchain...
                   </span>
                 ) : (
-                  `Confirm & Pay RM10,000`
+                  `Confirm Payment Received - RM10,000`
                 )}
               </button>
               {!isSigned && (
                 <p className="text-center text-xs mt-3" style={{ color: theme.textMuted }}>
-                  Signature required to activate payment
+                  Hospital signature required to confirm deal
                 </p>
               )}
             </div>
@@ -1595,7 +1595,7 @@ export default function FounderAdmin() {
                   {dealNotification.facilityName}
                 </p>
                 <p className="text-sm mb-3" style={{ color: theme.textSecondary }}>
-                  Partnership agreement signed and recorded on blockchain
+                  Payment received and recorded on blockchain
                 </p>
                 <div
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-xl"
