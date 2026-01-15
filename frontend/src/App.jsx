@@ -16,11 +16,15 @@ function StickyBalanceHeader({ walletAddress }) {
   const [loading, setLoading] = useState(false);
 
   // Show on Doctor and Admin portals where billing matters
-  const showOnRoutes = ['/doctor', '/admin', '/ceo'];
+  const showOnRoutes = ['/doctor', '/admin'];
   const shouldShow = showOnRoutes.includes(location.pathname);
 
-  const lowBalanceThreshold = 100; // RM100 threshold
-  const isLowBalance = creditBalance !== null && creditBalance < lowBalanceThreshold;
+  const criticalThreshold = 100; // RM100 - critical (red)
+  const warningThreshold = 500; // RM500 - warning (amber)
+
+  const isCriticalBalance = creditBalance !== null && creditBalance < criticalThreshold;
+  const isWarningBalance = creditBalance !== null && creditBalance < warningThreshold && creditBalance >= criticalThreshold;
+  const needsAttention = isCriticalBalance || isWarningBalance;
 
   useEffect(() => {
     if (shouldShow && walletAddress) {
@@ -46,46 +50,102 @@ function StickyBalanceHeader({ walletAddress }) {
 
   if (!shouldShow) return null;
 
+  // Determine styling based on balance level
+  const getStatusStyles = () => {
+    if (isCriticalBalance) {
+      return {
+        banner: 'bg-gradient-to-r from-red-600 to-red-700',
+        badge: 'bg-red-50 border-red-200',
+        text: 'text-white',
+        subtext: 'text-red-100',
+        icon: 'text-white',
+        button: 'bg-white text-red-600 hover:bg-red-50'
+      };
+    }
+    if (isWarningBalance) {
+      return {
+        banner: 'bg-gradient-to-r from-amber-500 to-orange-500',
+        badge: 'bg-amber-50 border-amber-200',
+        text: 'text-white',
+        subtext: 'text-amber-100',
+        icon: 'text-white',
+        button: 'bg-white text-amber-600 hover:bg-amber-50'
+      };
+    }
+    return {
+      banner: 'bg-white/95 border-b border-slate-200',
+      badge: 'bg-emerald-50 border-emerald-200',
+      text: 'text-slate-800',
+      subtext: 'text-slate-600',
+      icon: 'text-emerald-500',
+      button: 'bg-emerald-600 text-white hover:bg-emerald-700'
+    };
+  };
+
+  const styles = getStatusStyles();
+
+  // Show amber warning banner for low credit
+  if (needsAttention) {
+    return (
+      <div className={`sticky top-0 z-50 ${styles.banner} shadow-lg`}>
+        <div className="px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            {/* Warning Icon */}
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isCriticalBalance ? 'bg-white/20' : 'bg-white/20'} animate-pulse`}>
+              <svg className={`w-6 h-6 ${styles.icon}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+
+            {/* Alert Message */}
+            <div>
+              <div className="flex items-center gap-3">
+                <h3 className={`text-lg font-bold ${styles.text}`}>
+                  {isCriticalBalance ? 'Critical: Low Credit Balance' : 'Low Credit Warning'}
+                </h3>
+                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                  isCriticalBalance ? 'bg-white/20 text-white' : 'bg-white/20 text-white'
+                }`}>
+                  RM {loading ? '...' : creditBalance?.toLocaleString() || 0}
+                </span>
+              </div>
+              <p className={`text-sm mt-1 ${styles.subtext}`}>
+                {isCriticalBalance
+                  ? 'Immediate top-up required. MC issuance may be interrupted.'
+                  : 'Please top up to ensure uninterrupted MC issuance.'}
+              </p>
+            </div>
+          </div>
+
+          {/* Top Up Button */}
+          <button
+            onClick={handleTopUp}
+            className={`px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-lg ${styles.button}`}
+          >
+            Top Up Now
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Normal state - compact header
   return (
     <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
       <div className="px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-            isLowBalance
-              ? 'bg-red-50 border border-red-200'
-              : 'bg-emerald-50 border border-emerald-200'
-          }`}>
-            <svg className={`w-5 h-5 ${isLowBalance ? 'text-red-500' : 'text-emerald-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${styles.badge} border`}>
+            <svg className={`w-5 h-5 ${styles.icon}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div className="flex items-baseline gap-2">
-              <span className={`text-sm font-medium ${isLowBalance ? 'text-red-600' : 'text-slate-600'}`}>
-                Credit Balance:
-              </span>
-              <span className={`text-xl font-bold ${isLowBalance ? 'text-red-600' : 'text-emerald-600'}`}>
+              <span className="text-sm font-medium text-slate-600">Credit Balance:</span>
+              <span className="text-xl font-bold text-emerald-600">
                 {loading ? '...' : creditBalance !== null ? `RM ${creditBalance.toLocaleString()}` : '--'}
               </span>
             </div>
           </div>
-
-          {isLowBalance && (
-            <div className="flex items-center gap-2 text-red-600 animate-pulse">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <span className="text-sm font-semibold">Low Balance - Top up required to continue issuing MCs</span>
-            </div>
-          )}
         </div>
-
-        {isLowBalance && (
-          <button
-            onClick={handleTopUp}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition-all shadow-lg shadow-red-500/25"
-          >
-            Top Up Now
-          </button>
-        )}
       </div>
     </div>
   );

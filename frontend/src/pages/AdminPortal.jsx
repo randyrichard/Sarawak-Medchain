@@ -53,6 +53,9 @@ export default function AdminPortal({ walletAddress }) {
   const [message, setMessage] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Invoice Modal State
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+
   // Derived billing values (using context)
   const tierName = currentTier.name;
   const baseFee = monthlySubscriptionFee;
@@ -496,13 +499,25 @@ export default function AdminPortal({ walletAddress }) {
                     <p className="text-slate-400 text-sm">January 2026 Billing Period</p>
                   </div>
                 </div>
-                <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                  subscriptionPaid
-                    ? 'bg-emerald-500/20 text-emerald-400'
-                    : 'bg-amber-500/20 text-amber-400'
-                }`}>
-                  {subscriptionPaid ? 'Paid' : 'Payment Due'}
-                </span>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setShowInvoiceModal(true)}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-white transition-all shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+                    style={{ backgroundColor: sarawakBlue, boxShadow: `0 8px 20px ${sarawakBlue}40` }}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Generate Monthly Invoice
+                  </button>
+                  <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                    subscriptionPaid
+                      ? 'bg-emerald-500/20 text-emerald-400'
+                      : 'bg-amber-500/20 text-amber-400'
+                  }`}>
+                    {subscriptionPaid ? 'Paid' : 'Payment Due'}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -1000,6 +1015,259 @@ export default function AdminPortal({ walletAddress }) {
         <div className="mt-8 flex justify-start text-slate-500 text-sm">
           <p>Sarawak MedChain Admin Portal</p>
         </div>
+
+        {/* ========== OFFICIAL SARAWAK GOVERNMENT-STYLE INVOICE MODAL ========== */}
+        {showInvoiceModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowInvoiceModal(false)}
+            />
+
+            {/* Invoice Document */}
+            <div className="relative bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              {/* Official Header with Sarawak Branding */}
+              <div className="bg-gradient-to-r from-slate-800 to-slate-900 px-8 py-6 text-white">
+                <div className="grid grid-cols-12 gap-4 items-center">
+                  {/* Logo & Government Title */}
+                  <div className="col-span-12 lg:col-span-8">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 bg-white/10 rounded-xl flex items-center justify-center border border-white/20">
+                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-400 uppercase tracking-widest font-medium">Kerajaan Negeri Sarawak</p>
+                        <h1 className="text-2xl font-bold">SARAWAK MEDCHAIN</h1>
+                        <p className="text-sm text-slate-300">Healthcare Blockchain Services</p>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Invoice Badge */}
+                  <div className="col-span-12 lg:col-span-4 text-right">
+                    <div className="inline-block bg-white/10 rounded-xl px-6 py-3 border border-white/20">
+                      <p className="text-xs text-slate-400 uppercase tracking-wide">Official Invoice</p>
+                      <p className="text-xl font-bold text-white">INV-2026-01-{String(Date.now()).slice(-4)}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Invoice Body */}
+              <div className="p-8">
+                {/* Bill To & Invoice Details Grid */}
+                <div className="grid grid-cols-12 gap-8 mb-8">
+                  {/* Bill To */}
+                  <div className="col-span-12 lg:col-span-6">
+                    <div className="bg-slate-50 rounded-xl p-5 border border-slate-200">
+                      <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-3">Bill To</p>
+                      <p className="text-lg font-bold text-slate-800">{facilityType === 'Hospital' ? 'Hospital General Sarawak' : 'Klinik Kesihatan'}</p>
+                      <p className="text-sm text-slate-600 mt-1">{tierName}</p>
+                      <div className="mt-3 pt-3 border-t border-slate-200">
+                        <p className="text-xs text-slate-500">Wallet Address</p>
+                        <code className="text-xs font-mono text-slate-700 bg-slate-100 px-2 py-1 rounded mt-1 block">
+                          {walletAddress}
+                        </code>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Invoice Details */}
+                  <div className="col-span-12 lg:col-span-6">
+                    <div className="bg-slate-50 rounded-xl p-5 border border-slate-200">
+                      <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-3">Invoice Details</p>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm text-slate-500">Invoice Date:</span>
+                          <span className="text-sm font-medium text-slate-800">{new Date().toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-slate-500">Billing Period:</span>
+                          <span className="text-sm font-medium text-slate-800">January 2026</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-slate-500">Due Date:</span>
+                          <span className="text-sm font-medium text-slate-800">31 January 2026</span>
+                        </div>
+                        <div className="flex justify-between pt-2 border-t border-slate-200">
+                          <span className="text-sm text-slate-500">Status:</span>
+                          <span className={`text-sm font-bold ${subscriptionPaid ? 'text-emerald-600' : 'text-amber-600'}`}>
+                            {subscriptionPaid ? 'PAID' : 'PAYMENT DUE'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Invoice Line Items Table */}
+                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden mb-8">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-slate-800 text-white">
+                        <th className="text-left px-6 py-4 font-semibold text-sm">Description</th>
+                        <th className="text-center px-6 py-4 font-semibold text-sm">Quantity</th>
+                        <th className="text-right px-6 py-4 font-semibold text-sm">Unit Price (RM)</th>
+                        <th className="text-right px-6 py-4 font-semibold text-sm">Amount (RM)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {/* Base Subscription Fee */}
+                      <tr className="border-b border-slate-100">
+                        <td className="px-6 py-5">
+                          <p className="font-semibold text-slate-800">Monthly Subscription Fee</p>
+                          <p className="text-sm text-slate-500">{tierName} - {facilityType}</p>
+                        </td>
+                        <td className="px-6 py-5 text-center text-slate-600">1</td>
+                        <td className="px-6 py-5 text-right text-slate-600">{baseFee.toLocaleString()}.00</td>
+                        <td className="px-6 py-5 text-right font-bold text-slate-800">{baseFee.toLocaleString()}.00</td>
+                      </tr>
+                      {/* Blockchain Ledger Fee (MC Usage) */}
+                      <tr className="border-b border-slate-100 bg-emerald-50/30">
+                        <td className="px-6 py-5">
+                          <p className="font-semibold text-slate-800">Blockchain Ledger Fee</p>
+                          <p className="text-sm text-slate-500">Medical Certificate Issuance</p>
+                        </td>
+                        <td className="px-6 py-5 text-center text-slate-600">{mcsIssuedThisMonth}</td>
+                        <td className="px-6 py-5 text-right text-slate-600">{mcCost.toFixed(2)}</td>
+                        <td className="px-6 py-5 text-right font-bold text-emerald-600">{meteredUsageCost.toLocaleString()}.00</td>
+                      </tr>
+                      {/* Payments Received (if any) */}
+                      {subscriptionPaid && (
+                        <tr className="border-b border-slate-100 bg-sky-50/30">
+                          <td className="px-6 py-5">
+                            <p className="font-semibold text-slate-800">Payment Received</p>
+                            <p className="text-sm text-slate-500">Base subscription fee</p>
+                          </td>
+                          <td className="px-6 py-5 text-center text-slate-600">-</td>
+                          <td className="px-6 py-5 text-right text-slate-600">-</td>
+                          <td className="px-6 py-5 text-right font-bold text-sky-600">-{baseFeePayment.toLocaleString()}.00</td>
+                        </tr>
+                      )}
+                    </tbody>
+                    <tfoot>
+                      {/* Subtotal */}
+                      <tr className="bg-slate-50 border-b border-slate-200">
+                        <td colSpan={3} className="px-6 py-4 text-right font-semibold text-slate-600">Subtotal</td>
+                        <td className="px-6 py-4 text-right font-bold text-slate-800">RM {(baseFee + meteredUsageCost).toLocaleString()}.00</td>
+                      </tr>
+                      {/* Tax (0% for government) */}
+                      <tr className="bg-slate-50 border-b border-slate-200">
+                        <td colSpan={3} className="px-6 py-4 text-right font-semibold text-slate-600">SST (0% Government Exemption)</td>
+                        <td className="px-6 py-4 text-right text-slate-600">RM 0.00</td>
+                      </tr>
+                      {/* Total Due */}
+                      <tr className="bg-slate-800 text-white">
+                        <td colSpan={3} className="px-6 py-5 text-right font-bold text-lg">TOTAL DUE</td>
+                        <td className="px-6 py-5 text-right font-black text-2xl">RM {totalDue.toLocaleString()}.00</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+
+                {/* Payment Information & Footer */}
+                <div className="grid grid-cols-12 gap-8">
+                  {/* Payment Details */}
+                  <div className="col-span-12 lg:col-span-6">
+                    <div className="bg-slate-50 rounded-xl p-5 border border-slate-200">
+                      <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-3">Payment Information</p>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Bank:</span>
+                          <span className="font-medium text-slate-800">CIMB Bank Berhad</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Account Name:</span>
+                          <span className="font-medium text-slate-800">Sarawak MedChain Sdn Bhd</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Account No:</span>
+                          <span className="font-medium text-slate-800">8600-1234-5678</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Reference:</span>
+                          <span className="font-medium text-slate-800">INV-2026-01-{String(Date.now()).slice(-4)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Terms & Notes */}
+                  <div className="col-span-12 lg:col-span-6">
+                    <div className="bg-amber-50 rounded-xl p-5 border border-amber-200">
+                      <p className="text-xs text-amber-700 uppercase tracking-wider font-semibold mb-3">Terms & Conditions</p>
+                      <ul className="text-sm text-amber-800 space-y-1">
+                        <li>Payment due within 30 days of invoice date</li>
+                        <li>Late payments may incur 1.5% monthly interest</li>
+                        <li>All fees are non-refundable once processed</li>
+                        <li>Blockchain ledger fees are calculated per MC issued</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Official Footer */}
+                <div className="mt-8 pt-6 border-t border-slate-200">
+                  <div className="grid grid-cols-12 gap-8 items-center">
+                    <div className="col-span-12 lg:col-span-8">
+                      <p className="text-xs text-slate-500">
+                        This is a computer-generated invoice and does not require a signature.
+                        For inquiries, contact billing@sarawak-medchain.gov.my
+                      </p>
+                      <p className="text-xs text-slate-400 mt-2">
+                        Sarawak MedChain - Blockchain-Secured Healthcare Records for Sarawak
+                      </p>
+                    </div>
+                    <div className="col-span-12 lg:col-span-4 text-right">
+                      <div className="inline-flex items-center gap-2 text-emerald-600">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                        <span className="text-sm font-semibold">Verified on Blockchain</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="bg-slate-50 px-8 py-5 border-t border-slate-200 flex items-center justify-between">
+                <button
+                  onClick={() => setShowInvoiceModal(false)}
+                  className="px-6 py-3 rounded-xl font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 transition-all"
+                >
+                  Close
+                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => window.print()}
+                    className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-100 transition-all"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    Print Invoice
+                  </button>
+                  {!subscriptionPaid && (
+                    <button
+                      onClick={() => {
+                        setShowInvoiceModal(false);
+                        handleProcessMonthlyPayment();
+                      }}
+                      className="flex items-center gap-2 px-8 py-3 rounded-xl font-bold text-white transition-all shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+                      style={{ backgroundColor: sarawakBlue, boxShadow: `0 8px 20px ${sarawakBlue}40` }}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                      Pay Now - RM {totalDue.toLocaleString()}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   );
 }
