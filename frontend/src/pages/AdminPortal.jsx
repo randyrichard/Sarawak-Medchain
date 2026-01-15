@@ -67,6 +67,7 @@ export default function AdminPortal({ walletAddress }) {
 
   // Color scheme
   const sarawakRed = '#DC2626'; // For overdue alerts
+  const sarawakBlue = '#007BFF'; // Professional Sarawak Blue for buttons
   const medicalBlue = '#0284C7'; // For View Invoice button
 
   useEffect(() => {
@@ -290,61 +291,173 @@ export default function AdminPortal({ walletAddress }) {
           </div>
         )}
 
-        {/* Monetization Engine - Full Width Subscription Banner */}
+        {/* Payment Success Notification */}
+        {paymentSuccess && (
+          <div className="mb-6 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-6 py-4 flex items-center gap-3">
+            <div className="w-10 h-10 bg-emerald-500/20 rounded-full flex items-center justify-center">
+              <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-emerald-300 font-semibold">Payment Successful!</p>
+              <p className="text-emerald-400/80 text-sm">Your monthly payment has been processed</p>
+            </div>
+          </div>
+        )}
+
+        {/* ========== SUBSCRIPTION & USAGE CARD (col-span-12) ========== */}
         <div className="col-span-12 mb-8">
-          <div className={`rounded-2xl p-6 ${
-            isSubscriptionOverdue
-              ? 'bg-gradient-to-r from-red-900/40 to-slate-900 border-2 border-red-500/50'
-              : 'bg-gradient-to-r from-sky-900/40 to-slate-900 border border-sky-500/30'
-          }`}>
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-              {/* Entity Type & Subscription Info */}
-              <div className="flex items-center gap-4">
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
-                  facilityType === 'Hospital' ? 'bg-sky-500/20' : 'bg-emerald-500/20'
-                }`}>
-                  <svg className={`w-7 h-7 ${facilityType === 'Hospital' ? 'text-sky-400' : 'text-emerald-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                </div>
-                <div>
-                  <div className="flex items-center gap-3 mb-1">
-                    <select
-                      value={facilityType}
-                      onChange={(e) => setFacilityType(e.target.value)}
-                      className="bg-slate-700/50 border border-slate-600 text-white text-sm rounded-lg px-3 py-1 focus:ring-2 focus:ring-sky-500"
-                    >
-                      <option value="Hospital">Hospital</option>
-                      <option value="Clinic">Clinic</option>
-                    </select>
-                    {isSubscriptionOverdue && (
-                      <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider" style={{ backgroundColor: `${sarawakRed}20`, color: sarawakRed }}>
-                        Overdue
-                      </span>
-                    )}
+          <div className="bg-gradient-to-br from-slate-800 via-slate-800 to-slate-900 rounded-2xl border border-slate-700/50 shadow-2xl overflow-hidden">
+            {/* Card Header */}
+            <div className="px-8 py-5 border-b border-slate-700/50 bg-slate-800/80">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${sarawakBlue}20` }}>
+                    <svg className="w-6 h-6" style={{ color: sarawakBlue }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
                   </div>
-                  <p className="text-2xl font-bold text-white">
-                    {tierName} <span className="text-slate-400 font-normal">—</span> <span className="text-sky-400">RM {baseFee.toLocaleString()}/mo</span>
-                  </p>
-                  <p className="text-slate-400 text-sm mt-1">
-                    {facilityType === 'Hospital'
-                      ? 'Unlimited doctors • Priority support • Full API access'
-                      : 'Up to 5 doctors • Email support • Standard API access'}
-                  </p>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">Subscription & Usage</h2>
+                    <p className="text-slate-400 text-sm">January 2026 Billing Period</p>
+                  </div>
+                </div>
+                {/* Tier Selector */}
+                <div className="flex items-center gap-3">
+                  <select
+                    value={facilityType}
+                    onChange={(e) => setFacilityType(e.target.value)}
+                    className="bg-slate-700 border border-slate-600 text-white text-sm font-medium rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="Hospital">Hospital</option>
+                    <option value="Clinic">Clinic</option>
+                  </select>
+                  <span className={`px-4 py-2 rounded-full text-sm font-bold ${
+                    subscriptionPaid
+                      ? 'bg-emerald-500/20 text-emerald-400'
+                      : 'bg-amber-500/20 text-amber-400'
+                  }`}>
+                    {subscriptionPaid ? 'PAID' : 'DUE'}
+                  </span>
                 </div>
               </div>
+            </div>
 
-              {/* View Invoice Button */}
-              <button
-                onClick={() => handlePayNow(1)}
-                className="px-8 py-3 rounded-xl font-semibold text-white transition-all shadow-lg flex items-center gap-2"
-                style={{ backgroundColor: medicalBlue, boxShadow: `0 10px 25px ${medicalBlue}40` }}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                View Invoice
-              </button>
+            {/* Card Body */}
+            <div className="p-8">
+              <div className="grid grid-cols-12 gap-8">
+                {/* Left Side: Fee Breakdown */}
+                <div className="col-span-12 lg:col-span-7 space-y-6">
+                  {/* Base Fee */}
+                  <div className="bg-slate-700/30 rounded-xl p-5 border border-slate-600/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                          facilityType === 'Hospital' ? 'bg-sky-500/20' : 'bg-emerald-500/20'
+                        }`}>
+                          <svg className={`w-6 h-6 ${facilityType === 'Hospital' ? 'text-sky-400' : 'text-emerald-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-white font-semibold text-lg">Base Fee</p>
+                          <p className="text-slate-400 text-sm">{tierName}</p>
+                        </div>
+                      </div>
+                      <p className="text-3xl font-bold text-white">
+                        RM {baseFee.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* MC Usage - Live Counter */}
+                  <div className="bg-slate-700/30 rounded-xl p-5 border border-slate-600/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                          <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-white font-semibold text-lg">MC Usage</p>
+                            <span className="flex items-center gap-1 text-emerald-400 text-xs font-medium bg-emerald-500/20 px-2 py-0.5 rounded-full">
+                              <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
+                              LIVE
+                            </span>
+                          </div>
+                          <p className="text-slate-400 text-sm">
+                            <span className="text-white font-bold text-xl">{mcsIssuedThisMonth}</span> MCs × RM {mcCost.toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-3xl font-bold text-emerald-400">
+                        RM {meteredUsageCost.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Side: Total Due & Pay Button */}
+                <div className="col-span-12 lg:col-span-5">
+                  <div className={`rounded-2xl p-6 h-full flex flex-col justify-center ${
+                    isSubscriptionOverdue
+                      ? 'bg-gradient-to-br from-red-600 to-red-800'
+                      : subscriptionPaid
+                        ? 'bg-gradient-to-br from-emerald-600/20 to-emerald-800/20 border border-emerald-500/30'
+                        : 'bg-gradient-to-br from-slate-700 to-slate-800 border border-slate-600/50'
+                  }`}>
+                    <p className={`text-sm font-semibold uppercase tracking-wider mb-2 ${
+                      isSubscriptionOverdue ? 'text-red-200' : subscriptionPaid ? 'text-emerald-400' : 'text-slate-400'
+                    }`}>
+                      Total Due
+                    </p>
+                    <p className={`text-6xl font-black mb-2 ${
+                      isSubscriptionOverdue ? 'text-white' : subscriptionPaid ? 'text-emerald-400' : 'text-white'
+                    }`}>
+                      RM {totalDue.toLocaleString()}
+                    </p>
+                    <p className={`text-sm mb-6 ${
+                      isSubscriptionOverdue ? 'text-red-200' : subscriptionPaid ? 'text-emerald-400/70' : 'text-slate-400'
+                    }`}>
+                      Base: RM {baseFee.toLocaleString()} + Usage: RM {meteredUsageCost.toLocaleString()}
+                    </p>
+
+                    {subscriptionPaid ? (
+                      <div className="flex items-center gap-2 bg-emerald-500/20 text-emerald-400 px-4 py-3 rounded-xl">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="font-semibold">All Dues Cleared</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={handleProcessMonthlyPayment}
+                        disabled={paymentProcessing}
+                        className="w-full py-4 rounded-xl font-bold text-lg text-white transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-xl"
+                        style={{
+                          backgroundColor: sarawakBlue,
+                          boxShadow: `0 10px 30px ${sarawakBlue}50`
+                        }}
+                      >
+                        {paymentProcessing ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                            Processing...
+                          </span>
+                        ) : (
+                          'Process Payment'
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
