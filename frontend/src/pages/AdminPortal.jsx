@@ -56,6 +56,12 @@ export default function AdminPortal({ walletAddress }) {
   // Invoice Modal State
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
 
+  // Payment Simulation Overlay State
+  const [showPaymentOverlay, setShowPaymentOverlay] = useState(false);
+  const [paymentStage, setPaymentStage] = useState('broadcasting'); // 'broadcasting' | 'verifying' | 'success'
+  const [transactionHash, setTransactionHash] = useState('');
+  const [paymentAmount, setPaymentAmount] = useState(0);
+
   // Derived billing values (using context)
   const tierName = currentTier.name;
   const baseFee = monthlySubscriptionFee;
@@ -208,22 +214,47 @@ export default function AdminPortal({ walletAddress }) {
     handleProcessMonthlyPayment();
   };
 
-  const handleProcessMonthlyPayment = async () => {
-    try {
-      setPaymentProcessing(true);
-      setPaymentSuccess(false);
-      setMessage('Processing monthly payment...');
+  // Generate fake transaction hash
+  const generateTransactionHash = () => {
+    const chars = '0123456789abcdef';
+    let hash = '0x';
+    for (let i = 0; i < 64; i++) {
+      hash += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return hash;
+  };
 
+  const handleProcessMonthlyPayment = async () => {
+    // Store payment amount for display
+    setPaymentAmount(totalDue);
+
+    // Show overlay and start animation sequence
+    setShowPaymentOverlay(true);
+    setPaymentStage('broadcasting');
+    setPaymentProcessing(true);
+    setPaymentSuccess(false);
+
+    // Stage 1: Broadcasting (1.5 seconds)
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Stage 2: Verifying (1.5 seconds)
+    setPaymentStage('verifying');
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Generate transaction hash
+    const txHash = generateTransactionHash();
+    setTransactionHash(txHash);
+
+    // Stage 3: Success
+    setPaymentStage('success');
+
+    try {
+      // Process the actual payment in context
       const result = await processPayment(totalDue);
 
       if (result.success) {
         setPaymentSuccess(true);
         setMessage(`Payment successful! Transaction ID: ${result.transactionId}`);
-
-        // Auto-hide success after 5 seconds
-        setTimeout(() => {
-          setPaymentSuccess(false);
-        }, 5000);
 
         // Refresh billing data
         await refreshBillingData();
@@ -234,6 +265,11 @@ export default function AdminPortal({ walletAddress }) {
     } finally {
       setPaymentProcessing(false);
     }
+  };
+
+  const closePaymentOverlay = () => {
+    setShowPaymentOverlay(false);
+    setPaymentStage('broadcasting');
   };
 
   const formatAddress = (addr) => {
@@ -1266,6 +1302,160 @@ export default function AdminPortal({ walletAddress }) {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ========== PAYMENT SIMULATION OVERLAY ========== */}
+        {showPaymentOverlay && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center">
+            {/* Blur Backdrop */}
+            <div
+              className="absolute inset-0 bg-slate-900/80"
+              style={{ backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}
+            />
+
+            {/* Payment Card */}
+            <div className="relative bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 rounded-3xl shadow-2xl border border-slate-700/50 p-10 max-w-lg w-full mx-4 overflow-hidden">
+              {/* Animated Background Gradient */}
+              <div
+                className="absolute inset-0 opacity-30"
+                style={{
+                  background: paymentStage === 'success'
+                    ? 'radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.3) 0%, transparent 70%)'
+                    : 'radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.3) 0%, transparent 70%)',
+                  animation: 'pulse 2s ease-in-out infinite'
+                }}
+              />
+
+              <div className="relative text-center">
+                {/* Broadcasting & Verifying Stage */}
+                {paymentStage !== 'success' && (
+                  <>
+                    {/* Rotating Blockchain Icon */}
+                    <div className="mb-8 flex justify-center">
+                      <div
+                        className="w-28 h-28 rounded-full flex items-center justify-center"
+                        style={{
+                          background: 'linear-gradient(135deg, #3B82F6 0%, #8B5CF6 50%, #EC4899 100%)',
+                          animation: 'spin 3s linear infinite',
+                          boxShadow: '0 0 40px rgba(59, 130, 246, 0.5), 0 0 80px rgba(139, 92, 246, 0.3)'
+                        }}
+                      >
+                        <div className="w-24 h-24 bg-slate-900 rounded-full flex items-center justify-center">
+                          <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Status Text */}
+                    <h2 className="text-2xl font-bold text-white mb-3">
+                      {paymentStage === 'broadcasting'
+                        ? 'Broadcasting Transaction...'
+                        : 'Verifying Payment...'}
+                    </h2>
+                    <p className="text-slate-400 mb-6">
+                      {paymentStage === 'broadcasting'
+                        ? 'Broadcasting Transaction to Sarawak MedChain...'
+                        : `Verifying RM ${paymentAmount.toLocaleString()} Payment...`}
+                    </p>
+
+                    {/* Progress Dots */}
+                    <div className="flex justify-center gap-2 mb-6">
+                      <div className={`w-3 h-3 rounded-full ${paymentStage === 'broadcasting' ? 'bg-blue-500 animate-pulse' : 'bg-emerald-500'}`}></div>
+                      <div className={`w-3 h-3 rounded-full ${paymentStage === 'verifying' ? 'bg-blue-500 animate-pulse' : 'bg-slate-600'}`}></div>
+                      <div className="w-3 h-3 rounded-full bg-slate-600"></div>
+                    </div>
+
+                    {/* Amount Being Processed */}
+                    <div className="bg-slate-800/50 rounded-2xl p-5 border border-slate-700/50">
+                      <p className="text-slate-400 text-sm mb-1">Amount</p>
+                      <p className="text-4xl font-black text-white">RM {paymentAmount.toLocaleString()}</p>
+                    </div>
+                  </>
+                )}
+
+                {/* Success Stage */}
+                {paymentStage === 'success' && (
+                  <>
+                    {/* Large Green Checkmark */}
+                    <div className="mb-8 flex justify-center">
+                      <div
+                        className="w-32 h-32 rounded-full flex items-center justify-center bg-gradient-to-br from-emerald-500 to-emerald-600"
+                        style={{
+                          boxShadow: '0 0 60px rgba(16, 185, 129, 0.5), 0 0 100px rgba(16, 185, 129, 0.3)',
+                          animation: 'success-pop 0.5s ease-out'
+                        }}
+                      >
+                        <svg className="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    </div>
+
+                    {/* Success Text */}
+                    <h2 className="text-3xl font-bold text-emerald-400 mb-2">Payment Successful!</h2>
+                    <p className="text-slate-400 mb-6">Your transaction has been confirmed on the blockchain</p>
+
+                    {/* Transaction Details */}
+                    <div className="bg-slate-800/50 rounded-2xl p-5 border border-emerald-500/30 mb-6">
+                      <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-700">
+                        <span className="text-slate-400">Amount Paid</span>
+                        <span className="text-2xl font-bold text-emerald-400">RM {paymentAmount.toLocaleString()}</span>
+                      </div>
+                      <div className="text-left">
+                        <p className="text-slate-400 text-sm mb-2">Transaction Hash</p>
+                        <code className="block bg-slate-900/50 px-4 py-3 rounded-xl text-xs font-mono text-emerald-400 break-all border border-slate-700">
+                          {transactionHash.slice(0, 10)}...{transactionHash.slice(-8)}
+                        </code>
+                      </div>
+                    </div>
+
+                    {/* Updated Balance Info */}
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div className="bg-slate-800/30 rounded-xl p-4 border border-slate-700/50">
+                        <p className="text-slate-400 text-xs mb-1">Amount Due</p>
+                        <p className="text-2xl font-bold text-white">RM 0</p>
+                      </div>
+                      <div className="bg-emerald-500/10 rounded-xl p-4 border border-emerald-500/30">
+                        <p className="text-emerald-400 text-xs mb-1">Credits Added</p>
+                        <p className="text-2xl font-bold text-emerald-400">+{Math.floor(paymentAmount / mcCost)}</p>
+                      </div>
+                    </div>
+
+                    {/* Close Button */}
+                    <button
+                      onClick={closePaymentOverlay}
+                      className="w-full py-4 rounded-xl font-bold text-lg text-white transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                      style={{
+                        backgroundColor: sarawakBlue,
+                        boxShadow: `0 10px 30px ${sarawakBlue}50`
+                      }}
+                    >
+                      Done
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* CSS Animations */}
+            <style>{`
+              @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+              }
+              @keyframes success-pop {
+                0% { transform: scale(0); opacity: 0; }
+                50% { transform: scale(1.2); }
+                100% { transform: scale(1); opacity: 1; }
+              }
+              @keyframes pulse {
+                0%, 100% { opacity: 0.3; }
+                50% { opacity: 0.5; }
+              }
+            `}</style>
           </div>
         )}
     </div>
