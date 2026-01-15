@@ -2,13 +2,33 @@ import { useState, useEffect, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { isVerifiedDoctor, writeRecord, readRecords, getMyBalance, requestEmergencyAccess } from '../utils/contract';
 import { uploadMedicalRecord, checkStatus } from '../utils/api';
+import { useBilling } from '../context/BillingContext';
 
 export default function DoctorPortal({ walletAddress }) {
+  // Use Billing Context
+  const {
+    accountType,
+    currentTier,
+    monthlySubscriptionFee,
+    variableUsageCost,
+    totalOutstandingBalance,
+    mcRate,
+    mcsIssuedThisMonth,
+    subscriptionPaid
+  } = useBilling();
+
   const [isVerified, setIsVerified] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [backendStatus, setBackendStatus] = useState(null);
   const [creditBalance, setCreditBalance] = useState(null);
+
+  // Derived billing values
+  const sarawakBlue = '#007BFF';
+  const tierName = currentTier.name;
+  const baseFee = monthlySubscriptionFee;
+  const mcCost = mcRate;
+  const totalDue = totalOutstandingBalance;
 
   // Upload form state
   const [patientAddress, setPatientAddress] = useState('');
@@ -279,7 +299,112 @@ export default function DoctorPortal({ walletAddress }) {
           </div>
         )}
 
-      {/* MC Issued Success Modal */}
+        {/* ========== MONETIZATION ENGINE - BILLING HEADER (col-span-12) ========== */}
+        <div className="col-span-12 mb-8">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden">
+            {/* Billing Header Bar */}
+            <div className="px-8 py-4 bg-gradient-to-r from-slate-50 to-white border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${sarawakBlue}15` }}>
+                    <svg className="w-5 h-5" style={{ color: sarawakBlue }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900">Billing Summary</h2>
+                    <p className="text-sm text-gray-500">January 2026</p>
+                  </div>
+                </div>
+                <span className={`px-4 py-1.5 rounded-full text-sm font-bold ${
+                  subscriptionPaid
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : 'bg-amber-100 text-amber-700'
+                }`}>
+                  {subscriptionPaid ? 'PAID' : 'DUE'}
+                </span>
+              </div>
+            </div>
+
+            {/* Billing Content */}
+            <div className="px-8 py-6">
+              <div className="grid grid-cols-12 gap-6 items-center">
+                {/* Plan Info */}
+                <div className="col-span-12 md:col-span-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                      accountType === 'Hospital' ? 'bg-sky-100' : 'bg-emerald-100'
+                    }`}>
+                      <svg className={`w-6 h-6 ${accountType === 'Hospital' ? 'text-sky-600' : 'text-emerald-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Plan</p>
+                      <p className="text-lg font-bold text-gray-900">{accountType} Tier</p>
+                      <p className="text-sm text-gray-500">RM {baseFee.toLocaleString()}/mo</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Usage Info */}
+                <div className="col-span-12 md:col-span-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
+                      <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Usage</p>
+                      <p className="text-lg font-bold text-gray-900">
+                        <span className="text-2xl">{mcsIssuedThisMonth}</span> MCs Issued
+                      </p>
+                      <p className="text-sm text-emerald-600 font-medium">RM {variableUsageCost.toLocaleString()}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Total Balance */}
+                <div className="col-span-12 md:col-span-5">
+                  <div className="flex items-center justify-between bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl p-4 border border-slate-200">
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Total Balance</p>
+                      <p className="text-3xl font-black text-gray-900">
+                        RM {totalDue.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Base: RM {baseFee.toLocaleString()} + Usage: RM {variableUsageCost.toLocaleString()}
+                      </p>
+                    </div>
+                    {!subscriptionPaid && (
+                      <button
+                        className="px-6 py-3 rounded-xl font-bold text-white transition-all transform hover:scale-105 shadow-lg"
+                        style={{
+                          backgroundColor: sarawakBlue,
+                          boxShadow: `0 8px 20px ${sarawakBlue}40`
+                        }}
+                        onClick={() => window.location.href = '/admin'}
+                      >
+                        Pay Now
+                      </button>
+                    )}
+                    {subscriptionPaid && (
+                      <div className="flex items-center gap-2 bg-emerald-100 text-emerald-700 px-4 py-2 rounded-xl">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="font-semibold">Paid</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* MC Issued Success Modal */}
       {mcSuccess && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6">
