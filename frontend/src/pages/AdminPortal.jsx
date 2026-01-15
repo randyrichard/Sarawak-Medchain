@@ -170,7 +170,7 @@ export default function AdminPortal({ walletAddress }) {
   };
 
   return (
-    <div className="w-full min-h-full bg-slate-900 px-8 py-6 font-sans tracking-tight">
+    <div className="flex-1 flex-grow w-full min-h-full bg-slate-900 px-12 py-10 font-sans">
         {/* Header - Full Width Enterprise Style */}
         <div className="mb-8 flex flex-col lg:flex-row lg:items-center justify-start gap-x-4 gap-y-2">
           <div className="flex items-center gap-x-4">
@@ -200,7 +200,7 @@ export default function AdminPortal({ walletAddress }) {
         )}
 
         {/* Admin Management Section - 12 Column Grid */}
-        <div className="grid grid-cols-12 gap-6 mb-8">
+        <div className="grid grid-cols-12 gap-10 w-full mb-8">
           {/* Admin Transfer Card */}
           <div className="col-span-12 lg:col-span-4 bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
             <h2 className="text-xl font-semibold text-white mb-4">Admin Transfer</h2>
@@ -315,7 +315,7 @@ export default function AdminPortal({ walletAddress }) {
         </div>
 
         {/* Stats Cards - Full Width 12 Column Grid */}
-        <div className="grid grid-cols-12 gap-6 mb-8">
+        <div className="grid grid-cols-12 gap-10 w-full mb-8">
           {/* Total MCs Issued */}
           <div className="col-span-12 md:col-span-4 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-6 shadow-xl shadow-blue-900/20 border border-blue-500/20">
             <div className="flex items-center justify-start gap-x-4 mb-4">

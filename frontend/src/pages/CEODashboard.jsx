@@ -115,8 +115,8 @@ export default function CEODashboard({ walletAddress }) {
   };
 
   return (
-    <div className={`w-full min-h-full px-8 py-6 font-sans tracking-tight transition-colors duration-300 ${
-      darkMode ? 'bg-slate-900' : ''
+    <div className={`flex-1 flex-grow w-full min-h-full px-12 py-10 font-sans transition-colors duration-300 ${
+      darkMode ? 'bg-slate-900' : 'bg-slate-100'
     }`}>
       {/* Header - Full Width Enterprise Style */}
       <div className="mb-8 flex flex-col lg:flex-row lg:items-center justify-start gap-6">
@@ -154,7 +154,7 @@ export default function CEODashboard({ walletAddress }) {
         ) : (
           <>
             {/* Stats Cards Grid - Full Width 12 Column */}
-            <div className="grid grid-cols-12 gap-6 mb-8">
+            <div className="grid grid-cols-12 gap-10 w-full mb-8">
               <div className="col-span-12 md:col-span-4">
                 <StatCard
                   title="Total MCs Issued"

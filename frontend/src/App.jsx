@@ -167,8 +167,8 @@ function App() {
           </div>
         </aside>
 
-        {/* Main Content - Fluid, Scrolls Independently */}
-        <main className="flex-1 overflow-y-auto bg-slate-50">
+        {/* Main Content - Fluid, Scrolls Independently, Edge-to-Edge */}
+        <main className="flex-1 flex flex-col w-full overflow-y-auto bg-slate-100">
           <Routes>
             <Route path="/" element={<Navigate to="/patient" replace />} />
             <Route path="/patient" element={<PatientPortal walletAddress={walletAddress} />} />

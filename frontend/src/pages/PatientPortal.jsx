@@ -102,128 +102,141 @@ export default function PatientPortal({ walletAddress }) {
   };
 
   return (
-    <div className="w-full min-h-full px-8 py-6 font-sans tracking-tight">
-      {/* Header - Full Width Enterprise Style */}
-      <div className="mb-8 flex flex-col lg:flex-row lg:items-center justify-start gap-6">
-        <div className="flex items-center gap-6">
-          <h1 className="text-3xl lg:text-4xl font-bold text-slate-800">Patient Portal</h1>
-          <span className="flex px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700">
-            Patient View
-          </span>
-        </div>
-        <code className="text-sm bg-slate-200 px-3 py-2 rounded-lg font-mono text-slate-600 lg:ml-auto">
-          {walletAddress}
-        </code>
-      </div>
-
-      {/* Message */}
-      {message && (
-        <div className={`mb-6 p-4 rounded-xl ${
-          message.includes('Error')
-            ? 'bg-red-50 border border-red-200 text-red-700'
-            : 'bg-emerald-50 border border-emerald-200 text-emerald-700'
-        }`}>
-          {message}
-        </div>
-      )}
-
-      {/* Main Grid - 12 Column Layout */}
-      <div className="grid grid-cols-12 gap-6">
-        {/* Access Control Section */}
-        <div className="col-span-12 lg:col-span-4 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-          <h2 className="text-xl font-semibold text-slate-800 mb-4 flex items-center justify-start gap-6">
-            <span>Access Control</span>
-          </h2>
-          <div className="space-y-4">
-            <input
-              type="text"
-              placeholder="Doctor's wallet address (0x...)"
-              value={doctorAddress}
-              onChange={(e) => setDoctorAddress(e.target.value)}
-              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-            />
-            <div className="flex flex-wrap justify-start gap-3">
-              <button
-                onClick={handleGrantAccess}
-                disabled={loading || !doctorAddress}
-                className="flex-1 min-w-[120px] px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white rounded-lg font-medium transition-colors"
-              >
-                Grant Access
-              </button>
-              <button
-                onClick={handleRevokeAccess}
-                disabled={loading || !doctorAddress}
-                className="flex-1 min-w-[120px] px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-slate-300 text-white rounded-lg font-medium transition-colors"
-              >
-                Revoke Access
-              </button>
-              <button
-                onClick={handleCheckAccess}
-                disabled={loading || !doctorAddress}
-                className="flex-1 min-w-[120px] px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-lg font-medium transition-colors"
-              >
-                Check Access
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Medical Records Section */}
-        <div className="col-span-12 lg:col-span-8 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-          <div className="flex items-center justify-start gap-6 mb-4">
-            <h2 className="text-xl font-semibold text-slate-800">My Medical Records</h2>
-            <span className="px-3 py-1 rounded-full text-sm font-medium bg-slate-100 text-slate-600">
-              {records.length} records
+    <div className="flex-1 flex-grow w-full min-h-full bg-slate-100 font-sans">
+      {/* Full-Width Content Area - No max-width constraints */}
+      <div className="flex-1 w-full px-12 py-10">
+        {/* Top Bar - Stretches Full Width */}
+        <div className="mb-10 flex items-center justify-between">
+          <div className="flex items-center gap-5">
+            <h1 className="text-4xl font-bold text-slate-900 tracking-tight">Patient Portal</h1>
+            <span className="px-4 py-1.5 rounded-full text-sm font-semibold bg-sarawak-blue-100 text-sarawak-blue-700">
+              Patient View
             </span>
-            <button
-              onClick={loadRecords}
-              disabled={loading}
-              className="ml-auto px-4 py-2 bg-sarawak-blue-500 hover:bg-sarawak-blue-600 disabled:bg-slate-300 text-white rounded-lg font-medium transition-colors"
-            >
-              Refresh
-            </button>
+          </div>
+          <code className="text-sm bg-white px-5 py-3 rounded-2xl font-mono text-slate-600 shadow-sm">
+            {walletAddress}
+          </code>
+        </div>
+
+        {/* Message */}
+        {message && (
+          <div className={`mb-8 p-5 rounded-2xl ${
+            message.includes('Error')
+              ? 'bg-red-50 border border-red-200 text-red-700'
+              : 'bg-emerald-50 border border-emerald-200 text-emerald-700'
+          }`}>
+            {message}
+          </div>
+        )}
+
+        {/* Fluid Grid - 12 Column Layout, Full Width */}
+        <div className="grid grid-cols-12 gap-10 w-full">
+          {/* Access Control Section - col-span-4 */}
+          <div className="col-span-12 lg:col-span-4 bg-white rounded-3xl shadow-md p-8">
+            <h2 className="text-xl font-bold text-slate-900 mb-6">
+              Access Control
+            </h2>
+            <div className="space-y-5">
+              <div>
+                <label className="block text-sm font-medium text-slate-500 mb-2">Doctor's Wallet Address</label>
+                <input
+                  type="text"
+                  placeholder="0x..."
+                  value={doctorAddress}
+                  onChange={(e) => setDoctorAddress(e.target.value)}
+                  className="w-full px-5 py-4 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-sarawak-blue-500 focus:border-sarawak-blue-500 outline-none transition-all bg-slate-50 text-slate-800"
+                />
+              </div>
+              <div className="space-y-3 pt-2">
+                <button
+                  onClick={handleGrantAccess}
+                  disabled={loading || !doctorAddress}
+                  className="w-full px-6 py-4 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-100 disabled:text-slate-400 text-white rounded-2xl font-semibold transition-all duration-200"
+                >
+                  Grant Access
+                </button>
+                <button
+                  onClick={handleRevokeAccess}
+                  disabled={loading || !doctorAddress}
+                  className="w-full px-6 py-4 bg-red-500 hover:bg-red-600 disabled:bg-slate-100 disabled:text-slate-400 text-white rounded-2xl font-semibold transition-all duration-200"
+                >
+                  Revoke Access
+                </button>
+                <button
+                  onClick={handleCheckAccess}
+                  disabled={loading || !doctorAddress}
+                  className="w-full px-6 py-4 bg-slate-700 hover:bg-slate-800 disabled:bg-slate-100 disabled:text-slate-400 text-white rounded-2xl font-semibold transition-all duration-200"
+                >
+                  Check Access
+                </button>
+              </div>
+            </div>
           </div>
 
-          {records.length === 0 ? (
-            <p className="text-slate-500 py-8 text-center">No medical records found</p>
-          ) : (
-            <div className="space-y-4 max-h-[500px] overflow-y-auto">
-              {records.map((record, index) => (
-                <div key={index} className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div>
-                      <p className="text-xs text-slate-500 uppercase tracking-wide">Date</p>
-                      <p className="text-sm font-medium text-slate-800">{formatTimestamp(record.timestamp)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500 uppercase tracking-wide">Doctor</p>
-                      <code className="text-xs bg-slate-200 px-2 py-1 rounded">{record.doctorAddress.slice(0, 10)}...</code>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500 uppercase tracking-wide">IPFS Hash</p>
-                      <code className="text-xs bg-slate-200 px-2 py-1 rounded">{record.ipfsHash.slice(0, 12)}...</code>
-                    </div>
-                  </div>
-                  <div className="flex flex-col sm:flex-row justify-start gap-3">
-                    <input
-                      type="text"
-                      placeholder="Enter encryption key"
-                      value={encryptionKeys[record.ipfsHash] || ''}
-                      onChange={(e) => handleKeyChange(record.ipfsHash, e.target.value)}
-                      className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
-                    <button
-                      onClick={() => handleViewRecord(record.ipfsHash)}
-                      disabled={loading || !encryptionKeys[record.ipfsHash]}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-lg font-medium text-sm transition-colors"
-                    >
-                      View Record
-                    </button>
-                  </div>
-                </div>
-              ))}
+          {/* Medical Records Section - col-span-8 */}
+          <div className="col-span-12 lg:col-span-8 bg-white rounded-3xl shadow-md p-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <h2 className="text-xl font-bold text-slate-900">My Medical Records</h2>
+                <span className="px-4 py-1.5 rounded-full text-sm font-semibold bg-slate-100 text-slate-600">
+                  {records.length} records
+                </span>
+              </div>
+              <button
+                onClick={loadRecords}
+                disabled={loading}
+                className="px-6 py-3 bg-sarawak-blue-500 hover:bg-sarawak-blue-600 disabled:bg-slate-100 disabled:text-slate-400 text-white rounded-2xl font-semibold transition-all duration-200"
+              >
+                Refresh
+              </button>
             </div>
-          )}
+
+            {records.length === 0 ? (
+              <div className="flex items-center justify-center py-20 text-slate-400">
+                <div className="text-center">
+                  <div className="text-5xl mb-4">📋</div>
+                  <p className="text-lg">No medical records found</p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4 max-h-[600px] overflow-y-auto">
+                {records.map((record, index) => (
+                  <div key={index} className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                    <div className="grid grid-cols-3 gap-6 mb-5">
+                      <div>
+                        <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1">Date</p>
+                        <p className="text-sm font-medium text-slate-700">{formatTimestamp(record.timestamp)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1">Doctor</p>
+                        <code className="text-xs bg-slate-200 px-3 py-1.5 rounded-lg text-slate-600">{record.doctorAddress.slice(0, 10)}...</code>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1">IPFS Hash</p>
+                        <code className="text-xs bg-slate-200 px-3 py-1.5 rounded-lg text-slate-600">{record.ipfsHash.slice(0, 12)}...</code>
+                      </div>
+                    </div>
+                    <div className="flex gap-4">
+                      <input
+                        type="text"
+                        placeholder="Enter encryption key"
+                        value={encryptionKeys[record.ipfsHash] || ''}
+                        onChange={(e) => handleKeyChange(record.ipfsHash, e.target.value)}
+                        className="flex-1 px-5 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-sarawak-blue-500 outline-none bg-white"
+                      />
+                      <button
+                        onClick={() => handleViewRecord(record.ipfsHash)}
+                        disabled={loading || !encryptionKeys[record.ipfsHash]}
+                        className="px-6 py-3 bg-sarawak-blue-500 hover:bg-sarawak-blue-600 disabled:bg-slate-100 disabled:text-slate-400 text-white rounded-xl font-semibold text-sm transition-all duration-200"
+                      >
+                        View Record
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
