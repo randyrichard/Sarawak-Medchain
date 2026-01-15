@@ -1,11 +1,95 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
-import { connectWallet } from './utils/contract';
+import { BrowserRouter, Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { connectWallet, getMyBalance } from './utils/contract';
 import PatientPortal from './pages/PatientPortal';
 import DoctorPortal from './pages/DoctorPortal';
 import AdminPortal from './pages/AdminPortal';
 import CEODashboard from './pages/CEODashboard';
 import './App.css';
+
+// Credit Balance Sidebar Component (needs to be inside Router)
+function CreditBalanceSidebar({ walletAddress }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [creditBalance, setCreditBalance] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const isOnDoctorRoute = location.pathname === '/doctor';
+  const lowBalanceThreshold = 5;
+  const isLowBalance = creditBalance !== null && creditBalance <= lowBalanceThreshold;
+
+  useEffect(() => {
+    if (isOnDoctorRoute && walletAddress) {
+      fetchCreditBalance();
+    }
+  }, [isOnDoctorRoute, walletAddress]);
+
+  const fetchCreditBalance = async () => {
+    try {
+      setLoading(true);
+      const balance = await getMyBalance();
+      setCreditBalance(balance);
+    } catch (error) {
+      console.error('Error fetching credit balance:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTopUp = () => {
+    navigate('/admin');
+  };
+
+  if (!isOnDoctorRoute) return null;
+
+  return (
+    <div className="p-4 border-t border-slate-800">
+      <div className={`rounded-xl p-4 ${
+        isLowBalance
+          ? 'bg-gradient-to-r from-amber-600 to-amber-700'
+          : 'bg-gradient-to-r from-emerald-600 to-emerald-700'
+      }`}>
+        <div className="flex items-center justify-between mb-3">
+          <p className={`text-xs font-semibold uppercase tracking-wide ${
+            isLowBalance ? 'text-amber-200' : 'text-emerald-200'
+          }`}>
+            Credit Balance
+          </p>
+          {isLowBalance && (
+            <span className="px-2 py-0.5 bg-amber-500/30 rounded-full text-xs font-bold text-amber-100">
+              LOW
+            </span>
+          )}
+        </div>
+        <div className="flex items-end justify-between">
+          <div>
+            <p className="text-3xl font-black text-white">
+              {loading ? '...' : creditBalance !== null ? creditBalance : '--'}
+            </p>
+            <p className={`text-xs mt-1 ${isLowBalance ? 'text-amber-200/70' : 'text-emerald-200/70'}`}>
+              credits available
+            </p>
+          </div>
+          <button
+            onClick={handleTopUp}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              isLowBalance
+                ? 'bg-white text-amber-700 hover:bg-amber-100'
+                : 'bg-white/20 text-white hover:bg-white/30'
+            }`}
+          >
+            Top Up
+          </button>
+        </div>
+        {isLowBalance && (
+          <p className="text-xs text-amber-200/80 mt-3 pt-3 border-t border-amber-500/30">
+            RM1.00 per MC issued
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function App() {
   const [walletAddress, setWalletAddress] = useState(null);
@@ -131,6 +215,9 @@ function App() {
               </li>
             </ul>
           </nav>
+
+          {/* Credit Balance - Shows only on Doctor Portal */}
+          <CreditBalanceSidebar walletAddress={walletAddress} />
 
           {/* Verified Badge */}
           <div className="p-4 border-t border-slate-800">
