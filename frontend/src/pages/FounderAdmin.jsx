@@ -78,6 +78,21 @@ const mockHospitals = [
   { id: 6, name: 'Klinik Kesihatan Sibu', city: 'Sibu', tier: 'Clinic', monthlyFee: 2000, paid: true, mcs: 28 },
 ];
 
+// High-Value Hospital Leads (from Request Access modal submissions)
+const hospitalLeads = [
+  { id: 1, facilityName: 'KPJ Kuching Specialist Hospital', facilityType: 'Private Hospital', estimatedMCs: 850, decisionMaker: 'CEO', email: 'ceo@kpjkuching.com', submittedAt: '2026-01-15' },
+  { id: 2, facilityName: 'Normah Medical Specialist Centre', facilityType: 'Private Specialist', estimatedMCs: 620, decisionMaker: 'Hospital Director', email: 'director@normah.com', submittedAt: '2026-01-14' },
+  { id: 3, facilityName: 'Rejang Medical Centre', facilityType: 'Private Hospital', estimatedMCs: 480, decisionMaker: 'Head of IT', email: 'it@rejangmedical.com', submittedAt: '2026-01-14' },
+  { id: 4, facilityName: 'Borneo Medical Centre', facilityType: 'Private Hospital', estimatedMCs: 720, decisionMaker: 'CEO', email: 'ceo@borneomedical.com', submittedAt: '2026-01-13' },
+  { id: 5, facilityName: 'Timberland Medical Centre', facilityType: 'Medical Centre', estimatedMCs: 390, decisionMaker: 'Operations Manager', email: 'ops@timberland.com', submittedAt: '2026-01-12' },
+  { id: 6, facilityName: 'Columbia Asia Hospital Miri', facilityType: 'Private Hospital', estimatedMCs: 550, decisionMaker: 'Hospital Director', email: 'director@columbiaasia.com', submittedAt: '2026-01-11' },
+];
+
+// Calculate Lead Value: (Monthly MCs * RM1.00) + RM10,000 subscription
+const calculateLeadValue = (estimatedMCs) => {
+  return (estimatedMCs * 1.00) + 10000;
+};
+
 // Sarawak Map SVG Component
 function SarawakMap({ clients }) {
   const cities = {
@@ -937,6 +952,161 @@ export default function FounderAdmin() {
             <span className="text-sm font-medium" style={{ color: theme.success }}>
               Listening for blockchain events...
             </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Lead Pipeline Section */}
+      <div
+        className="rounded-2xl p-6 border mb-8"
+        style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}
+      >
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-bold" style={{ color: theme.textPrimary }}>
+              High-Value Hospital Leads
+            </h2>
+            <p className="text-sm" style={{ color: theme.textSecondary }}>
+              Pipeline from Request Access submissions
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div
+              className="px-4 py-2 rounded-xl"
+              style={{ backgroundColor: `${theme.success}20` }}
+            >
+              <p className="text-sm font-bold" style={{ color: theme.success }}>
+                Total Pipeline: RM {hospitalLeads.reduce((sum, lead) => sum + calculateLeadValue(lead.estimatedMCs), 0).toLocaleString()}/mo
+              </p>
+            </div>
+            <div
+              className="px-3 py-1 rounded-full text-sm font-medium"
+              style={{ backgroundColor: `${theme.accent}20`, color: theme.accent }}
+            >
+              {hospitalLeads.length} Leads
+            </div>
+          </div>
+        </div>
+
+        {/* Leads Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${theme.border}` }}>
+                <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: theme.textSecondary }}>Facility Name</th>
+                <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: theme.textSecondary }}>Facility Type</th>
+                <th className="text-center py-3 px-4 text-sm font-semibold" style={{ color: theme.textSecondary }}>Est. Monthly MCs</th>
+                <th className="text-center py-3 px-4 text-sm font-semibold" style={{ color: theme.textSecondary }}>Lead Value (MRR)</th>
+                <th className="text-center py-3 px-4 text-sm font-semibold" style={{ color: theme.textSecondary }}>Decision Maker</th>
+                <th className="text-center py-3 px-4 text-sm font-semibold" style={{ color: theme.textSecondary }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {hospitalLeads.map((lead, index) => {
+                const leadValue = calculateLeadValue(lead.estimatedMCs);
+                return (
+                  <tr
+                    key={lead.id}
+                    className="transition-all hover:opacity-80"
+                    style={{
+                      backgroundColor: index % 2 === 0 ? 'transparent' : `${theme.bg}50`,
+                      borderBottom: `1px solid ${theme.border}30`
+                    }}
+                  >
+                    <td className="py-4 px-4">
+                      <div>
+                        <p className="font-semibold text-sm" style={{ color: theme.textPrimary }}>{lead.facilityName}</p>
+                        <p className="text-xs" style={{ color: theme.textMuted }}>{lead.email}</p>
+                      </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      <span
+                        className="px-3 py-1 rounded-full text-xs font-medium"
+                        style={{
+                          backgroundColor: lead.facilityType === 'Private Hospital' ? `${theme.accent}20` :
+                                          lead.facilityType === 'Private Specialist' ? `${theme.purple}20` :
+                                          `${theme.warning}20`,
+                          color: lead.facilityType === 'Private Hospital' ? theme.accent :
+                                 lead.facilityType === 'Private Specialist' ? theme.purple :
+                                 theme.warning
+                        }}
+                      >
+                        {lead.facilityType}
+                      </span>
+                    </td>
+                    <td className="py-4 px-4 text-center">
+                      <p className="font-bold" style={{ color: theme.textPrimary }}>{lead.estimatedMCs.toLocaleString()}</p>
+                      <p className="text-xs" style={{ color: theme.textMuted }}>MCs/month</p>
+                    </td>
+                    <td className="py-4 px-4 text-center">
+                      <p className="text-lg font-black" style={{ color: theme.success }}>
+                        RM {leadValue.toLocaleString()}
+                      </p>
+                      <p className="text-xs" style={{ color: theme.textMuted }}>
+                        (RM10k + {lead.estimatedMCs} MCs)
+                      </p>
+                    </td>
+                    <td className="py-4 px-4 text-center">
+                      <span
+                        className="px-2 py-1 rounded text-xs font-medium"
+                        style={{ backgroundColor: `${theme.success}20`, color: theme.success }}
+                      >
+                        {lead.decisionMaker}
+                      </span>
+                    </td>
+                    <td className="py-4 px-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          className="px-3 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-80"
+                          style={{ backgroundColor: theme.accent, color: theme.textPrimary }}
+                          onClick={() => window.location.href = `mailto:${lead.email}?subject=Sarawak MedChain Partnership`}
+                        >
+                          Contact {lead.decisionMaker.split(' ')[0]}
+                        </button>
+                        <button
+                          className="px-3 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-80"
+                          style={{ backgroundColor: theme.purple, color: theme.textPrimary }}
+                          onClick={() => alert(`Generating blockchain node for ${lead.facilityName}...`)}
+                        >
+                          Generate Node
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pipeline Summary */}
+        <div
+          className="mt-6 pt-6 grid grid-cols-4 gap-4"
+          style={{ borderTop: `1px solid ${theme.border}` }}
+        >
+          <div className="text-center">
+            <p className="text-2xl font-black" style={{ color: theme.accent }}>
+              {hospitalLeads.filter(l => l.facilityType === 'Private Hospital').length}
+            </p>
+            <p className="text-xs" style={{ color: theme.textMuted }}>Private Hospitals</p>
+          </div>
+          <div className="text-center">
+            <p className="text-2xl font-black" style={{ color: theme.purple }}>
+              {hospitalLeads.filter(l => l.facilityType === 'Private Specialist').length}
+            </p>
+            <p className="text-xs" style={{ color: theme.textMuted }}>Specialists</p>
+          </div>
+          <div className="text-center">
+            <p className="text-2xl font-black" style={{ color: theme.warning }}>
+              {hospitalLeads.reduce((sum, l) => sum + l.estimatedMCs, 0).toLocaleString()}
+            </p>
+            <p className="text-xs" style={{ color: theme.textMuted }}>Total Est. MCs</p>
+          </div>
+          <div className="text-center">
+            <p className="text-2xl font-black" style={{ color: theme.success }}>
+              RM {hospitalLeads.reduce((sum, l) => sum + calculateLeadValue(l.estimatedMCs), 0).toLocaleString()}
+            </p>
+            <p className="text-xs" style={{ color: theme.textMuted }}>Total Pipeline MRR</p>
           </div>
         </div>
       </div>
