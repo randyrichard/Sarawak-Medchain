@@ -375,10 +375,14 @@ export default function DoctorPortal({ walletAddress }) {
 
               <button
                 type="submit"
-                disabled={loading || !isVerified || !selectedFile}
-                className="w-full px-6 py-4 bg-sarawak-blue-500 hover:bg-sarawak-blue-600 disabled:bg-slate-100 disabled:text-slate-400 text-white rounded-2xl font-semibold transition-all duration-200"
+                disabled={loading || !isVerified || !selectedFile || creditBalance <= 0}
+                className={`w-full px-6 py-4 rounded-2xl font-semibold transition-all duration-200 ${
+                  creditBalance <= 0
+                    ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                    : 'bg-sarawak-blue-500 hover:bg-sarawak-blue-600 disabled:bg-slate-100 disabled:text-slate-400 text-white'
+                }`}
               >
-                {loading ? 'Uploading...' : 'Upload and Encrypt'}
+                {loading ? 'Uploading...' : creditBalance <= 0 ? 'Top Up Required (RM1/MC)' : 'Issue MC'}
               </button>
             </form>
           </div>

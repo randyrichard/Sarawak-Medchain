@@ -47,6 +47,7 @@ export default function AdminPortal({ walletAddress }) {
   const meteredUsageCost = totalMCs * mcCost;
   const totalDue = baseFee + meteredUsageCost - baseFeePayment;
   const baseFeeDetected = baseFeePayment >= baseFee;
+  const isSubscriptionOverdue = !baseFeeDetected && totalDue > 0;
 
   useEffect(() => {
     fetchData();
@@ -198,6 +199,29 @@ export default function AdminPortal({ walletAddress }) {
 
   return (
     <div className="flex-1 flex-grow w-full min-h-full bg-slate-900 px-12 py-10 font-sans">
+        {/* Overdue Subscription Banner */}
+        {isSubscriptionOverdue && (
+          <div className="mb-6 bg-red-900/30 border border-red-500/40 rounded-xl px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-red-300 font-semibold">Monthly Subscription Overdue</p>
+                <p className="text-red-400/80 text-sm">Your {tierName} subscription (RM {baseFee.toLocaleString()}/mo) is pending payment</p>
+              </div>
+            </div>
+            <button
+              onClick={() => handlePayNow(1)}
+              className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition-all shadow-lg shadow-red-500/25"
+            >
+              Pay Now
+            </button>
+          </div>
+        )}
+
         {/* Header - Full Width Enterprise Style */}
         <div className="mb-8 flex flex-col lg:flex-row lg:items-center justify-start gap-x-4 gap-y-2">
           <div className="flex items-center gap-x-4">
