@@ -428,7 +428,7 @@ function App() {
         </aside>
 
         {/* Main Content - Fluid, Scrolls Independently, Edge-to-Edge */}
-        <main className="flex-1 flex flex-col w-full overflow-y-auto bg-slate-100">
+        <main className="flex-1 flex flex-col w-full overflow-y-auto">
           {/* Sticky Credit Balance Header */}
           <StickyBalanceHeader walletAddress={walletAddress} />
 

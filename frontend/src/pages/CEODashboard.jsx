@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getAllHospitalBalances } from '../utils/contract';
 import { useBilling } from '../context/BillingContext';
 
@@ -19,6 +19,32 @@ const generateFluSeasonData = () => {
       previousYear: Math.max(15, baseValue - 20 + Math.floor(Math.random() * 20)),
       revenue: mcs * 1, // RM1 per MC
       prevRevenue: Math.max(15, baseValue - 20 + Math.floor(Math.random() * 20))
+    };
+  });
+};
+
+// Revenue Forecast Data Generator
+// Base: RM10,000/mo (Hospital) or RM2,000/mo (Clinic) + RM1.00/MC usage
+const generateRevenueForecastData = (facilityType, currentMCs) => {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const baseSubscription = facilityType === 'Hospital' ? 10000 : 2000;
+
+  return months.map((month, index) => {
+    // Project MC growth with seasonal variations
+    let mcGrowthFactor = 1 + (index * 0.03); // 3% growth per month
+    if (index >= 9 || index <= 1) mcGrowthFactor *= 1.4; // Monsoon flu spike
+    if (index >= 5 && index <= 7) mcGrowthFactor *= 1.15; // Mid-year moderate
+
+    const projectedMCs = Math.round(currentMCs * mcGrowthFactor);
+    const usageRevenue = projectedMCs * 1; // RM1 per MC
+    const totalRevenue = baseSubscription + usageRevenue;
+
+    return {
+      month,
+      baseSubscription,
+      usageRevenue,
+      totalRevenue,
+      projectedMCs
     };
   });
 };
@@ -84,6 +110,7 @@ export default function CEODashboard({ walletAddress }) {
     revenue: 0
   });
   const [fluData, setFluData] = useState([]);
+  const [forecastData, setForecastData] = useState([]);
   const [hospitalBalances, setHospitalBalances] = useState([]);
 
   // Payment processing state
@@ -111,6 +138,12 @@ export default function CEODashboard({ walletAddress }) {
     fetchDashboardData();
     setFluData(generateFluSeasonData());
   }, []);
+
+  // Update forecast data when facility type or MCs change
+  useEffect(() => {
+    const currentMCs = mcsIssuedThisMonth || 100; // Default to 100 if no data
+    setForecastData(generateRevenueForecastData(facilityType, currentMCs));
+  }, [facilityType, mcsIssuedThisMonth]);
 
   const fetchDashboardData = async () => {
     try {
@@ -682,6 +715,183 @@ export default function CEODashboard({ walletAddress }) {
                   trend={15}
                   darkMode={darkMode}
                 />
+              </div>
+            </div>
+
+            {/* Revenue Forecast Chart - col-span-8 with Soft Green Gradient */}
+            <div className="grid grid-cols-12 gap-8 mb-8">
+              <div className={`col-span-12 xl:col-span-8 rounded-3xl p-8 shadow-lg ${
+                darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'
+              }`}>
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      Revenue Forecast
+                    </h2>
+                    <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      12-month projection: Base RM {facilityType === 'Hospital' ? '10,000' : '2,000'}/mo + RM1/MC
+                    </p>
+                  </div>
+                  <div className={`px-4 py-2 rounded-xl text-sm font-semibold ${
+                    darkMode ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'
+                  }`}>
+                    {facilityType}
+                  </div>
+                </div>
+
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={forecastData}>
+                      <defs>
+                        <linearGradient id="greenGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10B981" stopOpacity={0.4}/>
+                          <stop offset="50%" stopColor="#10B981" stopOpacity={0.15}/>
+                          <stop offset="95%" stopColor="#10B981" stopOpacity={0.02}/>
+                        </linearGradient>
+                        <linearGradient id="blueGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.02}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke={darkMode ? '#374151' : '#e5e7eb'}
+                        vertical={false}
+                      />
+                      <XAxis
+                        dataKey="month"
+                        stroke={darkMode ? '#9ca3af' : '#6b7280'}
+                        tick={{ fill: darkMode ? '#9ca3af' : '#6b7280', fontSize: 12 }}
+                        axisLine={{ stroke: darkMode ? '#4b5563' : '#d1d5db' }}
+                      />
+                      <YAxis
+                        stroke={darkMode ? '#9ca3af' : '#6b7280'}
+                        tick={{ fill: darkMode ? '#9ca3af' : '#6b7280', fontSize: 12 }}
+                        tickFormatter={(value) => `RM ${(value/1000).toFixed(0)}k`}
+                        axisLine={{ stroke: darkMode ? '#4b5563' : '#d1d5db' }}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: darkMode ? '#1f2937' : '#ffffff',
+                          border: `1px solid ${darkMode ? '#374151' : '#e5e7eb'}`,
+                          borderRadius: '12px',
+                          boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                          padding: '12px 16px'
+                        }}
+                        formatter={(value, name) => {
+                          const labels = {
+                            totalRevenue: 'Total Revenue',
+                            baseSubscription: 'Base Subscription',
+                            usageRevenue: 'MC Usage Revenue'
+                          };
+                          return [`RM ${value.toLocaleString()}`, labels[name] || name];
+                        }}
+                        labelStyle={{ color: darkMode ? '#fff' : '#111', fontWeight: 'bold', marginBottom: '8px' }}
+                      />
+                      <Legend
+                        wrapperStyle={{ paddingTop: '20px' }}
+                        formatter={(value) => {
+                          const labels = {
+                            totalRevenue: 'Total Revenue',
+                            baseSubscription: 'Base Fee',
+                            usageRevenue: 'MC Usage'
+                          };
+                          return <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>{labels[value] || value}</span>;
+                        }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="totalRevenue"
+                        name="totalRevenue"
+                        stroke="#10B981"
+                        strokeWidth={3}
+                        fill="url(#greenGradient)"
+                        dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
+                        activeDot={{ r: 8, stroke: '#10B981', strokeWidth: 2 }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="baseSubscription"
+                        name="baseSubscription"
+                        stroke="#3B82F6"
+                        strokeWidth={2}
+                        fill="url(#blueGradient)"
+                        strokeDasharray="5 5"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Forecast Summary */}
+                <div className={`mt-6 pt-6 border-t grid grid-cols-3 gap-4 ${
+                  darkMode ? 'border-gray-700' : 'border-gray-100'
+                }`}>
+                  <div className="text-center">
+                    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Base Fee</p>
+                    <p className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      RM {(facilityType === 'Hospital' ? 10000 : 2000).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Projected MC Revenue</p>
+                    <p className="text-xl font-bold text-emerald-500">
+                      RM {(forecastData[11]?.usageRevenue || 0).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Year-End Total</p>
+                    <p className="text-xl font-bold text-emerald-500">
+                      RM {(forecastData[11]?.totalRevenue || 0).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Stats - col-span-4 */}
+              <div className="col-span-12 xl:col-span-4 space-y-4">
+                <div className={`rounded-2xl p-6 ${
+                  darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white shadow-lg'
+                }`}>
+                  <h3 className={`text-lg font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    Forecast Highlights
+                  </h3>
+                  <div className="space-y-4">
+                    <div className={`flex items-center justify-between p-3 rounded-xl ${
+                      darkMode ? 'bg-emerald-500/10' : 'bg-emerald-50'
+                    }`}>
+                      <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Peak Month</span>
+                      <span className="font-bold text-emerald-500">December</span>
+                    </div>
+                    <div className={`flex items-center justify-between p-3 rounded-xl ${
+                      darkMode ? 'bg-sky-500/10' : 'bg-sky-50'
+                    }`}>
+                      <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Growth Rate</span>
+                      <span className="font-bold text-sky-500">+3%/mo</span>
+                    </div>
+                    <div className={`flex items-center justify-between p-3 rounded-xl ${
+                      darkMode ? 'bg-amber-500/10' : 'bg-amber-50'
+                    }`}>
+                      <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Flu Season Spike</span>
+                      <span className="font-bold text-amber-500">+40%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={`rounded-2xl p-6 ${
+                  darkMode
+                    ? 'bg-gradient-to-br from-emerald-900/30 to-slate-800 border border-emerald-700/30'
+                    : 'bg-gradient-to-br from-emerald-50 to-white border border-emerald-100 shadow-lg'
+                }`}>
+                  <p className={`text-sm font-medium ${darkMode ? 'text-emerald-400' : 'text-emerald-700'}`}>
+                    Annual Revenue Target
+                  </p>
+                  <p className="text-3xl font-black text-emerald-500 mt-2">
+                    RM {((facilityType === 'Hospital' ? 10000 : 2000) * 12 + (mcsIssuedThisMonth * 12 * 1.2)).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </p>
+                  <p className={`text-xs mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Based on current trajectory
+                  </p>
+                </div>
               </div>
             </div>
 
