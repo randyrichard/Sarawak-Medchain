@@ -13,6 +13,23 @@ import {
 } from '../utils/contract';
 import { useBilling } from '../context/BillingContext';
 
+// Doctor Performance Leaderboard Data
+const generateDoctorPerformanceData = () => {
+  const doctors = [
+    { id: 1, name: 'Dr. Ahmad Razak', department: 'General Medicine', mcsIssued: 47 },
+    { id: 2, name: 'Dr. Sarah Lim', department: 'Pediatrics', mcsIssued: 38 },
+    { id: 3, name: 'Dr. James Wong', department: 'Emergency', mcsIssued: 31 },
+    { id: 4, name: 'Dr. Fatimah Hassan', department: 'Internal Medicine', mcsIssued: 24 },
+    { id: 5, name: 'Dr. Kumar Pillai', department: 'Orthopedics', mcsIssued: 16 },
+  ];
+
+  return doctors.sort((a, b) => b.mcsIssued - a.mcsIssued).map((doc, index) => ({
+    ...doc,
+    rank: index + 1,
+    revenue: doc.mcsIssued * 1,
+  }));
+};
+
 export default function AdminPortal({ walletAddress }) {
   // Use Billing Context
   const {
@@ -34,6 +51,7 @@ export default function AdminPortal({ walletAddress }) {
   const [totalCredits, setTotalCredits] = useState(0);
   const [totalOwed, setTotalOwed] = useState(0);
   const [hospitalBalances, setHospitalBalances] = useState([]);
+  const [doctorPerformance, setDoctorPerformance] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Admin state
@@ -81,6 +99,7 @@ export default function AdminPortal({ walletAddress }) {
 
   useEffect(() => {
     fetchData();
+    setDoctorPerformance(generateDoctorPerformanceData());
   }, [walletAddress]);
 
   const fetchData = async () => {
@@ -735,6 +754,173 @@ export default function AdminPortal({ walletAddress }) {
                 {isSubscriptionOverdue ? 'Pay Overdue Balance' : 'Pay Now'}
               </button>
             )}
+          </div>
+        </div>
+
+        {/* Doctor Performance Leaderboard Section */}
+        <div className="grid grid-cols-12 gap-6 w-full mb-8">
+          {/* Doctor Performance Leaderboard - col-span-4 */}
+          <div className="col-span-12 lg:col-span-4">
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 overflow-hidden h-full">
+              {/* Leaderboard Header */}
+              <div className="px-6 py-4 border-b border-slate-700/50 bg-slate-800/80">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Doctor Leaderboard</h3>
+                    <p className="text-xs mt-0.5 text-slate-400">Top performers this month</p>
+                  </div>
+                  <div className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-400">
+                    {doctorPerformance.length} Doctors
+                  </div>
+                </div>
+              </div>
+
+              {/* Leaderboard Table */}
+              <div className="p-4">
+                <div className="space-y-2">
+                  {doctorPerformance.map((doctor, index) => {
+                    const monthlyGoal = facilityType === 'Hospital' ? 10000 : 2000;
+                    const progressPercent = Math.min(100, (doctor.revenue / monthlyGoal) * 100);
+
+                    return (
+                      <div
+                        key={doctor.id}
+                        className={`relative p-4 rounded-2xl transition-all cursor-pointer hover:bg-slate-700/50 ${
+                          index === 0 ? 'bg-amber-500/10 border border-amber-500/30' : ''
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          {/* Rank Badge */}
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                            index === 0
+                              ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-lg shadow-amber-500/30'
+                              : index === 1
+                                ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-white'
+                                : index === 2
+                                  ? 'bg-gradient-to-br from-amber-600 to-amber-800 text-white'
+                                  : 'bg-slate-700 text-slate-400'
+                          }`}>
+                            {doctor.rank}
+                          </div>
+
+                          {/* Doctor Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold text-sm truncate text-white">
+                                {doctor.name}
+                              </p>
+                              {index === 0 && (
+                                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-amber-400 to-amber-600 text-white shadow-sm">
+                                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                  </svg>
+                                  TOP
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-400">{doctor.department}</p>
+                          </div>
+
+                          {/* Revenue */}
+                          <div className="text-right">
+                            <p className={`font-bold ${index === 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                              RM {doctor.revenue}
+                            </p>
+                            <p className="text-xs text-slate-500">{doctor.mcsIssued} MCs</p>
+                          </div>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="mt-3">
+                          <div className="h-1.5 rounded-full overflow-hidden bg-slate-700">
+                            <div
+                              className={`h-full rounded-full transition-all ${
+                                index === 0
+                                  ? 'bg-gradient-to-r from-amber-400 to-amber-600'
+                                  : 'bg-gradient-to-r from-emerald-400 to-emerald-600'
+                              }`}
+                              style={{ width: `${progressPercent}%` }}
+                            />
+                          </div>
+                          <p className="text-xs mt-1 text-slate-500">
+                            {progressPercent.toFixed(1)}% of RM{monthlyGoal.toLocaleString()} goal
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Leaderboard Footer */}
+              <div className="px-6 py-4 border-t border-slate-700/50 bg-slate-800/30">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-slate-400">Total Revenue</p>
+                    <p className="text-lg font-bold text-emerald-400">
+                      RM {doctorPerformance.reduce((sum, d) => sum + d.revenue, 0).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-medium text-slate-400">Total MCs</p>
+                    <p className="text-lg font-bold text-white">
+                      {doctorPerformance.reduce((sum, d) => sum + d.mcsIssued, 0)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Performance Summary - col-span-8 */}
+          <div className="col-span-12 lg:col-span-8">
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6 h-full">
+              <h3 className="text-lg font-bold text-white mb-6">Performance Overview</h3>
+
+              {/* Top Performer Highlight */}
+              {doctorPerformance[0] && (
+                <div className="bg-gradient-to-r from-amber-500/10 to-amber-600/5 rounded-2xl p-6 border border-amber-500/30 mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/30">
+                      <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-amber-400 text-sm font-semibold uppercase tracking-wider">Top Performer</p>
+                      <p className="text-2xl font-bold text-white mt-1">{doctorPerformance[0].name}</p>
+                      <p className="text-slate-400 text-sm">{doctorPerformance[0].department}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-3xl font-black text-amber-400">RM {doctorPerformance[0].revenue}</p>
+                      <p className="text-slate-400 text-sm">{doctorPerformance[0].mcsIssued} MCs issued</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Department Stats Grid */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-slate-700/30 rounded-xl p-4 text-center">
+                  <p className="text-slate-400 text-xs mb-1">Avg MCs/Doctor</p>
+                  <p className="text-2xl font-bold text-white">
+                    {Math.round(doctorPerformance.reduce((sum, d) => sum + d.mcsIssued, 0) / doctorPerformance.length)}
+                  </p>
+                </div>
+                <div className="bg-slate-700/30 rounded-xl p-4 text-center">
+                  <p className="text-slate-400 text-xs mb-1">Avg Revenue</p>
+                  <p className="text-2xl font-bold text-emerald-400">
+                    RM {Math.round(doctorPerformance.reduce((sum, d) => sum + d.revenue, 0) / doctorPerformance.length)}
+                  </p>
+                </div>
+                <div className="bg-slate-700/30 rounded-xl p-4 text-center">
+                  <p className="text-slate-400 text-xs mb-1">Goal Progress</p>
+                  <p className="text-2xl font-bold text-sky-400">
+                    {((doctorPerformance.reduce((sum, d) => sum + d.revenue, 0) / (facilityType === 'Hospital' ? 10000 : 2000)) * 100).toFixed(1)}%
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

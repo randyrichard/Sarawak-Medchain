@@ -23,6 +23,24 @@ const generateFluSeasonData = () => {
   });
 };
 
+// Doctor Performance Leaderboard Data
+const generateDoctorPerformanceData = () => {
+  const doctors = [
+    { id: 1, name: 'Dr. Ahmad Razak', department: 'General Medicine', mcsIssued: 47 },
+    { id: 2, name: 'Dr. Sarah Lim', department: 'Pediatrics', mcsIssued: 38 },
+    { id: 3, name: 'Dr. James Wong', department: 'Emergency', mcsIssued: 31 },
+    { id: 4, name: 'Dr. Fatimah Hassan', department: 'Internal Medicine', mcsIssued: 24 },
+    { id: 5, name: 'Dr. Kumar Pillai', department: 'Orthopedics', mcsIssued: 16 },
+  ];
+
+  // Sort by MCs issued (descending)
+  return doctors.sort((a, b) => b.mcsIssued - a.mcsIssued).map((doc, index) => ({
+    ...doc,
+    rank: index + 1,
+    revenue: doc.mcsIssued * 1, // RM1.00 per MC
+  }));
+};
+
 // Revenue Forecast Data Generator
 // Base: RM10,000/mo (Hospital) or RM2,000/mo (Clinic) + RM1.00/MC usage
 const generateRevenueForecastData = (facilityType, currentMCs) => {
@@ -111,6 +129,7 @@ export default function CEODashboard({ walletAddress }) {
   });
   const [fluData, setFluData] = useState([]);
   const [forecastData, setForecastData] = useState([]);
+  const [doctorPerformance, setDoctorPerformance] = useState([]);
   const [hospitalBalances, setHospitalBalances] = useState([]);
 
   // Payment processing state
@@ -137,6 +156,7 @@ export default function CEODashboard({ walletAddress }) {
   useEffect(() => {
     fetchDashboardData();
     setFluData(generateFluSeasonData());
+    setDoctorPerformance(generateDoctorPerformanceData());
   }, []);
 
   // Update forecast data when facility type or MCs change
@@ -847,50 +867,142 @@ export default function CEODashboard({ walletAddress }) {
                 </div>
               </div>
 
-              {/* Quick Stats - col-span-4 */}
-              <div className="col-span-12 xl:col-span-4 space-y-4">
-                <div className={`rounded-2xl p-6 ${
+              {/* Doctor Performance Leaderboard - col-span-4 */}
+              <div className="col-span-12 xl:col-span-4">
+                <div className={`rounded-2xl overflow-hidden h-full ${
                   darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white shadow-lg'
                 }`}>
-                  <h3 className={`text-lg font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                    Forecast Highlights
-                  </h3>
-                  <div className="space-y-4">
-                    <div className={`flex items-center justify-between p-3 rounded-xl ${
-                      darkMode ? 'bg-emerald-500/10' : 'bg-emerald-50'
-                    }`}>
-                      <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Peak Month</span>
-                      <span className="font-bold text-emerald-500">December</span>
-                    </div>
-                    <div className={`flex items-center justify-between p-3 rounded-xl ${
-                      darkMode ? 'bg-sky-500/10' : 'bg-sky-50'
-                    }`}>
-                      <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Growth Rate</span>
-                      <span className="font-bold text-sky-500">+3%/mo</span>
-                    </div>
-                    <div className={`flex items-center justify-between p-3 rounded-xl ${
-                      darkMode ? 'bg-amber-500/10' : 'bg-amber-50'
-                    }`}>
-                      <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Flu Season Spike</span>
-                      <span className="font-bold text-amber-500">+40%</span>
+                  {/* Leaderboard Header */}
+                  <div className={`px-6 py-4 border-b ${
+                    darkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-100 bg-gray-50'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                          Doctor Leaderboard
+                        </h3>
+                        <p className={`text-xs mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          Top performers this month
+                        </p>
+                      </div>
+                      <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        darkMode ? 'bg-amber-500/20 text-amber-400' : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {doctorPerformance.length} Doctors
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className={`rounded-2xl p-6 ${
-                  darkMode
-                    ? 'bg-gradient-to-br from-emerald-900/30 to-slate-800 border border-emerald-700/30'
-                    : 'bg-gradient-to-br from-emerald-50 to-white border border-emerald-100 shadow-lg'
-                }`}>
-                  <p className={`text-sm font-medium ${darkMode ? 'text-emerald-400' : 'text-emerald-700'}`}>
-                    Annual Revenue Target
-                  </p>
-                  <p className="text-3xl font-black text-emerald-500 mt-2">
-                    RM {((facilityType === 'Hospital' ? 10000 : 2000) * 12 + (mcsIssuedThisMonth * 12 * 1.2)).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                  </p>
-                  <p className={`text-xs mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                    Based on current trajectory
-                  </p>
+                  {/* Leaderboard Table */}
+                  <div className="p-4">
+                    <div className="space-y-2">
+                      {doctorPerformance.map((doctor, index) => {
+                        const monthlyGoal = facilityType === 'Hospital' ? 10000 : 2000;
+                        const progressPercent = Math.min(100, (doctor.revenue / monthlyGoal) * 100);
+
+                        return (
+                          <div
+                            key={doctor.id}
+                            className={`relative p-4 rounded-2xl transition-all cursor-pointer ${
+                              darkMode
+                                ? 'hover:bg-gray-700/50'
+                                : 'hover:bg-slate-50'
+                            } ${index === 0 ? (darkMode ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-amber-50 border border-amber-200') : ''}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              {/* Rank Badge */}
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                                index === 0
+                                  ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-lg shadow-amber-500/30'
+                                  : index === 1
+                                    ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-white'
+                                    : index === 2
+                                      ? 'bg-gradient-to-br from-amber-600 to-amber-800 text-white'
+                                      : darkMode
+                                        ? 'bg-gray-700 text-gray-400'
+                                        : 'bg-gray-100 text-gray-500'
+                              }`}>
+                                {doctor.rank}
+                              </div>
+
+                              {/* Doctor Info */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className={`font-semibold text-sm truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                                    {doctor.name}
+                                  </p>
+                                  {index === 0 && (
+                                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-amber-400 to-amber-600 text-white shadow-sm">
+                                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                      </svg>
+                                      TOP
+                                    </span>
+                                  )}
+                                </div>
+                                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                  {doctor.department}
+                                </p>
+                              </div>
+
+                              {/* Revenue */}
+                              <div className="text-right">
+                                <p className={`font-bold ${index === 0 ? 'text-amber-500' : 'text-emerald-500'}`}>
+                                  RM {doctor.revenue}
+                                </p>
+                                <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                                  {doctor.mcsIssued} MCs
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Progress Bar */}
+                            <div className="mt-3">
+                              <div className={`h-1.5 rounded-full overflow-hidden ${
+                                darkMode ? 'bg-gray-700' : 'bg-gray-100'
+                              }`}>
+                                <div
+                                  className={`h-full rounded-full transition-all ${
+                                    index === 0
+                                      ? 'bg-gradient-to-r from-amber-400 to-amber-600'
+                                      : 'bg-gradient-to-r from-emerald-400 to-emerald-600'
+                                  }`}
+                                  style={{ width: `${progressPercent}%` }}
+                                />
+                              </div>
+                              <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                                {progressPercent.toFixed(1)}% of RM{monthlyGoal.toLocaleString()} goal
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Leaderboard Footer */}
+                  <div className={`px-6 py-4 border-t ${
+                    darkMode ? 'border-gray-700 bg-gray-800/30' : 'border-gray-100 bg-gray-50/50'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className={`text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          Total Revenue
+                        </p>
+                        <p className="text-lg font-bold text-emerald-500">
+                          RM {doctorPerformance.reduce((sum, d) => sum + d.revenue, 0).toLocaleString()}
+                        </p>
+                      </div>
+                      <div className={`text-right`}>
+                        <p className={`text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                          Total MCs
+                        </p>
+                        <p className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                          {doctorPerformance.reduce((sum, d) => sum + d.mcsIssued, 0)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
