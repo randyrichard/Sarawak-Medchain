@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import SignatureCanvas from 'react-signature-canvas';
 
 // Midnight Navy Theme Colors
 const theme = {
@@ -182,6 +183,359 @@ function CustomTooltip({ active, payload, label }) {
   return null;
 }
 
+// Generate unique hash ID for blockchain verification
+const generateHashId = () => {
+  const chars = '0123456789abcdef';
+  let hash = '0x';
+  for (let i = 0; i < 64; i++) {
+    hash += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return hash;
+};
+
+// Proposal Modal with Digital Signature
+function ProposalModal({ isOpen, onClose, lead, onDealClosed }) {
+  const sigCanvas = useRef(null);
+  const [isSigned, setIsSigned] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isComplete, setIsComplete] = useState(false);
+  const [verificationData, setVerificationData] = useState(null);
+
+  if (!isOpen || !lead) return null;
+
+  const leadValue = (lead.estimatedMCs * 1.00) + 10000;
+
+  const clearSignature = () => {
+    sigCanvas.current?.clear();
+    setIsSigned(false);
+  };
+
+  const handleSignatureEnd = () => {
+    if (sigCanvas.current && !sigCanvas.current.isEmpty()) {
+      setIsSigned(true);
+    }
+  };
+
+  const handleConfirmPayment = async () => {
+    if (!isSigned) return;
+
+    setIsProcessing(true);
+
+    // Simulate blockchain transaction
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const verification = {
+      hashId: generateHashId(),
+      timestamp: new Date().toISOString(),
+      blockNumber: Math.floor(Math.random() * 1000000) + 15847000,
+      facilityName: lead.facilityName,
+      amount: 10000,
+      signatureData: sigCanvas.current?.toDataURL()
+    };
+
+    setVerificationData(verification);
+    setIsComplete(true);
+    setIsProcessing(false);
+
+    // Notify parent component about the closed deal
+    onDealClosed({
+      ...lead,
+      verification,
+      closedAt: new Date()
+    });
+  };
+
+  const handleClose = () => {
+    setIsSigned(false);
+    setIsProcessing(false);
+    setIsComplete(false);
+    setVerificationData(null);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        onClick={handleClose}
+      />
+
+      {/* Modal */}
+      <div
+        className="relative w-full max-w-2xl rounded-2xl border overflow-hidden"
+        style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}
+      >
+        {/* Header */}
+        <div
+          className="px-8 py-6"
+          style={{ backgroundColor: theme.bg, borderBottom: `1px solid ${theme.border}` }}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold" style={{ color: theme.textPrimary }}>
+                Partnership Proposal
+              </h2>
+              <p className="text-sm mt-1" style={{ color: theme.textSecondary }}>
+                {lead.facilityName}
+              </p>
+            </div>
+            <button
+              onClick={handleClose}
+              className="w-10 h-10 rounded-full flex items-center justify-center transition-all hover:opacity-80"
+              style={{ backgroundColor: theme.bgCard }}
+            >
+              <svg className="w-5 h-5" fill={theme.textSecondary} viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {!isComplete ? (
+          <>
+            {/* Proposal Details */}
+            <div className="px-8 py-6">
+              <div className="grid grid-cols-2 gap-6 mb-6">
+                <div
+                  className="p-4 rounded-xl"
+                  style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}
+                >
+                  <p className="text-sm" style={{ color: theme.textMuted }}>Facility Type</p>
+                  <p className="text-lg font-bold" style={{ color: theme.textPrimary }}>{lead.facilityType}</p>
+                </div>
+                <div
+                  className="p-4 rounded-xl"
+                  style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}
+                >
+                  <p className="text-sm" style={{ color: theme.textMuted }}>Decision Maker</p>
+                  <p className="text-lg font-bold" style={{ color: theme.textPrimary }}>{lead.decisionMaker}</p>
+                </div>
+                <div
+                  className="p-4 rounded-xl"
+                  style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}
+                >
+                  <p className="text-sm" style={{ color: theme.textMuted }}>Estimated Monthly MCs</p>
+                  <p className="text-lg font-bold" style={{ color: theme.accent }}>{lead.estimatedMCs.toLocaleString()}</p>
+                </div>
+                <div
+                  className="p-4 rounded-xl"
+                  style={{ backgroundColor: `${theme.success}10`, border: `1px solid ${theme.success}` }}
+                >
+                  <p className="text-sm" style={{ color: theme.success }}>Total Monthly Value</p>
+                  <p className="text-lg font-black" style={{ color: theme.success }}>RM {leadValue.toLocaleString()}</p>
+                </div>
+              </div>
+
+              {/* Pricing Breakdown */}
+              <div
+                className="p-4 rounded-xl mb-6"
+                style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}
+              >
+                <p className="text-sm font-semibold mb-3" style={{ color: theme.textSecondary }}>Pricing Breakdown</p>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span style={{ color: theme.textMuted }}>Hospital Subscription (Monthly)</span>
+                    <span className="font-bold" style={{ color: theme.textPrimary }}>RM 10,000</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span style={{ color: theme.textMuted }}>Variable MC Fee ({lead.estimatedMCs} x RM1.00)</span>
+                    <span className="font-bold" style={{ color: theme.textPrimary }}>RM {lead.estimatedMCs.toLocaleString()}</span>
+                  </div>
+                  <div className="pt-2 mt-2 flex justify-between" style={{ borderTop: `1px solid ${theme.border}` }}>
+                    <span className="font-bold" style={{ color: theme.textPrimary }}>First Month Total</span>
+                    <span className="font-black text-lg" style={{ color: theme.success }}>RM {leadValue.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Digital Signature Section */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-semibold" style={{ color: theme.textSecondary }}>
+                    Digital Signature
+                  </p>
+                  <button
+                    onClick={clearSignature}
+                    className="text-xs px-3 py-1 rounded-lg transition-all hover:opacity-80"
+                    style={{ backgroundColor: theme.bg, color: theme.textMuted, border: `1px solid ${theme.border}` }}
+                  >
+                    Clear
+                  </button>
+                </div>
+                <div
+                  className="rounded-xl overflow-hidden"
+                  style={{
+                    backgroundColor: '#ffffff',
+                    border: isSigned ? `2px solid ${theme.success}` : `2px dashed ${theme.border}`
+                  }}
+                >
+                  <SignatureCanvas
+                    ref={sigCanvas}
+                    canvasProps={{
+                      className: 'w-full h-32 cursor-crosshair'
+                    }}
+                    backgroundColor="white"
+                    penColor="#0a1628"
+                    onEnd={handleSignatureEnd}
+                  />
+                </div>
+                {!isSigned && (
+                  <p className="text-xs mt-2 text-center" style={{ color: theme.textMuted }}>
+                    Please sign above to authorize the partnership agreement
+                  </p>
+                )}
+                {isSigned && (
+                  <p className="text-xs mt-2 text-center" style={{ color: theme.success }}>
+                    Signature captured successfully
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Footer with Payment Button */}
+            <div
+              className="px-8 py-6"
+              style={{ backgroundColor: theme.bg, borderTop: `1px solid ${theme.border}` }}
+            >
+              <button
+                onClick={handleConfirmPayment}
+                disabled={!isSigned || isProcessing}
+                className="w-full py-4 rounded-xl font-bold text-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: isSigned ? theme.success : theme.textMuted,
+                  color: theme.textPrimary
+                }}
+              >
+                {isProcessing ? (
+                  <span className="flex items-center justify-center gap-3">
+                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Recording on Blockchain...
+                  </span>
+                ) : (
+                  `Confirm & Pay RM10,000`
+                )}
+              </button>
+              {!isSigned && (
+                <p className="text-center text-xs mt-3" style={{ color: theme.textMuted }}>
+                  Signature required to activate payment
+                </p>
+              )}
+            </div>
+          </>
+        ) : (
+          /* Success State with Verification Seal */
+          <div className="px-8 py-10 text-center">
+            {/* Success Animation */}
+            <div
+              className="w-24 h-24 rounded-full mx-auto mb-6 flex items-center justify-center"
+              style={{ backgroundColor: `${theme.success}20`, border: `3px solid ${theme.success}` }}
+            >
+              <svg className="w-12 h-12" fill={theme.success} viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            </div>
+
+            <h3 className="text-2xl font-bold mb-2" style={{ color: theme.success }}>
+              Deal Closed!
+            </h3>
+            <p className="mb-8" style={{ color: theme.textSecondary }}>
+              Partnership with {lead.facilityName} has been recorded on the blockchain
+            </p>
+
+            {/* Blockchain Verification Seal */}
+            <div
+              className="rounded-2xl p-6 mb-6 relative overflow-hidden"
+              style={{
+                backgroundColor: theme.bg,
+                border: `2px solid ${theme.success}`,
+                boxShadow: `0 0 30px ${theme.success}30`
+              }}
+            >
+              {/* Seal Badge */}
+              <div className="absolute top-4 right-4">
+                <div
+                  className="px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1"
+                  style={{ backgroundColor: `${theme.success}20`, color: theme.success }}
+                >
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  BLOCKCHAIN VERIFIED
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4">
+                {/* Signature Preview */}
+                {verificationData?.signatureData && (
+                  <div
+                    className="w-32 h-20 rounded-lg overflow-hidden flex-shrink-0"
+                    style={{ backgroundColor: '#ffffff', border: `1px solid ${theme.border}` }}
+                  >
+                    <img
+                      src={verificationData.signatureData}
+                      alt="Signature"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                )}
+
+                {/* Verification Details */}
+                <div className="flex-1 text-left">
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-xs" style={{ color: theme.textMuted }}>Transaction Hash</p>
+                      <p className="text-xs font-mono break-all" style={{ color: theme.accent }}>
+                        {verificationData?.hashId}
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs" style={{ color: theme.textMuted }}>Block Number</p>
+                        <p className="text-sm font-bold" style={{ color: theme.textPrimary }}>
+                          #{verificationData?.blockNumber?.toLocaleString()}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs" style={{ color: theme.textMuted }}>Timestamp</p>
+                        <p className="text-sm font-bold" style={{ color: theme.textPrimary }}>
+                          {new Date(verificationData?.timestamp).toLocaleString('en-MY')}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Revenue Impact */}
+            <div
+              className="rounded-xl p-4 mb-6"
+              style={{ backgroundColor: `${theme.success}10`, border: `1px solid ${theme.success}` }}
+            >
+              <p className="text-sm" style={{ color: theme.success }}>Monthly Revenue Added</p>
+              <p className="text-3xl font-black" style={{ color: theme.success }}>
+                +RM {leadValue.toLocaleString()}
+              </p>
+            </div>
+
+            <button
+              onClick={handleClose}
+              className="px-8 py-3 rounded-xl font-semibold transition-all hover:opacity-80"
+              style={{ backgroundColor: theme.accent, color: theme.textPrimary }}
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function FounderAdmin() {
   // Authentication state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -196,6 +550,12 @@ export default function FounderAdmin() {
   const [totalProfit, setTotalProfit] = useState(0);
   const [exportingDeck, setExportingDeck] = useState(false);
   const feedRef = useRef(null);
+
+  // Proposal Modal state
+  const [proposalModalOpen, setProposalModalOpen] = useState(false);
+  const [selectedLead, setSelectedLead] = useState(null);
+  const [closedDeals, setClosedDeals] = useState([]);
+  const [dealNotification, setDealNotification] = useState(null);
 
   // Super Admin password (in production, this would be server-side)
   const SUPER_ADMIN_PASSWORD = 'founder2026';
@@ -216,6 +576,37 @@ export default function FounderAdmin() {
     } else {
       setLoginError('Invalid Super Admin credentials');
     }
+  };
+
+  // Open proposal modal for a lead
+  const openProposal = (lead) => {
+    setSelectedLead(lead);
+    setProposalModalOpen(true);
+  };
+
+  // Handle deal closure
+  const handleDealClosed = (closedDeal) => {
+    const leadValue = (closedDeal.estimatedMCs * 1.00) + 10000;
+
+    // Add to closed deals
+    setClosedDeals(prev => [...prev, closedDeal]);
+
+    // Update MRR live
+    setMrr(prev => prev + leadValue);
+
+    // Update bank balance with subscription payment
+    setBankBalance(prev => prev + 10000);
+
+    // Show deal notification
+    setDealNotification({
+      ...closedDeal,
+      value: leadValue
+    });
+
+    // Clear notification after 5 seconds
+    setTimeout(() => {
+      setDealNotification(null);
+    }, 5000);
   };
 
   // Export Investor Deck PDF
@@ -1065,10 +1456,10 @@ export default function FounderAdmin() {
                         </button>
                         <button
                           className="px-3 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-80"
-                          style={{ backgroundColor: theme.purple, color: theme.textPrimary }}
-                          onClick={() => alert(`Generating blockchain node for ${lead.facilityName}...`)}
+                          style={{ backgroundColor: theme.success, color: theme.textPrimary }}
+                          onClick={() => openProposal(lead)}
                         >
-                          Generate Node
+                          Close Deal
                         </button>
                       </div>
                     </td>
@@ -1154,6 +1545,86 @@ export default function FounderAdmin() {
       <p className="text-center mt-6 text-xs" style={{ color: theme.textMuted }}>
         Founder Command Center • Access Logged • Session Encrypted
       </p>
+
+      {/* Proposal Modal */}
+      <ProposalModal
+        isOpen={proposalModalOpen}
+        onClose={() => {
+          setProposalModalOpen(false);
+          setSelectedLead(null);
+        }}
+        lead={selectedLead}
+        onDealClosed={handleDealClosed}
+      />
+
+      {/* Deal Closed Notification Toast */}
+      {dealNotification && (
+        <div
+          className="fixed bottom-6 right-6 z-50 animate-slide-in-right"
+          style={{
+            animation: 'slideInRight 0.5s ease-out'
+          }}
+        >
+          <div
+            className="rounded-2xl p-6 border shadow-2xl min-w-[380px]"
+            style={{
+              backgroundColor: theme.bgCard,
+              borderColor: theme.success,
+              boxShadow: `0 0 40px ${theme.success}40`
+            }}
+          >
+            <div className="flex items-start gap-4">
+              {/* Success Icon */}
+              <div
+                className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: `${theme.success}20` }}
+              >
+                <svg className="w-6 h-6" fill={theme.success} viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: theme.success }}></span>
+                  <p className="text-xs font-bold uppercase tracking-wide" style={{ color: theme.success }}>
+                    Deal Closed
+                  </p>
+                </div>
+                <p className="font-bold text-lg mb-1" style={{ color: theme.textPrimary }}>
+                  {dealNotification.facilityName}
+                </p>
+                <p className="text-sm mb-3" style={{ color: theme.textSecondary }}>
+                  Partnership agreement signed and recorded on blockchain
+                </p>
+                <div
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl"
+                  style={{ backgroundColor: `${theme.success}15` }}
+                >
+                  <span className="text-sm" style={{ color: theme.textSecondary }}>Revenue Added:</span>
+                  <span className="text-xl font-black" style={{ color: theme.success }}>
+                    +RM {dealNotification.value?.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Animation styles */}
+      <style>{`
+        @keyframes slideInRight {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+      `}</style>
     </div>
   );
 }
