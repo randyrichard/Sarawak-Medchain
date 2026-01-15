@@ -384,6 +384,465 @@ function StrategicRevenueProjection() {
   );
 }
 
+// Automation Command Center for Solo Founder
+function AutomationCommandCenter({ bankBalance, mrr, leadsCount }) {
+  const [aiSalesAssistant, setAiSalesAssistant] = useState(true);
+  const [revenueWatchdog, setRevenueWatchdog] = useState(true);
+  const [autoMaintenance, setAutoMaintenance] = useState(true);
+  const [recentAlerts, setRecentAlerts] = useState([
+    { id: 1, type: 'milestone', message: 'Hospital Umum Sarawak reached 500 MCs', time: '2 hours ago', icon: '🏆' },
+    { id: 2, type: 'followup', message: 'Auto follow-up sent to Normah Medical', time: '5 hours ago', icon: '📧' },
+    { id: 3, type: 'heal', message: 'Sibu node auto-recovered from timeout', time: '1 day ago', icon: '🔧' },
+  ]);
+
+  // Current time for daily briefing
+  const currentHour = new Date().getHours();
+  const isBusinessHours = currentHour >= 8 && currentHour < 18;
+
+  // Calculate revenue gap
+  const revenueGap = REVENUE_TARGET - (mrr || 36000);
+  const gapPercentage = ((mrr || 36000) / REVENUE_TARGET) * 100;
+
+  // Simulated automation stats
+  const automationStats = {
+    emailsSent: 12,
+    followUpsScheduled: 3,
+    issuesAutoResolved: 7,
+    uptimePercentage: 99.97
+  };
+
+  // Node health data
+  const nodeHealth = [
+    { name: 'Kuching Primary', status: 'healthy', uptime: '99.99%', lastCheck: '2 min ago' },
+    { name: 'Miri Secondary', status: 'healthy', uptime: '99.95%', lastCheck: '2 min ago' },
+    { name: 'Sibu Tertiary', status: 'healing', uptime: '99.87%', lastCheck: '1 min ago' },
+    { name: 'Bintulu Backup', status: 'standby', uptime: '100%', lastCheck: '2 min ago' },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Daily Briefing Card - Solo Founder */}
+      <div
+        className="rounded-2xl p-6 border relative overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, ${theme.bgCard} 0%, rgba(16, 185, 129, 0.1) 100%)`,
+          borderColor: theme.success
+        }}
+      >
+        {/* Animated corner accent */}
+        <div
+          className="absolute top-0 right-0 w-32 h-32"
+          style={{
+            background: `radial-gradient(circle at 100% 0%, ${theme.success}30 0%, transparent 70%)`
+          }}
+        />
+
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: `${theme.success}20`, border: `2px solid ${theme.success}` }}
+              >
+                <span className="text-2xl">👨‍💼</span>
+              </div>
+              <div>
+                <h2 className="text-xl font-bold" style={{ color: theme.textPrimary }}>
+                  Solo Founder Daily Briefing
+                </h2>
+                <p className="text-sm" style={{ color: theme.textSecondary }}>
+                  {new Date().toLocaleDateString('en-MY', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                  {' • '}
+                  <span style={{ color: isBusinessHours ? theme.success : theme.warning }}>
+                    {isBusinessHours ? 'Business Hours' : 'After Hours'}
+                  </span>
+                </p>
+              </div>
+            </div>
+            <div
+              className="px-4 py-2 rounded-full flex items-center gap-2"
+              style={{ backgroundColor: `${theme.success}20` }}
+            >
+              <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: theme.success }} />
+              <span className="text-sm font-bold" style={{ color: theme.success }}>All Systems Automated</span>
+            </div>
+          </div>
+
+          {/* Three Key Stats */}
+          <div className="grid grid-cols-3 gap-6">
+            {/* Total Cash */}
+            <div
+              className="p-5 rounded-xl text-center"
+              style={{
+                backgroundColor: 'rgba(10, 22, 40, 0.6)',
+                border: `1px solid ${theme.success}40`
+              }}
+            >
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <svg className="w-5 h-5" fill={theme.success} viewBox="0 0 20 20">
+                  <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" />
+                </svg>
+                <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: theme.textMuted }}>
+                  Total Cash
+                </span>
+              </div>
+              <p className="text-3xl font-black" style={{ color: theme.success }}>
+                RM {(bankBalance || 36485).toLocaleString()}
+              </p>
+              <p className="text-xs mt-1" style={{ color: theme.textSecondary }}>
+                +RM 2,340 today
+              </p>
+            </div>
+
+            {/* New Leads */}
+            <div
+              className="p-5 rounded-xl text-center"
+              style={{
+                backgroundColor: 'rgba(10, 22, 40, 0.6)',
+                border: `1px solid ${theme.accent}40`
+              }}
+            >
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <svg className="w-5 h-5" fill={theme.accent} viewBox="0 0 20 20">
+                  <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                </svg>
+                <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: theme.textMuted }}>
+                  New Leads
+                </span>
+              </div>
+              <p className="text-3xl font-black" style={{ color: theme.accent }}>
+                {leadsCount || 6}
+              </p>
+              <p className="text-xs mt-1" style={{ color: theme.textSecondary }}>
+                3 hot, 2 warm, 1 cold
+              </p>
+            </div>
+
+            {/* Revenue Gap */}
+            <div
+              className="p-5 rounded-xl text-center"
+              style={{
+                backgroundColor: 'rgba(10, 22, 40, 0.6)',
+                border: `1px solid ${theme.warning}40`
+              }}
+            >
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <svg className="w-5 h-5" fill={theme.warning} viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: theme.textMuted }}>
+                  Gap to RM500k
+                </span>
+              </div>
+              <p className="text-3xl font-black" style={{ color: theme.warning }}>
+                RM {revenueGap.toLocaleString()}
+              </p>
+              <div className="mt-2">
+                <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: theme.border }}>
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{
+                      width: `${Math.min(gapPercentage, 100)}%`,
+                      background: `linear-gradient(90deg, ${theme.success}, ${theme.accent})`
+                    }}
+                  />
+                </div>
+                <p className="text-xs mt-1" style={{ color: theme.textSecondary }}>
+                  {gapPercentage.toFixed(1)}% complete
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Automation Toggles Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* AI Sales Assistant */}
+        <div
+          className="rounded-2xl p-6 border"
+          style={{
+            backgroundColor: aiSalesAssistant ? `rgba(16, 185, 129, 0.1)` : theme.bgCard,
+            borderColor: aiSalesAssistant ? theme.success : theme.border,
+            transition: 'all 0.3s ease'
+          }}
+        >
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: `${theme.accent}20` }}
+              >
+                <span className="text-2xl">🤖</span>
+              </div>
+              <div>
+                <h3 className="font-bold" style={{ color: theme.textPrimary }}>AI Sales Assistant</h3>
+                <p className="text-xs" style={{ color: theme.textSecondary }}>Auto follow-up after 48h</p>
+              </div>
+            </div>
+
+            {/* Toggle Switch */}
+            <button
+              onClick={() => setAiSalesAssistant(!aiSalesAssistant)}
+              className="relative w-14 h-7 rounded-full transition-all"
+              style={{
+                backgroundColor: aiSalesAssistant ? theme.success : theme.border
+              }}
+            >
+              <div
+                className="absolute top-1 w-5 h-5 rounded-full bg-white shadow-lg transition-all"
+                style={{
+                  left: aiSalesAssistant ? '32px' : '4px'
+                }}
+              />
+            </button>
+          </div>
+
+          {aiSalesAssistant && (
+            <div className="space-y-3 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
+              <div className="flex justify-between text-sm">
+                <span style={{ color: theme.textMuted }}>Emails sent this week</span>
+                <span className="font-bold" style={{ color: theme.success }}>{automationStats.emailsSent}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span style={{ color: theme.textMuted }}>Follow-ups scheduled</span>
+                <span className="font-bold" style={{ color: theme.accent }}>{automationStats.followUpsScheduled}</span>
+              </div>
+              <div
+                className="p-3 rounded-lg mt-3"
+                style={{ backgroundColor: theme.bg }}
+              >
+                <p className="text-xs" style={{ color: theme.textMuted }}>Next auto-email in:</p>
+                <p className="font-mono font-bold" style={{ color: theme.warning }}>23h 14m 32s</p>
+                <p className="text-xs mt-1" style={{ color: theme.textSecondary }}>To: Normah Medical Centre</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Revenue Watchdog */}
+        <div
+          className="rounded-2xl p-6 border"
+          style={{
+            backgroundColor: revenueWatchdog ? `rgba(139, 92, 246, 0.1)` : theme.bgCard,
+            borderColor: revenueWatchdog ? theme.purple : theme.border,
+            transition: 'all 0.3s ease'
+          }}
+        >
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: `${theme.purple}20` }}
+              >
+                <span className="text-2xl">📱</span>
+              </div>
+              <div>
+                <h3 className="font-bold" style={{ color: theme.textPrimary }}>Revenue Watchdog</h3>
+                <p className="text-xs" style={{ color: theme.textSecondary }}>Milestone phone alerts</p>
+              </div>
+            </div>
+
+            {/* Toggle Switch */}
+            <button
+              onClick={() => setRevenueWatchdog(!revenueWatchdog)}
+              className="relative w-14 h-7 rounded-full transition-all"
+              style={{
+                backgroundColor: revenueWatchdog ? theme.purple : theme.border
+              }}
+            >
+              <div
+                className="absolute top-1 w-5 h-5 rounded-full bg-white shadow-lg transition-all"
+                style={{
+                  left: revenueWatchdog ? '32px' : '4px'
+                }}
+              />
+            </button>
+          </div>
+
+          {revenueWatchdog && (
+            <div className="space-y-3 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
+              <p className="text-xs font-semibold" style={{ color: theme.textMuted }}>Alert Triggers:</p>
+              <div className="space-y-2">
+                {['Hospital hits 100 MCs', 'Hospital hits 500 MCs', 'Hospital hits 1,000 MCs', 'New deal signed'].map((trigger, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <svg className="w-4 h-4" fill={theme.success} viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-sm" style={{ color: theme.textSecondary }}>{trigger}</span>
+                  </div>
+                ))}
+              </div>
+              <div
+                className="p-3 rounded-lg mt-3"
+                style={{ backgroundColor: theme.bg }}
+              >
+                <p className="text-xs" style={{ color: theme.textMuted }}>Last alert sent:</p>
+                <p className="text-sm font-semibold" style={{ color: theme.purple }}>KPJ Kuching → 500 MCs 🏆</p>
+                <p className="text-xs" style={{ color: theme.textSecondary }}>2 hours ago</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Auto-Maintenance */}
+        <div
+          className="rounded-2xl p-6 border"
+          style={{
+            backgroundColor: autoMaintenance ? `rgba(59, 130, 246, 0.1)` : theme.bgCard,
+            borderColor: autoMaintenance ? theme.accent : theme.border,
+            transition: 'all 0.3s ease'
+          }}
+        >
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: `${theme.accent}20` }}
+              >
+                <span className="text-2xl">🔧</span>
+              </div>
+              <div>
+                <h3 className="font-bold" style={{ color: theme.textPrimary }}>Auto-Maintenance</h3>
+                <p className="text-xs" style={{ color: theme.textSecondary }}>Self-healing nodes</p>
+              </div>
+            </div>
+
+            {/* Toggle Switch */}
+            <button
+              onClick={() => setAutoMaintenance(!autoMaintenance)}
+              className="relative w-14 h-7 rounded-full transition-all"
+              style={{
+                backgroundColor: autoMaintenance ? theme.accent : theme.border
+              }}
+            >
+              <div
+                className="absolute top-1 w-5 h-5 rounded-full bg-white shadow-lg transition-all"
+                style={{
+                  left: autoMaintenance ? '32px' : '4px'
+                }}
+              />
+            </button>
+          </div>
+
+          {autoMaintenance && (
+            <div className="space-y-3 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
+              <div className="flex justify-between text-sm">
+                <span style={{ color: theme.textMuted }}>Issues auto-resolved</span>
+                <span className="font-bold" style={{ color: theme.success }}>{automationStats.issuesAutoResolved}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span style={{ color: theme.textMuted }}>System uptime</span>
+                <span className="font-bold" style={{ color: theme.success }}>{automationStats.uptimePercentage}%</span>
+              </div>
+
+              {/* Node Health Status */}
+              <div className="space-y-2 mt-3">
+                {nodeHealth.map((node, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between p-2 rounded-lg"
+                    style={{ backgroundColor: theme.bg }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`w-2 h-2 rounded-full ${node.status === 'healing' ? 'animate-pulse' : ''}`}
+                        style={{
+                          backgroundColor: node.status === 'healthy' ? theme.success :
+                                          node.status === 'healing' ? theme.warning :
+                                          theme.textMuted
+                        }}
+                      />
+                      <span className="text-xs" style={{ color: theme.textSecondary }}>{node.name}</span>
+                    </div>
+                    <span
+                      className="text-xs font-bold uppercase"
+                      style={{
+                        color: node.status === 'healthy' ? theme.success :
+                              node.status === 'healing' ? theme.warning :
+                              theme.textMuted
+                      }}
+                    >
+                      {node.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Recent Automation Activity */}
+      <div
+        className="rounded-2xl p-6 border"
+        style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ backgroundColor: `${theme.success}20` }}
+            >
+              <svg className="w-5 h-5" fill={theme.success} viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="font-bold" style={{ color: theme.textPrimary }}>Automation Activity Log</h3>
+              <p className="text-xs" style={{ color: theme.textSecondary }}>Actions taken while you sleep</p>
+            </div>
+          </div>
+          <span
+            className="px-3 py-1 rounded-full text-xs font-bold"
+            style={{ backgroundColor: `${theme.success}20`, color: theme.success }}
+          >
+            {recentAlerts.length} actions today
+          </span>
+        </div>
+
+        <div className="space-y-3">
+          {recentAlerts.map((alert) => (
+            <div
+              key={alert.id}
+              className="flex items-center gap-4 p-3 rounded-xl transition-all hover:opacity-80"
+              style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}
+            >
+              <span className="text-2xl">{alert.icon}</span>
+              <div className="flex-1">
+                <p className="text-sm font-medium" style={{ color: theme.textPrimary }}>{alert.message}</p>
+                <p className="text-xs" style={{ color: theme.textMuted }}>{alert.time}</p>
+              </div>
+              <span
+                className="px-2 py-1 rounded text-xs uppercase font-bold"
+                style={{
+                  backgroundColor: alert.type === 'milestone' ? `${theme.purple}20` :
+                                  alert.type === 'followup' ? `${theme.accent}20` :
+                                  `${theme.success}20`,
+                  color: alert.type === 'milestone' ? theme.purple :
+                        alert.type === 'followup' ? theme.accent :
+                        theme.success
+                }}
+              >
+                {alert.type}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div
+          className="mt-4 pt-4 text-center"
+          style={{ borderTop: `1px solid ${theme.border}` }}
+        >
+          <p className="text-sm" style={{ color: theme.textMuted }}>
+            <span className="font-bold" style={{ color: theme.success }}>19 hours</span> of your time saved this week
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Blockchain nodes across Sarawak
 const blockchainNodes = [
   { id: 1, city: 'Kuching', status: 'online', latency: 12, blocks: 15847, peers: 8 },
@@ -1727,6 +2186,15 @@ export default function FounderAdmin() {
       {/* Strategic Revenue Projection */}
       <div className="mb-8">
         <StrategicRevenueProjection />
+      </div>
+
+      {/* Automation Command Center - Solo Founder */}
+      <div className="mb-8">
+        <AutomationCommandCenter
+          bankBalance={bankBalance}
+          mrr={mrr}
+          leadsCount={hospitalLeads.length}
+        />
       </div>
 
       {/* Revenue Projection Chart & Market Share */}
