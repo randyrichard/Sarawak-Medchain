@@ -42,12 +42,16 @@ export default function AdminPortal({ walletAddress }) {
 
   // Billing calculations
   const baseFee = facilityType === 'Hospital' ? 10000 : 2000;
-  const tierName = facilityType === 'Hospital' ? 'Premium Tier' : 'Standard Tier';
+  const tierName = facilityType === 'Hospital' ? 'Premium Enterprise Tier' : 'Standard Tier';
   const mcCost = 1.00; // RM per MC
   const meteredUsageCost = totalMCs * mcCost;
   const totalDue = baseFee + meteredUsageCost - baseFeePayment;
   const baseFeeDetected = baseFeePayment >= baseFee;
   const isSubscriptionOverdue = !baseFeeDetected && totalDue > 0;
+
+  // Color scheme
+  const sarawakRed = '#DC2626'; // For overdue alerts
+  const medicalBlue = '#0284C7'; // For View Invoice button
 
   useEffect(() => {
     fetchData();
@@ -250,72 +254,129 @@ export default function AdminPortal({ walletAddress }) {
           </div>
         )}
 
-        {/* Billing Engine Section */}
-        <div className="grid grid-cols-12 gap-6 w-full mb-8">
-          {/* Plan Details Card */}
-          <div className="col-span-12 lg:col-span-4 bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-slate-700/50 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white">Plan Details</h2>
-              <select
-                value={facilityType}
-                onChange={(e) => setFacilityType(e.target.value)}
-                className="bg-slate-700 border border-slate-600 text-white text-sm rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="Hospital">Hospital</option>
-                <option value="Clinic">Clinic</option>
-              </select>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
-                  <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {/* Monetization Engine - Full Width Subscription Banner */}
+        <div className="col-span-12 mb-8">
+          <div className={`rounded-2xl p-6 ${
+            isSubscriptionOverdue
+              ? 'bg-gradient-to-r from-red-900/40 to-slate-900 border-2 border-red-500/50'
+              : 'bg-gradient-to-r from-sky-900/40 to-slate-900 border border-sky-500/30'
+          }`}>
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              {/* Entity Type & Subscription Info */}
+              <div className="flex items-center gap-4">
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
+                  facilityType === 'Hospital' ? 'bg-sky-500/20' : 'bg-emerald-500/20'
+                }`}>
+                  <svg className={`w-7 h-7 ${facilityType === 'Hospital' ? 'text-sky-400' : 'text-emerald-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
                 </div>
                 <div>
-                  <p className="text-slate-400 text-sm">{tierName}</p>
-                  <p className="text-2xl font-bold text-white">RM {baseFee.toLocaleString()}<span className="text-sm font-normal text-slate-400">/mo</span></p>
+                  <div className="flex items-center gap-3 mb-1">
+                    <select
+                      value={facilityType}
+                      onChange={(e) => setFacilityType(e.target.value)}
+                      className="bg-slate-700/50 border border-slate-600 text-white text-sm rounded-lg px-3 py-1 focus:ring-2 focus:ring-sky-500"
+                    >
+                      <option value="Hospital">Hospital</option>
+                      <option value="Clinic">Clinic</option>
+                    </select>
+                    {isSubscriptionOverdue && (
+                      <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider" style={{ backgroundColor: `${sarawakRed}20`, color: sarawakRed }}>
+                        Overdue
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-2xl font-bold text-white">
+                    {tierName} <span className="text-slate-400 font-normal">—</span> <span className="text-sky-400">RM {baseFee.toLocaleString()}/mo</span>
+                  </p>
+                  <p className="text-slate-400 text-sm mt-1">
+                    {facilityType === 'Hospital'
+                      ? 'Unlimited doctors • Priority support • Full API access'
+                      : 'Up to 5 doctors • Email support • Standard API access'}
+                  </p>
                 </div>
               </div>
-              <div className="pt-3 border-t border-slate-700">
-                <p className="text-slate-400 text-xs">
-                  {facilityType === 'Hospital'
-                    ? 'Full access to all features, unlimited doctors, priority support'
-                    : 'Standard access, up to 5 doctors, email support'}
-                </p>
+
+              {/* View Invoice Button */}
+              <button
+                onClick={() => handlePayNow(1)}
+                className="px-8 py-3 rounded-xl font-semibold text-white transition-all shadow-lg flex items-center gap-2"
+                style={{ backgroundColor: medicalBlue, boxShadow: `0 10px 25px ${medicalBlue}40` }}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                View Invoice
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Transaction Meter & Real-time Costing */}
+        <div className="grid grid-cols-12 gap-6 w-full mb-8">
+          {/* Live Transaction Meter */}
+          <div className="col-span-12 lg:col-span-4 bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-slate-700/50 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-white">Transaction Meter</h2>
+              <span className="flex items-center gap-1.5 text-emerald-400 text-xs font-medium">
+                <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
+                LIVE
+              </span>
+            </div>
+            <div className="text-center py-4">
+              <p className="text-6xl font-black text-white tabular-nums">{totalMCs}</p>
+              <p className="text-slate-400 text-sm mt-2">MCs Issued This Month</p>
+            </div>
+            <div className="mt-4 pt-4 border-t border-slate-700">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-400">Rate per MC</span>
+                <span className="text-white font-semibold">RM {mcCost.toFixed(2)}</span>
               </div>
             </div>
           </div>
 
-          {/* Metered Usage Card */}
-          <div className="col-span-12 lg:col-span-4 bg-gradient-to-br from-emerald-900/50 to-slate-900 rounded-2xl border border-emerald-700/30 p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">Metered Usage</h2>
+          {/* Real-time Costing */}
+          <div className="col-span-12 lg:col-span-4 bg-gradient-to-br from-emerald-900/30 to-slate-900 rounded-2xl border border-emerald-700/30 p-6">
+            <h2 className="text-lg font-semibold text-white mb-4">Real-time Costing</h2>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">MCs Issued This Month</span>
-                <span className="text-2xl font-bold text-emerald-400">{totalMCs}</span>
+                <span className="text-slate-400">Base Subscription</span>
+                <span className="text-white font-medium">RM {baseFee.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">Rate per MC</span>
-                <span className="text-white font-medium">RM {mcCost.toFixed(2)}</span>
+                <span className="text-slate-400">Metered Usage ({totalMCs} × RM1)</span>
+                <span className="text-emerald-400 font-medium">RM {meteredUsageCost.toLocaleString()}</span>
               </div>
-              <div className="pt-3 border-t border-slate-700">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Payments Received</span>
+                <span className="text-sky-400 font-medium">- RM {baseFeePayment.toLocaleString()}</span>
+              </div>
+              <div className="pt-4 border-t border-slate-700">
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-300 font-medium">Usage Cost</span>
-                  <span className="text-xl font-bold text-emerald-400">RM {meteredUsageCost.toLocaleString()}</span>
+                  <span className="text-white font-semibold">Sub-Total Due</span>
+                  <span className={`text-2xl font-bold ${isSubscriptionOverdue ? 'text-red-400' : 'text-emerald-400'}`}>
+                    RM {totalDue.toLocaleString()}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Total Due Card - Bold & Prominent */}
-          <div className="col-span-12 lg:col-span-4 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-6 shadow-xl shadow-blue-900/30">
-            <h2 className="text-lg font-semibold text-blue-100 mb-2">Total Due</h2>
+          <div className={`col-span-12 lg:col-span-4 rounded-2xl p-6 shadow-xl ${
+            isSubscriptionOverdue
+              ? 'bg-gradient-to-br from-red-600 to-red-800 shadow-red-900/30'
+              : 'bg-gradient-to-br from-sky-600 to-sky-800 shadow-sky-900/30'
+          }`}>
+            <h2 className={`text-lg font-semibold mb-2 ${isSubscriptionOverdue ? 'text-red-100' : 'text-sky-100'}`}>
+              {isSubscriptionOverdue ? 'Amount Overdue' : 'Total Due'}
+            </h2>
             <div className="mb-4">
               <p className="text-5xl font-black text-white">
                 RM {totalDue.toLocaleString()}
               </p>
-              <p className="text-blue-200 text-sm mt-1">
+              <p className={`text-sm mt-1 ${isSubscriptionOverdue ? 'text-red-200' : 'text-sky-200'}`}>
                 Base: RM {baseFee.toLocaleString()} + Usage: RM {meteredUsageCost.toLocaleString()}
               </p>
             </div>
@@ -327,7 +388,13 @@ export default function AdminPortal({ walletAddress }) {
                 <span className="font-medium">Base Fee Paid</span>
               </div>
             ) : (
-              <p className="text-blue-200 text-sm">Payment pending for this billing cycle</p>
+              <button
+                onClick={() => handlePayNow(1)}
+                className="w-full py-3 rounded-lg font-semibold text-white transition-all"
+                style={{ backgroundColor: isSubscriptionOverdue ? sarawakRed : medicalBlue }}
+              >
+                {isSubscriptionOverdue ? 'Pay Overdue Balance' : 'Pay Now'}
+              </button>
             )}
           </div>
         </div>
