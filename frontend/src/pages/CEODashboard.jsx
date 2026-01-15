@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getAllHospitalBalances } from '../utils/contract';
+import { useBilling } from '../context/BillingContext';
 
 // Mock flu season data - in production, this would come from actual MC issuance dates
 const generateFluSeasonData = () => {
@@ -60,6 +61,21 @@ function StatCard({ title, value, subtitle, icon, trend, darkMode }) {
 }
 
 export default function CEODashboard({ walletAddress }) {
+  // Use Billing Context for consistent billing data
+  const {
+    accountType,
+    changeAccountType,
+    currentTier,
+    monthlySubscriptionFee,
+    variableUsageCost,
+    totalOutstandingBalance,
+    mcRate,
+    mcsIssuedThisMonth,
+    subscriptionPaid,
+    processPayment,
+    refreshBillingData
+  } = useBilling();
+
   const [darkMode, setDarkMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -70,18 +86,21 @@ export default function CEODashboard({ walletAddress }) {
   const [fluData, setFluData] = useState([]);
   const [hospitalBalances, setHospitalBalances] = useState([]);
 
-  // Billing state
-  const [facilityType, setFacilityType] = useState('Hospital'); // 'Hospital' or 'Clinic'
-  const [baseFeePayment, setBaseFeePayment] = useState(0);
+  // Payment processing state
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
 
-  // Billing calculations
-  const baseFee = facilityType === 'Hospital' ? 10000 : 2000;
-  const tierName = facilityType === 'Hospital' ? 'Premium Enterprise Tier' : 'Standard Tier';
-  const mcCost = 1.00;
-  const meteredUsageCost = stats.totalMCs * mcCost;
-  const totalDue = baseFee + meteredUsageCost - baseFeePayment;
-  const baseFeeDetected = baseFeePayment >= baseFee;
-  const isSubscriptionOverdue = !baseFeeDetected && totalDue > 0;
+  // Derived billing values (using context)
+  const facilityType = accountType;
+  const setFacilityType = changeAccountType;
+  const baseFee = monthlySubscriptionFee;
+  const tierName = currentTier.name;
+  const mcCost = mcRate;
+  const meteredUsageCost = variableUsageCost;
+  const totalDue = totalOutstandingBalance;
+  const baseFeeDetected = subscriptionPaid;
+  const baseFeePayment = subscriptionPaid ? baseFee : 0;
+  const isSubscriptionOverdue = !subscriptionPaid && totalDue > 0;
 
   // Color scheme
   const sarawakRed = '#DC2626'; // For overdue alerts
@@ -134,9 +153,30 @@ export default function CEODashboard({ walletAddress }) {
     setDarkMode(!darkMode);
   };
 
-  const handlePayNow = () => {
-    // In production, this would trigger a blockchain payment
-    setBaseFeePayment(baseFee);
+  const handlePayNow = async () => {
+    try {
+      setPaymentProcessing(true);
+      setPaymentSuccess(false);
+
+      const result = await processPayment(totalDue);
+
+      if (result.success) {
+        setPaymentSuccess(true);
+
+        // Auto-hide success after 5 seconds
+        setTimeout(() => {
+          setPaymentSuccess(false);
+        }, 5000);
+
+        // Refresh billing data
+        await refreshBillingData();
+        await fetchDashboardData();
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+    } finally {
+      setPaymentProcessing(false);
+    }
   };
 
   return (
@@ -169,6 +209,179 @@ export default function CEODashboard({ walletAddress }) {
           <span className="font-medium text-sm">{darkMode ? 'Light' : 'Dark'}</span>
         </button>
       </div>
+
+        {/* Payment Success Notification */}
+        {paymentSuccess && (
+          <div className={`mb-6 rounded-xl px-6 py-4 flex items-center gap-3 ${
+            darkMode
+              ? 'bg-emerald-500/10 border border-emerald-500/30'
+              : 'bg-emerald-50 border border-emerald-200'
+          }`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+              darkMode ? 'bg-emerald-500/20' : 'bg-emerald-100'
+            }`}>
+              <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <p className={`font-semibold ${darkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>Payment Successful!</p>
+              <p className={`text-sm ${darkMode ? 'text-emerald-400/80' : 'text-emerald-600'}`}>Your monthly payment has been processed</p>
+            </div>
+          </div>
+        )}
+
+        {/* Revenue & Billing Engine - Full Width Summary Card (col-span-12) */}
+        <div className="col-span-12 mb-8">
+          <div className={`rounded-2xl overflow-hidden shadow-xl ${
+            darkMode
+              ? 'bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700'
+              : 'bg-white border border-gray-100'
+          }`}>
+            {/* Card Header */}
+            <div className={`px-8 py-5 border-b ${darkMode ? 'border-slate-700 bg-slate-800/50' : 'border-gray-100 bg-gray-50'}`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                    darkMode ? 'bg-sky-500/20' : 'bg-sky-100'
+                  }`}>
+                    <svg className="w-5 h-5 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      Revenue & Billing Engine
+                    </h2>
+                    <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+                      January 2026 Billing Summary
+                    </p>
+                  </div>
+                </div>
+                <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                  subscriptionPaid
+                    ? darkMode ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'
+                    : darkMode ? 'bg-amber-500/20 text-amber-400' : 'bg-amber-100 text-amber-700'
+                }`}>
+                  {subscriptionPaid ? 'Paid' : 'Payment Due'}
+                </span>
+              </div>
+            </div>
+
+            {/* Card Body - Billing Breakdown */}
+            <div className="p-8">
+              <div className="grid grid-cols-12 gap-8">
+                {/* Left: Line Items */}
+                <div className="col-span-12 lg:col-span-7">
+                  <div className="space-y-4">
+                    {/* Base Subscription */}
+                    <div className={`flex items-center justify-between p-4 rounded-xl ${
+                      darkMode ? 'bg-slate-700/50' : 'bg-gray-50'
+                    }`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          facilityType === 'Hospital'
+                            ? darkMode ? 'bg-sky-500/20' : 'bg-sky-100'
+                            : darkMode ? 'bg-emerald-500/20' : 'bg-emerald-100'
+                        }`}>
+                          <svg className={`w-5 h-5 ${facilityType === 'Hospital' ? 'text-sky-500' : 'text-emerald-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Base Subscription</p>
+                          <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-gray-500'}`}>{tierName} ({facilityType})</p>
+                        </div>
+                      </div>
+                      <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                        RM {baseFee.toLocaleString()}
+                      </p>
+                    </div>
+
+                    {/* MC Usage Fee */}
+                    <div className={`flex items-center justify-between p-4 rounded-xl ${
+                      darkMode ? 'bg-slate-700/50' : 'bg-gray-50'
+                    }`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          darkMode ? 'bg-emerald-500/20' : 'bg-emerald-100'
+                        }`}>
+                          <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>MC Usage Fee</p>
+                          <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-gray-500'}`}>{mcsIssuedThisMonth} MCs × RM {mcCost.toFixed(2)}</p>
+                        </div>
+                      </div>
+                      <p className="text-2xl font-bold text-emerald-500">
+                        RM {meteredUsageCost.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right: Total & Pay Button */}
+                <div className="col-span-12 lg:col-span-5">
+                  <div className={`rounded-2xl p-6 h-full flex flex-col justify-center ${
+                    isSubscriptionOverdue
+                      ? 'bg-gradient-to-br from-red-600 to-red-800'
+                      : subscriptionPaid
+                        ? darkMode
+                          ? 'bg-gradient-to-br from-emerald-600/20 to-emerald-800/20 border border-emerald-500/30'
+                          : 'bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200'
+                        : 'bg-gradient-to-br from-sky-600 to-sky-800'
+                  }`}>
+                    <p className={`text-sm font-medium mb-2 ${
+                      isSubscriptionOverdue || (!subscriptionPaid) ? 'text-white/80' : darkMode ? 'text-emerald-400' : 'text-emerald-700'
+                    }`}>
+                      Total Amount Due
+                    </p>
+                    <p className={`text-5xl font-black mb-4 ${
+                      subscriptionPaid && !isSubscriptionOverdue ? (darkMode ? 'text-emerald-400' : 'text-emerald-700') : 'text-white'
+                    }`}>
+                      RM {totalDue.toLocaleString()}
+                    </p>
+
+                    {subscriptionPaid ? (
+                      <div className={`flex items-center gap-2 px-4 py-3 rounded-xl ${
+                        darkMode ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-200/50 text-emerald-700'
+                      }`}>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="font-semibold">All Dues Cleared</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={handlePayNow}
+                        disabled={paymentProcessing}
+                        className={`w-full py-4 rounded-xl font-bold text-lg text-white transition-all transform hover:scale-[1.02] active:scale-[0.98] ${
+                          paymentProcessing
+                            ? 'bg-white/20 cursor-not-allowed'
+                            : 'bg-white/20 hover:bg-white/30'
+                        }`}
+                      >
+                        {paymentProcessing ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                            Processing...
+                          </span>
+                        ) : (
+                          'Process Payment'
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Monetization Engine - Full Width Subscription Banner */}
         <div className="col-span-12 mb-8">

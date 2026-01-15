@@ -91,6 +91,91 @@ function StickyBalanceHeader({ walletAddress }) {
   );
 }
 
+// Glowing Top Up Required Badge (shows in sidebar when credits < RM500)
+function TopUpRequiredBadge({ walletAddress }) {
+  const navigate = useNavigate();
+  const [creditBalance, setCreditBalance] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const topUpThreshold = 500; // RM500 threshold
+  const needsTopUp = creditBalance !== null && creditBalance < topUpThreshold;
+
+  useEffect(() => {
+    if (walletAddress) {
+      fetchCreditBalance();
+    }
+  }, [walletAddress]);
+
+  const fetchCreditBalance = async () => {
+    try {
+      setLoading(true);
+      const balance = await getMyBalance();
+      setCreditBalance(balance);
+    } catch (error) {
+      console.error('Error fetching credit balance for badge:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTopUp = () => {
+    navigate('/admin');
+  };
+
+  if (!needsTopUp || loading) return null;
+
+  return (
+    <div className="p-4">
+      <button
+        onClick={handleTopUp}
+        className="w-full relative overflow-hidden rounded-xl p-4 bg-gradient-to-r from-orange-500 to-amber-500 shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
+        style={{
+          boxShadow: '0 0 20px rgba(249, 115, 22, 0.5), 0 0 40px rgba(249, 115, 22, 0.3), 0 0 60px rgba(249, 115, 22, 0.1)',
+          animation: 'glow-pulse 2s ease-in-out infinite'
+        }}
+      >
+        {/* Animated glow overlay */}
+        <div
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+          style={{
+            animation: 'shimmer 2s ease-in-out infinite'
+          }}
+        />
+
+        <div className="relative flex items-center gap-3">
+          <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center animate-pulse">
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div className="text-left">
+            <p className="text-white font-bold text-sm">Top Up Required</p>
+            <p className="text-orange-100 text-xs">
+              Balance: RM {creditBalance?.toLocaleString() || 0}
+            </p>
+          </div>
+        </div>
+      </button>
+
+      {/* CSS for glow animation */}
+      <style>{`
+        @keyframes glow-pulse {
+          0%, 100% {
+            box-shadow: 0 0 20px rgba(249, 115, 22, 0.5), 0 0 40px rgba(249, 115, 22, 0.3), 0 0 60px rgba(249, 115, 22, 0.1);
+          }
+          50% {
+            box-shadow: 0 0 30px rgba(249, 115, 22, 0.7), 0 0 60px rgba(249, 115, 22, 0.5), 0 0 90px rgba(249, 115, 22, 0.2);
+          }
+        }
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 // Credit Balance Sidebar Component (needs to be inside Router)
 function CreditBalanceSidebar({ walletAddress }) {
   const location = useLocation();
@@ -300,6 +385,9 @@ function App() {
               </li>
             </ul>
           </nav>
+
+          {/* Glowing Top Up Required Badge - Shows when credits < RM500 */}
+          <TopUpRequiredBadge walletAddress={walletAddress} />
 
           {/* Credit Balance - Shows only on Doctor Portal */}
           <CreditBalanceSidebar walletAddress={walletAddress} />
