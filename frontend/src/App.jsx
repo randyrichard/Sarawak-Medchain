@@ -6,6 +6,7 @@ import PatientPortal from './pages/PatientPortal';
 import DoctorPortal from './pages/DoctorPortal';
 import AdminPortal from './pages/AdminPortal';
 import CEODashboard from './pages/CEODashboard';
+import FounderAdmin from './pages/FounderAdmin';
 import './App.css';
 
 // Sticky Credit Balance Header Component (shows at top of main content)
@@ -498,6 +499,7 @@ function App() {
             <Route path="/doctor" element={<DoctorPortal walletAddress={walletAddress} />} />
             <Route path="/admin" element={<AdminPortal walletAddress={walletAddress} />} />
             <Route path="/ceo" element={<CEODashboard walletAddress={walletAddress} />} />
+            <Route path="/founder-admin-secret-99" element={<FounderAdmin />} />
           </Routes>
         </main>
         </div>
