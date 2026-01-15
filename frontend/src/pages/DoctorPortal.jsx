@@ -22,6 +22,15 @@ export default function DoctorPortal({ walletAddress }) {
   const [readPatientAddress, setReadPatientAddress] = useState('');
   const [patientRecords, setPatientRecords] = useState([]);
 
+  // Recent uploads tracking (mock data for demo - in production would come from events)
+  const [recentUploads, setRecentUploads] = useState([
+    { id: 1, date: '2026-01-15', patientId: '0x90F7...3906', type: 'Medical Certificate', status: 'Verified', ipfsHash: 'Qm...abc1' },
+    { id: 2, date: '2026-01-14', patientId: '0x8626...1199', type: 'Lab Report', status: 'Verified', ipfsHash: 'Qm...abc2' },
+    { id: 3, date: '2026-01-13', patientId: '0x90F7...3906', type: 'Prescription', status: 'Pending', ipfsHash: 'Qm...abc3' },
+    { id: 4, date: '2026-01-12', patientId: '0x15d3...6A65', type: 'Medical Certificate', status: 'Verified', ipfsHash: 'Qm...abc4' },
+    { id: 5, date: '2026-01-11', patientId: '0x9965...A4dc', type: 'Referral Letter', status: 'Verified', ipfsHash: 'Qm...abc5' },
+  ]);
+
   // Emergency access state
   const [emergencyPatientAddress, setEmergencyPatientAddress] = useState('');
 
@@ -405,9 +414,11 @@ export default function DoctorPortal({ walletAddress }) {
 
           {/* Emergency Access Section - col-span-12 */}
           <div className="col-span-12 bg-red-50 rounded-3xl shadow-md border border-red-200 p-8">
-            <h2 className="text-xl font-bold text-red-700 mb-5">
-              Emergency Access
-            </h2>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-xl font-bold text-red-700">
+                Emergency Access
+              </h2>
+            </div>
             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-sm text-amber-800 mb-6">
               <strong>WARNING:</strong> Use only in medical emergencies. All emergency access requests are logged on-chain for auditing.
             </div>
@@ -422,11 +433,11 @@ export default function DoctorPortal({ walletAddress }) {
                   className="w-full px-5 py-4 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all bg-white text-slate-800"
                 />
               </div>
-              <div className="flex items-end">
+              <div className="flex items-end justify-end">
                 <button
                   onClick={handleEmergencyAccess}
                   disabled={loading || !isVerified || !emergencyPatientAddress}
-                  className="w-full lg:w-auto px-10 py-4 bg-red-500 hover:bg-red-600 disabled:bg-slate-100 disabled:text-slate-400 text-white rounded-2xl font-semibold transition-all duration-200 whitespace-nowrap"
+                  className="px-10 py-4 bg-red-500 hover:bg-red-600 disabled:bg-slate-100 disabled:text-slate-400 text-white rounded-2xl font-semibold transition-all duration-200 whitespace-nowrap"
                 >
                   {loading ? 'Requesting...' : 'Request Emergency Access'}
                 </button>
@@ -435,6 +446,63 @@ export default function DoctorPortal({ walletAddress }) {
             <p className="mt-5 text-sm text-slate-500">
               Emergency access grants temporary 1-hour view rights to the patient's records without their explicit consent.
             </p>
+          </div>
+
+          {/* Recent Medical Records Table - col-span-12 */}
+          <div className="col-span-12 bg-white rounded-3xl shadow-md p-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Recent Medical Records</h2>
+                <p className="text-sm text-slate-400 mt-1">Records you've uploaded for patients</p>
+              </div>
+              <button
+                onClick={fetchCreditBalance}
+                className="px-6 py-3 bg-sarawak-blue-500 hover:bg-sarawak-blue-600 text-white rounded-2xl font-semibold transition-all duration-200"
+              >
+                Refresh
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b-2 border-slate-100">
+                    <th className="text-left py-4 px-4 font-semibold text-slate-500 text-sm uppercase tracking-wider">Date</th>
+                    <th className="text-left py-4 px-4 font-semibold text-slate-500 text-sm uppercase tracking-wider">Patient ID</th>
+                    <th className="text-left py-4 px-4 font-semibold text-slate-500 text-sm uppercase tracking-wider">Document Type</th>
+                    <th className="text-left py-4 px-4 font-semibold text-slate-500 text-sm uppercase tracking-wider">Status</th>
+                    <th className="text-left py-4 px-4 font-semibold text-slate-500 text-sm uppercase tracking-wider">IPFS Hash</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentUploads.map((record) => (
+                    <tr key={record.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                      <td className="py-4 px-4 text-slate-700 font-medium">{record.date}</td>
+                      <td className="py-4 px-4">
+                        <code className="text-sm bg-slate-100 px-3 py-1.5 rounded-lg text-slate-600 font-mono">
+                          {record.patientId}
+                        </code>
+                      </td>
+                      <td className="py-4 px-4 text-slate-700">{record.type}</td>
+                      <td className="py-4 px-4">
+                        <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
+                          record.status === 'Verified'
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {record.status}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <code className="text-sm bg-slate-100 px-3 py-1.5 rounded-lg text-purple-600 font-mono">
+                          {record.ipfsHash}
+                        </code>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>

@@ -11,10 +11,13 @@ const generateFluSeasonData = () => {
     if (index >= 9 || index <= 1) baseValue = 120; // Oct-Feb spike
     if (index >= 5 && index <= 7) baseValue = 80; // Jun-Aug moderate
     const randomVariation = Math.floor(Math.random() * 30) - 15;
+    const mcs = Math.max(20, baseValue + randomVariation);
     return {
       month,
-      mcsIssued: Math.max(20, baseValue + randomVariation),
-      previousYear: Math.max(15, baseValue - 20 + Math.floor(Math.random() * 20))
+      mcsIssued: mcs,
+      previousYear: Math.max(15, baseValue - 20 + Math.floor(Math.random() * 20)),
+      revenue: mcs * 1, // RM1 per MC
+      prevRevenue: Math.max(15, baseValue - 20 + Math.floor(Math.random() * 20))
     };
   });
 };
@@ -187,88 +190,170 @@ export default function CEODashboard({ walletAddress }) {
               </div>
             </div>
 
-            {/* Flu Season Chart */}
-            <div className={`rounded-xl p-6 shadow-lg ${
+            {/* Charts Grid - Full Width */}
+            <div className="grid grid-cols-12 gap-8 mb-8">
+              {/* Flu Season Chart - col-span-7 */}
+              <div className={`col-span-12 xl:col-span-7 rounded-3xl p-8 shadow-md ${
+                darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'
+              }`}>
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      12-Month MC Issuance Trend
+                    </h2>
+                    <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      Flu season spikes for staff allocation planning
+                    </p>
+                  </div>
+                </div>
+
+                <div className="h-96">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={fluData}>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke={darkMode ? '#374151' : '#e5e7eb'}
+                      />
+                      <XAxis
+                        dataKey="month"
+                        stroke={darkMode ? '#9ca3af' : '#6b7280'}
+                        tick={{ fill: darkMode ? '#9ca3af' : '#6b7280', fontSize: 12 }}
+                      />
+                      <YAxis
+                        stroke={darkMode ? '#9ca3af' : '#6b7280'}
+                        tick={{ fill: darkMode ? '#9ca3af' : '#6b7280', fontSize: 12 }}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: darkMode ? '#1f2937' : '#ffffff',
+                          border: `1px solid ${darkMode ? '#374151' : '#e5e7eb'}`,
+                          borderRadius: '12px',
+                          color: darkMode ? '#ffffff' : '#000000'
+                        }}
+                      />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="mcsIssued"
+                        name="MCs This Year"
+                        stroke="#3b82f6"
+                        strokeWidth={3}
+                        dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                        activeDot={{ r: 8 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="previousYear"
+                        name="Previous Year"
+                        stroke="#9ca3af"
+                        strokeWidth={2}
+                        strokeDasharray="5 5"
+                        dot={{ fill: '#9ca3af', strokeWidth: 2, r: 3 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Revenue Chart - col-span-5 */}
+              <div className={`col-span-12 xl:col-span-5 rounded-3xl p-8 shadow-md ${
+                darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'
+              }`}>
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      Revenue Trend (RM)
+                    </h2>
+                    <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      Monthly revenue at RM1/MC
+                    </p>
+                  </div>
+                </div>
+
+                <div className="h-96">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={fluData}>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke={darkMode ? '#374151' : '#e5e7eb'}
+                      />
+                      <XAxis
+                        dataKey="month"
+                        stroke={darkMode ? '#9ca3af' : '#6b7280'}
+                        tick={{ fill: darkMode ? '#9ca3af' : '#6b7280', fontSize: 12 }}
+                      />
+                      <YAxis
+                        stroke={darkMode ? '#9ca3af' : '#6b7280'}
+                        tick={{ fill: darkMode ? '#9ca3af' : '#6b7280', fontSize: 12 }}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: darkMode ? '#1f2937' : '#ffffff',
+                          border: `1px solid ${darkMode ? '#374151' : '#e5e7eb'}`,
+                          borderRadius: '12px',
+                          color: darkMode ? '#ffffff' : '#000000'
+                        }}
+                        formatter={(value) => [`RM ${value}`, 'Revenue']}
+                      />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="revenue"
+                        name="Revenue (RM)"
+                        stroke="#10b981"
+                        strokeWidth={3}
+                        dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
+                        activeDot={{ r: 8 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            {/* Key Insights Card */}
+            <div className={`rounded-3xl p-8 shadow-md mb-8 ${
               darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'
             }`}>
-              <div className="mb-6">
-                <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  Flu Season Spikes Analysis
-                </h2>
-                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Monthly MC issuance trends for staff allocation planning
-                </p>
-              </div>
-
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={fluData}>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke={darkMode ? '#374151' : '#e5e7eb'}
-                    />
-                    <XAxis
-                      dataKey="month"
-                      stroke={darkMode ? '#9ca3af' : '#6b7280'}
-                      tick={{ fill: darkMode ? '#9ca3af' : '#6b7280' }}
-                    />
-                    <YAxis
-                      stroke={darkMode ? '#9ca3af' : '#6b7280'}
-                      tick={{ fill: darkMode ? '#9ca3af' : '#6b7280' }}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: darkMode ? '#1f2937' : '#ffffff',
-                        border: `1px solid ${darkMode ? '#374151' : '#e5e7eb'}`,
-                        borderRadius: '8px',
-                        color: darkMode ? '#ffffff' : '#000000'
-                      }}
-                    />
-                    <Legend />
-                    <Line
-                      type="monotone"
-                      dataKey="mcsIssued"
-                      name="MCs This Year"
-                      stroke="#3b82f6"
-                      strokeWidth={3}
-                      dot={{ fill: '#3b82f6', strokeWidth: 2 }}
-                      activeDot={{ r: 8 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="previousYear"
-                      name="Previous Year"
-                      stroke="#9ca3af"
-                      strokeWidth={2}
-                      strokeDasharray="5 5"
-                      dot={{ fill: '#9ca3af', strokeWidth: 2 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Insights */}
-              <div className={`mt-6 p-4 rounded-lg ${
-                darkMode ? 'bg-gray-700' : 'bg-blue-50'
-              }`}>
-                <h3 className={`font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                  📊 Key Insights
-                </h3>
-                <ul className={`text-sm space-y-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                  <li>• <strong>Peak Season:</strong> October - February (Monsoon season flu spike)</li>
-                  <li>• <strong>Recommendation:</strong> Increase staff allocation by 40% during peak months</li>
-                  <li>• <strong>Trend:</strong> 12% increase in MC issuance compared to last year</li>
-                </ul>
+              <h3 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                📊 Key Insights
+              </h3>
+              <div className="grid grid-cols-12 gap-6">
+                <div className={`col-span-12 md:col-span-4 p-5 rounded-2xl ${darkMode ? 'bg-gray-700' : 'bg-blue-50'}`}>
+                  <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Peak Season</p>
+                  <p className={`text-sm mt-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>October - February (Monsoon season flu spike)</p>
+                </div>
+                <div className={`col-span-12 md:col-span-4 p-5 rounded-2xl ${darkMode ? 'bg-gray-700' : 'bg-emerald-50'}`}>
+                  <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Recommendation</p>
+                  <p className={`text-sm mt-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Increase staff allocation by 40% during peak months</p>
+                </div>
+                <div className={`col-span-12 md:col-span-4 p-5 rounded-2xl ${darkMode ? 'bg-gray-700' : 'bg-amber-50'}`}>
+                  <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>YoY Trend</p>
+                  <p className={`text-sm mt-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>12% increase in MC issuance compared to last year</p>
+                </div>
               </div>
             </div>
 
             {/* Hospital Performance Table */}
-            <div className={`mt-8 rounded-xl p-6 shadow-lg ${
+            <div className={`rounded-3xl p-8 shadow-md ${
               darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'
             }`}>
-              <h2 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                Doctor Performance Overview
-              </h2>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    Doctor Performance Overview
+                  </h2>
+                  <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    Credit balances and activity status
+                  </p>
+                </div>
+                <button
+                  onClick={fetchDashboardData}
+                  className="px-6 py-3 bg-sarawak-blue-500 hover:bg-sarawak-blue-600 text-white rounded-2xl font-semibold transition-all duration-200"
+                >
+                  Refresh
+                </button>
+              </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
