@@ -19,7 +19,7 @@ const generateFluSeasonData = () => {
   });
 };
 
-// Stat Card Component
+// Stat Card Component - Enterprise Style
 function StatCard({ title, value, subtitle, icon, trend, darkMode }) {
   return (
     <div className={`rounded-xl p-6 shadow-lg transition-all duration-300 hover:shadow-xl ${
@@ -27,7 +27,7 @@ function StatCard({ title, value, subtitle, icon, trend, darkMode }) {
         ? 'bg-gray-800 border border-gray-700'
         : 'bg-white border border-gray-100'
     }`}>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-start gap-x-4">
         <div>
           <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
             {title}
@@ -115,74 +115,76 @@ export default function CEODashboard({ walletAddress }) {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
-      darkMode ? 'bg-gray-900' : 'bg-gray-50'
+    <div className={`w-full min-h-full px-8 py-6 font-sans tracking-tight transition-colors duration-300 ${
+      darkMode ? 'bg-slate-900' : ''
     }`}>
-      {/* Header */}
-      <div className={`px-6 py-4 border-b ${
-        darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-      }`}>
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-              Hospital CEO Dashboard
-            </h1>
-            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-              Real-time analytics for Sarawak MedChain
-            </p>
-          </div>
-
-          {/* Dark Mode Toggle */}
-          <button
-            onClick={toggleDarkMode}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-              darkMode
-                ? 'bg-yellow-500 text-gray-900 hover:bg-yellow-400'
-                : 'bg-gray-800 text-white hover:bg-gray-700'
-            }`}
-          >
-            <span className="text-xl">{darkMode ? '☀️' : '🌙'}</span>
-            <span className="font-medium">{darkMode ? 'Light Mode' : 'Dark Mode'}</span>
-          </button>
+      {/* Header - Full Width Enterprise Style */}
+      <div className="mb-8 flex flex-col lg:flex-row lg:items-center justify-start gap-6">
+        <div className="flex items-center gap-4">
+          <h1 className={`text-3xl lg:text-4xl font-bold ${darkMode ? 'text-white' : 'text-slate-800'}`}>
+            CEO Dashboard
+          </h1>
+          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+            darkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'
+          }`}>
+            Analytics
+          </span>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Dark Mode Toggle */}
+        <button
+          onClick={toggleDarkMode}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all lg:ml-auto ${
+            darkMode
+              ? 'bg-amber-500 text-slate-900 hover:bg-amber-400'
+              : 'bg-slate-800 text-white hover:bg-slate-700'
+          }`}
+        >
+          <span className="text-lg">{darkMode ? '☀️' : '🌙'}</span>
+          <span className="font-medium text-sm">{darkMode ? 'Light' : 'Dark'}</span>
+        </button>
+      </div>
         {/* Loading State */}
         {loading ? (
-          <div className="flex items-center justify-center h-64">
+          <div className="flex items-center justify-start h-64">
             <div className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
               Loading dashboard data...
             </div>
           </div>
         ) : (
           <>
-            {/* Stats Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <StatCard
-                title="Total MCs Issued"
-                value={stats.totalMCs.toLocaleString()}
-                subtitle="Medical certificates this period"
-                icon="📋"
-                trend={12}
-                darkMode={darkMode}
-              />
-              <StatCard
-                title="Active Verified Doctors"
-                value={stats.activeDoctors}
-                subtitle="Currently registered doctors"
-                icon="👨‍⚕️"
-                trend={5}
-                darkMode={darkMode}
-              />
-              <StatCard
-                title="Revenue Generated"
-                value={`RM ${stats.revenue.toLocaleString()}`}
-                subtitle="At RM1 per MC issued"
-                icon="💰"
-                trend={15}
-                darkMode={darkMode}
-              />
+            {/* Stats Cards Grid - Full Width 12 Column */}
+            <div className="grid grid-cols-12 gap-6 mb-8">
+              <div className="col-span-12 md:col-span-4">
+                <StatCard
+                  title="Total MCs Issued"
+                  value={stats.totalMCs.toLocaleString()}
+                  subtitle="Medical certificates this period"
+                  icon="📋"
+                  trend={12}
+                  darkMode={darkMode}
+                />
+              </div>
+              <div className="col-span-12 md:col-span-4">
+                <StatCard
+                  title="Active Verified Doctors"
+                  value={stats.activeDoctors}
+                  subtitle="Currently registered doctors"
+                  icon="👨‍⚕️"
+                  trend={5}
+                  darkMode={darkMode}
+                />
+              </div>
+              <div className="col-span-12 md:col-span-4">
+                <StatCard
+                  title="Revenue Generated"
+                  value={`RM ${stats.revenue.toLocaleString()}`}
+                  subtitle="At RM1 per MC issued"
+                  icon="💰"
+                  trend={15}
+                  darkMode={darkMode}
+                />
+              </div>
             </div>
 
             {/* Flu Season Chart */}
@@ -319,7 +321,6 @@ export default function CEODashboard({ walletAddress }) {
             </div>
           </>
         )}
-      </div>
     </div>
   );
 }

@@ -170,23 +170,22 @@ export default function AdminPortal({ walletAddress }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-10">
-          <h1 className="text-4xl font-bold text-white mb-2">Hospital Admin Portal</h1>
-          <p className="text-slate-400">Sarawak MedChain Billing Dashboard</p>
-          <div className="mt-2 flex items-center gap-4">
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+    <div className="w-full min-h-full bg-slate-900 px-8 py-6 font-sans tracking-tight">
+        {/* Header - Full Width Enterprise Style */}
+        <div className="mb-8 flex flex-col lg:flex-row lg:items-center justify-start gap-x-4 gap-y-2">
+          <div className="flex items-center gap-x-4">
+            <h1 className="text-3xl lg:text-4xl font-bold text-white">Hospital Admin Portal</h1>
+            <span className={`flex px-3 py-1 rounded-full text-sm font-medium ${
               isAdmin
                 ? 'bg-emerald-500/20 text-emerald-400'
                 : isPendingAdmin
                   ? 'bg-yellow-500/20 text-yellow-400'
                   : 'bg-slate-500/20 text-slate-400'
             }`}>
-              {isAdmin ? 'You are Admin' : isPendingAdmin ? 'Pending Admin (Accept to complete)' : 'Not Admin'}
+              {isAdmin ? 'You are Admin' : isPendingAdmin ? 'Pending Admin' : 'Not Admin'}
             </span>
           </div>
+          <p className="text-slate-400 lg:ml-auto">Sarawak MedChain Billing Dashboard</p>
         </div>
 
         {/* Message */}
@@ -200,10 +199,10 @@ export default function AdminPortal({ walletAddress }) {
           </div>
         )}
 
-        {/* Admin Management Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+        {/* Admin Management Section - 12 Column Grid */}
+        <div className="grid grid-cols-12 gap-6 mb-8">
           {/* Admin Transfer Card */}
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
+          <div className="col-span-12 lg:col-span-4 bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
             <h2 className="text-xl font-semibold text-white mb-4">Admin Transfer</h2>
             <div className="space-y-4">
               <div>
@@ -266,7 +265,7 @@ export default function AdminPortal({ walletAddress }) {
           </div>
 
           {/* Doctor Management Card */}
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
+          <div className="col-span-12 lg:col-span-8 bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/50 p-6">
             <h2 className="text-xl font-semibold text-white mb-4">Doctor Management</h2>
 
             {isAdmin ? (
@@ -315,11 +314,11 @@ export default function AdminPortal({ walletAddress }) {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        {/* Stats Cards - Full Width 12 Column Grid */}
+        <div className="grid grid-cols-12 gap-6 mb-8">
           {/* Total MCs Issued */}
-          <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-6 shadow-xl shadow-blue-900/20 border border-blue-500/20">
-            <div className="flex items-center justify-between mb-4">
+          <div className="col-span-12 md:col-span-4 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-6 shadow-xl shadow-blue-900/20 border border-blue-500/20">
+            <div className="flex items-center justify-start gap-x-4 mb-4">
               <div className="w-12 h-12 bg-blue-500/30 rounded-xl flex items-center justify-center">
                 <svg className="w-6 h-6 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -336,8 +335,8 @@ export default function AdminPortal({ walletAddress }) {
           </div>
 
           {/* Active Doctors */}
-          <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 rounded-2xl p-6 shadow-xl shadow-emerald-900/20 border border-emerald-500/20">
-            <div className="flex items-center justify-between mb-4">
+          <div className="col-span-12 md:col-span-4 bg-gradient-to-br from-emerald-600 to-emerald-800 rounded-2xl p-6 shadow-xl shadow-emerald-900/20 border border-emerald-500/20">
+            <div className="flex items-center justify-start gap-x-4 mb-4">
               <div className="w-12 h-12 bg-emerald-500/30 rounded-xl flex items-center justify-center">
                 <svg className="w-6 h-6 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -354,8 +353,8 @@ export default function AdminPortal({ walletAddress }) {
           </div>
 
           {/* Available Credits */}
-          <div className="bg-gradient-to-br from-violet-600 to-violet-800 rounded-2xl p-6 shadow-xl shadow-violet-900/20 border border-violet-500/20">
-            <div className="flex items-center justify-between mb-4">
+          <div className="col-span-12 md:col-span-4 bg-gradient-to-br from-violet-600 to-violet-800 rounded-2xl p-6 shadow-xl shadow-violet-900/20 border border-violet-500/20">
+            <div className="flex items-center justify-start gap-x-4 mb-4">
               <div className="w-12 h-12 bg-violet-500/30 rounded-xl flex items-center justify-center">
                 <svg className="w-6 h-6 text-violet-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -372,10 +371,10 @@ export default function AdminPortal({ walletAddress }) {
           </div>
         </div>
 
-        {/* Outstanding Balance Card */}
+        {/* Outstanding Balance Card - Full Width */}
         {totalOwed > 0 && (
-          <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-2xl p-6 mb-10">
-            <div className="flex items-center gap-4">
+          <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-2xl p-6 mb-8">
+            <div className="flex items-center justify-start gap-x-4">
               <div className="w-14 h-14 bg-amber-500/20 rounded-xl flex items-center justify-center">
                 <svg className="w-7 h-7 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -453,10 +452,9 @@ export default function AdminPortal({ walletAddress }) {
         </div>
 
         {/* Footer */}
-        <div className="mt-8 text-center text-slate-500 text-sm">
+        <div className="mt-8 flex justify-start text-slate-500 text-sm">
           <p>Sarawak MedChain Admin Portal</p>
         </div>
-      </div>
     </div>
   );
 }
