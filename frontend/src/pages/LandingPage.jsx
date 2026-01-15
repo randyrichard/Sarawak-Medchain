@@ -1,5 +1,346 @@
-import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+
+// Facility types for dropdown
+const FACILITY_TYPES = [
+  'Private Hospital',
+  'State Clinic',
+  'Private Specialist',
+  'Government Hospital',
+  'Medical Centre',
+];
+
+// Decision maker roles for dropdown
+const DECISION_MAKER_ROLES = [
+  'CEO',
+  'Hospital Director',
+  'Head of IT',
+  'Medical Director',
+  'Operations Manager',
+  'Finance Director',
+];
+
+// Generate blockchain-style reference ID
+const generateBlockchainRef = () => {
+  const chars = '0123456789abcdef';
+  let hash = '0x';
+  for (let i = 0; i < 16; i++) {
+    hash += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return hash;
+};
+
+// Request Access Modal Component
+function RequestAccessModal({ isOpen, onClose }) {
+  const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [blockchainRef, setBlockchainRef] = useState('');
+  const [formData, setFormData] = useState({
+    facilityName: '',
+    facilityType: '',
+    estimatedMCs: '',
+    decisionMakerRole: '',
+    email: '',
+    phone: '',
+  });
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const calculateProgress = () => {
+    const fields = ['facilityName', 'facilityType', 'estimatedMCs', 'decisionMakerRole'];
+    const filled = fields.filter(f => formData[f]).length;
+    return (filled / fields.length) * 100;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    // Simulate blockchain transaction
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    setBlockchainRef(generateBlockchainRef());
+    setStep(2);
+    setIsSubmitting(false);
+  };
+
+  const handleClose = () => {
+    setStep(1);
+    setFormData({
+      facilityName: '',
+      facilityType: '',
+      estimatedMCs: '',
+      decisionMakerRole: '',
+      email: '',
+      phone: '',
+    });
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        onClick={handleClose}
+      />
+
+      {/* Modal */}
+      <div className="relative w-full max-w-lg mx-4 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+        {/* Progress Bar */}
+        <div className="h-1 bg-slate-800">
+          <div
+            className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-500"
+            style={{ width: step === 2 ? '100%' : `${calculateProgress()}%` }}
+          />
+        </div>
+
+        {/* Close Button */}
+        <button
+          onClick={handleClose}
+          className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        {step === 1 ? (
+          /* Form Step */
+          <form onSubmit={handleSubmit} className="p-8">
+            {/* Header */}
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-white">Request Hospital Access</h2>
+              <p className="text-slate-400 mt-2">Join Sarawak's blockchain healthcare network</p>
+            </div>
+
+            {/* Form Fields */}
+            <div className="space-y-5">
+              {/* Facility Name */}
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Facility Name
+                </label>
+                <input
+                  type="text"
+                  name="facilityName"
+                  value={formData.facilityName}
+                  onChange={handleInputChange}
+                  placeholder="e.g., KPJ Kuching, Rejang Medical"
+                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  required
+                />
+              </div>
+
+              {/* Facility Type */}
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Facility Type
+                </label>
+                <select
+                  name="facilityType"
+                  value={formData.facilityType}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-colors appearance-none cursor-pointer"
+                  required
+                >
+                  <option value="" className="text-slate-500">Select facility type</option>
+                  {FACILITY_TYPES.map(type => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Estimated Monthly MCs */}
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Estimated Monthly MCs
+                </label>
+                <input
+                  type="number"
+                  name="estimatedMCs"
+                  value={formData.estimatedMCs}
+                  onChange={handleInputChange}
+                  placeholder="e.g., 500"
+                  min="1"
+                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  required
+                />
+                {formData.estimatedMCs && (
+                  <p className="text-xs text-emerald-400 mt-2">
+                    💰 Estimated variable fee: RM{Number(formData.estimatedMCs).toLocaleString()}/month
+                  </p>
+                )}
+              </div>
+
+              {/* Decision Maker Role */}
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Your Role
+                </label>
+                <select
+                  name="decisionMakerRole"
+                  value={formData.decisionMakerRole}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-colors appearance-none cursor-pointer"
+                  required
+                >
+                  <option value="" className="text-slate-500">Select your role</option>
+                  {DECISION_MAKER_ROLES.map(role => (
+                    <option key={role} value={role}>{role}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Contact Info Row */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="you@hospital.com"
+                    className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Phone
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    placeholder="+60 12-345 6789"
+                    className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full mt-8 py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Recording on Blockchain...
+                </>
+              ) : (
+                <>
+                  Submit Application
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </>
+              )}
+            </button>
+
+            <p className="text-center text-slate-500 text-xs mt-4">
+              🔐 Your information is encrypted and secured on the blockchain
+            </p>
+          </form>
+        ) : (
+          /* Success Step */
+          <div className="p-8 text-center">
+            {/* Success Icon */}
+            <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+
+            <h2 className="text-2xl font-bold text-white mb-2">Application Received!</h2>
+            <p className="text-slate-400 mb-8">
+              Your request has been logged on the Sarawak MedChain network.
+            </p>
+
+            {/* Blockchain Reference Card */}
+            <div className="bg-slate-800/50 border border-white/10 rounded-xl p-6 mb-6">
+              <p className="text-slate-400 text-sm mb-2">Blockchain Reference ID</p>
+              <div className="flex items-center justify-center gap-2">
+                <code className="text-lg font-mono text-emerald-400">{blockchainRef}</code>
+                <button
+                  onClick={() => navigator.clipboard.writeText(blockchainRef)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                  title="Copy to clipboard"
+                >
+                  <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-slate-500 text-xs mt-3">
+                ⛓️ Recorded at block #{Math.floor(Math.random() * 1000000 + 8000000)}
+              </p>
+            </div>
+
+            {/* Summary */}
+            <div className="bg-slate-800/30 rounded-xl p-4 mb-6 text-left">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-slate-500">Facility</p>
+                  <p className="text-white font-medium">{formData.facilityName}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500">Type</p>
+                  <p className="text-white font-medium">{formData.facilityType}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500">Est. Monthly MCs</p>
+                  <p className="text-white font-medium">{Number(formData.estimatedMCs).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500">Contact Role</p>
+                  <p className="text-white font-medium">{formData.decisionMakerRole}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Next Steps */}
+            <div className="text-left bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 mb-6">
+              <p className="text-blue-400 font-semibold text-sm mb-2">What happens next?</p>
+              <ul className="text-slate-400 text-sm space-y-1">
+                <li>✓ Our team will review your application within 24 hours</li>
+                <li>✓ You'll receive onboarding materials via email</li>
+                <li>✓ A dedicated account manager will contact you</li>
+              </ul>
+            </div>
+
+            <button
+              onClick={handleClose}
+              className="w-full py-4 bg-white/5 border border-white/10 text-white font-bold rounded-xl hover:bg-white/10 transition-all"
+            >
+              Close
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 // Social Proof notifications
 const SOCIAL_PROOF_EVENTS = [
@@ -77,14 +418,17 @@ function SocialProofToast() {
 }
 
 export default function LandingPage() {
-  const navigate = useNavigate();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleGetStarted = () => {
-    navigate('/patient');
+    setIsModalOpen(true);
   };
 
   return (
     <div className="min-h-screen bg-[#030712]" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+      {/* Request Access Modal */}
+      <RequestAccessModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+
       {/* Social Proof Toast */}
       <SocialProofToast />
 
