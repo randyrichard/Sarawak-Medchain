@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend } from 'recharts';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import SignatureCanvas from 'react-signature-canvas';
@@ -37,6 +37,352 @@ const projectionData = [
   { month: 'Jul', clients: 160, revenue: 520000, projected: true },
   { month: 'Aug', clients: 200, revenue: 560000, projected: true },
 ];
+
+// Generate strategic revenue projection based on adoption rate
+const generateRevenueProjection = (hospitalsPerMonth, startingHospitals = 3, avgMCsPerHospital = 150) => {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const HOSPITAL_FEE = 10000;
+  const MC_FEE = 1.00;
+
+  return months.map((month, index) => {
+    // Calculate cumulative hospitals (starting + growth)
+    const hospitals = Math.min(startingHospitals + (hospitalsPerMonth * index), TOTAL_SARAWAK_HOSPITALS);
+
+    // Base subscription revenue
+    const subscriptionRevenue = hospitals * HOSPITAL_FEE;
+
+    // Transaction fee revenue (MCs grow with hospitals)
+    const totalMCs = hospitals * avgMCsPerHospital;
+    const transactionRevenue = totalMCs * MC_FEE;
+
+    // Total revenue
+    const totalRevenue = subscriptionRevenue + transactionRevenue;
+
+    return {
+      month,
+      hospitals,
+      subscriptionRevenue,
+      transactionRevenue,
+      totalRevenue,
+      target: REVENUE_TARGET,
+      totalMCs
+    };
+  });
+};
+
+// Strategic Revenue Projection Component
+function StrategicRevenueProjection() {
+  const [adoptionRate, setAdoptionRate] = useState(3); // hospitals per month
+  const [projectionData, setProjectionData] = useState([]);
+
+  useEffect(() => {
+    setProjectionData(generateRevenueProjection(adoptionRate));
+  }, [adoptionRate]);
+
+  // Find month when target is reached
+  const targetMonth = projectionData.find(d => d.totalRevenue >= REVENUE_TARGET);
+  const monthsToTarget = targetMonth ? projectionData.indexOf(targetMonth) + 1 : '>12';
+
+  // Calculate end of year projections
+  const yearEndData = projectionData[11] || {};
+
+  // Custom tooltip
+  const CustomProjectionTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div
+          className="rounded-xl p-4 border shadow-2xl"
+          style={{
+            backgroundColor: 'rgba(15, 31, 56, 0.95)',
+            borderColor: theme.success,
+            backdropFilter: 'blur(10px)'
+          }}
+        >
+          <p className="font-bold text-lg mb-2" style={{ color: theme.textPrimary }}>{label} 2026</p>
+          <div className="space-y-1 text-sm">
+            <div className="flex justify-between gap-6">
+              <span style={{ color: theme.textMuted }}>Hospitals:</span>
+              <span className="font-bold" style={{ color: theme.accent }}>{data.hospitals}</span>
+            </div>
+            <div className="flex justify-between gap-6">
+              <span style={{ color: theme.textMuted }}>Subscriptions:</span>
+              <span className="font-bold" style={{ color: theme.success }}>RM {data.subscriptionRevenue?.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between gap-6">
+              <span style={{ color: theme.textMuted }}>MC Fees ({data.totalMCs?.toLocaleString()} MCs):</span>
+              <span className="font-bold" style={{ color: theme.purple }}>RM {data.transactionRevenue?.toLocaleString()}</span>
+            </div>
+            <div className="pt-2 mt-2 flex justify-between gap-6" style={{ borderTop: `1px solid ${theme.border}` }}>
+              <span className="font-semibold" style={{ color: theme.textSecondary }}>Total MRR:</span>
+              <span className="font-black text-lg" style={{ color: theme.success }}>RM {data.totalRevenue?.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div
+      className="rounded-2xl p-6 border relative overflow-hidden"
+      style={{
+        backgroundColor: 'rgba(15, 31, 56, 0.6)',
+        borderColor: theme.border,
+        backdropFilter: 'blur(20px)'
+      }}
+    >
+      {/* Background glow effect */}
+      <div
+        className="absolute inset-0 opacity-30"
+        style={{
+          background: `radial-gradient(ellipse at 50% 100%, ${theme.success}20 0%, transparent 70%)`
+        }}
+      />
+
+      <div className="relative z-10">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: `${theme.success}20`, border: `1px solid ${theme.success}` }}
+              >
+                <svg className="w-5 h-5" fill={theme.success} viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-xl font-bold" style={{ color: theme.textPrimary }}>
+                  Strategic Revenue Projection
+                </h2>
+                <p className="text-sm" style={{ color: theme.textSecondary }}>
+                  12-month forecast based on hospital adoption rate
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Target indicator */}
+          <div
+            className="px-4 py-2 rounded-xl text-right"
+            style={{ backgroundColor: `${theme.success}15`, border: `1px solid ${theme.success}40` }}
+          >
+            <p className="text-xs" style={{ color: theme.textMuted }}>Target Reached</p>
+            <p className="text-lg font-black" style={{ color: theme.success }}>
+              {typeof monthsToTarget === 'number' ? `Month ${monthsToTarget}` : monthsToTarget}
+            </p>
+          </div>
+        </div>
+
+        {/* Adoption Rate Slider */}
+        <div
+          className="mb-6 p-4 rounded-xl"
+          style={{ backgroundColor: 'rgba(10, 22, 40, 0.5)', border: `1px solid ${theme.border}` }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-sm font-semibold" style={{ color: theme.textSecondary }}>
+                Hospital Adoption Rate
+              </p>
+              <p className="text-xs" style={{ color: theme.textMuted }}>
+                Adjust to see different growth scenarios
+              </p>
+            </div>
+            <div
+              className="px-4 py-2 rounded-lg"
+              style={{ backgroundColor: theme.accent, color: theme.textPrimary }}
+            >
+              <span className="text-2xl font-black">{adoptionRate}</span>
+              <span className="text-sm ml-1">hospitals/month</span>
+            </div>
+          </div>
+
+          {/* Slider */}
+          <div className="relative">
+            <input
+              type="range"
+              min="1"
+              max="6"
+              value={adoptionRate}
+              onChange={(e) => setAdoptionRate(Number(e.target.value))}
+              className="w-full h-2 rounded-full appearance-none cursor-pointer"
+              style={{
+                background: `linear-gradient(to right, ${theme.success} 0%, ${theme.success} ${((adoptionRate - 1) / 5) * 100}%, ${theme.border} ${((adoptionRate - 1) / 5) * 100}%, ${theme.border} 100%)`
+              }}
+            />
+            <div className="flex justify-between mt-2 text-xs" style={{ color: theme.textMuted }}>
+              <span>Conservative (1)</span>
+              <span>Moderate (3)</span>
+              <span>Aggressive (6)</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Chart */}
+        <div className="h-80 mb-6">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={projectionData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <defs>
+                <linearGradient id="totalRevenueGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={theme.success} stopOpacity={0.3} />
+                  <stop offset="95%" stopColor={theme.success} stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="subscriptionGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={theme.accent} stopOpacity={0.3} />
+                  <stop offset="95%" stopColor={theme.accent} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+
+              <CartesianGrid strokeDasharray="3 3" stroke={theme.border} opacity={0.5} />
+
+              <XAxis
+                dataKey="month"
+                stroke={theme.textMuted}
+                fontSize={12}
+                tickLine={false}
+                axisLine={{ stroke: theme.border }}
+              />
+
+              <YAxis
+                stroke={theme.textMuted}
+                fontSize={12}
+                tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+                tickLine={false}
+                axisLine={{ stroke: theme.border }}
+                domain={[0, 600000]}
+              />
+
+              <Tooltip content={<CustomProjectionTooltip />} />
+
+              {/* Target line at RM500k */}
+              <ReferenceLine
+                y={REVENUE_TARGET}
+                stroke={theme.warning}
+                strokeDasharray="8 4"
+                strokeWidth={2}
+                label={{
+                  value: 'TARGET: RM500k',
+                  position: 'right',
+                  fill: theme.warning,
+                  fontSize: 11,
+                  fontWeight: 'bold'
+                }}
+              />
+
+              {/* Subscription Revenue Line */}
+              <Line
+                type="monotone"
+                dataKey="subscriptionRevenue"
+                name="Subscriptions"
+                stroke={theme.accent}
+                strokeWidth={2}
+                dot={{ fill: theme.accent, strokeWidth: 0, r: 4 }}
+                activeDot={{ r: 6, fill: theme.accent, stroke: theme.textPrimary, strokeWidth: 2 }}
+              />
+
+              {/* Transaction Revenue Line */}
+              <Line
+                type="monotone"
+                dataKey="transactionRevenue"
+                name="MC Fees"
+                stroke={theme.purple}
+                strokeWidth={2}
+                dot={{ fill: theme.purple, strokeWidth: 0, r: 4 }}
+                activeDot={{ r: 6, fill: theme.purple, stroke: theme.textPrimary, strokeWidth: 2 }}
+              />
+
+              {/* Total Revenue Line */}
+              <Line
+                type="monotone"
+                dataKey="totalRevenue"
+                name="Total MRR"
+                stroke={theme.success}
+                strokeWidth={3}
+                dot={{ fill: theme.success, strokeWidth: 0, r: 5 }}
+                activeDot={{ r: 8, fill: theme.success, stroke: theme.textPrimary, strokeWidth: 2 }}
+              />
+
+              <Legend
+                wrapperStyle={{ paddingTop: '20px' }}
+                formatter={(value) => <span style={{ color: theme.textSecondary, fontSize: '12px' }}>{value}</span>}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Summary Stats */}
+        <div className="grid grid-cols-4 gap-4">
+          <div
+            className="p-4 rounded-xl text-center"
+            style={{ backgroundColor: 'rgba(10, 22, 40, 0.5)', border: `1px solid ${theme.border}` }}
+          >
+            <p className="text-xs mb-1" style={{ color: theme.textMuted }}>Year-End Hospitals</p>
+            <p className="text-2xl font-black" style={{ color: theme.accent }}>
+              {yearEndData.hospitals || 0}
+            </p>
+          </div>
+          <div
+            className="p-4 rounded-xl text-center"
+            style={{ backgroundColor: 'rgba(10, 22, 40, 0.5)', border: `1px solid ${theme.border}` }}
+          >
+            <p className="text-xs mb-1" style={{ color: theme.textMuted }}>Subscriptions MRR</p>
+            <p className="text-2xl font-black" style={{ color: theme.success }}>
+              RM{((yearEndData.subscriptionRevenue || 0) / 1000).toFixed(0)}k
+            </p>
+          </div>
+          <div
+            className="p-4 rounded-xl text-center"
+            style={{ backgroundColor: 'rgba(10, 22, 40, 0.5)', border: `1px solid ${theme.border}` }}
+          >
+            <p className="text-xs mb-1" style={{ color: theme.textMuted }}>MC Fees MRR</p>
+            <p className="text-2xl font-black" style={{ color: theme.purple }}>
+              RM{((yearEndData.transactionRevenue || 0) / 1000).toFixed(0)}k
+            </p>
+          </div>
+          <div
+            className="p-4 rounded-xl text-center"
+            style={{
+              backgroundColor: `${theme.success}10`,
+              border: `1px solid ${theme.success}`
+            }}
+          >
+            <p className="text-xs mb-1" style={{ color: theme.success }}>Projected Year-End MRR</p>
+            <p className="text-2xl font-black" style={{ color: theme.success }}>
+              RM{((yearEndData.totalRevenue || 0) / 1000).toFixed(0)}k
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Custom slider styles */}
+      <style>{`
+        input[type="range"]::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: ${theme.success};
+          cursor: pointer;
+          border: 3px solid ${theme.textPrimary};
+          box-shadow: 0 0 10px ${theme.success}60;
+        }
+        input[type="range"]::-moz-range-thumb {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: ${theme.success};
+          cursor: pointer;
+          border: 3px solid ${theme.textPrimary};
+          box-shadow: 0 0 10px ${theme.success}60;
+        }
+      `}</style>
+    </div>
+  );
+}
 
 // Blockchain nodes across Sarawak
 const blockchainNodes = [
@@ -1376,6 +1722,11 @@ export default function FounderAdmin() {
             <p>Clinics: {connectedClinics}/{TOTAL_SARAWAK_CLINICS} ({clinicMarketShare}%)</p>
           </div>
         </div>
+      </div>
+
+      {/* Strategic Revenue Projection */}
+      <div className="mb-8">
+        <StrategicRevenueProjection />
       </div>
 
       {/* Revenue Projection Chart & Market Share */}
