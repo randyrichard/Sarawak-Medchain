@@ -70,6 +70,18 @@ export default function CEODashboard({ walletAddress }) {
   const [fluData, setFluData] = useState([]);
   const [hospitalBalances, setHospitalBalances] = useState([]);
 
+  // Billing state
+  const [facilityType, setFacilityType] = useState('Hospital'); // 'Hospital' or 'Clinic'
+  const [baseFeePayment, setBaseFeePayment] = useState(0);
+
+  // Billing calculations
+  const baseFee = facilityType === 'Hospital' ? 10000 : 2000;
+  const tierName = facilityType === 'Hospital' ? 'Premium Tier' : 'Standard Tier';
+  const mcCost = 1.00;
+  const meteredUsageCost = stats.totalMCs * mcCost;
+  const totalDue = baseFee + meteredUsageCost - baseFeePayment;
+  const baseFeeDetected = baseFeePayment >= baseFee;
+
   useEffect(() => {
     fetchDashboardData();
     setFluData(generateFluSeasonData());
@@ -117,6 +129,11 @@ export default function CEODashboard({ walletAddress }) {
     setDarkMode(!darkMode);
   };
 
+  const handlePayNow = () => {
+    // In production, this would trigger a blockchain payment
+    setBaseFeePayment(baseFee);
+  };
+
   return (
     <div className={`flex-1 flex-grow w-full min-h-full px-12 py-10 font-sans transition-colors duration-300 ${
       darkMode ? 'bg-slate-900' : 'bg-slate-100'
@@ -147,6 +164,171 @@ export default function CEODashboard({ walletAddress }) {
           <span className="font-medium text-sm">{darkMode ? 'Light' : 'Dark'}</span>
         </button>
       </div>
+
+        {/* Billing Engine Section */}
+        <div className="grid grid-cols-12 gap-6 w-full mb-8">
+          {/* Plan Details Card */}
+          <div className={`col-span-12 lg:col-span-4 rounded-2xl p-6 ${
+            darkMode
+              ? 'bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700'
+              : 'bg-white border border-gray-100 shadow-lg'
+          }`}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Plan Details</h2>
+              <select
+                value={facilityType}
+                onChange={(e) => setFacilityType(e.target.value)}
+                className={`text-sm rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-blue-500 ${
+                  darkMode
+                    ? 'bg-slate-700 border border-slate-600 text-white'
+                    : 'bg-gray-50 border border-gray-200 text-gray-900'
+                }`}
+              >
+                <option value="Hospital">Hospital</option>
+                <option value="Clinic">Clinic</option>
+              </select>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                  darkMode ? 'bg-blue-500/20' : 'bg-blue-50'
+                }`}>
+                  <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                </div>
+                <div>
+                  <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-gray-500'}`}>{tierName}</p>
+                  <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    RM {baseFee.toLocaleString()}<span className={`text-sm font-normal ${darkMode ? 'text-slate-400' : 'text-gray-500'}`}>/mo</span>
+                  </p>
+                </div>
+              </div>
+              <div className={`pt-3 border-t ${darkMode ? 'border-slate-700' : 'border-gray-100'}`}>
+                <p className={`text-xs ${darkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+                  {facilityType === 'Hospital'
+                    ? 'Full access to all features, unlimited doctors, priority support'
+                    : 'Standard access, up to 5 doctors, email support'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Metered Usage Card */}
+          <div className={`col-span-12 lg:col-span-4 rounded-2xl p-6 ${
+            darkMode
+              ? 'bg-gradient-to-br from-emerald-900/50 to-slate-900 border border-emerald-700/30'
+              : 'bg-gradient-to-br from-emerald-50 to-white border border-emerald-100 shadow-lg'
+          }`}>
+            <h2 className={`text-lg font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Metered Usage</h2>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className={darkMode ? 'text-slate-400' : 'text-gray-500'}>MCs Issued This Month</span>
+                <span className="text-2xl font-bold text-emerald-500">{stats.totalMCs}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className={darkMode ? 'text-slate-400' : 'text-gray-500'}>Rate per MC</span>
+                <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>RM {mcCost.toFixed(2)}</span>
+              </div>
+              <div className={`pt-3 border-t ${darkMode ? 'border-slate-700' : 'border-emerald-100'}`}>
+                <div className="flex items-center justify-between">
+                  <span className={`font-medium ${darkMode ? 'text-slate-300' : 'text-gray-700'}`}>Usage Cost</span>
+                  <span className="text-xl font-bold text-emerald-500">RM {meteredUsageCost.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Total Due Card - Bold & Prominent */}
+          <div className="col-span-12 lg:col-span-4 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-6 shadow-xl shadow-blue-900/30">
+            <h2 className="text-lg font-semibold text-blue-100 mb-2">Total Due</h2>
+            <div className="mb-4">
+              <p className="text-5xl font-black text-white">
+                RM {totalDue.toLocaleString()}
+              </p>
+              <p className="text-blue-200 text-sm mt-1">
+                Base: RM {baseFee.toLocaleString()} + Usage: RM {meteredUsageCost.toLocaleString()}
+              </p>
+            </div>
+            {baseFeeDetected ? (
+              <div className="flex items-center gap-2 text-emerald-300 bg-emerald-500/20 px-4 py-2 rounded-lg">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="font-medium">Base Fee Paid</span>
+              </div>
+            ) : (
+              <button
+                onClick={handlePayNow}
+                className="w-full px-4 py-3 bg-[#007BFF] hover:bg-[#0056b3] text-white rounded-lg font-semibold transition-all shadow-lg shadow-blue-500/25"
+              >
+                Pay Now
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Monthly Dues Table */}
+        <div className={`rounded-2xl overflow-hidden mb-8 ${
+          darkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white shadow-lg'
+        }`}>
+          <div className={`px-6 py-4 border-b ${darkMode ? 'border-slate-700' : 'border-gray-100'}`}>
+            <h2 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Monthly Dues</h2>
+            <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-gray-500'}`}>Invoice history and payment status</p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className={darkMode ? 'bg-slate-700/30' : 'bg-gray-50'}>
+                  <th className={`text-left px-6 py-4 font-medium text-sm ${darkMode ? 'text-slate-300' : 'text-gray-600'}`}>Billing Period</th>
+                  <th className={`text-right px-6 py-4 font-medium text-sm ${darkMode ? 'text-slate-300' : 'text-gray-600'}`}>Base Fee</th>
+                  <th className={`text-right px-6 py-4 font-medium text-sm ${darkMode ? 'text-slate-300' : 'text-gray-600'}`}>Metered Usage</th>
+                  <th className={`text-right px-6 py-4 font-medium text-sm ${darkMode ? 'text-slate-300' : 'text-gray-600'}`}>Total</th>
+                  <th className={`text-right px-6 py-4 font-medium text-sm ${darkMode ? 'text-slate-300' : 'text-gray-600'}`}>Status</th>
+                  <th className={`text-right px-6 py-4 font-medium text-sm ${darkMode ? 'text-slate-300' : 'text-gray-600'}`}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className={`border-t transition-colors ${
+                  darkMode ? 'border-slate-700/30 hover:bg-slate-700/20' : 'border-gray-100 hover:bg-gray-50'
+                }`}>
+                  <td className={`px-6 py-4 font-medium ${darkMode ? 'text-slate-200' : 'text-gray-900'}`}>January 2026</td>
+                  <td className={`px-6 py-4 text-right ${darkMode ? 'text-slate-300' : 'text-gray-600'}`}>RM {baseFee.toLocaleString()}</td>
+                  <td className={`px-6 py-4 text-right ${darkMode ? 'text-slate-300' : 'text-gray-600'}`}>RM {meteredUsageCost.toLocaleString()}</td>
+                  <td className={`px-6 py-4 text-right font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>RM {totalDue.toLocaleString()}</td>
+                  <td className="px-6 py-4 text-right">
+                    {baseFeeDetected ? (
+                      <span className="inline-flex items-center gap-1 text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-full text-sm font-medium">
+                        <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                        Paid
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-amber-500 bg-amber-500/10 px-3 py-1 rounded-full text-sm font-medium">
+                        <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
+                        Pending
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <button
+                      onClick={handlePayNow}
+                      disabled={baseFeeDetected}
+                      className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                        baseFeeDetected
+                          ? 'bg-emerald-500 text-white cursor-default'
+                          : 'bg-[#007BFF] hover:bg-[#0056b3] text-white shadow-lg shadow-blue-500/25'
+                      }`}
+                    >
+                      {baseFeeDetected ? 'Paid' : 'Pay Now'}
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         {/* Loading State */}
         {loading ? (
           <div className="flex items-center justify-start h-64">
