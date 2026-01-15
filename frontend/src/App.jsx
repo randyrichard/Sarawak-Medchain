@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { connectWallet, getMyBalance } from './utils/contract';
+import { BillingProvider } from './context/BillingContext';
 import PatientPortal from './pages/PatientPortal';
 import DoctorPortal from './pages/DoctorPortal';
 import AdminPortal from './pages/AdminPortal';
@@ -158,8 +159,9 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
-      <div className="flex h-screen w-full overflow-hidden">
+    <BillingProvider>
+      <BrowserRouter>
+        <div className="flex h-screen w-full overflow-hidden">
         {/* Fixed Sidebar */}
         <aside className="w-72 h-full bg-slate-900 text-white flex flex-col flex-shrink-0">
           {/* Logo & Title */}
@@ -264,8 +266,9 @@ function App() {
             <Route path="/ceo" element={<CEODashboard walletAddress={walletAddress} />} />
           </Routes>
         </main>
-      </div>
-    </BrowserRouter>
+        </div>
+      </BrowserRouter>
+    </BillingProvider>
   );
 }
 

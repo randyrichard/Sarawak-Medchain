@@ -11,8 +11,24 @@ import {
   removeVerifiedDoctor,
   isVerifiedDoctor
 } from '../utils/contract';
+import { useBilling } from '../context/BillingContext';
 
 export default function AdminPortal({ walletAddress }) {
+  // Use Billing Context
+  const {
+    accountType,
+    changeAccountType,
+    currentTier,
+    monthlySubscriptionFee,
+    variableUsageCost,
+    totalOutstandingBalance,
+    mcRate,
+    mcsIssuedThisMonth,
+    subscriptionPaid,
+    processPayment,
+    refreshBillingData
+  } = useBilling();
+
   const [totalMCs, setTotalMCs] = useState(0);
   const [activeDoctors, setActiveDoctors] = useState(0);
   const [totalCredits, setTotalCredits] = useState(0);
@@ -26,12 +42,9 @@ export default function AdminPortal({ walletAddress }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isPendingAdmin, setIsPendingAdmin] = useState(false);
 
-  // Billing state
-  const [facilityType, setFacilityType] = useState('Hospital'); // 'Hospital' or 'Clinic'
-  const [baseFeePayment, setBaseFeePayment] = useState(0); // Amount paid toward base fee
-  const [monthlyDues, setMonthlyDues] = useState([
-    { id: 1, month: 'January 2026', baseFee: 0, meteredUsage: 0, total: 0, status: 'pending' },
-  ]);
+  // Payment processing state
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
 
   // Form state
   const [newAdminAddress, setNewAdminAddress] = useState('');
@@ -40,14 +53,17 @@ export default function AdminPortal({ walletAddress }) {
   const [message, setMessage] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Billing calculations
-  const baseFee = facilityType === 'Hospital' ? 10000 : 2000;
-  const tierName = facilityType === 'Hospital' ? 'Premium Enterprise Tier' : 'Standard Tier';
-  const mcCost = 1.00; // RM per MC
-  const meteredUsageCost = totalMCs * mcCost;
-  const totalDue = baseFee + meteredUsageCost - baseFeePayment;
-  const baseFeeDetected = baseFeePayment >= baseFee;
-  const isSubscriptionOverdue = !baseFeeDetected && totalDue > 0;
+  // Derived billing values (using context)
+  const tierName = currentTier.name;
+  const baseFee = monthlySubscriptionFee;
+  const mcCost = mcRate;
+  const meteredUsageCost = variableUsageCost;
+  const totalDue = totalOutstandingBalance;
+  const baseFeeDetected = subscriptionPaid;
+  const isSubscriptionOverdue = !subscriptionPaid && totalDue > 0;
+  const baseFeePayment = subscriptionPaid ? baseFee : 0;
+  const facilityType = accountType;
+  const setFacilityType = changeAccountType;
 
   // Color scheme
   const sarawakRed = '#DC2626'; // For overdue alerts
@@ -185,15 +201,35 @@ export default function AdminPortal({ walletAddress }) {
   };
 
   const handlePayNow = (dueId) => {
-    // In production, this would trigger a blockchain payment
-    setMessage('Payment initiated. Processing...');
-    setTimeout(() => {
-      setBaseFeePayment(baseFee);
-      setMonthlyDues(prev => prev.map(due =>
-        due.id === dueId ? { ...due, status: 'paid' } : due
-      ));
-      setMessage('Payment successful! Base fee has been paid.');
-    }, 1500);
+    handleProcessMonthlyPayment();
+  };
+
+  const handleProcessMonthlyPayment = async () => {
+    try {
+      setPaymentProcessing(true);
+      setPaymentSuccess(false);
+      setMessage('Processing monthly payment...');
+
+      const result = await processPayment(totalDue);
+
+      if (result.success) {
+        setPaymentSuccess(true);
+        setMessage(`Payment successful! Transaction ID: ${result.transactionId}`);
+
+        // Auto-hide success after 5 seconds
+        setTimeout(() => {
+          setPaymentSuccess(false);
+        }, 5000);
+
+        // Refresh billing data
+        await refreshBillingData();
+        await fetchData();
+      }
+    } catch (error) {
+      setMessage(`Error: ${error.message}`);
+    } finally {
+      setPaymentProcessing(false);
+    }
   };
 
   const formatAddress = (addr) => {
@@ -309,6 +345,145 @@ export default function AdminPortal({ walletAddress }) {
                 </svg>
                 View Invoice
               </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Payment Success Notification */}
+        {paymentSuccess && (
+          <div className="mb-6 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-6 py-4 flex items-center justify-between animate-pulse">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-emerald-500/20 rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-emerald-300 font-semibold">Payment Successful!</p>
+                <p className="text-emerald-400/80 text-sm">Your monthly payment has been processed</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Invoice Card - Full Width (col-span-12) */}
+        <div className="col-span-12 mb-8">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-slate-700/50 overflow-hidden shadow-xl">
+            {/* Invoice Header */}
+            <div className="px-8 py-6 border-b border-slate-700/50 bg-slate-800/50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-sky-500/20 rounded-xl flex items-center justify-center">
+                    <svg className="w-6 h-6 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">Monthly Invoice</h2>
+                    <p className="text-slate-400 text-sm">January 2026 Billing Period</p>
+                  </div>
+                </div>
+                <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                  subscriptionPaid
+                    ? 'bg-emerald-500/20 text-emerald-400'
+                    : 'bg-amber-500/20 text-amber-400'
+                }`}>
+                  {subscriptionPaid ? 'Paid' : 'Payment Due'}
+                </span>
+              </div>
+            </div>
+
+            {/* Invoice Body */}
+            <div className="p-8">
+              <div className="grid grid-cols-12 gap-8">
+                {/* Breakdown Section */}
+                <div className="col-span-12 lg:col-span-7">
+                  <table className="w-full">
+                    <tbody>
+                      <tr className="border-b border-slate-700/50">
+                        <td className="py-4">
+                          <p className="text-white font-medium">Monthly Subscription</p>
+                          <p className="text-slate-400 text-sm">{tierName} - {facilityType}</p>
+                        </td>
+                        <td className="py-4 text-right">
+                          <p className="text-xl font-bold text-white">RM {baseFee.toLocaleString()}</p>
+                        </td>
+                      </tr>
+                      <tr className="border-b border-slate-700/50">
+                        <td className="py-4">
+                          <p className="text-white font-medium">Variable Usage (MC Issued)</p>
+                          <p className="text-slate-400 text-sm">{mcsIssuedThisMonth} MCs x RM {mcCost.toFixed(2)}</p>
+                        </td>
+                        <td className="py-4 text-right">
+                          <p className="text-xl font-bold text-emerald-400">RM {meteredUsageCost.toLocaleString()}</p>
+                        </td>
+                      </tr>
+                      {subscriptionPaid && (
+                        <tr className="border-b border-slate-700/50">
+                          <td className="py-4">
+                            <p className="text-white font-medium">Payment Received</p>
+                            <p className="text-slate-400 text-sm">Base subscription fee</p>
+                          </td>
+                          <td className="py-4 text-right">
+                            <p className="text-xl font-bold text-sky-400">- RM {baseFeePayment.toLocaleString()}</p>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Total & Pay Button Section */}
+                <div className="col-span-12 lg:col-span-5">
+                  <div className={`rounded-2xl p-6 ${
+                    isSubscriptionOverdue
+                      ? 'bg-gradient-to-br from-red-600/20 to-red-800/20 border border-red-500/30'
+                      : subscriptionPaid
+                        ? 'bg-gradient-to-br from-emerald-600/20 to-emerald-800/20 border border-emerald-500/30'
+                        : 'bg-gradient-to-br from-sky-600/20 to-sky-800/20 border border-sky-500/30'
+                  }`}>
+                    <p className="text-slate-400 text-sm font-medium mb-2">Total Outstanding Balance</p>
+                    <p className={`text-5xl font-black mb-4 ${
+                      isSubscriptionOverdue ? 'text-red-400' : subscriptionPaid ? 'text-emerald-400' : 'text-white'
+                    }`}>
+                      RM {totalDue.toLocaleString()}
+                    </p>
+
+                    {subscriptionPaid ? (
+                      <div className="flex items-center gap-2 text-emerald-400 bg-emerald-500/20 px-4 py-3 rounded-xl">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="font-semibold">All Dues Cleared</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={handleProcessMonthlyPayment}
+                        disabled={paymentProcessing}
+                        className={`w-full py-4 rounded-xl font-bold text-lg text-white transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg ${
+                          paymentProcessing
+                            ? 'bg-slate-600 cursor-not-allowed'
+                            : isSubscriptionOverdue
+                              ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-red-500/30'
+                              : 'bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 shadow-sky-500/30'
+                        }`}
+                      >
+                        {paymentProcessing ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            </svg>
+                            Processing Payment...
+                          </span>
+                        ) : (
+                          'Process Monthly Payment'
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
