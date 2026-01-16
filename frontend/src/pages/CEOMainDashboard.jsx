@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
-import { pauseHospital, unpauseHospital, isHospitalPaused } from '../utils/contract';
+import { pauseHospital, unpauseHospital } from '../utils/contract';
 import { sendBroadcast, clearBroadcast } from '../components/BroadcastNotification';
 
 // FOUNDER WALLET ADDRESS - Only this address can access this dashboard
@@ -524,6 +524,13 @@ export default function CEOMainDashboard({ walletAddress }) {
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [activeBroadcast, setActiveBroadcast] = useState(null);
 
+  // Invoice State
+  const [isGeneratingInvoices, setIsGeneratingInvoices] = useState(false);
+  const [isSendingInvoices, setIsSendingInvoices] = useState(false);
+  const [invoiceHistory, setInvoiceHistory] = useState([]);
+  const [currentBatch, setCurrentBatch] = useState(null);
+  const [founderAlerts, setFounderAlerts] = useState([]);
+
   // Check if current wallet is the founder
   const isFounder = walletAddress?.toLowerCase() === FOUNDER_WALLET.toLowerCase();
 
@@ -665,6 +672,130 @@ export default function CEOMainDashboard({ walletAddress }) {
     });
   };
 
+  // Load invoice history from localStorage on mount
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('medchain_invoice_history');
+    if (savedHistory) {
+      setInvoiceHistory(JSON.parse(savedHistory));
+    }
+    const savedAlerts = localStorage.getItem('medchain_founder_alerts');
+    if (savedAlerts) {
+      setFounderAlerts(JSON.parse(savedAlerts));
+    }
+  }, []);
+
+  // Generate monthly invoices
+  const handleGenerateInvoices = async () => {
+    setIsGeneratingInvoices(true);
+    try {
+      const now = new Date();
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                          'July', 'August', 'September', 'October', 'November', 'December'];
+      const billingPeriod = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Generate invoices for all active facilities
+      const invoices = facilities.filter(f => f.wallet && f.status === 'active').map((f, idx) => ({
+        invoiceNumber: `INV-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}-${String(idx + 1).padStart(3, '0')}`,
+        hospitalId: f.id,
+        hospitalName: f.name,
+        walletAddress: f.wallet,
+        billingPeriod,
+        issueDate: now.toISOString(),
+        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        baseFee: f.monthlyFee,
+        mcCount: f.mcsThisMonth,
+        variableFee: f.mcsThisMonth * 1.00,
+        total: f.monthlyFee + (f.mcsThisMonth * 1.00),
+        status: 'generated',
+      }));
+
+      const totalBilled = invoices.reduce((sum, inv) => sum + inv.total, 0);
+
+      const batch = {
+        id: `BATCH-${Date.now()}`,
+        generatedAt: now.toISOString(),
+        billingPeriod,
+        invoiceCount: invoices.length,
+        totalBilled,
+        invoices,
+        status: 'generated',
+      };
+
+      setCurrentBatch(batch);
+
+      // Add to history
+      const newHistory = [batch, ...invoiceHistory];
+      setInvoiceHistory(newHistory);
+      localStorage.setItem('medchain_invoice_history', JSON.stringify(newHistory));
+
+    } catch (error) {
+      console.error('Error generating invoices:', error);
+      alert('Failed to generate invoices. Please try again.');
+    } finally {
+      setIsGeneratingInvoices(false);
+    }
+  };
+
+  // Send invoices via email
+  const handleSendInvoices = async () => {
+    if (!currentBatch) return;
+
+    setIsSendingInvoices(true);
+    try {
+      // Simulate email sending delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Update batch status
+      const updatedBatch = { ...currentBatch, status: 'sent' };
+      setCurrentBatch(updatedBatch);
+
+      // Update history
+      const newHistory = invoiceHistory.map(b =>
+        b.id === currentBatch.id ? updatedBatch : b
+      );
+      setInvoiceHistory(newHistory);
+      localStorage.setItem('medchain_invoice_history', JSON.stringify(newHistory));
+
+      // Create founder alert
+      const alert = {
+        id: `alert-${Date.now()}`,
+        type: 'invoice_sent',
+        title: 'Invoices Sent',
+        message: `RM ${currentBatch.totalBilled.toLocaleString()} total billing initiated for ${currentBatch.billingPeriod}`,
+        timestamp: new Date().toISOString(),
+        read: false,
+      };
+
+      const newAlerts = [alert, ...founderAlerts];
+      setFounderAlerts(newAlerts);
+      localStorage.setItem('medchain_founder_alerts', JSON.stringify(newAlerts));
+
+      // Clear current batch after sending
+      setTimeout(() => setCurrentBatch(null), 3000);
+
+    } catch (error) {
+      console.error('Error sending invoices:', error);
+      alert('Failed to send invoices. Please try again.');
+    } finally {
+      setIsSendingInvoices(false);
+    }
+  };
+
+  // Dismiss founder alert
+  const dismissAlert = (alertId) => {
+    const newAlerts = founderAlerts.map(a =>
+      a.id === alertId ? { ...a, read: true } : a
+    );
+    setFounderAlerts(newAlerts);
+    localStorage.setItem('medchain_founder_alerts', JSON.stringify(newAlerts));
+  };
+
+  // Format currency
+  const formatCurrency = (amount) => `RM ${amount.toLocaleString('en-MY', { minimumFractionDigits: 2 })}`;
+
   // Generate initial transactions
   useEffect(() => {
     const initialTxs = [];
@@ -757,6 +888,55 @@ export default function CEOMainDashboard({ walletAddress }) {
           </div>
         </div>
       </header>
+
+      {/* Founder Alerts */}
+      {founderAlerts.filter(a => !a.read).length > 0 && (
+        <div className="px-8 pt-4">
+          <div className="space-y-2">
+            {founderAlerts.filter(a => !a.read).slice(0, 3).map(alert => (
+              <div
+                key={alert.id}
+                className="flex items-center justify-between p-4 rounded-xl border animate-pulse-once"
+                style={{
+                  backgroundColor: alert.type === 'invoice_sent' ? `${theme.success}15` : `${theme.accent}15`,
+                  borderColor: alert.type === 'invoice_sent' ? `${theme.success}30` : `${theme.accent}30`,
+                }}
+              >
+                <div className="flex items-center gap-4">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: alert.type === 'invoice_sent' ? `${theme.success}20` : `${theme.accent}20` }}
+                  >
+                    {alert.type === 'invoice_sent' ? (
+                      <svg className="w-5 h-5" style={{ color: theme.success }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" style={{ color: theme.accent }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                      </svg>
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm" style={{ color: alert.type === 'invoice_sent' ? theme.success : theme.accent }}>
+                      {alert.title}
+                    </p>
+                    <p className="text-sm" style={{ color: theme.textPrimary }}>{alert.message}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => dismissAlert(alert.id)}
+                  className="p-2 rounded-lg transition-colors hover:bg-white/10"
+                >
+                  <svg className="w-5 h-5" style={{ color: theme.textMuted }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="p-8">
         {/* Top Stats Row */}
@@ -1243,6 +1423,214 @@ export default function CEOMainDashboard({ walletAddress }) {
                       Users can dismiss the notification, but it will reappear on page refresh until it expires.
                     </p>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Monthly Invoicer Panel - Only in Full View */}
+        {!clientView && (
+          <div className="mt-8 rounded-2xl border overflow-hidden" style={{ backgroundColor: theme.bgCard, borderColor: `${theme.success}50` }}>
+            <div className="px-6 py-4 border-b flex items-center justify-between" style={{ borderColor: theme.border, background: `linear-gradient(135deg, ${theme.success}20, ${theme.cyan}10)` }}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${theme.success}30` }}>
+                  <svg className="w-5 h-5" style={{ color: theme.success }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold" style={{ color: theme.textPrimary }}>Automated Monthly Invoicer</h2>
+                  <p className="text-sm" style={{ color: theme.textMuted }}>Generate and send invoices to all hospital nodes</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: `${theme.success}30`, color: theme.success }}>
+                  {new Date().toLocaleDateString('en-MY', { month: 'long', year: 'numeric' })}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {/* Invoice Summary Stats */}
+              <div className="grid grid-cols-4 gap-4 mb-6">
+                <div className="p-4 rounded-xl" style={{ backgroundColor: theme.bg }}>
+                  <p className="text-xs font-medium mb-1" style={{ color: theme.textMuted }}>Active Hospitals</p>
+                  <p className="text-2xl font-bold" style={{ color: theme.textPrimary }}>{facilities.filter(f => f.wallet && f.status === 'active').length}</p>
+                </div>
+                <div className="p-4 rounded-xl" style={{ backgroundColor: theme.bg }}>
+                  <p className="text-xs font-medium mb-1" style={{ color: theme.textMuted }}>Total MCs This Month</p>
+                  <p className="text-2xl font-bold" style={{ color: theme.warning }}>{totalMCs.toLocaleString()}</p>
+                </div>
+                <div className="p-4 rounded-xl" style={{ backgroundColor: theme.bg }}>
+                  <p className="text-xs font-medium mb-1" style={{ color: theme.textMuted }}>Base Subscriptions</p>
+                  <p className="text-2xl font-bold" style={{ color: theme.accent }}>{formatCurrency(totalSubscriptions)}</p>
+                </div>
+                <div className="p-4 rounded-xl" style={{ backgroundColor: theme.bg }}>
+                  <p className="text-xs font-medium mb-1" style={{ color: theme.textMuted }}>Variable Fees (MCs)</p>
+                  <p className="text-2xl font-bold" style={{ color: theme.cyan }}>{formatCurrency(totalMCs)}</p>
+                </div>
+              </div>
+
+              {/* Total Billing Preview */}
+              <div className="p-5 rounded-xl mb-6 border" style={{ backgroundColor: `${theme.success}10`, borderColor: `${theme.success}30` }}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium" style={{ color: theme.textMuted }}>Total Billing for {new Date().toLocaleDateString('en-MY', { month: 'long', year: 'numeric' })}</p>
+                    <p className="text-3xl font-black mt-1" style={{ color: theme.success }}>
+                      {formatCurrency(totalSubscriptions + totalMCs)}
+                    </p>
+                    <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
+                      {formatCurrency(totalSubscriptions)} base + {formatCurrency(totalMCs)} variable
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm" style={{ color: theme.textMuted }}>Formula</p>
+                    <p className="text-sm font-mono mt-1" style={{ color: theme.cyan }}>
+                      RM 10,000 + (MCs × RM 1.00)
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Current Batch Status */}
+              {currentBatch && (
+                <div className="mb-6 p-4 rounded-xl border" style={{
+                  backgroundColor: currentBatch.status === 'sent' ? `${theme.success}10` : `${theme.warning}10`,
+                  borderColor: currentBatch.status === 'sent' ? `${theme.success}30` : `${theme.warning}30`,
+                }}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-3 h-3 rounded-full ${currentBatch.status === 'sent' ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`} />
+                      <div>
+                        <p className="font-semibold text-sm" style={{ color: currentBatch.status === 'sent' ? theme.success : theme.warning }}>
+                          {currentBatch.status === 'sent' ? 'Invoices Sent Successfully' : 'Invoices Generated - Ready to Send'}
+                        </p>
+                        <p className="text-xs" style={{ color: theme.textMuted }}>
+                          {currentBatch.invoiceCount} invoices • {formatCurrency(currentBatch.totalBilled)} total
+                        </p>
+                      </div>
+                    </div>
+                    {currentBatch.status === 'generated' && (
+                      <button
+                        onClick={handleSendInvoices}
+                        disabled={isSendingInvoices}
+                        className="px-4 py-2 rounded-xl font-semibold text-sm text-white transition-all flex items-center gap-2 disabled:opacity-50"
+                        style={{ backgroundColor: theme.success }}
+                      >
+                        {isSendingInvoices ? (
+                          <>
+                            <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Sending...
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            Send All Invoices
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Invoice List Preview */}
+                  {currentBatch.status === 'generated' && (
+                    <div className="mt-4 pt-4 border-t" style={{ borderColor: `${theme.warning}30` }}>
+                      <p className="text-xs font-medium mb-3" style={{ color: theme.textMuted }}>Invoice Preview</p>
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {currentBatch.invoices.map(inv => (
+                          <div key={inv.invoiceNumber} className="flex items-center justify-between p-2 rounded-lg" style={{ backgroundColor: theme.bg }}>
+                            <div className="flex items-center gap-3">
+                              <code className="text-xs font-mono" style={{ color: theme.cyan }}>{inv.invoiceNumber}</code>
+                              <span className="text-sm" style={{ color: theme.textPrimary }}>{inv.hospitalName}</span>
+                            </div>
+                            <span className="font-semibold text-sm" style={{ color: theme.success }}>{formatCurrency(inv.total)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Generate Button */}
+              <button
+                onClick={handleGenerateInvoices}
+                disabled={isGeneratingInvoices || currentBatch?.status === 'generated'}
+                className="w-full py-4 rounded-xl font-semibold text-white transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  background: !isGeneratingInvoices && !currentBatch ? `linear-gradient(135deg, ${theme.success}, ${theme.cyan})` : theme.border,
+                  boxShadow: !isGeneratingInvoices && !currentBatch ? `0 4px 20px ${theme.success}40` : 'none',
+                }}
+              >
+                {isGeneratingInvoices ? (
+                  <>
+                    <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Generating Invoices...
+                  </>
+                ) : currentBatch?.status === 'generated' ? (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Invoices Ready
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Generate {new Date().toLocaleDateString('en-MY', { month: 'long' })} Invoices
+                  </>
+                )}
+              </button>
+
+              {/* Invoice History */}
+              {invoiceHistory.length > 0 && (
+                <div className="mt-6 pt-6 border-t" style={{ borderColor: theme.border }}>
+                  <h3 className="text-sm font-bold mb-4" style={{ color: theme.textPrimary }}>Invoice History</h3>
+                  <div className="space-y-3 max-h-48 overflow-y-auto">
+                    {invoiceHistory.slice(0, 5).map(batch => (
+                      <div key={batch.id} className="flex items-center justify-between p-3 rounded-xl" style={{ backgroundColor: theme.bg }}>
+                        <div className="flex items-center gap-3">
+                          <div className={`w-2 h-2 rounded-full ${batch.status === 'sent' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                          <div>
+                            <p className="text-sm font-medium" style={{ color: theme.textPrimary }}>{batch.billingPeriod}</p>
+                            <p className="text-xs" style={{ color: theme.textMuted }}>
+                              {batch.invoiceCount} invoices • {new Date(batch.generatedAt).toLocaleDateString('en-MY')}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-sm" style={{ color: theme.success }}>{formatCurrency(batch.totalBilled)}</p>
+                          <p className="text-xs" style={{ color: batch.status === 'sent' ? theme.success : theme.warning }}>
+                            {batch.status === 'sent' ? 'Sent' : 'Generated'}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Auto-Run Info */}
+              <div className="mt-6 p-4 rounded-xl flex items-start gap-3" style={{ backgroundColor: `${theme.accent}10`, border: `1px solid ${theme.accent}30` }}>
+                <svg className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: theme.accent }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <p className="font-semibold text-sm" style={{ color: theme.accent }}>Automated Monthly Run</p>
+                  <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
+                    This script runs automatically on the 1st of every month at 9:00 AM MYT.
+                    Invoices are generated and emailed to each hospital's finance team.
+                    You'll receive a notification: "Invoices Sent: RM X total billing initiated for [Month]"
+                  </p>
                 </div>
               </div>
             </div>

@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import multer from 'multer';
 import uploadRoutes from './routes/upload.js';
+import invoiceRoutes from './routes/invoice.js';
 
 dotenv.config();
 
@@ -15,6 +16,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/upload', uploadRoutes);
+app.use('/api/invoices', invoiceRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
