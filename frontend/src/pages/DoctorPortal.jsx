@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import SignatureCanvas from 'react-signature-canvas';
-import { isVerifiedDoctor, writeRecord, readRecords, getMyBalance, requestEmergencyAccess } from '../utils/contract';
+import { isVerifiedDoctor, writeRecord, readRecords, getMyBalance, requestEmergencyAccess, isHospitalPaused } from '../utils/contract';
 import { uploadMedicalRecord, checkStatus } from '../utils/api';
 import { useBilling } from '../context/BillingContext';
+import BroadcastNotification from '../components/BroadcastNotification';
 
 // Terminal Theme Colors
 const terminalTheme = {
@@ -94,6 +95,61 @@ export default function DoctorPortal({ walletAddress }) {
   // Get hospital name from pending admin or default
   const pendingAdmin = JSON.parse(localStorage.getItem('medchain_pending_admin') || '{}');
   const hospitalName = pendingAdmin.facilityName || 'Sarawak General Hospital';
+
+  // Hospital suspension state
+  const [isHospitalSuspended, setIsHospitalSuspended] = useState(false);
+  const [checkingSuspension, setCheckingSuspension] = useState(true);
+
+  // Check if hospital is suspended
+  useEffect(() => {
+    const checkSuspension = async () => {
+      setCheckingSuspension(true);
+      try {
+        // First check localStorage (for demo mode)
+        const savedStatuses = localStorage.getItem('medchain_node_statuses');
+        if (savedStatuses) {
+          const statuses = JSON.parse(savedStatuses);
+          if (walletAddress && statuses[walletAddress]) {
+            setIsHospitalSuspended(true);
+            setCheckingSuspension(false);
+            return;
+          }
+        }
+
+        // Then try the blockchain (if connected)
+        if (walletAddress) {
+          try {
+            const isPaused = await isHospitalPaused(walletAddress);
+            setIsHospitalSuspended(isPaused);
+          } catch (contractError) {
+            console.log('Contract check failed (demo mode)');
+          }
+        }
+      } catch (error) {
+        console.error('Error checking suspension:', error);
+      } finally {
+        setCheckingSuspension(false);
+      }
+    };
+
+    checkSuspension();
+
+    // Also listen for storage changes (in case admin pauses from another tab)
+    const handleStorageChange = (e) => {
+      if (e.key === 'medchain_node_statuses') {
+        checkSuspension();
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    // Poll every 10 seconds for real-time suspension updates
+    const pollInterval = setInterval(checkSuspension, 10000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(pollInterval);
+    };
+  }, [walletAddress]);
 
   // Clear signature
   const clearSignature = () => {
@@ -405,8 +461,115 @@ export default function DoctorPortal({ walletAddress }) {
     setTransactionHash(null);
   };
 
+  // Show loading while checking suspension
+  if (checkingSuspension) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: terminalTheme.bg }}>
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full border-4 border-cyan-500/30 border-t-cyan-500 animate-spin"></div>
+          <p style={{ color: terminalTheme.textSecondary }}>Verifying node status...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show suspension screen if hospital is paused
+  if (isHospitalSuspended) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-8" style={{ backgroundColor: terminalTheme.bg }}>
+        <div className="max-w-lg w-full">
+          {/* Suspension Card */}
+          <div className="rounded-3xl overflow-hidden border" style={{ backgroundColor: terminalTheme.bgCard, borderColor: '#ef444450' }}>
+            {/* Header */}
+            <div className="px-8 py-6 text-center" style={{ backgroundColor: '#ef444420' }}>
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: '#ef444430' }}>
+                <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                </svg>
+              </div>
+              <h1 className="text-2xl font-bold text-red-400 mb-2">Account Suspended</h1>
+              <p style={{ color: terminalTheme.textMuted }}>Medical Certificate Issuance Disabled</p>
+            </div>
+
+            {/* Body */}
+            <div className="px-8 py-6 space-y-6">
+              {/* Professional Message */}
+              <div className="p-5 rounded-xl text-center" style={{ backgroundColor: terminalTheme.bg }}>
+                <p className="text-lg mb-4" style={{ color: terminalTheme.textPrimary }}>
+                  Your hospital node has been temporarily suspended.
+                </p>
+                <p style={{ color: terminalTheme.textSecondary }}>
+                  Please contact your <strong className="text-cyan-400">MedChain Administrator</strong> to settle outstanding subscription fees.
+                </p>
+              </div>
+
+              {/* Outstanding Balance */}
+              <div className="p-5 rounded-xl border" style={{ backgroundColor: '#f59e0b10', borderColor: '#f59e0b30' }}>
+                <div className="flex items-center justify-between mb-3">
+                  <span style={{ color: terminalTheme.textMuted }}>Outstanding Balance</span>
+                  <span className="text-2xl font-bold text-amber-400">RM 10,000.00</span>
+                </div>
+                <p className="text-xs" style={{ color: terminalTheme.textMuted }}>
+                  Monthly subscription fee for blockchain network access
+                </p>
+              </div>
+
+              {/* Contact Info */}
+              <div className="p-5 rounded-xl" style={{ backgroundColor: terminalTheme.bg }}>
+                <h3 className="font-semibold mb-3" style={{ color: terminalTheme.textPrimary }}>How to Restore Access:</h3>
+                <ol className="space-y-2 text-sm" style={{ color: terminalTheme.textSecondary }}>
+                  <li className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">1</span>
+                    <span>Contact your hospital's accounts department</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">2</span>
+                    <span>Process the RM 10,000 subscription payment</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">3</span>
+                    <span>Send payment confirmation to admin@medchain.sarawak.gov.my</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">4</span>
+                    <span>Your node will be reactivated within 24 hours</span>
+                  </li>
+                </ol>
+              </div>
+
+              {/* Support Contact */}
+              <div className="flex items-center justify-center gap-3 pt-4 border-t" style={{ borderColor: terminalTheme.border }}>
+                <svg className="w-5 h-5" style={{ color: terminalTheme.textMuted }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <span style={{ color: terminalTheme.textMuted }}>support@medchain.sarawak.gov.my</span>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-8 py-4 text-center" style={{ backgroundColor: terminalTheme.bg }}>
+              <p className="text-xs" style={{ color: terminalTheme.textMuted }}>
+                Secured by <span className="text-cyan-400 font-semibold">Sarawak MedChain</span> • Blockchain Verified Healthcare
+              </p>
+            </div>
+          </div>
+
+          {/* Wallet Info */}
+          <div className="mt-6 text-center">
+            <code className="text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: terminalTheme.bgCard, color: terminalTheme.textMuted }}>
+              Connected: {walletAddress?.slice(0, 10)}...{walletAddress?.slice(-8)}
+            </code>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen font-sans" style={{ backgroundColor: terminalTheme.bg }}>
+      {/* Network-Wide Broadcast Notification */}
+      <BroadcastNotification />
+
       {/* QR Code Receipt Modal */}
       {showReceipt && receiptData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">

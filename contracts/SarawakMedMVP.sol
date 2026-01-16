@@ -49,6 +49,9 @@ contract SarawakMedMVP {
     // Emergency access: patient => doctor => expiry timestamp
     mapping(address => mapping(address => uint256)) public emergencyAccessExpiry;
 
+    // Hospital node status: hospital address => paused status
+    mapping(address => bool) public pausedHospitals;
+
     // ========== EVENTS ==========
 
     event DoctorVerified(address indexed doctorAddress, uint256 timestamp);
@@ -84,6 +87,8 @@ contract SarawakMedMVP {
         uint256 expiryTime,
         uint256 timestamp
     );
+    event HospitalPaused(address indexed hospitalAddress, uint256 timestamp);
+    event HospitalUnpaused(address indexed hospitalAddress, uint256 timestamp);
 
     // ========== MODIFIERS ==========
 
@@ -177,6 +182,39 @@ contract SarawakMedMVP {
         pendingAdmin = address(0);
     }
 
+    /**
+     * @notice Pause a hospital node (stops MC issuance)
+     * @param _hospitalAddress Address of the hospital to pause
+     */
+    function pauseHospital(address _hospitalAddress) external onlyAdmin {
+        require(_hospitalAddress != address(0), "Invalid hospital address");
+        require(!pausedHospitals[_hospitalAddress], "Hospital already paused");
+
+        pausedHospitals[_hospitalAddress] = true;
+        emit HospitalPaused(_hospitalAddress, block.timestamp);
+    }
+
+    /**
+     * @notice Unpause a hospital node (resumes MC issuance)
+     * @param _hospitalAddress Address of the hospital to unpause
+     */
+    function unpauseHospital(address _hospitalAddress) external onlyAdmin {
+        require(_hospitalAddress != address(0), "Invalid hospital address");
+        require(pausedHospitals[_hospitalAddress], "Hospital not paused");
+
+        pausedHospitals[_hospitalAddress] = false;
+        emit HospitalUnpaused(_hospitalAddress, block.timestamp);
+    }
+
+    /**
+     * @notice Check if a hospital is paused
+     * @param _hospitalAddress Address of the hospital to check
+     * @return bool indicating if the hospital is paused
+     */
+    function isHospitalPaused(address _hospitalAddress) external view returns (bool) {
+        return pausedHospitals[_hospitalAddress];
+    }
+
     // ========== DOCTOR FUNCTIONS ==========
 
     /**
@@ -190,6 +228,7 @@ contract SarawakMedMVP {
     ) external onlyVerifiedDoctor {
         require(_patientAddress != address(0), "Invalid patient address");
         require(bytes(_ipfsHash).length > 0, "IPFS hash cannot be empty");
+        require(!pausedHospitals[msg.sender], "Hospital node is paused. Contact administrator.");
 
         MedicalRecord memory newRecord = MedicalRecord({
             patientAddress: _patientAddress,

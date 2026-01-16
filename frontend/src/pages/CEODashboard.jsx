@@ -4,6 +4,42 @@ import { getAllHospitalBalances } from '../utils/contract';
 import { useBilling } from '../context/BillingContext';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import BroadcastNotification from '../components/BroadcastNotification';
+
+// HOSPITAL WALLET MAPPING - Maps wallet addresses to hospital data
+// In production, this would come from the blockchain or backend
+const HOSPITAL_WALLET_MAPPING = {
+  '0x70997970c51812dc3a010c7d01b50e0d17dc79c8': {
+    id: 1,
+    name: 'Timberland Medical Centre',
+    location: 'Kuching',
+    tier: 'Hospital',
+  },
+  '0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc': {
+    id: 2,
+    name: 'KPJ Kuching Specialist',
+    location: 'Kuching',
+    tier: 'Hospital',
+  },
+  '0x90f79bf6eb2c4f870365e785982e1f101e93b906': {
+    id: 3,
+    name: 'Normah Medical Specialist',
+    location: 'Kuching',
+    tier: 'Hospital',
+  },
+  '0x15d34aaf54267db7d7c367839aaf71a00a2c6a65': {
+    id: 4,
+    name: 'Rejang Medical Centre',
+    location: 'Sibu',
+    tier: 'Hospital',
+  },
+  '0x9965507d1a55bcc2695c58ba16fb37d819b0a4dc': {
+    id: 5,
+    name: 'Bintulu Medical Centre',
+    location: 'Bintulu',
+    tier: 'Clinic',
+  },
+};
 
 // Mock flu season data - in production, this would come from actual MC issuance dates
 const generateFluSeasonData = () => {
@@ -107,6 +143,11 @@ function StatCard({ title, value, subtitle, icon, trend, darkMode }) {
 }
 
 export default function CEODashboard({ walletAddress }) {
+  // Get connected hospital info based on wallet address
+  const connectedHospital = walletAddress
+    ? HOSPITAL_WALLET_MAPPING[walletAddress.toLowerCase()]
+    : null;
+
   // Use Billing Context for consistent billing data
   const {
     accountType,
@@ -476,15 +517,26 @@ export default function CEODashboard({ walletAddress }) {
   };
 
   return (
-    <div className={`flex-1 flex-grow w-full min-h-full px-12 py-10 font-sans transition-colors duration-300 ${
+    <div className={`flex-1 flex-grow w-full min-h-full font-sans transition-colors duration-300 ${
       darkMode ? 'bg-slate-900' : 'bg-slate-100'
     }`}>
+      {/* Network-Wide Broadcast Notification */}
+      <BroadcastNotification />
+
+      <div className="px-12 py-10">
       {/* Header - Full Width Enterprise Style */}
       <div className="mb-8 flex flex-col lg:flex-row lg:items-center justify-start gap-6">
         <div className="flex items-center gap-4">
-          <h1 className={`text-3xl lg:text-4xl font-bold ${darkMode ? 'text-white' : 'text-slate-800'}`}>
-            CEO Dashboard
-          </h1>
+          <div>
+            <h1 className={`text-3xl lg:text-4xl font-bold ${darkMode ? 'text-white' : 'text-slate-800'}`}>
+              {connectedHospital ? connectedHospital.name : 'Hospital CEO Dashboard'}
+            </h1>
+            {connectedHospital && (
+              <p className={`text-sm mt-1 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                {connectedHospital.location} • {connectedHospital.tier}
+              </p>
+            )}
+          </div>
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${
             darkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'
           }`}>
@@ -1503,8 +1555,30 @@ export default function CEODashboard({ walletAddress }) {
                 </table>
               </div>
             </div>
+
+            {/* Data Privacy Notice */}
+            {connectedHospital && (
+              <div className={`mt-8 p-4 rounded-xl border flex items-center gap-4 ${
+                darkMode
+                  ? 'bg-sky-500/10 border-sky-500/30'
+                  : 'bg-sky-50 border-sky-200'
+              }`}>
+                <svg className={`w-6 h-6 flex-shrink-0 ${darkMode ? 'text-sky-400' : 'text-sky-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <div>
+                  <p className={`font-semibold text-sm ${darkMode ? 'text-sky-300' : 'text-sky-700'}`}>Data Privacy</p>
+                  <p className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                    You are viewing data for <strong>{connectedHospital.name}</strong> only.
+                    Other hospitals' data is not accessible from this dashboard.
+                    Contact MedChain support if you need cross-facility access.
+                  </p>
+                </div>
+              </div>
+            )}
           </>
         )}
+      </div>
     </div>
   );
 }

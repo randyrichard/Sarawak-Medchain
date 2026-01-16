@@ -1,0 +1,1267 @@
+import { useState, useEffect, useRef } from 'react';
+import { Navigate } from 'react-router-dom';
+import { pauseHospital, unpauseHospital, isHospitalPaused } from '../utils/contract';
+import { sendBroadcast, clearBroadcast } from '../components/BroadcastNotification';
+
+// FOUNDER WALLET ADDRESS - Only this address can access this dashboard
+const FOUNDER_WALLET = '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'; // Your wallet
+
+// Terminal Theme
+const theme = {
+  bg: '#030712',
+  bgCard: '#0f172a',
+  border: '#1e3a5f',
+  textPrimary: '#ffffff',
+  textSecondary: '#94a3b8',
+  textMuted: '#64748b',
+  accent: '#3b82f6',
+  success: '#10b981',
+  warning: '#f59e0b',
+  danger: '#ef4444',
+  gold: '#fbbf24',
+  cyan: '#06b6d4',
+};
+
+// City coordinates on the Sarawak map (relative positions)
+const CITY_POSITIONS = {
+  'Kuching': { x: 18, y: 75, hospitals: 3 },
+  'Sibu': { x: 52, y: 55, hospitals: 1 },
+  'Bintulu': { x: 68, y: 42, hospitals: 1 },
+  'Miri': { x: 82, y: 25, hospitals: 0 },
+};
+
+// Hospital/Lead data with location mapping
+const FACILITIES_DATA = [
+  {
+    id: 1,
+    name: 'Timberland Medical Centre',
+    wallet: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
+    location: 'Kuching',
+    tier: 'Hospital',
+    monthlyFee: 10000,
+    mcsThisMonth: 847,
+    variableFee: 847,
+    totalRevenue: 10847,
+    doctors: 12,
+    status: 'active', // Green pulse
+    joinedDate: '2025-11-15',
+    lastActivity: '2 min ago',
+    paid: true,
+  },
+  {
+    id: 2,
+    name: 'KPJ Kuching Specialist',
+    wallet: '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC',
+    location: 'Kuching',
+    tier: 'Hospital',
+    monthlyFee: 10000,
+    mcsThisMonth: 1203,
+    variableFee: 1203,
+    totalRevenue: 11203,
+    doctors: 18,
+    status: 'active',
+    joinedDate: '2025-10-22',
+    lastActivity: '5 min ago',
+    paid: true,
+  },
+  {
+    id: 3,
+    name: 'Normah Medical Specialist',
+    wallet: '0x90F79bf6EB2c4f870365E785982E1f101E93b906',
+    location: 'Kuching',
+    tier: 'Hospital',
+    monthlyFee: 10000,
+    mcsThisMonth: 523,
+    variableFee: 523,
+    totalRevenue: 10523,
+    doctors: 8,
+    status: 'active',
+    joinedDate: '2025-12-01',
+    lastActivity: '15 min ago',
+    paid: true,
+  },
+  {
+    id: 4,
+    name: 'Rejang Medical Centre',
+    wallet: '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65',
+    location: 'Sibu',
+    tier: 'Hospital',
+    monthlyFee: 10000,
+    mcsThisMonth: 312,
+    variableFee: 312,
+    totalRevenue: 10312,
+    doctors: 6,
+    status: 'active',
+    joinedDate: '2026-01-05',
+    lastActivity: '1 hour ago',
+    paid: true,
+  },
+  {
+    id: 5,
+    name: 'Bintulu Medical Centre',
+    wallet: '0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc',
+    location: 'Bintulu',
+    tier: 'Clinic',
+    monthlyFee: 2000,
+    mcsThisMonth: 156,
+    variableFee: 156,
+    totalRevenue: 2156,
+    doctors: 3,
+    status: 'lead', // Gold pulse - signed but not paid
+    joinedDate: '2026-01-10',
+    lastActivity: '3 hours ago',
+    paid: false,
+  },
+  {
+    id: 6,
+    name: 'Miri City Medical',
+    wallet: null,
+    location: 'Miri',
+    tier: 'Hospital',
+    monthlyFee: 10000,
+    mcsThisMonth: 0,
+    variableFee: 0,
+    totalRevenue: 0,
+    doctors: 0,
+    status: 'lead', // Gold pulse - high-value lead
+    joinedDate: null,
+    lastActivity: 'Proposal sent',
+    paid: false,
+  },
+];
+
+// Generate mock live transactions
+const generateLiveTransaction = (hospitals) => {
+  const activeHospitals = hospitals.filter(h => h.status === 'active');
+  if (activeHospitals.length === 0) return null;
+
+  const hospital = activeHospitals[Math.floor(Math.random() * activeHospitals.length)];
+  const doctors = ['Dr. Ahmad', 'Dr. Sarah', 'Dr. Wong', 'Dr. Kumar', 'Dr. Fatimah', 'Dr. Lee', 'Dr. Tan'];
+  const doctor = doctors[Math.floor(Math.random() * doctors.length)];
+
+  return {
+    id: Date.now(),
+    hospital: hospital.name,
+    location: hospital.location,
+    doctor,
+    amount: 1.00,
+    timestamp: new Date(),
+  };
+};
+
+// Sarawak Map SVG Component
+function SarawakMap({ facilities, clientView }) {
+  // Group facilities by location
+  const locationData = {};
+  facilities.forEach(f => {
+    if (!locationData[f.location]) {
+      locationData[f.location] = { active: 0, leads: 0, revenue: 0 };
+    }
+    if (f.status === 'active') {
+      locationData[f.location].active++;
+      locationData[f.location].revenue += f.totalRevenue;
+    } else {
+      locationData[f.location].leads++;
+    }
+  });
+
+  return (
+    <div className="relative w-full h-full">
+      {/* SVG Map of Sarawak */}
+      <svg viewBox="0 0 100 100" className="w-full h-full" style={{ filter: 'drop-shadow(0 0 20px rgba(6, 182, 212, 0.3))' }}>
+        {/* Grid lines for tech effect */}
+        <defs>
+          <pattern id="grid" width="5" height="5" patternUnits="userSpaceOnUse">
+            <path d="M 5 0 L 0 0 0 5" fill="none" stroke="rgba(6, 182, 212, 0.1)" strokeWidth="0.2"/>
+          </pattern>
+          <linearGradient id="mapGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="rgba(6, 182, 212, 0.15)" />
+            <stop offset="100%" stopColor="rgba(59, 130, 246, 0.1)" />
+          </linearGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+
+        {/* Background grid */}
+        <rect width="100" height="100" fill="url(#grid)" />
+
+        {/* Simplified Sarawak outline */}
+        <path
+          d="M 5 80
+             C 8 75, 12 72, 15 70
+             L 20 68 L 25 72 L 30 70 L 35 65
+             L 40 62 L 45 58 L 50 55
+             L 55 50 L 60 45 L 65 40
+             L 70 35 L 75 28 L 80 22
+             L 85 18 L 90 15 L 95 12
+             L 98 15 L 95 25 L 92 35
+             L 88 45 L 85 52 L 80 58
+             L 75 62 L 70 65 L 65 70
+             L 60 72 L 55 75 L 50 78
+             L 45 82 L 40 85 L 35 87
+             L 30 88 L 25 87 L 20 85
+             L 15 83 L 10 82 Z"
+          fill="url(#mapGradient)"
+          stroke={theme.cyan}
+          strokeWidth="0.5"
+          filter="url(#glow)"
+        />
+
+        {/* Rivers */}
+        <path
+          d="M 20 75 Q 30 70, 40 72 Q 50 68, 55 60"
+          fill="none"
+          stroke="rgba(6, 182, 212, 0.3)"
+          strokeWidth="0.3"
+          strokeDasharray="2 1"
+        />
+        <path
+          d="M 50 55 Q 55 50, 58 45"
+          fill="none"
+          stroke="rgba(6, 182, 212, 0.3)"
+          strokeWidth="0.3"
+          strokeDasharray="2 1"
+        />
+      </svg>
+
+      {/* City Pulse Points */}
+      {Object.entries(CITY_POSITIONS).map(([city, pos]) => {
+        const data = locationData[city] || { active: 0, leads: 0, revenue: 0 };
+        const hasActive = data.active > 0;
+        const hasLeads = data.leads > 0;
+        const pulseColor = hasActive ? theme.success : hasLeads ? theme.gold : 'rgba(100,100,100,0.3)';
+
+        return (
+          <div
+            key={city}
+            className="absolute transform -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
+            style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
+          >
+            {/* Outer pulse rings */}
+            {(hasActive || hasLeads) && (
+              <>
+                <div
+                  className="absolute w-16 h-16 rounded-full animate-ping"
+                  style={{
+                    backgroundColor: pulseColor,
+                    opacity: 0.2,
+                    left: '50%',
+                    top: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    animationDuration: '2s',
+                  }}
+                />
+                <div
+                  className="absolute w-12 h-12 rounded-full animate-ping"
+                  style={{
+                    backgroundColor: pulseColor,
+                    opacity: 0.3,
+                    left: '50%',
+                    top: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    animationDuration: '2s',
+                    animationDelay: '0.5s',
+                  }}
+                />
+              </>
+            )}
+
+            {/* Core dot */}
+            <div
+              className="relative w-4 h-4 rounded-full border-2 flex items-center justify-center"
+              style={{
+                backgroundColor: pulseColor,
+                borderColor: hasActive ? theme.success : hasLeads ? theme.gold : theme.textMuted,
+                boxShadow: hasActive || hasLeads ? `0 0 20px ${pulseColor}` : 'none',
+              }}
+            />
+
+            {/* City label */}
+            <div className="absolute top-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+              <p className="text-xs font-bold" style={{ color: theme.textPrimary, textShadow: '0 0 10px rgba(0,0,0,0.8)' }}>
+                {city}
+              </p>
+              {!clientView && (hasActive || hasLeads) && (
+                <p className="text-xs text-center" style={{ color: hasActive ? theme.success : theme.gold }}>
+                  {hasActive ? `${data.active} active` : `${data.leads} lead${data.leads > 1 ? 's' : ''}`}
+                </p>
+              )}
+            </div>
+
+            {/* Hover tooltip */}
+            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-50">
+              <div className="bg-slate-900 border border-cyan-500/30 rounded-lg p-3 shadow-xl min-w-[180px]">
+                <p className="text-sm font-bold text-white mb-2">{city}</p>
+                {!clientView ? (
+                  <>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span style={{ color: theme.textMuted }}>Active:</span>
+                      <span style={{ color: theme.success }}>{data.active} hospitals</span>
+                    </div>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span style={{ color: theme.textMuted }}>Leads:</span>
+                      <span style={{ color: theme.gold }}>{data.leads} pending</span>
+                    </div>
+                    <div className="flex justify-between text-xs border-t border-slate-700 pt-1 mt-1">
+                      <span style={{ color: theme.textMuted }}>Revenue:</span>
+                      <span style={{ color: theme.success }}>RM {data.revenue.toLocaleString()}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-xs" style={{ color: theme.textMuted }}>
+                    {data.active + data.leads} facilities
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Map Legend */}
+      <div className="absolute bottom-4 left-4 bg-slate-900/90 border border-slate-700 rounded-lg p-3">
+        <p className="text-xs font-bold text-white mb-2">Legend</p>
+        <div className="flex items-center gap-2 mb-1">
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme.success, boxShadow: `0 0 8px ${theme.success}` }} />
+          <span className="text-xs" style={{ color: theme.textSecondary }}>Active Hospital</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme.gold, boxShadow: `0 0 8px ${theme.gold}` }} />
+          <span className="text-xs" style={{ color: theme.textSecondary }}>High-Value Lead</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Live Profit Ticker Component
+function LiveProfitTicker({ transactions, clientView }) {
+  const tickerRef = useRef(null);
+
+  if (clientView) return null;
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-50 overflow-hidden" style={{ backgroundColor: 'rgba(3, 7, 18, 0.95)', borderTop: `1px solid ${theme.border}` }}>
+      <div className="flex items-center h-10">
+        {/* Live indicator */}
+        <div className="flex items-center gap-2 px-4 border-r" style={{ borderColor: theme.border }}>
+          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+          <span className="text-xs font-bold text-red-400">LIVE</span>
+        </div>
+
+        {/* Scrolling ticker */}
+        <div className="flex-1 overflow-hidden relative">
+          <div
+            ref={tickerRef}
+            className="flex items-center gap-8 animate-scroll whitespace-nowrap"
+            style={{
+              animation: 'scroll 30s linear infinite',
+            }}
+          >
+            {transactions.map((tx, idx) => (
+              <div key={tx.id || idx} className="flex items-center gap-3 px-4">
+                <span className="text-emerald-400 font-bold">+RM {tx.amount.toFixed(2)}</span>
+                <span style={{ color: theme.textMuted }}>|</span>
+                <span style={{ color: theme.textSecondary }}>{tx.hospital}</span>
+                <span style={{ color: theme.textMuted }}>•</span>
+                <span style={{ color: theme.cyan }}>{tx.doctor}</span>
+                <span style={{ color: theme.textMuted }}>•</span>
+                <span className="text-xs" style={{ color: theme.textMuted }}>
+                  {tx.timestamp.toLocaleTimeString()}
+                </span>
+              </div>
+            ))}
+            {/* Duplicate for seamless loop */}
+            {transactions.map((tx, idx) => (
+              <div key={`dup-${tx.id || idx}`} className="flex items-center gap-3 px-4">
+                <span className="text-emerald-400 font-bold">+RM {tx.amount.toFixed(2)}</span>
+                <span style={{ color: theme.textMuted }}>|</span>
+                <span style={{ color: theme.textSecondary }}>{tx.hospital}</span>
+                <span style={{ color: theme.textMuted }}>•</span>
+                <span style={{ color: theme.cyan }}>{tx.doctor}</span>
+                <span style={{ color: theme.textMuted }}>•</span>
+                <span className="text-xs" style={{ color: theme.textMuted }}>
+                  {tx.timestamp.toLocaleTimeString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Total today */}
+        <div className="flex items-center gap-2 px-4 border-l" style={{ borderColor: theme.border }}>
+          <span className="text-xs" style={{ color: theme.textMuted }}>Today:</span>
+          <span className="font-bold text-emerald-400">RM {(transactions.length * 1).toLocaleString()}</span>
+        </div>
+      </div>
+
+      {/* CSS for scroll animation */}
+      <style>{`
+        @keyframes scroll {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-scroll {
+          animation: scroll 30s linear infinite;
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// Kill Switch Confirmation Modal
+function KillSwitchModal({ isOpen, hospital, action, onConfirm, onCancel, isProcessing }) {
+  if (!isOpen || !hospital) return null;
+
+  const isPausing = action === 'pause';
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onCancel} />
+
+      {/* Modal */}
+      <div className="relative bg-slate-900 border border-red-500/30 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+        {/* Warning Icon */}
+        <div className="flex justify-center mb-6">
+          <div className={`w-20 h-20 rounded-full flex items-center justify-center ${
+            isPausing ? 'bg-red-500/20' : 'bg-emerald-500/20'
+          }`}>
+            {isPausing ? (
+              <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            ) : (
+              <svg className="w-10 h-10 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            )}
+          </div>
+        </div>
+
+        {/* Title */}
+        <h2 className={`text-2xl font-bold text-center mb-2 ${isPausing ? 'text-red-400' : 'text-emerald-400'}`}>
+          {isPausing ? 'Shut Down Node?' : 'Reactivate Node?'}
+        </h2>
+
+        {/* Hospital Name */}
+        <p className="text-center text-white font-semibold text-lg mb-4">
+          {hospital.name}
+        </p>
+
+        {/* Warning Message */}
+        <div className={`p-4 rounded-xl mb-6 ${isPausing ? 'bg-red-500/10 border border-red-500/20' : 'bg-emerald-500/10 border border-emerald-500/20'}`}>
+          {isPausing ? (
+            <p className="text-sm text-red-300 text-center">
+              This will <strong>immediately stop all MC issuance</strong> for this hospital.
+              Doctors will see a suspension notice when they try to log in.
+            </p>
+          ) : (
+            <p className="text-sm text-emerald-300 text-center">
+              This will <strong>restore MC issuance</strong> for this hospital.
+              Doctors will be able to issue MCs again immediately.
+            </p>
+          )}
+        </div>
+
+        {/* Buttons */}
+        <div className="flex gap-4">
+          <button
+            onClick={onCancel}
+            disabled={isProcessing}
+            className="flex-1 px-6 py-3 rounded-xl border border-slate-600 text-slate-300 font-semibold hover:bg-slate-800 transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isProcessing}
+            className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2 ${
+              isPausing
+                ? 'bg-red-500 hover:bg-red-600 text-white'
+                : 'bg-emerald-500 hover:bg-emerald-600 text-white'
+            }`}
+          >
+            {isProcessing ? (
+              <>
+                <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Processing...
+              </>
+            ) : isPausing ? (
+              'Shut Down'
+            ) : (
+              'Reactivate'
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function CEOMainDashboard({ walletAddress }) {
+  const [facilities, setFacilities] = useState(FACILITIES_DATA);
+  const [transactions, setTransactions] = useState([]);
+  const [clientView, setClientView] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState('month');
+
+  // Kill Switch Modal State
+  const [killSwitchModal, setKillSwitchModal] = useState({ isOpen: false, hospital: null, action: null });
+  const [isProcessingKillSwitch, setIsProcessingKillSwitch] = useState(false);
+  const [nodeStatuses, setNodeStatuses] = useState({});
+
+  // Broadcast State
+  const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [broadcastDuration, setBroadcastDuration] = useState(24);
+  const [broadcastPriority, setBroadcastPriority] = useState('normal');
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [activeBroadcast, setActiveBroadcast] = useState(null);
+
+  // Check if current wallet is the founder
+  const isFounder = walletAddress?.toLowerCase() === FOUNDER_WALLET.toLowerCase();
+
+  // Initialize node statuses from localStorage (for demo) or blockchain
+  useEffect(() => {
+    const savedStatuses = localStorage.getItem('medchain_node_statuses');
+    if (savedStatuses) {
+      setNodeStatuses(JSON.parse(savedStatuses));
+    }
+  }, []);
+
+  // Handle kill switch toggle
+  const handleKillSwitchClick = (hospital, currentStatus) => {
+    const action = currentStatus ? 'unpause' : 'pause';
+    setKillSwitchModal({ isOpen: true, hospital, action });
+  };
+
+  // Confirm kill switch action
+  const handleConfirmKillSwitch = async () => {
+    const { hospital, action } = killSwitchModal;
+    if (!hospital) return;
+
+    setIsProcessingKillSwitch(true);
+
+    try {
+      // In production, this would call the smart contract
+      // For demo, we simulate with localStorage
+      const newStatuses = {
+        ...nodeStatuses,
+        [hospital.wallet]: action === 'pause',
+      };
+
+      // Simulate blockchain delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Try to call the actual contract (will fail if not connected)
+      try {
+        if (action === 'pause') {
+          await pauseHospital(hospital.wallet);
+        } else {
+          await unpauseHospital(hospital.wallet);
+        }
+      } catch (contractError) {
+        console.log('Contract call failed (demo mode):', contractError.message);
+      }
+
+      setNodeStatuses(newStatuses);
+      localStorage.setItem('medchain_node_statuses', JSON.stringify(newStatuses));
+
+      // Update facilities status
+      setFacilities(prev => prev.map(f => {
+        if (f.wallet === hospital.wallet) {
+          return { ...f, nodeStatus: action === 'pause' ? 'paused' : 'active' };
+        }
+        return f;
+      }));
+
+      setKillSwitchModal({ isOpen: false, hospital: null, action: null });
+    } catch (error) {
+      console.error('Kill switch error:', error);
+      alert('Failed to update node status. Please try again.');
+    } finally {
+      setIsProcessingKillSwitch(false);
+    }
+  };
+
+  // Cancel kill switch
+  const handleCancelKillSwitch = () => {
+    setKillSwitchModal({ isOpen: false, hospital: null, action: null });
+  };
+
+  // Check if a node is paused
+  const isNodePaused = (wallet) => {
+    return nodeStatuses[wallet] || false;
+  };
+
+  // Check for active broadcast on mount
+  useEffect(() => {
+    const checkActiveBroadcast = () => {
+      const stored = localStorage.getItem('medchain_broadcast');
+      if (stored) {
+        const data = JSON.parse(stored);
+        if (data.expiresAt && Date.now() < data.expiresAt) {
+          setActiveBroadcast(data);
+        } else {
+          setActiveBroadcast(null);
+        }
+      } else {
+        setActiveBroadcast(null);
+      }
+    };
+
+    checkActiveBroadcast();
+    const interval = setInterval(checkActiveBroadcast, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Handle broadcast submission
+  const handleBroadcast = async () => {
+    if (!broadcastMessage.trim()) return;
+
+    setIsBroadcasting(true);
+    try {
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      const broadcast = sendBroadcast({
+        message: broadcastMessage.trim(),
+        duration: broadcastDuration,
+        priority: broadcastPriority,
+      });
+
+      setActiveBroadcast(broadcast);
+      setBroadcastMessage('');
+      setBroadcastPriority('normal');
+    } catch (error) {
+      console.error('Broadcast error:', error);
+      alert('Failed to send broadcast. Please try again.');
+    } finally {
+      setIsBroadcasting(false);
+    }
+  };
+
+  // Handle clear broadcast
+  const handleClearBroadcast = () => {
+    clearBroadcast();
+    setActiveBroadcast(null);
+  };
+
+  // Format expiration time
+  const formatExpirationTime = (expiresAt) => {
+    if (!expiresAt) return '';
+    const date = new Date(expiresAt);
+    return date.toLocaleString('en-MY', {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  // Generate initial transactions
+  useEffect(() => {
+    const initialTxs = [];
+    for (let i = 0; i < 10; i++) {
+      const tx = generateLiveTransaction(facilities);
+      if (tx) {
+        tx.id = i;
+        tx.timestamp = new Date(Date.now() - Math.random() * 3600000);
+        initialTxs.push(tx);
+      }
+    }
+    setTransactions(initialTxs.sort((a, b) => b.timestamp - a.timestamp));
+  }, []);
+
+  // Simulate live transactions
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const newTx = generateLiveTransaction(facilities);
+      if (newTx) {
+        setTransactions(prev => [newTx, ...prev.slice(0, 19)]);
+      }
+    }, 3000 + Math.random() * 5000);
+
+    return () => clearInterval(interval);
+  }, [facilities]);
+
+  // If not founder, redirect to home
+  if (!isFounder) {
+    return <Navigate to="/" replace />;
+  }
+
+  // Calculate totals
+  const activeFacilities = facilities.filter(f => f.status === 'active');
+  const leadFacilities = facilities.filter(f => f.status === 'lead');
+  const totalRevenue = activeFacilities.reduce((sum, h) => sum + h.totalRevenue, 0);
+  const totalMCs = activeFacilities.reduce((sum, h) => sum + h.mcsThisMonth, 0);
+  const totalDoctors = activeFacilities.reduce((sum, h) => sum + h.doctors, 0);
+  const totalSubscriptions = activeFacilities.reduce((sum, h) => sum + h.monthlyFee, 0);
+  const totalVariableFees = activeFacilities.reduce((sum, h) => sum + h.variableFee, 0);
+  const pendingRevenue = leadFacilities.reduce((sum, h) => sum + h.monthlyFee, 0);
+
+  return (
+    <div className="min-h-screen pb-12" style={{ backgroundColor: theme.bg }}>
+      {/* Header */}
+      <header className="border-b px-8 py-4" style={{ borderColor: theme.border, backgroundColor: theme.bgCard }}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${theme.gold}, ${theme.warning})` }}>
+              <svg className="w-6 h-6 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-xl font-bold" style={{ color: theme.textPrimary }}>Sarawak MedChain</h1>
+              <p className="text-sm" style={{ color: theme.gold }}>Master Command Center</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {/* Privacy Toggle */}
+            <button
+              onClick={() => setClientView(!clientView)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
+                clientView
+                  ? 'bg-purple-500/20 border border-purple-500/30'
+                  : 'bg-slate-800 border border-slate-700'
+              }`}
+            >
+              <svg className={`w-4 h-4 ${clientView ? 'text-purple-400' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {clientView ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                )}
+              </svg>
+              <span className={`text-sm font-semibold ${clientView ? 'text-purple-400' : 'text-slate-400'}`}>
+                {clientView ? 'Client View' : 'Full View'}
+              </span>
+            </button>
+
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl" style={{ backgroundColor: `${theme.gold}20`, border: `1px solid ${theme.gold}30` }}>
+              <svg className="w-4 h-4" style={{ color: theme.gold }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <span className="text-sm font-semibold" style={{ color: theme.gold }}>FOUNDER ACCESS</span>
+            </div>
+            <code className="text-xs font-mono px-3 py-2 rounded-lg" style={{ backgroundColor: theme.bg, color: theme.textMuted }}>
+              {walletAddress?.slice(0, 8)}...{walletAddress?.slice(-6)}
+            </code>
+          </div>
+        </div>
+      </header>
+
+      <div className="p-8">
+        {/* Top Stats Row */}
+        <div className="grid grid-cols-5 gap-4 mb-8">
+          {/* Total Revenue */}
+          <div className="rounded-2xl p-5 border" style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${theme.success}20` }}>
+                <svg className="w-4 h-4" style={{ color: theme.success }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <p className="text-xs font-medium" style={{ color: theme.textSecondary }}>Total Revenue</p>
+            </div>
+            <p className="text-2xl font-black" style={{ color: clientView ? theme.textMuted : theme.success }}>
+              {clientView ? '••••••' : `RM ${totalRevenue.toLocaleString()}`}
+            </p>
+          </div>
+
+          {/* MRR */}
+          <div className="rounded-2xl p-5 border" style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${theme.accent}20` }}>
+                <svg className="w-4 h-4" style={{ color: theme.accent }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+              <p className="text-xs font-medium" style={{ color: theme.textSecondary }}>MRR</p>
+            </div>
+            <p className="text-2xl font-black" style={{ color: clientView ? theme.textMuted : theme.accent }}>
+              {clientView ? '••••••' : `RM ${totalSubscriptions.toLocaleString()}`}
+            </p>
+          </div>
+
+          {/* Pipeline */}
+          <div className="rounded-2xl p-5 border" style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${theme.gold}20` }}>
+                <svg className="w-4 h-4" style={{ color: theme.gold }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+              <p className="text-xs font-medium" style={{ color: theme.textSecondary }}>Pipeline</p>
+            </div>
+            <p className="text-2xl font-black" style={{ color: clientView ? theme.textMuted : theme.gold }}>
+              {clientView ? '••••••' : `RM ${pendingRevenue.toLocaleString()}`}
+            </p>
+            <p className="text-xs mt-1" style={{ color: theme.textMuted }}>{leadFacilities.length} leads</p>
+          </div>
+
+          {/* Active Sites */}
+          <div className="rounded-2xl p-5 border" style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${theme.cyan}20` }}>
+                <svg className="w-4 h-4" style={{ color: theme.cyan }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <p className="text-xs font-medium" style={{ color: theme.textSecondary }}>Active Sites</p>
+            </div>
+            <p className="text-2xl font-black" style={{ color: theme.cyan }}>
+              {activeFacilities.length}
+            </p>
+            <p className="text-xs mt-1" style={{ color: theme.textMuted }}>across Sarawak</p>
+          </div>
+
+          {/* MCs Today */}
+          <div className="rounded-2xl p-5 border" style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${theme.warning}20` }}>
+                <svg className="w-4 h-4" style={{ color: theme.warning }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <p className="text-xs font-medium" style={{ color: theme.textSecondary }}>MCs This Month</p>
+            </div>
+            <p className="text-2xl font-black" style={{ color: clientView ? theme.textMuted : theme.warning }}>
+              {clientView ? '••••' : totalMCs.toLocaleString()}
+            </p>
+          </div>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-12 gap-6">
+          {/* Heat Map - col-span-8 */}
+          <div className="col-span-8 rounded-2xl border overflow-hidden" style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}>
+            <div className="px-6 py-4 border-b flex items-center justify-between" style={{ borderColor: theme.border }}>
+              <div>
+                <h2 className="text-lg font-bold" style={{ color: theme.textPrimary }}>Sarawak Network Heat Map</h2>
+                <p className="text-sm" style={{ color: theme.textMuted }}>Real-time hospital activity across the state</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full" style={{ backgroundColor: `${theme.success}20`, color: theme.success }}>
+                  <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: theme.success }} />
+                  LIVE
+                </span>
+              </div>
+            </div>
+            <div className="relative h-[500px] p-6">
+              <SarawakMap facilities={facilities} clientView={clientView} />
+            </div>
+          </div>
+
+          {/* Sidebar - col-span-4 */}
+          <div className="col-span-4 space-y-6">
+            {/* Active Hospitals */}
+            <div className="rounded-2xl border" style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}>
+              <div className="px-5 py-4 border-b" style={{ borderColor: theme.border }}>
+                <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: theme.textPrimary }}>
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: theme.success }} />
+                  Active Hospitals
+                </h3>
+              </div>
+              <div className="p-4 space-y-3 max-h-[200px] overflow-y-auto">
+                {activeFacilities.map(h => (
+                  <div key={h.id} className="flex items-center justify-between p-3 rounded-xl" style={{ backgroundColor: theme.bg }}>
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: theme.textPrimary }}>{h.name}</p>
+                      <p className="text-xs" style={{ color: theme.textMuted }}>{h.location} • {h.doctors} doctors</p>
+                    </div>
+                    {!clientView && (
+                      <p className="text-sm font-bold" style={{ color: theme.success }}>
+                        RM {h.totalRevenue.toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* High-Value Leads */}
+            <div className="rounded-2xl border" style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}>
+              <div className="px-5 py-4 border-b" style={{ borderColor: theme.border }}>
+                <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: theme.textPrimary }}>
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: theme.gold }} />
+                  High-Value Leads
+                </h3>
+              </div>
+              <div className="p-4 space-y-3">
+                {leadFacilities.map(h => (
+                  <div key={h.id} className="flex items-center justify-between p-3 rounded-xl" style={{ backgroundColor: `${theme.gold}10`, border: `1px solid ${theme.gold}20` }}>
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: theme.gold }}>{h.name}</p>
+                      <p className="text-xs" style={{ color: theme.textMuted }}>{h.location} • {h.lastActivity}</p>
+                    </div>
+                    {!clientView && (
+                      <p className="text-sm font-bold" style={{ color: theme.gold }}>
+                        RM {h.monthlyFee.toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="rounded-2xl border p-5" style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}>
+              <h3 className="text-sm font-bold mb-4" style={{ color: theme.textPrimary }}>Network Stats</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm" style={{ color: theme.textMuted }}>Total Doctors</span>
+                  <span className="font-bold" style={{ color: theme.textPrimary }}>{totalDoctors}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm" style={{ color: theme.textMuted }}>Avg MCs/Hospital</span>
+                  <span className="font-bold" style={{ color: theme.textPrimary }}>
+                    {Math.round(totalMCs / (activeFacilities.length || 1))}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm" style={{ color: theme.textMuted }}>Conversion Rate</span>
+                  <span className="font-bold" style={{ color: theme.success }}>
+                    {Math.round((activeFacilities.length / facilities.length) * 100)}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Privacy Notice */}
+        {clientView && (
+          <div className="mt-8 p-4 rounded-xl border flex items-center gap-4" style={{ backgroundColor: `${theme.accent}10`, borderColor: `${theme.accent}30` }}>
+            <svg className="w-6 h-6 flex-shrink-0" style={{ color: theme.accent }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <p className="font-semibold text-sm" style={{ color: theme.accent }}>Client View Mode Active</p>
+              <p className="text-xs" style={{ color: theme.textMuted }}>
+                Sensitive financial data is hidden. Safe to share screen with investors.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Master Infrastructure Controls - Only in Full View */}
+        {!clientView && (
+          <div className="mt-8 rounded-2xl border overflow-hidden" style={{ backgroundColor: theme.bgCard, borderColor: theme.danger + '30' }}>
+            <div className="px-6 py-4 border-b flex items-center justify-between" style={{ borderColor: theme.border, backgroundColor: `${theme.danger}10` }}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${theme.danger}20` }}>
+                  <svg className="w-5 h-5" style={{ color: theme.danger }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold" style={{ color: theme.textPrimary }}>Master Infrastructure Controls</h2>
+                  <p className="text-sm" style={{ color: theme.textMuted }}>Hospital node management & kill switches</p>
+                </div>
+              </div>
+              <span className="px-3 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: `${theme.danger}20`, color: theme.danger }}>
+                ADMIN ONLY
+              </span>
+            </div>
+
+            {/* Node List */}
+            <div className="p-6">
+              <div className="grid gap-4">
+                {facilities.filter(f => f.wallet && f.status === 'active').map(hospital => {
+                  const isPaused = isNodePaused(hospital.wallet);
+
+                  return (
+                    <div
+                      key={hospital.id}
+                      className={`p-4 rounded-xl border transition-all ${
+                        isPaused
+                          ? 'bg-red-500/5 border-red-500/30'
+                          : 'bg-slate-800/50 border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          {/* Status Indicator */}
+                          <div className={`w-3 h-3 rounded-full ${isPaused ? 'bg-red-500' : 'bg-emerald-500 animate-pulse'}`} />
+
+                          {/* Hospital Info */}
+                          <div>
+                            <p className="font-semibold" style={{ color: theme.textPrimary }}>{hospital.name}</p>
+                            <div className="flex items-center gap-3 mt-1">
+                              <span className="text-xs" style={{ color: theme.textMuted }}>{hospital.location}</span>
+                              <span className="text-xs" style={{ color: theme.textMuted }}>•</span>
+                              <span className="text-xs" style={{ color: theme.textMuted }}>{hospital.doctors} doctors</span>
+                              <span className="text-xs" style={{ color: theme.textMuted }}>•</span>
+                              <code className="text-xs font-mono" style={{ color: theme.cyan }}>
+                                {hospital.wallet?.slice(0, 6)}...{hospital.wallet?.slice(-4)}
+                              </code>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Kill Switch Toggle */}
+                        <div className="flex items-center gap-4">
+                          <span className={`text-sm font-semibold ${isPaused ? 'text-red-400' : 'text-emerald-400'}`}>
+                            Node Status: {isPaused ? 'PAUSED' : 'ACTIVE'}
+                          </span>
+                          <button
+                            onClick={() => handleKillSwitchClick(hospital, isPaused)}
+                            className={`relative w-14 h-7 rounded-full transition-colors ${
+                              isPaused
+                                ? 'bg-red-500/30'
+                                : 'bg-emerald-500/30'
+                            }`}
+                          >
+                            <div
+                              className={`absolute top-1 w-5 h-5 rounded-full transition-all ${
+                                isPaused
+                                  ? 'left-1 bg-red-500'
+                                  : 'left-8 bg-emerald-500'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Paused Warning */}
+                      {isPaused && (
+                        <div className="mt-3 pt-3 border-t border-red-500/20">
+                          <div className="flex items-center gap-2 text-red-400 text-sm">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <span>MC issuance blocked. Doctors see suspension notice.</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Warning Footer */}
+              <div className="mt-6 p-4 rounded-xl flex items-start gap-3" style={{ backgroundColor: `${theme.warning}10`, border: `1px solid ${theme.warning}30` }}>
+                <svg className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: theme.warning }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div>
+                  <p className="font-semibold text-sm" style={{ color: theme.warning }}>Critical Infrastructure Control</p>
+                  <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
+                    Pausing a node will immediately prevent all MC issuance for that hospital.
+                    Use this to enforce payment of outstanding RM 10,000 subscription fees.
+                    Doctors will see a professional suspension notice when attempting to log in.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Network-Wide Broadcast Panel - Only in Full View */}
+        {!clientView && (
+          <div className="mt-8 rounded-2xl border overflow-hidden" style={{ backgroundColor: theme.bgCard, borderColor: '#0066CC50' }}>
+            <div className="px-6 py-4 border-b flex items-center justify-between" style={{ borderColor: theme.border, background: 'linear-gradient(135deg, #0066CC20, #0052A320)' }}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#0066CC30' }}>
+                  <svg className="w-5 h-5" style={{ color: '#0066CC' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold" style={{ color: theme.textPrimary }}>Network-Wide Announcement</h2>
+                  <p className="text-sm" style={{ color: theme.textMuted }}>Broadcast messages to all Doctor Portals & Admin views</p>
+                </div>
+              </div>
+              <span className="px-3 py-1 rounded-full text-xs font-bold" style={{ backgroundColor: '#0066CC30', color: '#0066CC' }}>
+                LIVE BROADCAST
+              </span>
+            </div>
+
+            <div className="p-6">
+              {/* Active Broadcast Display */}
+              {activeBroadcast && (
+                <div className="mb-6 p-4 rounded-xl border" style={{ backgroundColor: '#0066CC10', borderColor: '#0066CC30' }}>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3 flex-1">
+                      <div className="relative flex-shrink-0 mt-1">
+                        <div className="absolute inset-0 bg-[#0066CC] rounded-full animate-ping opacity-30" />
+                        <div className="relative w-3 h-3 bg-[#0066CC] rounded-full" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold mb-1" style={{ color: '#0066CC' }}>
+                          Active Broadcast
+                          {activeBroadcast.priority === 'urgent' && (
+                            <span className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">URGENT</span>
+                          )}
+                        </p>
+                        <p className="text-sm" style={{ color: theme.textPrimary }}>{activeBroadcast.message}</p>
+                        <p className="text-xs mt-2" style={{ color: theme.textMuted }}>
+                          Expires: {formatExpirationTime(activeBroadcast.expiresAt)}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleClearBroadcast}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-red-500/20"
+                      style={{ backgroundColor: '#ef444420', color: theme.danger }}
+                    >
+                      End Broadcast
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Compose New Broadcast */}
+              <div className="space-y-4">
+                {/* Message Input */}
+                <div>
+                  <label className="block text-sm font-medium mb-2" style={{ color: theme.textSecondary }}>
+                    Announcement Message
+                  </label>
+                  <textarea
+                    value={broadcastMessage}
+                    onChange={(e) => setBroadcastMessage(e.target.value)}
+                    placeholder="Enter your network-wide announcement message..."
+                    rows={3}
+                    className="w-full px-4 py-3 rounded-xl border text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#0066CC]/50"
+                    style={{
+                      backgroundColor: theme.bg,
+                      borderColor: theme.border,
+                      color: theme.textPrimary,
+                    }}
+                    maxLength={280}
+                  />
+                  <p className="text-xs mt-1 text-right" style={{ color: theme.textMuted }}>
+                    {broadcastMessage.length}/280 characters
+                  </p>
+                </div>
+
+                {/* Options Row */}
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Duration Selector */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: theme.textSecondary }}>
+                      Auto-Expire After
+                    </label>
+                    <select
+                      value={broadcastDuration}
+                      onChange={(e) => setBroadcastDuration(Number(e.target.value))}
+                      className="w-full px-4 py-3 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-[#0066CC]/50 cursor-pointer"
+                      style={{
+                        backgroundColor: theme.bg,
+                        borderColor: theme.border,
+                        color: theme.textPrimary,
+                      }}
+                    >
+                      <option value={1}>1 hour</option>
+                      <option value={4}>4 hours</option>
+                      <option value={8}>8 hours</option>
+                      <option value={12}>12 hours</option>
+                      <option value={24}>24 hours</option>
+                      <option value={48}>48 hours</option>
+                      <option value={72}>72 hours</option>
+                    </select>
+                  </div>
+
+                  {/* Priority Selector */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{ color: theme.textSecondary }}>
+                      Priority Level
+                    </label>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setBroadcastPriority('normal')}
+                        className={`flex-1 px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
+                          broadcastPriority === 'normal'
+                            ? 'border-[#0066CC] bg-[#0066CC]/20'
+                            : 'border-slate-700 hover:border-slate-600'
+                        }`}
+                        style={{ color: broadcastPriority === 'normal' ? '#0066CC' : theme.textSecondary }}
+                      >
+                        Normal
+                      </button>
+                      <button
+                        onClick={() => setBroadcastPriority('urgent')}
+                        className={`flex-1 px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
+                          broadcastPriority === 'urgent'
+                            ? 'border-red-500 bg-red-500/20'
+                            : 'border-slate-700 hover:border-slate-600'
+                        }`}
+                        style={{ color: broadcastPriority === 'urgent' ? theme.danger : theme.textSecondary }}
+                      >
+                        Urgent
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Broadcast Button */}
+                <button
+                  onClick={handleBroadcast}
+                  disabled={!broadcastMessage.trim() || isBroadcasting}
+                  className="w-full py-4 rounded-xl font-semibold text-white transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    background: broadcastMessage.trim() ? 'linear-gradient(135deg, #0066CC, #0052A3)' : '#1e3a5f',
+                    boxShadow: broadcastMessage.trim() ? '0 4px 20px rgba(0, 102, 204, 0.3)' : 'none',
+                  }}
+                >
+                  {isBroadcasting ? (
+                    <>
+                      <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Broadcasting...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                      </svg>
+                      Broadcast to All Nodes
+                    </>
+                  )}
+                </button>
+
+                {/* Info Footer */}
+                <div className="pt-4 border-t" style={{ borderColor: theme.border }}>
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: theme.textMuted }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-xs" style={{ color: theme.textMuted }}>
+                      Messages appear instantly at the top of all active Doctor Portals and Hospital Admin views.
+                      Users can dismiss the notification, but it will reappear on page refresh until it expires.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Kill Switch Confirmation Modal */}
+      <KillSwitchModal
+        isOpen={killSwitchModal.isOpen}
+        hospital={killSwitchModal.hospital}
+        action={killSwitchModal.action}
+        onConfirm={handleConfirmKillSwitch}
+        onCancel={handleCancelKillSwitch}
+        isProcessing={isProcessingKillSwitch}
+      />
+
+      {/* Live Profit Ticker */}
+      <LiveProfitTicker transactions={transactions} clientView={clientView} />
+    </div>
+  );
+}

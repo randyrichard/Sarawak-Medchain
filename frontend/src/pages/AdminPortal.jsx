@@ -12,6 +12,7 @@ import {
   isVerifiedDoctor
 } from '../utils/contract';
 import { useBilling } from '../context/BillingContext';
+import BroadcastNotification from '../components/BroadcastNotification';
 
 // Doctor Performance Leaderboard Data
 const generateDoctorPerformanceData = () => {
@@ -297,7 +298,11 @@ export default function AdminPortal({ walletAddress }) {
   };
 
   return (
-    <div className="flex-1 flex-grow w-full min-h-full bg-slate-900 px-12 py-10 font-sans">
+    <div className="flex-1 flex-grow w-full min-h-full bg-slate-900 font-sans">
+        {/* Network-Wide Broadcast Notification */}
+        <BroadcastNotification />
+
+        <div className="px-12 py-10">
         {/* Overdue Subscription Banner */}
         {isSubscriptionOverdue && (
           <div className="mb-6 bg-red-900/30 border border-red-500/40 rounded-xl px-6 py-4 flex items-center justify-between">
@@ -1644,6 +1649,7 @@ export default function AdminPortal({ walletAddress }) {
             `}</style>
           </div>
         )}
+        </div>
     </div>
   );
 }

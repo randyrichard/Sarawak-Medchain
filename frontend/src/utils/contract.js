@@ -333,3 +333,40 @@ export async function removeVerifiedDoctor(doctorAddress) {
   const tx = await contract.removeVerifiedDoctor(validAddress);
   return await tx.wait();
 }
+
+// ========== HOSPITAL NODE CONTROL FUNCTIONS ==========
+
+/**
+ * Check if a hospital is paused
+ * @param {string} hospitalAddress - Address of the hospital to check
+ * @returns {boolean} True if the hospital is paused
+ */
+export async function isHospitalPaused(hospitalAddress) {
+  const validAddress = validateAddress(hospitalAddress);
+  const contract = getContract();
+  return await contract.isHospitalPaused(validAddress);
+}
+
+/**
+ * Pause a hospital node (admin only)
+ * Stops all MC issuance for this hospital
+ * @param {string} hospitalAddress - Address of hospital to pause
+ */
+export async function pauseHospital(hospitalAddress) {
+  const validAddress = validateAddress(hospitalAddress);
+  const contract = getContract();
+  const tx = await contract.pauseHospital(validAddress);
+  return await tx.wait();
+}
+
+/**
+ * Unpause a hospital node (admin only)
+ * Resumes MC issuance for this hospital
+ * @param {string} hospitalAddress - Address of hospital to unpause
+ */
+export async function unpauseHospital(hospitalAddress) {
+  const validAddress = validateAddress(hospitalAddress);
+  const contract = getContract();
+  const tx = await contract.unpauseHospital(validAddress);
+  return await tx.wait();
+}
