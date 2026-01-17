@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import { pauseHospital, unpauseHospital } from '../utils/contract';
 import { sendBroadcast, clearBroadcast } from '../components/BroadcastNotification';
 
@@ -531,6 +532,9 @@ export default function CEOMainDashboard({ walletAddress }) {
   const [currentBatch, setCurrentBatch] = useState(null);
   const [founderAlerts, setFounderAlerts] = useState([]);
 
+  // Profit Chart State
+  const [showProjection, setShowProjection] = useState(false);
+
   // Check if current wallet is the founder
   const isFounder = walletAddress?.toLowerCase() === FOUNDER_WALLET.toLowerCase();
 
@@ -836,6 +840,91 @@ export default function CEOMainDashboard({ walletAddress }) {
   const totalSubscriptions = activeFacilities.reduce((sum, h) => sum + h.monthlyFee, 0);
   const totalVariableFees = activeFacilities.reduce((sum, h) => sum + h.variableFee, 0);
   const pendingRevenue = leadFacilities.reduce((sum, h) => sum + h.monthlyFee, 0);
+
+  // Profit & Overhead Calculations
+  const activeNodeCount = facilities.filter(f => f.wallet && f.status === 'active').length;
+  const SERVER_COST_PER_NODE = 500; // RM 500/node
+  const ESTIMATED_GAS_FEES = 150; // RM per month (blockchain operations)
+  const MISC_OVERHEAD = 200; // Domain, email services, etc.
+
+  const grossRevenue = totalSubscriptions + totalMCs;
+  const serverCosts = activeNodeCount * SERVER_COST_PER_NODE;
+  const totalOperatingCosts = serverCosts + ESTIMATED_GAS_FEES + MISC_OVERHEAD;
+  const netProfit = grossRevenue - totalOperatingCosts;
+  const profitMargin = grossRevenue > 0 ? ((netProfit / grossRevenue) * 100).toFixed(1) : 0;
+
+  // Current month profit data
+  const currentMonthData = [
+    {
+      name: 'Current',
+      grossRevenue: grossRevenue,
+      serverCosts: serverCosts,
+      gasFees: ESTIMATED_GAS_FEES,
+      overhead: MISC_OVERHEAD,
+      netProfit: netProfit,
+    },
+  ];
+
+  // 6-month projection based on lead conversion rate
+  const conversionRate = 0.6; // 60% of leads convert
+  const monthlyGrowthRate = 0.15; // 15% MoM growth
+  const generateProjectionData = () => {
+    const months = ['Current', 'Month 2', 'Month 3', 'Month 4', 'Month 5', 'Month 6'];
+    const leadCount = facilities.filter(f => f.status === 'lead').length;
+
+    return months.map((month, idx) => {
+      // Project node growth from leads
+      const projectedNewNodes = idx === 0 ? 0 : Math.floor(leadCount * conversionRate * (idx / 6));
+      const projectedTotalNodes = activeNodeCount + projectedNewNodes;
+
+      // Project revenue growth
+      const growthMultiplier = Math.pow(1 + monthlyGrowthRate, idx);
+      const projectedSubscriptions = projectedTotalNodes * 10000;
+      const projectedMCs = Math.round(totalMCs * growthMultiplier);
+      const projectedGross = projectedSubscriptions + projectedMCs;
+
+      // Project costs
+      const projectedServerCosts = projectedTotalNodes * SERVER_COST_PER_NODE;
+      const projectedGasFees = Math.round(ESTIMATED_GAS_FEES * (1 + idx * 0.1));
+      const projectedOverhead = MISC_OVERHEAD;
+      const projectedTotalCosts = projectedServerCosts + projectedGasFees + projectedOverhead;
+      const projectedNet = projectedGross - projectedTotalCosts;
+
+      return {
+        name: month,
+        grossRevenue: projectedGross,
+        serverCosts: projectedServerCosts,
+        gasFees: projectedGasFees,
+        overhead: projectedOverhead,
+        netProfit: projectedNet,
+        nodes: projectedTotalNodes,
+      };
+    });
+  };
+
+  const profitChartData = showProjection ? generateProjectionData() : currentMonthData;
+
+  // Custom tooltip for chart
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="p-4 rounded-xl border" style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}>
+          <p className="font-bold mb-2" style={{ color: theme.textPrimary }}>{label}</p>
+          <div className="space-y-1 text-sm">
+            <p style={{ color: theme.success }}>Gross Revenue: {formatCurrency(data.grossRevenue)}</p>
+            <p style={{ color: theme.danger }}>Server Costs: {formatCurrency(data.serverCosts)}</p>
+            <p style={{ color: theme.warning }}>Gas Fees: {formatCurrency(data.gasFees)}</p>
+            <p style={{ color: theme.textMuted }}>Overhead: {formatCurrency(data.overhead)}</p>
+            <div className="pt-2 mt-2 border-t" style={{ borderColor: theme.border }}>
+              <p className="font-bold" style={{ color: theme.cyan }}>Net Profit: {formatCurrency(data.netProfit)}</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <div className="min-h-screen pb-12" style={{ backgroundColor: theme.bg }}>
@@ -1630,6 +1719,197 @@ export default function CEOMainDashboard({ walletAddress }) {
                     This script runs automatically on the 1st of every month at 9:00 AM MYT.
                     Invoices are generated and emailed to each hospital's finance team.
                     You'll receive a notification: "Invoices Sent: RM X total billing initiated for [Month]"
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Profit & Overhead Chart Panel - Only in Full View */}
+        {!clientView && (
+          <div className="mt-8 rounded-2xl border overflow-hidden" style={{ backgroundColor: theme.bgCard, borderColor: `${theme.gold}50` }}>
+            <div className="px-6 py-4 border-b flex items-center justify-between" style={{ borderColor: theme.border, background: `linear-gradient(135deg, ${theme.gold}20, ${theme.warning}10)` }}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${theme.gold}30` }}>
+                  <svg className="w-5 h-5" style={{ color: theme.gold }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold" style={{ color: theme.textPrimary }}>Profit & Overhead Analysis</h2>
+                  <p className="text-sm" style={{ color: theme.textMuted }}>Gross revenue vs operating costs breakdown</p>
+                </div>
+              </div>
+              {/* Projection Toggle */}
+              <button
+                onClick={() => setShowProjection(!showProjection)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
+                  showProjection
+                    ? 'bg-cyan-500/20 border border-cyan-500/30'
+                    : 'bg-slate-800 border border-slate-700'
+                }`}
+              >
+                <svg className={`w-4 h-4 ${showProjection ? 'text-cyan-400' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+                <span className={`text-sm font-semibold ${showProjection ? 'text-cyan-400' : 'text-slate-400'}`}>
+                  {showProjection ? '6-Month Forecast' : 'Current Month'}
+                </span>
+              </button>
+            </div>
+
+            <div className="p-6">
+              {/* Take-Home Metric - Large Glowing Number */}
+              <div className="mb-6 p-6 rounded-2xl relative overflow-hidden" style={{
+                background: `linear-gradient(135deg, ${theme.success}15, ${theme.cyan}10)`,
+                border: `2px solid ${theme.success}40`,
+              }}>
+                {/* Glow Effect */}
+                <div className="absolute inset-0 opacity-30" style={{
+                  background: `radial-gradient(circle at 30% 50%, ${theme.success}40 0%, transparent 50%)`,
+                }} />
+
+                <div className="relative flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium mb-1" style={{ color: theme.textMuted }}>Net Profit Margin (Solo Founder)</p>
+                    <div className="flex items-baseline gap-3">
+                      <span className="text-6xl font-black animate-pulse" style={{
+                        color: theme.success,
+                        textShadow: `0 0 30px ${theme.success}60, 0 0 60px ${theme.success}40`,
+                      }}>
+                        {profitMargin}%
+                      </span>
+                      <span className="text-2xl font-bold" style={{ color: theme.success }}>
+                        {formatCurrency(netProfit)}
+                      </span>
+                    </div>
+                    <p className="text-xs mt-2" style={{ color: theme.textMuted }}>
+                      Take-home after all operating expenses
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: theme.success }} />
+                      <span className="text-sm" style={{ color: theme.textSecondary }}>Gross: {formatCurrency(grossRevenue)}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: theme.danger }} />
+                      <span className="text-sm" style={{ color: theme.textSecondary }}>Costs: {formatCurrency(totalOperatingCosts)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* High Margin Badge */}
+                {profitMargin > 90 && (
+                  <div className="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold animate-bounce" style={{
+                    backgroundColor: `${theme.gold}30`,
+                    color: theme.gold,
+                    border: `1px solid ${theme.gold}50`,
+                  }}>
+                    EXCEPTIONAL MARGIN
+                  </div>
+                )}
+              </div>
+
+              {/* Cost Breakdown Grid */}
+              <div className="grid grid-cols-4 gap-4 mb-6">
+                <div className="p-4 rounded-xl" style={{ backgroundColor: theme.bg }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: theme.success }} />
+                    <p className="text-xs font-medium" style={{ color: theme.textMuted }}>Gross Revenue</p>
+                  </div>
+                  <p className="text-xl font-bold" style={{ color: theme.success }}>{formatCurrency(grossRevenue)}</p>
+                </div>
+                <div className="p-4 rounded-xl" style={{ backgroundColor: theme.bg }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: theme.danger }} />
+                    <p className="text-xs font-medium" style={{ color: theme.textMuted }}>Server Costs</p>
+                  </div>
+                  <p className="text-xl font-bold" style={{ color: theme.danger }}>{formatCurrency(serverCosts)}</p>
+                  <p className="text-xs" style={{ color: theme.textMuted }}>RM 500 × {activeNodeCount} nodes</p>
+                </div>
+                <div className="p-4 rounded-xl" style={{ backgroundColor: theme.bg }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: theme.warning }} />
+                    <p className="text-xs font-medium" style={{ color: theme.textMuted }}>Gas Fees</p>
+                  </div>
+                  <p className="text-xl font-bold" style={{ color: theme.warning }}>{formatCurrency(ESTIMATED_GAS_FEES)}</p>
+                  <p className="text-xs" style={{ color: theme.textMuted }}>Blockchain operations</p>
+                </div>
+                <div className="p-4 rounded-xl" style={{ backgroundColor: theme.bg }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: theme.textMuted }} />
+                    <p className="text-xs font-medium" style={{ color: theme.textMuted }}>Misc Overhead</p>
+                  </div>
+                  <p className="text-xl font-bold" style={{ color: theme.textSecondary }}>{formatCurrency(MISC_OVERHEAD)}</p>
+                  <p className="text-xs" style={{ color: theme.textMuted }}>Domain, email, etc.</p>
+                </div>
+              </div>
+
+              {/* Stacked Bar Chart */}
+              <div className="rounded-xl p-4" style={{ backgroundColor: theme.bg }}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-bold" style={{ color: theme.textPrimary }}>
+                    {showProjection ? 'Revenue vs Costs - 6 Month Projection' : 'Revenue vs Costs - Current Month'}
+                  </h3>
+                  {showProjection && (
+                    <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: `${theme.cyan}20`, color: theme.cyan }}>
+                      Based on {(conversionRate * 100)}% lead conversion rate
+                    </span>
+                  )}
+                </div>
+                <div style={{ height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={profitChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={theme.border} />
+                      <XAxis dataKey="name" tick={{ fill: theme.textMuted, fontSize: 12 }} />
+                      <YAxis tick={{ fill: theme.textMuted, fontSize: 12 }} tickFormatter={(value) => `RM ${(value / 1000).toFixed(0)}k`} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend
+                        wrapperStyle={{ paddingTop: 10 }}
+                        formatter={(value) => <span style={{ color: theme.textSecondary, fontSize: 12 }}>{value}</span>}
+                      />
+                      <Bar dataKey="grossRevenue" name="Gross Revenue" stackId="a" fill={theme.success} radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="serverCosts" name="Server Costs" stackId="b" fill={theme.danger} />
+                      <Bar dataKey="gasFees" name="Gas Fees" stackId="b" fill={theme.warning} />
+                      <Bar dataKey="overhead" name="Overhead" stackId="b" fill={theme.textMuted} radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Projection Insights */}
+              {showProjection && (
+                <div className="mt-6 p-4 rounded-xl border" style={{ backgroundColor: `${theme.cyan}10`, borderColor: `${theme.cyan}30` }}>
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: theme.cyan }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                    <div>
+                      <p className="font-semibold text-sm" style={{ color: theme.cyan }}>6-Month Projection Insights</p>
+                      <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
+                        With {facilities.filter(f => f.status === 'lead').length} leads in pipeline at {(conversionRate * 100)}% conversion rate,
+                        projected to reach {generateProjectionData()[5]?.nodes || activeNodeCount} active nodes.
+                        Month 6 projected net profit: {formatCurrency(generateProjectionData()[5]?.netProfit || netProfit)}.
+                        Margins remain exceptionally high due to minimal operational overhead as a solo founder.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Solo Founder Advantage */}
+              <div className="mt-6 p-4 rounded-xl flex items-start gap-3" style={{ backgroundColor: `${theme.gold}10`, border: `1px solid ${theme.gold}30` }}>
+                <svg className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: theme.gold }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <p className="font-semibold text-sm" style={{ color: theme.gold }}>Solo Founder Advantage</p>
+                  <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
+                    No employee salaries, no office rent, no equity dilution. Your {profitMargin}% profit margin
+                    represents near-complete take-home earnings. Each new hospital node adds approximately
+                    RM {(10000 - SERVER_COST_PER_NODE).toLocaleString()} to your monthly take-home.
                   </p>
                 </div>
               </div>
