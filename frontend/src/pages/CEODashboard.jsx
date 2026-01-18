@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getAllHospitalBalances } from '../utils/contract';
 import { useBilling } from '../context/BillingContext';
@@ -157,6 +158,8 @@ const getReferralStats = (referralCode) => {
 };
 
 export default function CEODashboard({ walletAddress }) {
+  const navigate = useNavigate();
+
   // Get connected hospital info based on wallet address
   const connectedHospital = walletAddress
     ? HOSPITAL_WALLET_MAPPING[walletAddress.toLowerCase()]
@@ -646,6 +649,22 @@ export default function CEODashboard({ walletAddress }) {
 
         {/* Actions Row */}
         <div className="flex items-center gap-3 lg:ml-auto">
+          {/* Quarterly Summary Button */}
+          <button
+            onClick={() => navigate('/ceo/quarterly')}
+            className={`relative flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all shadow-lg hover:scale-[1.02] active:scale-[0.98] ${
+              darkMode
+                ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:from-purple-400 hover:to-indigo-500'
+                : 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:from-purple-400 hover:to-indigo-500'
+            }`}
+            style={{ boxShadow: '0 10px 30px rgba(139, 92, 246, 0.3)' }}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <span>Q Report</span>
+          </button>
+
           {/* Expand the Network Button */}
           <button
             onClick={() => setShowReferralModal(true)}
