@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 // Sarawak MedChain Brand Colors
 const MEDCHAIN_BLUE = '#0066CC';
 const MEDCHAIN_DARK = '#003366';
 
 export default function HospitalPitch() {
+  const navigate = useNavigate();
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [formData, setFormData] = useState({
     hospitalName: '',
@@ -643,14 +644,17 @@ export default function HospitalPitch() {
             {/* CTA */}
             <div className="p-8 pt-0">
               <button
-                onClick={() => setShowRequestModal(true)}
-                className="w-full py-4 rounded-xl font-bold text-white text-lg transition-all transform hover:scale-[1.02]"
+                onClick={() => navigate('/agreement', { state: { plan: 'enterprise' } })}
+                className="w-full py-4 rounded-xl font-bold text-white text-lg transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2"
                 style={{
                   background: `linear-gradient(135deg, ${MEDCHAIN_BLUE}, ${MEDCHAIN_DARK})`,
                   boxShadow: `0 10px 40px ${MEDCHAIN_BLUE}30`,
                 }}
               >
-                Request Access Now
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Get Started - Sign Agreement
               </button>
               <p className="text-center text-slate-500 text-sm mt-4">
                 30-day money-back guarantee

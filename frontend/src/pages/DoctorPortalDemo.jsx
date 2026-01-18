@@ -477,14 +477,20 @@ export default function DoctorPortalDemo() {
                       </p>
                       <div className="flex items-center gap-2">
                         <Link
-                          to="/pitch#pricing"
+                          to="/agreement"
                           className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-lg text-sm hover:from-amber-400 hover:to-orange-400 transition-all"
+                        >
+                          Sign Agreement Now
+                        </Link>
+                        <Link
+                          to="/pitch#pricing"
+                          className="px-4 py-2 bg-slate-700 text-white rounded-lg text-sm hover:bg-slate-600 transition-colors"
                         >
                           View Pricing
                         </Link>
                         <button
                           onClick={closeSimulation}
-                          className="px-4 py-2 bg-slate-700 text-white rounded-lg text-sm hover:bg-slate-600 transition-colors"
+                          className="px-4 py-2 bg-slate-600 text-slate-300 rounded-lg text-sm hover:bg-slate-500 transition-colors"
                         >
                           Try Again
                         </button>

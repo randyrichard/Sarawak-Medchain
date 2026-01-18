@@ -10,6 +10,7 @@ import CEOMainDashboard from './pages/CEOMainDashboard';
 import HospitalPitch from './pages/HospitalPitch';
 import ConnectWallet from './pages/ConnectWallet';
 import DoctorPortalDemo from './pages/DoctorPortalDemo';
+import ServiceAgreement from './pages/ServiceAgreement';
 import FounderAdmin from './pages/FounderAdmin';
 import BusinessOverview from './pages/BusinessOverview';
 import LandingPage from './pages/LandingPage';
@@ -674,7 +675,7 @@ function AppRoutes() {
   }, []);
 
   // Public routes that don't need wallet - NO MetaMask trigger
-  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch', '/pricing', '/connect', '/demo'];
+  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch', '/pricing', '/connect', '/demo', '/agreement'];
   const isPublicRoute = publicPaths.includes(location.pathname);
   const isVerificationRoute = location.pathname.startsWith('/verify/');
 
@@ -709,6 +710,7 @@ function AppRoutes() {
             : <ConnectWallet onConnect={handleConnectWallet} loading={loading} error={error} />
         } />
         <Route path="/demo" element={<DoctorPortalDemo />} />
+        <Route path="/agreement" element={<ServiceAgreement />} />
       </Routes>
     );
   }
