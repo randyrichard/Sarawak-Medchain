@@ -18,6 +18,12 @@ export default function HospitalPitch() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  // ROI Calculator state
+  const [roiInputs, setRoiInputs] = useState({
+    numberOfDoctors: 10,
+    monthlyMCs: 500,
+  });
+
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -657,6 +663,173 @@ export default function HospitalPitch() {
             <p className="text-slate-400">
               Running a smaller clinic? Ask about our <span className="text-cyan-400 font-semibold">Clinic Tier at RM 2,000/month</span>
             </p>
+          </div>
+
+          {/* ROI Calculator */}
+          <div className="mt-16">
+            <div className="text-center mb-8">
+              <span className="inline-block px-3 py-1 rounded-full text-xs font-bold text-emerald-400 bg-emerald-500/20 mb-4">
+                ROI CALCULATOR
+              </span>
+              <h3 className="text-3xl font-black text-white mb-2">
+                Calculate Your <span className="text-emerald-400">Savings</span>
+              </h3>
+              <p className="text-slate-400">See how MedChain pays for itself</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 rounded-3xl border border-slate-700/50 p-8">
+              {/* Input Fields */}
+              <div className="grid md:grid-cols-2 gap-6 mb-8">
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Number of Doctors
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="500"
+                    value={roiInputs.numberOfDoctors}
+                    onChange={(e) => setRoiInputs({ ...roiInputs, numberOfDoctors: Math.max(1, parseInt(e.target.value) || 1) })}
+                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-lg font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-slate-500 mt-2">Active doctors in your facility</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Monthly MCs Issued
+                  </label>
+                  <input
+                    type="number"
+                    min="10"
+                    max="10000"
+                    value={roiInputs.monthlyMCs}
+                    onChange={(e) => setRoiInputs({ ...roiInputs, monthlyMCs: Math.max(10, parseInt(e.target.value) || 10) })}
+                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-lg font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="text-xs text-slate-500 mt-2">Average certificates per month</p>
+                </div>
+              </div>
+
+              {/* Calculated Results */}
+              {(() => {
+                // ROI Calculation Logic
+                const mcs = roiInputs.monthlyMCs;
+
+                // Admin hours wasted: ~15 min per MC for manual verification/filing
+                const adminHoursPerMC = 0.25; // 15 minutes
+                const adminHourlyRate = 25; // RM25/hour for admin staff
+                const adminHoursWasted = mcs * adminHoursPerMC;
+                const adminCostWasted = adminHoursWasted * adminHourlyRate;
+
+                // Fraud cost calculation based on RM 2.3B national stat
+                // Estimated 8-12% of MCs are fraudulent nationally
+                const fraudRate = 0.10; // 10% estimated fraud rate
+                const avgFraudCostPerMC = 350; // Lost productivity + investigation cost
+                const potentialFraudMCs = Math.round(mcs * fraudRate);
+                const potentialFraudCost = potentialFraudMCs * avgFraudCostPerMC;
+
+                // Current total loss
+                const currentMonthlyLoss = adminCostWasted + potentialFraudCost;
+
+                // MedChain cost
+                const medchainBaseFee = 10000;
+                const medchainMCFee = mcs * 1; // RM1 per MC
+                const medchainTotalCost = medchainBaseFee + medchainMCFee;
+
+                // Savings
+                const monthlySavings = currentMonthlyLoss - medchainTotalCost;
+                const savingsPositive = monthlySavings > 0;
+
+                // Breakeven: How many fake MCs need to be prevented
+                const breakEvenFakeMCs = Math.ceil(medchainTotalCost / avgFraudCostPerMC);
+
+                return (
+                  <>
+                    {/* Hidden Costs Breakdown */}
+                    <div className="grid md:grid-cols-2 gap-4 mb-8">
+                      <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="text-red-400 font-semibold text-sm">Admin Hours Wasted</span>
+                        </div>
+                        <p className="text-2xl font-bold text-white">{adminHoursWasted.toFixed(0)} hrs/month</p>
+                        <p className="text-xs text-slate-400 mt-1">= RM {adminCostWasted.toLocaleString()} in staff costs</p>
+                      </div>
+                      <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                          </svg>
+                          <span className="text-amber-400 font-semibold text-sm">Potential Fraud Exposure</span>
+                        </div>
+                        <p className="text-2xl font-bold text-white">~{potentialFraudMCs} fake MCs/month</p>
+                        <p className="text-xs text-slate-400 mt-1">= RM {potentialFraudCost.toLocaleString()} in fraud risk</p>
+                      </div>
+                    </div>
+
+                    {/* Big Comparison */}
+                    <div className="grid md:grid-cols-3 gap-4 items-center mb-8">
+                      {/* Current Loss */}
+                      <div className="bg-red-950/50 border border-red-500/30 rounded-2xl p-6 text-center">
+                        <p className="text-red-400 text-sm font-semibold mb-2">CURRENT HIDDEN LOSS</p>
+                        <p className="text-4xl font-black text-red-400">
+                          RM {currentMonthlyLoss.toLocaleString()}
+                        </p>
+                        <p className="text-slate-400 text-sm mt-1">/month</p>
+                      </div>
+
+                      {/* VS */}
+                      <div className="flex items-center justify-center">
+                        <div className="w-16 h-16 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center">
+                          <span className="text-2xl font-black text-slate-400">VS</span>
+                        </div>
+                      </div>
+
+                      {/* MedChain Cost */}
+                      <div className="bg-emerald-950/50 border border-emerald-500/30 rounded-2xl p-6 text-center">
+                        <p className="text-emerald-400 text-sm font-semibold mb-2">MEDCHAIN COST</p>
+                        <p className="text-4xl font-black text-emerald-400">
+                          RM {medchainTotalCost.toLocaleString()}
+                        </p>
+                        <p className="text-slate-400 text-sm mt-1">/month</p>
+                      </div>
+                    </div>
+
+                    {/* Savings Result */}
+                    {savingsPositive && (
+                      <div className="bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30 rounded-2xl p-6 text-center mb-6">
+                        <p className="text-emerald-400 text-sm font-semibold mb-2">YOUR MONTHLY SAVINGS</p>
+                        <p className="text-5xl font-black text-white mb-2">
+                          RM {monthlySavings.toLocaleString()}
+                        </p>
+                        <p className="text-slate-300">
+                          That's <span className="text-emerald-400 font-bold">RM {(monthlySavings * 12).toLocaleString()}</span> saved per year
+                        </p>
+                      </div>
+                    )}
+
+                    {/* The Clincher */}
+                    <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/30 rounded-2xl p-6 text-center">
+                      <div className="flex items-center justify-center gap-2 mb-3">
+                        <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                        <span className="text-blue-400 font-bold">THE BOTTOM LINE</span>
+                      </div>
+                      <p className="text-2xl md:text-3xl font-bold text-white">
+                        Your facility pays for itself by preventing just{' '}
+                        <span className="text-amber-400">{breakEvenFakeMCs} fake MCs</span> per month
+                      </p>
+                      <p className="text-slate-400 mt-3 text-sm">
+                        Based on RM 2.3 billion annual MC fraud cost in Malaysia (Source: MTUC 2023)
+                      </p>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
           </div>
         </div>
       </section>
