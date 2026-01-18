@@ -7,6 +7,7 @@ import DoctorPortal from './pages/DoctorPortal';
 import AdminPortal from './pages/AdminPortal';
 import CEODashboard from './pages/CEODashboard';
 import CEOMainDashboard from './pages/CEOMainDashboard';
+import HospitalPitch from './pages/HospitalPitch';
 import FounderAdmin from './pages/FounderAdmin';
 import BusinessOverview from './pages/BusinessOverview';
 import LandingPage from './pages/LandingPage';
@@ -659,7 +660,7 @@ function AppRoutes() {
   }, []);
 
   // Public routes that don't need wallet
-  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview'];
+  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch'];
   const isPublicRoute = publicPaths.includes(location.pathname);
   const isVerificationRoute = location.pathname.startsWith('/verify/');
 
@@ -670,6 +671,7 @@ function AppRoutes() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/founder-admin-secret-99" element={<FounderAdmin />} />
         <Route path="/business-overview" element={<BusinessOverview />} />
+        <Route path="/pitch" element={<HospitalPitch />} />
       </Routes>
     );
   }
