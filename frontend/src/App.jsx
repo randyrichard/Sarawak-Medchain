@@ -45,6 +45,18 @@ function StickyBalanceHeader({ walletAddress }) {
   const fetchCreditBalance = async () => {
     try {
       setLoading(true);
+      // First check localStorage for hospital node credits (from FPX payment)
+      const hospitalNode = localStorage.getItem('medchain_hospital_node');
+      if (hospitalNode) {
+        const nodeData = JSON.parse(hospitalNode);
+        if (nodeData.credits?.balance !== undefined) {
+          // Convert credit count to RM value (1 credit = RM 1)
+          setCreditBalance(nodeData.credits.balance);
+          setLoading(false);
+          return;
+        }
+      }
+      // Fall back to blockchain call
       const balance = await getMyBalance();
       setCreditBalance(balance);
     } catch (error) {
@@ -179,6 +191,18 @@ function TopUpRequiredBadge({ walletAddress }) {
   const fetchCreditBalance = async () => {
     try {
       setLoading(true);
+      // First check localStorage for hospital node credits (from FPX payment)
+      const hospitalNode = localStorage.getItem('medchain_hospital_node');
+      if (hospitalNode) {
+        const nodeData = JSON.parse(hospitalNode);
+        if (nodeData.credits?.balance !== undefined) {
+          // Convert credit count to RM value (1 credit = RM 1)
+          setCreditBalance(nodeData.credits.balance);
+          setLoading(false);
+          return;
+        }
+      }
+      // Fall back to blockchain call
       const balance = await getMyBalance();
       setCreditBalance(balance);
     } catch (error) {
@@ -266,6 +290,18 @@ function CreditBalanceSidebar({ walletAddress }) {
   const fetchCreditBalance = async () => {
     try {
       setLoading(true);
+      // First check localStorage for hospital node credits (from FPX payment)
+      const hospitalNode = localStorage.getItem('medchain_hospital_node');
+      if (hospitalNode) {
+        const nodeData = JSON.parse(hospitalNode);
+        if (nodeData.credits?.balance !== undefined) {
+          // Credits are already in RM value (1 credit = RM 1)
+          setCreditBalance(nodeData.credits.balance);
+          setLoading(false);
+          return;
+        }
+      }
+      // Fall back to blockchain call
       const balance = await getMyBalance();
       setCreditBalance(balance);
     } catch (error) {
@@ -292,7 +328,7 @@ function CreditBalanceSidebar({ walletAddress }) {
           <p className={`text-xs font-semibold uppercase tracking-wide ${
             isLowBalance ? 'text-amber-200' : 'text-emerald-200'
           }`}>
-            Credit Balance
+            Credits Loaded
           </p>
           {isLowBalance && (
             <span className="px-2 py-0.5 bg-amber-500/30 rounded-full text-xs font-bold text-amber-100">
@@ -303,10 +339,10 @@ function CreditBalanceSidebar({ walletAddress }) {
         <div className="flex items-end justify-between">
           <div>
             <p className="text-3xl font-black text-white">
-              {loading ? '...' : creditBalance !== null ? creditBalance : '--'}
+              {loading ? '...' : creditBalance !== null ? `RM ${creditBalance.toLocaleString()}` : '--'}
             </p>
             <p className={`text-xs mt-1 ${isLowBalance ? 'text-amber-200/70' : 'text-emerald-200/70'}`}>
-              credits available
+              {creditBalance !== null ? `${creditBalance} MC credits` : 'credits available'}
             </p>
           </div>
           <button
