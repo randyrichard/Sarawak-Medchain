@@ -142,6 +142,20 @@ function StatCard({ title, value, subtitle, icon, trend, darkMode }) {
   );
 }
 
+// Generate unique referral code from wallet address
+const generateReferralCode = (address) => {
+  if (!address) return '';
+  const hash = address.slice(2, 10).toUpperCase();
+  return `MEDCHAIN-${hash}`;
+};
+
+// Get referral stats from localStorage
+const getReferralStats = (referralCode) => {
+  const referrals = JSON.parse(localStorage.getItem('medchain_referrals') || '{}');
+  const stats = referrals[referralCode] || { referred: [], totalEarned: 0, pendingRewards: 0 };
+  return stats;
+};
+
 export default function CEODashboard({ walletAddress }) {
   // Get connected hospital info based on wallet address
   const connectedHospital = walletAddress
@@ -182,6 +196,19 @@ export default function CEODashboard({ walletAddress }) {
   // PDF Generation state
   const [generatingPDF, setGeneratingPDF] = useState(false);
   const [pdfProgress, setPdfProgress] = useState(0);
+
+  // Growth Multiplier / Referral state
+  const [showReferralModal, setShowReferralModal] = useState(false);
+  const [referralEmail, setReferralEmail] = useState('');
+  const [referralHospitalName, setReferralHospitalName] = useState('');
+  const [referralSending, setReferralSending] = useState(false);
+  const [referralSuccess, setReferralSuccess] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  // Generate referral code and link
+  const referralCode = generateReferralCode(walletAddress);
+  const referralLink = `${window.location.origin}/agreement?ref=${referralCode}`;
+  const referralStats = getReferralStats(referralCode);
 
   // Derived billing values (using context)
   const facilityType = accountType;
@@ -516,6 +543,79 @@ export default function CEODashboard({ walletAddress }) {
     }
   };
 
+  // Copy referral link to clipboard
+  const copyReferralLink = async () => {
+    try {
+      await navigator.clipboard.writeText(referralLink);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  // Send referral invitation (simulated)
+  const sendReferralInvite = async () => {
+    if (!referralEmail || !referralHospitalName) return;
+
+    setReferralSending(true);
+    try {
+      // Simulate sending email
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Store pending referral in localStorage
+      const pendingReferrals = JSON.parse(localStorage.getItem('medchain_pending_referrals') || '[]');
+      pendingReferrals.push({
+        id: `ref-${Date.now()}`,
+        referrerCode: referralCode,
+        referrerHospital: connectedHospital?.name || 'Unknown Hospital',
+        referrerWallet: walletAddress,
+        invitedEmail: referralEmail,
+        invitedHospitalName: referralHospitalName,
+        sentAt: new Date().toISOString(),
+        status: 'pending'
+      });
+      localStorage.setItem('medchain_pending_referrals', JSON.stringify(pendingReferrals));
+
+      // Add to founder alerts
+      const alerts = JSON.parse(localStorage.getItem('medchain_founder_alerts') || '[]');
+      alerts.unshift({
+        id: `alert-${Date.now()}`,
+        type: 'referral_sent',
+        title: 'Referral Invitation Sent',
+        message: `${connectedHospital?.name || 'A hospital'} invited ${referralHospitalName} to join MedChain`,
+        timestamp: new Date().toISOString(),
+        read: false
+      });
+      localStorage.setItem('medchain_founder_alerts', JSON.stringify(alerts));
+
+      setReferralSuccess(true);
+      setReferralEmail('');
+      setReferralHospitalName('');
+
+      setTimeout(() => {
+        setReferralSuccess(false);
+        setShowReferralModal(false);
+      }, 3000);
+    } catch (error) {
+      console.error('Error sending referral:', error);
+    } finally {
+      setReferralSending(false);
+    }
+  };
+
+  // Calculate network contributor tier
+  const getContributorTier = () => {
+    const referralCount = referralStats.referred.length;
+    if (referralCount >= 10) return { tier: 'Diamond', color: 'from-cyan-400 to-blue-500', icon: '💎', credits: referralCount * 1000 };
+    if (referralCount >= 5) return { tier: 'Gold', color: 'from-yellow-400 to-amber-500', icon: '🥇', credits: referralCount * 1000 };
+    if (referralCount >= 3) return { tier: 'Silver', color: 'from-gray-300 to-gray-400', icon: '🥈', credits: referralCount * 1000 };
+    if (referralCount >= 1) return { tier: 'Bronze', color: 'from-amber-600 to-amber-700', icon: '🥉', credits: referralCount * 1000 };
+    return { tier: 'Starter', color: 'from-slate-500 to-slate-600', icon: '🌱', credits: 0 };
+  };
+
+  const contributorTier = getContributorTier();
+
   return (
     <div className={`flex-1 flex-grow w-full min-h-full font-sans transition-colors duration-300 ${
       darkMode ? 'bg-slate-900' : 'bg-slate-100'
@@ -546,6 +646,27 @@ export default function CEODashboard({ walletAddress }) {
 
         {/* Actions Row */}
         <div className="flex items-center gap-3 lg:ml-auto">
+          {/* Expand the Network Button */}
+          <button
+            onClick={() => setShowReferralModal(true)}
+            className={`relative flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:scale-[1.02] active:scale-[0.98] overflow-hidden ${
+              darkMode
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-400 hover:to-teal-500'
+                : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-400 hover:to-teal-500'
+            }`}
+            style={{ boxShadow: '0 10px 30px rgba(16, 185, 129, 0.3)' }}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+            </svg>
+            <span>Expand the Network</span>
+            {referralStats.referred.length > 0 && (
+              <span className="ml-1 px-2 py-0.5 bg-white/20 rounded-full text-xs">
+                {referralStats.referred.length}
+              </span>
+            )}
+          </button>
+
           {/* Download Executive Report Button */}
           <button
             onClick={generateMonthlyReport}
@@ -597,6 +718,264 @@ export default function CEODashboard({ walletAddress }) {
           </button>
         </div>
       </div>
+
+      {/* Referral Modal */}
+      {showReferralModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className={`w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden ${
+            darkMode ? 'bg-slate-800' : 'bg-white'
+          }`}>
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold">Expand the Network</h2>
+                    <p className="text-emerald-100 text-sm">Earn 1,000 free MC credits per referral</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowReferralModal(false)}
+                  className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6">
+              {referralSuccess ? (
+                <div className="text-center py-8">
+                  <div className="w-20 h-20 mx-auto mb-4 bg-emerald-100 rounded-full flex items-center justify-center">
+                    <svg className="w-10 h-10 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <h3 className={`text-xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    Invitation Sent!
+                  </h3>
+                  <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    You will earn 1,000 free MC credits when they sign up and pay.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* Your Referral Link */}
+                  <div className={`mb-6 p-4 rounded-xl ${darkMode ? 'bg-slate-700/50' : 'bg-gray-50'}`}>
+                    <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      Your Partner Link
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={referralLink}
+                        className={`flex-1 px-3 py-2 rounded-lg text-sm font-mono truncate ${
+                          darkMode
+                            ? 'bg-slate-800 border border-slate-600 text-gray-300'
+                            : 'bg-white border border-gray-200 text-gray-700'
+                        }`}
+                      />
+                      <button
+                        onClick={copyReferralLink}
+                        className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                          copiedLink
+                            ? 'bg-emerald-500 text-white'
+                            : darkMode
+                              ? 'bg-slate-600 text-white hover:bg-slate-500'
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                      >
+                        {copiedLink ? 'Copied!' : 'Copy'}
+                      </button>
+                    </div>
+                    <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                      Referral Code: <span className="font-mono font-bold text-emerald-500">{referralCode}</span>
+                    </p>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className={`flex-1 h-px ${darkMode ? 'bg-slate-700' : 'bg-gray-200'}`}></div>
+                    <span className={`text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>or invite directly</span>
+                    <div className={`flex-1 h-px ${darkMode ? 'bg-slate-700' : 'bg-gray-200'}`}></div>
+                  </div>
+
+                  {/* Direct Invite Form */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        Hospital Name
+                      </label>
+                      <input
+                        type="text"
+                        value={referralHospitalName}
+                        onChange={(e) => setReferralHospitalName(e.target.value)}
+                        placeholder="e.g., Normah Medical Specialist"
+                        className={`w-full px-4 py-3 rounded-xl ${
+                          darkMode
+                            ? 'bg-slate-700 border border-slate-600 text-white placeholder-gray-500'
+                            : 'bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400'
+                        }`}
+                      />
+                    </div>
+                    <div>
+                      <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                        CEO/Admin Email
+                      </label>
+                      <input
+                        type="email"
+                        value={referralEmail}
+                        onChange={(e) => setReferralEmail(e.target.value)}
+                        placeholder="ceo@hospital.com"
+                        className={`w-full px-4 py-3 rounded-xl ${
+                          darkMode
+                            ? 'bg-slate-700 border border-slate-600 text-white placeholder-gray-500'
+                            : 'bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400'
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Reward Info */}
+                  <div className={`mt-6 p-4 rounded-xl border ${
+                    darkMode
+                      ? 'bg-amber-500/10 border-amber-500/30'
+                      : 'bg-amber-50 border-amber-200'
+                  }`}>
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">🎁</span>
+                      <div>
+                        <p className={`font-semibold ${darkMode ? 'text-amber-400' : 'text-amber-700'}`}>
+                          Your Reward: 1,000 Free MC Credits
+                        </p>
+                        <p className={`text-sm ${darkMode ? 'text-amber-400/70' : 'text-amber-600'}`}>
+                          Worth RM 1,000 — credited automatically when they complete their first RM 10,000 payment.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Send Button */}
+                  <button
+                    onClick={sendReferralInvite}
+                    disabled={!referralEmail || !referralHospitalName || referralSending}
+                    className={`w-full mt-6 py-4 rounded-xl font-bold text-lg transition-all ${
+                      !referralEmail || !referralHospitalName
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-400 hover:to-teal-500 shadow-lg'
+                    }`}
+                  >
+                    {referralSending ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Sending Invitation...
+                      </span>
+                    ) : (
+                      'Send Invitation'
+                    )}
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Your Stats */}
+            {!referralSuccess && (
+              <div className={`px-6 pb-6 pt-0`}>
+                <div className={`p-4 rounded-xl ${darkMode ? 'bg-slate-700/30' : 'bg-gray-50'}`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Your Referrals</p>
+                      <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                        {referralStats.referred.length} hospitals
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Credits Earned</p>
+                      <p className="text-2xl font-bold text-emerald-500">
+                        {referralStats.totalEarned.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+        {/* Network Contributor Badge */}
+        {referralStats.referred.length > 0 && (
+          <div className={`mb-6 rounded-2xl overflow-hidden ${
+            darkMode ? 'bg-slate-800 border border-slate-700' : 'bg-white shadow-lg'
+          }`}>
+            <div className={`bg-gradient-to-r ${contributorTier.color} p-4`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center text-3xl">
+                    {contributorTier.icon}
+                  </div>
+                  <div className="text-white">
+                    <p className="text-sm font-medium text-white/80">Network Contributor</p>
+                    <p className="text-2xl font-black">{contributorTier.tier} Partner</p>
+                  </div>
+                </div>
+                <div className="text-right text-white">
+                  <p className="text-sm text-white/80">Credits Earned</p>
+                  <p className="text-3xl font-black">{contributorTier.credits.toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-6">
+                  <div>
+                    <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Hospitals Referred</p>
+                    <p className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {referralStats.referred.length}
+                    </p>
+                  </div>
+                  <div>
+                    <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Total Value</p>
+                    <p className="text-xl font-bold text-emerald-500">
+                      RM {contributorTier.credits.toLocaleString()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Next Tier</p>
+                    <p className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {referralStats.referred.length < 1 ? '1 more' :
+                       referralStats.referred.length < 3 ? `${3 - referralStats.referred.length} more` :
+                       referralStats.referred.length < 5 ? `${5 - referralStats.referred.length} more` :
+                       referralStats.referred.length < 10 ? `${10 - referralStats.referred.length} more` : 'Max!'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowReferralModal(true)}
+                  className={`px-5 py-2.5 rounded-xl font-semibold transition-all ${
+                    darkMode
+                      ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                      : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                  }`}
+                >
+                  Refer More
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Payment Success Notification */}
         {paymentSuccess && (

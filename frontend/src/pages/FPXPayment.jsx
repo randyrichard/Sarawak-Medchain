@@ -108,6 +108,9 @@ export default function FPXPayment() {
     invoices.unshift(invoice);
     localStorage.setItem('medchain_invoices', JSON.stringify(invoices));
 
+    // Process referral reward if this hospital was referred
+    processReferralReward(agreementData);
+
     // Add success alert for founder
     addFounderAlert({
       type: 'payment_received',
@@ -189,6 +192,70 @@ export default function FPXPayment() {
       read: false,
     });
     localStorage.setItem('medchain_founder_alerts', JSON.stringify(alerts));
+  };
+
+  // Process referral reward if this hospital was referred
+  const processReferralReward = (agreement) => {
+    const referralCode = agreement?.referralCode;
+    if (!referralCode) return;
+
+    const REFERRAL_REWARD = 1000; // 1,000 free MC credits
+
+    // Get referral tracking data
+    const referrals = JSON.parse(localStorage.getItem('medchain_referrals') || '{}');
+
+    // Initialize referrer's stats if not exists
+    if (!referrals[referralCode]) {
+      referrals[referralCode] = { referred: [], totalEarned: 0, pendingRewards: 0 };
+    }
+
+    // Check if this hospital was already counted
+    const alreadyReferred = referrals[referralCode].referred.some(
+      r => r.hospitalName === agreement.hospitalName
+    );
+    if (alreadyReferred) return;
+
+    // Add the referred hospital
+    referrals[referralCode].referred.push({
+      hospitalName: agreement.hospitalName,
+      signedAt: agreement.signedAt,
+      paidAt: new Date().toISOString(),
+      rewardAmount: REFERRAL_REWARD,
+    });
+    referrals[referralCode].totalEarned += REFERRAL_REWARD;
+
+    // Save updated referrals
+    localStorage.setItem('medchain_referrals', JSON.stringify(referrals));
+
+    // Update referrer's hospital node credits
+    const pendingReferrals = JSON.parse(localStorage.getItem('medchain_pending_referrals') || '[]');
+    const referralRecord = pendingReferrals.find(r => r.referrerCode === referralCode);
+
+    if (referralRecord?.referrerWallet) {
+      // Find and update the referrer's hospital node
+      const allNodes = JSON.parse(localStorage.getItem('medchain_all_hospital_nodes') || '{}');
+      if (allNodes[referralRecord.referrerWallet]) {
+        allNodes[referralRecord.referrerWallet].credits.balance += REFERRAL_REWARD;
+        allNodes[referralRecord.referrerWallet].credits.lastBonusAt = new Date().toISOString();
+        localStorage.setItem('medchain_all_hospital_nodes', JSON.stringify(allNodes));
+      }
+    }
+
+    // Add alert for founder about referral reward
+    addFounderAlert({
+      type: 'referral_reward',
+      title: 'Referral Reward Credited!',
+      message: `${REFERRAL_REWARD.toLocaleString()} free MC credits awarded to referrer (Code: ${referralCode}) for referring ${agreement.hospitalName}`,
+      priority: 'success',
+    });
+
+    // Mark pending referral as completed
+    const updatedPending = pendingReferrals.map(r =>
+      r.invitedHospitalName === agreement.hospitalName
+        ? { ...r, status: 'completed', completedAt: new Date().toISOString() }
+        : r
+    );
+    localStorage.setItem('medchain_pending_referrals', JSON.stringify(updatedPending));
   };
 
   const downloadInvoice = () => {

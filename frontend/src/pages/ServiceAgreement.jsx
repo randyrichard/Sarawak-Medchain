@@ -23,6 +23,10 @@ export default function ServiceAgreement() {
   const location = useLocation();
   const signaturePadRef = useRef(null);
 
+  // Extract referral code from URL query parameter
+  const searchParams = new URLSearchParams(location.search);
+  const referralCode = searchParams.get('ref') || null;
+
   // Get hospital data from location state or localStorage
   const getInitialData = () => {
     if (location.state?.hospitalData) {
@@ -105,6 +109,7 @@ export default function ServiceAgreement() {
         signatureData,
         status: 'active',
         contractVersion: CONTRACT_VERSION,
+        referralCode: referralCode, // Track referral for reward processing
       };
 
       // Save to localStorage
@@ -170,6 +175,23 @@ export default function ServiceAgreement() {
       </header>
 
       <div className="max-w-5xl mx-auto px-6 py-12">
+        {/* Referral Banner */}
+        {referralCode && (
+          <div className="mb-8 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-emerald-500/20 rounded-full flex items-center justify-center">
+                <span className="text-xl">🎁</span>
+              </div>
+              <div>
+                <p className="text-emerald-400 font-semibold">You were referred by a partner hospital!</p>
+                <p className="text-slate-400 text-sm">
+                  Referral Code: <span className="font-mono text-emerald-300">{referralCode}</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Title */}
         <div className="text-center mb-12">
           <span className="inline-block px-3 py-1 rounded-full text-xs font-bold text-emerald-400 bg-emerald-500/20 mb-4">
