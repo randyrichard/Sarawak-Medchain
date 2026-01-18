@@ -52,8 +52,6 @@ export default function ServiceAgreement() {
   const [hasSignature, setHasSignature] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [signatureComplete, setSignatureComplete] = useState(false);
-  const [agreementRef, setAgreementRef] = useState('');
 
   // Pricing
   const selectedPlan = location.state?.plan || 'enterprise';
@@ -90,7 +88,6 @@ export default function ServiceAgreement() {
 
       // Generate agreement reference
       const ref = `DSA-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
-      setAgreementRef(ref);
 
       // Simulate processing
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -139,262 +136,14 @@ export default function ServiceAgreement() {
       });
       localStorage.setItem('medchain_founder_alerts', JSON.stringify(alerts));
 
-      setSignatureComplete(true);
+      // Redirect to payment page with agreement data
+      navigate('/payment', { state: { agreementData } });
     } catch (error) {
       console.error('Error processing agreement:', error);
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  // Generate and download PDF
-  const downloadPDF = () => {
-    // For demo, we'll create a simple printable version
-    const printWindow = window.open('', '_blank');
-    const signatureData = signaturePadRef.current?.toDataURL('image/png') || '';
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Digital Service Agreement - ${formData.hospitalName}</title>
-        <style>
-          body { font-family: 'Segoe UI', Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; color: #1a1a2e; line-height: 1.6; }
-          .header { text-align: center; border-bottom: 3px solid ${MEDCHAIN_BLUE}; padding-bottom: 20px; margin-bottom: 30px; }
-          .header h1 { color: ${MEDCHAIN_BLUE}; margin: 0; font-size: 28px; }
-          .header p { color: #666; margin: 5px 0 0 0; }
-          .ref { background: #f5f5f5; padding: 10px 20px; border-radius: 8px; text-align: center; margin-bottom: 30px; }
-          .ref span { font-weight: bold; color: ${MEDCHAIN_BLUE}; }
-          .section { margin-bottom: 25px; }
-          .section h2 { color: ${MEDCHAIN_DARK}; font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-          .parties { display: flex; justify-content: space-between; gap: 40px; }
-          .party { flex: 1; }
-          .party h3 { color: ${MEDCHAIN_BLUE}; font-size: 14px; margin-bottom: 10px; }
-          .party p { margin: 5px 0; font-size: 14px; }
-          .terms { background: #fafafa; padding: 20px; border-radius: 8px; font-size: 13px; }
-          .terms ol { padding-left: 20px; }
-          .terms li { margin-bottom: 10px; }
-          .pricing { background: ${MEDCHAIN_BLUE}10; padding: 20px; border-radius: 8px; border-left: 4px solid ${MEDCHAIN_BLUE}; }
-          .pricing-row { display: flex; justify-content: space-between; margin: 10px 0; }
-          .pricing-label { color: #666; }
-          .pricing-value { font-weight: bold; color: ${MEDCHAIN_DARK}; }
-          .signature-section { margin-top: 40px; padding-top: 20px; border-top: 2px solid #eee; }
-          .signature-box { display: flex; justify-content: space-between; gap: 60px; margin-top: 30px; }
-          .signature-party { flex: 1; }
-          .signature-party h4 { font-size: 12px; color: #666; margin-bottom: 10px; text-transform: uppercase; }
-          .signature-line { border-bottom: 1px solid #333; height: 60px; margin-bottom: 10px; display: flex; align-items: flex-end; justify-content: center; }
-          .signature-line img { max-height: 50px; max-width: 200px; }
-          .signature-name { font-weight: bold; }
-          .signature-title { color: #666; font-size: 13px; }
-          .footer { margin-top: 40px; text-align: center; font-size: 11px; color: #999; border-top: 1px solid #eee; padding-top: 20px; }
-          @media print { body { padding: 20px; } }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>SARAWAK MEDCHAIN</h1>
-          <p>Digital Service Agreement</p>
-        </div>
-
-        <div class="ref">
-          Agreement Reference: <span>${agreementRef}</span> | Version: ${CONTRACT_VERSION} | Date: ${EFFECTIVE_DATE}
-        </div>
-
-        <div class="section">
-          <h2>PARTIES TO THIS AGREEMENT</h2>
-          <div class="parties">
-            <div class="party">
-              <h3>Service Provider</h3>
-              <p><strong>Sarawak MedChain Sdn Bhd</strong></p>
-              <p>Level 15, Wisma Saberkas</p>
-              <p>Jalan Tun Abang Haji Openg</p>
-              <p>93000 Kuching, Sarawak</p>
-              <p>Registration: 202401012345</p>
-            </div>
-            <div class="party">
-              <h3>Client (Hospital/Clinic)</h3>
-              <p><strong>${formData.hospitalName}</strong></p>
-              <p>${formData.address || 'Address on file'}</p>
-              <p>Registration: ${formData.registrationNumber || 'On file'}</p>
-              <p>Contact: ${formData.email || 'On file'}</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="section">
-          <h2>SERVICE PLAN</h2>
-          <div class="pricing">
-            <div class="pricing-row">
-              <span class="pricing-label">Selected Plan:</span>
-              <span class="pricing-value">${currentPlan.name}</span>
-            </div>
-            <div class="pricing-row">
-              <span class="pricing-label">Monthly Subscription:</span>
-              <span class="pricing-value">RM ${currentPlan.baseFee.toLocaleString()}/month</span>
-            </div>
-            <div class="pricing-row">
-              <span class="pricing-label">Per MC Fee:</span>
-              <span class="pricing-value">RM ${currentPlan.mcFee.toFixed(2)} per certificate</span>
-            </div>
-            <div class="pricing-row">
-              <span class="pricing-label">Billing Cycle:</span>
-              <span class="pricing-value">Monthly (1st of each month)</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="section">
-          <h2>TERMS AND CONDITIONS</h2>
-          <div class="terms">
-            <ol>
-              <li><strong>Service Provision:</strong> Sarawak MedChain agrees to provide blockchain-based medical certificate verification services, including dedicated node access, unlimited doctor accounts, and QR verification capabilities.</li>
-              <li><strong>Payment Terms:</strong> Client agrees to maintain a positive credit balance. Monthly subscription is due on the 1st of each month. MC fees are deducted per issuance.</li>
-              <li><strong>Data Protection:</strong> Both parties agree to comply with Malaysia's Personal Data Protection Act 2010 (PDPA). All medical data is encrypted and stored in compliance with healthcare regulations.</li>
-              <li><strong>Service Level:</strong> Provider guarantees 99.9% uptime for the blockchain network. Scheduled maintenance will be communicated 48 hours in advance.</li>
-              <li><strong>Termination:</strong> Either party may terminate with 30 days written notice. No refunds for partial months. All data export will be provided upon termination.</li>
-              <li><strong>Liability:</strong> Provider's liability is limited to the value of services paid in the preceding 12 months.</li>
-              <li><strong>Governing Law:</strong> This agreement is governed by the laws of Malaysia and subject to the jurisdiction of Sarawak courts.</li>
-            </ol>
-          </div>
-        </div>
-
-        <div class="signature-section">
-          <h2>SIGNATURES</h2>
-          <p style="font-size: 13px; color: #666;">By signing below, both parties agree to the terms and conditions outlined in this Digital Service Agreement.</p>
-
-          <div class="signature-box">
-            <div class="signature-party">
-              <h4>For Sarawak MedChain Sdn Bhd</h4>
-              <div class="signature-line">
-                <span style="font-style: italic; color: #999;">[System Authorized]</span>
-              </div>
-              <p class="signature-name">Digital Authorization</p>
-              <p class="signature-title">Automated Contract System</p>
-              <p style="font-size: 11px; color: #999;">Date: ${EFFECTIVE_DATE}</p>
-            </div>
-            <div class="signature-party">
-              <h4>For ${formData.hospitalName}</h4>
-              <div class="signature-line">
-                ${signatureData ? `<img src="${signatureData}" alt="Signature" />` : ''}
-              </div>
-              <p class="signature-name">${formData.ceoName}</p>
-              <p class="signature-title">${formData.ceoTitle}</p>
-              <p style="font-size: 11px; color: #999;">Date: ${EFFECTIVE_DATE}</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="footer">
-          <p>This is a legally binding digital agreement. A copy has been sent to both parties.</p>
-          <p>Sarawak MedChain Sdn Bhd | billing@sarawakmedchain.com | +60 82-123456</p>
-          <p>Agreement ID: ${agreementRef} | Generated: ${new Date().toISOString()}</p>
-        </div>
-      </body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.print();
-  };
-
-  // Success Screen
-  if (signatureComplete) {
-    return (
-      <div className="min-h-screen bg-[#030712] flex items-center justify-center p-6">
-        <div className="max-w-2xl w-full">
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-emerald-500/30 rounded-3xl p-8 text-center">
-            {/* Success Icon */}
-            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 flex items-center justify-center">
-              <svg className="w-12 h-12 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-
-            <h1 className="text-3xl font-black text-white mb-2">Agreement Signed Successfully!</h1>
-            <p className="text-slate-400 mb-6">Welcome to the Sarawak MedChain network</p>
-
-            {/* Agreement Reference */}
-            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 mb-6">
-              <p className="text-sm text-slate-400 mb-1">Agreement Reference</p>
-              <p className="text-xl font-mono font-bold text-emerald-400">{agreementRef}</p>
-            </div>
-
-            {/* Summary */}
-            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 mb-8 text-left">
-              <h3 className="font-bold text-white mb-4">Agreement Summary</h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Hospital:</span>
-                  <span className="text-white font-medium">{formData.hospitalName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Signatory:</span>
-                  <span className="text-white font-medium">{formData.ceoName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Plan:</span>
-                  <span className="text-white font-medium">{currentPlan.name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Monthly Fee:</span>
-                  <span className="text-white font-medium">RM {currentPlan.baseFee.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Per MC Fee:</span>
-                  <span className="text-white font-medium">RM {currentPlan.mcFee.toFixed(2)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="space-y-3">
-              <button
-                onClick={downloadPDF}
-                className="w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-xl hover:from-blue-500 hover:to-cyan-500 transition-all flex items-center justify-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Download Agreement PDF
-              </button>
-
-              <button
-                onClick={() => navigate('/connect')}
-                className="w-full py-4 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-bold rounded-xl hover:from-emerald-500 hover:to-emerald-600 transition-all flex items-center justify-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Connect Wallet & Top Up
-              </button>
-
-              <button
-                onClick={() => navigate('/pitch')}
-                className="w-full py-3 text-slate-400 hover:text-white transition-colors text-sm"
-              >
-                Return to Pitch Deck
-              </button>
-            </div>
-
-            {/* Next Steps */}
-            <div className="mt-8 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-left">
-              <h4 className="font-bold text-amber-400 mb-2 flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Next Steps
-              </h4>
-              <ol className="text-sm text-slate-300 space-y-2 list-decimal list-inside">
-                <li>Connect your MetaMask wallet to activate your hospital node</li>
-                <li>Top up your credit balance (minimum RM 1,000)</li>
-                <li>Add your first verified doctor</li>
-                <li>Start issuing blockchain-secured MCs!</li>
-              </ol>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#030712]">
