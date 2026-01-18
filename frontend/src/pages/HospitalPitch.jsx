@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 // Sarawak MedChain Brand Colors
 const MEDCHAIN_BLUE = '#0066CC';
@@ -492,17 +493,17 @@ export default function HospitalPitch() {
                   </div>
                 </div>
 
-                {/* Play Button */}
-                <button
-                  onClick={() => window.open('/connect', '_blank')}
+                {/* Interactive Preview Button */}
+                <Link
+                  to="/demo"
                   className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full text-white font-bold shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105 transition-all"
                 >
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z" />
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
-                  Try Live Demo
-                </button>
-                <p className="text-slate-500 text-sm mt-4">Experience the secure login flow yourself</p>
+                  Interactive Preview (No Wallet Needed)
+                </Link>
+                <p className="text-slate-500 text-sm mt-4">Try the Doctor Portal with simulated blockchain</p>
               </div>
 
               {/* Corner Badges */}
