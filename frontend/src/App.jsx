@@ -8,6 +8,7 @@ import AdminPortal from './pages/AdminPortal';
 import CEODashboard from './pages/CEODashboard';
 import CEOMainDashboard from './pages/CEOMainDashboard';
 import HospitalPitch from './pages/HospitalPitch';
+import ConnectWallet from './pages/ConnectWallet';
 import FounderAdmin from './pages/FounderAdmin';
 import BusinessOverview from './pages/BusinessOverview';
 import LandingPage from './pages/LandingPage';
@@ -623,9 +624,11 @@ function ConnectScreen({ onConnect, loading, error }) {
 // App Routes Handler - needs to be inside BrowserRouter
 function AppRoutes() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [walletAddress, setWalletAddress] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [checkingWallet, setCheckingWallet] = useState(true);
 
   const handleConnectWallet = async () => {
     try {
@@ -633,6 +636,9 @@ function AppRoutes() {
       setError('');
       const { address } = await connectWallet();
       setWalletAddress(address);
+      // After successful connection, redirect to intended destination
+      const from = location.state?.from || '/patient';
+      navigate(from, { replace: true });
     } catch (err) {
       console.error('Wallet connection error:', err);
       setError(err.message);
@@ -644,27 +650,50 @@ function AppRoutes() {
   const handleDisconnect = () => {
     setWalletAddress(null);
     setError('');
-    window.location.reload();
+    navigate('/');
   };
 
-  // Auto-connect if already connected
+  // Check if wallet already connected on mount
   useEffect(() => {
-    if (window.ethereum) {
-      window.ethereum.request({ method: 'eth_accounts' })
-        .then(accounts => {
+    const checkExistingConnection = async () => {
+      if (window.ethereum) {
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
           if (accounts.length > 0) {
-            handleConnectWallet();
+            const { address } = await connectWallet();
+            setWalletAddress(address);
           }
-        });
-    }
+        } catch (err) {
+          console.error('Error checking wallet:', err);
+        }
+      }
+      setCheckingWallet(false);
+    };
+    checkExistingConnection();
   }, []);
 
-  // Public routes that don't need wallet
-  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch'];
+  // Public routes that don't need wallet - NO MetaMask trigger
+  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch', '/pricing', '/connect'];
   const isPublicRoute = publicPaths.includes(location.pathname);
   const isVerificationRoute = location.pathname.startsWith('/verify/');
 
-  // For public routes, render directly
+  // Protected routes that require wallet connection
+  const protectedPaths = ['/mvp', '/patient', '/doctor', '/admin', '/ceo', '/ceo-main'];
+  const isProtectedRoute = protectedPaths.some(path => location.pathname.startsWith(path));
+
+  // Show loading while checking wallet
+  if (checkingWallet && isProtectedRoute) {
+    return (
+      <div className="min-h-screen bg-[#030712] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-400">Checking wallet connection...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // For public routes, render directly without wallet check
   if (isPublicRoute) {
     return (
       <Routes>
@@ -672,6 +701,12 @@ function AppRoutes() {
         <Route path="/founder-admin-secret-99" element={<FounderAdmin />} />
         <Route path="/business-overview" element={<BusinessOverview />} />
         <Route path="/pitch" element={<HospitalPitch />} />
+        <Route path="/pricing" element={<Navigate to="/pitch#pricing" replace />} />
+        <Route path="/connect" element={
+          walletAddress
+            ? <Navigate to="/patient" replace />
+            : <ConnectWallet onConnect={handleConnectWallet} loading={loading} error={error} />
+        } />
       </Routes>
     );
   }
@@ -685,21 +720,18 @@ function AppRoutes() {
     );
   }
 
-  // /mvp route - shows Connect Wallet screen (with pending admin detection)
-  if (location.pathname === '/mvp') {
-    if (!walletAddress) {
-      return <ConnectScreen onConnect={handleConnectWallet} loading={loading} error={error} />;
-    }
-    // If wallet connected, redirect to patient portal
+  // THE GATE: Protected routes redirect to /connect if no wallet
+  if (isProtectedRoute && !walletAddress) {
+    return <Navigate to="/connect" state={{ from: location.pathname }} replace />;
+  }
+
+  // Wallet connected - show protected app
+  if (walletAddress) {
     return <ProtectedApp walletAddress={walletAddress} handleDisconnect={handleDisconnect} />;
   }
 
-  // For protected routes, check wallet
-  if (!walletAddress) {
-    return <ConnectScreen onConnect={handleConnectWallet} loading={loading} error={error} />;
-  }
-
-  return <ProtectedApp walletAddress={walletAddress} handleDisconnect={handleDisconnect} />;
+  // Fallback: redirect to home
+  return <Navigate to="/" replace />;
 }
 
 function App() {

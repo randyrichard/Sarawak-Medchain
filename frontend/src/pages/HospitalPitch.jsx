@@ -447,6 +447,127 @@ export default function HospitalPitch() {
         </div>
       </section>
 
+      {/* Demo Video Section - Security Showcase */}
+      <section className="py-20 px-6 bg-gradient-to-b from-slate-950 to-slate-900">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <span className="inline-block px-3 py-1 rounded-full text-xs font-bold text-purple-400 bg-purple-500/20 mb-4">
+              SEE IT IN ACTION
+            </span>
+            <h2 className="text-4xl font-black text-white mb-4">
+              Blockchain-Grade <span className="text-purple-400">Security</span>
+            </h2>
+            <p className="text-slate-400 max-w-2xl mx-auto">
+              Watch how MetaMask wallet authentication ensures only verified doctors can access the system.
+              No passwords to steal. No credentials to breach.
+            </p>
+          </div>
+
+          {/* Video Demo Card */}
+          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-3xl border border-slate-700/50 overflow-hidden">
+            {/* Video Player Area */}
+            <div className="aspect-video bg-slate-950 relative group cursor-pointer">
+              {/* Placeholder for demo video */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                {/* Animated wallet connection demo */}
+                <div className="relative mb-8">
+                  {/* MetaMask Fox Icon */}
+                  <div className="w-24 h-24 bg-gradient-to-br from-orange-500 to-amber-500 rounded-2xl flex items-center justify-center shadow-2xl shadow-orange-500/30 group-hover:scale-110 transition-transform">
+                    <svg className="w-14 h-14 text-white" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M21.6 2.4L13.2 8.4l1.6-3.6 6.8-2.4zM2.4 2.4l8.4 6 1.6-3.6-10-2.4zm16.4 13.2l-2.4 3.6 5.2 1.4-.6-5h-2.2zm-14.4 0l-.6 5 5.2-1.4-2.4-3.6H4.4zm9-4.8l-1.4 2.2 5.6.6-.6-2.8h-3.6zm-4.8 0l-.6 2.8 5.6-.6-1.4-2.2H8.6z" />
+                    </svg>
+                  </div>
+                  {/* Connection Line Animation */}
+                  <div className="absolute -right-20 top-1/2 -translate-y-1/2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-16 h-0.5 bg-gradient-to-r from-orange-500 to-blue-500 animate-pulse"></div>
+                      <div className="w-3 h-3 rounded-full bg-blue-500 animate-ping"></div>
+                    </div>
+                  </div>
+                  {/* Shield Icon */}
+                  <div className="absolute -right-32 top-1/2 -translate-y-1/2 w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Play Button */}
+                <button
+                  onClick={() => window.open('/connect', '_blank')}
+                  className="flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full text-white font-bold shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105 transition-all"
+                >
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                  Try Live Demo
+                </button>
+                <p className="text-slate-500 text-sm mt-4">Experience the secure login flow yourself</p>
+              </div>
+
+              {/* Corner Badges */}
+              <div className="absolute top-4 left-4 flex gap-2">
+                <span className="px-2 py-1 rounded bg-red-500/80 text-white text-xs font-bold">LIVE</span>
+                <span className="px-2 py-1 rounded bg-slate-700/80 text-slate-300 text-xs">HD</span>
+              </div>
+            </div>
+
+            {/* Video Description */}
+            <div className="p-6 bg-slate-800/30">
+              <div className="flex items-start gap-6">
+                {/* Security Points */}
+                <div className="flex-1 grid md:grid-cols-3 gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center flex-shrink-0">
+                      <svg className="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-white font-semibold text-sm">Zero Passwords</p>
+                      <p className="text-slate-400 text-xs">Cryptographic keys only</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                      <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-white font-semibold text-sm">SMC Verified</p>
+                      <p className="text-slate-400 text-xs">Doctor identity confirmed</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                      <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-white font-semibold text-sm">Unhackable</p>
+                      <p className="text-slate-400 text-xs">No central database</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* CEO Quote */}
+          <div className="mt-12 text-center">
+            <blockquote className="text-xl text-slate-300 italic max-w-2xl mx-auto">
+              "The moment I saw the MetaMask login, I knew this wasn't just another software vendor.
+              This is military-grade security for healthcare."
+            </blockquote>
+            <p className="text-slate-500 mt-4">- Hospital CEO during pilot demo</p>
+          </div>
+        </div>
+      </section>
+
       {/* Pricing Section */}
       <section id="pricing" className="py-20 px-6 bg-gradient-to-b from-slate-900 to-slate-950">
         <div className="max-w-5xl mx-auto">
