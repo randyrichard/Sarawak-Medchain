@@ -86,11 +86,23 @@ export async function isVerifiedDoctor(address) {
 
 /**
  * Write a medical record (Doctor only)
+ * Uses gas buffer and retry mechanism for reliability
  */
-export async function writeRecord(patientAddress, ipfsHash) {
+export async function writeRecord(patientAddress, ipfsHash, useResilience = true) {
   const validAddress = validateAddress(patientAddress);
-  const contract = getContract();
-  const tx = await contract.writeRecord(validAddress, ipfsHash);
+  const contractInstance = getContract();
+
+  if (useResilience) {
+    // Use resilient execution for production
+    return executeWithRetry(async () => {
+      const tx = await executeWithGasBuffer(contractInstance, 'writeRecord', [validAddress, ipfsHash]);
+      const receipt = await tx.wait();
+      return receipt;
+    });
+  }
+
+  // Fallback to direct execution for testing
+  const tx = await contractInstance.writeRecord(validAddress, ipfsHash);
   const receipt = await tx.wait();
   return receipt;
 }
@@ -384,6 +396,109 @@ export async function getTotalRecordStats() {
  */
 export function getContractAddress() {
   return CONTRACT_ADDRESS;
+}
+
+// ========== GAS BUFFER & RETRY MECHANISM ==========
+
+/**
+ * Execute contract transaction with gas buffer
+ * Adds 20% buffer to estimated gas to prevent failures during network congestion
+ * @param {Object} contract - Contract instance
+ * @param {string} methodName - Name of the contract method to call
+ * @param {Array} args - Arguments to pass to the method
+ * @param {Object} options - Optional transaction options
+ * @returns {Promise} Transaction promise
+ */
+export async function executeWithGasBuffer(contract, methodName, args = [], options = {}) {
+  const GAS_BUFFER_MULTIPLIER = 1.2; // 20% buffer
+  const FALLBACK_GAS = 500000;
+
+  try {
+    // Estimate gas for the transaction
+    const estimatedGas = await contract[methodName].estimateGas(...args);
+
+    // Add buffer to estimated gas
+    const gasLimit = Math.ceil(Number(estimatedGas) * GAS_BUFFER_MULTIPLIER);
+
+    console.log(`Gas estimation for ${methodName}: ${estimatedGas} -> ${gasLimit} (with 20% buffer)`);
+
+    // Execute with buffered gas
+    const tx = await contract[methodName](...args, {
+      ...options,
+      gasLimit,
+    });
+
+    return tx;
+  } catch (error) {
+    // If estimation fails, use fallback gas limit
+    if (error.code === 'UNPREDICTABLE_GAS_LIMIT' || error.message?.includes('cannot estimate')) {
+      console.warn(`Gas estimation failed for ${methodName}, using fallback: ${FALLBACK_GAS}`);
+
+      const tx = await contract[methodName](...args, {
+        ...options,
+        gasLimit: FALLBACK_GAS,
+      });
+      return tx;
+    }
+    throw error;
+  }
+}
+
+/**
+ * Retry wrapper for network congestion and transient errors
+ * Automatically retries failed transactions with exponential backoff
+ * @param {Function} fn - Async function to execute
+ * @param {number} maxRetries - Maximum number of retry attempts (default: 3)
+ * @param {number} delayMs - Initial delay between retries in ms (default: 2000)
+ * @returns {Promise} Result of the function
+ */
+export async function executeWithRetry(fn, maxRetries = 3, delayMs = 2000) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (attempt === maxRetries) {
+        console.error(`Transaction failed after ${maxRetries} attempts:`, error);
+        throw error;
+      }
+
+      // Check if error is retryable
+      const isRetryable =
+        error.code === 'NETWORK_ERROR' ||
+        error.code === 'TIMEOUT' ||
+        error.code === 'SERVER_ERROR' ||
+        error.message?.includes('nonce') ||
+        error.message?.includes('replacement fee too low') ||
+        error.message?.includes('transaction underpriced') ||
+        error.message?.includes('already known');
+
+      if (!isRetryable) {
+        console.error('Non-retryable error encountered:', error);
+        throw error;
+      }
+
+      const waitTime = delayMs * attempt; // Exponential backoff
+      console.warn(`Transaction failed (attempt ${attempt}/${maxRetries}), retrying in ${waitTime}ms...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+  }
+}
+
+/**
+ * High-level wrapper combining gas buffer and retry for critical transactions
+ * Use this for important blockchain operations that must succeed
+ * @param {Object} contract - Contract instance
+ * @param {string} methodName - Name of the contract method
+ * @param {Array} args - Arguments for the method
+ * @param {Object} options - Transaction options
+ * @returns {Promise} Transaction receipt
+ */
+export async function executeWithResilience(contract, methodName, args = [], options = {}) {
+  return executeWithRetry(async () => {
+    const tx = await executeWithGasBuffer(contract, methodName, args, options);
+    const receipt = await tx.wait();
+    return receipt;
+  });
 }
 
 // ========== HOSPITAL NODE CONTROL FUNCTIONS ==========

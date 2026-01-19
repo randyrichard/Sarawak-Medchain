@@ -60,10 +60,67 @@ app.get('/api/track/data', (req, res) => {
 
 // FPX Payment Webhook Endpoints
 // Stores confirmed payments for real-time revenue alerts
+// RESILIENT: Persists to file and activates credits server-side
 const paymentData = [];
+const activatedHospitals = new Map(); // Server-side hospital activation store
+const PAYMENTS_FILE = './data/payments.json';
+const HOSPITALS_FILE = './data/hospitals.json';
+
+// Load persisted data on startup
+import fs from 'fs';
+import path from 'path';
+
+const dataDir = './data';
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
+// Load existing payments from file
+try {
+  if (fs.existsSync(PAYMENTS_FILE)) {
+    const savedPayments = JSON.parse(fs.readFileSync(PAYMENTS_FILE, 'utf8'));
+    paymentData.push(...savedPayments);
+    console.log(`[FPX] Loaded ${savedPayments.length} payments from persistent storage`);
+  }
+} catch (e) {
+  console.log('[FPX] No existing payments file, starting fresh');
+}
+
+// Load existing hospital activations from file
+try {
+  if (fs.existsSync(HOSPITALS_FILE)) {
+    const savedHospitals = JSON.parse(fs.readFileSync(HOSPITALS_FILE, 'utf8'));
+    Object.entries(savedHospitals).forEach(([id, data]) => {
+      activatedHospitals.set(id, data);
+    });
+    console.log(`[FPX] Loaded ${activatedHospitals.size} hospital activations from persistent storage`);
+  }
+} catch (e) {
+  console.log('[FPX] No existing hospitals file, starting fresh');
+}
+
+// Persist payments to file
+const persistPayments = () => {
+  try {
+    fs.writeFileSync(PAYMENTS_FILE, JSON.stringify(paymentData, null, 2));
+  } catch (e) {
+    console.error('[FPX] Failed to persist payments:', e.message);
+  }
+};
+
+// Persist hospital activations to file
+const persistHospitals = () => {
+  try {
+    const hospitalsObj = Object.fromEntries(activatedHospitals);
+    fs.writeFileSync(HOSPITALS_FILE, JSON.stringify(hospitalsObj, null, 2));
+  } catch (e) {
+    console.error('[FPX] Failed to persist hospitals:', e.message);
+  }
+};
 
 // FPX Payment Success Webhook
 // Called by FPX gateway when payment is confirmed
+// RESILIENT: Activates credits server-side even if browser closes
 app.post('/api/webhook/fpx/success', (req, res) => {
   const {
     transactionId,
@@ -74,6 +131,7 @@ app.post('/api/webhook/fpx/success', (req, res) => {
     buyerName,
     fpxTransactionId,
     status,
+    agreementData, // Full agreement data for activation
   } = req.body;
 
   const timestamp = new Date().toISOString();
@@ -83,36 +141,109 @@ app.post('/api/webhook/fpx/success', (req, res) => {
     return res.status(400).json({ success: false, error: 'Missing required fields' });
   }
 
+  const paymentId = `fpx_${Date.now()}`;
+  const txnId = transactionId || fpxTransactionId || `FPX${Date.now()}`;
+  const hospId = hospitalId || `hosp_${Date.now()}`;
+
   // Record the payment
   const payment = {
-    id: `fpx_${Date.now()}`,
-    transactionId: transactionId || fpxTransactionId || `FPX${Date.now()}`,
+    id: paymentId,
+    transactionId: txnId,
     amount: parseFloat(amount),
     hospitalName,
-    hospitalId: hospitalId || `hosp_${Date.now()}`,
+    hospitalId: hospId,
     buyerEmail,
     buyerName,
     status: status || 'confirmed',
     timestamp,
     type: parseFloat(amount) >= 10000 ? 'hospital' : 'clinic',
+    creditsActivated: true, // Mark as activated server-side
   };
 
   paymentData.push(payment);
+  persistPayments(); // PERSIST TO FILE
+
+  // SERVER-SIDE CREDIT ACTIVATION
+  // This ensures credits are active even if browser closes during redirect
+  const initialCredits = payment.type === 'hospital' ? 100 : 50;
+  const nextBillingDate = new Date();
+  nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+
+  const hospitalActivation = {
+    hospitalId: hospId,
+    hospitalName,
+    status: 'Active',
+    activatedAt: timestamp,
+    transactionId: txnId,
+    paymentId,
+    subscription: {
+      plan: payment.type === 'hospital' ? 'Enterprise' : 'Clinic',
+      monthlyFee: payment.type === 'hospital' ? 10000 : 2000,
+      creditsIncluded: initialCredits,
+      nextBillingDate: nextBillingDate.toISOString(),
+    },
+    credits: {
+      balance: initialCredits,
+      lastTopUp: timestamp,
+    },
+    agreementData: agreementData || null,
+  };
+
+  activatedHospitals.set(hospId, hospitalActivation);
+  activatedHospitals.set(txnId, hospitalActivation); // Also index by transaction ID for recovery
+  persistHospitals(); // PERSIST TO FILE
 
   console.log(`\n╔════════════════════════════════════════════════════════════╗`);
-  console.log(`║  💰 FPX PAYMENT RECEIVED                                    ║`);
+  console.log(`║  💰 FPX PAYMENT RECEIVED + CREDITS ACTIVATED                ║`);
   console.log(`╠════════════════════════════════════════════════════════════╣`);
   console.log(`║  Amount: RM ${payment.amount.toLocaleString().padEnd(45)}║`);
-  console.log(`║  Hospital: ${payment.hospitalName.padEnd(47)}║`);
+  console.log(`║  Hospital: ${payment.hospitalName.substring(0, 45).padEnd(47)}║`);
   console.log(`║  Type: ${payment.type.padEnd(51)}║`);
-  console.log(`║  Transaction: ${payment.transactionId.slice(0, 40).padEnd(44)}║`);
+  console.log(`║  Credits: ${String(initialCredits).padEnd(48)}║`);
+  console.log(`║  Transaction: ${txnId.slice(0, 40).padEnd(44)}║`);
   console.log(`║  Time: ${timestamp.padEnd(51)}║`);
+  console.log(`║  Status: CREDITS ACTIVATED SERVER-SIDE ✓                    ║`);
   console.log(`╚════════════════════════════════════════════════════════════╝\n`);
 
-  // Return success response
+  // Return success response with activation data
   res.json({
     success: true,
-    message: 'Payment recorded successfully',
+    message: 'Payment recorded and credits activated',
+    payment: {
+      id: payment.id,
+      amount: payment.amount,
+      hospitalName: payment.hospitalName,
+      type: payment.type,
+      timestamp: payment.timestamp,
+      creditsActivated: true,
+    },
+    activation: hospitalActivation,
+    redirectUrl: `/payment/success?txn=${txnId}`,
+  });
+});
+
+// RECOVERY ENDPOINT: Check payment status by transaction ID
+// Used when browser closes and user returns - credits are already active server-side
+app.get('/api/webhook/fpx/status/:transactionId', (req, res) => {
+  const { transactionId } = req.params;
+
+  // Check if payment exists and was activated
+  const payment = paymentData.find(p => p.transactionId === transactionId);
+  const activation = activatedHospitals.get(transactionId);
+
+  if (!payment) {
+    return res.json({
+      success: false,
+      found: false,
+      message: 'Payment not found',
+    });
+  }
+
+  res.json({
+    success: true,
+    found: true,
+    status: payment.status,
+    creditsActivated: payment.creditsActivated || false,
     payment: {
       id: payment.id,
       amount: payment.amount,
@@ -120,6 +251,28 @@ app.post('/api/webhook/fpx/success', (req, res) => {
       type: payment.type,
       timestamp: payment.timestamp,
     },
+    activation: activation || null,
+  });
+});
+
+// RECOVERY ENDPOINT: Get activation data by hospital ID or transaction ID
+app.get('/api/webhook/fpx/activation/:id', (req, res) => {
+  const { id } = req.params;
+
+  const activation = activatedHospitals.get(id);
+
+  if (!activation) {
+    return res.json({
+      success: false,
+      found: false,
+      message: 'Activation not found',
+    });
+  }
+
+  res.json({
+    success: true,
+    found: true,
+    activation,
   });
 });
 
