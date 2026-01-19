@@ -517,6 +517,11 @@ export default function CEOMainDashboard({ walletAddress }) {
   // Kill Switch Modal State
   const [killSwitchModal, setKillSwitchModal] = useState({ isOpen: false, hospital: null, action: null });
   const [isProcessingKillSwitch, setIsProcessingKillSwitch] = useState(false);
+
+  // Global Kill Switch State
+  const [globalKillSwitchActive, setGlobalKillSwitchActive] = useState(false);
+  const [showGlobalKillConfirm, setShowGlobalKillConfirm] = useState(false);
+  const [isProcessingGlobalKill, setIsProcessingGlobalKill] = useState(false);
   const [nodeStatuses, setNodeStatuses] = useState({});
 
   // Broadcast State
@@ -606,6 +611,69 @@ export default function CEOMainDashboard({ walletAddress }) {
   const handleCancelKillSwitch = () => {
     setKillSwitchModal({ isOpen: false, hospital: null, action: null });
   };
+
+  // Global Kill Switch - Emergency network shutdown
+  const handleGlobalKillSwitch = async () => {
+    setIsProcessingGlobalKill(true);
+    try {
+      if (globalKillSwitchActive) {
+        // Restore all nodes
+        for (const facility of facilities) {
+          try {
+            await unpauseHospital(facility.wallet);
+          } catch (e) {
+            console.log(`Could not unpause ${facility.name}:`, e);
+          }
+        }
+        // Clear localStorage statuses
+        localStorage.removeItem('medchain_node_statuses');
+        setGlobalKillSwitchActive(false);
+
+        // Send service restored notification
+        const notifications = JSON.parse(localStorage.getItem('medchain_service_notifications') || '[]');
+        notifications.unshift({
+          id: `notif-${Date.now()}`,
+          type: 'service_restored',
+          title: 'Network Restored',
+          message: 'All hospital nodes have been reactivated. Network is fully operational.',
+          timestamp: new Date().toISOString(),
+          read: false,
+        });
+        localStorage.setItem('medchain_service_notifications', JSON.stringify(notifications));
+      } else {
+        // Pause all nodes
+        const statuses = {};
+        for (const facility of facilities) {
+          try {
+            await pauseHospital(facility.wallet);
+            statuses[facility.wallet] = true;
+          } catch (e) {
+            console.log(`Could not pause ${facility.name}:`, e);
+          }
+        }
+        localStorage.setItem('medchain_node_statuses', JSON.stringify(statuses));
+        setGlobalKillSwitchActive(true);
+      }
+    } catch (error) {
+      console.error('Global kill switch error:', error);
+    } finally {
+      setIsProcessingGlobalKill(false);
+      setShowGlobalKillConfirm(false);
+    }
+  };
+
+  // Check global kill switch status on mount
+  useEffect(() => {
+    const savedStatuses = localStorage.getItem('medchain_node_statuses');
+    if (savedStatuses) {
+      const statuses = JSON.parse(savedStatuses);
+      // If more than half of facilities are paused, consider global kill active
+      const pausedCount = Object.keys(statuses).length;
+      if (pausedCount >= facilities.length / 2) {
+        setGlobalKillSwitchActive(true);
+      }
+    }
+  }, []);
 
   // Check if a node is paused
   const isNodePaused = (wallet) => {
@@ -1030,6 +1098,161 @@ export default function CEOMainDashboard({ walletAddress }) {
                 </button>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Global Kill Switch Panel */}
+      <div className="px-8 pt-4">
+        <div
+          className={`rounded-2xl p-6 border-2 transition-all ${
+            globalKillSwitchActive
+              ? 'bg-red-500/10 border-red-500/50'
+              : 'bg-slate-800/50 border-slate-700'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              {/* Status indicator */}
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
+                globalKillSwitchActive ? 'bg-red-500/20' : 'bg-emerald-500/20'
+              }`}>
+                {globalKillSwitchActive ? (
+                  <svg className="w-7 h-7 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                  </svg>
+                ) : (
+                  <svg className="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                )}
+              </div>
+
+              <div>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-xl font-bold" style={{ color: theme.textPrimary }}>
+                    Global Kill Switch
+                  </h2>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                    globalKillSwitchActive
+                      ? 'bg-red-500/20 text-red-400'
+                      : 'bg-emerald-500/20 text-emerald-400'
+                  }`}>
+                    {globalKillSwitchActive ? 'NETWORK HALTED' : 'ALL SYSTEMS GO'}
+                  </span>
+                </div>
+                <p className="text-sm mt-1" style={{ color: theme.textMuted }}>
+                  {globalKillSwitchActive
+                    ? 'All hospital nodes are suspended. MC issuance is disabled network-wide.'
+                    : `Emergency control to halt all ${facilities.length} hospital nodes instantly.`}
+                </p>
+              </div>
+            </div>
+
+            {/* Kill Switch Button */}
+            <div className="flex items-center gap-4">
+              {/* System Status Link */}
+              <a
+                href="/status"
+                target="_blank"
+                className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-sm font-medium transition-colors"
+                style={{ color: theme.textSecondary }}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                System Status
+              </a>
+
+              {/* Main Kill Switch Button */}
+              <button
+                onClick={() => setShowGlobalKillConfirm(true)}
+                disabled={isProcessingGlobalKill}
+                className={`flex items-center gap-3 px-6 py-3 rounded-xl font-bold text-sm transition-all ${
+                  globalKillSwitchActive
+                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                    : 'bg-red-600 hover:bg-red-500 text-white'
+                } disabled:opacity-50`}
+              >
+                {isProcessingGlobalKill ? (
+                  <>
+                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Processing...
+                  </>
+                ) : globalKillSwitchActive ? (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Restore Network
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                    </svg>
+                    Halt All Nodes
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Global Kill Switch Confirmation Modal */}
+      {showGlobalKillConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 ${
+              globalKillSwitchActive ? 'bg-emerald-500/20' : 'bg-red-500/20'
+            }`}>
+              {globalKillSwitchActive ? (
+                <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              ) : (
+                <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              )}
+            </div>
+
+            <h3 className="text-xl font-bold text-white text-center mb-2">
+              {globalKillSwitchActive ? 'Restore Network?' : 'Emergency Network Halt?'}
+            </h3>
+
+            <p className="text-slate-400 text-center mb-6">
+              {globalKillSwitchActive
+                ? `This will reactivate all ${facilities.length} hospital nodes and resume MC issuance across Sarawak.`
+                : `This will immediately suspend all ${facilities.length} hospital nodes. No MCs can be issued until restored.`}
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowGlobalKillConfirm(false)}
+                className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleGlobalKillSwitch}
+                disabled={isProcessingGlobalKill}
+                className={`flex-1 py-3 font-bold rounded-xl transition-colors disabled:opacity-50 ${
+                  globalKillSwitchActive
+                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                    : 'bg-red-600 hover:bg-red-500 text-white'
+                }`}
+              >
+                {isProcessingGlobalKill ? 'Processing...' : globalKillSwitchActive ? 'Restore Now' : 'Halt Network'}
+              </button>
+            </div>
           </div>
         </div>
       )}

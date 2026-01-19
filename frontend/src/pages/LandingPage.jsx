@@ -676,6 +676,98 @@ export default function LandingPage() {
 
           </section>
 
+          {/* ========== FRAUD TRACKER SECTION - py-16 ========== */}
+          <section className="py-16">
+            <div className="bg-gradient-to-br from-red-950/50 via-slate-900 to-red-950/30 rounded-3xl border border-red-500/20 p-10 relative overflow-hidden">
+              {/* Background pattern */}
+              <div className="absolute inset-0 opacity-5">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ef4444' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+                }} />
+              </div>
+
+              <div className="relative">
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center">
+                    <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">Malaysia's MC Fraud Problem</h2>
+                    <p className="text-red-400 text-sm">The cost of unverified medical certificates</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {/* Main stat - RM 2.3B */}
+                  <div className="lg:col-span-1">
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 text-center">
+                      <p className="text-red-400 text-sm font-semibold uppercase tracking-wider mb-2">Annual Fraud Cost</p>
+                      <p className="text-5xl font-black text-white mb-2">RM 2.3B</p>
+                      <p className="text-slate-400 text-sm">Lost to fake MCs in Malaysia annually</p>
+                      <div className="mt-4 pt-4 border-t border-red-500/20">
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                          <span className="text-red-400 text-xs font-semibold">Live Fraud Tracker</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Problem breakdown */}
+                  <div className="lg:col-span-2">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+                        <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center mb-4">
+                          <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <p className="text-3xl font-bold text-white mb-1">34%</p>
+                        <p className="text-slate-400 text-sm">of HR managers suspect MC fraud in their organization</p>
+                      </div>
+
+                      <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+                        <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center mb-4">
+                          <svg className="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                        <p className="text-3xl font-bold text-white mb-1">Zero</p>
+                        <p className="text-slate-400 text-sm">verification for paper MCs - easily forged or duplicated</p>
+                      </div>
+
+                      <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+                        <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4">
+                          <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                          </svg>
+                        </div>
+                        <p className="text-3xl font-bold text-white mb-1">No Trail</p>
+                        <p className="text-slate-400 text-sm">Paper records leave no audit trail for investigations</p>
+                      </div>
+                    </div>
+
+                    {/* Solution callout */}
+                    <div className="mt-6 bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-5 flex items-center gap-4">
+                      <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-emerald-400 font-bold">MedChain Solution</p>
+                        <p className="text-slate-300 text-sm">Every MC is blockchain-verified with QR codes. Employers verify in seconds. Zero fraud possible.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* ========== PRICING SECTION - py-24 ========== */}
           <section id="pricing" className="py-24 text-center">
 
