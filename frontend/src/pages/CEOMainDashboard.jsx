@@ -7,6 +7,8 @@ import { MaintenanceSchedulerButton, ServiceNotificationsPanel } from '../compon
 import { LiveViewersPanel, AlertHistoryPanel } from '../components/CEOLeadAlerts';
 import ConversionHeatmap, { LeadFunnel } from '../components/ConversionHeatmap';
 import { useLeadAnalytics } from '../context/LeadAnalyticsContext';
+import { SoundToggleButton, TestPaymentButton } from '../components/RevenueAlertToast';
+import { useRevenueAlert } from '../context/RevenueAlertContext';
 
 // FOUNDER WALLET ADDRESS - Only this address can access this dashboard
 const FOUNDER_WALLET = '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'; // Your wallet
@@ -546,6 +548,10 @@ export default function CEOMainDashboard({ walletAddress }) {
 
   // Check if current wallet is the founder
   const isFounder = walletAddress?.toLowerCase() === FOUNDER_WALLET.toLowerCase();
+
+  // Revenue Alert Context
+  const { revenueData, getMRRProgress, isSoundEnabled } = useRevenueAlert();
+  const mrrProgress = getMRRProgress();
 
   // Initialize node statuses from localStorage (for demo) or blockchain
   useEffect(() => {
@@ -1259,6 +1265,77 @@ export default function CEOMainDashboard({ walletAddress }) {
           </div>
         </div>
       )}
+
+      {/* Live MRR Revenue Tracker */}
+      <div className="px-8 pt-6">
+        <div className="bg-gradient-to-r from-emerald-900/50 via-emerald-800/30 to-green-900/50 rounded-2xl border border-emerald-500/30 p-6 relative overflow-hidden">
+          {/* Background decoration */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+
+          <div className="relative flex items-center justify-between">
+            {/* Left: MRR Display */}
+            <div className="flex items-center gap-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                <span className="text-3xl">💰</span>
+              </div>
+
+              <div>
+                <p className="text-emerald-400 text-sm font-semibold uppercase tracking-wider mb-1">Live Monthly Recurring Revenue</p>
+                <div className="flex items-baseline gap-3">
+                  <span className="text-4xl font-black text-white">RM {revenueData.mrr.toLocaleString()}</span>
+                  <span className="text-emerald-400 text-lg font-semibold">/ month</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Center: Progress to Goal */}
+            <div className="flex-1 max-w-md mx-8">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-slate-400 text-sm">Progress to RM 500K Goal</span>
+                <span className="text-white font-bold">{mrrProgress.percentage.toFixed(1)}%</span>
+              </div>
+              <div className="h-4 bg-slate-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-emerald-500 via-green-400 to-emerald-500 rounded-full transition-all duration-1000 relative"
+                  style={{
+                    width: `${mrrProgress.percentage}%`,
+                    backgroundSize: '200% 100%',
+                    animation: 'shimmer-green 2s ease-in-out infinite',
+                  }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+                </div>
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-emerald-400 text-xs">{revenueData.hospitalCount} Hospitals + {revenueData.clinicCount} Clinics</span>
+                <span className="text-slate-500 text-xs">{mrrProgress.hospitalsNeeded} more hospitals to goal</span>
+              </div>
+            </div>
+
+            {/* Right: Controls & Test */}
+            <div className="flex items-center gap-4">
+              <SoundToggleButton />
+              <div className="h-10 w-px bg-slate-700" />
+              <TestPaymentButton />
+            </div>
+          </div>
+        </div>
+
+        {/* CSS for shimmer animation */}
+        <style>{`
+          @keyframes shimmer-green {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+          }
+          @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+          }
+          .animate-shimmer {
+            animation: shimmer 2s ease-in-out infinite;
+          }
+        `}</style>
+      </div>
 
       {/* Hospital Lead Analytics Section */}
       <div className="px-8 pt-6">

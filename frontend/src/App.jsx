@@ -5,7 +5,9 @@ import { BillingProvider } from './context/BillingContext';
 import { MaintenanceProvider } from './context/MaintenanceContext';
 import { FoundingMemberProvider } from './context/FoundingMemberContext';
 import { LeadAnalyticsProvider } from './context/LeadAnalyticsContext';
+import { RevenueAlertProvider } from './context/RevenueAlertContext';
 import { CEOAlertToast } from './components/CEOLeadAlerts';
+import RevenueAlertToast from './components/RevenueAlertToast';
 import PatientPortal from './pages/PatientPortal';
 import DoctorPortal from './pages/DoctorPortal';
 import AdminPortal from './pages/AdminPortal';
@@ -792,12 +794,15 @@ function App() {
     <MaintenanceProvider>
       <FoundingMemberProvider>
         <LeadAnalyticsProvider>
-          <BillingProvider>
-            <BrowserRouter>
-              <CEOAlertToast />
-              <AppRoutes />
-            </BrowserRouter>
-          </BillingProvider>
+          <RevenueAlertProvider>
+            <BillingProvider>
+              <BrowserRouter>
+                <CEOAlertToast />
+                <RevenueAlertToast />
+                <AppRoutes />
+              </BrowserRouter>
+            </BillingProvider>
+          </RevenueAlertProvider>
         </LeadAnalyticsProvider>
       </FoundingMemberProvider>
     </MaintenanceProvider>
