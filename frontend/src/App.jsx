@@ -26,6 +26,7 @@ import BusinessOverview from './pages/BusinessOverview';
 import LandingPage from './pages/LandingPage';
 import VerificationPage from './pages/VerificationPage';
 import SystemStatus from './pages/SystemStatus';
+import CouncilorView from './pages/CouncilorView';
 import { ServiceRestoredToast } from './components/ServiceNotifications';
 import './App.css';
 
@@ -725,7 +726,7 @@ function AppRoutes() {
   }, []);
 
   // Public routes that don't need wallet - NO MetaMask trigger
-  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch', '/pricing', '/connect', '/demo', '/agreement', '/payment', '/ceo/quarterly', '/status'];
+  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch', '/pricing', '/connect', '/demo', '/agreement', '/payment', '/ceo/quarterly', '/status', '/gov-preview'];
   const isPublicRoute = publicPaths.includes(location.pathname);
   const isVerificationRoute = location.pathname.startsWith('/verify/');
 
@@ -764,6 +765,7 @@ function AppRoutes() {
         <Route path="/payment" element={<FPXPayment />} />
         <Route path="/ceo/quarterly" element={<CEOQuarterlySummary />} />
         <Route path="/status" element={<SystemStatus />} />
+        <Route path="/gov-preview" element={<CouncilorView />} />
       </Routes>
     );
   }
