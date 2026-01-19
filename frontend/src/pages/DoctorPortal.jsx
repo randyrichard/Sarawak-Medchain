@@ -4,8 +4,10 @@ import SignatureCanvas from 'react-signature-canvas';
 import { isVerifiedDoctor, writeRecord, readRecords, getMyBalance, requestEmergencyAccess, isHospitalPaused } from '../utils/contract';
 import { uploadMedicalRecord, checkStatus } from '../utils/api';
 import { useBilling } from '../context/BillingContext';
+import { useFoundingMember } from '../context/FoundingMemberContext';
 import BroadcastNotification from '../components/BroadcastNotification';
 import MaintenanceBanner from '../components/MaintenanceBanner';
+import FoundingPartnerBadge from '../components/FoundingPartnerBadge';
 
 // Terminal Theme Colors
 const terminalTheme = {
@@ -35,6 +37,11 @@ export default function DoctorPortal({ walletAddress }) {
     mcsIssuedThisMonth,
     subscriptionPaid
   } = useBilling();
+
+  // Use Founding Member Context
+  const { isFoundingMember, getFoundingMemberNumber } = useFoundingMember();
+  const foundingMemberNumber = getFoundingMemberNumber(walletAddress);
+  const isFoundingPartner = isFoundingMember(walletAddress);
 
   const [isVerified, setIsVerified] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -605,7 +612,18 @@ export default function DoctorPortal({ walletAddress }) {
 
             {/* QR Code Section */}
             <div className="p-6">
-              <div className="bg-white rounded-2xl p-6 mb-6 text-center">
+              <div className="bg-white rounded-2xl p-6 mb-6 text-center relative overflow-hidden">
+                {/* Founding Member Watermark */}
+                {isFoundingPartner && (
+                  <div className="absolute top-2 right-2 z-10">
+                    <div className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-amber-900 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                      </svg>
+                      <span>Founding #{foundingMemberNumber}</span>
+                    </div>
+                  </div>
+                )}
                 <QRCodeSVG
                   value={receiptData.verificationUrl}
                   size={180}
@@ -613,6 +631,17 @@ export default function DoctorPortal({ walletAddress }) {
                   includeMargin={true}
                 />
                 <p className="text-slate-600 text-sm mt-3">Scan to verify this certificate</p>
+                {/* Founding Partner Trust Seal */}
+                {isFoundingPartner && (
+                  <div className="mt-3 pt-3 border-t border-amber-200">
+                    <p className="text-amber-700 text-xs font-semibold flex items-center justify-center gap-1">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                      </svg>
+                      Issued by Founding Partner #{foundingMemberNumber} - First to Secure Sarawak
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Patient Details */}
@@ -715,7 +744,11 @@ export default function DoctorPortal({ walletAddress }) {
               </svg>
             </div>
             <div>
-              <h1 className="text-xl font-bold" style={{ color: terminalTheme.textPrimary }}>{hospitalName}</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-xl font-bold" style={{ color: terminalTheme.textPrimary }}>{hospitalName}</h1>
+                {/* Founding Partner Badge */}
+                <FoundingPartnerBadge walletAddress={walletAddress} size="small" showTooltip={true} />
+              </div>
               <p className="text-sm" style={{ color: terminalTheme.textMuted }}>Medical Certificate Issue Terminal</p>
             </div>
           </div>

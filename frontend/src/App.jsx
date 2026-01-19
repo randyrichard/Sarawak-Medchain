@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Link, Navigate, useLocation, useNavigate 
 import { connectWallet, getMyBalance } from './utils/contract';
 import { BillingProvider } from './context/BillingContext';
 import { MaintenanceProvider } from './context/MaintenanceContext';
+import { FoundingMemberProvider } from './context/FoundingMemberContext';
 import PatientPortal from './pages/PatientPortal';
 import DoctorPortal from './pages/DoctorPortal';
 import AdminPortal from './pages/AdminPortal';
@@ -787,11 +788,13 @@ function AppRoutes() {
 function App() {
   return (
     <MaintenanceProvider>
-      <BillingProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </BillingProvider>
+      <FoundingMemberProvider>
+        <BillingProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </BillingProvider>
+      </FoundingMemberProvider>
     </MaintenanceProvider>
   );
 }

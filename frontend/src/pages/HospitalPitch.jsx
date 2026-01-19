@@ -576,6 +576,195 @@ export default function HospitalPitch() {
         </div>
       </section>
 
+      {/* Founding Circle Section */}
+      <section className="py-20 px-6 relative overflow-hidden">
+        {/* Gold gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-amber-950/20 to-slate-900" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full opacity-10 blur-3xl bg-amber-500" />
+
+        <div className="relative max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/30 rounded-full mb-6">
+              <svg className="w-5 h-5 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+              </svg>
+              <span className="text-amber-400 font-bold text-sm">LIMITED TO 10 HOSPITALS</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
+              The <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400">Founding Circle</span>
+            </h2>
+            <p className="text-xl text-slate-400 max-w-2xl mx-auto">
+              Be among the first 10 hospitals to secure Sarawak's medical records and earn your place in history.
+            </p>
+          </div>
+
+          {/* Benefits Grid */}
+          <div className="grid md:grid-cols-3 gap-6 mb-16">
+            {/* Benefit 1: Gold Badge */}
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl p-6 border border-amber-500/30 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-amber-500/20 to-transparent rounded-bl-full" />
+              <div className="w-14 h-14 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-xl flex items-center justify-center mb-4">
+                <svg className="w-7 h-7 text-amber-900" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Gold Founding Badge</h3>
+              <p className="text-slate-400">
+                Exclusive "Founding Partner #001-010" badge displayed on your profile and every MC issued.
+              </p>
+            </div>
+
+            {/* Benefit 2: Legacy Rate */}
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl p-6 border border-amber-500/30 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-amber-500/20 to-transparent rounded-bl-full" />
+              <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center mb-4">
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Legacy Rate - Forever</h3>
+              <p className="text-slate-400">
+                Lock in RM 10,000/month rate for life. Even when rates increase, your price stays the same.
+              </p>
+              <p className="text-emerald-400 text-sm font-semibold mt-3">Never pay more than founding rate</p>
+            </div>
+
+            {/* Benefit 3: Verification Seal */}
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl p-6 border border-amber-500/30 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-amber-500/20 to-transparent rounded-bl-full" />
+              <div className="w-14 h-14 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-xl flex items-center justify-center mb-4">
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">First to Secure Sarawak</h3>
+              <p className="text-slate-400">
+                Every QR receipt shows "Issued by Founding Partner" - a trust mark for employers and patients.
+              </p>
+            </div>
+          </div>
+
+          {/* Founding Members Showcase */}
+          <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 rounded-3xl border border-amber-500/20 p-8">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h3 className="text-2xl font-bold text-white">Current Founding Partners</h3>
+                <p className="text-slate-400 mt-1">5 of 10 slots claimed</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 bg-red-500/20 border border-red-500/30 rounded-full text-red-400 text-sm font-bold animate-pulse">
+                  5 SLOTS REMAINING
+                </span>
+              </div>
+            </div>
+
+            {/* Founding Members Grid */}
+            <div className="grid md:grid-cols-5 gap-4 mb-8">
+              {/* Founding Partner 1 */}
+              <div className="bg-gradient-to-br from-amber-500/10 to-transparent rounded-xl p-4 border border-amber-500/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-lg flex items-center justify-center text-amber-900 font-bold text-sm">
+                    #1
+                  </div>
+                  <span className="text-amber-400 text-xs font-bold">FOUNDING</span>
+                </div>
+                <p className="text-white font-semibold text-sm">Timberland Medical Centre</p>
+                <p className="text-slate-500 text-xs">Kuching</p>
+              </div>
+
+              {/* Founding Partner 2 */}
+              <div className="bg-gradient-to-br from-amber-500/10 to-transparent rounded-xl p-4 border border-amber-500/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-lg flex items-center justify-center text-amber-900 font-bold text-sm">
+                    #2
+                  </div>
+                  <span className="text-amber-400 text-xs font-bold">FOUNDING</span>
+                </div>
+                <p className="text-white font-semibold text-sm">KPJ Kuching Specialist</p>
+                <p className="text-slate-500 text-xs">Kuching</p>
+              </div>
+
+              {/* Founding Partner 3 */}
+              <div className="bg-gradient-to-br from-amber-500/10 to-transparent rounded-xl p-4 border border-amber-500/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-lg flex items-center justify-center text-amber-900 font-bold text-sm">
+                    #3
+                  </div>
+                  <span className="text-amber-400 text-xs font-bold">FOUNDING</span>
+                </div>
+                <p className="text-white font-semibold text-sm">Normah Medical Specialist</p>
+                <p className="text-slate-500 text-xs">Kuching</p>
+              </div>
+
+              {/* Founding Partner 4 */}
+              <div className="bg-gradient-to-br from-amber-500/10 to-transparent rounded-xl p-4 border border-amber-500/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-lg flex items-center justify-center text-amber-900 font-bold text-sm">
+                    #4
+                  </div>
+                  <span className="text-amber-400 text-xs font-bold">FOUNDING</span>
+                </div>
+                <p className="text-white font-semibold text-sm">Rejang Medical Centre</p>
+                <p className="text-slate-500 text-xs">Sibu</p>
+              </div>
+
+              {/* Founding Partner 5 */}
+              <div className="bg-gradient-to-br from-amber-500/10 to-transparent rounded-xl p-4 border border-amber-500/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-lg flex items-center justify-center text-amber-900 font-bold text-sm">
+                    #5
+                  </div>
+                  <span className="text-amber-400 text-xs font-bold">FOUNDING</span>
+                </div>
+                <p className="text-white font-semibold text-sm">Bintulu Medical Centre</p>
+                <p className="text-slate-500 text-xs">Bintulu</p>
+              </div>
+            </div>
+
+            {/* Empty Slots */}
+            <div className="grid md:grid-cols-5 gap-4">
+              {[6, 7, 8, 9, 10].map((num) => (
+                <div key={num} className="bg-slate-800/50 rounded-xl p-4 border border-dashed border-slate-600 flex flex-col items-center justify-center min-h-[100px]">
+                  <div className="w-8 h-8 bg-slate-700 rounded-lg flex items-center justify-center text-slate-500 font-bold text-sm mb-2">
+                    #{num}
+                  </div>
+                  <p className="text-slate-500 text-xs font-semibold">AVAILABLE</p>
+                </div>
+              ))}
+            </div>
+
+            {/* CTA */}
+            <div className="mt-8 text-center">
+              <button
+                onClick={() => navigate('/agreement', { state: { plan: 'founding' } })}
+                className="px-8 py-4 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-amber-900 font-bold rounded-xl hover:shadow-lg hover:shadow-amber-500/30 transition-all transform hover:scale-105"
+                style={{
+                  backgroundSize: '200% 100%',
+                  animation: 'shimmer-gold 3s ease-in-out infinite',
+                }}
+              >
+                <span className="flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                  </svg>
+                  Claim Your Founding Partner Spot
+                </span>
+              </button>
+              <p className="text-slate-500 text-sm mt-3">Limited to first 10 hospitals only</p>
+            </div>
+          </div>
+        </div>
+
+        {/* CSS for gold shimmer */}
+        <style>{`
+          @keyframes shimmer-gold {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+          }
+        `}</style>
+      </section>
+
       {/* Pricing Section */}
       <section id="pricing" className="py-20 px-6 bg-gradient-to-b from-slate-900 to-slate-950">
         <div className="max-w-5xl mx-auto">
