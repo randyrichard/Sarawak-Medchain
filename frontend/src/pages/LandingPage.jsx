@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import PublicImpactCounter from '../components/PublicImpactCounter';
 
 // Facility types for dropdown
 const FACILITY_TYPES = [
@@ -666,6 +667,11 @@ export default function LandingPage() {
                   <p className="text-slate-400 text-sm mt-2">Integrity</p>
                 </div>
               </div>
+            </div>
+
+            {/* Public Impact Counter - Live Blockchain Stats */}
+            <div className="mt-20 animate-fade-in-up animate-delay-6">
+              <PublicImpactCounter />
             </div>
 
           </section>

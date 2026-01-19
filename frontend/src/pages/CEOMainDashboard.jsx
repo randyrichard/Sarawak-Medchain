@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import { pauseHospital, unpauseHospital } from '../utils/contract';
 import { sendBroadcast, clearBroadcast } from '../components/BroadcastNotification';
+import { MaintenanceSchedulerButton, ServiceNotificationsPanel } from '../components/ServiceNotifications';
 
 // FOUNDER WALLET ADDRESS - Only this address can access this dashboard
 const FOUNDER_WALLET = '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'; // Your wallet
@@ -964,6 +965,12 @@ export default function CEOMainDashboard({ walletAddress }) {
                 {clientView ? 'Client View' : 'Full View'}
               </span>
             </button>
+
+            {/* Service Notifications */}
+            <ServiceNotificationsPanel />
+
+            {/* Maintenance Scheduler */}
+            <MaintenanceSchedulerButton />
 
             <div className="flex items-center gap-2 px-4 py-2 rounded-xl" style={{ backgroundColor: `${theme.gold}20`, border: `1px solid ${theme.gold}30` }}>
               <svg className="w-4 h-4" style={{ color: theme.gold }} fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -334,6 +334,58 @@ export async function removeVerifiedDoctor(doctorAddress) {
   return await tx.wait();
 }
 
+// ========== PUBLIC IMPACT STATS FUNCTIONS ==========
+
+/**
+ * Get total record statistics from RecordWritten events
+ * Returns total count, latest timestamp, and latest transaction hash
+ * @returns {Object} { totalRecords, latestTimestamp, latestTxHash, latestBlockNumber }
+ */
+export async function getTotalRecordStats() {
+  // Create a read-only provider for public access (no wallet needed)
+  let readProvider = provider;
+  if (!readProvider && window.ethereum) {
+    readProvider = new ethers.BrowserProvider(window.ethereum);
+  } else if (!readProvider) {
+    // Fallback to local Hardhat node for development
+    readProvider = new ethers.JsonRpcProvider('http://127.0.0.1:8545');
+  }
+
+  const readContract = new ethers.Contract(CONTRACT_ADDRESS, ContractABI.abi, readProvider);
+
+  // Query all RecordWritten events from block 0 to latest
+  const filter = readContract.filters.RecordWritten();
+  const events = await readContract.queryFilter(filter, 0, 'latest');
+
+  if (events.length === 0) {
+    return {
+      totalRecords: 0,
+      latestTimestamp: null,
+      latestTxHash: null,
+      latestBlockNumber: null
+    };
+  }
+
+  // Get the latest event
+  const latestEvent = events[events.length - 1];
+  const latestTimestamp = Number(latestEvent.args.timestamp);
+
+  return {
+    totalRecords: events.length,
+    latestTimestamp,
+    latestTxHash: latestEvent.transactionHash,
+    latestBlockNumber: latestEvent.blockNumber
+  };
+}
+
+/**
+ * Get contract address for block explorer links
+ * @returns {string} Contract address
+ */
+export function getContractAddress() {
+  return CONTRACT_ADDRESS;
+}
+
 // ========== HOSPITAL NODE CONTROL FUNCTIONS ==========
 
 /**

@@ -5,6 +5,7 @@ import { isVerifiedDoctor, writeRecord, readRecords, getMyBalance, requestEmerge
 import { uploadMedicalRecord, checkStatus } from '../utils/api';
 import { useBilling } from '../context/BillingContext';
 import BroadcastNotification from '../components/BroadcastNotification';
+import MaintenanceBanner from '../components/MaintenanceBanner';
 
 // Terminal Theme Colors
 const terminalTheme = {
@@ -567,6 +568,9 @@ export default function DoctorPortal({ walletAddress }) {
 
   return (
     <div className="min-h-screen font-sans" style={{ backgroundColor: terminalTheme.bg }}>
+      {/* Maintenance Banner - Shows 24 hours before scheduled maintenance */}
+      <MaintenanceBanner />
+
       {/* Network-Wide Broadcast Notification */}
       <BroadcastNotification />
 

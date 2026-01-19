@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { connectWallet, getMyBalance } from './utils/contract';
 import { BillingProvider } from './context/BillingContext';
+import { MaintenanceProvider } from './context/MaintenanceContext';
 import PatientPortal from './pages/PatientPortal';
 import DoctorPortal from './pages/DoctorPortal';
 import AdminPortal from './pages/AdminPortal';
@@ -17,6 +18,8 @@ import FounderAdmin from './pages/FounderAdmin';
 import BusinessOverview from './pages/BusinessOverview';
 import LandingPage from './pages/LandingPage';
 import VerificationPage from './pages/VerificationPage';
+import SystemStatus from './pages/SystemStatus';
+import { ServiceRestoredToast } from './components/ServiceNotifications';
 import './App.css';
 
 // Sticky Credit Balance Header Component (shows at top of main content)
@@ -371,6 +374,8 @@ function CreditBalanceSidebar({ walletAddress }) {
 function ProtectedApp({ walletAddress, handleDisconnect }) {
   return (
     <div className="flex h-screen w-full overflow-hidden">
+      {/* Service Restored Toast Notification */}
+      <ServiceRestoredToast />
       {/* Fixed Sidebar */}
       <aside className="w-72 h-full bg-slate-900 text-white flex flex-col flex-shrink-0">
         {/* Logo & Title */}
@@ -713,7 +718,7 @@ function AppRoutes() {
   }, []);
 
   // Public routes that don't need wallet - NO MetaMask trigger
-  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch', '/pricing', '/connect', '/demo', '/agreement', '/payment', '/ceo/quarterly'];
+  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch', '/pricing', '/connect', '/demo', '/agreement', '/payment', '/ceo/quarterly', '/status'];
   const isPublicRoute = publicPaths.includes(location.pathname);
   const isVerificationRoute = location.pathname.startsWith('/verify/');
 
@@ -751,6 +756,7 @@ function AppRoutes() {
         <Route path="/agreement" element={<ServiceAgreement />} />
         <Route path="/payment" element={<FPXPayment />} />
         <Route path="/ceo/quarterly" element={<CEOQuarterlySummary />} />
+        <Route path="/status" element={<SystemStatus />} />
       </Routes>
     );
   }
@@ -780,11 +786,13 @@ function AppRoutes() {
 
 function App() {
   return (
-    <BillingProvider>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
-    </BillingProvider>
+    <MaintenanceProvider>
+      <BillingProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </BillingProvider>
+    </MaintenanceProvider>
   );
 }
 
