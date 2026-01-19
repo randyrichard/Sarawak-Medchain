@@ -4,6 +4,9 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { pauseHospital, unpauseHospital } from '../utils/contract';
 import { sendBroadcast, clearBroadcast } from '../components/BroadcastNotification';
 import { MaintenanceSchedulerButton, ServiceNotificationsPanel } from '../components/ServiceNotifications';
+import { LiveViewersPanel, AlertHistoryPanel } from '../components/CEOLeadAlerts';
+import ConversionHeatmap, { LeadFunnel } from '../components/ConversionHeatmap';
+import { useLeadAnalytics } from '../context/LeadAnalyticsContext';
 
 // FOUNDER WALLET ADDRESS - Only this address can access this dashboard
 const FOUNDER_WALLET = '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'; // Your wallet
@@ -1256,6 +1259,45 @@ export default function CEOMainDashboard({ walletAddress }) {
           </div>
         </div>
       )}
+
+      {/* Hospital Lead Analytics Section */}
+      <div className="px-8 pt-6">
+        <div className="mb-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white">Hospital Lead Analytics</h2>
+              <p className="text-slate-400 text-sm">Track Founding Partner prospects in real-time</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-4 gap-6">
+          {/* Live Viewers Panel */}
+          <div className="col-span-1">
+            <LiveViewersPanel />
+          </div>
+
+          {/* Lead Funnel */}
+          <div className="col-span-1">
+            <LeadFunnel />
+          </div>
+
+          {/* Conversion Heatmap */}
+          <div className="col-span-1">
+            <ConversionHeatmap />
+          </div>
+
+          {/* Alert History */}
+          <div className="col-span-1">
+            <AlertHistoryPanel />
+          </div>
+        </div>
+      </div>
 
       <div className="p-8">
         {/* Top Stats Row */}

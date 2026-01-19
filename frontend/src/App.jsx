@@ -4,6 +4,8 @@ import { connectWallet, getMyBalance } from './utils/contract';
 import { BillingProvider } from './context/BillingContext';
 import { MaintenanceProvider } from './context/MaintenanceContext';
 import { FoundingMemberProvider } from './context/FoundingMemberContext';
+import { LeadAnalyticsProvider } from './context/LeadAnalyticsContext';
+import { CEOAlertToast } from './components/CEOLeadAlerts';
 import PatientPortal from './pages/PatientPortal';
 import DoctorPortal from './pages/DoctorPortal';
 import AdminPortal from './pages/AdminPortal';
@@ -789,11 +791,14 @@ function App() {
   return (
     <MaintenanceProvider>
       <FoundingMemberProvider>
-        <BillingProvider>
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </BillingProvider>
+        <LeadAnalyticsProvider>
+          <BillingProvider>
+            <BrowserRouter>
+              <CEOAlertToast />
+              <AppRoutes />
+            </BrowserRouter>
+          </BillingProvider>
+        </LeadAnalyticsProvider>
       </FoundingMemberProvider>
     </MaintenanceProvider>
   );
