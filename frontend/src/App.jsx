@@ -6,8 +6,10 @@ import { MaintenanceProvider } from './context/MaintenanceContext';
 import { FoundingMemberProvider } from './context/FoundingMemberContext';
 import { LeadAnalyticsProvider } from './context/LeadAnalyticsContext';
 import { RevenueAlertProvider } from './context/RevenueAlertContext';
+import { DisasterRecoveryProvider } from './context/DisasterRecoveryContext';
 import { CEOAlertToast } from './components/CEOLeadAlerts';
 import RevenueAlertToast from './components/RevenueAlertToast';
+import { DRAlertToast } from './components/DisasterRecoveryDashboard';
 import PatientPortal from './pages/PatientPortal';
 import DoctorPortal from './pages/DoctorPortal';
 import AdminPortal from './pages/AdminPortal';
@@ -795,13 +797,16 @@ function App() {
       <FoundingMemberProvider>
         <LeadAnalyticsProvider>
           <RevenueAlertProvider>
-            <BillingProvider>
-              <BrowserRouter>
-                <CEOAlertToast />
-                <RevenueAlertToast />
-                <AppRoutes />
-              </BrowserRouter>
-            </BillingProvider>
+            <DisasterRecoveryProvider>
+              <BillingProvider>
+                <BrowserRouter>
+                  <CEOAlertToast />
+                  <RevenueAlertToast />
+                  <DRAlertToast />
+                  <AppRoutes />
+                </BrowserRouter>
+              </BillingProvider>
+            </DisasterRecoveryProvider>
           </RevenueAlertProvider>
         </LeadAnalyticsProvider>
       </FoundingMemberProvider>

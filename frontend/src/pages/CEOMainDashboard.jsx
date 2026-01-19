@@ -9,6 +9,8 @@ import ConversionHeatmap, { LeadFunnel } from '../components/ConversionHeatmap';
 import { useLeadAnalytics } from '../context/LeadAnalyticsContext';
 import { SoundToggleButton, TestPaymentButton } from '../components/RevenueAlertToast';
 import { useRevenueAlert } from '../context/RevenueAlertContext';
+import DisasterRecoveryDashboard, { MiniDRStatus } from '../components/DisasterRecoveryDashboard';
+import { useDisasterRecovery } from '../context/DisasterRecoveryContext';
 
 // FOUNDER WALLET ADDRESS - Only this address can access this dashboard
 const FOUNDER_WALLET = '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'; // Your wallet
@@ -1374,6 +1376,11 @@ export default function CEOMainDashboard({ walletAddress }) {
             <AlertHistoryPanel />
           </div>
         </div>
+      </div>
+
+      {/* Disaster Recovery Suite Section */}
+      <div className="px-8 pt-6">
+        <DisasterRecoveryDashboard />
       </div>
 
       <div className="p-8">
