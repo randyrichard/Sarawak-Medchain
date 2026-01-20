@@ -59,6 +59,11 @@ function RequestAccessModal({ isOpen, onClose, onSubmitSuccess }) {
     e.preventDefault();
     setIsSubmitting(true);
 
+    // iOS AUDIO FIX: Play the cha-ching sound IMMEDIATELY during user gesture
+    // On iPhone 8 Plus, sound must play synchronously within the click event
+    // Visual feedback (overlay) comes after, but sound plays NOW
+    playSuccessSound();
+
     // Simulate blockchain transaction
     await new Promise(resolve => setTimeout(resolve, 1500));
 
@@ -359,42 +364,84 @@ function SocialProofToast() {
   );
 }
 
+// iOS Audio Fix: Create a shared AudioContext that persists across the app
+// This context is "unlocked" during a user gesture and can be reused later
+let sharedAudioContext = null;
+
+// Unlock/warm up the AudioContext - MUST be called from direct user click
+// This satisfies iOS requirement that audio be initiated from user gesture
+const unlockAudioContext = () => {
+  try {
+    if (!sharedAudioContext) {
+      sharedAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+      console.log('[AUDIO] AudioContext created');
+    }
+
+    // Resume if suspended (iOS Safari suspends by default)
+    if (sharedAudioContext.state === 'suspended') {
+      sharedAudioContext.resume().then(() => {
+        console.log('[AUDIO] AudioContext resumed - unlocked for iOS');
+      });
+    }
+
+    // Play a silent buffer to fully unlock on iOS
+    const silentBuffer = sharedAudioContext.createBuffer(1, 1, 22050);
+    const source = sharedAudioContext.createBufferSource();
+    source.buffer = silentBuffer;
+    source.connect(sharedAudioContext.destination);
+    source.start(0);
+
+    return true;
+  } catch (e) {
+    console.log('[AUDIO] Unlock error:', e.message);
+    return false;
+  }
+};
+
 // Professional "Cha-Ching" success sound using Web Audio API
-// Crisp but professional volume for Councilor demo
+// Uses the pre-unlocked sharedAudioContext for iOS compatibility
 const playSuccessSound = () => {
   try {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    // Use shared context or create new one
+    const audioContext = sharedAudioContext || new (window.AudioContext || window.webkitAudioContext)();
+
+    // Ensure context is running
+    if (audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
+
     const gainNode = audioContext.createGain();
     gainNode.connect(audioContext.destination);
-    gainNode.gain.value = 0.3; // Professional volume (not too loud)
+    gainNode.gain.value = 0.7; // Loud and clear for demo
 
     // First tone - high pitched "cha"
     const osc1 = audioContext.createOscillator();
-    osc1.type = 'sine';
-    osc1.frequency.setValueAtTime(1200, audioContext.currentTime);
-    osc1.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.1);
+    osc1.type = 'triangle'; // Richer sound than sine
+    osc1.frequency.setValueAtTime(1318, audioContext.currentTime); // E6
+    osc1.frequency.exponentialRampToValueAtTime(880, audioContext.currentTime + 0.1);
     osc1.connect(gainNode);
     osc1.start(audioContext.currentTime);
-    osc1.stop(audioContext.currentTime + 0.1);
+    osc1.stop(audioContext.currentTime + 0.15);
 
-    // Second tone - "ching" with slight delay
+    // Second tone - "ching"
     const osc2 = audioContext.createOscillator();
-    osc2.type = 'sine';
-    osc2.frequency.setValueAtTime(1400, audioContext.currentTime + 0.1);
-    osc2.frequency.exponentialRampToValueAtTime(1000, audioContext.currentTime + 0.25);
+    osc2.type = 'triangle';
+    osc2.frequency.setValueAtTime(1568, audioContext.currentTime + 0.12); // G6
     osc2.connect(gainNode);
-    osc2.start(audioContext.currentTime + 0.1);
-    osc2.stop(audioContext.currentTime + 0.25);
+    osc2.start(audioContext.currentTime + 0.12);
+    osc2.stop(audioContext.currentTime + 0.3);
 
-    // Third tone - resolution
+    // Third tone - triumphant resolution
     const osc3 = audioContext.createOscillator();
-    osc3.type = 'sine';
-    osc3.frequency.setValueAtTime(1600, audioContext.currentTime + 0.2);
+    osc3.type = 'triangle';
+    osc3.frequency.setValueAtTime(2093, audioContext.currentTime + 0.25); // C7
     osc3.connect(gainNode);
-    osc3.start(audioContext.currentTime + 0.2);
-    osc3.stop(audioContext.currentTime + 0.35);
+    osc3.start(audioContext.currentTime + 0.25);
+    osc3.stop(audioContext.currentTime + 0.5);
+
+    console.log('[AUDIO] Cha-ching played successfully!');
   } catch (e) {
-    console.log('Audio not available');
+    console.log('[AUDIO] Playback error:', e.message);
   }
 };
 
@@ -402,7 +449,6 @@ const playSuccessSound = () => {
 function ProvisioningOverlay({ isVisible, facilityName, blockchainRef, onComplete }) {
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
-  const [soundPlayed, setSoundPlayed] = useState(false);
 
   const steps = [
     'Initializing blockchain node...',
@@ -413,7 +459,6 @@ function ProvisioningOverlay({ isVisible, facilityName, blockchainRef, onComplet
 
   useEffect(() => {
     if (!isVisible) {
-      setSoundPlayed(false);
       return;
     }
 
@@ -433,13 +478,8 @@ function ProvisioningOverlay({ isVisible, facilityName, blockchainRef, onComplet
       setCurrentStep(prev => (prev + 1) % steps.length);
     }, 400);
 
-    // Play success sound at 80% progress
-    const soundTimeout = setTimeout(() => {
-      if (!soundPlayed) {
-        playSuccessSound();
-        setSoundPlayed(true);
-      }
-    }, 1200);
+    // NOTE: Sound now plays immediately on form submit (iOS requirement)
+    // No longer playing here via setTimeout - that doesn't work on iPhone 8 Plus
 
     // Complete after 1.5 seconds
     const completeTimeout = setTimeout(() => {
@@ -449,10 +489,9 @@ function ProvisioningOverlay({ isVisible, facilityName, blockchainRef, onComplet
     return () => {
       clearInterval(progressInterval);
       clearInterval(stepInterval);
-      clearTimeout(soundTimeout);
       clearTimeout(completeTimeout);
     };
-  }, [isVisible, onComplete, soundPlayed]);
+  }, [isVisible, onComplete]);
 
   if (!isVisible) return null;
 
@@ -632,6 +671,8 @@ export default function LandingPage() {
   }, []);
 
   const handleGetStarted = () => {
+    // iOS AUDIO FIX: Unlock AudioContext during this user gesture
+    unlockAudioContext();
     setIsModalOpen(true);
   };
 
@@ -647,6 +688,9 @@ export default function LandingPage() {
   // Handle pricing plan selection - uses window.location for PWA scope bypass
   // Includes security spinner and backend initialization for audit compliance
   const handlePlanSelect = async (planType) => {
+    // iOS AUDIO FIX: Unlock AudioContext during this user gesture
+    unlockAudioContext();
+
     // Show security loading spinner (0.5s professional feel)
     setSecurityLoading(planType);
 
