@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PublicImpactCounter from '../components/PublicImpactCounter';
+import SarawakReadinessMap from '../components/SarawakReadinessMap';
 import { usePWA, PWA_CONFIGS } from '../hooks/usePWA';
 
 // Facility types for dropdown
@@ -1093,6 +1094,11 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
+          </section>
+
+          {/* ========== SARAWAK READINESS MAP - py-16 ========== */}
+          <section className="py-16">
+            <SarawakReadinessMap />
           </section>
 
           {/* ========== FRAUD TRACKER SECTION - py-16 ========== */}
