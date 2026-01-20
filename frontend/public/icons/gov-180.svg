@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180">
+  <defs>
+    <linearGradient id="govGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f59e0b"/>
+      <stop offset="100%" style="stop-color:#d97706"/>
+    </linearGradient>
+  </defs>
+  <rect width="180" height="180" rx="40" fill="#030712"/>
+  <path d="M90 25 L145 55 L145 95 C145 125 120 150 90 160 C60 150 35 125 35 95 L35 55 Z" fill="url(#govGrad)"/>
+  <text x="90" y="110" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="48" font-weight="bold" fill="#030712">G</text>
+  <circle cx="90" cy="130" r="8" fill="#030712"/>
+</svg>

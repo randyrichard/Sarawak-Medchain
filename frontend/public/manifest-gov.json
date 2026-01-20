@@ -1,0 +1,32 @@
+{
+  "name": "Gov Dashboard",
+  "short_name": "Gov",
+  "description": "Government Dashboard - Sarawak MedChain",
+  "start_url": "/admin/gov-dashboard?auth=1",
+  "scope": "/admin/",
+  "id": "sarawak-medchain-gov-v2",
+  "display": "standalone",
+  "background_color": "#030712",
+  "theme_color": "#d97706",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/gov-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/gov-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/gov-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

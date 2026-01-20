@@ -16,12 +16,13 @@ const MALAYSIAN_BANKS = [
   { code: 'AFFIN', name: 'Affin Online', logo: '🏪' },
 ];
 
+// WEALTH 2026 DEMO: Sub-500ms total processing for instant feel on 4G
 const PROCESSING_STEPS = [
-  { title: 'Connecting to FPX Gateway', icon: '🔗', duration: 1000 },
-  { title: 'Redirecting to Bank', icon: '🏦', duration: 1200 },
-  { title: 'Awaiting Authorization', icon: '🔐', duration: 2000 },
-  { title: 'Processing Payment', icon: '💳', duration: 1500 },
-  { title: 'Confirming Transaction', icon: '✅', duration: 800 },
+  { title: 'Connecting to FPX Gateway', icon: '🔗', duration: 60 },
+  { title: 'Redirecting to Bank', icon: '🏦', duration: 80 },
+  { title: 'Awaiting Authorization', icon: '🔐', duration: 100 },
+  { title: 'Processing Payment', icon: '💳', duration: 80 },
+  { title: 'Confirming Transaction', icon: '✅', duration: 60 },
 ];
 
 export default function FPXPayment() {
@@ -157,7 +158,8 @@ export default function FPXPayment() {
       await new Promise(resolve => setTimeout(resolve, PROCESSING_STEPS[i].duration));
     }
 
-    // Payment successful - call backend webhook for server-side activation
+    // WEALTH 2026 DEMO: Persistent server-side activation
+    // This ensures RM 10,000 credits trigger even if user switches apps during demo
     try {
       await fetch('/api/webhook/fpx/success', {
         method: 'POST',
@@ -165,12 +167,19 @@ export default function FPXPayment() {
         body: JSON.stringify({
           transactionId,
           amount: pricing.total,
-          hospitalId: transactionId, // Use txn ID as hospital ID for simplicity
+          hospitalId: transactionId,
           hospitalName: agreementData.hospitalName,
           hospitalEmail: agreementData.ceoEmail || agreementData.email,
           initialCredits,
           bankCode: selectedBank,
           bankName: MALAYSIAN_BANKS.find(b => b.code === selectedBank)?.name,
+          // Full agreement data for persistent recovery
+          agreementData: {
+            ...agreementData,
+            activatedCredits: initialCredits,
+            subscriptionPlan: 'Enterprise',
+            monthlyFee: 10000,
+          },
         }),
       });
     } catch (error) {

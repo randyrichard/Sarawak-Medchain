@@ -2,12 +2,153 @@
  * Connect Wallet Page
  * Gate page for accessing the MedChain application
  * Only shown when user tries to access protected routes without a wallet
+ * WEALTH 2026 DEMO: Includes biometric-style Security Verified animation
  */
 
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 const MEDCHAIN_BLUE = '#0066CC';
+
+// WEALTH 2026 DEMO: Security Verified Animation Component
+function SecurityVerifiedAnimation({ onComplete }) {
+  const [phase, setPhase] = useState('scanning'); // scanning -> verified -> complete
+
+  useEffect(() => {
+    // Phase 1: Scanning (300ms)
+    const scanTimer = setTimeout(() => setPhase('verified'), 300);
+    // Phase 2: Verified display (600ms)
+    const verifyTimer = setTimeout(() => setPhase('complete'), 900);
+    // Phase 3: Complete and callback
+    const completeTimer = setTimeout(() => onComplete?.(), 1200);
+
+    return () => {
+      clearTimeout(scanTimer);
+      clearTimeout(verifyTimer);
+      clearTimeout(completeTimer);
+    };
+  }, [onComplete]);
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-[#030712] flex items-center justify-center">
+      {/* Background grid animation */}
+      <div className="absolute inset-0 overflow-hidden opacity-20">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(16, 185, 129, 0.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(16, 185, 129, 0.1) 1px, transparent 1px)
+            `,
+            backgroundSize: '30px 30px',
+          }}
+        />
+      </div>
+
+      <div className="relative text-center">
+        {/* Shield Icon with Scan Effect */}
+        <div className="relative w-32 h-32 mx-auto mb-8">
+          {/* Outer pulse rings */}
+          <div
+            className={`absolute inset-0 rounded-full border-2 border-emerald-500/30 ${
+              phase === 'scanning' ? 'animate-ping' : ''
+            }`}
+            style={{ animationDuration: '1s' }}
+          />
+          <div
+            className={`absolute inset-2 rounded-full border-2 border-emerald-500/40 ${
+              phase === 'scanning' ? 'animate-ping' : ''
+            }`}
+            style={{ animationDuration: '1.2s', animationDelay: '0.1s' }}
+          />
+
+          {/* Main shield container */}
+          <div
+            className={`absolute inset-4 rounded-full flex items-center justify-center transition-all duration-500 ${
+              phase === 'verified' || phase === 'complete'
+                ? 'bg-emerald-500/20 scale-110'
+                : 'bg-slate-800/50'
+            }`}
+          >
+            {/* Shield SVG */}
+            <svg
+              className={`w-16 h-16 transition-all duration-300 ${
+                phase === 'verified' || phase === 'complete'
+                  ? 'text-emerald-400'
+                  : 'text-slate-500'
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                className={phase === 'verified' || phase === 'complete' ? 'checkmark-animate' : ''}
+                style={{
+                  strokeDasharray: phase === 'verified' || phase === 'complete' ? '100' : '0',
+                  strokeDashoffset: phase === 'verified' || phase === 'complete' ? '0' : '100',
+                  transition: 'stroke-dashoffset 0.5s ease-out',
+                }}
+              />
+            </svg>
+
+            {/* Scan line effect */}
+            {phase === 'scanning' && (
+              <div
+                className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent"
+                style={{
+                  animation: 'security-scan 0.8s ease-in-out infinite',
+                }}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Status Text */}
+        <div className="space-y-2">
+          {phase === 'scanning' && (
+            <>
+              <h2 className="text-2xl font-bold text-white animate-pulse">
+                Verifying Identity...
+              </h2>
+              <p className="text-slate-400 text-sm">Cryptographic signature check</p>
+            </>
+          )}
+          {(phase === 'verified' || phase === 'complete') && (
+            <>
+              <h2 className="text-2xl font-bold text-emerald-400">
+                Security Verified
+              </h2>
+              <div className="flex items-center justify-center gap-2 mt-4">
+                <span className="px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-emerald-400 text-xs font-bold">
+                  AES-256-GCM
+                </span>
+                <span className="px-3 py-1 bg-blue-500/20 border border-blue-500/30 rounded-full text-blue-400 text-xs font-bold">
+                  BLOCKCHAIN
+                </span>
+              </div>
+              <p className="text-slate-400 text-sm mt-3">
+                Military-grade encryption active
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* CSS for scan animation */}
+      <style>{`
+        @keyframes security-scan {
+          0%, 100% { top: 10%; opacity: 0; }
+          50% { opacity: 1; }
+          100% { top: 90%; opacity: 0; }
+        }
+      `}</style>
+    </div>
+  );
+}
 
 // Helper to get initial pending admin data
 function getInitialPendingAdmin() {
@@ -23,6 +164,22 @@ export default function ConnectWallet({ onConnect, loading, error }) {
   const location = useLocation();
   const [pendingAdmin, setPendingAdmin] = useState(getInitialPendingAdmin);
   const autoConnectTriggeredRef = useRef(false);
+  const [showSecurityAnimation, setShowSecurityAnimation] = useState(false);
+
+  // WEALTH 2026 DEMO: Wrap onConnect to show security animation first
+  const handleSecureConnect = async () => {
+    setShowSecurityAnimation(true);
+  };
+
+  const handleAnimationComplete = () => {
+    setShowSecurityAnimation(false);
+    onConnect();
+  };
+
+  // Show Security Verified animation
+  if (showSecurityAnimation) {
+    return <SecurityVerifiedAnimation onComplete={handleAnimationComplete} />;
+  }
 
   // Get the intended destination
   const from = location.state?.from || '/patient';
@@ -35,9 +192,9 @@ export default function ConnectWallet({ onConnect, loading, error }) {
     autoConnectTriggeredRef.current = true;
     const updatedData = { ...pendingAdmin, autoConnect: false };
     localStorage.setItem('medchain_pending_admin', JSON.stringify(updatedData));
-    const timer = setTimeout(() => onConnect(), 500);
+    const timer = setTimeout(() => handleSecureConnect(), 500);
     return () => clearTimeout(timer);
-  }, [pendingAdmin, onConnect]);
+  }, [pendingAdmin]);
 
   // Pending Admin UI
   if (pendingAdmin) {
@@ -102,7 +259,7 @@ export default function ConnectWallet({ onConnect, loading, error }) {
             )}
 
             <button
-              onClick={onConnect}
+              onClick={handleSecureConnect}
               disabled={loading}
               className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-900 font-bold rounded-xl hover:from-amber-400 hover:to-orange-400 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
@@ -214,7 +371,7 @@ export default function ConnectWallet({ onConnect, loading, error }) {
 
             {/* Connect Button */}
             <button
-              onClick={onConnect}
+              onClick={handleSecureConnect}
               disabled={loading}
               className="w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-xl hover:from-blue-500 hover:to-cyan-500 transition-all disabled:opacity-50 flex items-center justify-center gap-3 shadow-lg shadow-blue-500/20"
             >

@@ -72,3 +72,116 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   WEALTH 2026 DEMO - iPhone 8 Plus Optimization (414x736 CSS, 5.5" Retina 3x)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* iPhone 8 Plus specific viewport optimizations */
+@media screen and (min-width: 375px) and (max-width: 428px) and (min-height: 667px) {
+  /* Ensure hero badges are first visible on load */
+  .hero-badge-priority {
+    position: relative;
+    z-index: 100;
+    margin-top: 0 !important;
+    padding-top: env(safe-area-inset-top, 20px);
+  }
+
+  /* 100% Pass Rate badge prominence */
+  .pass-rate-badge {
+    font-size: 1.25rem !important;
+    padding: 1rem 1.5rem !important;
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.4), 0 0 60px rgba(16, 185, 129, 0.2) !important;
+    animation: badge-glow 2s ease-in-out infinite !important;
+  }
+
+  /* Optimize touch targets for 4G demo */
+  button, a, [role="button"] {
+    min-height: 48px;
+    min-width: 48px;
+  }
+
+  /* Reduce content shifting on scroll */
+  .scroll-stable {
+    overflow-anchor: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+/* Badge glow animation for 100% Pass Rate */
+@keyframes badge-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.4), 0 0 40px rgba(16, 185, 129, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.6), 0 0 60px rgba(16, 185, 129, 0.3);
+  }
+}
+
+/* Security Verified biometric animation */
+@keyframes security-scan {
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+
+@keyframes security-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 20px rgba(16, 185, 129, 0);
+  }
+}
+
+@keyframes checkmark-draw {
+  0% {
+    stroke-dashoffset: 50;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes shield-fill {
+  0% {
+    fill-opacity: 0;
+  }
+  100% {
+    fill-opacity: 0.2;
+  }
+}
+
+.security-verified-animation {
+  animation: security-pulse 0.6s ease-out;
+}
+
+.scan-line {
+  animation: security-scan 1.5s ease-in-out;
+}
+
+.checkmark-animate {
+  stroke-dasharray: 50;
+  stroke-dashoffset: 50;
+  animation: checkmark-draw 0.5s ease-out 0.3s forwards;
+}
+
+/* Instant feedback for touch interactions */
+.instant-touch {
+  transition: transform 0.1s ease-out, opacity 0.1s ease-out !important;
+}
+
+.instant-touch:active {
+  transform: scale(0.97);
+  opacity: 0.9;
+}

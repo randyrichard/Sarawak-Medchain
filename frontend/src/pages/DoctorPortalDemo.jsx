@@ -4,8 +4,9 @@
  * No wallet required, uses mock data
  */
 
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { usePWA, PWA_CONFIGS } from '../hooks/usePWA';
 
 // Terminal Theme Colors
 const terminalTheme = {
@@ -26,10 +27,18 @@ const terminalTheme = {
 const MEDCHAIN_BLUE = '#0066CC';
 
 export default function DoctorPortalDemo() {
+  const location = useLocation();
+
   // Demo states
   const [showSimulation, setShowSimulation] = useState(false);
   const [simulationStep, setSimulationStep] = useState(0);
   const [hasSignature, setHasSignature] = useState(false);
+
+  // Check if we're on the PWA route
+  const isPWARoute = location.pathname === '/pwa/issue';
+
+  // PWA: Only set manifest when on /pwa/issue route
+  usePWA(isPWARoute ? PWA_CONFIGS.issue : null);
 
   // MC Form state with pre-filled demo data
   const [mcFormData, setMcFormData] = useState({

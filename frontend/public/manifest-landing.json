@@ -1,0 +1,34 @@
+{
+  "name": "Sarawak MedChain",
+  "short_name": "MedChain",
+  "description": "Blockchain Healthcare Platform for Sarawak",
+  "start_url": "/?home=1",
+  "scope": "/?home",
+  "id": "sarawak-medchain-landing-v2",
+  "display": "browser",
+  "background_color": "#030712",
+  "theme_color": "#ef4444",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/main-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/main-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/main-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["medical", "business"],
+  "prefer_related_applications": false
+}

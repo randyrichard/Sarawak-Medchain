@@ -1,0 +1,32 @@
+{
+  "name": "Verify MC",
+  "short_name": "Verify",
+  "description": "Verify Medical Certificates - Sarawak MedChain",
+  "start_url": "/pwa/verify",
+  "scope": "/pwa/verify",
+  "id": "medchain-verify-app",
+  "display": "standalone",
+  "background_color": "#030712",
+  "theme_color": "#0ea5e9",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/verify-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/verify-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/verify-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

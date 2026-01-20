@@ -726,7 +726,7 @@ function AppRoutes() {
   }, []);
 
   // Public routes that don't need wallet - NO MetaMask trigger
-  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch', '/pricing', '/connect', '/demo', '/agreement', '/payment', '/ceo/quarterly', '/status', '/gov-preview'];
+  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch', '/pricing', '/connect', '/demo', '/agreement', '/payment', '/ceo/quarterly', '/status', '/gov-preview', '/portal/gov-preview', '/admin/gov-dashboard', '/pwa/verify', '/pwa/issue'];
   const isPublicRoute = publicPaths.includes(location.pathname);
   const isVerificationRoute = location.pathname.startsWith('/verify/');
 
@@ -766,6 +766,10 @@ function AppRoutes() {
         <Route path="/ceo/quarterly" element={<CEOQuarterlySummary />} />
         <Route path="/status" element={<SystemStatus />} />
         <Route path="/gov-preview" element={<CouncilorView />} />
+        <Route path="/portal/gov-preview" element={<CouncilorView />} />
+        <Route path="/admin/gov-dashboard" element={<CouncilorView />} />
+        <Route path="/pwa/verify" element={<VerificationPage />} />
+        <Route path="/pwa/issue" element={<DoctorPortalDemo />} />
       </Routes>
     );
   }

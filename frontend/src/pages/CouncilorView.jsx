@@ -1,9 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { usePWA, PWA_CONFIGS } from '../hooks/usePWA';
 
 /**
  * Councilor View - Government Preview Dashboard
  * Public Health Dashboard, Economic Impact, Governance Branding, ESG Stats
+ *
+ * OPTIMIZED FOR: iPhone 8 Plus (5.5-inch, 16:9 display)
+ * - Touch targets: Minimum 48px for thumb-tapping
+ * - Dark mode: High-contrast toggle for professional demos
+ * - PWA: Offline caching enabled via service worker
  */
 
 // Sarawak district data for heatmap
@@ -42,13 +48,38 @@ const ESG_METRICS = {
 };
 
 export default function CouncilorView() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [districts, setDistricts] = useState(DISTRICTS);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [fraudSaved, setFraudSaved] = useState(2300000000); // RM 2.3B baseline
   const [mcsProcessed, setMcsProcessed] = useState(847000);
   const [animatedFraud, setAnimatedFraud] = useState(0);
   const [hoveredDistrict, setHoveredDistrict] = useState(null);
+  const [isDarkMode, setIsDarkMode] = useState(true); // Default dark for high-tech look
+  const [isHighContrast, setIsHighContrast] = useState(false);
   const counterRef = useRef(null);
+
+  // Check if we're on the PWA route (for home screen icon)
+  const isPWARoute = location.pathname === '/admin/gov-dashboard' || location.pathname.startsWith('/admin/gov-dashboard');
+
+  // Demo sample transaction hash for verification demo
+  const DEMO_TX_HASH = '0x7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b';
+
+  // PWA: Only set manifest when on /pwa/gov route
+  usePWA(isPWARoute ? PWA_CONFIGS.gov : null);
+
+  // Theme classes for dark/light mode
+  const theme = {
+    bg: isDarkMode ? 'bg-[#030712]' : 'bg-gray-100',
+    cardBg: isDarkMode ? 'bg-slate-900/50' : 'bg-white',
+    headerBg: isDarkMode ? 'bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900' : 'bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800',
+    text: isDarkMode ? 'text-white' : 'text-gray-900',
+    textMuted: isDarkMode ? 'text-slate-400' : 'text-gray-600',
+    border: isDarkMode ? 'border-slate-700/50' : 'border-gray-200',
+    accent: isHighContrast ? 'text-yellow-400' : 'text-emerald-400',
+    accentBg: isHighContrast ? 'bg-yellow-500/20' : 'bg-emerald-500/20',
+  };
 
   // Animate fraud counter on load
   useEffect(() => {
@@ -117,154 +148,209 @@ export default function CouncilorView() {
   };
 
   return (
-    <div className="min-h-screen bg-[#030712]">
-      {/* Header with Governance Branding */}
-      <header className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-slate-700/50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+    <div className={`min-h-screen ${theme.bg} transition-colors duration-300`}>
+      {/* Header with Governance Branding - Mobile Optimized */}
+      <header className={`${theme.headerBg} border-b ${theme.border} sticky top-0 z-50`}>
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            {/* Logo Strip */}
-            <div className="flex items-center gap-6">
-              {/* Sarawak Digital Logo */}
-              <div className="flex items-center gap-3 pr-6 border-r border-slate-700">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center">
-                  <span className="text-2xl font-black text-white">SD</span>
+            {/* Logo Strip - Responsive */}
+            <div className="flex items-center gap-2 sm:gap-6 overflow-x-auto">
+              {/* Sarawak Digital Logo - Compact on mobile */}
+              <div className="flex items-center gap-2 sm:gap-3 pr-2 sm:pr-6 border-r border-slate-700 flex-shrink-0">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center">
+                  <span className="text-lg sm:text-2xl font-black text-white">SD</span>
                 </div>
-                <div>
+                <div className="hidden sm:block">
                   <p className="text-white font-bold text-sm">Sarawak</p>
                   <p className="text-cyan-400 text-xs font-semibold">DIGITAL</p>
                 </div>
               </div>
 
-              {/* Smart City Logo */}
-              <div className="flex items-center gap-3 pr-6 border-r border-slate-700">
-                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center">
-                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {/* Smart City Logo - Hidden on small mobile */}
+              <div className="hidden xs:flex items-center gap-2 sm:gap-3 pr-2 sm:pr-6 border-r border-slate-700 flex-shrink-0">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center">
+                  <svg className="w-5 h-5 sm:w-7 sm:h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
                 </div>
-                <div>
+                <div className="hidden sm:block">
                   <p className="text-white font-bold text-sm">Smart City</p>
                   <p className="text-emerald-400 text-xs font-semibold">INITIATIVE</p>
                 </div>
               </div>
 
               {/* MedChain Logo */}
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl flex items-center justify-center">
-                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl flex items-center justify-center">
+                  <svg className="w-5 h-5 sm:w-7 sm:h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                 </div>
-                <div>
+                <div className="hidden sm:block">
                   <p className="text-white font-bold text-sm">Sarawak</p>
                   <p className="text-orange-400 text-xs font-semibold">MEDCHAIN</p>
                 </div>
               </div>
             </div>
 
-            {/* Header Right */}
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="text-slate-400 text-xs">Government Preview</p>
-                <p className="text-white font-bold">Councilor Dashboard</p>
-              </div>
-              <div className="w-px h-10 bg-slate-700"></div>
-              <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-lg">
-                <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
-                <span className="text-emerald-400 font-bold text-sm">LIVE DATA</span>
+            {/* Header Right - Dark Mode Toggle & Live Status */}
+            <div className="flex items-center gap-2 sm:gap-4">
+              {/* Dark Mode Toggle - Touch-friendly 48px minimum */}
+              <button
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-xl bg-slate-800/50 border border-slate-700 hover:bg-slate-700 active:scale-95 transition-all touch-manipulation"
+                aria-label="Toggle dark mode"
+              >
+                {isDarkMode ? (
+                  <svg className="w-6 h-6 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6 text-slate-300" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                  </svg>
+                )}
+              </button>
+
+              {/* High Contrast Toggle */}
+              <button
+                onClick={() => setIsHighContrast(!isHighContrast)}
+                className={`w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-xl border hover:bg-slate-700 active:scale-95 transition-all touch-manipulation ${
+                  isHighContrast ? 'bg-yellow-500/20 border-yellow-500/50' : 'bg-slate-800/50 border-slate-700'
+                }`}
+                aria-label="Toggle high contrast"
+              >
+                <svg className={`w-6 h-6 ${isHighContrast ? 'text-yellow-400' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              </button>
+
+              <div className="hidden sm:block w-px h-10 bg-slate-700"></div>
+
+              {/* Live Status Badge */}
+              <div className={`flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 ${theme.accentBg} border border-emerald-500/30 rounded-xl`}>
+                <span className={`w-2 h-2 ${theme.accent.replace('text-', 'bg-')} rounded-full animate-pulse`}></span>
+                <span className={`${theme.accent} font-bold text-xs sm:text-sm`}>LIVE</span>
               </div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      {/* Main Content - Mobile Optimized with padding for iPhone 8 Plus */}
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
         {/* Page Title */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-black text-white mb-2">
+        <div className="mb-4 sm:mb-8 text-center sm:text-left">
+          <h1 className={`text-xl sm:text-3xl font-black ${theme.text} mb-2`}>
             Public Health Intelligence Dashboard
           </h1>
-          <p className="text-slate-400">
-            Real-time anonymized health data across Sarawak districts - Powered by MedChain blockchain technology
+          <p className={`${theme.textMuted} text-sm sm:text-base`}>
+            Real-time anonymized health data across Sarawak districts
           </p>
         </div>
 
-        {/* Economic Impact Hero Section */}
-        <div className="mb-8">
-          <div className="relative overflow-hidden bg-gradient-to-r from-emerald-900/50 via-emerald-800/30 to-cyan-900/50 rounded-3xl border border-emerald-500/30">
+        {/* 100% Integrity Badge - WEALTH 2026 DEMO: First visible element on iPhone 8 Plus */}
+        <div className="flex justify-center mb-4 sm:mb-6 hero-badge-priority">
+          <div className={`pass-rate-badge inline-flex items-center gap-3 px-5 py-3 sm:px-6 sm:py-4 rounded-2xl ${
+            isHighContrast ? 'bg-yellow-500/20 border-2 border-yellow-400' : 'bg-emerald-500/20 border border-emerald-500/50'
+          }`}>
+            <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full ${
+              isHighContrast ? 'bg-yellow-500' : 'bg-emerald-500'
+            } flex items-center justify-center`}>
+              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <p className={`text-2xl sm:text-3xl font-black ${isHighContrast ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                100%
+              </p>
+              <p className={`text-xs sm:text-sm font-bold ${theme.textMuted}`}>INTEGRITY</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Economic Impact Hero Section - Mobile Centered */}
+        <div className="mb-4 sm:mb-8">
+          <div className={`relative overflow-hidden rounded-2xl sm:rounded-3xl border ${
+            isHighContrast
+              ? 'bg-gradient-to-r from-yellow-900/50 via-amber-800/30 to-orange-900/50 border-yellow-500/30'
+              : 'bg-gradient-to-r from-emerald-900/50 via-emerald-800/30 to-cyan-900/50 border-emerald-500/30'
+          }`}>
             {/* Animated background */}
             <div className="absolute inset-0 opacity-30">
               <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-emerald-500/20 via-transparent to-transparent"></div>
               <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-cyan-500/20 via-transparent to-transparent"></div>
             </div>
 
-            <div className="relative p-8">
-              <div className="grid grid-cols-3 gap-8">
-                {/* Fraud Saved Counter */}
-                <div className="col-span-2">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-14 h-14 bg-emerald-500/20 rounded-2xl flex items-center justify-center">
-                      <span className="text-3xl">💰</span>
+            <div className="relative p-4 sm:p-8">
+              {/* Mobile: Stack vertically, Desktop: Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
+                {/* Fraud Saved Counter - Centered on mobile */}
+                <div className="lg:col-span-2 text-center lg:text-left">
+                  <div className="flex items-center justify-center lg:justify-start gap-3 mb-3 sm:mb-4">
+                    <div className={`w-12 h-12 sm:w-14 sm:h-14 ${isHighContrast ? 'bg-yellow-500/20' : 'bg-emerald-500/20'} rounded-2xl flex items-center justify-center`}>
+                      <span className="text-2xl sm:text-3xl">💰</span>
                     </div>
                     <div>
-                      <p className="text-emerald-300 text-sm font-semibold uppercase tracking-wider">Economic Impact</p>
-                      <p className="text-slate-400 text-sm">Fraud Prevention Savings for Sarawak Businesses</p>
+                      <p className={`${isHighContrast ? 'text-yellow-300' : 'text-emerald-300'} text-xs sm:text-sm font-semibold uppercase tracking-wider`}>Economic Impact</p>
+                      <p className={`${theme.textMuted} text-xs sm:text-sm`}>Fraud Prevention Savings</p>
                     </div>
                   </div>
 
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-emerald-400 text-2xl font-bold">RM</span>
+                  {/* RM 2.3B Counter - Scaled and centered for iPhone 8 Plus */}
+                  <div className="flex items-baseline justify-center lg:justify-start gap-2 sm:gap-3">
+                    <span className={`${isHighContrast ? 'text-yellow-400' : 'text-emerald-400'} text-lg sm:text-2xl font-bold`}>RM</span>
                     <span
                       ref={counterRef}
-                      className="text-6xl font-black text-white tabular-nums"
+                      className={`text-4xl sm:text-5xl lg:text-6xl font-black ${theme.text} tabular-nums`}
                       style={{ fontFamily: 'monospace' }}
                     >
                       {animatedFraud.toLocaleString()}
                     </span>
                   </div>
 
-                  <div className="mt-4 flex items-center gap-6">
+                  <div className="mt-3 sm:mt-4 flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-6">
                     <div className="flex items-center gap-2">
-                      <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className={`w-4 h-4 sm:w-5 sm:h-5 ${isHighContrast ? 'text-yellow-400' : 'text-emerald-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                       </svg>
-                      <span className="text-emerald-400 font-bold">+RM 5,000</span>
-                      <span className="text-slate-400 text-sm">every 5 seconds</span>
+                      <span className={`${isHighContrast ? 'text-yellow-400' : 'text-emerald-400'} font-bold text-sm`}>+RM 5,000</span>
+                      <span className={`${theme.textMuted} text-xs`}>/ 5 sec</span>
                     </div>
-                    <div className="h-4 w-px bg-slate-700"></div>
-                    <div className="text-slate-400 text-sm">
-                      <span className="text-white font-bold">{mcsProcessed.toLocaleString()}</span> MCs verified & fraud-proof
+                    <div className="hidden sm:block h-4 w-px bg-slate-700"></div>
+                    <div className={`${theme.textMuted} text-xs sm:text-sm`}>
+                      <span className={`${theme.text} font-bold`}>{mcsProcessed.toLocaleString()}</span> MCs verified
                     </div>
                   </div>
                 </div>
 
-                {/* Impact Breakdown */}
-                <div className="bg-slate-900/50 rounded-2xl p-5 border border-slate-700/50">
-                  <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-4">Impact Breakdown</p>
-                  <div className="space-y-4">
+                {/* Impact Breakdown - Stacked on mobile */}
+                <div className={`${theme.cardBg} rounded-2xl p-4 sm:p-5 border ${theme.border}`}>
+                  <p className={`${theme.textMuted} text-xs font-semibold uppercase tracking-wider mb-3 sm:mb-4`}>Impact Breakdown</p>
+                  <div className="space-y-3 sm:space-y-4">
                     <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-slate-400">Fake MC Fraud Blocked</span>
-                        <span className="text-white font-bold">RM 1.8B</span>
+                      <div className="flex justify-between text-xs sm:text-sm mb-1">
+                        <span className={theme.textMuted}>Fake MC Fraud Blocked</span>
+                        <span className={`${theme.text} font-bold`}>RM 1.8B</span>
                       </div>
                       <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-red-500 to-red-400 rounded-full" style={{ width: '78%' }}></div>
                       </div>
                     </div>
                     <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-slate-400">Admin Cost Reduction</span>
-                        <span className="text-white font-bold">RM 350M</span>
+                      <div className="flex justify-between text-xs sm:text-sm mb-1">
+                        <span className={theme.textMuted}>Admin Cost Reduction</span>
+                        <span className={`${theme.text} font-bold`}>RM 350M</span>
                       </div>
                       <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full" style={{ width: '15%' }}></div>
                       </div>
                     </div>
                     <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-slate-400">Healthcare Efficiency</span>
-                        <span className="text-white font-bold">RM 150M</span>
+                      <div className="flex justify-between text-xs sm:text-sm mb-1">
+                        <span className={theme.textMuted}>Healthcare Efficiency</span>
+                        <span className={`${theme.text} font-bold`}>RM 150M</span>
                       </div>
                       <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full" style={{ width: '7%' }}></div>
@@ -277,11 +363,33 @@ export default function CouncilorView() {
           </div>
         </div>
 
-        {/* Main Grid */}
-        <div className="grid grid-cols-3 gap-6 mb-8">
+        {/* Touch-Friendly Action Buttons for Demo - 48px minimum height */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <button
+            onClick={() => navigate(`/verify/${DEMO_TX_HASH}`)}
+            className="flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 active:scale-[0.98] text-white font-bold text-sm sm:text-base rounded-xl sm:rounded-2xl shadow-lg transition-all touch-manipulation min-h-[56px] sm:min-h-[64px] instant-touch"
+          >
+            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Verify MC</span>
+          </button>
+          <button
+            onClick={() => navigate('/demo')}
+            className="flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 active:scale-[0.98] text-white font-bold text-sm sm:text-base rounded-xl sm:rounded-2xl shadow-lg transition-all touch-manipulation min-h-[56px] sm:min-h-[64px] instant-touch"
+          >
+            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span>Issue MC</span>
+          </button>
+        </div>
+
+        {/* Main Grid - Responsive */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-8">
           {/* Health Heatmap */}
-          <div className="col-span-2 bg-slate-900/50 rounded-2xl border border-slate-700/50 overflow-hidden">
-            <div className="p-5 border-b border-slate-700/50">
+          <div className={`lg:col-span-2 ${theme.cardBg} rounded-2xl border ${theme.border} overflow-hidden`}>
+            <div className="p-3 sm:p-5 border-b border-slate-700/50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
@@ -446,19 +554,19 @@ export default function CouncilorView() {
           </div>
         </div>
 
-        {/* ESG / Green Stats Section */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-5">
+        {/* ESG / Green Stats Section - Mobile Optimized */}
+        <div className="mb-4 sm:mb-8">
+          <div className="flex items-center gap-3 mb-4 sm:mb-5">
             <div className="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center">
               <span className="text-2xl">🌱</span>
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white">Environmental Impact (ESG)</h2>
-              <p className="text-slate-400 text-sm">Sustainability metrics from 100% digital medical certificates</p>
+              <h2 className={`text-lg sm:text-xl font-bold ${theme.text}`}>Environmental Impact (ESG)</h2>
+              <p className={`${theme.textMuted} text-xs sm:text-sm`}>100% digital medical certificates</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {/* Paper Saved */}
             <div className="relative overflow-hidden bg-gradient-to-br from-green-900/50 to-emerald-900/30 rounded-2xl border border-green-500/30 p-5">
               <div className="absolute top-0 right-0 text-6xl opacity-10">📄</div>
@@ -529,27 +637,27 @@ export default function CouncilorView() {
           </div>
         </div>
 
-        {/* Quick Stats Footer */}
-        <div className="grid grid-cols-5 gap-4">
-          <div className="bg-slate-900/50 rounded-xl border border-slate-700/50 p-4 text-center">
-            <p className="text-slate-400 text-xs mb-1">Hospitals Live</p>
-            <p className="text-2xl font-black text-white">27</p>
+        {/* Quick Stats Footer - Mobile Scrollable */}
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-4">
+          <div className={`${theme.cardBg} rounded-xl border ${theme.border} p-3 sm:p-4 text-center`}>
+            <p className={`${theme.textMuted} text-[10px] sm:text-xs mb-1`}>Hospitals</p>
+            <p className={`text-lg sm:text-2xl font-black ${theme.text}`}>27</p>
           </div>
-          <div className="bg-slate-900/50 rounded-xl border border-slate-700/50 p-4 text-center">
-            <p className="text-slate-400 text-xs mb-1">Clinics Live</p>
-            <p className="text-2xl font-black text-white">142</p>
+          <div className={`${theme.cardBg} rounded-xl border ${theme.border} p-3 sm:p-4 text-center`}>
+            <p className={`${theme.textMuted} text-[10px] sm:text-xs mb-1`}>Clinics</p>
+            <p className={`text-lg sm:text-2xl font-black ${theme.text}`}>142</p>
           </div>
-          <div className="bg-slate-900/50 rounded-xl border border-slate-700/50 p-4 text-center">
-            <p className="text-slate-400 text-xs mb-1">Doctors Verified</p>
-            <p className="text-2xl font-black text-white">1,247</p>
+          <div className={`${theme.cardBg} rounded-xl border ${theme.border} p-3 sm:p-4 text-center`}>
+            <p className={`${theme.textMuted} text-[10px] sm:text-xs mb-1`}>Doctors</p>
+            <p className={`text-lg sm:text-2xl font-black ${theme.text}`}>1,247</p>
           </div>
-          <div className="bg-slate-900/50 rounded-xl border border-slate-700/50 p-4 text-center">
-            <p className="text-slate-400 text-xs mb-1">Patients Protected</p>
-            <p className="text-2xl font-black text-white">89,432</p>
+          <div className={`${theme.cardBg} rounded-xl border ${theme.border} p-3 sm:p-4 text-center hidden sm:block`}>
+            <p className={`${theme.textMuted} text-[10px] sm:text-xs mb-1`}>Patients</p>
+            <p className={`text-lg sm:text-2xl font-black ${theme.text}`}>89,432</p>
           </div>
-          <div className="bg-slate-900/50 rounded-xl border border-slate-700/50 p-4 text-center">
-            <p className="text-slate-400 text-xs mb-1">Blockchain Uptime</p>
-            <p className="text-2xl font-black text-emerald-400">99.99%</p>
+          <div className={`${theme.cardBg} rounded-xl border ${theme.border} p-3 sm:p-4 text-center hidden sm:block`}>
+            <p className={`${theme.textMuted} text-[10px] sm:text-xs mb-1`}>Uptime</p>
+            <p className={`text-lg sm:text-2xl font-black ${theme.accent}`}>99.99%</p>
           </div>
         </div>
 

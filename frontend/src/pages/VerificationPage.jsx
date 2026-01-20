@@ -1,19 +1,28 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
+import { usePWA, PWA_CONFIGS } from '../hooks/usePWA';
 
 export default function VerificationPage() {
   const { txHash } = useParams();
+  const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [verified, setVerified] = useState(false);
   const [mcData, setMcData] = useState(null);
   const cardRef = useRef(null);
 
+  // Check if we're on the PWA route
+  const isPWARoute = location.pathname === '/pwa/verify';
+
+  // PWA: Only set manifest when on /pwa/verify route
+  usePWA(isPWARoute ? PWA_CONFIGS.verify : null);
+
   useEffect(() => {
-    // Simulate blockchain verification
+    // WEALTH 2026 DEMO: Instant blockchain verification (sub-500ms for 4G)
     const verifyOnChain = async () => {
       setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Reduced to 80ms for instant feel on 4G while showing animation
+      await new Promise(resolve => setTimeout(resolve, 80));
 
       // Mock verification data (in production, this would query the blockchain)
       const mockData = {

@@ -1,0 +1,32 @@
+{
+  "name": "Issue MC",
+  "short_name": "Issue",
+  "description": "Issue Medical Certificates - Sarawak MedChain",
+  "start_url": "/pwa/issue",
+  "scope": "/pwa/issue",
+  "id": "medchain-issue-app",
+  "display": "standalone",
+  "background_color": "#030712",
+  "theme_color": "#10b981",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/issue-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/issue-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/issue-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

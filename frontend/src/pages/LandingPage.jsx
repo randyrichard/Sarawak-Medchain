@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PublicImpactCounter from '../components/PublicImpactCounter';
+import { usePWA, PWA_CONFIGS } from '../hooks/usePWA';
 
 // Facility types for dropdown
 const FACILITY_TYPES = [
@@ -513,6 +514,69 @@ export default function LandingPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showProvisioning, setShowProvisioning] = useState(false);
   const [provisioningData, setProvisioningData] = useState({ facilityName: '', blockchainRef: '' });
+
+  // LANDING PAGE: NO PWA - just a regular website
+  // This prevents iOS from hijacking the session
+  useEffect(() => {
+    // Check if we're running as a standalone PWA (installed app)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                         window.navigator.standalone === true || // iOS Safari
+                         document.referrer.includes('android-app://');
+
+    // Remove ANY manifest link on landing page
+    const manifests = document.querySelectorAll('link[rel="manifest"]');
+    manifests.forEach(m => m.remove());
+
+    // Remove apple-touch-icon to prevent PWA behavior
+    const appleIcons = document.querySelectorAll('link[rel="apple-touch-icon"]');
+    appleIcons.forEach(i => i.remove());
+
+    // Set page title
+    document.title = 'Sarawak MedChain';
+
+    // FORCE clear ALL service workers and caches ONLY if NOT in standalone mode
+    // This prevents the browser from "remembering" other PWAs when on landing page
+    if (!isStandalone) {
+      console.log('[LANDING] Not standalone - clearing all PWA state');
+
+      // Clear ALL service workers
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          registrations.forEach(registration => {
+            registration.unregister().then(() => {
+              console.log('[LANDING] Service worker unregistered:', registration.scope);
+            });
+          });
+        });
+
+        // Also clear the controller
+        if (navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+        }
+      }
+
+      // Clear ALL caches
+      if ('caches' in window) {
+        caches.keys().then(cacheNames => {
+          return Promise.all(
+            cacheNames.map(cacheName => {
+              console.log('[LANDING] Clearing cache:', cacheName);
+              return caches.delete(cacheName);
+            })
+          );
+        });
+      }
+
+      // Clear PWA-related localStorage
+      localStorage.removeItem('pwa-manifest');
+      localStorage.removeItem('pwa-gov');
+      localStorage.removeItem('pwa-verify');
+      localStorage.removeItem('pwa-issue');
+
+      // Force clear any installed PWA state
+      sessionStorage.clear();
+    }
+  }, []);
 
   const handleGetStarted = () => {
     setIsModalOpen(true);

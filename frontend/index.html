@@ -3,11 +3,118 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#030712" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="MedChain" />
+    <meta name="description" content="Sarawak MedChain - Blockchain Healthcare Platform for Government Demo" />
+
+    <!-- NO GLOBAL MANIFEST - Each page injects its own manifest dynamically -->
+    <!-- This prevents iOS Safari from caching the wrong manifest -->
+
+    <!-- NO GLOBAL APPLE TOUCH ICON - Each PWA sets its own icon -->
+
+    <!-- Splash Screens for iOS -->
+    <link rel="apple-touch-startup-image" href="/splash/splash-828x1792.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)" />
+
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+
+    <title>Sarawak MedChain</title>
+
+    <style>
+      /* Critical CSS for instant paint - prevents flash of unstyled content */
+      html, body {
+        margin: 0;
+        padding: 0;
+        background-color: #030712;
+        color: white;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        /* Safe area insets for iPhone X+ notch */
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      }
+      #root {
+        min-height: 100vh;
+        min-height: 100dvh; /* Dynamic viewport height for mobile */
+      }
+      /* Touch action for better mobile scrolling */
+      * {
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- CONDITIONAL Service Worker - Only for PWA routes, NOT landing page -->
+    <script>
+      (function() {
+        // PWA SWITCH LOGIC: Determine which app context we're in
+        const path = window.location.pathname;
+        const isLandingPage = path === '/' || path === '';
+        const isGovDashboard = path.includes('/admin/gov-dashboard');
+        const isVerifyPWA = path.includes('/pwa/verify');
+        const isIssuePWA = path.includes('/pwa/issue');
+        const isPWARoute = isGovDashboard || isVerifyPWA || isIssuePWA;
+
+        // LANDING PAGE: Clear all PWA state and DO NOT register service worker
+        if (isLandingPage) {
+          console.log('[LANDING] Clearing all PWA state...');
+
+          // Unregister ALL service workers
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+              for (var i = 0; i < registrations.length; i++) {
+                registrations[i].unregister();
+                console.log('[LANDING] Unregistered SW:', registrations[i].scope);
+              }
+            });
+          }
+
+          // Clear all caches
+          if ('caches' in window) {
+            caches.keys().then(function(names) {
+              for (var i = 0; i < names.length; i++) {
+                caches.delete(names[i]);
+              }
+            });
+          }
+
+          // Remove any manifest link that might exist
+          var manifests = document.querySelectorAll('link[rel="manifest"]');
+          for (var i = 0; i < manifests.length; i++) {
+            manifests[i].remove();
+          }
+
+          return; // DO NOT register service worker on landing page
+        }
+
+        // PWA ROUTES: Register service worker
+        if (isPWARoute && 'serviceWorker' in navigator) {
+          window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/sw.js')
+              .then(function(registration) {
+                console.log('[PWA] Service Worker registered for:', path);
+              })
+              .catch(function(error) {
+                console.log('[PWA] SW registration failed:', error);
+              });
+          });
+        }
+
+        // Handle online/offline status
+        window.addEventListener('online', function() {
+          document.body.classList.remove('offline');
+        });
+        window.addEventListener('offline', function() {
+          document.body.classList.add('offline');
+        });
+      })();
+    </script>
   </body>
 </html>
