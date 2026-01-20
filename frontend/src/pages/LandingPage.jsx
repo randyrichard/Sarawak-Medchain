@@ -961,6 +961,140 @@ export default function LandingPage() {
 
           </section>
 
+          {/* ========== NETWORK READINESS LIST - py-16 ========== */}
+          <section className="py-16">
+            <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/30 rounded-3xl border border-emerald-500/20 p-8 relative overflow-hidden">
+              {/* Background grid pattern */}
+              <div className="absolute inset-0 opacity-5">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: `linear-gradient(rgba(16, 185, 129, 0.1) 1px, transparent 1px),
+                                    linear-gradient(90deg, rgba(16, 185, 129, 0.1) 1px, transparent 1px)`,
+                  backgroundSize: '20px 20px',
+                }} />
+              </div>
+
+              <div className="relative">
+                {/* Header with "Wow" stat */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
+                      <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-white">Network Readiness</h2>
+                      <p className="text-emerald-400 text-sm">Hospital blockchain nodes across Sarawak</p>
+                    </div>
+                  </div>
+
+                  {/* The "Wow" Stat - 24/24 Validated */}
+                  <div className="flex items-center gap-3 px-5 py-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+                    <div className="flex items-center gap-2">
+                      <span className="relative flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                      </span>
+                      <span className="text-emerald-400 text-xs font-bold uppercase tracking-wider">Live</span>
+                    </div>
+                    <div className="w-px h-6 bg-emerald-500/30"></div>
+                    <div>
+                      <p className="text-2xl font-black text-white">24/24</p>
+                      <p className="text-emerald-400 text-xs font-semibold">Nodes Validated</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Scrollable Hospital Node List - iPhone 8 Plus thumb-optimized */}
+                <div
+                  className="overflow-y-auto overscroll-contain"
+                  style={{
+                    maxHeight: '320px',
+                    WebkitOverflowScrolling: 'touch', // iOS momentum scrolling
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: 'rgba(16, 185, 129, 0.3) transparent'
+                  }}
+                >
+                  <div className="space-y-2 pr-2">
+                    {/* Hospital Node Items */}
+                    {[
+                      { name: 'Sarawak General Hospital', location: 'Kuching', type: 'Government' },
+                      { name: 'Miri General Hospital', location: 'Miri', type: 'Government' },
+                      { name: 'Sibu Hospital', location: 'Sibu', type: 'Government' },
+                      { name: 'Bintulu Hospital', location: 'Bintulu', type: 'Government' },
+                      { name: 'KPJ Kuching Specialist', location: 'Kuching', type: 'Private' },
+                      { name: 'Normah Medical Specialist', location: 'Kuching', type: 'Private' },
+                      { name: 'Timberland Medical Centre', location: 'Kuching', type: 'Private' },
+                      { name: 'Borneo Medical Centre', location: 'Kuching', type: 'Private' },
+                      { name: 'Columbia Asia Miri', location: 'Miri', type: 'Private' },
+                      { name: 'KPJ Miri Specialist', location: 'Miri', type: 'Private' },
+                      { name: 'Rejang Medical Centre', location: 'Sibu', type: 'Private' },
+                      { name: 'Selangau District Hospital', location: 'Selangau', type: 'Government' },
+                      { name: 'Kapit Hospital', location: 'Kapit', type: 'Government' },
+                      { name: 'Sarikei Hospital', location: 'Sarikei', type: 'Government' },
+                      { name: 'Mukah Hospital', location: 'Mukah', type: 'Government' },
+                      { name: 'Limbang Hospital', location: 'Limbang', type: 'Government' },
+                      { name: 'Lawas Hospital', location: 'Lawas', type: 'Government' },
+                      { name: 'Sri Aman Hospital', location: 'Sri Aman', type: 'Government' },
+                      { name: 'Betong Hospital', location: 'Betong', type: 'Government' },
+                      { name: 'Saratok Hospital', location: 'Saratok', type: 'Government' },
+                      { name: 'Lundu Hospital', location: 'Lundu', type: 'Government' },
+                      { name: 'Bau Hospital', location: 'Bau', type: 'Government' },
+                      { name: 'Serian Hospital', location: 'Serian', type: 'Government' },
+                      { name: 'Marudi Hospital', location: 'Marudi', type: 'Government' },
+                    ].map((hospital, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-4 bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 rounded-xl transition-all active:scale-[0.98]"
+                      >
+                        {/* Hospital Info */}
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-white font-semibold text-sm truncate">{hospital.name}</p>
+                            <p className="text-slate-500 text-xs">{hospital.location} • {hospital.type}</p>
+                          </div>
+                        </div>
+
+                        {/* Status Indicators */}
+                        <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+                          {/* AES-256 Badge */}
+                          <span className="hidden sm:flex items-center gap-1 px-2 py-1 bg-slate-800/80 rounded text-[10px] font-bold text-slate-400">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            AES-256
+                          </span>
+
+                          {/* Ready to Sync Status */}
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-full">
+                            <span className="relative flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </span>
+                            <span className="text-emerald-400 text-[10px] font-bold uppercase tracking-wider">Ready</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Scroll hint for iPhone */}
+                <div className="flex items-center justify-center gap-2 mt-4 text-slate-500 text-xs">
+                  <svg className="w-4 h-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                  <span>Swipe to view all 24 nodes</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* ========== FRAUD TRACKER SECTION - py-16 ========== */}
           <section className="py-16">
             <div className="bg-gradient-to-br from-red-950/50 via-slate-900 to-red-950/30 rounded-3xl border border-red-500/20 p-10 relative overflow-hidden">
