@@ -591,6 +591,32 @@ export default function LandingPage() {
     navigate('/mvp');
   };
 
+  // Handle pricing plan selection - uses window.location for PWA scope bypass
+  const handlePlanSelect = (planType) => {
+    // Store selected plan in localStorage for agreement/payment flow to pick up
+    const planData = {
+      type: planType,
+      name: planType === 'clinic' ? 'Clinic Plan' : 'Hospital Plan',
+      monthlyFee: planType === 'clinic' ? 2000 : 10000,
+      perMcFee: 1,
+      features: planType === 'clinic'
+        ? ['Digital Records', 'Basic Dashboard', '5 Doctor Accounts', 'Email Support']
+        : ['Full ERP Integration', 'Executive Dashboard', 'Unlimited Doctors', '24/7 Priority Support', 'Custom API Access'],
+      selectedAt: new Date().toISOString(),
+    };
+    localStorage.setItem('medchain_selected_plan', JSON.stringify(planData));
+
+    // Use window.location.href to bypass PWA scope restrictions on iOS
+    // This forces a full page navigation outside the current manifest scope
+    // Go through agreement page first which then flows to payment
+    window.location.href = '/agreement?plan=' + planType;
+  };
+
+  // Handle contact sales for government plan
+  const handleContactSales = () => {
+    window.location.href = 'mailto:enterprise@medchain.sarawak.gov.my?subject=Government%20Plan%20Inquiry';
+  };
+
   return (
     <div className="min-h-screen bg-[#030712]" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
       {/* Full-screen Provisioning Overlay */}
@@ -888,7 +914,10 @@ export default function LandingPage() {
                   </div>
                 </div>
 
-                <button className="w-full py-4 mt-8 bg-white/5 border border-white/10 text-white font-bold rounded-lg hover:bg-white/10 transition-all">
+                <button
+                  onClick={() => handlePlanSelect('clinic')}
+                  className="w-full py-4 mt-8 bg-white/5 border border-white/10 text-white font-bold rounded-lg hover:bg-white/10 transition-all"
+                >
                   Get Started
                 </button>
               </div>
@@ -941,7 +970,10 @@ export default function LandingPage() {
                     </div>
                   </div>
 
-                  <button className="w-full py-4 mt-8 bg-amber-500 text-slate-900 font-black rounded-lg hover:bg-amber-400 transition-all">
+                  <button
+                    onClick={() => handlePlanSelect('hospital')}
+                    className="w-full py-4 mt-8 bg-amber-500 text-slate-900 font-black rounded-lg hover:bg-amber-400 transition-all"
+                  >
                     Get Started
                   </button>
                 </div>
@@ -983,7 +1015,10 @@ export default function LandingPage() {
                   </div>
                 </div>
 
-                <button className="w-full py-4 mt-8 bg-white/5 border border-white/10 text-white font-bold rounded-lg hover:bg-white/10 transition-all">
+                <button
+                  onClick={handleContactSales}
+                  className="w-full py-4 mt-8 bg-white/5 border border-white/10 text-white font-bold rounded-lg hover:bg-white/10 transition-all"
+                >
                   Contact Sales
                 </button>
               </div>
