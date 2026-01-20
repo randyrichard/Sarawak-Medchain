@@ -606,6 +606,7 @@ export default function LandingPage() {
   const [showProvisioning, setShowProvisioning] = useState(false);
   const [provisioningData, setProvisioningData] = useState({ facilityName: '', blockchainRef: '' });
   const [securityLoading, setSecurityLoading] = useState(null); // 'clinic' | 'hospital' | null
+  const [integrityFlash, setIntegrityFlash] = useState(false); // Flash 100% Integrity badge on click
 
   // LANDING PAGE: NO PWA - just a regular website
   // This prevents iOS from hijacking the session
@@ -691,6 +692,10 @@ export default function LandingPage() {
     // iOS AUDIO FIX: Unlock AudioContext during this user gesture
     unlockAudioContext();
 
+    // Flash the 100% Integrity badge to remind user they're using certified system
+    setIntegrityFlash(true);
+    setTimeout(() => setIntegrityFlash(false), 800);
+
     // Show security loading spinner (0.5s professional feel)
     setSecurityLoading(planType);
 
@@ -775,6 +780,42 @@ export default function LandingPage() {
         }
         .haptic-btn:active {
           transform: scale(0.95);
+        }
+
+        /* Gold glow button for Hospital Plan - elite premium feel */
+        .gold-btn-glow {
+          box-shadow: 0 0 20px rgba(251, 191, 36, 0.4), 0 0 40px rgba(251, 191, 36, 0.2), 0 4px 15px rgba(0, 0, 0, 0.3);
+          transition: all 0.3s ease;
+        }
+        .gold-btn-glow:hover {
+          box-shadow: 0 0 30px rgba(251, 191, 36, 0.6), 0 0 60px rgba(251, 191, 36, 0.3), 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Integrity badge flash animation */
+        @keyframes integrity-flash {
+          0%, 100% {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+            transform: scale(1);
+          }
+          25% {
+            background-color: rgba(16, 185, 129, 0.3);
+            border-color: rgba(16, 185, 129, 0.5);
+            transform: scale(1.05);
+          }
+          50% {
+            background-color: rgba(16, 185, 129, 0.2);
+            border-color: rgba(16, 185, 129, 0.4);
+            transform: scale(1.02);
+          }
+          75% {
+            background-color: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.3);
+            transform: scale(1.01);
+          }
+        }
+        .integrity-flash {
+          animation: integrity-flash 0.8s ease-out;
         }
 
         /* Fade in up animation */
@@ -869,6 +910,30 @@ export default function LandingPage() {
                   View Pricing
                 </a>
               </div>
+
+              {/* Trust Badges - Gray-scale compliance icons */}
+              <div className="flex justify-center items-center gap-6 mt-8">
+                <div className="flex items-center gap-2 text-slate-500">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+                  </svg>
+                  <span className="text-xs font-medium">Bank Negara Compliant</span>
+                </div>
+                <div className="w-px h-4 bg-slate-700"></div>
+                <div className="flex items-center gap-2 text-slate-500">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  <span className="text-xs font-medium">AES-256 Encrypted</span>
+                </div>
+                <div className="w-px h-4 bg-slate-700"></div>
+                <div className="flex items-center gap-2 text-slate-500">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  <span className="text-xs font-medium">MDEC Verified</span>
+                </div>
+              </div>
             </div>
 
             {/* Stats */}
@@ -882,7 +947,7 @@ export default function LandingPage() {
                   <p className="text-4xl font-extrabold text-white">180+</p>
                   <p className="text-slate-400 text-sm mt-2">Clinics</p>
                 </div>
-                <div className="text-center px-6 py-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all">
+                <div className={`text-center px-6 py-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all ${integrityFlash ? 'integrity-flash' : ''}`}>
                   <p className="text-4xl font-extrabold text-emerald-400">100%</p>
                   <p className="text-slate-400 text-sm mt-2">Integrity</p>
                 </div>
@@ -1117,7 +1182,7 @@ export default function LandingPage() {
                   <button
                     onClick={() => handlePlanSelect('hospital')}
                     disabled={securityLoading !== null}
-                    className="haptic-btn w-full py-4 mt-8 bg-amber-500 text-slate-900 font-black rounded-lg hover:bg-amber-400 transition-all disabled:opacity-70 flex items-center justify-center gap-2"
+                    className="haptic-btn gold-btn-glow w-full py-4 mt-8 bg-amber-500 text-slate-900 font-black rounded-lg hover:bg-amber-400 transition-all disabled:opacity-70 flex items-center justify-center gap-2"
                   >
                     {securityLoading === 'hospital' ? (
                       <>
