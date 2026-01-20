@@ -60,15 +60,34 @@ const DIVISIONS = {
   },
 };
 
+// Fraud hotspot positions for red heatmap overlay
+const FRAUD_HOTSPOTS = [
+  { x: 20, y: 75, r: 12, intensity: 0.8 },  // Kuching main
+  { x: 15, y: 80, r: 8, intensity: 0.6 },   // Kuching secondary
+  { x: 25, y: 70, r: 6, intensity: 0.5 },   // Kuching tertiary
+  { x: 75, y: 25, r: 10, intensity: 0.7 },  // Miri main
+  { x: 80, y: 20, r: 7, intensity: 0.5 },   // Miri secondary
+  { x: 45, y: 55, r: 8, intensity: 0.6 },   // Sibu
+  { x: 60, y: 40, r: 6, intensity: 0.5 },   // Bintulu
+];
+
+// Haptic feedback for iPhone
+const triggerHaptic = () => {
+  if ('vibrate' in navigator) {
+    navigator.vibrate(50); // 50ms vibration
+  }
+  // iOS doesn't support vibrate API, but the visual feedback helps
+};
+
 export default function SarawakReadinessMap() {
   const [selectedDivision, setSelectedDivision] = useState(null);
   const [isZoomed, setIsZoomed] = useState(false);
   const [flyInComplete, setFlyInComplete] = useState(false);
   const [scanLineY, setScanLineY] = useState(0);
+  const [isProtected, setIsProtected] = useState(true); // Impact toggle state
 
   // Fly-in animation: Start zoomed out, then fly into Miri
   useEffect(() => {
-    // Start the fly-in after a brief delay
     const flyInTimer = setTimeout(() => {
       setSelectedDivision('miri');
       setIsZoomed(true);
@@ -78,13 +97,15 @@ export default function SarawakReadinessMap() {
     return () => clearTimeout(flyInTimer);
   }, []);
 
-  // Scanning line animation for security overlay
+  // Scanning line animation for security overlay (only when protected)
   useEffect(() => {
+    if (!isProtected) return;
+
     const scanInterval = setInterval(() => {
       setScanLineY(prev => (prev + 1) % 100);
     }, 50);
     return () => clearInterval(scanInterval);
-  }, []);
+  }, [isProtected]);
 
   const activeData = selectedDivision ? DIVISIONS[selectedDivision] : null;
 
@@ -98,7 +119,12 @@ export default function SarawakReadinessMap() {
     }
   };
 
-  // Calculate viewBox for zoom effect - Miri focused
+  const handleToggle = () => {
+    triggerHaptic();
+    setIsProtected(!isProtected);
+  };
+
+  // Calculate viewBox for zoom effect
   const getViewBox = () => {
     if (!isZoomed || !selectedDivision) {
       return '0 0 100 100';
@@ -110,73 +136,145 @@ export default function SarawakReadinessMap() {
   };
 
   return (
-    <div className="bg-gradient-to-br from-[#0a0f1a] via-[#0d1525] to-[#0a0f1a] rounded-3xl border border-blue-500/20 p-5 relative overflow-hidden">
-      {/* Security scanning grid overlay - AES-256-GCM visualization */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Static grid */}
-        <div className="absolute inset-0 opacity-[0.04]" style={{
-          backgroundImage: `
-            linear-gradient(rgba(59, 130, 246, 0.8) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(59, 130, 246, 0.8) 1px, transparent 1px)
-          `,
-          backgroundSize: '20px 20px',
-        }} />
+    <div className={`rounded-3xl p-5 relative overflow-hidden transition-all duration-500 ${
+      isProtected
+        ? 'bg-gradient-to-br from-[#0a0f1a] via-[#0d1525] to-[#0a0f1a] border border-blue-500/20'
+        : 'bg-gradient-to-br from-[#1a0a0a] via-[#1f0d0d] to-[#1a0a0a] border border-red-500/30'
+    }`}>
+      {/* Security scanning grid overlay - only when protected */}
+      {isProtected && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute inset-0 opacity-[0.04]" style={{
+            backgroundImage: `
+              linear-gradient(rgba(59, 130, 246, 0.8) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(59, 130, 246, 0.8) 1px, transparent 1px)
+            `,
+            backgroundSize: '20px 20px',
+          }} />
+          <div
+            className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-30"
+            style={{ top: `${scanLineY}%`, transition: 'top 0.05s linear' }}
+          />
+          <div
+            className="absolute left-0 right-0 h-8 bg-gradient-to-b from-cyan-400/5 to-transparent"
+            style={{ top: `${scanLineY}%`, transition: 'top 0.05s linear' }}
+          />
+        </div>
+      )}
 
-        {/* Scanning line effect */}
-        <div
-          className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-30"
-          style={{ top: `${scanLineY}%`, transition: 'top 0.05s linear' }}
-        />
-        <div
-          className="absolute left-0 right-0 h-8 bg-gradient-to-b from-cyan-400/5 to-transparent"
-          style={{ top: `${scanLineY}%`, transition: 'top 0.05s linear' }}
-        />
-      </div>
+      {/* Fraud danger overlay - only when NOT protected */}
+      {!isProtected && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute inset-0 opacity-[0.06]" style={{
+            backgroundImage: `
+              repeating-linear-gradient(
+                45deg,
+                rgba(239, 68, 68, 0.3) 0px,
+                rgba(239, 68, 68, 0.3) 2px,
+                transparent 2px,
+                transparent 8px
+              )
+            `,
+          }} />
+        </div>
+      )}
 
-      {/* MedChain branding accent */}
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-amber-500 to-blue-500 opacity-60"></div>
+      {/* Top accent bar */}
+      <div className={`absolute top-0 left-0 w-full h-1 transition-all duration-500 ${
+        isProtected
+          ? 'bg-gradient-to-r from-blue-500 via-amber-500 to-blue-500 opacity-60'
+          : 'bg-gradient-to-r from-red-600 via-red-500 to-red-600 opacity-80'
+      }`}></div>
 
       <div className="relative">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-4 mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-              </svg>
+        {/* Header with Impact Toggle */}
+        <div className="flex flex-col gap-3 mb-4">
+          {/* Title row */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg transition-all duration-500 ${
+                isProtected
+                  ? 'bg-gradient-to-br from-blue-500 to-blue-600 shadow-blue-500/20'
+                  : 'bg-gradient-to-br from-red-500 to-red-600 shadow-red-500/20'
+              }`}>
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {isProtected ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  )}
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white">Sarawak Health Infrastructure</h2>
+                <p className={`text-xs transition-colors duration-500 ${isProtected ? 'text-blue-400' : 'text-red-400'}`}>
+                  {isProtected ? 'AES-256-GCM Protected Network' : 'Unprotected - Fraud Vulnerable'}
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-white">Sarawak Health Infrastructure</h2>
-              <p className="text-blue-400 text-xs">AES-256-GCM Protected Network</p>
-            </div>
+
+            {/* Zoom out button */}
+            {isZoomed && (
+              <button
+                onClick={() => { setSelectedDivision(null); setIsZoomed(false); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-slate-400 hover:bg-white/10 transition-all"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
+                </svg>
+                Zoom Out
+              </button>
+            )}
           </div>
 
-          {/* Zoom indicator */}
-          {isZoomed && (
-            <button
-              onClick={() => { setSelectedDivision(null); setIsZoomed(false); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-slate-400 hover:bg-white/10 transition-all"
-            >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
-              </svg>
-              Zoom Out
-            </button>
-          )}
+          {/* Impact Toggle Switch */}
+          <div className="flex items-center justify-center">
+            <div className={`flex items-center gap-2 p-1 rounded-full transition-all duration-300 ${
+              isProtected ? 'bg-emerald-500/10 border border-emerald-500/30' : 'bg-red-500/10 border border-red-500/30'
+            }`}>
+              <button
+                onClick={handleToggle}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all duration-300 ${
+                  !isProtected
+                    ? 'bg-red-500 text-white shadow-lg shadow-red-500/30'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Fraud Impact
+              </button>
+              <button
+                onClick={handleToggle}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all duration-300 ${
+                  isProtected
+                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                MedChain Protected
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Map Container */}
-        <div className="relative bg-[#070b14] rounded-2xl border border-blue-500/10 overflow-hidden" style={{ minHeight: '340px' }}>
-          {/* SVG Map with fly-in animation */}
+        <div className={`relative rounded-2xl overflow-hidden transition-all duration-500 ${
+          isProtected ? 'bg-[#070b14] border border-blue-500/10' : 'bg-[#0f0505] border border-red-500/20'
+        }`} style={{ minHeight: '340px' }}>
+          {/* SVG Map */}
           <svg
             viewBox={getViewBox()}
             className="w-full h-auto transition-all duration-1000 ease-out"
             style={{ minHeight: '320px' }}
           >
-            {/* Definitions */}
             <defs>
               <radialGradient id="mapGlow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#1e3a5f" stopOpacity="0.4" />
+                <stop offset="0%" stopColor={isProtected ? "#1e3a5f" : "#5f1e1e"} stopOpacity="0.4" />
                 <stop offset="100%" stopColor="#070b14" stopOpacity="0" />
               </radialGradient>
               <filter id="glow">
@@ -186,28 +284,47 @@ export default function SarawakReadinessMap() {
                   <feMergeNode in="SourceGraphic"/>
                 </feMerge>
               </filter>
+              {/* Red heatmap gradient for fraud */}
+              <radialGradient id="fraudHeat">
+                <stop offset="0%" stopColor="#ef4444" stopOpacity="0.6" />
+                <stop offset="50%" stopColor="#ef4444" stopOpacity="0.3" />
+                <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
+              </radialGradient>
             </defs>
 
             {/* Ocean/Background */}
-            <rect x="0" y="0" width="100" height="100" fill="#070b14" />
+            <rect x="0" y="0" width="100" height="100" fill={isProtected ? "#070b14" : "#0a0505"} />
             <circle cx="50" cy="50" r="45" fill="url(#mapGlow)" />
 
             {/* Sarawak landmass */}
             <path
               d="M5 88 Q8 78 12 72 L18 68 Q28 62 35 58 L45 52 Q55 44 65 38 L75 28 Q85 20 94 16 L97 22 Q94 32 88 42 L82 52 Q76 60 70 65 L60 70 Q50 74 40 78 L28 82 Q18 86 10 88 L5 88 Z"
-              fill="#111827"
-              stroke="#1e3a5f"
+              fill={isProtected ? "#111827" : "#1a1010"}
+              stroke={isProtected ? "#1e3a5f" : "#5f2020"}
               strokeWidth="0.3"
             />
 
-            {/* Connection lines - network backbone */}
-            <g stroke="#3b82f6" strokeWidth="0.2" opacity="0.3">
+            {/* FRAUD STATE: Red heatmaps */}
+            {!isProtected && FRAUD_HOTSPOTS.map((spot, idx) => (
+              <circle
+                key={idx}
+                cx={spot.x}
+                cy={spot.y}
+                r={spot.r}
+                fill="url(#fraudHeat)"
+                opacity={spot.intensity}
+                className="animate-pulse"
+              />
+            ))}
+
+            {/* Connection lines */}
+            <g stroke={isProtected ? "#3b82f6" : "#ef4444"} strokeWidth="0.2" opacity="0.3">
               <line x1="18" y1="78" x2="45" y2="55" />
               <line x1="45" y1="55" x2="60" y2="40" />
               <line x1="60" y1="40" x2="78" y2="22" />
             </g>
 
-            {/* Division nodes and labels */}
+            {/* Division nodes */}
             {Object.entries(DIVISIONS).map(([key, division]) => {
               const isSelected = selectedDivision === key;
               const isMiri = key === 'miri';
@@ -221,33 +338,53 @@ export default function SarawakReadinessMap() {
                       cy={division.position.y}
                       r={isZoomed ? 8 : 6}
                       fill="none"
-                      stroke={division.color}
+                      stroke={isProtected ? division.color : '#ef4444'}
                       strokeWidth="0.3"
                       opacity="0.6"
                       strokeDasharray="1 1"
                     />
                   )}
 
-                  {/* Node dot */}
-                  <circle
-                    cx={division.position.x}
-                    cy={division.position.y}
-                    r={isSelected ? 3 : 2.5}
-                    fill={division.color}
-                    filter={isMiri && flyInComplete ? 'url(#glow)' : undefined}
-                    className="transition-all duration-300"
-                  />
+                  {/* PROTECTED STATE: Green integrity nodes */}
+                  {isProtected ? (
+                    <>
+                      <circle
+                        cx={division.position.x}
+                        cy={division.position.y}
+                        r={isSelected ? 3 : 2.5}
+                        fill="#10b981"
+                        filter={isMiri && flyInComplete ? 'url(#glow)' : undefined}
+                        className="transition-all duration-300"
+                      />
+                      <circle
+                        cx={division.position.x}
+                        cy={division.position.y}
+                        r="1"
+                        fill="white"
+                        opacity="0.5"
+                      />
+                    </>
+                  ) : (
+                    /* FRAUD STATE: Red warning nodes */
+                    <>
+                      <circle
+                        cx={division.position.x}
+                        cy={division.position.y}
+                        r={isSelected ? 3.5 : 3}
+                        fill="#ef4444"
+                        className="animate-pulse"
+                      />
+                      <circle
+                        cx={division.position.x}
+                        cy={division.position.y}
+                        r="1.5"
+                        fill="#fca5a5"
+                        opacity="0.8"
+                      />
+                    </>
+                  )}
 
-                  {/* Inner highlight */}
-                  <circle
-                    cx={division.position.x}
-                    cy={division.position.y}
-                    r="1"
-                    fill="white"
-                    opacity="0.5"
-                  />
-
-                  {/* Division label - always visible */}
+                  {/* Division label */}
                   <text
                     x={division.position.x}
                     y={division.position.y - 5}
@@ -260,9 +397,8 @@ export default function SarawakReadinessMap() {
                     {division.shortName}
                   </text>
 
-                  {/* Hospital labels - Professional white boxes, only when zoomed */}
-                  {isZoomed && isSelected && division.hospitals.map((hospital, idx) => {
-                    // Spread hospitals around the center point
+                  {/* Hospital labels - only when zoomed and protected */}
+                  {isZoomed && isSelected && isProtected && division.hospitals.map((hospital, idx) => {
                     const angle = (idx / division.hospitals.length) * Math.PI * 2 - Math.PI / 2;
                     const radius = 12 + (idx % 2) * 4;
                     const hx = division.position.x + Math.cos(angle) * radius;
@@ -270,26 +406,16 @@ export default function SarawakReadinessMap() {
 
                     return (
                       <g key={idx} className="transition-all duration-500" style={{ opacity: flyInComplete ? 1 : 0 }}>
-                        {/* Connection line to center */}
                         <line
                           x1={division.position.x}
                           y1={division.position.y}
                           x2={hx}
                           y2={hy}
-                          stroke={division.color}
+                          stroke="#10b981"
                           strokeWidth="0.15"
                           opacity="0.4"
                         />
-
-                        {/* Hospital marker dot */}
-                        <circle
-                          cx={hx}
-                          cy={hy}
-                          r="1"
-                          fill={division.color}
-                        />
-
-                        {/* Professional white label box */}
+                        <circle cx={hx} cy={hy} r="1" fill="#10b981" />
                         <rect
                           x={hx - 8}
                           y={hy + 1.5}
@@ -297,7 +423,6 @@ export default function SarawakReadinessMap() {
                           height="3"
                           rx="0.5"
                           fill="rgba(255,255,255,0.95)"
-                          className="drop-shadow-sm"
                         />
                         <text
                           x={hx}
@@ -320,34 +445,64 @@ export default function SarawakReadinessMap() {
 
           {/* Fixed Sidebar - Bottom Left Overlay */}
           <div className="absolute bottom-3 left-3 flex flex-col gap-2">
-            {/* Regional Integrity */}
-            <div className="bg-[#070b14]/90 backdrop-blur-sm border border-emerald-500/30 rounded-lg px-3 py-2 min-w-[140px]">
+            {/* Status indicator */}
+            <div className={`backdrop-blur-sm rounded-lg px-3 py-2 min-w-[140px] transition-all duration-500 ${
+              isProtected
+                ? 'bg-[#070b14]/90 border border-emerald-500/30'
+                : 'bg-[#0a0505]/90 border border-red-500/30'
+            }`}>
               <div className="flex items-center justify-between">
-                <span className="text-slate-500 text-[10px] uppercase tracking-wider">Regional Integrity</span>
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                <span className="text-slate-500 text-[10px] uppercase tracking-wider">
+                  {isProtected ? 'Regional Integrity' : 'Fraud Exposure'}
+                </span>
+                <div className={`w-1.5 h-1.5 rounded-full ${isProtected ? 'bg-emerald-500' : 'bg-red-500 animate-pulse'}`}></div>
               </div>
-              <p className="text-xl font-black text-emerald-400">100%</p>
+              <p className={`text-xl font-black ${isProtected ? 'text-emerald-400' : 'text-red-400'}`}>
+                {isProtected ? '100%' : 'HIGH'}
+              </p>
             </div>
 
-            {/* Fraud Prevention */}
-            <div className="bg-[#070b14]/90 backdrop-blur-sm border border-amber-500/30 rounded-lg px-3 py-2">
-              <span className="text-slate-500 text-[10px] uppercase tracking-wider">Fraud Prevention</span>
-              <p className="text-xl font-black text-amber-400">RM 2.07B</p>
+            {/* Financial impact */}
+            <div className={`backdrop-blur-sm rounded-lg px-3 py-2 transition-all duration-500 ${
+              isProtected
+                ? 'bg-[#070b14]/90 border border-amber-500/30'
+                : 'bg-[#0a0505]/90 border border-red-500/30'
+            }`}>
+              <span className="text-slate-500 text-[10px] uppercase tracking-wider">
+                {isProtected ? 'Fraud Prevention' : 'Annual Loss'}
+              </span>
+              <p className={`text-lg font-black ${isProtected ? 'text-amber-400' : 'text-red-400'}`}>
+                {isProtected ? 'RM 2.07B' : 'RM 2.3B'}
+              </p>
             </div>
 
-            {/* Active Nodes */}
-            <div className="bg-[#070b14]/90 backdrop-blur-sm border border-blue-500/30 rounded-lg px-3 py-2">
-              <span className="text-slate-500 text-[10px] uppercase tracking-wider">Active Nodes</span>
-              <p className="text-xl font-black text-blue-400">24</p>
+            {/* Nodes status */}
+            <div className={`backdrop-blur-sm rounded-lg px-3 py-2 transition-all duration-500 ${
+              isProtected
+                ? 'bg-[#070b14]/90 border border-blue-500/30'
+                : 'bg-[#0a0505]/90 border border-red-500/30'
+            }`}>
+              <span className="text-slate-500 text-[10px] uppercase tracking-wider">
+                {isProtected ? 'Active Nodes' : 'Vulnerable Nodes'}
+              </span>
+              <p className={`text-xl font-black ${isProtected ? 'text-blue-400' : 'text-red-400'}`}>
+                24
+              </p>
             </div>
           </div>
 
           {/* Security badge - Bottom Right */}
-          <div className="absolute bottom-3 right-3 flex items-center gap-1.5 px-2.5 py-1.5 bg-[#070b14]/90 backdrop-blur-sm border border-cyan-500/30 rounded-lg">
-            <svg className="w-3 h-3 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className={`absolute bottom-3 right-3 flex items-center gap-1.5 px-2.5 py-1.5 backdrop-blur-sm rounded-lg transition-all duration-500 ${
+            isProtected
+              ? 'bg-[#070b14]/90 border border-cyan-500/30'
+              : 'bg-[#0a0505]/90 border border-red-500/30'
+          }`}>
+            <svg className={`w-3 h-3 ${isProtected ? 'text-cyan-400' : 'text-red-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
-            <span className="text-cyan-400 text-[10px] font-bold">AES-256-GCM</span>
+            <span className={`text-[10px] font-bold ${isProtected ? 'text-cyan-400' : 'text-red-400'}`}>
+              {isProtected ? 'AES-256-GCM' : 'UNENCRYPTED'}
+            </span>
           </div>
 
           {/* Division quick-select - Top */}
@@ -362,26 +517,26 @@ export default function SarawakReadinessMap() {
                     : 'bg-black/40 border border-white/10 text-slate-400 hover:bg-white/10'
                 }`}
               >
-                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: division.color }}></div>
+                <div className={`w-1.5 h-1.5 rounded-full transition-colors duration-500`}
+                     style={{ backgroundColor: isProtected ? '#10b981' : '#ef4444' }}></div>
                 {division.shortName}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Hospital detail panel - appears below map when zoomed */}
-        {isZoomed && activeData && (
+        {/* Hospital detail panel */}
+        {isZoomed && activeData && isProtected && (
           <div className="mt-3 bg-[#070b14] rounded-xl border border-white/10 overflow-hidden">
             <div className="p-2.5 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
               <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: activeData.color }}></div>
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
                 <span className="text-white font-semibold text-sm">{activeData.name}</span>
                 <span className="text-slate-500 text-xs">• {activeData.hospitals.length} hospitals</span>
               </div>
-              <span className="text-emerald-400 text-xs font-semibold">All Verified</span>
+              <span className="text-emerald-400 text-xs font-semibold">100% Integrity</span>
             </div>
 
-            {/* Compact hospital grid - iPhone optimized */}
             <div className="p-2.5 grid grid-cols-2 sm:grid-cols-3 gap-2">
               {activeData.hospitals.map((hospital, index) => (
                 <div
@@ -396,6 +551,29 @@ export default function SarawakReadinessMap() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Fraud warning panel - when NOT protected */}
+        {!isProtected && (
+          <div className="mt-3 bg-red-950/50 rounded-xl border border-red-500/30 p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-red-400 font-bold text-sm">Malaysia loses RM 2.3 Billion annually</p>
+                <p className="text-red-300/70 text-xs">Fake MCs, unverified records, zero audit trail</p>
+              </div>
+            </div>
+            <button
+              onClick={handleToggle}
+              className="mt-3 w-full py-2 bg-emerald-500 text-white font-bold text-sm rounded-lg hover:bg-emerald-600 transition-all active:scale-[0.98]"
+            >
+              Activate MedChain Protection →
+            </button>
           </div>
         )}
       </div>
