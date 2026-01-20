@@ -150,7 +150,8 @@ export default function CouncilorView() {
   return (
     <div className={`min-h-screen ${theme.bg} transition-colors duration-300`}>
       {/* Header with Governance Branding - Mobile Optimized */}
-      <header className={`${theme.headerBg} border-b ${theme.border} sticky top-0 z-50`}>
+      {/* iPhone 8 Plus Safe Area: Extra 20px padding to prevent iOS status bar overlap */}
+      <header className={`${theme.headerBg} border-b ${theme.border} sticky top-0 z-50 pt-[20px]`} style={{ paddingTop: 'calc(20px + env(safe-area-inset-top, 0px))' }}>
         <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             {/* Logo Strip - Responsive */}

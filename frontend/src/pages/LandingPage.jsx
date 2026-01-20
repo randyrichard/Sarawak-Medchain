@@ -359,10 +359,50 @@ function SocialProofToast() {
   );
 }
 
+// Professional "Cha-Ching" success sound using Web Audio API
+// Crisp but professional volume for Councilor demo
+const playSuccessSound = () => {
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const gainNode = audioContext.createGain();
+    gainNode.connect(audioContext.destination);
+    gainNode.gain.value = 0.3; // Professional volume (not too loud)
+
+    // First tone - high pitched "cha"
+    const osc1 = audioContext.createOscillator();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(1200, audioContext.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.1);
+    osc1.connect(gainNode);
+    osc1.start(audioContext.currentTime);
+    osc1.stop(audioContext.currentTime + 0.1);
+
+    // Second tone - "ching" with slight delay
+    const osc2 = audioContext.createOscillator();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(1400, audioContext.currentTime + 0.1);
+    osc2.frequency.exponentialRampToValueAtTime(1000, audioContext.currentTime + 0.25);
+    osc2.connect(gainNode);
+    osc2.start(audioContext.currentTime + 0.1);
+    osc2.stop(audioContext.currentTime + 0.25);
+
+    // Third tone - resolution
+    const osc3 = audioContext.createOscillator();
+    osc3.type = 'sine';
+    osc3.frequency.setValueAtTime(1600, audioContext.currentTime + 0.2);
+    osc3.connect(gainNode);
+    osc3.start(audioContext.currentTime + 0.2);
+    osc3.stop(audioContext.currentTime + 0.35);
+  } catch (e) {
+    console.log('Audio not available');
+  }
+};
+
 // Full-screen Provisioning Overlay Component
 function ProvisioningOverlay({ isVisible, facilityName, blockchainRef, onComplete }) {
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
+  const [soundPlayed, setSoundPlayed] = useState(false);
 
   const steps = [
     'Initializing blockchain node...',
@@ -372,7 +412,10 @@ function ProvisioningOverlay({ isVisible, facilityName, blockchainRef, onComplet
   ];
 
   useEffect(() => {
-    if (!isVisible) return;
+    if (!isVisible) {
+      setSoundPlayed(false);
+      return;
+    }
 
     // Animate progress
     const progressInterval = setInterval(() => {
@@ -390,6 +433,14 @@ function ProvisioningOverlay({ isVisible, facilityName, blockchainRef, onComplet
       setCurrentStep(prev => (prev + 1) % steps.length);
     }, 400);
 
+    // Play success sound at 80% progress
+    const soundTimeout = setTimeout(() => {
+      if (!soundPlayed) {
+        playSuccessSound();
+        setSoundPlayed(true);
+      }
+    }, 1200);
+
     // Complete after 1.5 seconds
     const completeTimeout = setTimeout(() => {
       onComplete();
@@ -398,9 +449,10 @@ function ProvisioningOverlay({ isVisible, facilityName, blockchainRef, onComplet
     return () => {
       clearInterval(progressInterval);
       clearInterval(stepInterval);
+      clearTimeout(soundTimeout);
       clearTimeout(completeTimeout);
     };
-  }, [isVisible, onComplete]);
+  }, [isVisible, onComplete, soundPlayed]);
 
   if (!isVisible) return null;
 
@@ -673,6 +725,14 @@ export default function LandingPage() {
         }
         .gold-glow { animation: gold-glow 2s ease-in-out infinite; }
 
+        /* Haptic feedback button press - iPhone 8 Plus physical feel */
+        .haptic-btn {
+          transition: transform 0.1s ease-out;
+        }
+        .haptic-btn:active {
+          transform: scale(0.95);
+        }
+
         /* Fade in up animation */
         @keyframes fadeInUp {
           from {
@@ -943,7 +1003,7 @@ export default function LandingPage() {
                 <button
                   onClick={() => handlePlanSelect('clinic')}
                   disabled={securityLoading !== null}
-                  className="w-full py-4 mt-8 bg-white/5 border border-white/10 text-white font-bold rounded-lg hover:bg-white/10 transition-all disabled:opacity-70 flex items-center justify-center gap-2"
+                  className="haptic-btn w-full py-4 mt-8 bg-white/5 border border-white/10 text-white font-bold rounded-lg hover:bg-white/10 transition-all disabled:opacity-70 flex items-center justify-center gap-2"
                 >
                   {securityLoading === 'clinic' ? (
                     <>
@@ -1013,7 +1073,7 @@ export default function LandingPage() {
                   <button
                     onClick={() => handlePlanSelect('hospital')}
                     disabled={securityLoading !== null}
-                    className="w-full py-4 mt-8 bg-amber-500 text-slate-900 font-black rounded-lg hover:bg-amber-400 transition-all disabled:opacity-70 flex items-center justify-center gap-2"
+                    className="haptic-btn w-full py-4 mt-8 bg-amber-500 text-slate-900 font-black rounded-lg hover:bg-amber-400 transition-all disabled:opacity-70 flex items-center justify-center gap-2"
                   >
                     {securityLoading === 'hospital' ? (
                       <>
