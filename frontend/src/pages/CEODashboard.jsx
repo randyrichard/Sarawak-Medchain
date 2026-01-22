@@ -181,7 +181,8 @@ export default function CEODashboard({ walletAddress }) {
     refreshBillingData
   } = useBilling();
 
-  const [darkMode, setDarkMode] = useState(false);
+  // Force dark mode - no toggle
+  const darkMode = true;
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalMCs: 0,
@@ -279,10 +280,6 @@ export default function CEODashboard({ walletAddress }) {
     } finally {
       setLoading(false);
     }
-  };
-
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
   };
 
   const handlePayNow = async () => {
@@ -723,19 +720,6 @@ export default function CEODashboard({ walletAddress }) {
                 <span>Download Executive Report</span>
               </>
             )}
-          </button>
-
-          {/* Dark Mode Toggle */}
-          <button
-            onClick={toggleDarkMode}
-            className={`flex items-center gap-2 px-4 py-3 rounded-xl transition-all ${
-              darkMode
-                ? 'bg-amber-500 text-slate-900 hover:bg-amber-400'
-                : 'bg-slate-800 text-white hover:bg-slate-700'
-            }`}
-          >
-            <span className="text-lg">{darkMode ? '☀️' : '🌙'}</span>
-            <span className="font-medium text-sm">{darkMode ? 'Light' : 'Dark'}</span>
           </button>
         </div>
       </div>
