@@ -571,3 +571,52 @@ main > div:first-child,
 .qr-section {
   background-color: white !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   MIRI DEMO - KILL ALL SEAMS - Absolute Final Override
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Force header to match */
+header {
+  background-color: #0a0e14 !important;
+  border: none !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+}
+
+/* Force nav to match */
+nav {
+  background-color: #0a0e14 !important;
+  border: none !important;
+}
+
+/* Kill any gradient backgrounds that might cause seams */
+.bg-gradient-to-b,
+.bg-gradient-to-t {
+  background: #0a0e14 !important;
+}
+
+/* Center main content containers */
+.portal-container,
+.main-content > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Flex centering wrapper for dashboard views */
+.flex-center-wrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Force ALL divs inside #root to have master color */
+#root * {
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Nuclear option - override any inline styles that might cause seams */
+[style*="border"] {
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
