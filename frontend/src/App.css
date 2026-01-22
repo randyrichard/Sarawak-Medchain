@@ -610,3 +610,34 @@ nav {
   width: 100%;
   padding: 0 24px;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   SIDEBAR-MAIN JUNCTION - Zero Seam
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Protected app layout */
+.flex.h-screen.w-full.overflow-hidden {
+  background-color: #0a0e14 !important;
+}
+
+/* Remove sidebar border */
+.flex.h-screen > aside {
+  border-right: none !important;
+  box-shadow: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ROUTE CONTAINERS - Background consistency
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Each route container background */
+.admin-portal,
+.founder-command,
+.founder-admin-dashboard,
+.ceo-dashboard,
+.fpx-payment,
+.doctor-portal,
+.patient-portal {
+  background-color: #0a0e14 !important;
+  min-height: 100%;
+}

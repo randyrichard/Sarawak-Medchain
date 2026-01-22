@@ -1007,9 +1007,9 @@ export default function CEOMainDashboard({ walletAddress }) {
   };
 
   return (
-    <div className="min-h-screen pb-12" style={{ backgroundColor: theme.bg }}>
+    <div className="min-h-screen pb-12 founder-command" style={{ backgroundColor: '#0a0e14' }}>
       {/* Header */}
-      <header className="border-b px-8 py-4" style={{ borderColor: theme.border, backgroundColor: theme.bgCard }}>
+      <header className="px-8 py-4" style={{ backgroundColor: '#0a0e14', border: 'none', boxShadow: 'none', maxWidth: '1600px', margin: '0 auto' }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${theme.gold}, ${theme.warning})` }}>

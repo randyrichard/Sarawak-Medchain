@@ -621,16 +621,14 @@ export default function CEODashboard({ walletAddress }) {
   const contributorTier = getContributorTier();
 
   return (
-    <div className={`flex-1 flex-grow w-full min-h-full font-sans transition-colors duration-300 ${
-      darkMode ? 'bg-slate-900' : 'bg-slate-100'
-    }`}>
+    <div className="flex-1 flex-grow w-full min-h-full font-sans ceo-dashboard" style={{ backgroundColor: '#0a0e14' }}>
       {/* Network-Wide Broadcast Notification */}
       <BroadcastNotification />
 
       {/* Service Restored Toast Notification */}
       <ServiceRestoredToast />
 
-      <div className="px-12 py-10">
+      <div className="px-12 py-10" style={{ maxWidth: '1400px', margin: '0 auto' }}>
       {/* Header - Full Width Enterprise Style */}
       <div className="mb-8 flex flex-col lg:flex-row lg:items-center justify-start gap-6">
         <div className="flex items-center gap-4">

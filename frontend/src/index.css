@@ -280,8 +280,46 @@ button:focus-visible {
   background-color: #0a0e14;
 }
 
-/* Kill horizontal line artifacts between sections */
-.border-t,
-.border-b {
-  border-color: rgba(255, 255, 255, 0.05) !important;
+/* ═══════════════════════════════════════════════════════════════════════════════
+   MASTER BACKGROUND - #0a0e14 Only
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Core layout backgrounds */
+html, body, #root {
+  background-color: #0a0e14 !important;
+}
+
+/* Main layout structure */
+.flex.h-screen,
+.flex.h-screen > aside,
+.flex.h-screen > main {
+  background-color: #0a0e14 !important;
+}
+
+/* Remove seam between sidebar and main */
+.flex.h-screen > aside {
+  border-right: none !important;
+  box-shadow: none !important;
+}
+
+.flex.h-screen > main {
+  border-left: none !important;
+}
+
+/* Sticky balance header */
+.sticky.top-0.z-50 {
+  background-color: #0a0e14 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   CENTERING - Dashboard and Payment Screens
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Centered content wrapper */
+.centered-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
 }

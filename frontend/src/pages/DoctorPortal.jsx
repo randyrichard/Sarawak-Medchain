@@ -611,7 +611,7 @@ export default function DoctorPortal({ walletAddress }) {
   }
 
   return (
-    <div className="min-h-screen font-sans" style={{ backgroundColor: terminalTheme.bg }}>
+    <div className="min-h-screen font-sans doctor-portal" style={{ backgroundColor: '#0a0e14' }}>
       {/* Maintenance Banner - Shows 24 hours before scheduled maintenance */}
       <MaintenanceBanner />
 

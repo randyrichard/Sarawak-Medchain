@@ -973,15 +973,8 @@ export default function FPXPayment() {
 
   // Main Payment Selection Screen
   return (
-    <div className="min-h-screen py-12 px-4" style={{ backgroundColor: '#0a0e14' }}>
-      {/* Global CSS for seamless background */}
-      <style>{`
-        html, body, #root {
-          background-color: #0a0e14 !important;
-        }
-      `}</style>
-
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="min-h-screen py-12 px-4 fpx-payment" style={{ backgroundColor: '#0a0e14' }}>
+      <div className="w-full" style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">

@@ -259,10 +259,10 @@ function StickyBalanceHeader({ walletAddress }) {
       };
     }
     return {
-      banner: 'bg-white/95 border-b border-slate-200',
+      banner: '',
       badge: 'bg-emerald-50 border-emerald-200',
-      text: 'text-slate-800',
-      subtext: 'text-slate-600',
+      text: 'text-slate-300',
+      subtext: 'text-slate-400',
       icon: 'text-emerald-500',
       button: 'bg-emerald-600 text-white hover:bg-emerald-700'
     };
@@ -341,16 +341,16 @@ function StickyBalanceHeader({ walletAddress }) {
 
   // Normal state - compact header
   return (
-    <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
-      <div className="px-6 py-3 flex items-center justify-between">
+    <div className="sticky top-0 z-50" style={{ backgroundColor: '#0a0e14', border: 'none', boxShadow: 'none' }}>
+      <div className="px-6 py-3 flex items-center justify-between" style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <div className="flex items-center gap-4">
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${styles.badge} border`}>
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800/50 border border-slate-700`}>
             <svg className={`w-5 h-5 ${styles.icon}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div className="flex items-baseline gap-2">
-              <span className="text-sm font-medium text-slate-600">Credit Balance:</span>
-              <span className="text-xl font-bold text-emerald-600">
+              <span className="text-sm font-medium text-slate-400">Credit Balance:</span>
+              <span className="text-xl font-bold text-emerald-400">
                 {loading ? '...' : creditBalance !== null ? `RM ${creditBalance.toLocaleString()}` : '--'}
               </span>
             </div>
@@ -506,7 +506,7 @@ function CreditBalanceSidebar({ walletAddress }) {
   if (!isOnDoctorRoute) return null;
 
   return (
-    <div className="p-4 border-t border-slate-800">
+    <div className="p-4" style={{ borderTop: 'none' }}>
       <div className={`rounded-xl p-4 ${
         isLowBalance
           ? 'bg-gradient-to-r from-amber-600 to-amber-700'
@@ -634,7 +634,7 @@ function ProtectedApp({ walletAddress, handleDisconnect }) {
         <CreditBalanceSidebar walletAddress={walletAddress} />
 
         {/* Verified Badge */}
-        <div className="p-4 border-t border-slate-800">
+        <div className="p-4" style={{ borderTop: 'none' }}>
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-4">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
@@ -982,9 +982,6 @@ function App() {
             <DisasterRecoveryProvider>
               <BillingProvider>
                 <BrowserRouter>
-                  <CEOAlertToast />
-                  <RevenueAlertToast />
-                  <DRAlertToast />
                   <AppRoutes />
                 </BrowserRouter>
               </BillingProvider>

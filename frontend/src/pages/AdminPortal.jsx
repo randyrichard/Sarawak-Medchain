@@ -298,11 +298,11 @@ export default function AdminPortal({ walletAddress }) {
   };
 
   return (
-    <div className="flex-1 flex-grow w-full min-h-full font-sans" style={{ backgroundColor: '#0a0e14' }}>
+    <div className="flex-1 flex-grow w-full min-h-full font-sans admin-portal" style={{ backgroundColor: '#0a0e14' }}>
         {/* Network-Wide Broadcast Notification */}
         <BroadcastNotification />
 
-        <div className="px-12 py-10">
+        <div className="px-12 py-10" style={{ maxWidth: '1400px', margin: '0 auto' }}>
         {/* Overdue Subscription Banner */}
         {isSubscriptionOverdue && (
           <div className="mb-6 bg-red-900/30 border border-red-500/40 rounded-xl px-6 py-4 flex items-center justify-between">

@@ -102,7 +102,7 @@ export default function PatientPortal({ walletAddress }) {
   };
 
   return (
-    <div className="flex-1 flex-grow w-full min-h-full font-sans" style={{ backgroundColor: '#0a0e14' }}>
+    <div className="flex-1 flex-grow w-full min-h-full font-sans patient-portal" style={{ backgroundColor: '#0a0e14' }}>
       {/* Full-Width Content Area - No max-width constraints */}
       <div className="flex-1 w-full px-12 py-10">
         {/* Top Bar - Stretches Full Width */}

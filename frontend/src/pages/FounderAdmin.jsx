@@ -2005,7 +2005,7 @@ export default function FounderAdmin() {
   // Main Dashboard
   return (
     <div
-      className="min-h-screen p-8"
+      className="min-h-screen p-8 founder-admin-dashboard"
       style={{ backgroundColor: '#0a0e14' }}
     >
       {/* Global background override */}
