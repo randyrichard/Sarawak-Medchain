@@ -596,27 +596,17 @@ nav {
   background: #0a0e14 !important;
 }
 
-/* Center main content containers */
-.portal-container,
-.main-content > div {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* Flex centering wrapper for dashboard views */
+/* Flex centering wrapper for dashboard views - use this class explicitly */
 .flex-center-wrapper {
   display: flex;
   justify-content: center;
   width: 100%;
 }
 
-/* Force ALL divs inside #root to have master color */
-#root * {
-  border-color: rgba(255, 255, 255, 0.05);
-}
-
-/* Nuclear option - override any inline styles that might cause seams */
-[style*="border"] {
-  border-color: rgba(255, 255, 255, 0.05) !important;
+/* Master centering for standalone pages */
+.centered-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0 24px;
 }

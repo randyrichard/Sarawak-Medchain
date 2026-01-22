@@ -2006,8 +2006,13 @@ export default function FounderAdmin() {
   return (
     <div
       className="min-h-screen p-8"
-      style={{ backgroundColor: theme.bg }}
+      style={{ backgroundColor: '#0a0e14' }}
     >
+      {/* Global background override */}
+      <style>{`
+        html, body, #root { background-color: #0a0e14 !important; }
+      `}</style>
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -2761,6 +2766,7 @@ export default function FounderAdmin() {
           </div>
         </div>
       )}
+      </div>{/* End centering wrapper */}
 
       {/* Animation styles */}
       <style>{`
