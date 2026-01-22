@@ -151,10 +151,10 @@ export default function ServiceAgreement() {
   };
 
   return (
-    <div className="min-h-screen bg-[#030712]">
+    <div className="min-h-screen bg-[#121212] flex flex-col">
       {/* Header */}
-      <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+      <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-50 w-full">
+        <div style={{ maxWidth: '900px', margin: '0 auto' }} className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: MEDCHAIN_BLUE }}>
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -174,7 +174,7 @@ export default function ServiceAgreement() {
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-6 py-12">
+      <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column' }} className="w-full px-6 pt-[50px] pb-12">
         {/* Referral Banner */}
         {referralCode && (
           <div className="mb-8 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 rounded-xl p-4">
@@ -201,8 +201,14 @@ export default function ServiceAgreement() {
           <p className="text-slate-400">Please review and sign to activate your hospital node</p>
         </div>
 
-        {/* Contract Form */}
-        <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700/50 rounded-3xl overflow-hidden">
+        {/* Contract Form - Floating Document */}
+        <div
+          className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl overflow-hidden w-full"
+          style={{
+            border: '1px solid rgba(100, 116, 139, 0.4)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05)'
+          }}
+        >
           {/* Contract Header */}
           <div className="p-8 border-b border-slate-700/50" style={{ background: `linear-gradient(135deg, ${MEDCHAIN_BLUE}10, ${MEDCHAIN_DARK}05)` }}>
             <div className="flex items-center justify-between">
@@ -322,12 +328,12 @@ export default function ServiceAgreement() {
             <h3 className="text-lg font-bold text-white mb-2">Digital Signature</h3>
             <p className="text-sm text-slate-400 mb-6">Please sign in the box below using your mouse or touchscreen</p>
 
-            <div className="bg-white rounded-xl p-2 mb-4">
+            <div className="bg-white rounded-xl p-3 mb-4 w-full" style={{ width: '100%' }}>
               <SignatureCanvas
                 ref={signaturePadRef}
                 canvasProps={{
-                  className: 'signature-canvas w-full h-40 rounded-lg cursor-crosshair',
-                  style: { width: '100%', height: '160px' }
+                  className: 'signature-canvas rounded-lg cursor-crosshair',
+                  style: { width: '100%', height: '180px', display: 'block' }
                 }}
                 backgroundColor="white"
                 penColor="#003366"
