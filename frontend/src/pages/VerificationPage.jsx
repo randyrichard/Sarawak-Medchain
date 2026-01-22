@@ -124,6 +124,7 @@ export default function VerificationPage() {
         <div
           ref={cardRef}
           className="print-card bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl overflow-hidden shadow-2xl border border-white/10"
+          style={{ maxWidth: '800px', margin: '0 auto' }}
         >
           {/* Card Header */}
           <div className="bg-gradient-to-r from-cyan-600 to-blue-600 px-8 py-6">

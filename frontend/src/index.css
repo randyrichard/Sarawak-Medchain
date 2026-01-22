@@ -265,3 +265,23 @@ button:focus-visible {
     border: 1px solid #d1d5db !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   MIRI DEMO - Full Screen Color Unity
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Force gray-900 variants to master color */
+.bg-gray-900 {
+  background-color: #0a0e14 !important;
+}
+
+/* Ensure min-h-screen uses master background */
+.min-h-screen {
+  background-color: #0a0e14;
+}
+
+/* Kill horizontal line artifacts between sections */
+.border-t,
+.border-b {
+  border-color: rgba(255, 255, 255, 0.05) !important;
+}
