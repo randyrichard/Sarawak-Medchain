@@ -86,6 +86,7 @@ export default function DoctorPortal({ walletAddress }) {
     remarks: '',
   });
   const signaturePadRef = useRef(null);
+  const signatureContainerRef = useRef(null);
   const [isSigning, setIsSigning] = useState(false);
   const [transactionHash, setTransactionHash] = useState(null);
   const [isMinting, setIsMinting] = useState(false);
@@ -158,6 +159,42 @@ export default function DoctorPortal({ walletAddress }) {
       clearInterval(pollInterval);
     };
   }, [walletAddress]);
+
+  // Fix canvas size on mount and resize
+  useEffect(() => {
+    const resizeCanvas = () => {
+      if (signaturePadRef.current && signatureContainerRef.current) {
+        const canvas = signaturePadRef.current.getCanvas();
+        const container = signatureContainerRef.current;
+        const rect = container.getBoundingClientRect();
+
+        // Get device pixel ratio for high DPI displays
+        const ratio = window.devicePixelRatio || 1;
+
+        // Set the canvas internal dimensions to match display size
+        canvas.width = rect.width * ratio;
+        canvas.height = 150 * ratio;
+
+        // Scale the context to account for pixel ratio
+        const ctx = canvas.getContext('2d');
+        ctx.scale(ratio, ratio);
+
+        // Clear the canvas after resizing
+        signaturePadRef.current.clear();
+      }
+    };
+
+    // Resize on mount with a small delay to ensure DOM is ready
+    const timeoutId = setTimeout(resizeCanvas, 100);
+
+    // Also resize on window resize
+    window.addEventListener('resize', resizeCanvas);
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', resizeCanvas);
+    };
+  }, []);
 
   // Clear signature
   const clearSignature = () => {
@@ -926,16 +963,16 @@ export default function DoctorPortal({ walletAddress }) {
                 </button>
               </div>
               <div
+                ref={signatureContainerRef}
                 className="rounded-xl border-2 border-dashed overflow-hidden"
-                style={{ borderColor: isSigning ? terminalTheme.medical : terminalTheme.border, backgroundColor: '#ffffff' }}
+                style={{ borderColor: isSigning ? terminalTheme.medical : terminalTheme.border, backgroundColor: '#ffffff', width: '100%' }}
               >
                 <SignatureCanvas
                   ref={signaturePadRef}
                   penColor="#1e3a5f"
                   canvasProps={{
-                    width: 600,
-                    height: 150,
-                    className: 'signature-canvas w-full cursor-crosshair'
+                    style: { width: '100%', height: '150px', display: 'block' },
+                    className: 'signature-canvas cursor-crosshair'
                   }}
                   onBegin={() => setIsSigning(true)}
                 />
