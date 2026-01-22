@@ -655,11 +655,60 @@ nav {
   border-radius: 12px;
 }
 
-/* Ensure text is visible on dark cards */
-.subscription-card *,
-.monthly-dues *,
-.analytics-card * {
-  color: inherit;
+/* Convert ALL white cards to deep charcoal */
+.bg-white:not(.qr-section):not([class*="qr"]):not(.signature-canvas):not(canvas) {
+  background-color: #111827 !important;
+  border: 1px solid #1f2937 !important;
+  color: white !important;
+}
+
+/* White text inside converted cards */
+.bg-white *:not(.qr-section *):not([class*="qr"] *) {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   FOUNDER COMMAND VIEW - Hide overlapping subscription cards
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* When Founder Command is active, hide ALL admin portal content */
+body:has(.founder-command) .admin-portal,
+body:has(.founder-command) .subscription-card,
+body:has(.founder-command) .monthly-dues,
+body:has(.founder-command) [class*="Subscription"],
+body:has(.founder-command) [class*="subscription"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   PERFECT CENTERING - Dashboards and Payment screens
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Center Public Health Intelligence Dashboard */
+.ceo-dashboard > div,
+.ceo-dashboard .px-12,
+.public-health-dashboard {
+  max-width: 1400px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Center Complete Your Payment box */
+.fpx-payment,
+.payment-container,
+[class*="payment"] {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+.fpx-payment > div,
+.payment-container > div {
+  max-width: 1200px !important;
+  width: 100% !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
@@ -685,6 +734,11 @@ nav {
   [class*="bg-white"] {
     background-color: white !important;
     border: 1px solid #e5e7eb !important;
+    color: #1f2937 !important;
+  }
+
+  .bg-white * {
+    color: #1f2937 !important;
   }
 
   .text-slate-600,

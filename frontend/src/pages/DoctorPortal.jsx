@@ -160,7 +160,7 @@ export default function DoctorPortal({ walletAddress }) {
     };
   }, [walletAddress]);
 
-  // Fix canvas size on mount and resize
+  // Fix canvas size on mount and resize - uses getBoundingClientRect for perfect alignment
   useEffect(() => {
     const resizeCanvas = () => {
       if (signaturePadRef.current && signatureContainerRef.current) {
@@ -171,9 +171,17 @@ export default function DoctorPortal({ walletAddress }) {
         // Get device pixel ratio for high DPI displays
         const ratio = window.devicePixelRatio || 1;
 
-        // Set the canvas internal dimensions to match display size
-        canvas.width = rect.width * ratio;
-        canvas.height = 150 * ratio;
+        // Calculate display dimensions from container
+        const displayWidth = Math.floor(rect.width);
+        const displayHeight = 150;
+
+        // Set the canvas internal dimensions to match display size * DPI
+        canvas.width = displayWidth * ratio;
+        canvas.height = displayHeight * ratio;
+
+        // Set CSS display size - ensures ink follows cursor perfectly
+        canvas.style.width = `${displayWidth}px`;
+        canvas.style.height = `${displayHeight}px`;
 
         // Scale the context to account for pixel ratio
         const ctx = canvas.getContext('2d');
@@ -185,7 +193,7 @@ export default function DoctorPortal({ walletAddress }) {
     };
 
     // Resize on mount with a small delay to ensure DOM is ready
-    const timeoutId = setTimeout(resizeCanvas, 100);
+    const timeoutId = setTimeout(resizeCanvas, 150);
 
     // Also resize on window resize
     window.addEventListener('resize', resizeCanvas);

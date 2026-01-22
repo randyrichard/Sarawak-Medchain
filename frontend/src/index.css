@@ -282,48 +282,66 @@ button:focus-visible {
 
 /* ═══════════════════════════════════════════════════════════════════════════════
    PERFECT DARK THEME - Master: #0a0e14, Cards: #111827
+   ZERO WHITE ELEMENTS - ABSOLUTE ENFORCEMENT
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-/* NUCLEAR: Core layout backgrounds */
-html, body, #root, #root > *, #root > * > * {
+/* NUCLEAR LEVEL 1: Core layout backgrounds */
+html, body, #root, #root > *, #root > * > *, #root > * > * > * {
   background-color: #0a0e14 !important;
 }
 
-/* Header - force #0a0e14, kill all seams */
-header, .header, [class*="header"] {
+/* NUCLEAR LEVEL 2: Header - force #0a0e14, kill ALL seams */
+header, .header, [class*="header"],
+header *, .header *, [class*="header"] * {
   background-color: #0a0e14 !important;
   border: none !important;
   border-bottom: none !important;
   box-shadow: none !important;
 }
 
-/* Sidebar - force #0a0e14, kill all seams */
-aside, .sidebar, nav:not(.nav-links) {
+/* NUCLEAR LEVEL 3: Sidebar - force #0a0e14, kill ALL seams */
+aside, .sidebar, nav:not(.nav-links),
+aside *, .sidebar *, nav:not(.nav-links) * {
   background-color: #0a0e14 !important;
   border: none !important;
   border-right: none !important;
   box-shadow: none !important;
 }
 
-/* Main content - force #0a0e14 */
-main, .main, .main-content {
+/* NUCLEAR LEVEL 4: Main content - force #0a0e14 */
+main, .main, .main-content,
+main > div:first-child {
   background-color: #0a0e14 !important;
   border: none !important;
   border-left: none !important;
+  border-top: none !important;
 }
 
 /* Main layout structure */
 .flex.h-screen,
 .flex.h-screen > aside,
-.flex.h-screen > main {
+.flex.h-screen > main,
+.flex.h-screen > .flex-1 {
   background-color: #0a0e14 !important;
 }
 
-/* Sticky balance header */
-.sticky.top-0.z-50 {
+/* Sticky balance header - eliminate seam line */
+.sticky.top-0.z-50,
+.sticky.top-0,
+[class*="sticky"] {
   background-color: #0a0e14 !important;
   border: none !important;
   box-shadow: none !important;
+}
+
+/* Kill the light seam between header and body */
+.flex.h-screen > aside + main,
+.flex.h-screen > aside + .flex-1,
+aside + main,
+header + main {
+  border: none !important;
+  margin: 0 !important;
+  padding-top: 0 !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
