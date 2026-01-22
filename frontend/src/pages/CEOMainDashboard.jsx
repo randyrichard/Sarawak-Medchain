@@ -15,10 +15,10 @@ import { useDisasterRecovery } from '../context/DisasterRecoveryContext';
 // FOUNDER WALLET ADDRESS - Only this address can access this dashboard
 const FOUNDER_WALLET = '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'; // Your wallet
 
-// Terminal Theme
+// Terminal Theme - Master: #0a0e14
 const theme = {
-  bg: '#030712',
-  bgCard: '#0f172a',
+  bg: '#0a0e14',
+  bgCard: '#0a0e14',
   border: '#1e3a5f',
   textPrimary: '#ffffff',
   textSecondary: '#94a3b8',

@@ -51,9 +51,22 @@ body {
 #root > div,
 .app,
 .container,
-main {
+main,
+aside {
   background-color: #0a0e14 !important;
   min-height: 100vh;
+}
+
+/* Remove all horizon lines - sidebar/header borders */
+aside,
+aside > div {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Force slate-900 to match master */
+.bg-slate-900 {
+  background-color: #0a0e14 !important;
 }
 
 h1 {
@@ -193,4 +206,62 @@ button:focus-visible {
 .instant-touch:active {
   transform: scale(0.97);
   opacity: 0.9;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   PRINT STYLES - Clean White Background for PDF Export
+   ═══════════════════════════════════════════════════════════════════════════════ */
+@media print {
+  /* Reset to white background for printing */
+  html, body, #root, #root > div, .min-h-screen {
+    background-color: white !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Hide non-essential elements */
+  header,
+  .sticky,
+  button,
+  .qr-section-print-hide,
+  nav,
+  aside {
+    display: none !important;
+  }
+
+  /* Show the agreement content with proper styling */
+  .bg-gradient-to-br,
+  .from-slate-900,
+  .to-slate-800 {
+    background: white !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: none !important;
+  }
+
+  /* Make text black for readability */
+  .text-white,
+  .text-slate-300,
+  .text-slate-400,
+  .text-blue-400,
+  .text-emerald-400 {
+    color: #1f2937 !important;
+  }
+
+  /* Input fields visible */
+  input {
+    border: 1px solid #d1d5db !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Page setup */
+  @page {
+    margin: 1in;
+    size: A4;
+  }
+
+  /* Keep signature pad visible */
+  .signature-canvas {
+    border: 1px solid #d1d5db !important;
+  }
 }

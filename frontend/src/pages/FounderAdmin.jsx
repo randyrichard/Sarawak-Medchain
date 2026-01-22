@@ -4,10 +4,10 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import SignatureCanvas from 'react-signature-canvas';
 
-// Midnight Navy Theme Colors
+// Midnight Navy Theme Colors - Master: #0a0e14
 const theme = {
-  bg: '#0a1628',
-  bgCard: '#0f1f38',
+  bg: '#0a0e14',
+  bgCard: '#0a0e14',
   bgCardHover: '#142847',
   border: '#1e3a5f',
   textPrimary: '#ffffff',

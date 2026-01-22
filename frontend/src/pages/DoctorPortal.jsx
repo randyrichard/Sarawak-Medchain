@@ -9,10 +9,10 @@ import BroadcastNotification from '../components/BroadcastNotification';
 import MaintenanceBanner from '../components/MaintenanceBanner';
 import FoundingPartnerBadge from '../components/FoundingPartnerBadge';
 
-// Terminal Theme Colors
+// Terminal Theme Colors - Master: #0a0e14
 const terminalTheme = {
-  bg: '#0a0f1a',
-  bgCard: '#0f1629',
+  bg: '#0a0e14',
+  bgCard: '#0a0e14',
   bgCardHover: '#141d33',
   border: '#1e3a5f',
   textPrimary: '#ffffff',

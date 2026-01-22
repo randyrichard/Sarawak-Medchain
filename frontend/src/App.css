@@ -482,6 +482,56 @@ button:disabled {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
+   MASTER COLOR UNITY - #0a0e14 Single Source of Truth
+   ABSOLUTE OVERRIDES - No Exceptions
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Force master color on ALL containers */
+html, body, #root, #root > div, #root > div > div {
+  background-color: #0a0e14 !important;
+}
+
+/* Sidebar - exact master color, no borders, no shadows */
+aside {
+  background-color: #0a0e14 !important;
+  border: none !important;
+  border-right: none !important;
+  box-shadow: none !important;
+}
+
+/* Kill ALL borders inside sidebar */
+aside > div,
+aside > nav,
+aside div {
+  border: none !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+}
+
+/* Main content area - exact master color */
+main {
+  background-color: #0a0e14 !important;
+  border: none !important;
+  border-top: none !important;
+  box-shadow: none !important;
+}
+
+/* Kill the seam - any element that might create a line */
+main > div:first-child,
+.flex-1 > div:first-child {
+  border-top: none !important;
+  box-shadow: none !important;
+}
+
+/* Force all portal containers to master color */
+.flex-1.flex-grow,
+[class*="min-h-full"],
+[class*="min-h-screen"] {
+  background-color: #0a0e14 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
    LOW CREDIT WARNING BANNER - Full Width, No White Margins
    ═══════════════════════════════════════════════════════════════════════════════ */
 .sticky.top-0.z-50 {
@@ -495,6 +545,18 @@ button:disabled {
 .flex-1.flex.flex-col {
   background-color: #0a0e14 !important;
   min-height: 100vh;
+}
+
+/* Override slate-900 to match master color */
+.bg-slate-900 {
+  background-color: #0a0e14 !important;
+}
+
+/* Component cards - transparent to sit on master color */
+.bg-gradient-to-br.from-slate-800,
+.bg-slate-800\/50 {
+  background: transparent !important;
+  border: 1px solid rgba(51, 65, 85, 0.3) !important;
 }
 
 /* Override any Tailwind bg-white classes in main areas */

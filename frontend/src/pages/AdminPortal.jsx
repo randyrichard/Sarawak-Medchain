@@ -298,7 +298,7 @@ export default function AdminPortal({ walletAddress }) {
   };
 
   return (
-    <div className="flex-1 flex-grow w-full min-h-full bg-slate-900 font-sans">
+    <div className="flex-1 flex-grow w-full min-h-full font-sans" style={{ backgroundColor: '#0a0e14' }}>
         {/* Network-Wide Broadcast Notification */}
         <BroadcastNotification />
 

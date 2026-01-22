@@ -466,6 +466,20 @@ export default function ServiceAgreement() {
             Scan to authorize mobile node access
           </p>
         </div>
+
+        {/* Export Official PDF Button */}
+        <div className="mt-8 flex justify-center pb-8">
+          <button
+            onClick={() => window.print()}
+            className="px-6 py-3 rounded-xl font-semibold text-slate-300 border-2 border-slate-600 hover:border-slate-400 hover:text-white transition-all flex items-center gap-3 cursor-pointer"
+            style={{ background: 'transparent' }}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+            </svg>
+            Export Official PDF
+          </button>
+        </div>
       </div>
     </div>
   );

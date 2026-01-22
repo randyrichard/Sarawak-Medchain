@@ -102,18 +102,18 @@ export default function PatientPortal({ walletAddress }) {
   };
 
   return (
-    <div className="flex-1 flex-grow w-full min-h-full bg-slate-100 font-sans">
+    <div className="flex-1 flex-grow w-full min-h-full font-sans" style={{ backgroundColor: '#0a0e14' }}>
       {/* Full-Width Content Area - No max-width constraints */}
       <div className="flex-1 w-full px-12 py-10">
         {/* Top Bar - Stretches Full Width */}
         <div className="mb-10 flex items-center justify-between">
           <div className="flex items-center gap-5">
-            <h1 className="text-4xl font-bold text-slate-900 tracking-tight">Patient Portal</h1>
-            <span className="px-4 py-1.5 rounded-full text-sm font-semibold bg-sarawak-blue-100 text-sarawak-blue-700">
+            <h1 className="text-4xl font-bold text-white tracking-tight">Patient Portal</h1>
+            <span className="px-4 py-1.5 rounded-full text-sm font-semibold bg-sarawak-blue-500/20 text-sarawak-blue-400">
               Patient View
             </span>
           </div>
-          <code className="text-sm bg-white px-5 py-3 rounded-2xl font-mono text-slate-600 shadow-sm">
+          <code className="text-sm bg-slate-800 px-5 py-3 rounded-2xl font-mono text-slate-300 border border-slate-700">
             {walletAddress}
           </code>
         </div>
@@ -132,19 +132,19 @@ export default function PatientPortal({ walletAddress }) {
         {/* Fluid Grid - 12 Column Layout, Full Width */}
         <div className="grid grid-cols-12 gap-10 w-full">
           {/* Access Control Section - col-span-4 */}
-          <div className="col-span-12 lg:col-span-4 bg-white rounded-3xl shadow-md p-8">
-            <h2 className="text-xl font-bold text-slate-900 mb-6">
+          <div className="col-span-12 lg:col-span-4 bg-slate-800/50 rounded-3xl border border-slate-700/50 p-8">
+            <h2 className="text-xl font-bold text-white mb-6">
               Access Control
             </h2>
             <div className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-slate-500 mb-2">Doctor's Wallet Address</label>
+                <label className="block text-sm font-medium text-slate-400 mb-2">Doctor's Wallet Address</label>
                 <input
                   type="text"
                   placeholder="0x..."
                   value={doctorAddress}
                   onChange={(e) => setDoctorAddress(e.target.value)}
-                  className="w-full px-5 py-4 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-sarawak-blue-500 focus:border-sarawak-blue-500 outline-none transition-all bg-slate-50 text-slate-800"
+                  className="w-full px-5 py-4 border border-slate-600 rounded-2xl focus:ring-2 focus:ring-sarawak-blue-500 focus:border-sarawak-blue-500 outline-none transition-all bg-slate-900/50 text-white placeholder-slate-500"
                 />
               </div>
               <div className="space-y-3 pt-2">
@@ -174,11 +174,11 @@ export default function PatientPortal({ walletAddress }) {
           </div>
 
           {/* Medical Records Section - col-span-8 */}
-          <div className="col-span-12 lg:col-span-8 bg-white rounded-3xl shadow-md p-8">
+          <div className="col-span-12 lg:col-span-8 bg-slate-800/50 rounded-3xl border border-slate-700/50 p-8">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
-                <h2 className="text-xl font-bold text-slate-900">My Medical Records</h2>
-                <span className="px-4 py-1.5 rounded-full text-sm font-semibold bg-slate-100 text-slate-600">
+                <h2 className="text-xl font-bold text-white">My Medical Records</h2>
+                <span className="px-4 py-1.5 rounded-full text-sm font-semibold bg-slate-700 text-slate-300">
                   {records.length} records
                 </span>
               </div>
@@ -222,7 +222,7 @@ export default function PatientPortal({ walletAddress }) {
                         placeholder="Enter encryption key"
                         value={encryptionKeys[record.ipfsHash] || ''}
                         onChange={(e) => handleKeyChange(record.ipfsHash, e.target.value)}
-                        className="flex-1 px-5 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-sarawak-blue-500 outline-none bg-white"
+                        className="flex-1 px-5 py-3 border border-slate-600 rounded-xl text-sm focus:ring-2 focus:ring-sarawak-blue-500 outline-none bg-slate-900/50 text-white placeholder-slate-500"
                       />
                       <button
                         onClick={() => handleViewRecord(record.ipfsHash)}

@@ -308,9 +308,10 @@ function StickyBalanceHeader({ walletAddress }) {
           <button
             onClick={handleTopUp}
             disabled={buttonLoading}
-            className={`px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-lg transform hover:scale-105 hover:shadow-xl active:scale-95 flex items-center gap-2 ${styles.button}`}
+            className={`px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-lg transform hover:scale-105 hover:shadow-xl active:scale-95 flex items-center gap-2 cursor-pointer ${styles.button}`}
             style={{
-              transition: 'all 0.2s ease-in-out'
+              transition: 'all 0.2s ease-in-out',
+              cursor: 'pointer'
             }}
           >
             {buttonLoading ? (
@@ -556,13 +557,13 @@ function CreditBalanceSidebar({ walletAddress }) {
 // Protected App Layout - requires wallet connection
 function ProtectedApp({ walletAddress, handleDisconnect }) {
   return (
-    <div className="flex h-screen w-full overflow-hidden">
+    <div className="flex h-screen w-full overflow-hidden" style={{ backgroundColor: '#0a0e14' }}>
       {/* Service Restored Toast Notification */}
       <ServiceRestoredToast />
       {/* Fixed Sidebar */}
-      <aside className="w-72 h-full bg-slate-900 text-white flex flex-col flex-shrink-0">
+      <aside className="w-72 h-full text-white flex flex-col flex-shrink-0" style={{ backgroundColor: '#0a0e14', borderRight: 'none', boxShadow: 'none' }}>
         {/* Logo & Title */}
-        <div className="p-6 border-b border-slate-800">
+        <div className="p-6" style={{ borderBottom: 'none' }}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-sarawak-red-500 rounded-lg flex items-center justify-center">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -651,7 +652,7 @@ function ProtectedApp({ walletAddress, handleDisconnect }) {
         </div>
 
         {/* Wallet Info */}
-        <div className="p-4 border-t border-slate-800">
+        <div className="p-4" style={{ borderTop: 'none' }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
@@ -668,7 +669,7 @@ function ProtectedApp({ walletAddress, handleDisconnect }) {
       </aside>
 
       {/* Main Content - Fluid, Scrolls Independently, Edge-to-Edge */}
-      <main className="flex-1 flex flex-col w-full overflow-y-auto">
+      <main className="flex-1 flex flex-col w-full overflow-y-auto" style={{ backgroundColor: '#0a0e14', minHeight: '100vh' }}>
         {/* Sticky Credit Balance Header */}
         <StickyBalanceHeader walletAddress={walletAddress} />
 
