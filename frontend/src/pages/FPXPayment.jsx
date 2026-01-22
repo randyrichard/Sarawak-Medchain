@@ -39,6 +39,10 @@ export default function FPXPayment() {
   const [invoiceData, setInvoiceData] = useState(null);
   const [isRecovering, setIsRecovering] = useState(false);
 
+  // Check if this is a top-up flow (from TopUpModal)
+  const isTopUp = location.state?.isTopUp === true;
+  const topUpAmount = location.state?.topUpAmount || 1000;
+
   // Check for pending payment recovery on page load
   useEffect(() => {
     const checkPendingPayment = async () => {
@@ -111,7 +115,29 @@ export default function FPXPayment() {
   }, []);
 
   useEffect(() => {
-    // Try to get agreement data from location state first, then localStorage
+    // For top-up flow, use existing hospital data
+    if (isTopUp) {
+      const hospitalNode = localStorage.getItem('medchain_hospital_node');
+      if (hospitalNode) {
+        setAgreementData(JSON.parse(hospitalNode));
+      } else {
+        // Fallback to signed agreement or create minimal data
+        const storedAgreement = localStorage.getItem('medchain_signed_agreement');
+        if (storedAgreement) {
+          setAgreementData(JSON.parse(storedAgreement));
+        } else {
+          // Use minimal data for top-up demo
+          setAgreementData({
+            hospitalName: 'Miri Hospital',
+            ceoEmail: 'admin@hospital.com',
+            signedAt: new Date().toISOString()
+          });
+        }
+      }
+      return;
+    }
+
+    // Subscription flow: get agreement data from location state first, then localStorage
     const stateData = location.state?.agreementData;
     const storedData = localStorage.getItem('medchain_signed_agreement');
 
@@ -123,9 +149,22 @@ export default function FPXPayment() {
       // No agreement found, redirect to agreement page
       navigate('/agreement');
     }
-  }, [location.state, navigate]);
+  }, [location.state, navigate, isTopUp]);
 
   const calculateTotal = () => {
+    // Top-up flow: only the selected credit amount + SST
+    if (isTopUp) {
+      const creditCost = topUpAmount;
+      return {
+        baseFee: 0,
+        creditCost,
+        subtotal: creditCost,
+        sst: Math.round(creditCost * 0.06), // 6% SST
+        total: Math.round(creditCost * 1.06),
+      };
+    }
+
+    // Subscription flow: base fee + credits + SST
     const baseFee = 10000; // RM 10,000 monthly subscription
     const creditCost = initialCredits * 1; // RM 1.00 per credit
     return {
@@ -189,28 +228,44 @@ export default function FPXPayment() {
     // Clear pending transaction after successful webhook call
     localStorage.removeItem('medchain_pending_fpx_txn');
 
-    // Payment successful - update hospital node to Active
+    // Payment successful - update hospital node
     const invoice = generateInvoice();
     invoice.transactionRef = transactionId; // Use consistent transaction ID
     setInvoiceData(invoice);
 
-    // Update hospital node status in localStorage
-    const hospitalData = {
-      ...agreementData,
-      status: 'Active',
-      activatedAt: new Date().toISOString(),
-      subscription: {
-        plan: 'Enterprise',
-        monthlyFee: 10000,
-        creditsIncluded: initialCredits,
-        nextBillingDate: getNextBillingDate(),
-      },
-      credits: {
-        balance: initialCredits,
-        lastTopUp: new Date().toISOString(),
-      },
-    };
-    localStorage.setItem('medchain_hospital_node', JSON.stringify(hospitalData));
+    // Handle top-up vs new subscription differently
+    if (isTopUp) {
+      // Top-up flow: Add credits to existing balance
+      const existingNode = JSON.parse(localStorage.getItem('medchain_hospital_node') || '{}');
+      const currentBalance = existingNode.credits?.balance || 0;
+      const hospitalData = {
+        ...existingNode,
+        credits: {
+          ...existingNode.credits,
+          balance: currentBalance + topUpAmount,
+          lastTopUp: new Date().toISOString(),
+        },
+      };
+      localStorage.setItem('medchain_hospital_node', JSON.stringify(hospitalData));
+    } else {
+      // New subscription flow: Create new hospital node
+      const hospitalData = {
+        ...agreementData,
+        status: 'Active',
+        activatedAt: new Date().toISOString(),
+        subscription: {
+          plan: 'Enterprise',
+          monthlyFee: 10000,
+          creditsIncluded: initialCredits,
+          nextBillingDate: getNextBillingDate(),
+        },
+        credits: {
+          balance: initialCredits,
+          lastTopUp: new Date().toISOString(),
+        },
+      };
+      localStorage.setItem('medchain_hospital_node', JSON.stringify(hospitalData));
+    }
 
     // Clear any critical alerts
     clearCriticalAlerts();
@@ -242,11 +297,37 @@ export default function FPXPayment() {
       '0123456789abcdef'[Math.floor(Math.random() * 16)]
     ).join('');
 
+    // Different items based on flow type
+    const items = isTopUp
+      ? [
+          {
+            description: `Credit Top-Up (${topUpAmount} credits @ RM 1.00)`,
+            quantity: topUpAmount,
+            unitPrice: 1,
+            amount: topUpAmount,
+          },
+        ]
+      : [
+          {
+            description: 'Sarawak MedChain Enterprise Subscription (Monthly)',
+            quantity: 1,
+            unitPrice: 10000,
+            amount: 10000,
+          },
+          {
+            description: `Initial Transaction Credits (${initialCredits} credits @ RM 1.00)`,
+            quantity: initialCredits,
+            unitPrice: 1,
+            amount: initialCredits,
+          },
+        ];
+
     return {
       invoiceNumber,
       date: new Date().toISOString(),
       dueDate: new Date().toISOString(),
       status: 'Paid',
+      isTopUp,
       hospital: {
         name: agreementData?.hospitalName || 'Hospital',
         address: agreementData?.hospitalAddress || '',
@@ -254,20 +335,7 @@ export default function FPXPayment() {
         ceoEmail: agreementData?.ceoEmail || agreementData?.email || 'ceo@hospital.com',
         financeEmail: agreementData?.financeEmail || 'finance@hospital.com',
       },
-      items: [
-        {
-          description: 'Sarawak MedChain Enterprise Subscription (Monthly)',
-          quantity: 1,
-          unitPrice: 10000,
-          amount: 10000,
-        },
-        {
-          description: `Initial Transaction Credits (${initialCredits} credits @ RM 1.00)`,
-          quantity: initialCredits,
-          unitPrice: 1,
-          amount: initialCredits,
-        },
-      ],
+      items,
       subtotal: pricing.subtotal,
       sst: pricing.sst,
       total: pricing.total,
@@ -601,8 +669,8 @@ export default function FPXPayment() {
               <div class="payment-value">${new Date(invoiceData.date).toLocaleString('en-MY')}</div>
             </div>
             <div class="payment-item">
-              <div class="payment-label">Credits Loaded</div>
-              <div class="payment-value" style="color: #0d9488; font-weight: 700;">RM ${initialCredits.toLocaleString()}.00</div>
+              <div class="payment-label">${invoiceData.isTopUp ? 'Credits Added' : 'Credits Loaded'}</div>
+              <div class="payment-value" style="color: #0d9488; font-weight: 700;">RM ${(invoiceData.isTopUp ? topUpAmount : initialCredits).toLocaleString()}.00</div>
             </div>
           </div>
         </div>
@@ -701,8 +769,12 @@ export default function FPXPayment() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h1 className="text-3xl font-bold text-white mb-2">Payment Successful!</h1>
-              <p className="text-green-100">Your hospital node is now active</p>
+              <h1 className="text-3xl font-bold text-white mb-2">
+                {isTopUp ? 'Top-Up Successful!' : 'Payment Successful!'}
+              </h1>
+              <p className="text-green-100">
+                {isTopUp ? `${topUpAmount.toLocaleString()} credits added to your balance` : 'Your hospital node is now active'}
+              </p>
             </div>
           </div>
 
@@ -793,13 +865,13 @@ export default function FPXPayment() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-emerald-400 font-bold text-lg">Credits Loaded</p>
-                  <p className="text-gray-400 text-sm">Ready for MC issuance</p>
+                  <p className="text-emerald-400 font-bold text-lg">{isTopUp ? 'Credits Added' : 'Credits Loaded'}</p>
+                  <p className="text-gray-400 text-sm">{isTopUp ? 'Added to your balance' : 'Ready for MC issuance'}</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-3xl font-black text-white">RM {initialCredits.toLocaleString()}</p>
-                <p className="text-emerald-400 text-sm">{initialCredits} MC credits</p>
+                <p className="text-3xl font-black text-white">RM {(isTopUp ? topUpAmount : initialCredits).toLocaleString()}</p>
+                <p className="text-emerald-400 text-sm">{isTopUp ? topUpAmount : initialCredits} MC credits</p>
               </div>
             </div>
           </div>
@@ -816,17 +888,17 @@ export default function FPXPayment() {
                 </div>
               </div>
               <div className="bg-gray-700/50 rounded-lg p-4">
-                <div className="text-gray-400 text-sm">Credit Balance</div>
-                <div className="text-emerald-400 font-bold">RM {initialCredits.toLocaleString()}</div>
+                <div className="text-gray-400 text-sm">{isTopUp ? 'Credits Added' : 'Credit Balance'}</div>
+                <div className="text-emerald-400 font-bold">RM {(isTopUp ? topUpAmount : initialCredits).toLocaleString()}</div>
               </div>
               <div className="bg-gray-700/50 rounded-lg p-4">
                 <div className="text-gray-400 text-sm">Plan</div>
                 <div className="text-white font-bold">Enterprise</div>
               </div>
               <div className="bg-gray-700/50 rounded-lg p-4">
-                <div className="text-gray-400 text-sm">Next Billing</div>
+                <div className="text-gray-400 text-sm">{isTopUp ? 'Transaction' : 'Next Billing'}</div>
                 <div className="text-white font-bold">
-                  {new Date(getNextBillingDate()).toLocaleDateString()}
+                  {isTopUp ? 'Completed' : new Date(getNextBillingDate()).toLocaleDateString()}
                 </div>
               </div>
             </div>
@@ -877,13 +949,22 @@ export default function FPXPayment() {
 
   // Main Payment Selection Screen
   return (
-    <div className="min-h-screen bg-gray-900 py-12 px-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen py-12 px-4" style={{ backgroundColor: '#0a0e14' }}>
+      {/* Global CSS for seamless background */}
+      <style>{`
+        html, body, #root {
+          background-color: #0a0e14 !important;
+        }
+      `}</style>
+
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Complete Your Payment</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">
+            {isTopUp ? 'Top Up Credits' : 'Complete Your Payment'}
+          </h1>
           <p className="text-gray-400">
-            Activate your hospital node with FPX Online Banking
+            {isTopUp ? 'Add credits to your hospital node via FPX' : 'Activate your hospital node with FPX Online Banking'}
           </p>
         </div>
 
@@ -893,37 +974,51 @@ export default function FPXPayment() {
             <h2 className="text-xl font-semibold text-white mb-4">Order Summary</h2>
 
             <div className="space-y-4 mb-6">
-              <div className="flex justify-between items-center py-3 border-b border-gray-700">
-                <div>
-                  <div className="text-white font-medium">Enterprise Subscription</div>
-                  <div className="text-gray-400 text-sm">Monthly fee</div>
-                </div>
-                <div className="text-white font-bold">RM 10,000</div>
-              </div>
-
-              <div className="py-3 border-b border-gray-700">
-                <div className="flex justify-between items-center mb-3">
+              {/* Show subscription line ONLY for non-top-up flow */}
+              {!isTopUp && (
+                <div className="flex justify-between items-center py-3 border-b border-gray-700">
                   <div>
-                    <div className="text-white font-medium">Initial Credits</div>
-                    <div className="text-gray-400 text-sm">RM 1.00 per MC transaction</div>
+                    <div className="text-white font-medium">Enterprise Subscription</div>
+                    <div className="text-gray-400 text-sm">Monthly fee</div>
                   </div>
-                  <div className="text-white font-bold">RM {initialCredits}</div>
+                  <div className="text-white font-bold">RM 10,000</div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <input
-                    type="range"
-                    min="50"
-                    max="500"
-                    step="50"
-                    value={initialCredits}
-                    onChange={(e) => setInitialCredits(Number(e.target.value))}
-                    className="flex-1 accent-teal-500"
-                  />
-                  <span className="text-teal-400 font-mono w-20 text-right">
-                    {initialCredits} credits
-                  </span>
+              )}
+
+              {/* Credits section - different for top-up vs subscription */}
+              {isTopUp ? (
+                <div className="flex justify-between items-center py-3 border-b border-gray-700">
+                  <div>
+                    <div className="text-white font-medium">Credit Top-Up</div>
+                    <div className="text-gray-400 text-sm">{topUpAmount} MC credits @ RM 1.00 each</div>
+                  </div>
+                  <div className="text-white font-bold">RM {topUpAmount.toLocaleString()}</div>
                 </div>
-              </div>
+              ) : (
+                <div className="py-3 border-b border-gray-700">
+                  <div className="flex justify-between items-center mb-3">
+                    <div>
+                      <div className="text-white font-medium">Initial Credits</div>
+                      <div className="text-gray-400 text-sm">RM 1.00 per MC transaction</div>
+                    </div>
+                    <div className="text-white font-bold">RM {initialCredits}</div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="range"
+                      min="50"
+                      max="500"
+                      step="50"
+                      value={initialCredits}
+                      onChange={(e) => setInitialCredits(Number(e.target.value))}
+                      className="flex-1 accent-teal-500"
+                    />
+                    <span className="text-teal-400 font-mono w-20 text-right">
+                      {initialCredits} credits
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2 mb-4">
@@ -946,10 +1041,17 @@ export default function FPXPayment() {
 
             <div className="mt-4 p-4 bg-teal-900/30 rounded-lg">
               <div className="text-teal-400 font-medium mb-1">Hospital</div>
-              <div className="text-white">{agreementData.hospitalName}</div>
-              <div className="text-gray-400 text-sm mt-2">
-                Agreement signed on {new Date(agreementData.signedAt).toLocaleDateString()}
-              </div>
+              <div className="text-white">{agreementData?.hospitalName || 'Hospital'}</div>
+              {!isTopUp && agreementData?.signedAt && (
+                <div className="text-gray-400 text-sm mt-2">
+                  Agreement signed on {new Date(agreementData.signedAt).toLocaleDateString()}
+                </div>
+              )}
+              {isTopUp && (
+                <div className="text-gray-400 text-sm mt-2">
+                  Credits will be added to your existing balance
+                </div>
+              )}
             </div>
           </div>
 
