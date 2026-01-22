@@ -63,6 +63,16 @@ export default function ServiceAgreement() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSignatureSuccess, setShowSignatureSuccess] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Real-time clock - update every second
+  useEffect(() => {
+    const clockInterval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(clockInterval);
+  }, []);
 
   // Signature canvas container ref for proper sizing
   const signatureContainerRef = useRef(null);
@@ -222,7 +232,7 @@ export default function ServiceAgreement() {
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#0a0e14' }}>
       {/* Header */}
-      <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-50 w-full">
+      <header className="sticky top-0 z-50 w-full" style={{ backgroundColor: '#0a0e14', borderBottom: '1px solid rgba(51, 65, 85, 0.3)' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }} className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: MEDCHAIN_BLUE }}>
@@ -235,10 +245,17 @@ export default function ServiceAgreement() {
               <span className="text-xl font-bold text-amber-400 ml-1">MedChain</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <span className="px-3 py-1 bg-blue-500/20 border border-blue-500/30 rounded-full text-blue-400 text-xs font-bold">
               {CONTRACT_VERSION}
             </span>
+            {/* Real-Time Digital Clock */}
+            <div className="flex items-center gap-2 px-3 py-1 bg-slate-800/80 border border-slate-700 rounded-full">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+              <span className="text-emerald-400 text-sm font-mono font-bold tracking-wider">
+                {currentTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              </span>
+            </div>
           </div>
         </div>
       </header>
@@ -471,7 +488,7 @@ export default function ServiceAgreement() {
                       </svg>
                     </div>
                     <h4 className="text-white text-xl font-bold mb-1">Node Authorization Successful</h4>
-                    <p className="text-emerald-100 text-sm font-medium">Miri Node Online</p>
+                    <p className="text-emerald-100 text-sm font-medium">Miri Hospital Node Online</p>
                   </div>
                 </div>
               )}
@@ -497,8 +514,18 @@ export default function ServiceAgreement() {
               )}
             </div>
 
-            {/* CSS Keyframe Animations */}
+            {/* CSS Keyframe Animations & Global Background Unity */}
             <style>{`
+              /* Perfect Background Unity - #0a0e14 everywhere */
+              html, body, #root {
+                background-color: #0a0e14 !important;
+              }
+
+              /* Remove any seams or lines */
+              * {
+                border-color: transparent;
+              }
+
               @keyframes fadeInScale {
                 0% { opacity: 0; transform: scale(0.8); }
                 100% { opacity: 1; transform: scale(1); }
