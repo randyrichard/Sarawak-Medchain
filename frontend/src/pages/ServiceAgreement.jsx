@@ -14,6 +14,7 @@ const DEMO_URL = 'http://192.168.0.163:5173/gov-preview';
 
 const MEDCHAIN_BLUE = '#0066CC';
 const MEDCHAIN_DARK = '#003366';
+const MEDCHAIN_GOLD = '#D4A017'; // Prestigious gold for signatures
 
 // Contract template
 const CONTRACT_VERSION = 'DSA-2026-001';
@@ -61,6 +62,7 @@ export default function ServiceAgreement() {
   const [hasSignature, setHasSignature] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSignatureSuccess, setShowSignatureSuccess] = useState(false);
 
   // Signature canvas container ref for proper sizing
   const signatureContainerRef = useRef(null);
@@ -75,7 +77,7 @@ export default function ServiceAgreement() {
       const rect = container.getBoundingClientRect();
 
       // Account for padding (12px on each side from p-3)
-      const displayWidth = rect.width - 24;
+      const displayWidth = Math.floor(rect.width - 24);
       const displayHeight = 180;
 
       // Get device pixel ratio for high-DPI screens
@@ -85,7 +87,7 @@ export default function ServiceAgreement() {
       canvas.width = displayWidth * dpr;
       canvas.height = displayHeight * dpr;
 
-      // Set CSS display size
+      // Set CSS display size - ensures ink stays within box boundary
       canvas.style.width = `${displayWidth}px`;
       canvas.style.height = `${displayHeight}px`;
 
@@ -93,9 +95,14 @@ export default function ServiceAgreement() {
       const ctx = canvas.getContext('2d');
       ctx.scale(dpr, dpr);
 
-      // Clear canvas after resize
+      // Fill with dark background color to ensure proper initialization
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, displayWidth, displayHeight);
+
+      // Clear canvas state after resize
       signaturePadRef.current.clear();
       setHasSignature(false);
+      setShowSignatureSuccess(false);
     };
 
     // Delay to ensure DOM is ready and container is properly sized
@@ -123,13 +130,22 @@ export default function ServiceAgreement() {
     if (signaturePadRef.current) {
       signaturePadRef.current.clear();
       setHasSignature(false);
+      setShowSignatureSuccess(false);
     }
   };
 
-  // Check if signature exists
+  // Check if signature exists and trigger success animation
   const checkSignature = () => {
     if (signaturePadRef.current) {
-      setHasSignature(!signaturePadRef.current.isEmpty());
+      const hasSig = !signaturePadRef.current.isEmpty();
+      setHasSignature(hasSig);
+
+      // Trigger success animation when signature is first captured
+      if (hasSig && !hasSignature) {
+        setShowSignatureSuccess(true);
+        // Auto-hide after 4 seconds
+        setTimeout(() => setShowSignatureSuccess(false), 4000);
+      }
     }
   };
 
@@ -204,7 +220,7 @@ export default function ServiceAgreement() {
   };
 
   return (
-    <div className="min-h-screen bg-[#121212] flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#0a0e14' }}>
       {/* Header */}
       <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-50 w-full">
         <div style={{ maxWidth: '900px', margin: '0 auto' }} className="px-6 py-4 flex items-center justify-between">
@@ -377,17 +393,18 @@ export default function ServiceAgreement() {
           </div>
 
           {/* Signature Pad */}
-          <div className="p-8 border-b border-slate-700/50">
+          <div className="p-8 border-b border-slate-700/50 relative">
             <h3 className="text-lg font-bold text-white mb-2">Digital Signature</h3>
             <p className="text-sm text-slate-400 mb-6">Please sign in the box below using your mouse or touchscreen</p>
 
             <div
               ref={signatureContainerRef}
-              className="bg-white rounded-xl p-3 mb-4 w-full"
+              className="rounded-xl p-3 mb-4 w-full relative overflow-hidden"
               style={{
                 width: '100%',
-                border: '2px dashed #003366',
-                boxSizing: 'border-box'
+                border: `2px dashed ${MEDCHAIN_GOLD}`,
+                boxSizing: 'border-box',
+                backgroundColor: '#0f172a'
               }}
             >
               <SignatureCanvas
@@ -401,10 +418,63 @@ export default function ServiceAgreement() {
                     touchAction: 'none'
                   }
                 }}
-                backgroundColor="white"
-                penColor="#003366"
+                backgroundColor="#0f172a"
+                penColor={MEDCHAIN_GOLD}
                 onEnd={checkSignature}
               />
+
+              {/* Signature Success Animation Overlay */}
+              {showSignatureSuccess && (
+                <div
+                  className="absolute inset-0 flex items-center justify-center z-10 animate-fade-in"
+                  style={{
+                    backgroundColor: 'rgba(16, 185, 129, 0.95)',
+                    animation: 'fadeInScale 0.5s ease-out forwards'
+                  }}
+                >
+                  <div className="text-center">
+                    {/* Animated Checkmark */}
+                    <div className="relative w-20 h-20 mx-auto mb-4">
+                      <svg
+                        className="w-20 h-20 text-white"
+                        viewBox="0 0 52 52"
+                        style={{
+                          animation: 'checkmarkCircle 0.6s ease-in-out forwards'
+                        }}
+                      >
+                        <circle
+                          className="stroke-current"
+                          cx="26"
+                          cy="26"
+                          r="23"
+                          fill="none"
+                          strokeWidth="3"
+                          style={{
+                            strokeDasharray: 166,
+                            strokeDashoffset: 166,
+                            animation: 'strokeDraw 0.6s ease-in-out forwards'
+                          }}
+                        />
+                        <path
+                          className="stroke-current"
+                          fill="none"
+                          strokeWidth="4"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M14 27l7 7 16-16"
+                          style={{
+                            strokeDasharray: 48,
+                            strokeDashoffset: 48,
+                            animation: 'strokeDraw 0.4s 0.4s ease-in-out forwards'
+                          }}
+                        />
+                      </svg>
+                    </div>
+                    <h4 className="text-white text-xl font-bold mb-1">Node Authorization Successful</h4>
+                    <p className="text-emerald-100 text-sm font-medium">Miri Node Online</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center justify-between">
@@ -418,7 +488,7 @@ export default function ServiceAgreement() {
                 Clear Signature
               </button>
               {hasSignature && (
-                <span className="text-emerald-400 text-sm flex items-center gap-2">
+                <span className="text-amber-400 text-sm flex items-center gap-2">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
@@ -426,6 +496,22 @@ export default function ServiceAgreement() {
                 </span>
               )}
             </div>
+
+            {/* CSS Keyframe Animations */}
+            <style>{`
+              @keyframes fadeInScale {
+                0% { opacity: 0; transform: scale(0.8); }
+                100% { opacity: 1; transform: scale(1); }
+              }
+              @keyframes strokeDraw {
+                to { stroke-dashoffset: 0; }
+              }
+              @keyframes checkmarkCircle {
+                0% { transform: scale(0); opacity: 0; }
+                50% { transform: scale(1.1); }
+                100% { transform: scale(1); opacity: 1; }
+              }
+            `}</style>
           </div>
 
           {/* Agreement Checkbox */}
