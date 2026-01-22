@@ -281,12 +281,35 @@ button:focus-visible {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   MASTER BACKGROUND - #0a0e14 Only
+   MASTER BACKGROUND - #0a0e14 Only - ABSOLUTE ENFORCEMENT
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-/* Core layout backgrounds */
-html, body, #root {
+/* Core layout backgrounds - NUCLEAR */
+html, body, #root, #root > * {
   background-color: #0a0e14 !important;
+}
+
+/* Header - force #0a0e14, kill all seams */
+header, .header, [class*="header"] {
+  background-color: #0a0e14 !important;
+  border: none !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+}
+
+/* Sidebar - force #0a0e14, kill all seams */
+aside, .sidebar, nav:not(.nav-links) {
+  background-color: #0a0e14 !important;
+  border: none !important;
+  border-right: none !important;
+  box-shadow: none !important;
+}
+
+/* Main content - force #0a0e14 */
+main, .main, .main-content {
+  background-color: #0a0e14 !important;
+  border: none !important;
+  border-left: none !important;
 }
 
 /* Main layout structure */
@@ -294,16 +317,6 @@ html, body, #root {
 .flex.h-screen > aside,
 .flex.h-screen > main {
   background-color: #0a0e14 !important;
-}
-
-/* Remove seam between sidebar and main */
-.flex.h-screen > aside {
-  border-right: none !important;
-  box-shadow: none !important;
-}
-
-.flex.h-screen > main {
-  border-left: none !important;
 }
 
 /* Sticky balance header */
@@ -322,4 +335,14 @@ html, body, #root {
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   DARK GLASS CARDS - Override white backgrounds globally
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Override white backgrounds in main content (preserve modals/print) */
+main .bg-white {
+  background: rgba(17, 25, 40, 0.75) !important;
+  backdrop-filter: blur(10px) !important;
 }
