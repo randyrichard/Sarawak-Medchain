@@ -274,8 +274,8 @@ function StickyBalanceHeader({ walletAddress }) {
   if (needsAttention) {
     return (
       <>
-      <div className={`sticky top-0 z-50 ${styles.banner} shadow-lg`}>
-        <div className="px-6 py-4 flex items-center justify-between">
+      <div className={`sticky top-0 z-50 ${styles.banner}`} style={{ width: '100%', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }} className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             {/* Warning Icon */}
             <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isCriticalBalance ? 'bg-white/20' : 'bg-white/20'} animate-pulse`}>
@@ -719,7 +719,7 @@ function ConnectScreen({ onConnect, loading, error }) {
   // If pending admin, show special UI
   if (pendingAdmin) {
     return (
-      <div className="min-h-screen bg-[#030712] flex items-center justify-center p-6">
+      <div className="min-h-screen bg-[#0a0e14] flex items-center justify-center p-6">
         <div className="max-w-lg w-full">
           {/* Pending Admin Card */}
           <div className="bg-slate-900 border border-amber-500/30 rounded-2xl p-8 shadow-2xl">
@@ -913,7 +913,7 @@ function AppRoutes() {
   // Show loading while checking wallet
   if (checkingWallet && isProtectedRoute) {
     return (
-      <div className="min-h-screen bg-[#030712] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0a0e14] flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-slate-400">Checking wallet connection...</p>

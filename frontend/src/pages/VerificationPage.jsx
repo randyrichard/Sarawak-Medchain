@@ -78,7 +78,7 @@ export default function VerificationPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#030712] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0a0e14' }}>
         <div className="text-center">
           <div className="w-20 h-20 mx-auto mb-6 relative">
             <div className="absolute inset-0 rounded-full border-4 border-cyan-500/30 animate-ping"></div>
@@ -92,9 +92,12 @@ export default function VerificationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#030712] py-12 px-4">
-      {/* Print Styles */}
+    <div className="min-h-screen py-12 px-4" style={{ backgroundColor: '#0a0e14' }}>
+      {/* Global CSS & Print Styles */}
       <style>{`
+        html, body, #root {
+          background-color: #0a0e14 !important;
+        }
         @media print {
           body { background: white !important; }
           .no-print { display: none !important; }
@@ -105,7 +108,7 @@ export default function VerificationPage() {
         }
       `}</style>
 
-      <div className="max-w-2xl mx-auto">
+      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {/* Verification Status Banner */}
         <div className="no-print mb-8 text-center">
           <div className="inline-flex items-center gap-3 px-6 py-3 bg-emerald-500/20 border border-emerald-500/30 rounded-full">
