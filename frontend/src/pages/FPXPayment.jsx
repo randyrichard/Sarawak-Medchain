@@ -38,6 +38,7 @@ export default function FPXPayment() {
   const [paymentComplete, setPaymentComplete] = useState(false);
   const [invoiceData, setInvoiceData] = useState(null);
   const [isRecovering, setIsRecovering] = useState(false);
+  const [newBalance, setNewBalance] = useState(0); // Track new balance after top-up
 
   // Check if this is a top-up flow (from TopUpModal)
   const isTopUp = location.state?.isTopUp === true;
@@ -238,11 +239,13 @@ export default function FPXPayment() {
       // Top-up flow: Add credits to existing balance
       const existingNode = JSON.parse(localStorage.getItem('medchain_hospital_node') || '{}');
       const currentBalance = existingNode.credits?.balance || 0;
+      const updatedBalance = currentBalance + topUpAmount;
+      setNewBalance(updatedBalance); // Store new balance for receipt
       const hospitalData = {
         ...existingNode,
         credits: {
           ...existingNode.credits,
-          balance: currentBalance + topUpAmount,
+          balance: updatedBalance,
           lastTopUp: new Date().toISOString(),
         },
       };
@@ -673,6 +676,12 @@ export default function FPXPayment() {
               <div class="payment-value" style="color: #0d9488; font-weight: 700;">RM ${(invoiceData.isTopUp ? topUpAmount : initialCredits).toLocaleString()}.00</div>
             </div>
           </div>
+          ${invoiceData.isTopUp ? `
+          <div style="margin-top: 16px; padding: 16px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 12px; text-align: center;">
+            <div style="font-size: 12px; color: rgba(255,255,255,0.8); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">New Credit Balance</div>
+            <div style="font-size: 28px; font-weight: 800; color: white;">RM ${newBalance.toLocaleString()}.00</div>
+          </div>
+          ` : ''}
         </div>
 
         <!-- Email Confirmation -->
@@ -705,7 +714,7 @@ export default function FPXPayment() {
 
   if (!agreementData) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0a0e14' }}>
         <div className="text-white">Loading...</div>
       </div>
     );
@@ -714,7 +723,7 @@ export default function FPXPayment() {
   // Payment Processing Screen
   if (isProcessing) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0a0e14' }}>
         <div className="bg-gray-800 rounded-2xl p-8 max-w-md w-full mx-4 text-center">
           <div className="mb-8">
             <div className="text-6xl mb-4">{PROCESSING_STEPS[currentStep]?.icon}</div>
@@ -758,7 +767,13 @@ export default function FPXPayment() {
   // Payment Complete Screen
   if (paymentComplete && invoiceData) {
     return (
-      <div className="min-h-screen bg-gray-900 py-12 px-4">
+      <div className="min-h-screen py-12 px-4" style={{ backgroundColor: '#0a0e14' }}>
+        {/* Global CSS for seamless background */}
+        <style>{`
+          html, body, #root {
+            background-color: #0a0e14 !important;
+          }
+        `}</style>
         <div className="max-w-2xl mx-auto">
           {/* Success Banner */}
           <div className="bg-gradient-to-r from-green-600 to-teal-600 rounded-2xl p-8 text-center mb-8 relative overflow-hidden">
@@ -866,12 +881,21 @@ export default function FPXPayment() {
                 </div>
                 <div>
                   <p className="text-emerald-400 font-bold text-lg">{isTopUp ? 'Credits Added' : 'Credits Loaded'}</p>
-                  <p className="text-gray-400 text-sm">{isTopUp ? 'Added to your balance' : 'Ready for MC issuance'}</p>
+                  <p className="text-gray-400 text-sm">{isTopUp ? `+RM ${topUpAmount.toLocaleString()} added` : 'Ready for MC issuance'}</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-3xl font-black text-white">RM {(isTopUp ? topUpAmount : initialCredits).toLocaleString()}</p>
-                <p className="text-emerald-400 text-sm">{isTopUp ? topUpAmount : initialCredits} MC credits</p>
+                {isTopUp ? (
+                  <>
+                    <p className="text-3xl font-black text-white">RM {newBalance.toLocaleString()}</p>
+                    <p className="text-emerald-400 text-sm">New Balance</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-3xl font-black text-white">RM {initialCredits.toLocaleString()}</p>
+                    <p className="text-emerald-400 text-sm">{initialCredits} MC credits</p>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -888,17 +912,17 @@ export default function FPXPayment() {
                 </div>
               </div>
               <div className="bg-gray-700/50 rounded-lg p-4">
-                <div className="text-gray-400 text-sm">{isTopUp ? 'Credits Added' : 'Credit Balance'}</div>
-                <div className="text-emerald-400 font-bold">RM {(isTopUp ? topUpAmount : initialCredits).toLocaleString()}</div>
+                <div className="text-gray-400 text-sm">{isTopUp ? 'New Balance' : 'Credit Balance'}</div>
+                <div className="text-emerald-400 font-bold">RM {(isTopUp ? newBalance : initialCredits).toLocaleString()}</div>
               </div>
               <div className="bg-gray-700/50 rounded-lg p-4">
                 <div className="text-gray-400 text-sm">Plan</div>
                 <div className="text-white font-bold">Enterprise</div>
               </div>
               <div className="bg-gray-700/50 rounded-lg p-4">
-                <div className="text-gray-400 text-sm">{isTopUp ? 'Transaction' : 'Next Billing'}</div>
-                <div className="text-white font-bold">
-                  {isTopUp ? 'Completed' : new Date(getNextBillingDate()).toLocaleDateString()}
+                <div className="text-gray-400 text-sm">{isTopUp ? 'Transaction ID' : 'Next Billing'}</div>
+                <div className="text-white font-bold text-sm">
+                  {isTopUp ? invoiceData?.transactionRef : new Date(getNextBillingDate()).toLocaleDateString()}
                 </div>
               </div>
             </div>
