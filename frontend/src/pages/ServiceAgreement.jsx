@@ -6,6 +6,11 @@
 import { useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import SignatureCanvas from 'react-signature-canvas';
+import { QRCodeSVG } from 'qrcode.react';
+
+// Live demo URL for mobile preview (Councilor View / Miri-focused map)
+// Using local network IP for same-WiFi mobile access
+const DEMO_URL = 'http://192.168.0.163:5173/gov-preview';
 
 const MEDCHAIN_BLUE = '#0066CC';
 const MEDCHAIN_DARK = '#003366';
@@ -418,6 +423,48 @@ export default function ServiceAgreement() {
               </p>
             )}
           </div>
+        </div>
+
+        {/* QR Code - Scan to Preview */}
+        <div className="mt-12 flex flex-col items-center pb-8">
+          <div
+            className="relative bg-white p-5 rounded-2xl"
+            style={{
+              boxShadow: '0 10px 40px rgba(0, 102, 204, 0.2)',
+            }}
+          >
+            <QRCodeSVG
+              value={DEMO_URL}
+              size={160}
+              level="H"
+              bgColor="#ffffff"
+              fgColor="#003366"
+            />
+            {/* MedChain Gold Shield Overlay - Centered */}
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)'
+              }}
+            >
+              <div
+                className="w-11 h-11 rounded-lg flex items-center justify-center border-2 border-white"
+                style={{
+                  background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+                  boxShadow: '0 2px 8px rgba(245, 158, 11, 0.5)',
+                }}
+              >
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+          <p className="mt-4 text-slate-400 text-sm font-medium tracking-wide">
+            Scan to authorize mobile node access
+          </p>
         </div>
       </div>
     </div>
