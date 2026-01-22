@@ -30,12 +30,154 @@ import CouncilorView from './pages/CouncilorView';
 import { ServiceRestoredToast } from './components/ServiceNotifications';
 import './App.css';
 
+// Top-Up Modal Component
+function TopUpModal({ isOpen, onClose, currentBalance }) {
+  const navigate = useNavigate();
+  const [selectedAmount, setSelectedAmount] = useState(1000);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const topUpOptions = [
+    { amount: 500, label: 'RM 500', popular: false },
+    { amount: 1000, label: 'RM 1,000', popular: true },
+    { amount: 2500, label: 'RM 2,500', popular: false },
+    { amount: 5000, label: 'RM 5,000', popular: false },
+  ];
+
+  const handleProceedToPayment = async () => {
+    setIsProcessing(true);
+    // Small delay for visual feedback
+    await new Promise(resolve => setTimeout(resolve, 200));
+    // Navigate to payment page with amount
+    navigate('/payment', { state: { topUpAmount: selectedAmount, isTopUp: true } });
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Modal - Centered with max-width matching Service Agreement */}
+      <div
+        className="relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl overflow-hidden w-full mx-4"
+        style={{
+          maxWidth: '500px',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05)'
+        }}
+      >
+        {/* Header */}
+        <div className="p-6 border-b border-slate-700/50 bg-gradient-to-r from-blue-600/10 to-cyan-600/10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">Top Up Credits</h2>
+                <p className="text-slate-400 text-sm">Instant FPX payment</p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition-colors"
+            >
+              <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Current Balance */}
+        <div className="p-6 border-b border-slate-700/50">
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400">Current Balance</span>
+            <span className="text-2xl font-bold text-white">RM {currentBalance?.toLocaleString() || 0}</span>
+          </div>
+        </div>
+
+        {/* Amount Selection */}
+        <div className="p-6">
+          <p className="text-sm text-slate-400 mb-4">Select top-up amount</p>
+          <div className="grid grid-cols-2 gap-3">
+            {topUpOptions.map((option) => (
+              <button
+                key={option.amount}
+                onClick={() => setSelectedAmount(option.amount)}
+                className={`relative p-4 rounded-xl border-2 transition-all ${
+                  selectedAmount === option.amount
+                    ? 'border-blue-500 bg-blue-500/10'
+                    : 'border-slate-700 hover:border-slate-600 hover:bg-slate-800/50'
+                }`}
+              >
+                {option.popular && (
+                  <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-emerald-500 text-white text-xs font-bold rounded-full">
+                    POPULAR
+                  </span>
+                )}
+                <p className={`text-lg font-bold ${selectedAmount === option.amount ? 'text-blue-400' : 'text-white'}`}>
+                  {option.label}
+                </p>
+                <p className="text-xs text-slate-500 mt-1">{option.amount} MC credits</p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Summary & Action */}
+        <div className="p-6 bg-slate-800/50">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-slate-400">New Balance</span>
+            <span className="text-xl font-bold text-emerald-400">
+              RM {((currentBalance || 0) + selectedAmount).toLocaleString()}
+            </span>
+          </div>
+          <button
+            onClick={handleProceedToPayment}
+            disabled={isProcessing}
+            className="w-full py-4 rounded-xl font-bold text-white text-lg transition-all transform hover:scale-[1.02] hover:shadow-lg active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-70 disabled:transform-none"
+            style={{
+              background: 'linear-gradient(135deg, #0066CC, #003366)',
+              boxShadow: '0 10px 40px rgba(0, 102, 204, 0.3)'
+            }}
+          >
+            {isProcessing ? (
+              <>
+                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Processing...
+              </>
+            ) : (
+              <>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                Pay RM {selectedAmount.toLocaleString()} via FPX
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Sticky Credit Balance Header Component (shows at top of main content)
 function StickyBalanceHeader({ walletAddress }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [creditBalance, setCreditBalance] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showTopUpModal, setShowTopUpModal] = useState(false);
+  const [buttonLoading, setButtonLoading] = useState(false);
 
   // Show on Doctor and Admin portals where billing matters
   const showOnRoutes = ['/doctor', '/admin'];
@@ -78,8 +220,18 @@ function StickyBalanceHeader({ walletAddress }) {
     }
   };
 
-  const handleTopUp = () => {
-    navigate('/admin');
+  const handleTopUp = async () => {
+    setButtonLoading(true);
+    // Show spinner if loading takes more than 200ms
+    const timer = setTimeout(() => {
+      setShowTopUpModal(true);
+      setButtonLoading(false);
+    }, 200);
+
+    // Open modal immediately if ready
+    setShowTopUpModal(true);
+    setButtonLoading(false);
+    clearTimeout(timer);
   };
 
   if (!shouldShow) return null;
@@ -121,6 +273,7 @@ function StickyBalanceHeader({ walletAddress }) {
   // Show amber warning banner for low credit
   if (needsAttention) {
     return (
+      <>
       <div className={`sticky top-0 z-50 ${styles.banner} shadow-lg`}>
         <div className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -154,12 +307,34 @@ function StickyBalanceHeader({ walletAddress }) {
           {/* Top Up Button */}
           <button
             onClick={handleTopUp}
-            className={`px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-lg ${styles.button}`}
+            disabled={buttonLoading}
+            className={`px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-lg transform hover:scale-105 hover:shadow-xl active:scale-95 flex items-center gap-2 ${styles.button}`}
+            style={{
+              transition: 'all 0.2s ease-in-out'
+            }}
           >
-            Top Up Now
+            {buttonLoading ? (
+              <>
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Loading...
+              </>
+            ) : (
+              'Top Up Now'
+            )}
           </button>
         </div>
       </div>
+
+      {/* Top-Up Modal */}
+      <TopUpModal
+        isOpen={showTopUpModal}
+        onClose={() => setShowTopUpModal(false)}
+        currentBalance={creditBalance}
+      />
+    </>
     );
   }
 
