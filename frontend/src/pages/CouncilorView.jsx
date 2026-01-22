@@ -69,14 +69,14 @@ export default function CouncilorView() {
   // PWA: Only set manifest when on /pwa/gov route
   usePWA(isPWARoute ? PWA_CONFIGS.gov : null);
 
-  // Theme classes for dark/light mode
+  // Theme classes for dark/light mode - Master color: #0a0e14
   const theme = {
-    bg: isDarkMode ? 'bg-[#030712]' : 'bg-gray-100',
+    bg: '#0a0e14', // Master background color
     cardBg: isDarkMode ? 'bg-slate-900/50' : 'bg-white',
-    headerBg: isDarkMode ? 'bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900' : 'bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800',
+    headerBg: '#0a0e14', // Seamless header - no gradient
     text: isDarkMode ? 'text-white' : 'text-gray-900',
     textMuted: isDarkMode ? 'text-slate-400' : 'text-gray-600',
-    border: isDarkMode ? 'border-slate-700/50' : 'border-gray-200',
+    border: isDarkMode ? 'border-slate-700/30' : 'border-gray-200',
     accent: isHighContrast ? 'text-yellow-400' : 'text-emerald-400',
     accentBg: isHighContrast ? 'bg-yellow-500/20' : 'bg-emerald-500/20',
   };
@@ -148,11 +148,29 @@ export default function CouncilorView() {
   };
 
   return (
-    <div className={`min-h-screen ${theme.bg} transition-colors duration-300`}>
+    <div className="min-h-screen transition-colors duration-300" style={{ backgroundColor: theme.bg }}>
+      {/* Global CSS Overrides for Perfect Background Unity */}
+      <style>{`
+        html, body, #root {
+          background-color: #0a0e14 !important;
+        }
+        * {
+          box-sizing: border-box;
+        }
+      `}</style>
+
       {/* Header with Governance Branding - Mobile Optimized */}
       {/* iPhone 8 Plus Safe Area: Extra 20px padding to prevent iOS status bar overlap */}
-      <header className={`${theme.headerBg} border-b ${theme.border} sticky top-0 z-50 pt-[20px]`} style={{ paddingTop: 'calc(20px + env(safe-area-inset-top, 0px))' }}>
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-4">
+      <header
+        className="sticky top-0 z-50 pt-[20px]"
+        style={{
+          backgroundColor: '#0a0e14',
+          borderBottom: 'none',
+          boxShadow: 'none',
+          paddingTop: 'calc(20px + env(safe-area-inset-top, 0px))'
+        }}
+      >
+        <div style={{ maxWidth: '1400px', margin: '0 auto' }} className="px-3 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             {/* Logo Strip - Responsive */}
             <div className="flex items-center gap-2 sm:gap-6 overflow-x-auto">
@@ -238,8 +256,8 @@ export default function CouncilorView() {
         </div>
       </header>
 
-      {/* Main Content - Mobile Optimized with padding for iPhone 8 Plus */}
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
+      {/* Main Content - Centered with max-width 1400px */}
+      <main style={{ maxWidth: '1400px', margin: '0 auto', backgroundColor: '#0a0e14' }} className="px-3 sm:px-6 py-4 sm:py-8">
         {/* Page Title */}
         <div className="mb-4 sm:mb-8 text-center sm:text-left">
           <h1 className={`text-xl sm:text-3xl font-black ${theme.text} mb-2`}>
