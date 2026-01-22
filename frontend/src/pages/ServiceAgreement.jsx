@@ -3,7 +3,7 @@
  * Professional contract signing for hospital onboarding
  */
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import SignatureCanvas from 'react-signature-canvas';
 import { QRCodeSVG } from 'qrcode.react';
@@ -61,6 +61,54 @@ export default function ServiceAgreement() {
   const [hasSignature, setHasSignature] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Signature canvas container ref for proper sizing
+  const signatureContainerRef = useRef(null);
+
+  // Fix canvas coordinates - recalculate on mount and resize
+  useEffect(() => {
+    const fixCanvasSize = () => {
+      if (!signaturePadRef.current || !signatureContainerRef.current) return;
+
+      const canvas = signaturePadRef.current.getCanvas();
+      const container = signatureContainerRef.current;
+      const rect = container.getBoundingClientRect();
+
+      // Account for padding (12px on each side from p-3)
+      const displayWidth = rect.width - 24;
+      const displayHeight = 180;
+
+      // Get device pixel ratio for high-DPI screens
+      const dpr = window.devicePixelRatio || 1;
+
+      // Set canvas internal resolution to match display size * DPI
+      canvas.width = displayWidth * dpr;
+      canvas.height = displayHeight * dpr;
+
+      // Set CSS display size
+      canvas.style.width = `${displayWidth}px`;
+      canvas.style.height = `${displayHeight}px`;
+
+      // Scale context to account for DPI
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+
+      // Clear canvas after resize
+      signaturePadRef.current.clear();
+      setHasSignature(false);
+    };
+
+    // Delay to ensure DOM is ready and container is properly sized
+    const timer = setTimeout(fixCanvasSize, 150);
+
+    // Recalculate on window resize (handles orientation changes too)
+    window.addEventListener('resize', fixCanvasSize);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', fixCanvasSize);
+    };
+  }, []);
 
   // Pricing
   const selectedPlan = location.state?.plan || 'enterprise';
@@ -333,12 +381,25 @@ export default function ServiceAgreement() {
             <h3 className="text-lg font-bold text-white mb-2">Digital Signature</h3>
             <p className="text-sm text-slate-400 mb-6">Please sign in the box below using your mouse or touchscreen</p>
 
-            <div className="bg-white rounded-xl p-3 mb-4 w-full" style={{ width: '100%' }}>
+            <div
+              ref={signatureContainerRef}
+              className="bg-white rounded-xl p-3 mb-4 w-full"
+              style={{
+                width: '100%',
+                border: '2px dashed #003366',
+                boxSizing: 'border-box'
+              }}
+            >
               <SignatureCanvas
                 ref={signaturePadRef}
                 canvasProps={{
                   className: 'signature-canvas rounded-lg cursor-crosshair',
-                  style: { width: '100%', height: '180px', display: 'block' }
+                  style: {
+                    width: '100%',
+                    height: '180px',
+                    display: 'block',
+                    touchAction: 'none'
+                  }
                 }}
                 backgroundColor="white"
                 penColor="#003366"
