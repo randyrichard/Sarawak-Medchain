@@ -643,36 +643,56 @@ nav {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   DARK GLASS THEME - Convert white cards to dark theme
+   PERFECT DARK THEME - Deep Charcoal Cards
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-/* Convert white background cards to dark glass (except modals and print areas) */
-.admin-portal .bg-white:not(.invoice-modal *):not([class*="print"]),
-.ceo-dashboard .bg-white:not(.invoice-modal *):not([class*="print"]),
-.doctor-portal .bg-white:not(.invoice-modal *):not([class*="print"]),
-.patient-portal .bg-white:not(.invoice-modal *):not([class*="print"]) {
-  background: rgba(17, 25, 40, 0.75) !important;
-  backdrop-filter: blur(10px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+/* Deep Charcoal card styling */
+.subscription-card,
+.monthly-dues,
+.analytics-card {
+  background-color: #111827 !important;
+  border: 1px solid #1f2937 !important;
+  border-radius: 12px;
 }
 
-/* Text contrast for darkened cards */
-.admin-portal .bg-white:not(.invoice-modal *) .text-slate-600,
-.admin-portal .bg-white:not(.invoice-modal *) .text-slate-700,
-.admin-portal .bg-white:not(.invoice-modal *) .text-slate-800,
-.admin-portal .bg-white:not(.invoice-modal *) .text-gray-600,
-.admin-portal .bg-white:not(.invoice-modal *) .text-gray-700,
-.admin-portal .bg-white:not(.invoice-modal *) .text-gray-800 {
-  color: rgba(255, 255, 255, 0.9) !important;
+/* Ensure text is visible on dark cards */
+.subscription-card *,
+.monthly-dues *,
+.analytics-card * {
+  color: inherit;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   FOUNDER COMMAND - Hide hospital-specific cards
+   MEDCHAIN GOLD - Signature ink and accents
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-/* Hide admin portal cards when in founder-command view */
-.founder-command .admin-portal,
-.founder-command .hospital-card,
-.founder-command .subscription-card {
-  display: none !important;
+.gold-text,
+.medchain-gold {
+  color: #d4af37 !important;
+}
+
+/* Gold accents for important elements */
+.gold-accent {
+  border-color: #d4af37 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   PRINT STYLES - Preserve white for printing
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+@media print {
+  .bg-white,
+  [class*="bg-white"] {
+    background-color: white !important;
+    border: 1px solid #e5e7eb !important;
+  }
+
+  .text-slate-600,
+  .text-slate-700,
+  .text-slate-800,
+  .text-gray-600,
+  .text-gray-700,
+  .text-gray-800 {
+    color: #1f2937 !important;
+  }
 }

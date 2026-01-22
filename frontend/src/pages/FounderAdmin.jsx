@@ -1451,7 +1451,7 @@ function ProposalModal({ isOpen, onClose, lead, onDealClosed }) {
                       className: 'w-full h-32 cursor-crosshair'
                     }}
                     backgroundColor="white"
-                    penColor="#0a1628"
+                    penColor="#D4A017"
                     onEnd={handleSignatureEnd}
                   />
                 </div>

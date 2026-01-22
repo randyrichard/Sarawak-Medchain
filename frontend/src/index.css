@@ -281,11 +281,11 @@ button:focus-visible {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   MASTER BACKGROUND - #0a0e14 Only - ABSOLUTE ENFORCEMENT
+   PERFECT DARK THEME - Master: #0a0e14, Cards: #111827
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-/* Core layout backgrounds - NUCLEAR */
-html, body, #root, #root > * {
+/* NUCLEAR: Core layout backgrounds */
+html, body, #root, #root > *, #root > * > * {
   background-color: #0a0e14 !important;
 }
 
@@ -327,7 +327,65 @@ main, .main, .main-content {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   CENTERING - Dashboard and Payment Screens
+   DEEP CHARCOAL CARDS - #111827 with #1f2937 border
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Convert ALL white backgrounds to Deep Charcoal */
+.bg-white,
+[class*="bg-white"] {
+  background-color: #111827 !important;
+  border: 1px solid #1f2937 !important;
+}
+
+/* Preserve white for QR codes and signature pads only */
+.qr-section,
+.qr-code-container,
+canvas.signature-pad,
+[class*="qr-"] {
+  background-color: white !important;
+  border: none !important;
+}
+
+/* Cards with gradient backgrounds - convert to charcoal */
+.bg-slate-100,
+.bg-slate-50,
+.bg-gray-100,
+.bg-gray-50 {
+  background-color: #111827 !important;
+  border: 1px solid #1f2937 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   TEXT INVERSION - White and MedChain Gold on dark backgrounds
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* MedChain Gold color */
+:root {
+  --medchain-gold: #d4af37;
+}
+
+/* Invert dark text to white */
+.text-slate-600,
+.text-slate-700,
+.text-slate-800,
+.text-slate-900,
+.text-gray-600,
+.text-gray-700,
+.text-gray-800,
+.text-gray-900 {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Lighter grays stay visible */
+.text-slate-400,
+.text-slate-500,
+.text-gray-400,
+.text-gray-500 {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   CENTERING - Dashboard and Verify MC Screens
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 /* Centered content wrapper */
@@ -337,12 +395,24 @@ main, .main, .main-content {
   width: 100%;
 }
 
+/* Center all portal content */
+.admin-portal > div,
+.ceo-dashboard > div,
+.doctor-portal > div,
+.patient-portal > div {
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════════
-   DARK GLASS CARDS - Override white backgrounds globally
+   GOLD INK SIGNATURE - Calibrated for centered canvas
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-/* Override white backgrounds in main content (preserve modals/print) */
-main .bg-white {
-  background: rgba(17, 25, 40, 0.75) !important;
-  backdrop-filter: blur(10px) !important;
+/* Signature canvas styling */
+.signature-canvas,
+canvas[class*="signature"] {
+  background-color: white !important;
+  border-radius: 8px;
+  cursor: crosshair;
 }

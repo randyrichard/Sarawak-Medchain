@@ -969,7 +969,7 @@ export default function DoctorPortal({ walletAddress }) {
               >
                 <SignatureCanvas
                   ref={signaturePadRef}
-                  penColor="#1e3a5f"
+                  penColor="#D4A017"
                   canvasProps={{
                     style: { width: '100%', height: '150px', display: 'block' },
                     className: 'signature-canvas cursor-crosshair'
