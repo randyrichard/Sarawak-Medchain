@@ -387,15 +387,52 @@ hr, [class*="border-t"], [class*="border-b"] {
   border: 1px solid #1f2937 !important;
 }
 
-/* Preserve white for QR codes and signature pads ONLY */
+/* Preserve white for QR codes ONLY - NOT signature pads */
 .qr-section,
 .qr-code-container,
-canvas.signature-pad,
-[class*="qr-"],
+[class*="qr-"]:not(.signature-canvas),
 .qr-section *,
 .qr-code-container * {
   background-color: white !important;
   border: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   MASTER COMMAND CENTER - SUBSCRIPTION/MONTHLY DUES/SERVICE AGREEMENT CARDS
+   ALL CARDS → DEEP CHARCOAL #111827
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* NUCLEAR: Force ALL card-like elements to Deep Charcoal */
+.subscription-card,
+.monthly-dues-card,
+.service-agreement-card,
+[class*="subscription"],
+[class*="monthly-dues"],
+[class*="billing-card"],
+[class*="payment-card"],
+[class*="Subscription"],
+[class*="MonthlyDues"],
+[class*="ServiceAgreement"] {
+  background-color: #111827 !important;
+  border-color: #1f2937 !important;
+}
+
+/* Force ALL white backgrounds in billing/payment flows to charcoal */
+.billing-section .bg-white,
+.payment-section .bg-white,
+[class*="billing"] .bg-white,
+[class*="payment"] .bg-white:not(.qr-section):not([class*="qr"]) {
+  background-color: #111827 !important;
+  border: 1px solid #1f2937 !important;
+}
+
+/* Kill ANY remaining white cards */
+.rounded-xl.bg-white:not(.qr-section):not([class*="qr"]),
+.rounded-2xl.bg-white:not(.qr-section):not([class*="qr"]),
+.rounded-3xl.bg-white:not(.qr-section):not([class*="qr"]),
+div[class*="card"].bg-white:not(.qr-section) {
+  background-color: #111827 !important;
+  border: 1px solid #1f2937 !important;
 }
 
 /* Shadow cards become charcoal */
@@ -512,20 +549,32 @@ canvas.signature-pad,
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   GOLD INK SIGNATURE - Calibrated for centered canvas
+   GOLD INK SIGNATURE - Transparent Black with MedChain Gold Border
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-/* Signature canvas styling - Dark charcoal for Doctor Portal */
+/* Signature canvas styling - DEEP VOID #0a0e14 with Gold Border */
 .signature-canvas,
 canvas[class*="signature"] {
   border-radius: 8px;
   cursor: crosshair;
+  background-color: #0a0e14 !important;
+  background: #0a0e14 !important;
 }
 
-/* Doctor Portal signature - dark background with gold ink */
-.doctor-portal .signature-canvas,
-.doctor-portal canvas[class*="signature"] {
+/* Signature container - #0a0e14 background with 1px MedChain Gold border */
+.signature-container {
   background-color: #0a0e14 !important;
+  background: #0a0e14 !important;
+  border: 1px solid #daa520 !important;
+  box-shadow: 0 0 15px rgba(218, 165, 32, 0.2) !important;
+}
+
+/* Doctor Portal signature - FORCE #0a0e14 background with gold ink */
+.doctor-portal .signature-canvas,
+.doctor-portal canvas[class*="signature"],
+.doctor-portal .signature-container canvas {
+  background-color: #0a0e14 !important;
+  background: #0a0e14 !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
@@ -563,39 +612,88 @@ canvas[class*="signature"] {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   STATE ISOLATION - PURGE Hospital Admin Cards
-   When in Founder Command or Doctor Portal, HIDE subscription/usage cards
+   STATE ISOLATION - ABSOLUTE VIEW PURGE
+   When in Founder Command, Doctor Portal, or Admin views - HIDE ALL OVERLAPPING
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-/* NUCLEAR PURGE: Hide ALL Hospital Admin white cards in these views */
+/* THERMONUCLEAR PURGE: Hide ALL white cards and overlapping elements */
 body:has(.founder-command) .hospital-admin-card,
 body:has(.founder-command) .subscription-card,
 body:has(.founder-command) .monthly-dues,
 body:has(.founder-command) [class*="Subscription"],
+body:has(.founder-command) [class*="subscription"],
+body:has(.founder-command) [class*="Premium"][class*="Tier"],
+body:has(.founder-command) [class*="premium"][class*="tier"],
+body:has(.founder-command) [class*="Enterprise"][class*="Tier"],
 body:has(.founder-command) [class*="hospital-balance"],
 body:has(.founder-command) [class*="HospitalBalance"],
 body:has(.founder-command) .bg-white:not(.qr-section):not([class*="qr"]),
 body:has(.doctor-portal) .hospital-admin-card,
 body:has(.doctor-portal) .subscription-card,
 body:has(.doctor-portal) .monthly-dues,
-body:has(.doctor-portal) [class*="Subscription"]:not(.doctor-portal [class*="Subscription"]),
+body:has(.doctor-portal) [class*="Subscription"]:not(.doctor-portal *),
+body:has(.doctor-portal) [class*="subscription"]:not(.doctor-portal *),
+body:has(.doctor-portal) [class*="Premium"][class*="Tier"]:not(.doctor-portal *),
 body:has(.doctor-portal) [class*="hospital-balance"],
 body:has(.doctor-portal) [class*="HospitalBalance"],
 body:has(.founder-admin-dashboard) .hospital-admin-card,
 body:has(.founder-admin-dashboard) .subscription-card,
 body:has(.founder-admin-dashboard) .monthly-dues,
 body:has(.founder-admin-dashboard) [class*="Subscription"],
-body:has(.founder-admin-dashboard) [class*="hospital-balance"] {
+body:has(.founder-admin-dashboard) [class*="Premium"][class*="Tier"],
+body:has(.founder-admin-dashboard) [class*="hospital-balance"],
+body:has(.ceo-dashboard) .hospital-admin-card,
+body:has(.ceo-dashboard) .subscription-card:not(.ceo-dashboard *),
+body:has(.ceo-dashboard) [class*="Subscription"]:not(.ceo-dashboard *) {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
   height: 0 !important;
+  width: 0 !important;
   overflow: hidden !important;
   margin: 0 !important;
   padding: 0 !important;
   position: absolute !important;
-  left: -9999px !important;
+  left: -99999px !important;
+  top: -99999px !important;
+  z-index: -9999 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   CENTER CORE ANALYTICS - Lead Analytics, Heatmap, Revenue Forecast
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.founder-command .analytics-container,
+.founder-command .lead-analytics,
+.founder-command .conversion-heatmap,
+.founder-command .revenue-forecast,
+.founder-command > div > div,
+.ceo-dashboard .analytics-container,
+.ceo-dashboard > div > div,
+[class*="analytics"],
+[class*="heatmap"],
+[class*="forecast"] {
+  max-width: 1400px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  width: 100% !important;
+}
+
+/* Center founder command content */
+.founder-command,
+.founder-command > div {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  width: 100% !important;
+  background-color: #0a0e14 !important;
+}
+
+.founder-command > div > div {
+  max-width: 1400px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
 }
 
 /* Founder Command and Doctor Portal get absolute z-index priority */
@@ -777,4 +875,64 @@ header + div {
 .fixed.right-4 > div:nth-child(n+3) {
   opacity: 0.5 !important;
   transform: scale(0.95) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   UNIFIED VOID - ABSOLUTE #0a0e14 ENFORCEMENT
+   MASTER COMMAND CENTER AESTHETIC - NO WHITE ANYWHERE
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* THERMONUCLEAR: Force #0a0e14 on EVERYTHING not explicitly excluded */
+*:not(.qr-section):not([class*="qr"]):not(.bg-white.qr-section):not(.qr-code-container):not(.qr-code-container *) {
+  --tw-bg-opacity: 1;
+}
+
+/* Kill white gaps between elements */
+.gap-1, .gap-2, .gap-3, .gap-4, .gap-5, .gap-6, .gap-8,
+.space-y-1 > *, .space-y-2 > *, .space-y-3 > *, .space-y-4 > *,
+.space-x-1 > *, .space-x-2 > *, .space-x-3 > *, .space-x-4 > * {
+  background-color: transparent;
+}
+
+/* Force deep charcoal on gradient cards */
+.bg-gradient-to-br:not(.qr-section):not([class*="qr"]),
+.bg-gradient-to-r:not(.qr-section):not([class*="qr"]),
+.bg-gradient-to-l:not(.qr-section):not([class*="qr"]),
+.bg-gradient-to-t:not(.qr-section):not([class*="qr"]),
+.bg-gradient-to-b:not(.qr-section):not([class*="qr"]) {
+  background-color: #111827 !important;
+}
+
+/* Force modal/popup backgrounds dark */
+.fixed.inset-0:not(.qr-section):not([class*="qr"]),
+.absolute.inset-0:not(.qr-section):not([class*="qr"]),
+[class*="modal"]:not(.qr-section),
+[class*="popup"]:not(.qr-section),
+[class*="dialog"]:not(.qr-section) {
+  background-color: rgba(10, 14, 20, 0.95) !important;
+}
+
+/* Force input backgrounds dark */
+input:not([type="checkbox"]):not([type="radio"]),
+textarea,
+select {
+  background-color: #0a0e14 !important;
+  border-color: #1e3a5f !important;
+  color: #ffffff !important;
+}
+
+/* Dropdown/select options dark */
+option {
+  background-color: #111827 !important;
+  color: #ffffff !important;
+}
+
+/* FINAL: Catch-all for any sneaky white backgrounds */
+[style*="background: white"],
+[style*="background-color: white"],
+[style*="background: #fff"],
+[style*="background-color: #fff"],
+[style*="background: rgb(255"],
+[style*="background-color: rgb(255"] {
+  background-color: #111827 !important;
 }
