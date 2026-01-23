@@ -1157,11 +1157,7 @@ export default function CEODashboard({ walletAddress }) {
                       <button
                         onClick={handlePayNow}
                         disabled={paymentProcessing}
-                        className="w-full py-4 rounded-xl font-bold text-lg text-white transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-xl"
-                        style={{
-                          backgroundColor: sarawakBlue,
-                          boxShadow: `0 10px 30px ${sarawakBlue}50`
-                        }}
+                        className="gold-btn-filled gold-btn-pulse w-full py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-[1.02] active:scale-[0.98]"
                       >
                         {paymentProcessing ? (
                           <span className="flex items-center justify-center gap-2">
@@ -1227,7 +1223,19 @@ export default function CEODashboard({ walletAddress }) {
                     )}
                   </div>
                   <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                    {tierName} <span className={darkMode ? 'text-slate-400' : 'text-gray-400'}>—</span> <span className="text-sky-500">RM {baseFee.toLocaleString()}/mo</span>
+                    <span className="flex items-center gap-4 flex-wrap">
+                      <span>{tierName} <span className={darkMode ? 'text-slate-400' : 'text-gray-400'}>—</span> <span className="text-sky-500">RM {baseFee.toLocaleString()}/mo</span></span>
+                      {/* View Invoice Button - Positioned near tier title */}
+                      <button
+                        onClick={handlePayNow}
+                        className="gold-btn px-5 py-2 rounded-xl font-semibold transition-all flex items-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        View Invoice
+                      </button>
+                    </span>
                   </p>
                   <p className={`text-sm mt-1 ${darkMode ? 'text-slate-400' : 'text-gray-500'}`}>
                     {facilityType === 'Hospital'
@@ -1235,20 +1243,6 @@ export default function CEODashboard({ walletAddress }) {
                       : 'Up to 5 doctors • Email support • Standard API access'}
                   </p>
                 </div>
-              </div>
-
-              {/* View Invoice Button - Positioned below tier info */}
-              <div className="flex justify-start pl-[72px]">
-                <button
-                  onClick={handlePayNow}
-                  className="px-6 py-2.5 rounded-xl font-semibold text-white transition-all shadow-lg flex items-center gap-2 hover:opacity-90"
-                  style={{ backgroundColor: '#0a0e14', border: '1px solid #374151' }}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  View Invoice
-                </button>
               </div>
             </div>
           </div>
@@ -1339,8 +1333,7 @@ export default function CEODashboard({ walletAddress }) {
             ) : (
               <button
                 onClick={handlePayNow}
-                className="w-full py-3 rounded-lg font-semibold text-white transition-all"
-                style={{ backgroundColor: isSubscriptionOverdue ? sarawakRed : medicalBlue }}
+                className="gold-btn w-full py-3 rounded-lg font-semibold transition-all"
               >
                 {isSubscriptionOverdue ? 'Pay Overdue Balance' : 'Pay Now'}
               </button>
@@ -1399,12 +1392,11 @@ export default function CEODashboard({ walletAddress }) {
                     <button
                       onClick={handlePayNow}
                       disabled={baseFeeDetected}
-                      className="px-4 py-2 rounded-lg font-semibold text-sm transition-all text-white"
-                      style={{
-                        backgroundColor: baseFeeDetected ? '#10B981' : medicalBlue,
-                        boxShadow: baseFeeDetected ? 'none' : `0 4px 15px ${medicalBlue}40`,
-                        cursor: baseFeeDetected ? 'default' : 'pointer'
-                      }}
+                      className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                        baseFeeDetected
+                          ? 'bg-emerald-500 text-white cursor-default'
+                          : 'gold-btn'
+                      }`}
                     >
                       {baseFeeDetected ? 'Paid' : 'View Invoice'}
                     </button>
