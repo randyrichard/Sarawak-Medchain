@@ -68,6 +68,15 @@ export default function DoctorPortal({ walletAddress }) {
   const [mcSuccess, setMcSuccess] = useState(null);
   const qrRef = useRef(null);
 
+  // Gold Confetti Celebration state
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  // Trigger gold confetti celebration
+  const triggerGoldConfetti = () => {
+    setShowConfetti(true);
+    setTimeout(() => setShowConfetti(false), 3000);
+  };
+
   // Read records state
   const [readPatientAddress, setReadPatientAddress] = useState('');
   const [patientRecords, setPatientRecords] = useState([]);
@@ -273,6 +282,9 @@ export default function DoctorPortal({ walletAddress }) {
       }, 3000);
 
       setMessage('✓ Medical Certificate secured on blockchain!');
+
+      // Trigger gold confetti celebration
+      triggerGoldConfetti();
 
       // Show receipt modal with QR code
       setReceiptData({
@@ -635,6 +647,39 @@ export default function DoctorPortal({ walletAddress }) {
       {/* Network-Wide Broadcast Notification */}
       <BroadcastNotification />
 
+      {/* Gold Confetti Celebration */}
+      {showConfetti && (
+        <div className="fixed inset-0 z-[100] pointer-events-none overflow-hidden">
+          {/* Generate 50 gold confetti particles */}
+          {[...Array(50)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute animate-confetti"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: '-20px',
+                width: `${8 + Math.random() * 12}px`,
+                height: `${8 + Math.random() * 12}px`,
+                background: `linear-gradient(135deg, #daa520 0%, #ffd700 50%, #b8860b 100%)`,
+                borderRadius: Math.random() > 0.5 ? '50%' : '2px',
+                boxShadow: '0 0 10px rgba(218, 165, 32, 0.8)',
+                animationDelay: `${Math.random() * 0.5}s`,
+                animationDuration: `${2 + Math.random() * 2}s`,
+                transform: `rotate(${Math.random() * 360}deg)`,
+              }}
+            />
+          ))}
+          {/* Center burst glow */}
+          <div
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full animate-pulse"
+            style={{
+              background: 'radial-gradient(circle, rgba(218, 165, 32, 0.4) 0%, transparent 70%)',
+              boxShadow: '0 0 100px rgba(218, 165, 32, 0.6), 0 0 200px rgba(218, 165, 32, 0.3)',
+            }}
+          />
+        </div>
+      )}
+
       {/* QR Code Receipt Modal */}
       {showReceipt && receiptData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
@@ -844,28 +889,26 @@ export default function DoctorPortal({ walletAddress }) {
 
           {/* Right: MC Credits + Doctor Badge - ANCHORED TO HEADER */}
           <div className="flex items-center gap-4">
-            {/* MC CREDITS - Anchored to Header */}
+            {/* MC CREDITS - Perfectly Aligned */}
             <div
-              className="flex items-center gap-3 px-4 py-2 rounded-xl"
+              className="flex items-center gap-4 px-5 py-3 rounded-xl"
               style={{
-                background: 'linear-gradient(135deg, rgba(218, 165, 32, 0.2) 0%, rgba(218, 165, 32, 0.1) 100%)',
-                border: '1px solid rgba(218, 165, 32, 0.4)',
-                boxShadow: '0 0 20px rgba(218, 165, 32, 0.15)'
+                backgroundColor: '#111827',
+                border: '1px solid #daa520',
+                boxShadow: '0 0 15px rgba(218, 165, 32, 0.2)'
               }}
             >
-              <div className="text-right">
-                <p className="text-xs uppercase tracking-wider font-semibold" style={{ color: '#daa520' }}>MC Credits</p>
-                <p className="text-xl font-black text-white">
-                  RM {creditBalance !== null ? creditBalance.toLocaleString() : '10'}
-                </p>
-              </div>
+              <span className="text-sm font-bold" style={{ color: '#daa520' }}>MC Credits:</span>
+              <span className="text-lg font-black text-white">
+                RM {creditBalance !== null ? creditBalance.toLocaleString() : '10'}
+              </span>
               <button
                 onClick={handleTopUp}
-                className="px-3 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-1 hover:scale-105"
+                className="px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 hover:scale-105"
                 style={{
-                  background: 'linear-gradient(135deg, #daa520 0%, #b8860b 100%)',
-                  color: '#0a0e14',
-                  boxShadow: '0 0 10px rgba(218, 165, 32, 0.4)'
+                  backgroundColor: '#daa520',
+                  color: '#000000',
+                  boxShadow: '0 0 10px rgba(218, 165, 32, 0.5)'
                 }}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -933,8 +976,8 @@ export default function DoctorPortal({ walletAddress }) {
               className="rounded-3xl overflow-hidden"
               style={{
                 backgroundColor: '#111827',
-                border: '1px solid rgba(218, 165, 32, 0.3)',
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(218, 165, 32, 0.08)'
+                border: '1px solid #daa520',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
               }}
             >
               {/* Premium Card Header */}
@@ -1178,14 +1221,13 @@ export default function DoctorPortal({ walletAddress }) {
                 disabled={isMinting || !isVerified}
                 className="w-full py-5 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-4 disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98]"
                 style={{
-                  background: isMinting
-                    ? '#374151'
-                    : 'linear-gradient(135deg, #daa520 0%, #b8860b 50%, #daa520 100%)',
-                  color: isMinting ? '#9ca3af' : '#0a0e14',
+                  background: isMinting ? '#374151' : '#ffffff',
+                  color: isMinting ? '#9ca3af' : '#000000',
                   boxShadow: isMinting
                     ? 'none'
-                    : '0 0 40px rgba(218, 165, 32, 0.6), 0 0 80px rgba(218, 165, 32, 0.3), 0 10px 40px rgba(218, 165, 32, 0.4), inset 0 1px 0 rgba(255,255,255,0.3)',
-                  textShadow: isMinting ? 'none' : '0 1px 0 rgba(255,255,255,0.3)'
+                    : '0 0 20px rgba(218, 165, 32, 0.8), 0 0 50px rgba(218, 165, 32, 0.5)',
+                  textShadow: 'none',
+                  border: isMinting ? 'none' : '2px solid rgba(218, 165, 32, 0.3)'
                 }}
               >
               {isMinting ? (
@@ -1194,15 +1236,15 @@ export default function DoctorPortal({ walletAddress }) {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  <span>Securing on Blockchain...</span>
+                  <span className="font-black">Securing on Blockchain...</span>
                 </>
               ) : (
                 <>
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6" fill="none" stroke="#000000" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
-                  <span>SECURE ON BLOCKCHAIN</span>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <span className="font-black tracking-wide">SECURE ON BLOCKCHAIN</span>
+                  <svg className="w-5 h-5" fill="none" stroke="#000000" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
                 </>
@@ -1219,8 +1261,8 @@ export default function DoctorPortal({ walletAddress }) {
           className="w-80 rounded-3xl overflow-hidden"
           style={{
             backgroundColor: '#111827',
-            border: '1px solid rgba(16, 185, 129, 0.2)',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 30px rgba(16, 185, 129, 0.05)'
+            border: '1px solid #daa520',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
           }}
         >
           {/* Sidebar Header */}
@@ -1276,9 +1318,9 @@ export default function DoctorPortal({ walletAddress }) {
                   <span
                     className="text-xs px-3 py-1 rounded-full font-bold flex items-center gap-1.5"
                     style={{
-                      backgroundColor: item.status === 'confirming' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)',
+                      backgroundColor: item.status === 'confirming' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.25)',
                       color: item.status === 'confirming' ? '#f59e0b' : '#10b981',
-                      border: item.status === 'confirming' ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)'
+                      border: item.status === 'confirming' ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(16, 185, 129, 0.4)'
                     }}
                   >
                     {item.status === 'confirming' && (
