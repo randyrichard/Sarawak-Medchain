@@ -27,6 +27,9 @@ const terminalTheme = {
 };
 
 export default function DoctorPortal({ walletAddress }) {
+  // Navigation hook - must be at top before any conditionals
+  const navigate = useNavigate();
+
   // Use Billing Context
   const {
     accountType,
@@ -618,9 +621,6 @@ export default function DoctorPortal({ walletAddress }) {
       </div>
     );
   }
-
-  // Navigate for Top Up
-  const navigate = useNavigate();
 
   // Handle Top Up click
   const handleTopUp = () => {
