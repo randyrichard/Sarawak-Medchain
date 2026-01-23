@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import SignatureCanvas from 'react-signature-canvas';
 import { isVerifiedDoctor, writeRecord, readRecords, getMyBalance, requestEmergencyAccess, isHospitalPaused } from '../utils/contract';
@@ -618,6 +619,14 @@ export default function DoctorPortal({ walletAddress }) {
     );
   }
 
+  // Navigate for Top Up
+  const navigate = useNavigate();
+
+  // Handle Top Up click
+  const handleTopUp = () => {
+    navigate('/payment', { state: { topUpAmount: 1000, isTopUp: true } });
+  };
+
   return (
     <div className="min-h-screen font-sans doctor-portal" style={{ backgroundColor: '#0a0e14' }}>
       {/* Maintenance Banner - Shows 24 hours before scheduled maintenance */}
@@ -807,26 +816,49 @@ export default function DoctorPortal({ walletAddress }) {
             <span className="text-sm font-semibold" style={{ color: terminalTheme.success }}>Network Status: Connected</span>
           </div>
 
-          {/* Right: Doctor Info */}
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm font-semibold" style={{ color: terminalTheme.textPrimary }}>Dr. Verified</p>
-              <p className="text-xs font-mono" style={{ color: terminalTheme.textMuted }}>
-                {walletAddress.slice(0, 8)}...{walletAddress.slice(-6)}
-              </p>
+          {/* Right: Credit Balance, Top Up & Doctor Info */}
+          <div className="flex items-center gap-6">
+            {/* Credit Balance & Top Up */}
+            <div className="flex items-center gap-3 px-4 py-2 rounded-xl" style={{ backgroundColor: '#111827', border: '1px solid #d4af37' }}>
+              <div className="text-right">
+                <p className="text-xs uppercase tracking-wider" style={{ color: '#d4af37' }}>MC Credits</p>
+                <p className="text-lg font-bold" style={{ color: '#ffffff' }}>
+                  RM {creditBalance !== null ? creditBalance.toLocaleString() : '1,100'}
+                </p>
+              </div>
+              <button
+                onClick={handleTopUp}
+                className="gold-btn px-4 py-2 rounded-lg font-semibold text-sm transition-all flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Top Up
+              </button>
             </div>
-            <div className={`px-3 py-1 rounded-lg text-xs font-bold ${isVerified ? '' : 'opacity-50'}`} style={{
-              backgroundColor: isVerified ? `${terminalTheme.success}20` : `${terminalTheme.danger}20`,
-              color: isVerified ? terminalTheme.success : terminalTheme.danger
-            }}>
-              {isVerified ? 'VERIFIED' : 'UNVERIFIED'}
+
+            {/* Doctor Info */}
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <p className="text-sm font-semibold" style={{ color: terminalTheme.textPrimary }}>Dr. Verified</p>
+                <p className="text-xs font-mono" style={{ color: terminalTheme.textMuted }}>
+                  {walletAddress.slice(0, 8)}...{walletAddress.slice(-6)}
+                </p>
+              </div>
+              <div className={`px-3 py-1 rounded-lg text-xs font-bold ${isVerified ? '' : 'opacity-50'}`} style={{
+                backgroundColor: isVerified ? `${terminalTheme.success}20` : `${terminalTheme.danger}20`,
+                color: isVerified ? terminalTheme.success : terminalTheme.danger
+              }}>
+                {isVerified ? 'VERIFIED' : 'UNVERIFIED'}
+              </div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <div className="flex">
+      {/* Main Content - Centered with max-width */}
+      <div className="flex justify-center" style={{ backgroundColor: '#0a0e14' }}>
+        <div className="flex w-full" style={{ maxWidth: '1100px', margin: '0 auto' }}>
         {/* Issue MC Form - Main Panel */}
         <div className="flex-1 p-8">
           {/* Message */}
@@ -972,21 +1004,29 @@ export default function DoctorPortal({ walletAddress }) {
               </div>
               <div
                 ref={signatureContainerRef}
-                className="rounded-xl border-2 border-dashed overflow-hidden"
-                style={{ borderColor: isSigning ? terminalTheme.medical : terminalTheme.border, backgroundColor: '#ffffff', width: '100%' }}
+                className="rounded-xl border-2 overflow-hidden"
+                style={{
+                  borderColor: isSigning ? '#d4af37' : '#d4af37',
+                  backgroundColor: '#0a0e14',
+                  width: '100%',
+                  boxShadow: isSigning ? '0 0 15px rgba(212, 175, 55, 0.3)' : 'none'
+                }}
               >
                 <SignatureCanvas
                   ref={signaturePadRef}
-                  penColor="#D4A017"
+                  penColor="#d4af37"
                   canvasProps={{
-                    style: { width: '100%', height: '150px', display: 'block' },
+                    style: { width: '100%', height: '150px', display: 'block', backgroundColor: '#0a0e14' },
                     className: 'signature-canvas cursor-crosshair'
                   }}
                   onBegin={() => setIsSigning(true)}
                 />
               </div>
-              <p className="mt-2 text-xs" style={{ color: terminalTheme.textMuted }}>
-                Sign above using your mouse or touchpad
+              <p className="mt-2 text-xs flex items-center gap-2" style={{ color: '#d4af37' }}>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+                Sign with MedChain Gold ink
               </p>
             </div>
 
@@ -1115,6 +1155,7 @@ export default function DoctorPortal({ walletAddress }) {
               </div>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>
