@@ -719,6 +719,36 @@ body:has(.ceo-dashboard) [class*="Subscription"]:not(.ceo-dashboard *) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
+   DOCTOR PORTAL - HIGH CONTRAST BUTTON & CLEAN BACKGROUNDS
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Force white button visibility */
+.doctor-portal button[style*="ffffff"] {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+/* Remove any light horizontal lines */
+.doctor-portal hr,
+.doctor-portal [class*="border-white"],
+.doctor-portal [class*="border-slate"],
+.doctor-portal [class*="border-gray"] {
+  border-color: rgba(218, 165, 32, 0.2) !important;
+}
+
+/* Ensure all dividers are dark gold, not white */
+.doctor-portal .border-b {
+  border-bottom-color: rgba(218, 165, 32, 0.15) !important;
+}
+
+/* Force all card backgrounds to stay dark */
+.doctor-portal [class*="bg-white"],
+.doctor-portal [class*="bg-slate-100"],
+.doctor-portal [class*="bg-gray-100"] {
+  background-color: #111827 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
    GOLD CONFETTI CELEBRATION ANIMATION
    ═══════════════════════════════════════════════════════════════════════════════ */
 

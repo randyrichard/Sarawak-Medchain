@@ -1149,20 +1149,21 @@ export default function DoctorPortal({ walletAddress }) {
               </div>
             )}
 
-            {/* PREMIUM Secure on Blockchain Button */}
+            {/* PREMIUM Secure on Blockchain Button - HIGH CONTRAST WHITE */}
             <div className="flex justify-center mt-6">
               <button
                 onClick={handleSecureOnBlockchain}
                 disabled={isMinting || !isVerified}
-                className="w-full py-5 rounded-2xl font-black text-lg transition-all flex items-center justify-center gap-4 disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full py-5 rounded-2xl text-lg transition-all flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-[0.98]"
                 style={{
-                  background: isMinting ? '#374151' : '#ffffff',
+                  backgroundColor: isMinting ? '#374151' : '#ffffff',
                   color: isMinting ? '#9ca3af' : '#000000',
+                  fontWeight: 900,
                   boxShadow: isMinting
                     ? 'none'
-                    : '0 0 20px rgba(218, 165, 32, 0.8), 0 0 50px rgba(218, 165, 32, 0.5)',
-                  textShadow: 'none',
-                  border: isMinting ? 'none' : '2px solid rgba(218, 165, 32, 0.3)'
+                    : '0 0 25px rgba(218, 165, 32, 0.8), 0 0 60px rgba(218, 165, 32, 0.5), 0 0 100px rgba(218, 165, 32, 0.3)',
+                  border: '2px solid #daa520',
+                  opacity: (isMinting || !isVerified) ? 0.7 : 1
                 }}
               >
               {isMinting ? (
@@ -1171,15 +1172,15 @@ export default function DoctorPortal({ walletAddress }) {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  <span className="font-black">Securing on Blockchain...</span>
+                  <span style={{ fontWeight: 900, color: '#9ca3af' }}>Securing on Blockchain...</span>
                 </>
               ) : (
                 <>
-                  <svg className="w-6 h-6" fill="none" stroke="#000000" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  <svg className="w-6 h-6" fill="none" stroke="#000000" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
-                  <span className="font-black tracking-wide">SECURE ON BLOCKCHAIN</span>
-                  <svg className="w-5 h-5" fill="none" stroke="#000000" viewBox="0 0 24 24">
+                  <span style={{ fontWeight: 900, color: '#000000', letterSpacing: '0.05em' }}>SECURE ON BLOCKCHAIN</span>
+                  <svg className="w-5 h-5" fill="none" stroke="#000000" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
                 </>
