@@ -788,7 +788,7 @@ export default function DoctorPortal({ walletAddress }) {
       )}
 
       {/* Terminal Header */}
-      <header className="border-b px-8 py-4" style={{ borderColor: terminalTheme.border, backgroundColor: terminalTheme.bgCard }}>
+      <header className="border-b px-8 py-4" style={{ borderColor: '#1e3a5f', backgroundColor: '#0a0e14' }}>
         <div className="flex items-center justify-between">
           {/* Left: Hospital Name & Logo */}
           <div className="flex items-center gap-4">
@@ -856,11 +856,28 @@ export default function DoctorPortal({ walletAddress }) {
         </div>
       </header>
 
-      {/* Main Content - Centered with max-width */}
-      <div className="w-full flex justify-center" style={{ backgroundColor: '#0a0e14', minHeight: 'calc(100vh - 80px)' }}>
-        <div className="w-full flex" style={{ maxWidth: '1100px', padding: '0 24px' }}>
+      {/* Main Content - DEAD CENTER with max-width */}
+      <div
+        className="w-full"
+        style={{
+          backgroundColor: '#0a0e14',
+          minHeight: 'calc(100vh - 80px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'flex-start',
+          padding: '32px 24px'
+        }}
+      >
+        <div
+          className="flex gap-8"
+          style={{
+            maxWidth: '1100px',
+            width: '100%',
+            margin: '0 auto'
+          }}
+        >
           {/* Issue MC Form - Main Panel */}
-          <div className="flex-1 py-8 pr-6">
+          <div className="flex-1">
           {/* Message */}
           {message && (
             <div className={`mb-6 p-4 rounded-xl border ${
@@ -873,7 +890,7 @@ export default function DoctorPortal({ walletAddress }) {
           )}
 
           {/* Issue MC Form Card */}
-          <div className="rounded-2xl p-6 border" style={{ backgroundColor: terminalTheme.bgCard, borderColor: terminalTheme.border }}>
+          <div className="rounded-2xl p-6 border" style={{ backgroundColor: '#0a0e14', borderColor: '#1e3a5f' }}>
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${terminalTheme.medical}20` }}>
                 <svg className="w-5 h-5" style={{ color: terminalTheme.medical }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1004,25 +1021,31 @@ export default function DoctorPortal({ walletAddress }) {
               </div>
               <div
                 ref={signatureContainerRef}
-                className="rounded-xl border-2 overflow-hidden"
+                className="rounded-xl overflow-hidden"
                 style={{
-                  borderColor: isSigning ? '#d4af37' : '#d4af37',
+                  border: '2px solid #daa520',
                   backgroundColor: '#0a0e14',
                   width: '100%',
-                  boxShadow: isSigning ? '0 0 15px rgba(212, 175, 55, 0.3)' : 'none'
+                  boxShadow: isSigning ? '0 0 20px rgba(218, 165, 32, 0.4)' : '0 0 10px rgba(218, 165, 32, 0.15)'
                 }}
               >
                 <SignatureCanvas
                   ref={signaturePadRef}
-                  penColor="#d4af37"
+                  penColor="#daa520"
+                  backgroundColor="#0a0e14"
                   canvasProps={{
-                    style: { width: '100%', height: '150px', display: 'block', backgroundColor: '#0a0e14' },
+                    style: {
+                      width: '100%',
+                      height: '150px',
+                      display: 'block',
+                      backgroundColor: '#0a0e14'
+                    },
                     className: 'signature-canvas cursor-crosshair'
                   }}
                   onBegin={() => setIsSigning(true)}
                 />
               </div>
-              <p className="mt-2 text-xs flex items-center gap-2" style={{ color: '#d4af37' }}>
+              <p className="mt-2 text-xs flex items-center gap-2" style={{ color: '#daa520' }}>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                 </svg>
@@ -1051,18 +1074,21 @@ export default function DoctorPortal({ walletAddress }) {
               </div>
             )}
 
-            {/* Secure on Blockchain Button */}
-            <button
-              onClick={handleSecureOnBlockchain}
-              disabled={isMinting || !isVerified}
-              className="w-full py-4 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-3 disabled:opacity-50"
-              style={{
-                background: isMinting
-                  ? terminalTheme.textMuted
-                  : `linear-gradient(135deg, ${terminalTheme.accent}, ${terminalTheme.medical})`,
-                boxShadow: isMinting ? 'none' : `0 8px 24px ${terminalTheme.accent}40`
-              }}
-            >
+            {/* Secure on Blockchain Button - Centered with Outer Glow */}
+            <div className="flex justify-center mt-4">
+              <button
+                onClick={handleSecureOnBlockchain}
+                disabled={isMinting || !isVerified}
+                className="w-full max-w-md py-4 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                style={{
+                  background: isMinting
+                    ? terminalTheme.textMuted
+                    : `linear-gradient(135deg, ${terminalTheme.accent}, ${terminalTheme.medical})`,
+                  boxShadow: isMinting
+                    ? 'none'
+                    : `0 0 30px rgba(59, 130, 246, 0.5), 0 0 60px rgba(6, 182, 212, 0.3), 0 8px 24px rgba(59, 130, 246, 0.4)`
+                }}
+              >
               {isMinting ? (
                 <>
                   <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
@@ -1084,7 +1110,7 @@ export default function DoctorPortal({ walletAddress }) {
         </div>
 
         {/* Live Feed Sidebar */}
-        <div className="w-96 border-l p-6" style={{ borderColor: terminalTheme.border, backgroundColor: terminalTheme.bgCard }}>
+        <div className="w-80 border-l p-6" style={{ borderColor: '#1e3a5f', backgroundColor: '#0a0e14' }}>
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${terminalTheme.success}20` }}>
               <svg className="w-5 h-5" style={{ color: terminalTheme.success }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
