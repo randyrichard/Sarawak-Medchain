@@ -515,51 +515,115 @@ canvas.signature-pad,
    GOLD INK SIGNATURE - Calibrated for centered canvas
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-/* Signature canvas styling */
+/* Signature canvas styling - Dark charcoal for Doctor Portal */
 .signature-canvas,
 canvas[class*="signature"] {
-  background-color: white !important;
   border-radius: 8px;
   cursor: crosshair;
 }
 
+/* Doctor Portal signature - dark background with gold ink */
+.doctor-portal .signature-canvas,
+.doctor-portal canvas[class*="signature"] {
+  background-color: #0a0e14 !important;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════════
-   STATE ISOLATION - Founder Command vs Hospital Admin Cards
-   ABSOLUTE LAYER SEPARATION - No Overlapping Elements
+   DOCTOR PORTAL CENTERING - Dead Center Terminal
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-/* When Founder Command class is present, HIDE all Hospital Admin cards */
-.founder-command ~ .hospital-admin-card,
-.founder-command ~ .subscription-card,
-.founder-command ~ .monthly-dues,
-.founder-command ~ [class*="subscription"],
-.founder-command ~ [class*="hospital-card"],
+.doctor-portal {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  background-color: #0a0e14 !important;
+  min-height: 100vh !important;
+}
+
+/* Center the main content area */
+.doctor-portal > div:not(.fixed):not([class*="modal"]) {
+  width: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  background-color: #0a0e14 !important;
+}
+
+/* Header spans full width but content is centered */
+.doctor-portal header {
+  width: 100% !important;
+  background-color: #0a0e14 !important;
+}
+
+/* Main content wrapper */
+.doctor-portal .flex.justify-center {
+  width: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  background-color: #0a0e14 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   STATE ISOLATION - PURGE Hospital Admin Cards
+   When in Founder Command or Doctor Portal, HIDE subscription/usage cards
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* NUCLEAR PURGE: Hide ALL Hospital Admin white cards in these views */
 body:has(.founder-command) .hospital-admin-card,
 body:has(.founder-command) .subscription-card,
 body:has(.founder-command) .monthly-dues,
-body:has(.founder-command) [class*="subscription"],
+body:has(.founder-command) [class*="Subscription"],
 body:has(.founder-command) [class*="hospital-balance"],
-body:has(.founder-command) [class*="HospitalBalance"] {
+body:has(.founder-command) [class*="HospitalBalance"],
+body:has(.founder-command) .bg-white:not(.qr-section):not([class*="qr"]),
+body:has(.doctor-portal) .hospital-admin-card,
+body:has(.doctor-portal) .subscription-card,
+body:has(.doctor-portal) .monthly-dues,
+body:has(.doctor-portal) [class*="Subscription"]:not(.doctor-portal [class*="Subscription"]),
+body:has(.doctor-portal) [class*="hospital-balance"],
+body:has(.doctor-portal) [class*="HospitalBalance"],
+body:has(.founder-admin-dashboard) .hospital-admin-card,
+body:has(.founder-admin-dashboard) .subscription-card,
+body:has(.founder-admin-dashboard) .monthly-dues,
+body:has(.founder-admin-dashboard) [class*="Subscription"],
+body:has(.founder-admin-dashboard) [class*="hospital-balance"] {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
 }
 
-/* Founder Command gets absolute z-index priority */
+/* Founder Command and Doctor Portal get absolute z-index priority */
 .founder-command,
+.founder-admin-dashboard,
+.doctor-portal,
 [class*="founder-command"],
 [class*="FounderCommand"] {
   position: relative !important;
   z-index: 200 !important;
   isolation: isolate !important;
+  background-color: #0a0e14 !important;
 }
 
-/* Hospital Admin cards get lower z-index */
+/* Doctor Portal specific - ensure full dark background */
+.doctor-portal,
+.doctor-portal * {
+  --portal-bg: #0a0e14;
+}
+
+.doctor-portal {
+  background-color: #0a0e14 !important;
+}
+
+/* Hospital Admin cards get lower z-index when visible */
 .hospital-admin-card,
 .subscription-card,
-.monthly-dues,
-[class*="subscription"]:not(.founder-command *) {
+.monthly-dues {
   z-index: 50 !important;
 }
 

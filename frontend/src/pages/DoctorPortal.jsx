@@ -857,10 +857,10 @@ export default function DoctorPortal({ walletAddress }) {
       </header>
 
       {/* Main Content - Centered with max-width */}
-      <div className="flex justify-center" style={{ backgroundColor: '#0a0e14' }}>
-        <div className="flex w-full" style={{ maxWidth: '1100px', margin: '0 auto' }}>
-        {/* Issue MC Form - Main Panel */}
-        <div className="flex-1 p-8">
+      <div className="w-full flex justify-center" style={{ backgroundColor: '#0a0e14', minHeight: 'calc(100vh - 80px)' }}>
+        <div className="w-full flex" style={{ maxWidth: '1100px', padding: '0 24px' }}>
+          {/* Issue MC Form - Main Panel */}
+          <div className="flex-1 py-8 pr-6">
           {/* Message */}
           {message && (
             <div className={`mb-6 p-4 rounded-xl border ${
