@@ -1107,6 +1107,7 @@ export default function DoctorPortal({ walletAddress }) {
               )}
             </button>
           </div>
+          </div>
         </div>
 
         {/* Live Feed Sidebar */}
