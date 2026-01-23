@@ -826,6 +826,66 @@ body:has(.founder-command) table[class*="hospital"] {
   border-color: #d4af37 !important;
 }
 
+/* Print Official Receipt Button - MedChain Gold */
+.print-btn {
+  background-color: transparent !important;
+  border: 2px solid #d4af37 !important;
+  color: #d4af37 !important;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.print-btn:hover {
+  background-color: #d4af37 !important;
+  color: #0a0e14 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   FORCE BLACK UNITY - Eliminate ALL Light Elements
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Kill any remaining white backgrounds in portals */
+.ceo-dashboard *,
+.admin-portal *,
+.doctor-portal *,
+.patient-portal *,
+.fpx-payment *,
+.founder-admin-dashboard * {
+  background-color: inherit;
+}
+
+/* Force dark backgrounds on ALL cards */
+[class*="rounded-xl"],
+[class*="rounded-2xl"],
+[class*="rounded-lg"] {
+  background-color: #111827;
+}
+
+/* Exceptions for buttons and badges */
+button[class*="rounded"],
+span[class*="rounded"],
+[class*="badge"],
+[class*="Badge"] {
+  background-color: inherit;
+}
+
+/* Top-Up Success Screen centering */
+.fpx-payment .min-h-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+/* Verify MC Document centering */
+.verify-mc-container,
+.mc-verification-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 24px;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════════
    PRINT STYLES - Preserve white for printing
    ═══════════════════════════════════════════════════════════════════════════════ */
