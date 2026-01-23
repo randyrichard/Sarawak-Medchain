@@ -522,3 +522,195 @@ canvas[class*="signature"] {
   border-radius: 8px;
   cursor: crosshair;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   STATE ISOLATION - Founder Command vs Hospital Admin Cards
+   ABSOLUTE LAYER SEPARATION - No Overlapping Elements
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* When Founder Command class is present, HIDE all Hospital Admin cards */
+.founder-command ~ .hospital-admin-card,
+.founder-command ~ .subscription-card,
+.founder-command ~ .monthly-dues,
+.founder-command ~ [class*="subscription"],
+.founder-command ~ [class*="hospital-card"],
+body:has(.founder-command) .hospital-admin-card,
+body:has(.founder-command) .subscription-card,
+body:has(.founder-command) .monthly-dues,
+body:has(.founder-command) [class*="subscription"],
+body:has(.founder-command) [class*="hospital-balance"],
+body:has(.founder-command) [class*="HospitalBalance"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Founder Command gets absolute z-index priority */
+.founder-command,
+[class*="founder-command"],
+[class*="FounderCommand"] {
+  position: relative !important;
+  z-index: 200 !important;
+  isolation: isolate !important;
+}
+
+/* Hospital Admin cards get lower z-index */
+.hospital-admin-card,
+.subscription-card,
+.monthly-dues,
+[class*="subscription"]:not(.founder-command *) {
+  z-index: 50 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   KILL ALL WHITE SEAMS - Nuclear Level Enforcement
+   FORCE #0a0e14 on EVERY POSSIBLE ELEMENT
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Absolute force on all layout elements */
+html, body, #root,
+#root > *, #root > * > *, #root > * > * > *,
+#root > * > * > * > *, #root > * > * > * > * > *,
+#root > * > * > * > * > * > *,
+.flex.h-screen,
+.flex.h-screen > *,
+.flex.h-screen > * > *,
+main, aside, header, nav, section, article, footer {
+  background-color: #0a0e14 !important;
+  border-color: transparent !important;
+}
+
+/* Kill ALL potential seam lines */
+[class*="border-t"]:not(table *):not(.gold-btn):not([class*="qr"]),
+[class*="border-b"]:not(table *):not(.gold-btn):not([class*="qr"]),
+[class*="border-l"]:not(.gold-btn):not([class*="qr"]),
+[class*="border-r"]:not(.gold-btn):not([class*="qr"]) {
+  border-color: transparent !important;
+}
+
+/* Sidebar-Main junction - zero visible seam */
+aside + main,
+aside + div,
+aside + .flex-1,
+header + main,
+header + div {
+  border: none !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+}
+
+/* Force overflow/scroll containers dark */
+[class*="overflow-"],
+[class*="scroll"] {
+  background-color: #0a0e14 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   CENTER-ALIGN FINANCIALS - Service Agreement & Payment Success
+   FLEX CONTAINER WITH JUSTIFY-CENTER
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Service Agreement page centering */
+.service-agreement,
+[class*="service-agreement"],
+[class*="ServiceAgreement"],
+.agreement-container {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: 100% !important;
+  min-height: 100vh !important;
+  background-color: #0a0e14 !important;
+}
+
+.service-agreement > div,
+[class*="service-agreement"] > div,
+[class*="ServiceAgreement"] > div,
+.agreement-container > div {
+  max-width: 1200px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
+/* Payment Success centering */
+.payment-success,
+[class*="payment-success"],
+[class*="PaymentSuccess"],
+.success-container {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  min-height: 100vh !important;
+  background-color: #0a0e14 !important;
+}
+
+.payment-success > div,
+[class*="payment-success"] > div,
+[class*="PaymentSuccess"] > div {
+  max-width: 800px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
+/* FPX Payment centering (both payment and success views) */
+.fpx-payment,
+[class*="fpx-payment"],
+[class*="FPXPayment"] {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: 100% !important;
+  min-height: 100vh !important;
+  background-color: #0a0e14 !important;
+  padding: 24px !important;
+}
+
+.fpx-payment > div,
+[class*="fpx-payment"] > div,
+[class*="FPXPayment"] > div {
+  max-width: 1200px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   NOTIFICATION STACK CONTROL - Reduce Clutter
+   Auto-hide after animation, limit stack height
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Limit notification stack height */
+.fixed.top-4.right-4,
+.fixed.top-4.left-4,
+[class*="toast-container"],
+[class*="notification-stack"] {
+  max-height: 300px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* Auto-fade notifications after appearing */
+.fixed [class*="animate-slide"] {
+  animation-fill-mode: forwards !important;
+}
+
+/* Clear Notifications CSS class - apply to hide all notifications */
+.notifications-cleared .fixed.top-4,
+.notifications-cleared .fixed.bottom-4,
+.notifications-cleared [class*="toast"],
+.notifications-cleared [class*="alert-toast"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* Reduce visual noise from stacked notifications */
+.fixed.top-4 > div:nth-child(n+3),
+.fixed.right-4 > div:nth-child(n+3) {
+  opacity: 0.5 !important;
+  transform: scale(0.95) !important;
+}

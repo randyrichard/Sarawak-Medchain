@@ -1001,6 +1001,54 @@ span[class*="rounded"],
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
+   NOTIFICATION CLEARING - Hide stacked alerts
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Hide excessive notifications - only show first 2 */
+.fixed.top-4.right-4.z-\\[100\\] > div:nth-child(n+3),
+.fixed.top-4.right-4 > div:nth-child(n+4),
+.fixed.bottom-6.right-6.z-50:nth-child(n+2) {
+  display: none !important;
+}
+
+/* Limit notification area height */
+.fixed.top-4.right-4,
+.fixed.top-4.left-1\\/2 {
+  max-height: 250px !important;
+  overflow: hidden !important;
+}
+
+/* Auto-hide old notifications */
+.fixed [class*="animate-"]:not(:first-child):not(:nth-child(2)) {
+  opacity: 0.3 !important;
+  pointer-events: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ABSOLUTE DARK VOID - Kill ALL light backgrounds
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Force dark on sticky headers and nav bars */
+.sticky,
+[class*="sticky"],
+.fixed:not([class*="toast"]):not([class*="notification"]):not([class*="alert"]) {
+  background-color: #0a0e14 !important;
+}
+
+/* Force dark on all hover states */
+[class*="hover\\:bg-white"]:hover,
+[class*="hover\\:bg-gray-"]:hover,
+[class*="hover\\:bg-slate-"]:hover {
+  background-color: #1f2937 !important;
+}
+
+/* Kill any gradient that might create light seams */
+.bg-gradient-to-b:not([class*="from-cyan"]):not([class*="from-emerald"]):not([class*="from-amber"]):not([class*="from-red"]):not([class*="from-sky"]):not([class*="gold"]),
+.bg-gradient-to-t:not([class*="from-cyan"]):not([class*="from-emerald"]):not([class*="from-amber"]):not([class*="from-red"]):not([class*="from-sky"]):not([class*="gold"]) {
+  background: #0a0e14 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
    PRINT STYLES - Preserve white for printing
    ═══════════════════════════════════════════════════════════════════════════════ */
 
