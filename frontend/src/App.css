@@ -869,12 +869,55 @@ span[class*="rounded"],
   background-color: inherit;
 }
 
-/* Top-Up Success Screen centering */
-.fpx-payment .min-h-screen {
+/* ═══════════════════════════════════════════════════════════════════════════════
+   GLOBAL VIEWPORT CENTERING - All Core Screens
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Core viewport centering wrapper */
+.min-h-screen {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
+  width: 100%;
+}
+
+/* Service Agreement centering */
+[class*="service-agreement"],
+.agreement-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* FPX Payment centering */
+.fpx-payment {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: 100% !important;
+}
+
+/* Verification Page centering */
+.verification-page,
+[class*="verify"] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* Content containers - max-width with auto margin */
+.fpx-payment > div,
+.verification-page > div,
+.agreement-page > div,
+[class*="service-agreement"] > div {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 /* Verify MC Document centering */
@@ -884,6 +927,12 @@ span[class*="rounded"],
   margin: 0 auto;
   width: 100%;
   padding: 24px;
+}
+
+/* Ensure inner content doesn't overflow */
+.fpx-payment .grid,
+.verification-page .print-card {
+  max-width: 100%;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════

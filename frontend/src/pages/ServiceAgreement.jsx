@@ -230,10 +230,13 @@ export default function ServiceAgreement() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#0a0e14' }}>
+    <div
+      className="min-h-screen flex flex-col items-center"
+      style={{ backgroundColor: '#0a0e14', width: '100%' }}
+    >
       {/* Header */}
       <header className="sticky top-0 z-50 w-full" style={{ backgroundColor: '#0a0e14', borderBottom: '1px solid rgba(51, 65, 85, 0.3)' }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto' }} className="px-6 py-4 flex items-center justify-between">
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }} className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: MEDCHAIN_BLUE }}>
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -260,7 +263,7 @@ export default function ServiceAgreement() {
         </div>
       </header>
 
-      <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column' }} className="w-full px-6 pt-[50px] pb-12">
+      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }} className="w-full px-6 pt-[50px] pb-12">
         {/* Referral Banner */}
         {referralCode && (
           <div className="mb-8 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 rounded-xl p-4">

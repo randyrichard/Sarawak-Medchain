@@ -767,14 +767,17 @@ export default function FPXPayment() {
   // Payment Complete Screen
   if (paymentComplete && invoiceData) {
     return (
-      <div className="min-h-screen py-12 px-4 flex flex-col items-center" style={{ backgroundColor: '#0a0e14' }}>
+      <div
+        className="min-h-screen py-12 px-4 flex flex-col items-center justify-start"
+        style={{ backgroundColor: '#0a0e14', width: '100%' }}
+      >
         {/* Global CSS for seamless background */}
         <style>{`
           html, body, #root {
             background-color: #0a0e14 !important;
           }
         `}</style>
-        <div className="w-full" style={{ maxWidth: '700px' }}>
+        <div className="w-full" style={{ maxWidth: '800px', margin: '0 auto' }}>
           {/* Success Banner */}
           <div className="bg-gradient-to-r from-green-600 to-teal-600 rounded-2xl p-8 text-center mb-8 relative overflow-hidden">
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAzMHYySDI0di0yaDEyek0zNiAyNnYySDI0di0yaDEyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-30"></div>
@@ -998,7 +1001,10 @@ export default function FPXPayment() {
 
   // Main Payment Selection Screen
   return (
-    <div className="min-h-screen py-12 px-4 fpx-payment" style={{ backgroundColor: '#0a0e14' }}>
+    <div
+      className="min-h-screen py-12 px-4 fpx-payment flex flex-col items-center"
+      style={{ backgroundColor: '#0a0e14', width: '100%' }}
+    >
       <div className="w-full" style={{ maxWidth: '1200px', margin: '0 auto' }}>
         {/* Header */}
         <div className="text-center mb-8">

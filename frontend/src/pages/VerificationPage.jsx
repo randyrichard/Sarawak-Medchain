@@ -92,7 +92,10 @@ export default function VerificationPage() {
   }
 
   return (
-    <div className="min-h-screen py-12 px-4" style={{ backgroundColor: '#0a0e14' }}>
+    <div
+      className="min-h-screen py-12 px-4 flex flex-col items-center justify-start"
+      style={{ backgroundColor: '#0a0e14', width: '100%' }}
+    >
       {/* Global CSS & Print Styles */}
       <style>{`
         html, body, #root {
@@ -108,7 +111,7 @@ export default function VerificationPage() {
         }
       `}</style>
 
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
         {/* Verification Status Banner */}
         <div className="no-print mb-8 text-center">
           <div className="inline-flex items-center gap-3 px-6 py-3 bg-emerald-500/20 border border-emerald-500/30 rounded-full">
