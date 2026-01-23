@@ -240,22 +240,22 @@ function StickyBalanceHeader({ walletAddress }) {
   const getStatusStyles = () => {
     if (isCriticalBalance) {
       return {
-        banner: 'bg-gradient-to-r from-red-600 to-red-700',
-        badge: 'bg-red-50 border-red-200',
+        banner: '', // Use inline style for dark background
+        badge: 'border-red-500/30',
         text: 'text-white',
-        subtext: 'text-red-100',
-        icon: 'text-white',
-        button: 'bg-white text-red-600 hover:bg-red-50'
+        subtext: 'text-slate-300',
+        icon: 'text-red-400',
+        button: '' // Use inline style for white button
       };
     }
     if (isWarningBalance) {
       return {
-        banner: 'bg-gradient-to-r from-amber-500 to-orange-500',
-        badge: 'bg-amber-50 border-amber-200',
+        banner: '', // Use inline style for dark background
+        badge: 'border-yellow-500/30',
         text: 'text-white',
-        subtext: 'text-amber-100',
-        icon: 'text-white',
-        button: 'bg-white text-amber-600 hover:bg-amber-50'
+        subtext: 'text-slate-300',
+        icon: 'text-yellow-400',
+        button: '' // Use inline style for white button
       };
     }
     return {
@@ -270,33 +270,52 @@ function StickyBalanceHeader({ walletAddress }) {
 
   const styles = getStatusStyles();
 
-  // Show amber warning banner for low credit
+  // Show warning banner for low credit - DARK THEME with gold accents
   if (needsAttention) {
     return (
       <>
-      <div className={`sticky top-0 z-50 ${styles.banner}`} style={{ width: '100%', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)' }}>
+      <div
+        className="sticky top-0 z-50"
+        style={{
+          width: '100%',
+          backgroundColor: '#0a0e14',
+          borderBottom: '1px solid rgba(218, 165, 32, 0.3)',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)'
+        }}
+      >
         <div style={{ maxWidth: '1200px', margin: '0 auto' }} className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            {/* Warning Icon */}
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isCriticalBalance ? 'bg-white/20' : 'bg-white/20'} animate-pulse`}>
-              <svg className={`w-6 h-6 ${styles.icon}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {/* Warning Icon - Soft Gold */}
+            <div
+              className="w-12 h-12 rounded-full flex items-center justify-center"
+              style={{
+                backgroundColor: 'rgba(218, 165, 32, 0.15)',
+                border: '1px solid rgba(218, 165, 32, 0.3)'
+              }}
+            >
+              <svg className="w-6 h-6" style={{ color: '#daa520' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
 
-            {/* Alert Message */}
+            {/* Alert Message - White Text */}
             <div>
               <div className="flex items-center gap-3">
-                <h3 className={`text-lg font-bold ${styles.text}`}>
+                <h3 className="text-lg font-bold" style={{ color: '#ffffff' }}>
                   {isCriticalBalance ? 'Critical: Low Credit Balance' : 'Low Credit Warning'}
                 </h3>
-                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                  isCriticalBalance ? 'bg-white/20 text-white' : 'bg-white/20 text-white'
-                }`}>
+                <span
+                  className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
+                  style={{
+                    backgroundColor: 'rgba(218, 165, 32, 0.2)',
+                    border: '1px solid rgba(218, 165, 32, 0.4)',
+                    color: '#daa520'
+                  }}
+                >
                   RM {loading ? '...' : creditBalance?.toLocaleString() || 0}
                 </span>
               </div>
-              <p className={`text-sm mt-1 ${styles.subtext}`}>
+              <p className="text-sm mt-1" style={{ color: '#94a3b8' }}>
                 {isCriticalBalance
                   ? 'Immediate top-up required. MC issuance may be interrupted.'
                   : 'Please top up to ensure uninterrupted MC issuance.'}
@@ -304,12 +323,16 @@ function StickyBalanceHeader({ walletAddress }) {
             </div>
           </div>
 
-          {/* Top Up Button */}
+          {/* Top Up Now Button - SOLID WHITE with BLACK TEXT */}
           <button
             onClick={handleTopUp}
             disabled={buttonLoading}
-            className={`px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-lg transform hover:scale-105 hover:shadow-xl active:scale-95 flex items-center gap-2 cursor-pointer ${styles.button}`}
+            className="topup-btn px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-lg transform hover:scale-105 hover:shadow-xl active:scale-95 flex items-center gap-2 cursor-pointer"
             style={{
+              backgroundColor: '#ffffff',
+              color: '#000000',
+              border: '1px solid #daa520',
+              boxShadow: '0 0 15px rgba(218, 165, 32, 0.4)',
               transition: 'all 0.2s ease-in-out',
               cursor: 'pointer'
             }}
