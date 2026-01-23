@@ -298,18 +298,18 @@ function StickyBalanceHeader({ walletAddress }) {
               </svg>
             </div>
 
-            {/* Alert Message - White Text */}
+            {/* Alert Message - Clean Sharp White Text */}
             <div>
               <div className="flex items-center gap-3">
-                <h3 className="text-lg font-bold" style={{ color: '#ffffff' }}>
+                <h3 className="text-lg font-black" style={{ color: '#ffffff', letterSpacing: '0.02em' }}>
                   {isCriticalBalance ? 'Critical: Low Credit Balance' : 'Low Credit Warning'}
                 </h3>
                 <span
-                  className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
+                  className="px-3 py-1 rounded-full text-sm font-black uppercase tracking-wider"
                   style={{
-                    backgroundColor: 'rgba(218, 165, 32, 0.2)',
-                    border: '1px solid rgba(218, 165, 32, 0.4)',
-                    color: '#daa520'
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    color: '#ffffff'
                   }}
                 >
                   RM {loading ? '...' : creditBalance?.toLocaleString() || 0}
@@ -323,17 +323,17 @@ function StickyBalanceHeader({ walletAddress }) {
             </div>
           </div>
 
-          {/* Top Up Now Button - SOLID WHITE with BLACK TEXT */}
+          {/* Top Up Now Button - SOLID WHITE with GOLD HOVER */}
           <button
             onClick={handleTopUp}
             disabled={buttonLoading}
-            className="topup-btn px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-lg transform hover:scale-105 hover:shadow-xl active:scale-95 flex items-center gap-2 cursor-pointer"
+            className="credit-topup-btn px-6 py-3 rounded-xl font-bold text-sm shadow-lg transform hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer"
             style={{
               backgroundColor: '#ffffff',
               color: '#000000',
               border: '1px solid #daa520',
               boxShadow: '0 0 15px rgba(218, 165, 32, 0.4)',
-              transition: 'all 0.2s ease-in-out',
+              transition: 'all 0.3s ease-in-out',
               cursor: 'pointer'
             }}
           >
