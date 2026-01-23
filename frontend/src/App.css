@@ -643,13 +643,17 @@ nav {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   PERFECT DARK THEME - Deep Charcoal Cards
+   PERFECT DARK THEME - Deep Charcoal Cards (#111827)
+   ALL WHITE/LIGHT ELEMENTS CONVERTED - MedChain Gold Accents
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 /* Deep Charcoal card styling */
 .subscription-card,
 .monthly-dues,
-.analytics-card {
+.analytics-card,
+.stat-card,
+.info-card,
+.data-card {
   background-color: #111827 !important;
   border: 1px solid #1f2937 !important;
   border-radius: 12px;
@@ -659,37 +663,95 @@ nav {
 .bg-white:not(.qr-section):not([class*="qr"]):not(.signature-canvas):not(canvas) {
   background-color: #111827 !important;
   border: 1px solid #1f2937 !important;
-  color: white !important;
 }
 
 /* White text inside converted cards */
-.bg-white *:not(.qr-section *):not([class*="qr"] *) {
+.bg-white *:not(.qr-section *):not([class*="qr"] *):not(input):not(select) {
   color: rgba(255, 255, 255, 0.9) !important;
 }
 
+/* Force charcoal on any remaining light backgrounds */
+[style*="background-color: white"],
+[style*="background-color: #fff"],
+[style*="background-color: rgb(255"],
+[style*="background: white"],
+[style*="background: #fff"] {
+  background-color: #111827 !important;
+}
+
+/* Card hover states - slightly lighter charcoal */
+.bg-white:hover:not(.qr-section):not([class*="qr"]) {
+  background-color: #1f2937 !important;
+}
+
+/* Preserve white ONLY for QR codes */
+.qr-section,
+.qr-section > div,
+[class*="qr-code"],
+canvas.qr-code {
+  background-color: white !important;
+}
+
+/* Input fields - dark but visible */
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  background-color: #1f2937 !important;
+  border: 1px solid #374151 !important;
+  color: white !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════════
-   FOUNDER COMMAND VIEW - Hide overlapping subscription cards
+   FOUNDER COMMAND VIEW - Hide overlapping hospital/subscription cards
+   CLEAN LAYER SEPARATION
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-/* When Founder Command is active, hide ALL admin portal content */
+/* When Founder Command is active, hide ALL admin portal and hospital content */
 body:has(.founder-command) .admin-portal,
 body:has(.founder-command) .subscription-card,
 body:has(.founder-command) .monthly-dues,
+body:has(.founder-command) .hospital-card,
+body:has(.founder-command) .hospital-list,
 body:has(.founder-command) [class*="Subscription"],
-body:has(.founder-command) [class*="subscription"] {
+body:has(.founder-command) [class*="subscription"],
+body:has(.founder-command) [class*="hospital-specific"],
+body:has(.founder-command) [class*="HospitalCard"] {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
+  position: absolute !important;
+  left: -9999px !important;
+}
+
+/* Ensure Founder Command has full z-index priority */
+.founder-command {
+  position: relative;
+  z-index: 100;
+}
+
+/* Hide hospital balances table when in Founder Command */
+body:has(.founder-command) .hospital-balances,
+body:has(.founder-command) [class*="hospitalBalance"],
+body:has(.founder-command) table[class*="hospital"] {
+  display: none !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   PERFECT CENTERING - Dashboards and Payment screens
+   PERFECT CENTERING - Dashboards, Verify MC, and Payment screens
+   FLEX CONTAINER ALIGNMENT
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 /* Center Public Health Intelligence Dashboard */
 .ceo-dashboard > div,
 .ceo-dashboard .px-12,
+.ceo-dashboard .px-8,
+.ceo-dashboard .px-6,
 .public-health-dashboard {
   max-width: 1400px !important;
   margin-left: auto !important;
@@ -699,16 +761,55 @@ body:has(.founder-command) [class*="subscription"] {
 /* Center Complete Your Payment box */
 .fpx-payment,
 .payment-container,
-[class*="payment"] {
+[class*="FPXPayment"] {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
+  width: 100% !important;
+  padding: 24px !important;
 }
 
 .fpx-payment > div,
-.payment-container > div {
+.payment-container > div,
+[class*="FPXPayment"] > div {
   max-width: 1200px !important;
   width: 100% !important;
+}
+
+/* Center Verify MC viewer */
+.verify-mc,
+[class*="verify-mc"],
+[class*="VerifyMC"],
+.mc-verification {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.verify-mc > div,
+[class*="verify-mc"] > div,
+[class*="VerifyMC"] > div,
+.mc-verification > div {
+  max-width: 1200px !important;
+  width: 100% !important;
+}
+
+/* Center Founder Admin dashboard */
+.founder-admin-dashboard > div,
+.founder-command > div {
+  max-width: 1400px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Analytics grid centering */
+.analytics-grid,
+.dashboard-grid,
+.stats-grid {
+  max-width: 1400px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════

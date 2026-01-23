@@ -1017,6 +1017,7 @@ const PROTOCOL_STEPS = [
 // Proposal Modal with Digital Signature
 function ProposalModal({ isOpen, onClose, lead, onDealClosed }) {
   const sigCanvas = useRef(null);
+  const sigContainerRef = useRef(null);
   const [isSigned, setIsSigned] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
@@ -1025,6 +1026,44 @@ function ProposalModal({ isOpen, onClose, lead, onDealClosed }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState([]);
   const [nodeId, setNodeId] = useState('004');
+
+  // Fix canvas size for perfect gold ink alignment using getBoundingClientRect
+  useEffect(() => {
+    if (!isOpen || !sigCanvas.current || !sigContainerRef.current) return;
+
+    const resizeCanvas = () => {
+      const canvas = sigCanvas.current.getCanvas();
+      const container = sigContainerRef.current;
+      const rect = container.getBoundingClientRect();
+      const ratio = window.devicePixelRatio || 1;
+
+      const displayWidth = Math.floor(rect.width);
+      const displayHeight = 128; // h-32 = 8rem = 128px
+
+      // Set internal canvas resolution
+      canvas.width = displayWidth * ratio;
+      canvas.height = displayHeight * ratio;
+
+      // Set display size via CSS
+      canvas.style.width = `${displayWidth}px`;
+      canvas.style.height = `${displayHeight}px`;
+
+      // Scale context
+      const ctx = canvas.getContext('2d');
+      ctx.scale(ratio, ratio);
+
+      sigCanvas.current.clear();
+    };
+
+    // Wait for modal to render
+    const timeoutId = setTimeout(resizeCanvas, 100);
+    window.addEventListener('resize', resizeCanvas);
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', resizeCanvas);
+    };
+  }, [isOpen]);
 
   if (!isOpen || !lead) return null;
 
@@ -1439,7 +1478,8 @@ function ProposalModal({ isOpen, onClose, lead, onDealClosed }) {
                   </button>
                 </div>
                 <div
-                  className="rounded-xl overflow-hidden"
+                  ref={sigContainerRef}
+                  className="rounded-xl overflow-hidden signature-container"
                   style={{
                     backgroundColor: '#ffffff',
                     border: isSigned ? `2px solid ${theme.success}` : `2px dashed ${theme.border}`

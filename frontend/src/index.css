@@ -285,12 +285,19 @@ button:focus-visible {
    ZERO WHITE ELEMENTS - ABSOLUTE ENFORCEMENT
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-/* NUCLEAR LEVEL 1: Core layout backgrounds */
-html, body, #root, #root > *, #root > * > *, #root > * > * > * {
+/* NUCLEAR LEVEL 1: Core layout - TOTAL COVERAGE */
+html, body, #root,
+#root > *, #root > * > *, #root > * > * > *,
+#root > * > * > * > *, #root > * > * > * > * > * {
   background-color: #0a0e14 !important;
 }
 
-/* NUCLEAR LEVEL 2: Header - force #0a0e14, kill ALL seams */
+/* NUCLEAR LEVEL 2: Every div by default */
+div:not(.qr-section):not([class*="qr"]):not(.signature-container) {
+  background-color: transparent;
+}
+
+/* NUCLEAR LEVEL 3: Header - force #0a0e14, kill ALL seams */
 header, .header, [class*="header"],
 header *, .header *, [class*="header"] * {
   background-color: #0a0e14 !important;
@@ -299,7 +306,7 @@ header *, .header *, [class*="header"] * {
   box-shadow: none !important;
 }
 
-/* NUCLEAR LEVEL 3: Sidebar - force #0a0e14, kill ALL seams */
+/* NUCLEAR LEVEL 4: Sidebar - force #0a0e14, kill ALL seams */
 aside, .sidebar, nav:not(.nav-links),
 aside *, .sidebar *, nav:not(.nav-links) * {
   background-color: #0a0e14 !important;
@@ -308,9 +315,10 @@ aside *, .sidebar *, nav:not(.nav-links) * {
   box-shadow: none !important;
 }
 
-/* NUCLEAR LEVEL 4: Main content - force #0a0e14 */
+/* NUCLEAR LEVEL 5: Main content - force #0a0e14 */
 main, .main, .main-content,
-main > div:first-child {
+main > div:first-child,
+.flex-1, .flex-grow {
   background-color: #0a0e14 !important;
   border: none !important;
   border-left: none !important;
@@ -321,14 +329,15 @@ main > div:first-child {
 .flex.h-screen,
 .flex.h-screen > aside,
 .flex.h-screen > main,
-.flex.h-screen > .flex-1 {
+.flex.h-screen > .flex-1,
+.flex.h-screen > div {
   background-color: #0a0e14 !important;
 }
 
 /* Sticky balance header - eliminate seam line */
 .sticky.top-0.z-50,
 .sticky.top-0,
-[class*="sticky"] {
+[class*="sticky"]:not(.sticky-card) {
   background-color: #0a0e14 !important;
   border: none !important;
   box-shadow: none !important;
@@ -338,37 +347,68 @@ main > div:first-child {
 .flex.h-screen > aside + main,
 .flex.h-screen > aside + .flex-1,
 aside + main,
-header + main {
+header + main,
+aside + div,
+header + div {
   border: none !important;
   margin: 0 !important;
   padding-top: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Kill ANY horizontal line that might appear */
+hr, [class*="border-t"], [class*="border-b"] {
+  border-color: transparent !important;
+}
+
+/* Force overflow areas to dark */
+.overflow-y-auto, .overflow-x-auto, .overflow-auto {
+  background-color: #0a0e14 !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
    DEEP CHARCOAL CARDS - #111827 with #1f2937 border
+   CONVERT ALL LIGHT BACKGROUNDS TO DARK
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 /* Convert ALL white backgrounds to Deep Charcoal */
-.bg-white,
-[class*="bg-white"] {
+.bg-white:not(.qr-section):not([class*="qr"]):not(.signature-canvas),
+[class*="bg-white"]:not(.qr-section):not([class*="qr"]) {
   background-color: #111827 !important;
   border: 1px solid #1f2937 !important;
 }
 
-/* Preserve white for QR codes and signature pads only */
+/* Cards with light backgrounds - convert to charcoal */
+.bg-slate-100, .bg-slate-50, .bg-slate-200,
+.bg-gray-100, .bg-gray-50, .bg-gray-200,
+.bg-zinc-100, .bg-zinc-50,
+.bg-neutral-100, .bg-neutral-50 {
+  background-color: #111827 !important;
+  border: 1px solid #1f2937 !important;
+}
+
+/* Preserve white for QR codes and signature pads ONLY */
 .qr-section,
 .qr-code-container,
 canvas.signature-pad,
-[class*="qr-"] {
+[class*="qr-"],
+.qr-section *,
+.qr-code-container * {
   background-color: white !important;
   border: none !important;
 }
 
-/* Cards with gradient backgrounds - convert to charcoal */
-.bg-slate-100,
-.bg-slate-50,
-.bg-gray-100,
-.bg-gray-50 {
+/* Shadow cards become charcoal */
+.shadow-lg:not(.qr-section):not([class*="qr"]),
+.shadow-xl:not(.qr-section):not([class*="qr"]),
+.shadow-2xl:not(.qr-section):not([class*="qr"]) {
+  background-color: #111827 !important;
+}
+
+/* Rounded cards with shadows */
+.rounded-xl.shadow-lg,
+.rounded-2xl.shadow-lg,
+.rounded-lg.shadow-lg {
   background-color: #111827 !important;
   border: 1px solid #1f2937 !important;
 }
@@ -403,7 +443,7 @@ canvas.signature-pad,
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   CENTERING - Dashboard and Verify MC Screens
+   CENTERING - Dashboard, Verify MC, and Payment Screens
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 /* Centered content wrapper */
@@ -411,16 +451,64 @@ canvas.signature-pad,
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
+  padding: 0 24px;
 }
 
 /* Center all portal content */
 .admin-portal > div,
 .ceo-dashboard > div,
 .doctor-portal > div,
-.patient-portal > div {
+.patient-portal > div,
+.founder-admin-dashboard > div,
+.fpx-payment > div,
+.verify-mc > div {
   max-width: 1400px;
   margin-left: auto;
   margin-right: auto;
+}
+
+/* Center the main analytics grid */
+.ceo-dashboard .grid,
+.admin-portal .grid,
+.founder-admin-dashboard .grid {
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Center Verify MC viewer */
+.verify-mc,
+[class*="verify-mc"],
+[class*="VerifyMC"] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.verify-mc > *,
+[class*="verify-mc"] > *,
+[class*="VerifyMC"] > * {
+  max-width: 1200px;
+  width: 100%;
+}
+
+/* Center Complete Your Payment screen */
+.fpx-payment,
+[class*="fpx-payment"],
+[class*="FPXPayment"],
+[class*="payment-container"] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 24px;
+}
+
+.fpx-payment > div,
+[class*="payment"] > div {
+  max-width: 1200px;
+  width: 100%;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
