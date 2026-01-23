@@ -749,6 +749,53 @@ body:has(.ceo-dashboard) [class*="Subscription"]:not(.ceo-dashboard *) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
+   HIGH-CONTRAST BUTTON HOVER EFFECTS - CLIENT TACTILE FEEDBACK
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Top Up Button - White with Gold Border, Gold Hover */
+.topup-btn {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border: 1px solid #daa520 !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.topup-btn:hover {
+  background-color: #daa520 !important;
+  color: #ffffff !important;
+  border-color: #daa520 !important;
+  box-shadow: 0 0 15px rgba(218, 165, 32, 0.6) !important;
+}
+
+/* Secure on Blockchain Button - White with Gold Glow, Gold Hover */
+.secure-btn {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.secure-btn:hover:not(:disabled) {
+  background-color: #daa520 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 35px rgba(218, 165, 32, 0.9), 0 0 70px rgba(218, 165, 32, 0.6), 0 0 110px rgba(218, 165, 32, 0.4) !important;
+}
+
+.secure-btn:hover:not(:disabled) span {
+  color: #ffffff !important;
+}
+
+.secure-btn:hover:not(:disabled) svg {
+  stroke: #ffffff !important;
+}
+
+/* Disabled state maintains gray styling */
+.secure-btn:disabled {
+  background-color: #374151 !important;
+  color: #9ca3af !important;
+  opacity: 0.7 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
    GOLD CONFETTI CELEBRATION ANIMATION
    ═══════════════════════════════════════════════════════════════════════════════ */
 

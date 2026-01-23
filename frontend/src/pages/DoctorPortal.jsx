@@ -839,11 +839,12 @@ export default function DoctorPortal({ walletAddress }) {
               </span>
               <button
                 onClick={handleTopUp}
-                className="px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 hover:scale-105"
+                className="topup-btn px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 hover:scale-105"
                 style={{
-                  backgroundColor: '#daa520',
+                  backgroundColor: '#ffffff',
                   color: '#000000',
-                  boxShadow: '0 0 10px rgba(218, 165, 32, 0.5)'
+                  border: '1px solid #daa520',
+                  boxShadow: '0 0 8px rgba(218, 165, 32, 0.3)'
                 }}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1154,7 +1155,7 @@ export default function DoctorPortal({ walletAddress }) {
               <button
                 onClick={handleSecureOnBlockchain}
                 disabled={isMinting || !isVerified}
-                className="w-full py-5 rounded-2xl text-lg transition-all flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-[0.98]"
+                className="secure-btn w-full py-5 rounded-2xl text-lg transition-all flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-[0.98]"
                 style={{
                   backgroundColor: isMinting ? '#374151' : '#ffffff',
                   color: isMinting ? '#9ca3af' : '#000000',
