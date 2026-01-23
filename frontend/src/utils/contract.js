@@ -29,20 +29,47 @@ let billingContract;
  */
 export async function connectWallet() {
   try {
+    // Check if MetaMask is installed
     if (!window.ethereum) {
-      throw new Error('MetaMask is not installed');
+      throw new Error('MetaMask is not installed. Please install MetaMask extension from metamask.io');
     }
 
     // Request account access
-    await window.ethereum.request({ method: 'eth_requestAccounts' });
+    try {
+      await window.ethereum.request({ method: 'eth_requestAccounts' });
+    } catch (err) {
+      if (err.code === 4001) {
+        throw new Error('Please connect your MetaMask wallet to continue');
+      }
+      throw new Error('Failed to connect MetaMask: ' + err.message);
+    }
 
     provider = new ethers.BrowserProvider(window.ethereum);
+
+    // Check network - should be localhost:8545 (chainId 31337 or 1337)
+    const network = await provider.getNetwork();
+    const chainId = Number(network.chainId);
+    console.log('Connected to network:', chainId);
+
+    // Accept both Hardhat default chainIds
+    if (chainId !== 31337 && chainId !== 1337) {
+      throw new Error(`Wrong network. Please connect MetaMask to Localhost 8545 (Hardhat). Current chainId: ${chainId}`);
+    }
+
     signer = await provider.getSigner();
     const address = await signer.getAddress();
 
-    // Initialize contracts
-    contract = new ethers.Contract(CONTRACT_ADDRESS, ContractABI.abi, signer);
-    billingContract = new ethers.Contract(BILLING_CONTRACT_ADDRESS, BillingABI.abi, signer);
+    // Initialize contracts with error handling
+    try {
+      contract = new ethers.Contract(CONTRACT_ADDRESS, ContractABI.abi, signer);
+      billingContract = new ethers.Contract(BILLING_CONTRACT_ADDRESS, BillingABI.abi, signer);
+
+      // Verify contract is deployed by calling a simple view function
+      await contract.admin();
+    } catch (err) {
+      console.error('Contract initialization error:', err);
+      throw new Error('Contracts not found. Please run: npx hardhat node && node scripts/deploy.cjs');
+    }
 
     console.log('Connected to wallet:', address);
     console.log('Contract address:', CONTRACT_ADDRESS);
