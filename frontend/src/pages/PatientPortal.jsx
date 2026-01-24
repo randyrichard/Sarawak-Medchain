@@ -8,6 +8,7 @@ export default function PatientPortal({ walletAddress }) {
   const [message, setMessage] = useState('');
   const [doctorAddress, setDoctorAddress] = useState('');
   const [encryptionKeys, setEncryptionKeys] = useState({});
+  const [successGlow, setSuccessGlow] = useState(false);
 
   // Load patient records on mount
   useEffect(() => {
@@ -35,6 +36,10 @@ export default function PatientPortal({ walletAddress }) {
       await grantAccess(doctorAddress);
       setMessage(`Access granted to ${doctorAddress}`);
       setDoctorAddress('');
+
+      // Trigger premium success glow animation
+      setSuccessGlow(true);
+      setTimeout(() => setSuccessGlow(false), 3000);
     } catch (error) {
       console.error('Error granting access:', error);
       setMessage(`Error: ${error.message}`);
@@ -159,8 +164,9 @@ export default function PatientPortal({ walletAddress }) {
               <h1 style={{ color: '#ffffff', fontSize: '2rem', fontWeight: 900, letterSpacing: '-0.025em', margin: 0, lineHeight: 1.2 }}>
                 Patient Portal
               </h1>
-              {/* SECURE Badge - Under Title */}
+              {/* SECURE Badge - Under Title (flashes green on success) */}
               <div
+                className={successGlow ? 'success-badge-green' : 'success-badge-gold'}
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -168,18 +174,23 @@ export default function PatientPortal({ walletAddress }) {
                   padding: '6px 12px',
                   borderRadius: '8px',
                   marginTop: '8px',
-                  background: 'linear-gradient(135deg, rgba(218, 165, 32, 0.2) 0%, rgba(218, 165, 32, 0.08) 100%)',
-                  border: '1px solid #daa520',
-                  color: '#daa520',
+                  background: successGlow
+                    ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.3) 0%, rgba(16, 185, 129, 0.15) 100%)'
+                    : 'linear-gradient(135deg, rgba(218, 165, 32, 0.2) 0%, rgba(218, 165, 32, 0.08) 100%)',
+                  border: successGlow ? '1px solid #10b981' : '1px solid #daa520',
+                  color: successGlow ? '#10b981' : '#daa520',
                   fontSize: '0.7rem',
                   fontWeight: 700,
-                  boxShadow: '0 0 12px rgba(218, 165, 32, 0.2)'
+                  boxShadow: successGlow
+                    ? '0 0 20px rgba(16, 185, 129, 0.5)'
+                    : '0 0 12px rgba(218, 165, 32, 0.2)',
+                  transition: 'all 0.5s ease-in-out'
                 }}
               >
                 <svg style={{ width: '12px', height: '12px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
-                SECURE PATIENT VIEW
+                {successGlow ? 'ACCESS GRANTED' : 'SECURE PATIENT VIEW'}
               </div>
             </div>
           </div>
@@ -269,7 +280,7 @@ export default function PatientPortal({ walletAddress }) {
         >
             {/* ACCESS CONTROL - Luxury Sovereign Card */}
             <div
-              className="luxury-card-breathing"
+              className={successGlow ? 'success-glow-active' : 'luxury-card-breathing'}
               style={{
                 width: '100%',
                 padding: '48px',
