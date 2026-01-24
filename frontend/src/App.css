@@ -1005,7 +1005,7 @@ span[class*="rounded"],
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 /* Hide excessive notifications - only show first 2 */
-.fixed.top-4.right-4.z-\\[100\\] > div:nth-child(n+3),
+.fixed.top-4.right-4.z-\[100\] > div:nth-child(n+3),
 .fixed.top-4.right-4 > div:nth-child(n+4),
 .fixed.bottom-6.right-6.z-50:nth-child(n+2) {
   display: none !important;
@@ -1013,7 +1013,7 @@ span[class*="rounded"],
 
 /* Limit notification area height */
 .fixed.top-4.right-4,
-.fixed.top-4.left-1\\/2 {
+.fixed.top-4.left-1\/2 {
   max-height: 250px !important;
   overflow: hidden !important;
 }
