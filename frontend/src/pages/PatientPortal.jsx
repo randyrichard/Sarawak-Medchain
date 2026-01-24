@@ -451,7 +451,7 @@ export default function PatientPortal({ walletAddress }) {
                         width: '100px',
                         height: '100px',
                         color: '#daa520',
-                        filter: 'drop-shadow(0 0 20px rgba(218, 165, 32, 0.6))'
+                        filter: 'drop-shadow(0 0 25px rgba(218, 165, 32, 0.7))'
                       }}
                       fill="none"
                       stroke="currentColor"
