@@ -239,22 +239,26 @@ export default function PatientPortal({ walletAddress }) {
         </div>
       </header>
 
-      {/* Main Content - VERTICAL CENTERED */}
+      {/* Main Content - PERFECT VERTICAL CENTER */}
       <div
         style={{
-          flex: 1,
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
+          minHeight: '85vh',
           padding: '20px 40px',
           overflow: 'auto'
         }}
       >
-        {/* Error Messages Only - Hide debug/success messages */}
+        {/* Error Messages Only */}
         {message && message.includes('Error') && (
           <div
-            className="mb-6 p-5 rounded-2xl text-lg font-medium"
             style={{
+              marginBottom: '24px',
+              padding: '20px',
+              borderRadius: '16px',
+              fontSize: '1.1rem',
+              fontWeight: 500,
               backgroundColor: 'rgba(239, 68, 68, 0.1)',
               border: '1px solid rgba(239, 68, 68, 0.3)',
               color: '#ef4444',
@@ -266,24 +270,24 @@ export default function PatientPortal({ walletAddress }) {
           </div>
         )}
 
-        {/* SYMMETRICAL GRID - CENTERED + RAISED 40px */}
+        {/* LUXURY CARDS - PERFECT HORIZONTAL SYMMETRY */}
         <div
           style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
+            display: 'flex',
+            justifyContent: 'center',
             alignItems: 'stretch',
-            gap: '60px',
-            margin: 'auto',
-            marginTop: '-40px',
+            gap: '50px',
             maxWidth: '1400px',
-            width: '100%'
+            width: '100%',
+            margin: '0 auto'
           }}
         >
             {/* ACCESS CONTROL - Luxury Sovereign Card */}
             <div
               className={successGlow ? 'success-glow-active' : 'luxury-card-sync'}
               style={{
-                width: '100%',
+                flex: 1,
+                maxWidth: '600px',
                 padding: '48px',
                 backgroundColor: '#111827',
                 border: '2px solid #daa520',
@@ -393,7 +397,8 @@ export default function PatientPortal({ walletAddress }) {
           <div
             className="luxury-card-sync"
             style={{
-              width: '100%',
+              flex: 1,
+              maxWidth: '600px',
               padding: '48px',
               backgroundColor: '#111827',
               border: '2px solid #daa520',
