@@ -1,7 +1,5 @@
 {
-  "framework": null,
   "buildCommand": "cd frontend && npm install && npm run build",
-  "installCommand": "npm install",
   "outputDirectory": "frontend/dist",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
