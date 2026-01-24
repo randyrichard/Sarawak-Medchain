@@ -1036,9 +1036,9 @@ span[class*="rounded"],
 }
 
 /* Force dark on all hover states */
-[class*="hover\\:bg-white"]:hover,
-[class*="hover\\:bg-gray-"]:hover,
-[class*="hover\\:bg-slate-"]:hover {
+[class*="hover\:bg-white"]:hover,
+[class*="hover\:bg-gray-"]:hover,
+[class*="hover\:bg-slate-"]:hover {
   background-color: #1f2937 !important;
 }
 
