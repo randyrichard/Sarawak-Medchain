@@ -403,44 +403,74 @@ export default function PatientPortal({ walletAddress }) {
               flexDirection: 'column'
             }}
           >
-            {/* Card Header - ENLARGED */}
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-4">
-                <div
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                  style={{
-                    background: 'linear-gradient(135deg, #daa520 0%, #b8860b 100%)',
-                    boxShadow: '0 0 25px rgba(218, 165, 32, 0.5)'
-                  }}
-                >
-                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <h2 className="font-black text-white" style={{ fontSize: '2rem' }}>My Medical Records</h2>
-                <span
-                  className="px-4 py-2 rounded-full text-base font-bold"
-                  style={{
-                    backgroundColor: 'rgba(218, 165, 32, 0.2)',
-                    border: '2px solid rgba(218, 165, 32, 0.5)',
-                    color: '#daa520'
-                  }}
-                >
-                  {records.length} records
-                </span>
+            {/* Card Header - PERFECT ALIGNMENT */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '15px',
+                marginBottom: '32px'
+              }}
+            >
+              <div
+                style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '16px',
+                  background: 'linear-gradient(135deg, #daa520 0%, #b8860b 100%)',
+                  boxShadow: '0 0 25px rgba(218, 165, 32, 0.5)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}
+              >
+                <svg style={{ width: '28px', height: '28px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
               </div>
+              <h2 style={{ fontSize: '2rem', fontWeight: 900, color: '#ffffff', margin: 0 }}>My Medical Records</h2>
+              <span
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '9999px',
+                  fontSize: '1rem',
+                  fontWeight: 700,
+                  backgroundColor: 'rgba(218, 165, 32, 0.2)',
+                  border: '2px solid rgba(218, 165, 32, 0.5)',
+                  color: '#daa520',
+                  marginLeft: 'auto'
+                }}
+              >
+                {records.length} records
+              </span>
             </div>
 
             {records.length === 0 ? (
               /* Empty State - ELITE HERO SHIELD 2X */
-              <div className="flex items-center justify-center flex-1" style={{ minHeight: '300px' }}>
-                <div className="text-center">
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flex: 1,
+                  minHeight: '280px',
+                  marginTop: '20px'
+                }}
+              >
+                <div style={{ textAlign: 'center' }}>
                   {/* 2X LARGER Pulsing Gold Shield Icon */}
                   <div
-                    className="hero-shield-pulse mx-auto mb-8 rounded-3xl flex items-center justify-center relative"
+                    className="hero-shield-pulse"
                     style={{
                       width: '180px',
                       height: '180px',
+                      margin: '0 auto 32px auto',
+                      borderRadius: '24px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      position: 'relative',
                       background: 'linear-gradient(135deg, rgba(218, 165, 32, 0.12) 0%, rgba(218, 165, 32, 0.04) 100%)',
                       border: '2px solid rgba(218, 165, 32, 0.5)'
                     }}
@@ -460,10 +490,21 @@ export default function PatientPortal({ walletAddress }) {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                     </svg>
                     {/* Pulsing glow ring */}
-                    <div className="absolute inset-0 rounded-3xl hero-shield-glow"></div>
+                    <div
+                      className="hero-shield-glow"
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        borderRadius: '24px'
+                      }}
+                    ></div>
                   </div>
-                  <p className="text-xl font-bold" style={{ color: '#ffffff' }}>Your medical history is secured</p>
-                  <p className="text-base mt-2" style={{ color: '#daa520' }}>on the Sarawak Blockchain</p>
+                  <p style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                    Your medical history is secured
+                  </p>
+                  <p style={{ fontSize: '1rem', color: '#daa520', marginTop: '8px' }}>
+                    on the Sarawak Blockchain
+                  </p>
                 </div>
               </div>
             ) : (
