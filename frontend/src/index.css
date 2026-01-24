@@ -846,6 +846,25 @@ body:has(.ceo-dashboard) [class*="Subscription"]:not(.ceo-dashboard *) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
+   LUXURY BREATHING GOLD ANIMATION
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+@keyframes breathingGold {
+  0%, 100% {
+    box-shadow: 0 0 30px rgba(218, 165, 32, 0.1), 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    border-color: rgba(218, 165, 32, 0.8);
+  }
+  50% {
+    box-shadow: 0 0 50px rgba(218, 165, 32, 0.25), 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    border-color: rgba(218, 165, 32, 1);
+  }
+}
+
+.luxury-card-breathing {
+  animation: breathingGold 4s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
    GOLD CONFETTI CELEBRATION ANIMATION
    ═══════════════════════════════════════════════════════════════════════════════ */
 

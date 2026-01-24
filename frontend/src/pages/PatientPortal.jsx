@@ -102,15 +102,24 @@ export default function PatientPortal({ walletAddress }) {
   };
 
   return (
-    <div className="flex-1 flex-grow w-full min-h-screen font-sans patient-portal" style={{ backgroundColor: '#0a0e14' }}>
-      {/* ELITE SOVEREIGN HEADER - LUXURY SPACING */}
+    <div
+      className="font-sans patient-portal"
+      style={{
+        backgroundColor: '#0a0e14',
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100vh',
+        overflow: 'hidden'
+      }}
+    >
+      {/* ELITE SOVEREIGN HEADER */}
       <header
         style={{
           backgroundColor: '#0a0e14',
           borderBottom: '2px solid rgba(218, 165, 32, 0.3)',
           boxShadow: '0 4px 30px rgba(0, 0, 0, 0.4)',
-          padding: '32px 50px',
-          marginBottom: '60px'
+          padding: '24px 40px',
+          flexShrink: 0
         }}
       >
         <div
@@ -122,16 +131,16 @@ export default function PatientPortal({ walletAddress }) {
             alignItems: 'center'
           }}
         >
-          {/* LEFT: Logo + Title + Badge (inline) */}
+          {/* LEFT: Branding Block - Logo + Title + Badge stacked */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            {/* Gold Avatar Logo - 10% LARGER for Bold Branding */}
+            {/* Gold Avatar Logo */}
             <div
               style={{
-                width: '72px',
-                height: '72px',
-                borderRadius: '16px',
+                width: '64px',
+                height: '64px',
+                borderRadius: '14px',
                 background: 'linear-gradient(135deg, #daa520 0%, #b8860b 100%)',
-                boxShadow: '0 0 35px rgba(218, 165, 32, 0.5), inset 0 2px 0 rgba(255,255,255,0.3)',
+                boxShadow: '0 0 30px rgba(218, 165, 32, 0.5), inset 0 2px 0 rgba(255,255,255,0.3)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -139,52 +148,53 @@ export default function PatientPortal({ walletAddress }) {
                 position: 'relative'
               }}
             >
-              <svg style={{ width: '40px', height: '40px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg style={{ width: '36px', height: '36px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              <div style={{ position: 'absolute', inset: 0, borderRadius: '16px', boxShadow: '0 0 30px rgba(218, 165, 32, 0.4)' }} className="animate-pulse"></div>
+              <div style={{ position: 'absolute', inset: 0, borderRadius: '14px', boxShadow: '0 0 25px rgba(218, 165, 32, 0.4)' }} className="animate-pulse"></div>
             </div>
 
-            {/* Title */}
-            <h1 style={{ color: '#ffffff', fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.025em', margin: 0 }}>
-              Patient Portal
-            </h1>
-
-            {/* SECURE PATIENT VIEW Badge - RIGHT of Title */}
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '10px 16px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, rgba(218, 165, 32, 0.2) 0%, rgba(218, 165, 32, 0.08) 100%)',
-                border: '1px solid #daa520',
-                color: '#daa520',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                boxShadow: '0 0 15px rgba(218, 165, 32, 0.25)',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-              SECURE
+            {/* Title + Badge Stacked */}
+            <div>
+              <h1 style={{ color: '#ffffff', fontSize: '2rem', fontWeight: 900, letterSpacing: '-0.025em', margin: 0, lineHeight: 1.2 }}>
+                Patient Portal
+              </h1>
+              {/* SECURE Badge - Under Title */}
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  marginTop: '8px',
+                  background: 'linear-gradient(135deg, rgba(218, 165, 32, 0.2) 0%, rgba(218, 165, 32, 0.08) 100%)',
+                  border: '1px solid #daa520',
+                  color: '#daa520',
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  boxShadow: '0 0 12px rgba(218, 165, 32, 0.2)'
+                }}
+              >
+                <svg style={{ width: '12px', height: '12px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                SECURE PATIENT VIEW
+              </div>
             </div>
           </div>
 
-          {/* RIGHT: Wallet + Refresh - CENTER ALIGNED */}
+          {/* RIGHT: Wallet + Refresh */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <code
               style={{
-                padding: '14px 20px',
-                borderRadius: '12px',
+                padding: '12px 18px',
+                borderRadius: '10px',
                 fontFamily: 'monospace',
                 backgroundColor: '#111827',
-                border: '2px solid rgba(218, 165, 32, 0.3)',
+                border: '1px solid rgba(218, 165, 32, 0.3)',
                 color: '#daa520',
-                fontSize: '0.95rem'
+                fontSize: '0.85rem'
               }}
             >
               {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
@@ -194,22 +204,22 @@ export default function PatientPortal({ walletAddress }) {
               disabled={loading}
               className="patient-refresh-btn hover:scale-105"
               style={{
-                padding: '14px 24px',
-                borderRadius: '12px',
+                padding: '12px 20px',
+                borderRadius: '10px',
                 fontWeight: 900,
                 display: 'flex',
                 alignItems: 'center',
-                gap: '10px',
+                gap: '8px',
                 backgroundColor: '#ffffff',
                 color: '#000000',
                 border: '2px solid #daa520',
-                boxShadow: '0 0 20px rgba(218, 165, 32, 0.3)',
-                fontSize: '0.95rem',
+                boxShadow: '0 0 15px rgba(218, 165, 32, 0.3)',
+                fontSize: '0.85rem',
                 cursor: 'pointer',
                 transition: 'all 0.2s'
               }}
             >
-              <svg style={{ width: '18px', height: '18px' }} className={loading ? 'animate-spin' : ''} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg style={{ width: '16px', height: '16px' }} className={loading ? 'animate-spin' : ''} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
               Refresh
@@ -218,53 +228,54 @@ export default function PatientPortal({ walletAddress }) {
         </div>
       </header>
 
-      {/* Main Content - VERTICAL LIFT & CENTERED */}
+      {/* Main Content - VERTICAL CENTERED */}
       <div
         style={{
-          maxWidth: '1400px',
-          margin: '0 auto',
-          padding: '0 20px 40px 20px',
+          flex: 1,
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
-          minHeight: '80vh'
+          padding: '20px 40px',
+          overflow: 'auto'
         }}
       >
-        {/* Message */}
-        {message && (
+        {/* Error Messages Only - Hide debug/success messages */}
+        {message && message.includes('Error') && (
           <div
             className="mb-6 p-5 rounded-2xl text-lg font-medium"
             style={{
-              backgroundColor: message.includes('Error') ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-              border: message.includes('Error') ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)',
-              color: message.includes('Error') ? '#ef4444' : '#10b981'
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#ef4444',
+              maxWidth: '1400px',
+              margin: '0 auto 24px auto'
             }}
           >
             {message}
           </div>
         )}
 
-        {/* SYMMETRICAL GRID - ANCHORED CENTER */}
+        {/* SYMMETRICAL GRID - CENTERED */}
         <div
           style={{
             display: 'grid',
             gridTemplateColumns: '1fr 1fr',
             alignItems: 'stretch',
             gap: '60px',
-            margin: '0 auto',
-            marginTop: '-50px',
+            margin: 'auto',
+            maxWidth: '1400px',
             width: '100%'
           }}
         >
             {/* ACCESS CONTROL - Luxury Sovereign Card */}
             <div
+              className="luxury-card-breathing"
               style={{
                 width: '100%',
                 padding: '48px',
                 backgroundColor: '#111827',
                 border: '2px solid #daa520',
                 borderRadius: '24px',
-                boxShadow: '0 0 40px rgba(218, 165, 32, 0.1), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
                 backdropFilter: 'blur(10px)',
                 display: 'flex',
                 flexDirection: 'column'
@@ -368,13 +379,13 @@ export default function PatientPortal({ walletAddress }) {
 
           {/* MEDICAL RECORDS - Luxury Sovereign Card */}
           <div
+            className="luxury-card-breathing"
             style={{
               width: '100%',
               padding: '48px',
               backgroundColor: '#111827',
               border: '2px solid #daa520',
               borderRadius: '24px',
-              boxShadow: '0 0 40px rgba(218, 165, 32, 0.1), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
               backdropFilter: 'blur(10px)',
               display: 'flex',
               flexDirection: 'column'
