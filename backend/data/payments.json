@@ -1,0 +1,15 @@
+[
+  {
+    "transactionId": "FPX_TEST_1768837320852",
+    "amount": 10600,
+    "hospitalId": "HOSP_TEST_1768837320852",
+    "hospitalName": "Test Hospital Kuching",
+    "hospitalEmail": "test@hospital.my",
+    "initialCredits": 100,
+    "bankCode": "MBB",
+    "bankName": "Maybank2u",
+    "timestamp": "2026-01-19T15:42:00.852Z",
+    "status": "confirmed",
+    "blockchainTxHash": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  }
+]

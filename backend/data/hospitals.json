@@ -1,0 +1,16 @@
+{
+  "HOSP_TEST_1768837320852": {
+    "hospitalId": "HOSP_TEST_1768837320852",
+    "hospitalName": "Test Hospital Kuching",
+    "status": "Active",
+    "activatedAt": "2026-01-19T15:42:00.852Z",
+    "credits": {
+      "balance": 100,
+      "lastTopUp": "2026-01-19T15:42:00.852Z"
+    },
+    "subscription": {
+      "plan": "Enterprise",
+      "monthlyFee": 10000
+    }
+  }
+}

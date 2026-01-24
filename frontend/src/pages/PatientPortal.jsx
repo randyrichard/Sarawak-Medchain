@@ -20,7 +20,7 @@ export default function PatientPortal({ walletAddress }) {
       setLoading(true);
       const myRecords = await getMyRecords();
       setRecords(myRecords);
-      setMessage(`Loaded ${myRecords.length} records`);
+      // No debug message - keep UI clean
     } catch (error) {
       console.error('Error loading records:', error);
       setMessage(`Error: ${error.message}`);
@@ -266,7 +266,7 @@ export default function PatientPortal({ walletAddress }) {
           </div>
         )}
 
-        {/* SYMMETRICAL GRID - CENTERED */}
+        {/* SYMMETRICAL GRID - CENTERED + RAISED 40px */}
         <div
           style={{
             display: 'grid',
@@ -274,13 +274,14 @@ export default function PatientPortal({ walletAddress }) {
             alignItems: 'stretch',
             gap: '60px',
             margin: 'auto',
+            marginTop: '-40px',
             maxWidth: '1400px',
             width: '100%'
           }}
         >
             {/* ACCESS CONTROL - Luxury Sovereign Card */}
             <div
-              className={successGlow ? 'success-glow-active' : 'luxury-card-breathing'}
+              className={successGlow ? 'success-glow-active' : 'luxury-card-sync'}
               style={{
                 width: '100%',
                 padding: '48px',
@@ -390,7 +391,7 @@ export default function PatientPortal({ walletAddress }) {
 
           {/* MEDICAL RECORDS - Luxury Sovereign Card */}
           <div
-            className="luxury-card-breathing"
+            className="luxury-card-sync"
             style={{
               width: '100%',
               padding: '48px',
@@ -431,22 +432,26 @@ export default function PatientPortal({ walletAddress }) {
             </div>
 
             {records.length === 0 ? (
-              /* Empty State - CENTERED HERO SHIELD */
-              <div className="flex items-center justify-center" style={{ minHeight: '350px' }}>
+              /* Empty State - ELITE HERO SHIELD 2X */
+              <div className="flex items-center justify-center flex-1" style={{ minHeight: '300px' }}>
                 <div className="text-center">
-                  {/* Glowing Gold Medical Shield Icon - PERFECTLY CENTERED */}
+                  {/* 2X LARGER Pulsing Gold Shield Icon */}
                   <div
-                    className="w-40 h-40 mx-auto mb-8 rounded-3xl flex items-center justify-center relative"
+                    className="hero-shield-pulse mx-auto mb-8 rounded-3xl flex items-center justify-center relative"
                     style={{
-                      background: 'linear-gradient(135deg, rgba(218, 165, 32, 0.15) 0%, rgba(218, 165, 32, 0.05) 100%)',
-                      border: '2px solid rgba(218, 165, 32, 0.4)'
+                      width: '180px',
+                      height: '180px',
+                      background: 'linear-gradient(135deg, rgba(218, 165, 32, 0.12) 0%, rgba(218, 165, 32, 0.04) 100%)',
+                      border: '2px solid rgba(218, 165, 32, 0.5)'
                     }}
                   >
                     <svg
-                      className="w-20 h-20"
+                      className="hero-shield-icon"
                       style={{
+                        width: '100px',
+                        height: '100px',
                         color: '#daa520',
-                        filter: 'drop-shadow(0 0 15px rgba(218, 165, 32, 0.4))'
+                        filter: 'drop-shadow(0 0 20px rgba(218, 165, 32, 0.6))'
                       }}
                       fill="none"
                       stroke="currentColor"
@@ -454,11 +459,11 @@ export default function PatientPortal({ walletAddress }) {
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                     </svg>
-                    {/* Animated glow ring */}
-                    <div className="absolute inset-0 rounded-3xl animate-pulse" style={{ boxShadow: '0 0 40px rgba(218, 165, 32, 0.3)' }}></div>
+                    {/* Pulsing glow ring */}
+                    <div className="absolute inset-0 rounded-3xl hero-shield-glow"></div>
                   </div>
-                  <p className="text-xl font-bold" style={{ color: '#94a3b8' }}>No medical records found</p>
-                  <p className="text-base mt-2" style={{ color: '#64748b' }}>Your blockchain-secured records will appear here</p>
+                  <p className="text-xl font-bold" style={{ color: '#ffffff' }}>Your medical history is secured</p>
+                  <p className="text-base mt-2" style={{ color: '#daa520' }}>on the Sarawak Blockchain</p>
                 </div>
               </div>
             ) : (
