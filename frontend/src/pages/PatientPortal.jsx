@@ -102,118 +102,370 @@ export default function PatientPortal({ walletAddress }) {
   };
 
   return (
-    <div className="flex-1 flex-grow w-full min-h-full font-sans patient-portal" style={{ backgroundColor: '#0a0e14' }}>
-      {/* Full-Width Content Area - No max-width constraints */}
-      <div className="flex-1 w-full px-12 py-10">
-        {/* Top Bar - Stretches Full Width */}
-        <div className="mb-10 flex items-center justify-between">
-          <div className="flex items-center gap-5">
-            <h1 className="text-4xl font-bold text-white tracking-tight">Patient Portal</h1>
-            <span className="px-4 py-1.5 rounded-full text-sm font-semibold bg-sarawak-blue-500/20 text-sarawak-blue-400">
-              Patient View
-            </span>
-          </div>
-          <code className="text-sm bg-slate-800 px-5 py-3 rounded-2xl font-mono text-slate-300 border border-slate-700">
-            {walletAddress}
-          </code>
-        </div>
+    <div className="flex-1 flex-grow w-full min-h-screen font-sans patient-portal" style={{ backgroundColor: '#0a0e14' }}>
+      {/* ELITE SOVEREIGN HEADER - LUXURY SPACING */}
+      <header
+        style={{
+          backgroundColor: '#0a0e14',
+          borderBottom: '2px solid rgba(218, 165, 32, 0.3)',
+          boxShadow: '0 4px 30px rgba(0, 0, 0, 0.4)',
+          padding: '32px 50px',
+          marginBottom: '60px'
+        }}
+      >
+        <div
+          style={{
+            maxWidth: '1400px',
+            margin: '0 auto',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}
+        >
+          {/* LEFT: Logo + Title + Badge (inline) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            {/* Gold Avatar Logo - 10% LARGER for Bold Branding */}
+            <div
+              style={{
+                width: '72px',
+                height: '72px',
+                borderRadius: '16px',
+                background: 'linear-gradient(135deg, #daa520 0%, #b8860b 100%)',
+                boxShadow: '0 0 35px rgba(218, 165, 32, 0.5), inset 0 2px 0 rgba(255,255,255,0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                position: 'relative'
+              }}
+            >
+              <svg style={{ width: '40px', height: '40px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <div style={{ position: 'absolute', inset: 0, borderRadius: '16px', boxShadow: '0 0 30px rgba(218, 165, 32, 0.4)' }} className="animate-pulse"></div>
+            </div>
 
+            {/* Title */}
+            <h1 style={{ color: '#ffffff', fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.025em', margin: 0 }}>
+              Patient Portal
+            </h1>
+
+            {/* SECURE PATIENT VIEW Badge - RIGHT of Title */}
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '10px 16px',
+                borderRadius: '10px',
+                background: 'linear-gradient(135deg, rgba(218, 165, 32, 0.2) 0%, rgba(218, 165, 32, 0.08) 100%)',
+                border: '1px solid #daa520',
+                color: '#daa520',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                boxShadow: '0 0 15px rgba(218, 165, 32, 0.25)',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              SECURE
+            </div>
+          </div>
+
+          {/* RIGHT: Wallet + Refresh - CENTER ALIGNED */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <code
+              style={{
+                padding: '14px 20px',
+                borderRadius: '12px',
+                fontFamily: 'monospace',
+                backgroundColor: '#111827',
+                border: '2px solid rgba(218, 165, 32, 0.3)',
+                color: '#daa520',
+                fontSize: '0.95rem'
+              }}
+            >
+              {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
+            </code>
+            <button
+              onClick={loadRecords}
+              disabled={loading}
+              className="patient-refresh-btn hover:scale-105"
+              style={{
+                padding: '14px 24px',
+                borderRadius: '12px',
+                fontWeight: 900,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                backgroundColor: '#ffffff',
+                color: '#000000',
+                border: '2px solid #daa520',
+                boxShadow: '0 0 20px rgba(218, 165, 32, 0.3)',
+                fontSize: '0.95rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              <svg style={{ width: '18px', height: '18px' }} className={loading ? 'animate-spin' : ''} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Refresh
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content - VERTICAL LIFT & CENTERED */}
+      <div
+        style={{
+          maxWidth: '1400px',
+          margin: '0 auto',
+          padding: '0 20px 40px 20px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          minHeight: '80vh'
+        }}
+      >
         {/* Message */}
         {message && (
-          <div className={`mb-8 p-5 rounded-2xl ${
-            message.includes('Error')
-              ? 'bg-red-50 border border-red-200 text-red-700'
-              : 'bg-emerald-50 border border-emerald-200 text-emerald-700'
-          }`}>
+          <div
+            className="mb-6 p-5 rounded-2xl text-lg font-medium"
+            style={{
+              backgroundColor: message.includes('Error') ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+              border: message.includes('Error') ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)',
+              color: message.includes('Error') ? '#ef4444' : '#10b981'
+            }}
+          >
             {message}
           </div>
         )}
 
-        {/* Fluid Grid - 12 Column Layout, Full Width */}
-        <div className="grid grid-cols-12 gap-10 w-full">
-          {/* Access Control Section - col-span-4 */}
-          <div className="col-span-12 lg:col-span-4 bg-slate-800/50 rounded-3xl border border-slate-700/50 p-8">
-            <h2 className="text-xl font-bold text-white mb-6">
-              Access Control
-            </h2>
-            <div className="space-y-5">
+        {/* SYMMETRICAL GRID - ANCHORED CENTER */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            alignItems: 'stretch',
+            gap: '60px',
+            margin: '0 auto',
+            marginTop: '-50px',
+            width: '100%'
+          }}
+        >
+            {/* ACCESS CONTROL - Luxury Sovereign Card */}
+            <div
+              style={{
+                width: '100%',
+                padding: '48px',
+                backgroundColor: '#111827',
+                border: '2px solid #daa520',
+                borderRadius: '24px',
+                boxShadow: '0 0 40px rgba(218, 165, 32, 0.1), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+                backdropFilter: 'blur(10px)',
+                display: 'flex',
+                flexDirection: 'column'
+              }}
+            >
+              {/* Card Header - ENLARGED */}
+              <div className="flex items-center gap-4 mb-8">
+                <div
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                  style={{
+                    background: 'linear-gradient(135deg, #daa520 0%, #b8860b 100%)',
+                    boxShadow: '0 0 25px rgba(218, 165, 32, 0.5)'
+                  }}
+                >
+                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                </svg>
+              </div>
+              <h2 className="font-black text-white" style={{ fontSize: '2rem' }}>Access Control</h2>
+            </div>
+
+            <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-2">Doctor's Wallet Address</label>
+                <label className="block text-base font-semibold mb-3" style={{ color: '#daa520' }}>Doctor's Wallet Address</label>
                 <input
                   type="text"
                   placeholder="0x..."
                   value={doctorAddress}
                   onChange={(e) => setDoctorAddress(e.target.value)}
-                  className="w-full px-5 py-4 border border-slate-600 rounded-2xl focus:ring-2 focus:ring-sarawak-blue-500 focus:border-sarawak-blue-500 outline-none transition-all bg-slate-900/50 text-white placeholder-slate-500"
+                  className="w-full px-6 py-5 rounded-xl outline-none transition-all text-lg"
+                  style={{
+                    backgroundColor: '#0a0e14',
+                    border: '1px solid rgba(218, 165, 32, 0.3)',
+                    color: '#ffffff'
+                  }}
                 />
               </div>
-              <div className="space-y-3 pt-2">
+
+              {/* Premium White Buttons - ENLARGED for Easy Tap */}
+              <div className="space-y-4 pt-4">
                 <button
                   onClick={handleGrantAccess}
                   disabled={loading || !doctorAddress}
-                  className="w-full px-6 py-4 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-100 disabled:text-slate-400 text-white rounded-2xl font-semibold transition-all duration-200"
+                  className="patient-action-btn w-full px-8 py-5 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3"
+                  style={{
+                    backgroundColor: (loading || !doctorAddress) ? '#374151' : '#ffffff',
+                    color: (loading || !doctorAddress) ? '#9ca3af' : '#000000',
+                    border: '2px solid #daa520',
+                    boxShadow: (loading || !doctorAddress) ? 'none' : '0 0 20px rgba(218, 165, 32, 0.4)',
+                    opacity: (loading || !doctorAddress) ? 0.6 : 1,
+                    fontWeight: 900,
+                    fontSize: '1.1rem'
+                  }}
                 >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                   Grant Access
                 </button>
                 <button
                   onClick={handleRevokeAccess}
                   disabled={loading || !doctorAddress}
-                  className="w-full px-6 py-4 bg-red-500 hover:bg-red-600 disabled:bg-slate-100 disabled:text-slate-400 text-white rounded-2xl font-semibold transition-all duration-200"
+                  className="patient-action-btn w-full px-8 py-5 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3"
+                  style={{
+                    backgroundColor: (loading || !doctorAddress) ? '#374151' : '#ffffff',
+                    color: (loading || !doctorAddress) ? '#9ca3af' : '#000000',
+                    border: '2px solid #daa520',
+                    boxShadow: (loading || !doctorAddress) ? 'none' : '0 0 20px rgba(218, 165, 32, 0.4)',
+                    opacity: (loading || !doctorAddress) ? 0.6 : 1,
+                    fontWeight: 900,
+                    fontSize: '1.1rem'
+                  }}
                 >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                  </svg>
                   Revoke Access
                 </button>
                 <button
                   onClick={handleCheckAccess}
                   disabled={loading || !doctorAddress}
-                  className="w-full px-6 py-4 bg-slate-700 hover:bg-slate-800 disabled:bg-slate-100 disabled:text-slate-400 text-white rounded-2xl font-semibold transition-all duration-200"
+                  className="patient-action-btn w-full px-8 py-5 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3"
+                  style={{
+                    backgroundColor: (loading || !doctorAddress) ? '#374151' : '#ffffff',
+                    color: (loading || !doctorAddress) ? '#9ca3af' : '#000000',
+                    border: '2px solid #daa520',
+                    boxShadow: (loading || !doctorAddress) ? 'none' : '0 0 20px rgba(218, 165, 32, 0.4)',
+                    opacity: (loading || !doctorAddress) ? 0.6 : 1,
+                    fontWeight: 900,
+                    fontSize: '1.1rem'
+                  }}
                 >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                   Check Access
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Medical Records Section - col-span-8 */}
-          <div className="col-span-12 lg:col-span-8 bg-slate-800/50 rounded-3xl border border-slate-700/50 p-8">
-            <div className="flex items-center justify-between mb-6">
+          {/* MEDICAL RECORDS - Luxury Sovereign Card */}
+          <div
+            style={{
+              width: '100%',
+              padding: '48px',
+              backgroundColor: '#111827',
+              border: '2px solid #daa520',
+              borderRadius: '24px',
+              boxShadow: '0 0 40px rgba(218, 165, 32, 0.1), 0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+              backdropFilter: 'blur(10px)',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            {/* Card Header - ENLARGED */}
+            <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-4">
-                <h2 className="text-xl font-bold text-white">My Medical Records</h2>
-                <span className="px-4 py-1.5 rounded-full text-sm font-semibold bg-slate-700 text-slate-300">
+                <div
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                  style={{
+                    background: 'linear-gradient(135deg, #daa520 0%, #b8860b 100%)',
+                    boxShadow: '0 0 25px rgba(218, 165, 32, 0.5)'
+                  }}
+                >
+                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <h2 className="font-black text-white" style={{ fontSize: '2rem' }}>My Medical Records</h2>
+                <span
+                  className="px-4 py-2 rounded-full text-base font-bold"
+                  style={{
+                    backgroundColor: 'rgba(218, 165, 32, 0.2)',
+                    border: '2px solid rgba(218, 165, 32, 0.5)',
+                    color: '#daa520'
+                  }}
+                >
                   {records.length} records
                 </span>
               </div>
-              <button
-                onClick={loadRecords}
-                disabled={loading}
-                className="px-6 py-3 bg-sarawak-blue-500 hover:bg-sarawak-blue-600 disabled:bg-slate-100 disabled:text-slate-400 text-white rounded-2xl font-semibold transition-all duration-200"
-              >
-                Refresh
-              </button>
             </div>
 
             {records.length === 0 ? (
-              <div className="flex items-center justify-center py-20 text-slate-400">
+              /* Empty State - CENTERED HERO SHIELD */
+              <div className="flex items-center justify-center" style={{ minHeight: '350px' }}>
                 <div className="text-center">
-                  <div className="text-5xl mb-4">📋</div>
-                  <p className="text-lg">No medical records found</p>
+                  {/* Glowing Gold Medical Shield Icon - PERFECTLY CENTERED */}
+                  <div
+                    className="w-40 h-40 mx-auto mb-8 rounded-3xl flex items-center justify-center relative"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(218, 165, 32, 0.15) 0%, rgba(218, 165, 32, 0.05) 100%)',
+                      border: '2px solid rgba(218, 165, 32, 0.4)'
+                    }}
+                  >
+                    <svg
+                      className="w-20 h-20"
+                      style={{
+                        color: '#daa520',
+                        filter: 'drop-shadow(0 0 15px rgba(218, 165, 32, 0.4))'
+                      }}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                    {/* Animated glow ring */}
+                    <div className="absolute inset-0 rounded-3xl animate-pulse" style={{ boxShadow: '0 0 40px rgba(218, 165, 32, 0.3)' }}></div>
+                  </div>
+                  <p className="text-xl font-bold" style={{ color: '#94a3b8' }}>No medical records found</p>
+                  <p className="text-base mt-2" style={{ color: '#64748b' }}>Your blockchain-secured records will appear here</p>
                 </div>
               </div>
             ) : (
-              <div className="space-y-4 max-h-[600px] overflow-y-auto">
+              <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
                 {records.map((record, index) => (
-                  <div key={index} className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                  <div
+                    key={index}
+                    className="rounded-2xl p-6"
+                    style={{
+                      backgroundColor: '#0a0e14',
+                      border: '1px solid rgba(218, 165, 32, 0.2)'
+                    }}
+                  >
                     <div className="grid grid-cols-3 gap-6 mb-5">
                       <div>
-                        <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1">Date</p>
-                        <p className="text-sm font-medium text-slate-700">{formatTimestamp(record.timestamp)}</p>
+                        <p className="text-xs uppercase tracking-wider font-semibold mb-1" style={{ color: '#daa520' }}>Date</p>
+                        <p className="text-sm font-medium text-white">{formatTimestamp(record.timestamp)}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1">Doctor</p>
-                        <code className="text-xs bg-slate-200 px-3 py-1.5 rounded-lg text-slate-600">{record.doctorAddress.slice(0, 10)}...</code>
+                        <p className="text-xs uppercase tracking-wider font-semibold mb-1" style={{ color: '#daa520' }}>Doctor</p>
+                        <code className="text-xs px-3 py-1.5 rounded-lg" style={{ backgroundColor: '#111827', color: '#94a3b8' }}>
+                          {record.doctorAddress.slice(0, 10)}...
+                        </code>
                       </div>
                       <div>
-                        <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-1">IPFS Hash</p>
-                        <code className="text-xs bg-slate-200 px-3 py-1.5 rounded-lg text-slate-600">{record.ipfsHash.slice(0, 12)}...</code>
+                        <p className="text-xs uppercase tracking-wider font-semibold mb-1" style={{ color: '#daa520' }}>IPFS Hash</p>
+                        <code className="text-xs px-3 py-1.5 rounded-lg" style={{ backgroundColor: '#111827', color: '#94a3b8' }}>
+                          {record.ipfsHash.slice(0, 12)}...
+                        </code>
                       </div>
                     </div>
                     <div className="flex gap-4">
@@ -222,12 +474,23 @@ export default function PatientPortal({ walletAddress }) {
                         placeholder="Enter encryption key"
                         value={encryptionKeys[record.ipfsHash] || ''}
                         onChange={(e) => handleKeyChange(record.ipfsHash, e.target.value)}
-                        className="flex-1 px-5 py-3 border border-slate-600 rounded-xl text-sm focus:ring-2 focus:ring-sarawak-blue-500 outline-none bg-slate-900/50 text-white placeholder-slate-500"
+                        className="flex-1 px-5 py-3 rounded-xl text-sm outline-none"
+                        style={{
+                          backgroundColor: '#111827',
+                          border: '1px solid rgba(218, 165, 32, 0.2)',
+                          color: '#ffffff'
+                        }}
                       />
                       <button
                         onClick={() => handleViewRecord(record.ipfsHash)}
                         disabled={loading || !encryptionKeys[record.ipfsHash]}
-                        className="px-6 py-3 bg-sarawak-blue-500 hover:bg-sarawak-blue-600 disabled:bg-slate-100 disabled:text-slate-400 text-white rounded-xl font-semibold text-sm transition-all duration-200"
+                        className="patient-action-btn px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300"
+                        style={{
+                          backgroundColor: (loading || !encryptionKeys[record.ipfsHash]) ? '#374151' : '#ffffff',
+                          color: (loading || !encryptionKeys[record.ipfsHash]) ? '#9ca3af' : '#000000',
+                          border: '1px solid #daa520',
+                          opacity: (loading || !encryptionKeys[record.ipfsHash]) ? 0.6 : 1
+                        }}
                       >
                         View Record
                       </button>
