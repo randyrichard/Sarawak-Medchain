@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
