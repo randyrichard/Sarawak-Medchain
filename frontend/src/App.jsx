@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { connectWallet, getMyBalance } from './utils/contract';
 import { BillingProvider } from './context/BillingContext';
 import { MaintenanceProvider } from './context/MaintenanceContext';
@@ -1004,9 +1004,9 @@ function App() {
           <RevenueAlertProvider>
             <DisasterRecoveryProvider>
               <BillingProvider>
-                <BrowserRouter>
+                <HashRouter>
                   <AppRoutes />
-                </BrowserRouter>
+                </HashRouter>
               </BillingProvider>
             </DisasterRecoveryProvider>
           </RevenueAlertProvider>
