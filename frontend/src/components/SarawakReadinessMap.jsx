@@ -224,46 +224,29 @@ export default function SarawakReadinessMap() {
 
       <div className="relative">
         {/* Header with Impact Toggle */}
-        <div className="flex flex-col gap-3 mb-4">
-          {/* Title row */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg transition-all duration-500 ${
-                isProtected
-                  ? 'bg-gradient-to-br from-blue-500 to-blue-600 shadow-blue-500/20'
-                  : 'bg-gradient-to-br from-red-500 to-red-600 shadow-red-500/20'
-              }`}>
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {isProtected ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  )}
-                </svg>
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-white">Sarawak Health Infrastructure</h2>
-                <p className={`text-xs transition-colors duration-500 ${isProtected ? 'text-blue-400' : 'text-red-400'}`}>
-                  {isProtected ? 'AES-256-GCM Protected Network' : 'Unprotected - Fraud Vulnerable'}
-                </p>
-              </div>
+        <div className="flex flex-col gap-4 mb-4">
+          {/* Title - Centered */}
+          <div className="flex flex-col items-center text-center">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg transition-all duration-500 mb-3 ${
+              isProtected
+                ? 'bg-gradient-to-br from-blue-500 to-blue-600 shadow-blue-500/20'
+                : 'bg-gradient-to-br from-red-500 to-red-600 shadow-red-500/20'
+            }`}>
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {isProtected ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                )}
+              </svg>
             </div>
-
-            {/* Zoom out button */}
-            {isZoomed && (
-              <button
-                onClick={() => { setSelectedDivision(null); setIsZoomed(false); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-slate-400 hover:bg-white/10 transition-all"
-              >
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
-                </svg>
-                Zoom Out
-              </button>
-            )}
+            <h2 className="text-xl font-bold text-white mb-1">Sarawak Health Infrastructure</h2>
+            <p className={`text-sm transition-colors duration-500 ${isProtected ? 'text-blue-400' : 'text-red-400'}`}>
+              {isProtected ? 'AES-256-GCM Protected Network' : 'Unprotected - Fraud Vulnerable'}
+            </p>
           </div>
 
-          {/* Impact Toggle Switch */}
+          {/* Impact Toggle Switch - Centered */}
           <div className="flex items-center justify-center">
             <div className={`flex items-center gap-2 p-1 rounded-full transition-all duration-300 ${
               isProtected ? 'bg-emerald-500/10 border border-emerald-500/30' : 'bg-red-500/10 border border-red-500/30'
@@ -296,6 +279,21 @@ export default function SarawakReadinessMap() {
               </button>
             </div>
           </div>
+
+          {/* Zoom out button - Centered */}
+          {isZoomed && (
+            <div className="flex justify-center">
+              <button
+                onClick={() => { setSelectedDivision(null); setIsZoomed(false); }}
+                className="flex items-center gap-1.5 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-slate-400 hover:bg-white/10 transition-all"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
+                </svg>
+                Zoom Out
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Map Container */}

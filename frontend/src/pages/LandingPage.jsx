@@ -746,7 +746,15 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#030712]" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <main className="landing-page" style={{
+      fontFamily: "'Inter', system-ui, sans-serif",
+      minHeight: '100vh',
+      backgroundColor: '#f8fafc',
+      width: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center'
+    }}>
       {/* Full-screen Provisioning Overlay */}
       <ProvisioningOverlay
         isVisible={showProvisioning}
@@ -768,752 +776,1015 @@ export default function LandingPage() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-        /* Gold glow animation */
-        @keyframes gold-glow {
-          0%, 100% { box-shadow: 0 0 20px rgba(251, 191, 36, 0.6), 0 0 40px rgba(251, 191, 36, 0.4); }
-          50% { box-shadow: 0 0 30px rgba(251, 191, 36, 0.8), 0 0 60px rgba(251, 191, 36, 0.5); }
+        /* LANDING PAGE OVERRIDES - Reset global dark theme */
+        .landing-page,
+        .landing-page *:not(.bg-gradient-to-b):not(.bg-gradient-to-br):not([class*="from-slate-9"]) {
+          background-color: transparent;
         }
-        .gold-glow { animation: gold-glow 2s ease-in-out infinite; }
-
-        /* Haptic feedback button press - iPhone 8 Plus physical feel */
-        .haptic-btn {
-          transition: transform 0.1s ease-out;
+        .landing-page {
+          background-color: #f8fafc !important;
         }
-        .haptic-btn:active {
-          transform: scale(0.95);
+        .landing-page header {
+          background-color: rgba(255, 255, 255, 0.8) !important;
         }
-
-        /* Gold glow button for Hospital Plan - elite premium feel */
-        .gold-btn-glow {
-          box-shadow: 0 0 20px rgba(251, 191, 36, 0.4), 0 0 40px rgba(251, 191, 36, 0.2), 0 4px 15px rgba(0, 0, 0, 0.3);
-          transition: all 0.3s ease;
+        .landing-page .bg-white {
+          background-color: #ffffff !important;
         }
-        .gold-btn-glow:hover {
-          box-shadow: 0 0 30px rgba(251, 191, 36, 0.6), 0 0 60px rgba(251, 191, 36, 0.3), 0 6px 20px rgba(0, 0, 0, 0.4);
+        .landing-page .bg-slate-50 {
+          background-color: #f8fafc !important;
         }
 
-        /* Integrity badge flash animation */
-        @keyframes integrity-flash {
-          0%, 100% {
-            background-color: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.1);
-            transform: scale(1);
-          }
-          25% {
-            background-color: rgba(16, 185, 129, 0.3);
-            border-color: rgba(16, 185, 129, 0.5);
-            transform: scale(1.05);
-          }
-          50% {
-            background-color: rgba(16, 185, 129, 0.2);
-            border-color: rgba(16, 185, 129, 0.4);
-            transform: scale(1.02);
-          }
-          75% {
-            background-color: rgba(16, 185, 129, 0.15);
-            border-color: rgba(16, 185, 129, 0.3);
-            transform: scale(1.01);
-          }
-        }
-        .integrity-flash {
-          animation: integrity-flash 0.8s ease-out;
+        /* Premium Typography */
+        .font-heading { font-family: 'Inter', system-ui, sans-serif; }
+        .font-body { font-family: 'Inter', system-ui, sans-serif; }
+
+        /* Gradient text - Stripe style */
+        .gradient-text {
+          background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
         }
 
-        /* Fade in up animation */
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+        /* Premium card glass effect */
+        .glass-card {
+          background: rgba(255, 255, 255, 0.7);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        .animate-fade-in-up {
-          animation: fadeInUp 0.8s ease-out forwards;
+        /* Premium button glow */
+        .btn-glow {
+          box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.5),
+                      0 2px 4px rgba(59, 130, 246, 0.1),
+                      0 12px 24px rgba(59, 130, 246, 0.2);
+        }
+        .btn-glow:hover {
+          box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.5),
+                      0 4px 8px rgba(59, 130, 246, 0.2),
+                      0 16px 32px rgba(59, 130, 246, 0.3);
         }
 
-        .animate-delay-1 { animation-delay: 0.1s; opacity: 0; }
-        .animate-delay-2 { animation-delay: 0.2s; opacity: 0; }
-        .animate-delay-3 { animation-delay: 0.3s; opacity: 0; }
-        .animate-delay-4 { animation-delay: 0.4s; opacity: 0; }
-        .animate-delay-5 { animation-delay: 0.5s; opacity: 0; }
-        .animate-delay-6 { animation-delay: 0.6s; opacity: 0; }
+        /* Subtle animations */
+        .hover-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .hover-lift:hover { transform: translateY(-2px); }
+
+        /* Red glow for fraud stat */
+        .red-glow { text-shadow: 0 0 40px rgba(239, 68, 68, 0.5); }
       `}</style>
 
-      <main className="flex flex-col items-center w-full">
-        <div className="max-w-7xl w-full px-8">
+      {/* ===== STICKY HEADER - Premium ===== */}
+      <header className="sticky top-0 z-50 border-b border-slate-200/50 backdrop-blur-xl" style={{ width: '100%', backgroundColor: 'rgba(255,255,255,0.8)' }}>
+        <nav style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 32px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          {/* Logo */}
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-violet-600 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <span className="text-[15px] font-semibold text-slate-900 font-heading">Sarawak MedChain</span>
+          </div>
 
-          {/* Navigation */}
-          <nav className="py-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          {/* Nav Items */}
+          <div className="flex items-center gap-8">
+            <a href="#features" className="hidden md:block text-[13px] text-slate-600 hover:text-slate-900 transition-colors font-medium">Features</a>
+            <a href="#pricing" className="hidden md:block text-[13px] text-slate-600 hover:text-slate-900 transition-colors font-medium">Pricing</a>
+            <a
+              href="mailto:enterprise@medchain.sarawak.gov.my"
+              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-medium text-[13px] rounded-lg transition-all duration-200"
+            >
+              Contact Sales
+            </a>
+          </div>
+        </nav>
+      </header>
+
+      {/* ===== MAIN CONTENT ===== */}
+      <div style={{ width: '100%', maxWidth: '1200px', margin: '0 auto', padding: '0 32px' }}>
+
+      {/* ========== HERO SECTION - Premium ========== */}
+      <section style={{ paddingTop: '96px', paddingBottom: '80px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+        {/* Badge */}
+        <div style={{ marginBottom: '32px' }}>
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '8px 16px 8px 12px',
+            borderRadius: '9999px',
+            backgroundColor: 'rgba(16, 185, 129, 0.08)',
+            border: '1px solid rgba(16, 185, 129, 0.2)',
+            boxShadow: '0 1px 2px rgba(16, 185, 129, 0.05)'
+          }}>
+            {/* Green pulsing dot */}
+            <span style={{ position: 'relative', display: 'flex', width: '8px', height: '8px' }}>
+              <span className="animate-ping" style={{
+                position: 'absolute',
+                display: 'inline-flex',
+                width: '100%',
+                height: '100%',
+                borderRadius: '9999px',
+                backgroundColor: '#10b981',
+                opacity: 0.75
+              }}></span>
+              <span style={{
+                position: 'relative',
+                display: 'inline-flex',
+                width: '8px',
+                height: '8px',
+                borderRadius: '9999px',
+                backgroundColor: '#10b981'
+              }}></span>
+            </span>
+            <span style={{ fontSize: '13px', color: '#059669', fontWeight: 600, letterSpacing: '0.01em' }}>Live in Sarawak</span>
+          </span>
+        </div>
+
+        {/* Headline */}
+        <h1 className="font-heading gradient-text" style={{ fontSize: 'clamp(44px, 5vw, 64px)', fontWeight: 800, letterSpacing: '-0.02em', color: '#0f172a', textAlign: 'center', lineHeight: 1.08, marginBottom: '24px', maxWidth: '900px' }}>
+          Blockchain-Secured Medical Records <span className="gradient-text">for Sarawak</span>
+        </h1>
+
+        {/* Subtitle */}
+        <p className="font-body" style={{ fontSize: '20px', color: '#64748b', lineHeight: 1.6, marginBottom: '48px', maxWidth: '580px', textAlign: 'center', fontWeight: 400 }}>
+          Sarawak's first tamper-proof healthcare platform. Eliminate MC fraud with military-grade encryption.
+        </p>
+
+        {/* CTA Button */}
+        <div style={{ marginBottom: '80px' }}>
+          <button
+            onClick={handleGetStarted}
+            className="group"
+            style={{
+              padding: '14px 28px',
+              backgroundColor: '#2563eb',
+              color: 'white',
+              fontSize: '15px',
+              fontWeight: 600,
+              borderRadius: '12px',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              boxShadow: '0 0 0 1px rgba(37, 99, 235, 0.5), 0 4px 6px rgba(37, 99, 235, 0.15), 0 10px 20px rgba(37, 99, 235, 0.2), 0 0 40px rgba(37, 99, 235, 0.15)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#1d4ed8';
+              e.currentTarget.style.boxShadow = '0 0 0 1px rgba(37, 99, 235, 0.6), 0 6px 12px rgba(37, 99, 235, 0.25), 0 15px 30px rgba(37, 99, 235, 0.3), 0 0 60px rgba(37, 99, 235, 0.25)';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#2563eb';
+              e.currentTarget.style.boxShadow = '0 0 0 1px rgba(37, 99, 235, 0.5), 0 4px 6px rgba(37, 99, 235, 0.15), 0 10px 20px rgba(37, 99, 235, 0.2), 0 0 40px rgba(37, 99, 235, 0.15)';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              Start Free Trial
+              <svg className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </span>
+          </button>
+        </div>
+
+        {/* Stats Row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '48px' }}>
+          <div style={{ textAlign: 'center' }}>
+            <p className="font-heading" style={{ fontSize: '48px', fontWeight: 700, color: '#0f172a', lineHeight: 1 }}>24</p>
+            <p className="font-body" style={{ fontSize: '13px', color: '#64748b', marginTop: '8px', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Hospitals</p>
+          </div>
+          {/* Divider */}
+          <div style={{ width: '1px', height: '48px', background: 'linear-gradient(to bottom, transparent, #cbd5e1, transparent)' }}></div>
+          <div style={{ textAlign: 'center' }}>
+            <p className="font-heading" style={{ fontSize: '48px', fontWeight: 700, color: '#0f172a', lineHeight: 1 }}>180+</p>
+            <p className="font-body" style={{ fontSize: '13px', color: '#64748b', marginTop: '8px', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Clinics</p>
+          </div>
+          {/* Divider */}
+          <div style={{ width: '1px', height: '48px', background: 'linear-gradient(to bottom, transparent, #cbd5e1, transparent)' }}></div>
+          <div style={{ textAlign: 'center' }}>
+            <p className="font-heading" style={{ fontSize: '48px', fontWeight: 700, color: '#2563eb', lineHeight: 1 }}>99.9%</p>
+            <p className="font-body" style={{ fontSize: '13px', color: '#64748b', marginTop: '8px', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Uptime</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ========== THE PROBLEM SECTION - Premium ========== */}
+      <section style={{ padding: '96px 0' }}>
+        <div style={{ position: 'relative', background: 'linear-gradient(to bottom, #0f172a, #020617)', color: 'white', borderRadius: '20px', padding: '64px', overflow: 'hidden' }}>
+          {/* Subtle gradient orb */}
+          <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translate(-50%, -50%)', width: '600px', height: '600px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '50%', filter: 'blur(120px)' }}></div>
+
+          <div style={{ position: 'relative', zIndex: 10, maxWidth: '700px', margin: '0 auto', textAlign: 'center' }}>
+            {/* Section Label */}
+            <p className="font-heading" style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '32px', textTransform: 'uppercase', letterSpacing: '0.2em' }}>The Problem</p>
+
+            {/* Main Stat with red glow */}
+            <h2 className="font-heading red-glow" style={{ fontSize: 'clamp(56px, 8vw, 72px)', fontWeight: 800, color: 'white', marginBottom: '16px', lineHeight: 1 }}>
+              RM 2.3 Billion
+            </h2>
+            <p className="font-heading" style={{ fontSize: 'clamp(20px, 3vw, 24px)', fontWeight: 600, color: '#f87171', marginBottom: '40px' }}>Lost to MC Fraud Annually</p>
+
+            {/* Description */}
+            <p className="font-body" style={{ fontSize: '18px', color: '#94a3b8', lineHeight: 1.7, marginBottom: '48px', maxWidth: '540px', marginLeft: 'auto', marginRight: 'auto' }}>
+              Malaysian employers lose billions annually to fraudulent medical certificates. Paper-based systems are easily forged, impossible to verify, and create zero accountability.
+            </p>
+
+            {/* Pain points row */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: '12px', marginBottom: '64px' }}>
+              {['Paper MCs easily forged', 'No employer verification', 'Zero audit trail'].map((problem, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '9999px' }}>
+                  <svg style={{ width: '14px', height: '14px', color: '#f87171' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  <span style={{ fontSize: '13px', color: 'white', fontWeight: 500 }}>{problem}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Solution cards - glassmorphism */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
+              <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 backdrop-blur-sm hover-lift">
+                <div className="w-11 h-11 bg-emerald-500/15 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                 </div>
-                <div>
-                  <span className="block text-xl font-extrabold text-white">Sarawak</span>
-                  <span className="block text-xs font-bold text-amber-400">MedChain</span>
-                </div>
+                <p className="text-emerald-400 text-[32px] font-bold mb-1">100%</p>
+                <p className="text-slate-500 text-[13px] font-medium">Tamper-Proof</p>
               </div>
-              <div className="flex items-center gap-6">
-                <a href="#pricing" className="text-slate-300 hover:text-white font-medium text-sm">Pricing</a>
-                <a href="#why-us" className="text-slate-300 hover:text-white font-medium text-sm">Why Us</a>
-                <button onClick={handleGetStarted} className="px-6 py-3 bg-blue-600 text-white font-bold text-sm rounded-lg hover:bg-blue-700">
-                  Launch App
-                </button>
-              </div>
-            </div>
-          </nav>
-
-          {/* ========== HERO SECTION - py-24 ========== */}
-          <section className="py-24 text-center">
-
-            {/* Badge */}
-            <div className="animate-fade-in-up animate-delay-1">
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10">
-                <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
-                <span className="text-sm text-slate-300">Now Live in Sarawak</span>
-              </span>
-            </div>
-
-            {/* Title - mb-16 breathing room */}
-            <h1 className="text-5xl md:text-6xl font-extrabold text-white leading-tight mb-16 mt-12 animate-fade-in-up animate-delay-2">
-              Sarawak's First<br />
-              <span className="bg-gradient-to-r from-blue-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent">
-                Blockchain-Secured
-              </span><br />
-              Medical Network
-            </h1>
-
-            {/* Sub-header - flex centering + max-w-[750px] + mt-8 mb-14 */}
-            <div className="flex flex-col items-center justify-center w-full mt-8 mb-14 animate-fade-in-up animate-delay-3">
-              <p className="max-w-[750px] text-center text-xl text-white/80 leading-[1.8]">
-                Digitizing healthcare with <span className="text-emerald-400 font-semibold">100% data integrity</span>.
-                Every medical certificate verified, every record tamper-proof.
-              </p>
-            </div>
-
-            {/* CTA Buttons */}
-            <div className="my-12 animate-fade-in-up animate-delay-4">
-              <div className="flex justify-center gap-4">
-                <button onClick={handleGetStarted} className="px-8 py-4 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-all hover:scale-105 flex items-center gap-2">
-                  Get Started
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 backdrop-blur-sm hover-lift">
+                <div className="w-11 h-11 bg-blue-500/15 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
-                </button>
-                <a href="#pricing" className="px-8 py-4 bg-white/5 border border-white/10 text-white font-bold rounded-xl hover:bg-white/10 transition-all">
-                  View Pricing
-                </a>
+                </div>
+                <p className="text-blue-400 text-[32px] font-bold mb-1">&lt;3 sec</p>
+                <p className="text-slate-500 text-[13px] font-medium">Instant Verify</p>
+              </div>
+              <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 backdrop-blur-sm hover-lift">
+                <div className="w-11 h-11 bg-amber-500/15 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                  </svg>
+                </div>
+                <p className="text-amber-400 text-[32px] font-bold mb-1">24/7</p>
+                <p className="text-slate-500 text-[13px] font-medium">Audit Trail</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ========== NETWORK READINESS MAP - Premium ========== */}
+      <section style={{ padding: '96px 0' }}>
+        {/* Section Header */}
+        <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+          <p className="font-heading" style={{ fontSize: '11px', fontWeight: 600, color: '#2563eb', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.2em' }}>Infrastructure</p>
+          <h2 className="font-heading" style={{ fontSize: 'clamp(36px, 5vw, 44px)', fontWeight: 800, color: '#0f172a', marginBottom: '16px', letterSpacing: '-0.02em' }}>Sarawak Network Readiness</h2>
+          <p className="font-body" style={{ fontSize: '17px', color: '#64748b', maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>Real-time deployment status across all 13 divisions</p>
+        </div>
+
+        {/* Map Container - Premium */}
+        <div style={{ backgroundColor: 'white', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+          <SarawakReadinessMap />
+        </div>
+      </section>
+
+      {/* ========== HOSPITAL NETWORK GRID - Premium ========== */}
+      <section style={{ padding: '96px 0' }}>
+        {/* Section Header */}
+        <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+          <p className="font-heading" style={{ fontSize: '11px', fontWeight: 600, color: '#059669', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.2em' }}>Network</p>
+          <h2 className="font-heading" style={{ fontSize: 'clamp(36px, 5vw, 44px)', fontWeight: 800, color: '#0f172a', marginBottom: '16px', letterSpacing: '-0.02em' }}>Hospital Network</h2>
+          <p className="font-body" style={{ fontSize: '17px', color: '#64748b', maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>24 hospitals across Sarawak already connected</p>
+        </div>
+
+        {/* Hospital Grid - Premium cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px' }}>
+            {[
+              { name: 'Sarawak General Hospital', short: 'SGH', division: 'Kuching', status: 'live' },
+              { name: 'Normah Medical Centre', short: 'NMC', division: 'Kuching', status: 'live' },
+              { name: 'KPJ Kuching Specialist', short: 'KPJ', division: 'Kuching', status: 'live' },
+              { name: 'Timberland Medical Centre', short: 'TMC', division: 'Kuching', status: 'live' },
+              { name: 'Columbia Asia Miri', short: 'CAM', division: 'Miri', status: 'live' },
+              { name: 'Miri City Medical', short: 'MCM', division: 'Miri', status: 'live' },
+              { name: 'Sibu Hospital', short: 'SBH', division: 'Sibu', status: 'live' },
+              { name: 'Rejang Medical Centre', short: 'RMC', division: 'Sibu', status: 'live' },
+              { name: 'Bintulu Hospital', short: 'BTH', division: 'Bintulu', status: 'live' },
+              { name: 'Bintulu Medical Centre', short: 'BMC', division: 'Bintulu', status: 'live' },
+              { name: 'Sarikei Hospital', short: 'SKH', division: 'Sarikei', status: 'live' },
+              { name: 'Kapit Hospital', short: 'KPH', division: 'Kapit', status: 'live' },
+              { name: 'Sri Aman Hospital', short: 'SAH', division: 'Sri Aman', status: 'pending' },
+              { name: 'Betong Hospital', short: 'BGH', division: 'Betong', status: 'pending' },
+              { name: 'Mukah Hospital', short: 'MKH', division: 'Mukah', status: 'pending' },
+              { name: 'Limbang Hospital', short: 'LBH', division: 'Limbang', status: 'pending' },
+            ].map((hospital, idx) => (
+              <div
+                key={idx}
+                style={{
+                  padding: '24px',
+                  backgroundColor: 'white',
+                  borderRadius: '16px',
+                  border: '1px solid #e2e8f0',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.03) translateY(-4px)';
+                  e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.1)';
+                  e.currentTarget.style.borderColor = '#cbd5e1';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1) translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)';
+                  e.currentTarget.style.borderColor = '#e2e8f0';
+                }}
+              >
+                {/* Monogram Icon */}
+                <div style={{
+                  width: '64px',
+                  height: '64px',
+                  background: hospital.status === 'live'
+                    ? 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)'
+                    : 'linear-gradient(135deg, #78716c 0%, #a8a29e 100%)',
+                  borderRadius: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '16px',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  boxShadow: hospital.status === 'live'
+                    ? '0 8px 24px rgba(59, 130, 246, 0.3)'
+                    : '0 8px 24px rgba(0,0,0,0.1)'
+                }}>
+                  <span style={{
+                    fontSize: '20px',
+                    fontWeight: 700,
+                    color: 'white',
+                    letterSpacing: '0.5px',
+                    fontFamily: 'Inter, system-ui, sans-serif'
+                  }}>{hospital.short}</span>
+                </div>
+
+                {/* Status Badge */}
+                {hospital.status === 'live' ? (
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 12px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    borderRadius: '9999px',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    color: '#059669',
+                    marginBottom: '12px',
+                    boxShadow: '0 0 12px rgba(16, 185, 129, 0.2)'
+                  }}>
+                    <span style={{ position: 'relative', display: 'flex', width: '6px', height: '6px' }}>
+                      <span className="animate-ping" style={{
+                        position: 'absolute',
+                        display: 'inline-flex',
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: '9999px',
+                        backgroundColor: '#10b981',
+                        opacity: 0.75
+                      }}></span>
+                      <span style={{
+                        position: 'relative',
+                        display: 'inline-flex',
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '9999px',
+                        backgroundColor: '#10b981'
+                      }}></span>
+                    </span>
+                    LIVE
+                  </span>
+                ) : (
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 12px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    borderRadius: '9999px',
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                    color: '#d97706',
+                    marginBottom: '12px'
+                  }}>
+                    <span style={{
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '9999px',
+                      backgroundColor: '#f59e0b'
+                    }}></span>
+                    COMING SOON
+                  </span>
+                )}
+
+                {/* Hospital Name */}
+                <h4 className="font-heading" style={{
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  color: '#0f172a',
+                  marginBottom: '4px',
+                  lineHeight: 1.3
+                }}>{hospital.name}</h4>
+
+                {/* Location */}
+                <p className="font-body" style={{
+                  fontSize: '12px',
+                  color: '#94a3b8',
+                  fontWeight: 500
+                }}>{hospital.division} Division</p>
+              </div>
+            ))}
+        </div>
+
+        {/* Legend */}
+        <div style={{
+          marginTop: '48px',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '32px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{
+              width: '10px',
+              height: '10px',
+              borderRadius: '9999px',
+              backgroundColor: '#10b981',
+              boxShadow: '0 0 8px rgba(16, 185, 129, 0.5)'
+            }}></span>
+            <span style={{ fontSize: '14px', color: '#475569', fontWeight: 500 }}>12 Live</span>
+          </div>
+          {/* Divider */}
+          <div style={{ width: '1px', height: '20px', background: 'linear-gradient(to bottom, transparent, #cbd5e1, transparent)' }}></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{
+              width: '10px',
+              height: '10px',
+              borderRadius: '9999px',
+              backgroundColor: '#f59e0b'
+            }}></span>
+            <span style={{ fontSize: '14px', color: '#475569', fontWeight: 500 }}>4 Coming Soon</span>
+          </div>
+        </div>
+      </section>
+
+      {/* ========== FEATURES - Premium ========== */}
+      <section id="features" style={{ padding: '96px 0' }}>
+        {/* Section Header */}
+        <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+          <p className="font-heading" style={{ fontSize: '11px', fontWeight: 600, color: '#7c3aed', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.2em' }}>Features</p>
+          <h2 className="font-heading" style={{ fontSize: 'clamp(36px, 5vw, 44px)', fontWeight: 800, color: '#0f172a', marginBottom: '16px', letterSpacing: '-0.02em' }}>Why MedChain?</h2>
+          <p className="font-body" style={{ fontSize: '17px', color: '#64748b', maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>Enterprise-grade security built for healthcare</p>
+        </div>
+
+        {/* Feature Cards - Premium consistent */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="p-8 bg-white rounded-2xl border border-slate-200 flex flex-col items-center text-center hover:border-slate-300 hover:shadow-xl hover-lift">
+            <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mb-5 shadow-lg shadow-blue-500/25">
+              <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <h3 className="font-heading text-[18px] font-bold text-slate-900 mb-3">Blockchain Security</h3>
+            <p className="font-body text-[15px] text-slate-500 leading-relaxed">Immutable records with AES-256 encryption that cannot be altered or forged.</p>
+          </div>
+
+          <div className="p-8 bg-white rounded-2xl border border-slate-200 flex flex-col items-center text-center hover:border-slate-300 hover:shadow-xl hover-lift">
+            <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center mb-5 shadow-lg shadow-emerald-500/25">
+              <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="font-heading text-[18px] font-bold text-slate-900 mb-3">Real-time Verification</h3>
+            <p className="font-body text-[15px] text-slate-500 leading-relaxed">Instant QR code validation for employers to verify MCs in under 3 seconds.</p>
+          </div>
+
+          <div className="p-8 bg-white rounded-2xl border border-slate-200 flex flex-col items-center text-center hover:border-slate-300 hover:shadow-xl hover-lift">
+            <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl flex items-center justify-center mb-5 shadow-lg shadow-amber-500/25">
+              <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="font-heading text-[18px] font-bold text-slate-900 mb-3">Sarawak-First</h3>
+            <p className="font-body text-[15px] text-slate-500 leading-relaxed">All data stays local in Sarawak with full data sovereignty compliance.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ========== PRICING SECTION - Premium Dark ========== */}
+      <section id="pricing" style={{
+        padding: '96px 0',
+        background: 'linear-gradient(to bottom, #0f172a, #1e293b)',
+        borderRadius: '32px',
+        margin: '0 -32px',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* Background gradient orbs */}
+        <div style={{ position: 'absolute', top: '-200px', left: '-100px', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)', borderRadius: '50%' }}></div>
+        <div style={{ position: 'absolute', bottom: '-150px', right: '-50px', width: '350px', height: '350px', background: 'radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%)', borderRadius: '50%' }}></div>
+
+        <div style={{ position: 'relative', zIndex: 10, padding: '0 32px' }}>
+          {/* Pricing Header */}
+          <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+            <p className="font-heading" style={{ fontSize: '12px', fontWeight: 600, color: '#60a5fa', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.2em' }}>Pricing</p>
+            <h2 className="font-heading" style={{ fontSize: 'clamp(36px, 5vw, 48px)', fontWeight: 800, color: 'white', marginBottom: '16px', letterSpacing: '-0.02em' }}>Simple, Transparent Pricing</h2>
+            <p className="font-body" style={{ fontSize: '18px', color: '#94a3b8', maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>No hidden fees. Cancel anytime.</p>
+          </div>
+
+          {/* Pricing Grid - Premium cards */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'stretch',
+            gap: '24px',
+            flexWrap: 'wrap',
+            maxWidth: '1100px',
+            margin: '0 auto'
+          }}>
+
+            {/* CLINIC Plan */}
+            <div
+              style={{
+                width: '320px',
+                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: '20px',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                padding: '40px 32px',
+                display: 'flex',
+                flexDirection: 'column',
+                transition: 'all 0.3s ease',
+                cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                e.currentTarget.style.transform = 'translateY(-4px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                {/* Icon */}
+                <div style={{
+                  width: '56px',
+                  height: '56px',
+                  background: 'linear-gradient(135deg, rgba(148, 163, 184, 0.2) 0%, rgba(148, 163, 184, 0.1) 100%)',
+                  borderRadius: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 24px auto',
+                  border: '1px solid rgba(255, 255, 255, 0.1)'
+                }}>
+                  <svg style={{ width: '28px', height: '28px', color: '#94a3b8' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                </div>
+                {/* Plan Name */}
+                <p className="font-heading" style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '16px' }}>Clinic</p>
+                {/* Price */}
+                <p className="font-heading" style={{ fontSize: '48px', fontWeight: 800, color: 'white', lineHeight: 1, marginBottom: '4px' }}>
+                  RM2,000<span style={{ fontSize: '16px', fontWeight: 500, color: '#64748b' }}>/mo</span>
+                </p>
+                <p style={{ color: '#64748b', fontSize: '14px', marginTop: '8px' }}>+ RM1 per MC issued</p>
               </div>
 
-              {/* Trust Badges - Gray-scale compliance icons */}
-              <div className="flex justify-center items-center gap-6 mt-8">
-                <div className="flex items-center gap-2 text-slate-500">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {/* Features */}
+              <div style={{ flex: 1, marginBottom: '32px' }}>
+                {['Digital Records', 'Basic Dashboard', '5 Doctor Accounts', 'Email Support'].map((feature, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                    <div style={{
+                      width: '20px',
+                      height: '20px',
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      <svg style={{ width: '12px', height: '12px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span style={{ color: '#cbd5e1', fontSize: '15px' }}>{feature}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Button */}
+              <button
+                onClick={() => handlePlanSelect('clinic')}
+                disabled={securityLoading !== null}
+                style={{
+                  width: '100%',
+                  padding: '14px 24px',
+                  backgroundColor: 'transparent',
+                  color: 'white',
+                  fontSize: '15px',
+                  fontWeight: 600,
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                }}
+              >
+                {securityLoading === 'clinic' ? 'Verifying...' : 'Get Started'}
+              </button>
+            </div>
+
+            {/* HOSPITAL Plan - FEATURED */}
+            <div
+              style={{
+                width: '340px',
+                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%)',
+                borderRadius: '20px',
+                border: '2px solid rgba(59, 130, 246, 0.5)',
+                padding: '40px 32px',
+                display: 'flex',
+                flexDirection: 'column',
+                position: 'relative',
+                boxShadow: '0 0 60px rgba(59, 130, 246, 0.2), 0 25px 50px rgba(0, 0, 0, 0.3)',
+                transform: 'scale(1.02)',
+                zIndex: 10
+              }}
+            >
+              {/* Most Popular Badge */}
+              <div style={{
+                position: 'absolute',
+                top: '-14px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 20
+              }}>
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 16px',
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                  color: 'white',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  borderRadius: '9999px',
+                  boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)'
+                }}>
+                  <svg style={{ width: '12px', height: '12px' }} fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clipRule="evenodd" />
+                  </svg>
+                  Most Popular
+                </span>
+              </div>
+
+              <div style={{ textAlign: 'center', marginBottom: '32px', paddingTop: '8px' }}>
+                {/* Icon */}
+                <div style={{
+                  width: '56px',
+                  height: '56px',
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                  borderRadius: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 24px auto',
+                  boxShadow: '0 8px 24px rgba(59, 130, 246, 0.4)'
+                }}>
+                  <svg style={{ width: '28px', height: '28px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
                   </svg>
-                  <span className="text-xs font-medium">Bank Negara Compliant</span>
                 </div>
-                <div className="w-px h-4 bg-slate-700"></div>
-                <div className="flex items-center gap-2 text-slate-500">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                  <span className="text-xs font-medium">AES-256 Encrypted</span>
-                </div>
-                <div className="w-px h-4 bg-slate-700"></div>
-                <div className="flex items-center gap-2 text-slate-500">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                  <span className="text-xs font-medium">MDEC Verified</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Stats */}
-            <div className="mt-16 animate-fade-in-up animate-delay-5">
-              <div className="flex justify-center gap-8">
-                <div className="text-center px-6 py-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all">
-                  <p className="text-4xl font-extrabold text-white">24</p>
-                  <p className="text-slate-400 text-sm mt-2">Hospitals</p>
-                </div>
-                <div className="text-center px-6 py-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all">
-                  <p className="text-4xl font-extrabold text-white">180+</p>
-                  <p className="text-slate-400 text-sm mt-2">Clinics</p>
-                </div>
-                <div className={`text-center px-6 py-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-all ${integrityFlash ? 'integrity-flash' : ''}`}>
-                  <p className="text-4xl font-extrabold text-emerald-400">100%</p>
-                  <p className="text-slate-400 text-sm mt-2">Integrity</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Public Impact Counter - Live Blockchain Stats */}
-            <div className="mt-20 animate-fade-in-up animate-delay-6">
-              <PublicImpactCounter />
-            </div>
-
-          </section>
-
-          {/* ========== NETWORK READINESS LIST - py-16 ========== */}
-          <section className="py-16">
-            <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/30 rounded-3xl border border-emerald-500/20 p-8 relative overflow-hidden">
-              {/* Background grid pattern */}
-              <div className="absolute inset-0 opacity-5">
-                <div className="absolute inset-0" style={{
-                  backgroundImage: `linear-gradient(rgba(16, 185, 129, 0.1) 1px, transparent 1px),
-                                    linear-gradient(90deg, rgba(16, 185, 129, 0.1) 1px, transparent 1px)`,
-                  backgroundSize: '20px 20px',
-                }} />
+                {/* Plan Name */}
+                <p className="font-heading" style={{ fontSize: '12px', fontWeight: 600, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '16px' }}>Hospital</p>
+                {/* Price */}
+                <p className="font-heading" style={{ fontSize: '48px', fontWeight: 800, color: 'white', lineHeight: 1, marginBottom: '4px' }}>
+                  RM10,000<span style={{ fontSize: '16px', fontWeight: 500, color: '#64748b' }}>/mo</span>
+                </p>
+                <p style={{ color: '#60a5fa', fontSize: '14px', fontWeight: 500, marginTop: '8px' }}>+ RM1 per MC issued</p>
               </div>
 
-              <div className="relative">
-                {/* Header with "Wow" stat */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-                      <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+              {/* Features */}
+              <div style={{ flex: 1, marginBottom: '32px' }}>
+                {['Full ERP Integration', 'Executive Dashboard', 'Unlimited Doctors', '24/7 Priority Support', 'Custom API Access'].map((feature, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                    <div style={{
+                      width: '20px',
+                      height: '20px',
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      <svg style={{ width: '12px', height: '12px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
-                    <div>
-                      <h2 className="text-2xl font-bold text-white">Network Readiness</h2>
-                      <p className="text-emerald-400 text-sm">Hospital blockchain nodes across Sarawak</p>
-                    </div>
+                    <span style={{ color: 'white', fontSize: '15px', fontWeight: 500 }}>{feature}</span>
                   </div>
-
-                  {/* The "Wow" Stat - 24/24 Validated */}
-                  <div className="flex items-center gap-3 px-5 py-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
-                    <div className="flex items-center gap-2">
-                      <span className="relative flex h-3 w-3">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                      </span>
-                      <span className="text-emerald-400 text-xs font-bold uppercase tracking-wider">Live</span>
-                    </div>
-                    <div className="w-px h-6 bg-emerald-500/30"></div>
-                    <div>
-                      <p className="text-2xl font-black text-white">24/24</p>
-                      <p className="text-emerald-400 text-xs font-semibold">Nodes Validated</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Scrollable Hospital Node List - iPhone 8 Plus thumb-optimized */}
-                <div
-                  className="overflow-y-auto overscroll-contain"
-                  style={{
-                    maxHeight: '320px',
-                    WebkitOverflowScrolling: 'touch', // iOS momentum scrolling
-                    scrollbarWidth: 'thin',
-                    scrollbarColor: 'rgba(16, 185, 129, 0.3) transparent'
-                  }}
-                >
-                  <div className="space-y-2 pr-2">
-                    {/* Hospital Node Items */}
-                    {[
-                      { name: 'Sarawak General Hospital', location: 'Kuching', type: 'Government' },
-                      { name: 'Miri General Hospital', location: 'Miri', type: 'Government' },
-                      { name: 'Sibu Hospital', location: 'Sibu', type: 'Government' },
-                      { name: 'Bintulu Hospital', location: 'Bintulu', type: 'Government' },
-                      { name: 'KPJ Kuching Specialist', location: 'Kuching', type: 'Private' },
-                      { name: 'Normah Medical Specialist', location: 'Kuching', type: 'Private' },
-                      { name: 'Timberland Medical Centre', location: 'Kuching', type: 'Private' },
-                      { name: 'Borneo Medical Centre', location: 'Kuching', type: 'Private' },
-                      { name: 'Columbia Asia Miri', location: 'Miri', type: 'Private' },
-                      { name: 'KPJ Miri Specialist', location: 'Miri', type: 'Private' },
-                      { name: 'Rejang Medical Centre', location: 'Sibu', type: 'Private' },
-                      { name: 'Selangau District Hospital', location: 'Selangau', type: 'Government' },
-                      { name: 'Kapit Hospital', location: 'Kapit', type: 'Government' },
-                      { name: 'Sarikei Hospital', location: 'Sarikei', type: 'Government' },
-                      { name: 'Mukah Hospital', location: 'Mukah', type: 'Government' },
-                      { name: 'Limbang Hospital', location: 'Limbang', type: 'Government' },
-                      { name: 'Lawas Hospital', location: 'Lawas', type: 'Government' },
-                      { name: 'Sri Aman Hospital', location: 'Sri Aman', type: 'Government' },
-                      { name: 'Betong Hospital', location: 'Betong', type: 'Government' },
-                      { name: 'Saratok Hospital', location: 'Saratok', type: 'Government' },
-                      { name: 'Lundu Hospital', location: 'Lundu', type: 'Government' },
-                      { name: 'Bau Hospital', location: 'Bau', type: 'Government' },
-                      { name: 'Serian Hospital', location: 'Serian', type: 'Government' },
-                      { name: 'Marudi Hospital', location: 'Marudi', type: 'Government' },
-                    ].map((hospital, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-4 bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 rounded-xl transition-all active:scale-[0.98]"
-                      >
-                        {/* Hospital Info */}
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                            </svg>
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-white font-semibold text-sm truncate">{hospital.name}</p>
-                            <p className="text-slate-500 text-xs">{hospital.location} • {hospital.type}</p>
-                          </div>
-                        </div>
-
-                        {/* Status Indicators */}
-                        <div className="flex items-center gap-2 flex-shrink-0 ml-3">
-                          {/* AES-256 Badge */}
-                          <span className="hidden sm:flex items-center gap-1 px-2 py-1 bg-slate-800/80 rounded text-[10px] font-bold text-slate-400">
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            </svg>
-                            AES-256
-                          </span>
-
-                          {/* Ready to Sync Status */}
-                          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-full">
-                            <span className="relative flex h-2 w-2">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                            </span>
-                            <span className="text-emerald-400 text-[10px] font-bold uppercase tracking-wider">Ready</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Scroll hint for iPhone */}
-                <div className="flex items-center justify-center gap-2 mt-4 text-slate-500 text-xs">
-                  <svg className="w-4 h-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                  </svg>
-                  <span>Swipe to view all 24 nodes</span>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* ========== SARAWAK READINESS MAP - py-16 ========== */}
-          <section className="py-16">
-            <SarawakReadinessMap />
-          </section>
-
-          {/* ========== FRAUD TRACKER SECTION - py-16 ========== */}
-          <section className="py-16">
-            <div className="bg-gradient-to-br from-red-950/50 via-slate-900 to-red-950/30 rounded-3xl border border-red-500/20 p-10 relative overflow-hidden">
-              {/* Background pattern */}
-              <div className="absolute inset-0 opacity-5">
-                <div className="absolute inset-0" style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ef4444' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-                }} />
+                ))}
               </div>
 
-              <div className="relative">
-                {/* Header */}
-                <div className="flex items-center gap-3 mb-8">
-                  <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center">
-                    <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              {/* Button */}
+              <button
+                onClick={() => handlePlanSelect('hospital')}
+                disabled={securityLoading !== null}
+                style={{
+                  width: '100%',
+                  padding: '16px 24px',
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                  color: 'white',
+                  fontSize: '15px',
+                  fontWeight: 600,
+                  borderRadius: '12px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 8px 30px rgba(59, 130, 246, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 20px rgba(59, 130, 246, 0.4)';
+                }}
+              >
+                {securityLoading === 'hospital' ? 'Verifying...' : (
+                  <>
+                    Get Started
+                    <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-white">Malaysia's MC Fraud Problem</h2>
-                    <p className="text-red-400 text-sm">The cost of unverified medical certificates</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                  {/* Main stat - RM 2.3B */}
-                  <div className="lg:col-span-1">
-                    <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-6 text-center">
-                      <p className="text-red-400 text-sm font-semibold uppercase tracking-wider mb-2">Annual Fraud Cost</p>
-                      <p className="text-5xl font-black text-white mb-2">RM 2.3B</p>
-                      <p className="text-slate-400 text-sm">Lost to fake MCs in Malaysia annually</p>
-                      <div className="mt-4 pt-4 border-t border-red-500/20">
-                        <div className="flex items-center justify-center gap-2">
-                          <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                          <span className="text-red-400 text-xs font-semibold">Live Fraud Tracker</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Problem breakdown */}
-                  <div className="lg:col-span-2">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="bg-white/5 rounded-xl p-5 border border-white/10">
-                        <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center mb-4">
-                          <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        </div>
-                        <p className="text-3xl font-bold text-white mb-1">34%</p>
-                        <p className="text-slate-400 text-sm">of HR managers suspect MC fraud in their organization</p>
-                      </div>
-
-                      <div className="bg-white/5 rounded-xl p-5 border border-white/10">
-                        <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center mb-4">
-                          <svg className="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        </div>
-                        <p className="text-3xl font-bold text-white mb-1">Zero</p>
-                        <p className="text-slate-400 text-sm">verification for paper MCs - easily forged or duplicated</p>
-                      </div>
-
-                      <div className="bg-white/5 rounded-xl p-5 border border-white/10">
-                        <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4">
-                          <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                          </svg>
-                        </div>
-                        <p className="text-3xl font-bold text-white mb-1">No Trail</p>
-                        <p className="text-slate-400 text-sm">Paper records leave no audit trail for investigations</p>
-                      </div>
-                    </div>
-
-                    {/* Solution callout */}
-                    <div className="mt-6 bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-5 flex items-center gap-4">
-                      <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="text-emerald-400 font-bold">MedChain Solution</p>
-                        <p className="text-slate-300 text-sm">Every MC is blockchain-verified with QR codes. Employers verify in seconds. Zero fraud possible.</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* ========== PRICING SECTION - py-24 ========== */}
-          <section id="pricing" className="py-24 text-center">
-
-            {/* Title */}
-            <h2 className="text-4xl font-extrabold text-white animate-fade-in-up">
-              Simple, Transparent Pricing
-            </h2>
-
-            {/* Description - flex centering + max-w-[750px] + mt-8 mb-14 */}
-            <div className="flex flex-col items-center justify-center w-full mt-8 mb-14 animate-fade-in-up">
-              <p className="max-w-[750px] text-center text-xl text-white/80 leading-[1.8]">
-                Choose the plan that fits your healthcare facility. No hidden fees, no surprises.
-              </p>
+                  </>
+                )}
+              </button>
             </div>
 
-            {/* Pricing Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
-
-              {/* Clinic */}
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-8 text-left flex flex-col hover:bg-white/[0.08] transition-all hover:-translate-y-2">
-                <div className="flex justify-between items-center mb-8">
-                  <span className="px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full text-xs font-bold">CLINIC</span>
-                  <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
-                    <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                  </div>
+            {/* GOVERNMENT Plan */}
+            <div
+              style={{
+                width: '320px',
+                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: '20px',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                padding: '40px 32px',
+                display: 'flex',
+                flexDirection: 'column',
+                transition: 'all 0.3s ease',
+                cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                e.currentTarget.style.transform = 'translateY(-4px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+                {/* Icon */}
+                <div style={{
+                  width: '56px',
+                  height: '56px',
+                  background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(139, 92, 246, 0.1) 100%)',
+                  borderRadius: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 24px auto',
+                  border: '1px solid rgba(139, 92, 246, 0.3)'
+                }}>
+                  <svg style={{ width: '28px', height: '28px', color: '#a78bfa' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+                  </svg>
                 </div>
-
-                <h3 className="text-xl font-bold text-white mb-4">Clinic Plan</h3>
-
-                <p className="text-3xl font-extrabold text-white mb-4">
-                  RM2,000<span className="text-slate-500 text-sm font-normal">/month</span>
+                {/* Plan Name */}
+                <p className="font-heading" style={{ fontSize: '12px', fontWeight: 600, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '16px' }}>Government</p>
+                {/* Price */}
+                <p className="font-heading" style={{ fontSize: '48px', fontWeight: 800, color: 'white', lineHeight: 1, marginBottom: '4px' }}>
+                  Custom
                 </p>
-
-                <p className="text-blue-400 text-xs mb-8">+ RM1.00 per MC issued</p>
-
-                <div className="space-y-5 flex-1">
-                  <div className="flex items-center gap-3">
-                    <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                    <span className="text-slate-300">Digital Records</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                    <span className="text-slate-300">Basic Dashboard</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                    <span className="text-slate-300">5 Doctor Accounts</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                    <span className="text-slate-300">Email Support</span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => handlePlanSelect('clinic')}
-                  disabled={securityLoading !== null}
-                  className="haptic-btn w-full py-4 mt-8 bg-white/5 border border-white/10 text-white font-bold rounded-lg hover:bg-white/10 transition-all disabled:opacity-70 flex items-center justify-center gap-2"
-                >
-                  {securityLoading === 'clinic' ? (
-                    <>
-                      <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                      </svg>
-                      Verifying Security...
-                    </>
-                  ) : (
-                    'Get Started'
-                  )}
-                </button>
+                <p style={{ color: '#a78bfa', fontSize: '14px', fontWeight: 500, marginTop: '8px' }}>State-wide oversight</p>
               </div>
 
-              {/* Hospital - Featured */}
-              <div className="relative hover:-translate-y-2 transition-all">
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
-                  <span className="gold-glow px-4 py-1.5 bg-amber-400 text-slate-900 text-xs font-black rounded-full uppercase">
-                    Most Popular
-                  </span>
-                </div>
-                <div className="bg-white/[0.08] border-2 border-amber-400/50 rounded-2xl p-8 text-left flex flex-col h-full">
-                  <div className="flex justify-between items-center mb-8 mt-2">
-                    <span className="px-3 py-1 bg-amber-500/20 text-amber-300 rounded-full text-xs font-bold">HOSPITAL</span>
-                    <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center">
-                      <svg className="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+              {/* Features */}
+              <div style={{ flex: 1, marginBottom: '32px' }}>
+                {['State-wide Dashboard', 'Health Analytics', 'Compliance Monitoring', 'Dedicated Account Manager'].map((feature, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                    <div style={{
+                      width: '20px',
+                      height: '20px',
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      <svg style={{ width: '12px', height: '12px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
+                    <span style={{ color: '#cbd5e1', fontSize: '15px' }}>{feature}</span>
                   </div>
-
-                  <h3 className="text-xl font-bold text-white mb-4">Hospital Plan</h3>
-
-                  <p className="text-3xl font-extrabold text-white mb-4">
-                    RM10,000<span className="text-slate-500 text-sm font-normal">/month</span>
-                  </p>
-
-                  <p className="text-amber-400 text-xs mb-8">+ RM1.00 per MC issued</p>
-
-                  <div className="space-y-5 flex-1">
-                    <div className="flex items-center gap-3">
-                      <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                      <span className="text-slate-300">Full ERP Integration</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                      <span className="text-slate-300">Executive Dashboard</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                      <span className="text-slate-300">Unlimited Doctors</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                      <span className="text-slate-300">24/7 Priority Support</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                      <span className="text-slate-300">Custom API Access</span>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => handlePlanSelect('hospital')}
-                    disabled={securityLoading !== null}
-                    className="haptic-btn gold-btn-glow w-full py-4 mt-8 bg-amber-500 text-slate-900 font-black rounded-lg hover:bg-amber-400 transition-all disabled:opacity-70 flex items-center justify-center gap-2"
-                  >
-                    {securityLoading === 'hospital' ? (
-                      <>
-                        <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                        </svg>
-                        Verifying Security...
-                      </>
-                    ) : (
-                      'Get Started'
-                    )}
-                  </button>
-                </div>
+                ))}
               </div>
 
-              {/* Government */}
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-8 text-left flex flex-col hover:bg-white/[0.08] transition-all hover:-translate-y-2">
-                <div className="flex justify-between items-center mb-8">
-                  <span className="px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-xs font-bold">GOVERNMENT</span>
-                  <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
-                    <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
-                    </svg>
-                  </div>
-                </div>
-
-                <h3 className="text-xl font-bold text-white mb-4">Government</h3>
-
-                <p className="text-3xl font-extrabold text-white mb-4">Custom</p>
-
-                <p className="text-purple-400 text-xs mb-8">State-wide oversight</p>
-
-                <div className="space-y-5 flex-1">
-                  <div className="flex items-center gap-3">
-                    <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                    <span className="text-slate-300">State-wide Dashboard</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                    <span className="text-slate-300">Health Analytics</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                    <span className="text-slate-300">Compliance Monitoring</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                    <span className="text-slate-300">Account Manager</span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleContactSales}
-                  className="w-full py-4 mt-8 bg-white/5 border border-white/10 text-white font-bold rounded-lg hover:bg-white/10 transition-all"
-                >
-                  Contact Sales
-                </button>
-              </div>
-
-            </div>
-          </section>
-
-          {/* ========== WHY US SECTION - py-24 ========== */}
-          <section id="why-us" className="py-24 text-center">
-
-            {/* Title */}
-            <h2 className="text-4xl font-extrabold text-white animate-fade-in-up">
-              Why Choose MedChain?
-            </h2>
-
-            {/* Description - flex centering + max-w-[750px] + mt-8 mb-14 */}
-            <div className="flex flex-col items-center justify-center w-full mt-8 mb-14 animate-fade-in-up">
-              <p className="max-w-[750px] text-center text-xl text-white/80 leading-[1.8]">
-                Built by Sarawakians, for Sarawak. Enterprise-grade security meets local expertise.
-              </p>
+              {/* Button */}
+              <button
+                onClick={handleContactSales}
+                style={{
+                  width: '100%',
+                  padding: '14px 24px',
+                  backgroundColor: 'rgba(139, 92, 246, 0.15)',
+                  color: '#a78bfa',
+                  fontSize: '15px',
+                  fontWeight: 600,
+                  borderRadius: '12px',
+                  border: '1px solid rgba(139, 92, 246, 0.3)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(139, 92, 246, 0.25)';
+                  e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgba(139, 92, 246, 0.15)';
+                  e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)';
+                }}
+              >
+                Contact Sales
+              </button>
             </div>
 
-            {/* Features Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-8 text-center hover:bg-white/[0.08] transition-all hover:-translate-y-2">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mx-auto mb-8">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                </div>
+          </div>{/* END Pricing Grid */}
 
-                <h3 className="text-xl font-bold text-white mb-6">Blockchain Security</h3>
-
-                <p className="text-slate-400 leading-loose">
-                  Every medical record is cryptographically secured. Tamper-proof and auditable.
-                </p>
-              </div>
-
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-8 text-center hover:bg-white/[0.08] transition-all hover:-translate-y-2">
-                <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-500 rounded-xl flex items-center justify-center mx-auto mb-8">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-
-                <h3 className="text-xl font-bold text-white mb-6">Real-time Verification</h3>
-
-                <p className="text-slate-400 leading-loose">
-                  Instantly verify any MC with our QR system. Employers validate in seconds.
-                </p>
-              </div>
-
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-8 text-center hover:bg-white/[0.08] transition-all hover:-translate-y-2">
-                <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mx-auto mb-8">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-
-                <h3 className="text-xl font-bold text-white mb-6">Sarawak-First</h3>
-
-                <p className="text-slate-400 leading-loose">
-                  Nodes in Kuching, Miri, Sibu, Bintulu. Your data stays in Sarawak.
-                </p>
-              </div>
-            </div>
-
-            {/* Trust Badges */}
-            <div className="mt-24 pt-12 border-t border-white/10">
-              <div className="flex justify-center gap-4 flex-wrap">
-                <span className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-lg border border-white/10 text-slate-300 text-sm hover:bg-white/10 transition-all">
-                  <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-                  AES-256 Encryption
-                </span>
-                <span className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-lg border border-white/10 text-slate-300 text-sm hover:bg-white/10 transition-all">
-                  <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" /></svg>
-                  IPFS Storage
-                </span>
-                <span className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-lg border border-white/10 text-slate-300 text-sm hover:bg-white/10 transition-all">
-                  <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
-                  Full Audit Trail
-                </span>
-              </div>
-            </div>
-          </section>
-
-          {/* ========== CTA SECTION - py-24 ========== */}
-          <section className="py-24">
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-16 text-center">
-
-              <h2 className="text-3xl font-extrabold text-white">
-                Ready to Transform Your Healthcare Records?
-              </h2>
-
-              {/* Description - flex centering + max-w-[750px] + mt-8 mb-14 */}
-              <div className="flex flex-col items-center justify-center w-full mt-8 mb-14">
-                <p className="max-w-[750px] text-center text-xl text-white/80 leading-[1.8]">
-                  Join Sarawak's leading hospitals and clinics on the blockchain.
-                </p>
-              </div>
-
-              <div className="flex justify-center gap-4 mt-12">
-                <button onClick={handleGetStarted} className="px-8 py-4 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-all hover:scale-105">
-                  Start Free Trial
-                </button>
-                <button className="px-8 py-4 bg-white/5 border border-white/10 text-white font-bold rounded-xl hover:bg-white/10 transition-all">
-                  Schedule Demo
-                </button>
-              </div>
-            </div>
-          </section>
-
-          {/* Footer */}
-          <footer className="py-12 border-t border-white/10">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="font-bold text-white">Sarawak MedChain</p>
-                  <p className="text-xs text-slate-500">Blockchain-Secured Healthcare</p>
-                </div>
-              </div>
-              <p className="text-slate-600 text-sm">&copy; 2026 Sarawak MedChain. All rights reserved.</p>
-            </div>
-          </footer>
-
+          {/* Footer Text */}
+          <div style={{ textAlign: 'center', marginTop: '56px' }}>
+            <p className="font-body" style={{ color: '#94a3b8', fontSize: '16px' }}>
+              Ready to get started? <span style={{ color: '#60a5fa', fontWeight: 600 }}>Join 24 hospitals</span> already using MedChain.
+            </p>
+          </div>
         </div>
-      </main>
-    </div>
+      </section>
+
+      {/* ========== CTA SECTION - Premium ========== */}
+      <section style={{ padding: '96px 0' }}>
+        <div style={{
+          position: 'relative',
+          background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #3730a3 100%)',
+          borderRadius: '24px',
+          padding: '80px 48px',
+          textAlign: 'center',
+          overflow: 'hidden',
+          border: '1px solid rgba(147, 197, 253, 0.2)',
+          boxShadow: '0 0 80px rgba(59, 130, 246, 0.15), 0 25px 50px rgba(0, 0, 0, 0.25)'
+        }}>
+          {/* Mesh gradient overlay */}
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'radial-gradient(ellipse at 20% 20%, rgba(96, 165, 250, 0.15) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 70%)',
+            pointerEvents: 'none'
+          }}></div>
+
+          {/* Content */}
+          <div style={{
+            position: 'relative',
+            zIndex: 10,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            {/* Heading */}
+            <h2 className="font-heading" style={{
+              fontSize: 'clamp(32px, 5vw, 44px)',
+              fontWeight: 800,
+              color: 'white',
+              marginBottom: '24px',
+              letterSpacing: '-0.02em',
+              lineHeight: 1.2,
+              maxWidth: '600px'
+            }}>
+              Ready to transform your healthcare facility?
+            </h2>
+
+            {/* Subtitle */}
+            <p className="font-body" style={{
+              fontSize: '18px',
+              color: 'rgba(255, 255, 255, 0.7)',
+              marginBottom: '40px',
+              maxWidth: '480px',
+              lineHeight: 1.6
+            }}>
+              Start your free trial today. No credit card required.
+            </p>
+
+            {/* Button */}
+            <button
+              onClick={handleGetStarted}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '16px 32px',
+                backgroundColor: 'white',
+                color: '#1e40af',
+                fontSize: '16px',
+                fontWeight: 600,
+                borderRadius: '12px',
+                border: 'none',
+                cursor: 'pointer',
+                boxShadow: '0 4px 20px rgba(255, 255, 255, 0.25), 0 8px 30px rgba(0, 0, 0, 0.2)',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)';
+                e.currentTarget.style.boxShadow = '0 8px 30px rgba(255, 255, 255, 0.35), 0 15px 40px rgba(0, 0, 0, 0.25)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                e.currentTarget.style.boxShadow = '0 4px 20px rgba(255, 255, 255, 0.25), 0 8px 30px rgba(0, 0, 0, 0.2)';
+              }}
+            >
+              Start Free Trial
+              <svg style={{ width: '18px', height: '18px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      </div>{/* END CONTENT WRAPPER */}
+
+      {/* ========== FOOTER - Premium ========== */}
+      <footer style={{ width: '100%', padding: '40px 0', borderTop: '1px solid #e2e8f0', backgroundColor: 'white' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 32px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', textAlign: 'center' }}>
+            {/* Logo */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '32px', height: '32px', background: 'linear-gradient(135deg, #2563eb, #7c3aed)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg style={{ width: '16px', height: '16px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <span className="font-heading" style={{ fontSize: '15px', fontWeight: 600, color: '#0f172a' }}>Sarawak MedChain</span>
+            </div>
+
+            {/* Links */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+              <a href="#features" style={{ fontSize: '14px', color: '#64748b', fontWeight: 500, textDecoration: 'none' }}>Features</a>
+              <a href="#pricing" style={{ fontSize: '14px', color: '#64748b', fontWeight: 500, textDecoration: 'none' }}>Pricing</a>
+              <a href="mailto:enterprise@medchain.sarawak.gov.my" style={{ fontSize: '14px', color: '#64748b', fontWeight: 500, textDecoration: 'none' }}>Contact</a>
+            </div>
+
+            {/* Copyright */}
+            <p style={{ color: '#94a3b8', fontSize: '14px' }}>&copy; 2026 Sarawak MedChain</p>
+          </div>
+        </div>
+      </footer>
+
+    </main>
   );
 }
