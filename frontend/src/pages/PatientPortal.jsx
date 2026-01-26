@@ -192,29 +192,26 @@ export default function PatientPortal({ walletAddress }) {
     },
     cardsGrid: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(2, 1fr)',
-      gap: '24px',
-      alignItems: 'stretch',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '32px',
+      alignItems: 'start',
     },
     card: {
-      backgroundColor: '#111827',
-      border: '1px solid rgba(148, 163, 184, 0.1)',
+      backgroundColor: 'rgba(17, 24, 39, 0.8)',
+      border: '1px solid rgba(255, 255, 255, 0.08)',
       borderRadius: '16px',
-      padding: '32px',
-      display: 'flex',
-      flexDirection: 'column',
-      minHeight: '480px',
+      padding: '28px',
     },
     cardHeader: {
       display: 'flex',
       alignItems: 'center',
-      gap: '14px',
-      marginBottom: '28px',
+      gap: '12px',
+      marginBottom: '24px',
     },
     cardIcon: {
-      width: '48px',
-      height: '48px',
-      borderRadius: '12px',
+      width: '44px',
+      height: '44px',
+      borderRadius: '10px',
       background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
       display: 'flex',
       alignItems: 'center',
@@ -222,17 +219,17 @@ export default function PatientPortal({ walletAddress }) {
       flexShrink: 0,
     },
     cardTitle: {
-      fontSize: '1.35rem',
-      fontWeight: '700',
+      fontSize: '1.2rem',
+      fontWeight: '600',
       color: '#ffffff',
       margin: 0,
     },
     recordsBadge: {
       marginLeft: 'auto',
-      padding: '6px 14px',
-      borderRadius: '20px',
-      fontSize: '0.85rem',
-      fontWeight: '600',
+      padding: '5px 12px',
+      borderRadius: '16px',
+      fontSize: '0.8rem',
+      fontWeight: '500',
       backgroundColor: 'rgba(20, 184, 166, 0.1)',
       border: '1px solid rgba(20, 184, 166, 0.2)',
       color: '#14b8a6',
@@ -260,22 +257,22 @@ export default function PatientPortal({ walletAddress }) {
     buttonGroup: {
       display: 'flex',
       flexDirection: 'column',
-      gap: '12px',
-      marginTop: '24px',
+      gap: '10px',
+      marginTop: '20px',
     },
     button: {
       width: '100%',
-      padding: '14px 20px',
-      borderRadius: '10px',
-      fontWeight: '600',
-      fontSize: '0.95rem',
+      padding: '12px 16px',
+      borderRadius: '8px',
+      fontWeight: '500',
+      fontSize: '0.9rem',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: '10px',
+      gap: '8px',
       cursor: 'pointer',
       transition: 'all 0.2s ease',
-      border: '1px solid rgba(148, 163, 184, 0.2)',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
     },
     buttonPrimary: {
       backgroundColor: '#14b8a6',
@@ -283,44 +280,43 @@ export default function PatientPortal({ walletAddress }) {
       border: 'none',
     },
     buttonSecondary: {
-      backgroundColor: 'transparent',
+      backgroundColor: 'rgba(255, 255, 255, 0.03)',
       color: '#94a3b8',
-      border: '1px solid rgba(148, 163, 184, 0.2)',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
     },
     buttonDisabled: {
-      backgroundColor: '#1e293b',
+      backgroundColor: 'rgba(30, 41, 59, 0.5)',
       color: '#475569',
       cursor: 'not-allowed',
-      opacity: 0.6,
+      opacity: 0.5,
     },
     emptyState: {
-      flex: 1,
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
       textAlign: 'center',
-      padding: '20px',
+      padding: '40px 20px',
     },
     shieldContainer: {
-      width: '120px',
-      height: '120px',
+      width: '100px',
+      height: '100px',
       borderRadius: '50%',
-      background: 'rgba(20, 184, 166, 0.08)',
-      border: '2px solid rgba(20, 184, 166, 0.15)',
+      background: 'rgba(20, 184, 166, 0.06)',
+      border: '1px solid rgba(20, 184, 166, 0.12)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: '24px',
+      marginBottom: '20px',
     },
     emptyTitle: {
-      fontSize: '1.1rem',
-      fontWeight: '600',
+      fontSize: '1rem',
+      fontWeight: '500',
       color: '#ffffff',
-      margin: '0 0 8px 0',
+      margin: '0 0 6px 0',
     },
     emptySubtitle: {
-      fontSize: '0.9rem',
+      fontSize: '0.85rem',
       color: '#14b8a6',
       margin: 0,
     },
@@ -411,15 +407,10 @@ export default function PatientPortal({ walletAddress }) {
         {/* Cards Grid */}
         <div style={styles.cardsGrid}>
           {/* Access Control Card */}
-          <div style={{
-            ...styles.card,
-            borderColor: successGlow ? 'rgba(16, 185, 129, 0.3)' : 'rgba(148, 163, 184, 0.1)',
-            boxShadow: successGlow ? '0 0 30px rgba(16, 185, 129, 0.15)' : 'none',
-            transition: 'all 0.3s ease',
-          }}>
+          <div style={styles.card}>
             <div style={styles.cardHeader}>
               <div style={styles.cardIcon}>
-                <svg style={{ width: '24px', height: '24px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg style={{ width: '22px', height: '22px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                 </svg>
               </div>
@@ -486,7 +477,7 @@ export default function PatientPortal({ walletAddress }) {
           <div style={styles.card}>
             <div style={styles.cardHeader}>
               <div style={styles.cardIcon}>
-                <svg style={{ width: '24px', height: '24px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg style={{ width: '22px', height: '22px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
@@ -498,7 +489,7 @@ export default function PatientPortal({ walletAddress }) {
               <div style={styles.emptyState}>
                 <div style={styles.shieldContainer}>
                   <svg
-                    style={{ width: '56px', height: '56px', color: '#14b8a6' }}
+                    style={{ width: '48px', height: '48px', color: '#14b8a6' }}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
