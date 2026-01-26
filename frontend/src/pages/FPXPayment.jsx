@@ -1036,8 +1036,8 @@ export default function FPXPayment() {
   // Main Payment Selection Screen
   return (
     <div
-      className="min-h-screen py-12 px-6 fpx-payment flex flex-col items-center"
-      style={{ backgroundColor: '#0a0e14', width: '100%' }}
+      className="min-h-screen fpx-payment flex flex-col items-center"
+      style={{ backgroundColor: '#0a0e14', width: '100%', padding: '40px' }}
     >
       {/* Global CSS for seamless background */}
       <style>{`
@@ -1085,13 +1085,13 @@ export default function FPXPayment() {
         }
       `}</style>
 
-      <div className="w-full" style={{ maxWidth: '1100px', margin: '0 auto' }}>
+      <div className="w-full" style={{ maxWidth: '1100px', margin: '0 auto', padding: '40px 0' }}>
         {/* Header */}
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">
+        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+          <h1 style={{ fontSize: '32px', fontWeight: 700, color: '#ffffff', marginBottom: '12px', letterSpacing: '-0.5px' }}>
             {isTopUp ? 'Top Up Credits' : 'Complete Your Payment'}
           </h1>
-          <p className="text-slate-400">
+          <p style={{ color: '#64748b', fontSize: '16px' }}>
             {isTopUp ? 'Add credits to your hospital node via FPX' : 'Activate your hospital node with FPX Online Banking'}
           </p>
         </div>
