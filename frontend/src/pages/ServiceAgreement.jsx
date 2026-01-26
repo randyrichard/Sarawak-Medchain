@@ -8,16 +8,20 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import SignatureCanvas from 'react-signature-canvas';
 import { QRCodeSVG } from 'qrcode.react';
 
-// Live demo URL for mobile preview (Councilor View / Miri-focused map)
-// Using local network IP for same-WiFi mobile access
-const DEMO_URL = 'http://192.168.0.163:5173/gov-preview';
-
 const MEDCHAIN_BLUE = '#0066CC';
 const MEDCHAIN_DARK = '#003366';
 const MEDCHAIN_GOLD = '#D4A017'; // Prestigious gold for signatures
+const MEDCHAIN_GREEN = '#10B981';
 
 // Contract template
 const CONTRACT_VERSION = 'DSA-2026-001';
+
+// Generate unique document ID for QR code
+const generateDocumentId = () => {
+  const timestamp = Date.now().toString(36).toUpperCase();
+  const random = Math.random().toString(36).substr(2, 6).toUpperCase();
+  return `${CONTRACT_VERSION}-${timestamp}-${random}`;
+};
 const EFFECTIVE_DATE = new Date().toLocaleDateString('en-MY', {
   year: 'numeric',
   month: 'long',
@@ -64,6 +68,22 @@ export default function ServiceAgreement() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSignatureSuccess, setShowSignatureSuccess] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Generate unique document ID for this session
+  const [documentId] = useState(() => generateDocumentId());
+
+  // Generate QR code data - encodes authorization URL with document details
+  const qrCodeData = JSON.stringify({
+    type: 'medchain_authorization',
+    documentId: documentId,
+    version: CONTRACT_VERSION,
+    hospital: formData.hospitalName || 'Pending',
+    timestamp: new Date().toISOString(),
+    verifyUrl: `https://medchain.sarawak.gov.my/verify/${documentId}`,
+  });
+
+  // Authorization URL for QR code scanning
+  const authorizationUrl = `${window.location.origin}/verify-agreement?doc=${documentId}&hospital=${encodeURIComponent(formData.hospitalName || 'Pending')}`;
 
   // Real-time clock - update every second
   useEffect(() => {
@@ -263,18 +283,31 @@ export default function ServiceAgreement() {
         </div>
       </header>
 
-      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }} className="w-full px-6 pt-[50px] pb-12">
+      <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }} className="w-full px-6 pt-12 pb-12">
         {/* Referral Banner */}
         {referralCode && (
-          <div className="mb-8 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 rounded-xl p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-emerald-500/20 rounded-full flex items-center justify-center">
-                <span className="text-xl">🎁</span>
+          <div
+            className="mb-8 w-full rounded-2xl p-5"
+            style={{
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(20, 184, 166, 0.1) 100%)',
+              border: '1px solid rgba(16, 185, 129, 0.25)',
+            }}
+          >
+            <div className="flex items-center gap-4">
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.2) 100%)',
+                }}
+              >
+                <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+                </svg>
               </div>
               <div>
                 <p className="text-emerald-400 font-semibold">You were referred by a partner hospital!</p>
-                <p className="text-slate-400 text-sm">
-                  Referral Code: <span className="font-mono text-emerald-300">{referralCode}</span>
+                <p className="text-slate-400 text-sm mt-0.5">
+                  Referral Code: <span className="font-mono text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded">{referralCode}</span>
                 </p>
               </div>
             </div>
@@ -282,11 +315,18 @@ export default function ServiceAgreement() {
         )}
 
         {/* Title */}
-        <div className="text-center mb-12">
-          <span className="inline-block px-3 py-1 rounded-full text-xs font-bold text-emerald-400 bg-emerald-500/20 mb-4">
-            DIGITAL SERVICE AGREEMENT
+        <div className="text-center mb-10 w-full">
+          <span
+            className="inline-block px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-4"
+            style={{
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              color: '#34D399',
+            }}
+          >
+            Digital Service Agreement
           </span>
-          <h1 className="text-4xl font-black text-white mb-2">Service Agreement</h1>
+          <h1 className="text-4xl font-bold text-white mb-3 tracking-tight">Service Agreement</h1>
           <p className="text-slate-400">Please review and sign to activate your hospital node</p>
         </div>
 
@@ -299,15 +339,41 @@ export default function ServiceAgreement() {
           }}
         >
           {/* Contract Header */}
-          <div className="p-8 border-b border-slate-700/50" style={{ background: `linear-gradient(135deg, ${MEDCHAIN_BLUE}10, ${MEDCHAIN_DARK}05)` }}>
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-white">Sarawak MedChain Service Agreement</h2>
-                <p className="text-slate-400 mt-1">Blockchain Medical Certificate Verification Services</p>
+          <div
+            className="p-8 border-b border-slate-700/50"
+            style={{
+              background: `linear-gradient(135deg, ${MEDCHAIN_BLUE}08 0%, ${MEDCHAIN_DARK}05 100%)`,
+            }}
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-5">
+                <div
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+                  style={{
+                    background: `linear-gradient(135deg, ${MEDCHAIN_BLUE} 0%, ${MEDCHAIN_DARK} 100%)`,
+                    boxShadow: `0 8px 24px ${MEDCHAIN_BLUE}30`,
+                  }}
+                >
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white tracking-tight">Sarawak MedChain Service Agreement</h2>
+                  <p className="text-slate-400 mt-1">Blockchain Medical Certificate Verification Services</p>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-slate-400">Effective Date</p>
-                <p className="text-white font-semibold">{EFFECTIVE_DATE}</p>
+              <div className="text-right flex-shrink-0">
+                <div
+                  className="inline-flex flex-col items-end px-4 py-3 rounded-xl"
+                  style={{
+                    background: 'rgba(30, 41, 59, 0.5)',
+                    border: '1px solid rgba(71, 85, 105, 0.3)',
+                  }}
+                >
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Effective Date</p>
+                  <p className="text-white font-semibold">{EFFECTIVE_DATE}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -315,33 +381,79 @@ export default function ServiceAgreement() {
           {/* Parties */}
           <div className="p-8 border-b border-slate-700/50">
             <h3 className="text-lg font-bold text-white mb-6">Parties to this Agreement</h3>
-            <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid md:grid-cols-2 gap-6">
               {/* Provider */}
-              <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
-                <p className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-3">Service Provider</p>
+              <div
+                className="rounded-2xl p-6"
+                style={{
+                  background: 'rgba(30, 41, 59, 0.4)',
+                  border: '1px solid rgba(59, 130, 246, 0.2)',
+                }}
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                  <p className="text-xs font-bold text-blue-400 uppercase tracking-wider">Service Provider</p>
+                </div>
                 <p className="text-lg font-bold text-white">Sarawak MedChain Sdn Bhd</p>
-                <p className="text-sm text-slate-400 mt-2">Level 15, Wisma Saberkas</p>
-                <p className="text-sm text-slate-400">Jalan Tun Abang Haji Openg</p>
-                <p className="text-sm text-slate-400">93000 Kuching, Sarawak</p>
+                <div className="mt-3 space-y-1">
+                  <p className="text-sm text-slate-400">Level 15, Wisma Saberkas</p>
+                  <p className="text-sm text-slate-400">Jalan Tun Abang Haji Openg</p>
+                  <p className="text-sm text-slate-400">93000 Kuching, Sarawak</p>
+                </div>
               </div>
 
               {/* Client */}
-              <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
-                <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-3">Client (Hospital/Clinic)</p>
-                <input
-                  type="text"
-                  value={formData.hospitalName}
-                  onChange={(e) => setFormData({ ...formData, hospitalName: e.target.value })}
-                  placeholder="Hospital / Clinic Name"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white text-lg font-bold mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <input
-                  type="text"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="Business Address"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              <div
+                className="rounded-2xl p-6"
+                style={{
+                  background: 'rgba(30, 41, 59, 0.4)',
+                  border: '1px solid rgba(16, 185, 129, 0.2)',
+                }}
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+                  <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Client (Hospital/Clinic)</p>
+                </div>
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    value={formData.hospitalName}
+                    onChange={(e) => setFormData({ ...formData, hospitalName: e.target.value })}
+                    placeholder="Hospital / Clinic Name"
+                    className="w-full rounded-xl px-4 py-3 text-white text-base font-semibold placeholder-slate-500 focus:outline-none transition-all"
+                    style={{
+                      background: 'rgba(15, 23, 42, 0.8)',
+                      border: '1px solid rgba(71, 85, 105, 0.5)',
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = MEDCHAIN_GREEN;
+                      e.target.style.boxShadow = `0 0 0 3px ${MEDCHAIN_GREEN}20`;
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'rgba(71, 85, 105, 0.5)';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                  <input
+                    type="text"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    placeholder="Business Address"
+                    className="w-full rounded-xl px-4 py-2.5 text-slate-300 text-sm placeholder-slate-500 focus:outline-none transition-all"
+                    style={{
+                      background: 'rgba(15, 23, 42, 0.8)',
+                      border: '1px solid rgba(71, 85, 105, 0.5)',
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = MEDCHAIN_GREEN;
+                      e.target.style.boxShadow = `0 0 0 3px ${MEDCHAIN_GREEN}20`;
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'rgba(71, 85, 105, 0.5)';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -349,23 +461,38 @@ export default function ServiceAgreement() {
           {/* Selected Plan */}
           <div className="p-8 border-b border-slate-700/50">
             <h3 className="text-lg font-bold text-white mb-6">Selected Service Plan</h3>
-            <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/30 rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
+            <div
+              className="rounded-2xl p-6"
+              style={{
+                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(6, 182, 212, 0.08) 100%)',
+                border: '1px solid rgba(59, 130, 246, 0.25)',
+              }}
+            >
+              <div className="flex items-center justify-between mb-6">
                 <h4 className="text-xl font-bold text-white">{currentPlan.name}</h4>
-                <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-sm font-bold">Selected</span>
+                <span
+                  className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.2) 100%)',
+                    border: '1px solid rgba(16, 185, 129, 0.4)',
+                    color: '#34D399',
+                  }}
+                >
+                  Selected
+                </span>
               </div>
-              <div className="grid md:grid-cols-3 gap-6">
-                <div>
-                  <p className="text-sm text-slate-400">Monthly Subscription</p>
-                  <p className="text-2xl font-black text-white">RM {currentPlan.baseFee.toLocaleString()}</p>
+              <div className="grid grid-cols-3 gap-0">
+                <div className="text-center py-4 px-2">
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Monthly Subscription</p>
+                  <p className="text-2xl font-bold text-white">RM {currentPlan.baseFee.toLocaleString()}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-slate-400">Per MC Fee</p>
-                  <p className="text-2xl font-black text-white">RM {currentPlan.mcFee.toFixed(2)}</p>
+                <div className="text-center py-4 px-2 border-x border-slate-700/50">
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Per MC Fee</p>
+                  <p className="text-2xl font-bold text-white">RM {currentPlan.mcFee.toFixed(2)}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-slate-400">Billing Cycle</p>
-                  <p className="text-2xl font-black text-white">Monthly</p>
+                <div className="text-center py-4 px-2">
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Billing Cycle</p>
+                  <p className="text-2xl font-bold text-white">Monthly</p>
                 </div>
               </div>
             </div>
@@ -374,40 +501,89 @@ export default function ServiceAgreement() {
           {/* Terms */}
           <div className="p-8 border-b border-slate-700/50">
             <h3 className="text-lg font-bold text-white mb-6">Terms and Conditions</h3>
-            <div className="bg-slate-800/30 rounded-xl p-6 max-h-64 overflow-y-auto text-sm text-slate-300 space-y-4">
-              <p><strong className="text-white">1. Service Provision:</strong> Sarawak MedChain agrees to provide blockchain-based medical certificate verification services, including dedicated node access, unlimited doctor accounts, and QR verification capabilities.</p>
-              <p><strong className="text-white">2. Payment Terms:</strong> Client agrees to maintain a positive credit balance. Monthly subscription is due on the 1st of each month. MC fees are deducted per issuance from the prepaid credit balance.</p>
-              <p><strong className="text-white">3. Data Protection:</strong> Both parties agree to comply with Malaysia's Personal Data Protection Act 2010 (PDPA). All medical data is encrypted using AES-256-GCM and stored in compliance with healthcare regulations.</p>
-              <p><strong className="text-white">4. Service Level:</strong> Provider guarantees 99.9% uptime for the blockchain network. Scheduled maintenance will be communicated 48 hours in advance.</p>
-              <p><strong className="text-white">5. Termination:</strong> Either party may terminate with 30 days written notice. No refunds for partial months. All data export will be provided upon termination request.</p>
-              <p><strong className="text-white">6. Liability:</strong> Provider's liability is limited to the value of services paid in the preceding 12 months.</p>
-              <p><strong className="text-white">7. Governing Law:</strong> This agreement is governed by the laws of Malaysia and subject to the jurisdiction of Sarawak courts.</p>
+            <div
+              className="rounded-2xl p-6 max-h-72 overflow-y-auto custom-scrollbar"
+              style={{
+                background: 'rgba(30, 41, 59, 0.4)',
+                border: '1px solid rgba(71, 85, 105, 0.4)',
+              }}
+            >
+              <div className="space-y-4">
+                {[
+                  { num: '1', title: 'Service Provision', content: 'Sarawak MedChain agrees to provide blockchain-based medical certificate verification services, including dedicated node access, unlimited doctor accounts, and QR verification capabilities.' },
+                  { num: '2', title: 'Payment Terms', content: 'Client agrees to maintain a positive credit balance. Monthly subscription is due on the 1st of each month. MC fees are deducted per issuance from the prepaid credit balance.' },
+                  { num: '3', title: 'Data Protection', content: "Both parties agree to comply with Malaysia's Personal Data Protection Act 2010 (PDPA). All medical data is encrypted using AES-256-GCM and stored in compliance with healthcare regulations." },
+                  { num: '4', title: 'Service Level', content: 'Provider guarantees 99.9% uptime for the blockchain network. Scheduled maintenance will be communicated 48 hours in advance.' },
+                  { num: '5', title: 'Termination', content: 'Either party may terminate with 30 days written notice. No refunds for partial months. All data export will be provided upon termination request.' },
+                  { num: '6', title: 'Liability', content: "Provider's liability is limited to the value of services paid in the preceding 12 months." },
+                  { num: '7', title: 'Governing Law', content: 'This agreement is governed by the laws of Malaysia and subject to the jurisdiction of Sarawak courts.' },
+                ].map((term, idx) => (
+                  <div key={idx} className="pb-4 border-b border-slate-700/30 last:border-0 last:pb-0">
+                    <p style={{ lineHeight: '1.6' }} className="text-sm text-slate-300">
+                      <span className="text-white font-bold">{term.num}. {term.title}:</span>{' '}
+                      {term.content}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
           {/* Signatory Details */}
           <div className="p-8 border-b border-slate-700/50">
             <h3 className="text-lg font-bold text-white mb-6">Authorized Signatory</h3>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm text-slate-400 mb-2">Full Name</label>
-                <input
-                  type="text"
-                  value={formData.ceoName}
-                  onChange={(e) => setFormData({ ...formData, ceoName: e.target.value })}
-                  placeholder="Full legal name"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-slate-400 mb-2">Title / Position</label>
-                <input
-                  type="text"
-                  value={formData.ceoTitle}
-                  onChange={(e) => setFormData({ ...formData, ceoTitle: e.target.value })}
-                  placeholder="e.g., Chief Executive Officer"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+            <div
+              className="rounded-2xl p-6"
+              style={{
+                background: 'rgba(30, 41, 59, 0.3)',
+                border: '1px solid rgba(71, 85, 105, 0.3)',
+              }}
+            >
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Full Name</label>
+                  <input
+                    type="text"
+                    value={formData.ceoName}
+                    onChange={(e) => setFormData({ ...formData, ceoName: e.target.value })}
+                    placeholder="Full legal name"
+                    className="w-full rounded-xl px-4 py-3.5 text-white placeholder-slate-500 focus:outline-none transition-all"
+                    style={{
+                      background: 'rgba(15, 23, 42, 0.8)',
+                      border: '1px solid rgba(71, 85, 105, 0.5)',
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = MEDCHAIN_BLUE;
+                      e.target.style.boxShadow = `0 0 0 3px ${MEDCHAIN_BLUE}20`;
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'rgba(71, 85, 105, 0.5)';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Title / Position</label>
+                  <input
+                    type="text"
+                    value={formData.ceoTitle}
+                    onChange={(e) => setFormData({ ...formData, ceoTitle: e.target.value })}
+                    placeholder="e.g., Chief Executive Officer"
+                    className="w-full rounded-xl px-4 py-3.5 text-white placeholder-slate-500 focus:outline-none transition-all"
+                    style={{
+                      background: 'rgba(15, 23, 42, 0.8)',
+                      border: '1px solid rgba(71, 85, 105, 0.5)',
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = MEDCHAIN_BLUE;
+                      e.target.style.boxShadow = `0 0 0 3px ${MEDCHAIN_BLUE}20`;
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = 'rgba(71, 85, 105, 0.5)';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -419,12 +595,13 @@ export default function ServiceAgreement() {
 
             <div
               ref={signatureContainerRef}
-              className="rounded-xl p-3 mb-4 w-full relative overflow-hidden"
+              className="rounded-2xl p-3 mb-4 w-full relative overflow-hidden"
               style={{
                 width: '100%',
-                border: `2px dashed ${MEDCHAIN_GOLD}`,
+                border: `2px solid ${MEDCHAIN_GOLD}40`,
                 boxSizing: 'border-box',
-                backgroundColor: '#0f172a'
+                backgroundColor: '#0f172a',
+                boxShadow: `inset 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 0 1px ${MEDCHAIN_GOLD}10`
               }}
             >
               <SignatureCanvas
@@ -446,28 +623,34 @@ export default function ServiceAgreement() {
               {/* Signature Success Animation Overlay */}
               {showSignatureSuccess && (
                 <div
-                  className="absolute inset-0 flex items-center justify-center z-10 animate-fade-in"
+                  className="absolute inset-0 flex items-center justify-center z-10"
                   style={{
-                    backgroundColor: 'rgba(16, 185, 129, 0.95)',
+                    backgroundColor: 'rgba(6, 78, 59, 0.97)',
                     animation: 'fadeInScale 0.5s ease-out forwards'
                   }}
                 >
-                  <div className="text-center">
-                    {/* Animated Checkmark */}
-                    <div className="relative w-20 h-20 mx-auto mb-4">
+                  <div className="flex flex-col items-center justify-center text-center px-4">
+                    {/* Animated Checkmark with Glow */}
+                    <div
+                      className="relative mb-6"
+                      style={{
+                        filter: 'drop-shadow(0 0 20px rgba(16, 185, 129, 0.8)) drop-shadow(0 0 40px rgba(16, 185, 129, 0.5))'
+                      }}
+                    >
                       <svg
-                        className="w-20 h-20 text-white"
+                        width="80"
+                        height="80"
                         viewBox="0 0 52 52"
                         style={{
                           animation: 'checkmarkCircle 0.6s ease-in-out forwards'
                         }}
                       >
                         <circle
-                          className="stroke-current"
                           cx="26"
                           cy="26"
                           r="23"
                           fill="none"
+                          stroke="#10B981"
                           strokeWidth="3"
                           style={{
                             strokeDasharray: 166,
@@ -476,8 +659,8 @@ export default function ServiceAgreement() {
                           }}
                         />
                         <path
-                          className="stroke-current"
                           fill="none"
+                          stroke="#ffffff"
                           strokeWidth="4"
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -490,8 +673,8 @@ export default function ServiceAgreement() {
                         />
                       </svg>
                     </div>
-                    <h4 className="text-white text-xl font-bold mb-1">Node Authorization Successful</h4>
-                    <p className="text-emerald-100 text-sm font-medium">Miri Hospital Node Online</p>
+                    <h4 className="text-white text-2xl font-bold mb-2 tracking-tight">Node Authorization Successful</h4>
+                    <p className="text-emerald-300/80 text-sm font-medium">Miri Hospital Node Online</p>
                   </div>
                 </div>
               )}
@@ -500,7 +683,20 @@ export default function ServiceAgreement() {
             <div className="flex items-center justify-between">
               <button
                 onClick={clearSignature}
-                className="px-4 py-2 text-slate-400 hover:text-white transition-colors text-sm flex items-center gap-2"
+                className="px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 transition-all"
+                style={{
+                  background: 'rgba(71, 85, 105, 0.3)',
+                  border: '1px solid rgba(71, 85, 105, 0.5)',
+                  color: '#94A3B8',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'rgba(71, 85, 105, 0.5)';
+                  e.target.style.color = '#ffffff';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'rgba(71, 85, 105, 0.3)';
+                  e.target.style.color = '#94A3B8';
+                }}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -508,9 +704,16 @@ export default function ServiceAgreement() {
                 Clear Signature
               </button>
               {hasSignature && (
-                <span className="text-amber-400 text-sm flex items-center gap-2">
+                <span
+                  className="text-sm font-medium flex items-center gap-2 px-4 py-2 rounded-xl"
+                  style={{
+                    background: 'rgba(16, 185, 129, 0.15)',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    color: '#34D399',
+                  }}
+                >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                   </svg>
                   Signature captured
                 </span>
@@ -524,9 +727,20 @@ export default function ServiceAgreement() {
                 background-color: #0a0e14 !important;
               }
 
-              /* Remove any seams or lines */
-              * {
-                border-color: transparent;
+              /* Custom Scrollbar for Terms */
+              .custom-scrollbar::-webkit-scrollbar {
+                width: 6px;
+              }
+              .custom-scrollbar::-webkit-scrollbar-track {
+                background: rgba(30, 41, 59, 0.3);
+                border-radius: 3px;
+              }
+              .custom-scrollbar::-webkit-scrollbar-thumb {
+                background: rgba(71, 85, 105, 0.6);
+                border-radius: 3px;
+              }
+              .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                background: rgba(100, 116, 139, 0.8);
               }
 
               @keyframes fadeInScale {
@@ -546,14 +760,33 @@ export default function ServiceAgreement() {
 
           {/* Agreement Checkbox */}
           <div className="p-8">
-            <label className="flex items-start gap-4 cursor-pointer group">
+            <label
+              className="flex items-start gap-4 cursor-pointer group p-5 rounded-2xl transition-all"
+              style={{
+                background: agreedToTerms ? 'rgba(16, 185, 129, 0.08)' : 'rgba(30, 41, 59, 0.3)',
+                border: agreedToTerms ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(71, 85, 105, 0.3)',
+              }}
+            >
+              <div
+                className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 transition-all"
+                style={{
+                  background: agreedToTerms ? MEDCHAIN_GREEN : 'rgba(15, 23, 42, 0.8)',
+                  border: agreedToTerms ? 'none' : '2px solid rgba(71, 85, 105, 0.6)',
+                }}
+              >
+                {agreedToTerms && (
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </div>
               <input
                 type="checkbox"
                 checked={agreedToTerms}
                 onChange={(e) => setAgreedToTerms(e.target.checked)}
-                className="w-5 h-5 mt-1 rounded border-slate-700 bg-slate-900 text-blue-500 focus:ring-blue-500 focus:ring-offset-slate-900"
+                className="sr-only"
               />
-              <span className="text-slate-300 text-sm">
+              <span className="text-slate-300 text-sm leading-relaxed">
                 I, <strong className="text-white">{formData.ceoName || '[Signatory Name]'}</strong>, as the authorized representative of <strong className="text-white">{formData.hospitalName || '[Hospital Name]'}</strong>, have read, understood, and agree to be bound by the terms and conditions outlined in this Digital Service Agreement. I confirm that I have the authority to enter into this agreement on behalf of the organization.
               </span>
             </label>
@@ -564,12 +797,27 @@ export default function ServiceAgreement() {
             <button
               onClick={handleSubmit}
               disabled={!hasSignature || !agreedToTerms || !formData.hospitalName || !formData.ceoName || isSubmitting}
-              className="w-full py-4 rounded-xl font-bold text-white text-lg transition-all transform hover:scale-[1.01] disabled:opacity-50 disabled:transform-none flex items-center justify-center gap-3"
+              className="w-full py-4 rounded-2xl font-bold text-white text-lg transition-all transform disabled:cursor-not-allowed flex items-center justify-center gap-3"
               style={{
                 background: hasSignature && agreedToTerms
-                  ? `linear-gradient(135deg, ${MEDCHAIN_BLUE}, ${MEDCHAIN_DARK})`
-                  : '#374151',
-                boxShadow: hasSignature && agreedToTerms ? `0 10px 40px ${MEDCHAIN_BLUE}30` : 'none',
+                  ? `linear-gradient(135deg, ${MEDCHAIN_BLUE} 0%, ${MEDCHAIN_GREEN} 100%)`
+                  : 'rgba(55, 65, 81, 0.5)',
+                boxShadow: hasSignature && agreedToTerms
+                  ? `0 8px 32px ${MEDCHAIN_BLUE}40, 0 0 0 1px rgba(255,255,255,0.1) inset`
+                  : 'none',
+                opacity: (!hasSignature || !agreedToTerms || !formData.hospitalName || !formData.ceoName) ? 0.5 : 1,
+              }}
+              onMouseEnter={(e) => {
+                if (hasSignature && agreedToTerms && formData.hospitalName && formData.ceoName && !isSubmitting) {
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = `0 12px 40px ${MEDCHAIN_BLUE}50, 0 0 0 1px rgba(255,255,255,0.15) inset`;
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0)';
+                if (hasSignature && agreedToTerms) {
+                  e.target.style.boxShadow = `0 8px 32px ${MEDCHAIN_BLUE}40, 0 0 0 1px rgba(255,255,255,0.1) inset`;
+                }
               }}
             >
               {isSubmitting ? (
@@ -602,56 +850,122 @@ export default function ServiceAgreement() {
           </div>
         </div>
 
-        {/* QR Code - Scan to Preview */}
+        {/* QR Code - Scan to Verify/Authorize */}
         <div className="mt-12 flex flex-col items-center pb-8">
+          {/* QR Code Container with Glow Animation */}
           <div
-            className="relative bg-white p-5 rounded-2xl"
+            className="relative p-1 rounded-3xl qr-glow-container"
             style={{
-              boxShadow: '0 10px 40px rgba(0, 102, 204, 0.2)',
+              background: 'linear-gradient(135deg, rgba(0, 102, 204, 0.3) 0%, rgba(16, 185, 129, 0.3) 100%)',
             }}
           >
-            <QRCodeSVG
-              value={DEMO_URL}
-              size={160}
-              level="H"
-              bgColor="#ffffff"
-              fgColor="#003366"
-            />
-            {/* MedChain Gold Shield Overlay - Centered */}
             <div
-              className="absolute pointer-events-none"
+              className="relative p-5 rounded-2xl"
               style={{
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)'
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
               }}
             >
+              {/* Corner Brackets for Scan Effect */}
+              <div className="absolute top-2 left-2 w-5 h-5 border-t-2 border-l-2 border-blue-400/60 rounded-tl"></div>
+              <div className="absolute top-2 right-2 w-5 h-5 border-t-2 border-r-2 border-blue-400/60 rounded-tr"></div>
+              <div className="absolute bottom-2 left-2 w-5 h-5 border-b-2 border-l-2 border-emerald-400/60 rounded-bl"></div>
+              <div className="absolute bottom-2 right-2 w-5 h-5 border-b-2 border-r-2 border-emerald-400/60 rounded-br"></div>
+
+              <QRCodeSVG
+                value={authorizationUrl}
+                size={160}
+                level="H"
+                bgColor="transparent"
+                fgColor="#ffffff"
+                imageSettings={{
+                  src: '',
+                  height: 0,
+                  width: 0,
+                  excavate: true,
+                }}
+              />
+
+              {/* MedChain Shield Logo Overlay - Centered */}
               <div
-                className="w-11 h-11 rounded-lg flex items-center justify-center border-2 border-white"
+                className="absolute pointer-events-none"
                 style={{
-                  background: 'linear-gradient(135deg, #F59E0B, #D97706)',
-                  boxShadow: '0 2px 8px rgba(245, 158, 11, 0.5)',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)'
                 }}
               >
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
+                <div
+                  className="w-11 h-11 rounded-xl flex items-center justify-center"
+                  style={{
+                    background: 'linear-gradient(135deg, #0066CC 0%, #003366 100%)',
+                    boxShadow: '0 4px 16px rgba(0, 102, 204, 0.5), 0 0 0 2px rgba(255,255,255,0.1)',
+                  }}
+                >
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
               </div>
             </div>
           </div>
-          <p className="mt-4 text-slate-400 text-sm font-medium tracking-wide">
-            Scan to authorize mobile node access
+
+          {/* Document ID Badge */}
+          <div
+            className="mt-4 px-4 py-2 rounded-xl flex items-center gap-2"
+            style={{
+              background: 'rgba(30, 41, 59, 0.6)',
+              border: '1px solid rgba(71, 85, 105, 0.4)',
+            }}
+          >
+            <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            <span className="text-xs font-mono text-slate-400">{documentId}</span>
+          </div>
+
+          <p className="mt-3 text-slate-500 text-xs font-medium tracking-wider uppercase">
+            Scan to verify document authenticity
           </p>
+
+          {/* QR Glow Animation Styles */}
+          <style>{`
+            .qr-glow-container {
+              animation: qrGlow 3s ease-in-out infinite;
+            }
+            @keyframes qrGlow {
+              0%, 100% {
+                box-shadow: 0 0 20px rgba(0, 102, 204, 0.3), 0 0 40px rgba(0, 102, 204, 0.1);
+              }
+              50% {
+                box-shadow: 0 0 30px rgba(16, 185, 129, 0.4), 0 0 60px rgba(16, 185, 129, 0.15);
+              }
+            }
+          `}</style>
         </div>
 
         {/* Export Official PDF Button */}
-        <div className="mt-8 flex justify-center pb-8">
+        <div className="mt-4 flex justify-center pb-12">
           <button
             onClick={() => window.print()}
-            className="px-6 py-3 rounded-xl font-semibold text-slate-300 border-2 border-slate-600 hover:border-slate-400 hover:text-white transition-all flex items-center gap-3 cursor-pointer"
-            style={{ background: 'transparent' }}
+            className="px-6 py-3 rounded-xl font-medium text-sm flex items-center gap-3 transition-all"
+            style={{
+              background: 'rgba(30, 41, 59, 0.5)',
+              border: '1px solid rgba(71, 85, 105, 0.4)',
+              color: '#94A3B8',
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(30, 41, 59, 0.8)';
+              e.target.style.borderColor = 'rgba(100, 116, 139, 0.6)';
+              e.target.style.color = '#ffffff';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(30, 41, 59, 0.5)';
+              e.target.style.borderColor = 'rgba(71, 85, 105, 0.4)';
+              e.target.style.color = '#94A3B8';
+            }}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
             </svg>
             Export Official PDF

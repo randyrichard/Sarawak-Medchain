@@ -25,6 +25,7 @@ import FounderAdmin from './pages/FounderAdmin';
 import BusinessOverview from './pages/BusinessOverview';
 import LandingPage from './pages/LandingPage';
 import VerificationPage from './pages/VerificationPage';
+import VerifyAgreement from './pages/VerifyAgreement';
 import SystemStatus from './pages/SystemStatus';
 import CouncilorView from './pages/CouncilorView';
 import { ServiceRestoredToast } from './components/ServiceNotifications';
@@ -925,7 +926,7 @@ function AppRoutes() {
   }, []);
 
   // Public routes that don't need wallet - NO MetaMask trigger
-  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch', '/pricing', '/connect', '/demo', '/agreement', '/payment', '/ceo/quarterly', '/status', '/gov-preview', '/portal/gov-preview', '/admin/gov-dashboard', '/pwa/verify', '/pwa/issue'];
+  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch', '/pricing', '/connect', '/demo', '/agreement', '/payment', '/ceo/quarterly', '/status', '/gov-preview', '/portal/gov-preview', '/admin/gov-dashboard', '/pwa/verify', '/pwa/issue', '/verify-agreement'];
   const isPublicRoute = publicPaths.includes(location.pathname);
   const isVerificationRoute = location.pathname.startsWith('/verify/');
 
@@ -969,6 +970,7 @@ function AppRoutes() {
         <Route path="/admin/gov-dashboard" element={<CouncilorView />} />
         <Route path="/pwa/verify" element={<VerificationPage />} />
         <Route path="/pwa/issue" element={<DoctorPortalDemo />} />
+        <Route path="/verify-agreement" element={<VerifyAgreement />} />
       </Routes>
     );
   }
