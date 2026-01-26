@@ -202,8 +202,8 @@ export default function PatientPortal({ walletAddress }) {
 
           {/* LEFT CARD - Access Control */}
           <div style={{
-            background: 'rgba(17, 24, 39, 0.8)',
-            border: '1px solid rgba(148, 163, 184, 0.2)',
+            background: 'rgba(20, 184, 166, 0.05)',
+            border: '1px solid rgba(20, 184, 166, 0.3)',
             borderRadius: '16px',
             padding: '24px'
           }}>
@@ -342,8 +342,8 @@ export default function PatientPortal({ walletAddress }) {
 
           {/* RIGHT CARD - My Medical Records */}
           <div style={{
-            background: 'rgba(17, 24, 39, 0.8)',
-            border: '1px solid rgba(148, 163, 184, 0.2)',
+            background: 'rgba(20, 184, 166, 0.05)',
+            border: '1px solid rgba(20, 184, 166, 0.3)',
             borderRadius: '16px',
             padding: '24px'
           }}>
