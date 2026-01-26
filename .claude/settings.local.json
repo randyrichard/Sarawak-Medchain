@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node scripts/deploy.cjs:*)"
+      "Bash(node scripts/deploy.cjs:*)",
+      "Bash(npx hardhat node)"
     ]
   }
 }

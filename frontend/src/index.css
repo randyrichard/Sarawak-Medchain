@@ -1204,3 +1204,49 @@ option {
 [style*="background-color: rgb(255"] {
   background-color: #111827 !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   PATIENT PORTAL CARDS - Override nuclear rules for visible teal borders
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.patient-portal-card {
+  border: 2px solid #14b8a6 !important;
+  border-color: #14b8a6 !important;
+  box-shadow: 0 0 20px rgba(20, 184, 166, 0.15) !important;
+}
+
+/* Extra specificity to override ALL nuclear rules */
+main .patient-portal-card,
+div .patient-portal-card,
+#root .patient-portal-card,
+body .patient-portal-card,
+#root main .patient-portal-card,
+body #root main .patient-portal-card,
+html body #root main .patient-portal-card {
+  border: 2px solid #14b8a6 !important;
+  border-color: #14b8a6 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   SIDEBAR CLEANUP - Remove any gray rectangles
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Ensure sidebar wrapper divs have transparent backgrounds */
+aside > div.p-4,
+aside div.p-4,
+aside .p-4 {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+/* Ensure TopUpRequiredBadge wrapper is transparent */
+aside div:has(> button[class*="from-orange"]),
+aside div:has(> button[class*="from-amber"]) {
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+/* Remove any default gray backgrounds from sidebar buttons */
+aside button:not([class*="gradient"]):not([class*="bg-"]) {
+  background-color: transparent !important;
+}
