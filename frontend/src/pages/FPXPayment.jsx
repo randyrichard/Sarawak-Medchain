@@ -1002,55 +1002,114 @@ export default function FPXPayment() {
   // Main Payment Selection Screen
   return (
     <div
-      className="min-h-screen py-12 px-4 fpx-payment flex flex-col items-center"
+      className="min-h-screen py-12 px-6 fpx-payment flex flex-col items-center"
       style={{ backgroundColor: '#0a0e14', width: '100%' }}
     >
-      <div className="w-full" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      {/* Global CSS for seamless background */}
+      <style>{`
+        html, body, #root {
+          background-color: #0a0e14 !important;
+        }
+        .credit-slider::-webkit-slider-track {
+          height: 8px;
+          background: rgba(30, 41, 59, 0.8);
+          border-radius: 4px;
+        }
+        .credit-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          width: 20px;
+          height: 20px;
+          background: linear-gradient(135deg, #14b8a6, #06b6d4);
+          border-radius: 50%;
+          cursor: pointer;
+          box-shadow: 0 2px 8px rgba(20, 184, 166, 0.4);
+        }
+        .credit-slider::-moz-range-track {
+          height: 8px;
+          background: rgba(30, 41, 59, 0.8);
+          border-radius: 4px;
+        }
+        .credit-slider::-moz-range-thumb {
+          width: 20px;
+          height: 20px;
+          background: linear-gradient(135deg, #14b8a6, #06b6d4);
+          border-radius: 50%;
+          cursor: pointer;
+          border: none;
+        }
+        .bank-card {
+          transition: all 0.2s ease;
+        }
+        .bank-card:hover {
+          transform: translateY(-2px);
+          border-color: rgba(20, 184, 166, 0.5) !important;
+          background: rgba(20, 184, 166, 0.08) !important;
+        }
+      `}</style>
+
+      <div className="w-full" style={{ maxWidth: '960px', margin: '0 auto' }}>
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">
+        <div className="text-center mb-10">
+          <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">
             {isTopUp ? 'Top Up Credits' : 'Complete Your Payment'}
           </h1>
-          <p className="text-gray-400">
+          <p className="text-slate-400">
             {isTopUp ? 'Add credits to your hospital node via FPX' : 'Activate your hospital node with FPX Online Banking'}
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Order Summary */}
-          <div className="bg-gray-800 rounded-xl p-6">
-            <h2 className="text-xl font-semibold text-white mb-4">Order Summary</h2>
+        <div className="grid md:grid-cols-2 gap-6 items-start">
+          {/* Order Summary Card */}
+          <div
+            className="rounded-2xl p-8"
+            style={{
+              background: 'rgba(255, 255, 255, 0.02)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+            }}
+          >
+            <h2 className="text-lg font-bold text-white mb-6">Order Summary</h2>
 
-            <div className="space-y-4 mb-6">
+            {/* Line Items */}
+            <div>
               {/* Show subscription line ONLY for non-top-up flow */}
               {!isTopUp && (
-                <div className="flex justify-between items-center py-3 border-b border-gray-700">
+                <div
+                  className="flex justify-between items-center py-4"
+                  style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}
+                >
                   <div>
                     <div className="text-white font-medium">Enterprise Subscription</div>
-                    <div className="text-gray-400 text-sm">Monthly fee</div>
+                    <div className="text-slate-500 text-sm">Monthly fee</div>
                   </div>
-                  <div className="text-white font-bold">RM 10,000</div>
+                  <div className="text-white font-bold text-right">RM 10,000</div>
                 </div>
               )}
 
               {/* Credits section - different for top-up vs subscription */}
               {isTopUp ? (
-                <div className="flex justify-between items-center py-3 border-b border-gray-700">
+                <div
+                  className="flex justify-between items-center py-4"
+                  style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}
+                >
                   <div>
                     <div className="text-white font-medium">Credit Top-Up</div>
-                    <div className="text-gray-400 text-sm">{topUpAmount} MC credits @ RM 1.00 each</div>
+                    <div className="text-slate-500 text-sm">{topUpAmount} MC credits @ RM 1.00 each</div>
                   </div>
-                  <div className="text-white font-bold">RM {topUpAmount.toLocaleString()}</div>
+                  <div className="text-white font-bold text-right">RM {topUpAmount.toLocaleString()}</div>
                 </div>
               ) : (
-                <div className="py-3 border-b border-gray-700">
-                  <div className="flex justify-between items-center mb-3">
+                <div
+                  className="py-4"
+                  style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}
+                >
+                  <div className="flex justify-between items-center mb-4">
                     <div>
                       <div className="text-white font-medium">Initial Credits</div>
-                      <div className="text-gray-400 text-sm">RM 1.00 per MC transaction</div>
+                      <div className="text-slate-500 text-sm">RM 1.00 per MC transaction</div>
                     </div>
-                    <div className="text-white font-bold">RM {initialCredits}</div>
+                    <div className="text-white font-bold text-right">RM {initialCredits}</div>
                   </div>
+                  {/* Styled Slider */}
                   <div className="flex items-center gap-4">
                     <input
                       type="range"
@@ -1059,115 +1118,203 @@ export default function FPXPayment() {
                       step="50"
                       value={initialCredits}
                       onChange={(e) => setInitialCredits(Number(e.target.value))}
-                      className="flex-1 accent-teal-500"
+                      className="flex-1 credit-slider h-2 rounded-lg appearance-none cursor-pointer"
+                      style={{ background: 'transparent' }}
                     />
-                    <span className="text-teal-400 font-mono w-20 text-right">
+                    <span
+                      className="text-sm font-semibold px-3 py-1.5 rounded-lg"
+                      style={{
+                        background: 'rgba(20, 184, 166, 0.15)',
+                        color: '#14b8a6',
+                        minWidth: '100px',
+                        textAlign: 'center',
+                      }}
+                    >
                       {initialCredits} credits
                     </span>
                   </div>
                 </div>
               )}
-            </div>
 
-            <div className="space-y-2 mb-4">
-              <div className="flex justify-between text-gray-400">
-                <span>Subtotal</span>
-                <span>RM {pricing.subtotal.toLocaleString()}</span>
+              {/* Subtotal */}
+              <div
+                className="flex justify-between items-center py-4"
+                style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}
+              >
+                <span className="text-slate-400 text-sm">Subtotal</span>
+                <span className="text-slate-400 text-sm">RM {pricing.subtotal.toLocaleString()}</span>
               </div>
-              <div className="flex justify-between text-gray-400">
-                <span>SST (6%)</span>
-                <span>RM {pricing.sst.toLocaleString()}</span>
+
+              {/* SST */}
+              <div
+                className="flex justify-between items-center py-4"
+                style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}
+              >
+                <span className="text-slate-400 text-sm">SST (6%)</span>
+                <span className="text-slate-400 text-sm">RM {pricing.sst.toLocaleString()}</span>
+              </div>
+
+              {/* Total */}
+              <div className="flex justify-between items-center py-5">
+                <span className="text-lg text-white font-bold">Total</span>
+                <span
+                  className="text-3xl font-bold"
+                  style={{
+                    background: 'linear-gradient(135deg, #14b8a6, #06b6d4)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}
+                >
+                  RM {pricing.total.toLocaleString()}
+                </span>
               </div>
             </div>
 
-            <div className="flex justify-between items-center py-4 border-t border-gray-700">
-              <span className="text-xl text-white font-bold">Total</span>
-              <span className="text-2xl text-teal-400 font-bold">
-                RM {pricing.total.toLocaleString()}
-              </span>
-            </div>
-
-            <div className="mt-4 p-4 bg-teal-900/30 rounded-lg">
-              <div className="text-teal-400 font-medium mb-1">Hospital</div>
-              <div className="text-white">{agreementData?.hospitalName || 'Hospital'}</div>
+            {/* Hospital Info */}
+            <div
+              className="mt-2 p-4 rounded-xl"
+              style={{
+                background: 'rgba(20, 184, 166, 0.08)',
+                border: '1px solid rgba(20, 184, 166, 0.2)',
+              }}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <svg className="w-4 h-4 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                <span className="text-xs font-semibold text-teal-400 uppercase tracking-wider">Hospital</span>
+              </div>
+              <div className="text-white font-semibold">{agreementData?.hospitalName || 'Hospital'}</div>
               {!isTopUp && agreementData?.signedAt && (
-                <div className="text-gray-400 text-sm mt-2">
+                <div className="text-slate-500 text-sm mt-1">
                   Agreement signed on {new Date(agreementData.signedAt).toLocaleDateString()}
                 </div>
               )}
               {isTopUp && (
-                <div className="text-gray-400 text-sm mt-2">
+                <div className="text-slate-500 text-sm mt-1">
                   Credits will be added to your existing balance
                 </div>
               )}
             </div>
           </div>
 
-          {/* Bank Selection */}
-          <div className="bg-gray-800 rounded-xl p-6">
-            <h2 className="text-xl font-semibold text-white mb-4">
-              Select Your Bank
-            </h2>
-            <p className="text-gray-400 text-sm mb-4">
+          {/* Bank Selection Card */}
+          <div
+            className="rounded-2xl p-8 flex flex-col"
+            style={{
+              background: 'rgba(255, 255, 255, 0.02)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+            }}
+          >
+            <h2 className="text-lg font-bold text-white mb-2">Select Your Bank</h2>
+            <p className="text-slate-500 text-sm mb-6">
               Choose your bank to proceed with FPX payment
             </p>
 
+            {/* Bank Grid */}
             <div className="grid grid-cols-2 gap-3 mb-6">
               {MALAYSIAN_BANKS.map((bank) => (
                 <button
                   key={bank.code}
                   onClick={() => setSelectedBank(bank.code)}
-                  className={`p-4 rounded-lg border-2 transition-all text-left ${
-                    selectedBank === bank.code
-                      ? 'border-teal-500 bg-teal-900/30'
-                      : 'border-gray-700 bg-gray-700/30 hover:border-gray-600'
-                  }`}
+                  className="bank-card p-4 rounded-xl text-center flex flex-col items-center justify-center gap-2"
+                  style={{
+                    background: selectedBank === bank.code
+                      ? 'rgba(20, 184, 166, 0.12)'
+                      : 'rgba(15, 23, 42, 0.6)',
+                    border: selectedBank === bank.code
+                      ? '2px solid #14b8a6'
+                      : '1px solid rgba(255, 255, 255, 0.1)',
+                    boxShadow: selectedBank === bank.code
+                      ? '0 0 20px rgba(20, 184, 166, 0.15), inset 0 1px 0 rgba(255,255,255,0.05)'
+                      : 'inset 0 1px 0 rgba(255,255,255,0.03)',
+                    minHeight: '90px',
+                  }}
                 >
-                  <div className="text-2xl mb-1">{bank.logo}</div>
-                  <div className={`text-sm font-medium ${
-                    selectedBank === bank.code ? 'text-teal-400' : 'text-white'
-                  }`}>
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+                    style={{
+                      background: selectedBank === bank.code
+                        ? 'rgba(20, 184, 166, 0.2)'
+                        : 'rgba(255, 255, 255, 0.05)',
+                    }}
+                  >
+                    {bank.logo}
+                  </div>
+                  <div
+                    className="text-xs font-medium"
+                    style={{
+                      color: selectedBank === bank.code ? '#14b8a6' : '#cbd5e1',
+                    }}
+                  >
                     {bank.name}
                   </div>
                 </button>
               ))}
             </div>
 
+            {/* Pay Button */}
             <button
               onClick={handlePayment}
               disabled={!selectedBank}
-              className={`w-full py-4 rounded-lg font-bold text-lg transition-all ${
-                selectedBank
-                  ? 'bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white'
-                  : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-              }`}
+              className="w-full py-4 rounded-xl font-bold text-lg transition-all flex items-center justify-center gap-3"
+              style={{
+                background: selectedBank
+                  ? 'linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%)'
+                  : 'rgba(55, 65, 81, 0.5)',
+                color: selectedBank ? '#ffffff' : '#6b7280',
+                cursor: selectedBank ? 'pointer' : 'not-allowed',
+                boxShadow: selectedBank
+                  ? '0 8px 32px rgba(20, 184, 166, 0.3)'
+                  : 'none',
+              }}
             >
-              {selectedBank
-                ? `Pay RM ${pricing.total.toLocaleString()} via FPX`
-                : 'Select a bank to continue'
-              }
+              {selectedBank ? (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  Pay RM {pricing.total.toLocaleString()} via FPX
+                </>
+              ) : (
+                'Select a bank to continue'
+              )}
             </button>
 
-            <div className="mt-4 flex items-center justify-center gap-2 text-gray-500 text-sm">
-              <span>🔒</span>
-              <span>Secured by FPX Payment Gateway</span>
-            </div>
-
-            <div className="mt-6 p-4 bg-gray-700/30 rounded-lg">
-              <div className="text-gray-400 text-sm">
-                <strong className="text-white">Note:</strong> You will be redirected to your bank&apos;s secure login page to authorize this payment.
+            {/* Footer Elements - Centered */}
+            <div className="mt-6 flex flex-col items-center text-center">
+              {/* Security Badge */}
+              <div
+                className="flex items-center justify-center gap-2 py-3 px-5 rounded-xl mb-4"
+                style={{
+                  background: 'rgba(30, 41, 59, 0.5)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                }}
+              >
+                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <span className="text-slate-400 text-sm font-medium">Secured by FPX Payment Gateway</span>
               </div>
+
+              {/* Note */}
+              <p className="text-slate-500 text-xs leading-relaxed max-w-xs">
+                You will be redirected to your bank's secure login page to authorize this payment.
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Back Button */}
-        <div className="mt-8 text-center">
+        {/* Footer - Back Link */}
+        <div className="mt-10 flex justify-center">
           <button
-            onClick={() => navigate('/agreement')}
-            className="text-gray-400 hover:text-white transition-colors"
+            onClick={() => navigate(isTopUp ? '/admin' : '/agreement')}
+            className="text-slate-500 hover:text-white transition-colors text-sm flex items-center gap-2"
           >
-            &larr; Back to Agreement
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            {isTopUp ? 'Back to Admin Portal' : 'Back to Agreement'}
           </button>
         </div>
       </div>
