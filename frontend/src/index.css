@@ -1250,3 +1250,39 @@ aside div:has(> button[class*="from-amber"]) {
 aside button:not([class*="gradient"]):not([class*="bg-"]) {
   background-color: transparent !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   PATIENT PORTAL CLEANUP - Prevent content leaks
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Patient Portal container - strict overflow control */
+.patient-portal {
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+/* Force all sidebar .p-4 wrappers to be minimal when empty */
+aside .p-4:empty {
+  display: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Hide any buttons in sidebar that have default gray background */
+aside button {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+/* But restore styled buttons */
+aside button[class*="from-orange"],
+aside button[class*="from-amber"],
+aside button[class*="from-emerald"],
+aside button[class*="bg-white"],
+aside button[class*="rounded-xl"],
+aside button[class*="rounded-lg"] {
+  background-color: unset !important;
+  border: unset !important;
+  padding: unset !important;
+}

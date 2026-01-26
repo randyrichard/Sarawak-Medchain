@@ -689,6 +689,7 @@ function ProtectedApp({ walletAddress, handleDisconnect }) {
             <button
               onClick={handleDisconnect}
               className="text-xs text-slate-400 hover:text-red-400 transition-colors"
+              style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
             >
               Disconnect
             </button>
