@@ -762,18 +762,81 @@ export default function DoctorPortal({ walletAddress }) {
       <div style={{ backgroundColor: '#0a0e14', minHeight: 'calc(100vh - 64px)', padding: '32px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
 
-          {/* Status Message */}
-          {message && (
+          {/* Verification Badge - Centered */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+            {isVerified ? (
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 16px',
+                  borderRadius: '50px',
+                  backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                  border: '1px solid rgba(34, 197, 94, 0.3)',
+                  color: '#22c55e',
+                  fontSize: '14px',
+                  fontWeight: 500
+                }}
+              >
+                <svg style={{ width: '16px', height: '16px' }} fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span>Verified Doctor</span>
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 16px',
+                  borderRadius: '50px',
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  color: '#f87171',
+                  fontSize: '14px',
+                  fontWeight: 500
+                }}
+              >
+                <svg style={{ width: '16px', height: '16px' }} fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <span>Not Verified</span>
+              </div>
+            )}
+          </div>
+
+          {/* Error/Warning Messages */}
+          {message && (message.includes('Error') || message.includes('⚠️')) && (
             <div
               style={{
-                marginBottom: '24px',
-                padding: '16px 20px',
-                borderRadius: '12px',
+                marginBottom: '20px',
+                padding: '12px 16px',
+                borderRadius: '10px',
                 fontSize: '14px',
                 fontWeight: 500,
-                backgroundColor: message.includes('Error') || message.includes('⚠️') ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-                border: `1px solid ${message.includes('Error') || message.includes('⚠️') ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)'}`,
-                color: message.includes('Error') || message.includes('⚠️') ? '#f87171' : '#34d399'
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.2)',
+                color: '#f87171'
+              }}
+            >
+              {message}
+            </div>
+          )}
+
+          {/* Success Messages (not verification related) */}
+          {message && message.includes('✓') && !message.includes('verified') && (
+            <div
+              style={{
+                marginBottom: '20px',
+                padding: '12px 16px',
+                borderRadius: '10px',
+                fontSize: '14px',
+                fontWeight: 500,
+                backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                border: '1px solid rgba(34, 197, 94, 0.2)',
+                color: '#22c55e'
               }}
             >
               {message}
