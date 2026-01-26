@@ -743,104 +743,197 @@ function ConnectScreen({ onConnect, loading, error }) {
   // If pending admin, show special UI
   if (pendingAdmin) {
     return (
-      <div className="min-h-screen bg-[#0a0e14] flex items-center justify-center p-6">
-        <div className="max-w-lg w-full">
-          {/* Pending Admin Card */}
-          <div className="bg-slate-900 border border-amber-500/30 rounded-2xl p-8 shadow-2xl">
-            {/* Status Badge */}
-            <div className="flex justify-center mb-6">
-              <span className="px-4 py-2 bg-amber-500/20 border border-amber-500/30 rounded-full text-amber-400 text-sm font-bold flex items-center gap-2">
-                <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></span>
-                Pending Admin Verification
-              </span>
-            </div>
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '40px',
+        background: '#0a0e14'
+      }}>
+        <div style={{
+          maxWidth: '500px',
+          width: '100%',
+          background: 'rgba(255,255,255,0.05)',
+          border: '1px solid rgba(255,255,255,0.15)',
+          borderRadius: '24px',
+          padding: '48px',
+          textAlign: 'center'
+        }}>
+          {/* Pending badge */}
+          <div style={{
+            display: 'inline-block',
+            background: 'rgba(234,179,8,0.2)',
+            color: '#facc15',
+            padding: '8px 20px',
+            borderRadius: '50px',
+            fontSize: '14px',
+            fontWeight: '600',
+            marginBottom: '32px'
+          }}>
+            ⏳ Pending Admin Verification
+          </div>
 
-            {/* Hospital Icon */}
-            <div className="w-20 h-20 bg-gradient-to-br from-amber-500/20 to-orange-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <svg className="w-10 h-10 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-            </div>
+          {/* Icon */}
+          <div style={{
+            width: '80px',
+            height: '80px',
+            background: 'linear-gradient(135deg, #14b8a6, #0891b2)',
+            borderRadius: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 24px',
+            boxShadow: '0 0 30px rgba(20,184,166,0.3)'
+          }}>
+            <svg width="40" height="40" fill="none" stroke="white" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
 
-            <h1 className="text-2xl font-bold text-white text-center mb-2">
-              Welcome, {pendingAdmin.facilityName}
-            </h1>
-            <p className="text-slate-400 text-center mb-8">
-              Your application is being reviewed by our team
-            </p>
+          {/* Title */}
+          <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: 'white', marginBottom: '8px' }}>
+            Welcome, {pendingAdmin.facilityName}
+          </h1>
 
-            {/* Application Details */}
-            <div className="bg-slate-800/50 rounded-xl p-4 mb-6">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-slate-500">Facility Type</p>
-                  <p className="text-white font-medium">{pendingAdmin.facilityType}</p>
-                </div>
-                <div>
-                  <p className="text-slate-500">Your Role</p>
-                  <p className="text-white font-medium">{pendingAdmin.decisionMakerRole}</p>
-                </div>
-                <div>
-                  <p className="text-slate-500">Blockchain Ref</p>
-                  <p className="text-emerald-400 font-mono text-xs">{pendingAdmin.blockchainRef}</p>
-                </div>
-                <div>
-                  <p className="text-slate-500">Submitted</p>
-                  <p className="text-white font-medium">
-                    {new Date(pendingAdmin.submittedAt).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-            </div>
+          {/* Subtitle */}
+          <p style={{ color: '#9ca3af', marginBottom: '32px' }}>
+            Your application is being reviewed by our team
+          </p>
 
-            {/* Connect Wallet Section */}
-            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 mb-6">
-              <p className="text-blue-400 font-semibold text-sm mb-2">Next Step: Connect Your Wallet</p>
-              <p className="text-slate-400 text-sm">
-                Connect your MetaMask wallet to complete the onboarding process. This wallet will become your hospital's admin wallet.
+          {/* Info grid */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '24px',
+            textAlign: 'left',
+            marginBottom: '32px',
+            padding: '24px',
+            background: 'rgba(15, 23, 42, 0.6)',
+            borderRadius: '16px',
+            border: '1px solid rgba(255, 255, 255, 0.08)'
+          }}>
+            {/* Facility Type */}
+            <div>
+              <p style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+                Facility Type
+              </p>
+              <p style={{ fontSize: '14px', fontWeight: '600', color: '#ffffff', margin: 0 }}>
+                {pendingAdmin.facilityType}
               </p>
             </div>
-
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-xl mb-6 text-sm">
-                {error}
-              </div>
-            )}
-
-            <button
-              onClick={onConnect}
-              disabled={loading}
-              className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-900 font-bold rounded-xl hover:from-amber-400 hover:to-orange-400 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Connecting...
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M20.5 12l-1.5-1.5-6 6V3h-2v13.5l-6-6L3.5 12 12 20.5 20.5 12z" />
-                  </svg>
-                  Connect MetaMask Wallet
-                </>
-              )}
-            </button>
-
-            {/* Clear Application Link */}
-            <button
-              onClick={() => {
-                localStorage.removeItem('medchain_pending_admin');
-                setPendingAdmin(null);
-              }}
-              className="w-full mt-4 text-slate-500 hover:text-slate-400 text-sm transition-colors"
-            >
-              Not {pendingAdmin.facilityName}? Start fresh
-            </button>
+            {/* Your Role */}
+            <div>
+              <p style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+                Your Role
+              </p>
+              <p style={{ fontSize: '14px', fontWeight: '600', color: '#ffffff', margin: 0 }}>
+                {pendingAdmin.decisionMakerRole}
+              </p>
+            </div>
+            {/* Blockchain Ref */}
+            <div>
+              <p style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+                Blockchain Ref
+              </p>
+              <p style={{ fontSize: '13px', fontWeight: '500', color: '#22d3ee', fontFamily: 'monospace', margin: 0 }}>
+                {pendingAdmin.blockchainRef}
+              </p>
+            </div>
+            {/* Submitted */}
+            <div>
+              <p style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+                Submitted
+              </p>
+              <p style={{ fontSize: '14px', fontWeight: '600', color: '#ffffff', margin: 0 }}>
+                {new Date(pendingAdmin.submittedAt).toLocaleDateString('en-GB', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric'
+                })}
+              </p>
+            </div>
           </div>
+
+          {/* Next Step Section */}
+          <div style={{
+            textAlign: 'left',
+            marginBottom: '24px',
+            padding: '16px 20px',
+            background: 'rgba(20, 184, 166, 0.1)',
+            borderRadius: '12px',
+            border: '1px solid rgba(20, 184, 166, 0.2)'
+          }}>
+            <p style={{ fontSize: '14px', fontWeight: '600', color: '#14b8a6', marginBottom: '4px' }}>
+              Next Step: Connect Your Wallet
+            </p>
+            <p style={{ fontSize: '13px', color: '#94a3b8', lineHeight: '1.5', margin: 0 }}>
+              Connect your MetaMask wallet to complete the onboarding process.
+            </p>
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div style={{
+              padding: '16px',
+              borderRadius: '12px',
+              marginBottom: '24px',
+              fontSize: '14px',
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#f87171',
+              textAlign: 'left'
+            }}>
+              {error}
+            </div>
+          )}
+
+          {/* MetaMask button */}
+          <button
+            onClick={onConnect}
+            disabled={loading}
+            style={{
+              width: '100%',
+              background: 'linear-gradient(135deg, #f6851b, #e2761b)',
+              color: 'white',
+              padding: '16px 24px',
+              borderRadius: '12px',
+              fontWeight: '600',
+              border: 'none',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              fontSize: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '12px',
+              opacity: loading ? 0.7 : 1,
+              boxShadow: '0 8px 32px rgba(246, 133, 27, 0.4)'
+            }}
+          >
+            {loading ? (
+              'Connecting...'
+            ) : (
+              <>
+                🦊 Connect MetaMask Wallet
+              </>
+            )}
+          </button>
+
+          {/* Footer link */}
+          <p
+            onClick={() => {
+              localStorage.removeItem('medchain_pending_admin');
+              setPendingAdmin(null);
+            }}
+            style={{
+              color: '#6b7280',
+              marginTop: '24px',
+              fontSize: '14px',
+              cursor: 'pointer'
+            }}
+          >
+            Not {pendingAdmin.facilityName}? Start fresh
+          </p>
         </div>
       </div>
     );
