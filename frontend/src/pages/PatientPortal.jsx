@@ -96,19 +96,31 @@ export default function PatientPortal({ walletAddress }) {
   const isButtonDisabled = loading || !doctorAddress;
 
   return (
-    <div className="patient-portal" style={{ backgroundColor: '#0a0e14', minHeight: '100vh' }}>
-      {/* Header */}
+    <div className="patient-portal" style={{
+      backgroundColor: '#0a0e14',
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      width: '100%'
+    }}>
+      {/* Header - Full width but content centered */}
       <header style={{
         backgroundColor: '#0f172a',
         borderBottom: '1px solid rgba(255,255,255,0.1)',
-        padding: '16px 24px'
+        padding: '16px 24px',
+        width: '100%',
+        boxSizing: 'border-box'
       }}>
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          maxWidth: '900px',
-          margin: '0 auto'
+          maxWidth: '912px',
+          margin: '0 auto',
+          width: '100%',
+          padding: '0 24px',
+          boxSizing: 'border-box'
         }}>
           {/* Left: Title */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -175,16 +187,17 @@ export default function PatientPortal({ walletAddress }) {
         </div>
       </header>
 
-      {/* Main Content - Centered */}
+      {/* Main Content - Centered in the main content area */}
       <div style={{
-        padding: '24px',
-        maxWidth: '900px',
-        margin: '0 auto'
+        padding: '32px 24px',
+        width: '100%',
+        maxWidth: '960px',
+        boxSizing: 'border-box'
       }}>
         {/* Error/Success Messages */}
         {message && (
           <div style={{
-            marginBottom: '16px',
+            marginBottom: '20px',
             padding: '12px 16px',
             borderRadius: '8px',
             backgroundColor: message.includes('Error') ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)',
@@ -201,9 +214,7 @@ export default function PatientPortal({ walletAddress }) {
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
           gap: '24px',
-          alignItems: 'stretch',
-          maxWidth: '900px',
-          margin: '0 auto'
+          alignItems: 'stretch'
         }}>
 
           {/* LEFT CARD - Access Control */}
