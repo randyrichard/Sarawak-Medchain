@@ -96,7 +96,7 @@ export default function PatientPortal({ walletAddress }) {
   const isButtonDisabled = loading || !doctorAddress;
 
   return (
-    <div style={{ backgroundColor: '#0a0e14', minHeight: '100vh' }}>
+    <div className="patient-portal" style={{ backgroundColor: '#0a0e14', minHeight: '100vh' }}>
       {/* Header */}
       <header style={{
         backgroundColor: '#0f172a',
@@ -107,7 +107,7 @@ export default function PatientPortal({ walletAddress }) {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          maxWidth: '1100px',
+          maxWidth: '900px',
           margin: '0 auto'
         }}>
           {/* Left: Title */}
@@ -175,8 +175,12 @@ export default function PatientPortal({ walletAddress }) {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main style={{ padding: '24px', maxWidth: '1100px', margin: '0 auto' }}>
+      {/* Main Content - Centered */}
+      <div style={{
+        padding: '24px',
+        maxWidth: '900px',
+        margin: '0 auto'
+      }}>
         {/* Error/Success Messages */}
         {message && (
           <div style={{
@@ -192,12 +196,14 @@ export default function PatientPortal({ walletAddress }) {
           </div>
         )}
 
-        {/* TWO COLUMN GRID */}
+        {/* TWO COLUMN GRID - Centered */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
           gap: '24px',
-          alignItems: 'stretch'
+          alignItems: 'stretch',
+          maxWidth: '900px',
+          margin: '0 auto'
         }}>
 
           {/* LEFT CARD - Access Control */}
@@ -473,7 +479,7 @@ export default function PatientPortal({ walletAddress }) {
           </div>
 
         </div>
-      </main>
+      </div>
 
       {/* CSS for hover effects */}
       <style>{`
