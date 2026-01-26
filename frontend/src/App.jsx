@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { connectWallet, getMyBalance } from './utils/contract';
 import { BillingProvider } from './context/BillingContext';
@@ -580,6 +580,7 @@ function CreditBalanceSidebar({ walletAddress }) {
 
 // Protected App Layout - requires wallet connection
 function ProtectedApp({ walletAddress, handleDisconnect }) {
+  console.log('[ProtectedApp] Rendering with walletAddress:', walletAddress);
   return (
     <div className="flex h-screen w-full overflow-hidden" style={{ backgroundColor: '#0a0e14' }}>
       {/* Service Restored Toast Notification */}
@@ -977,17 +978,22 @@ function AppRoutes() {
   const [checkingWallet, setCheckingWallet] = useState(true);
 
   const handleConnectWallet = async () => {
+    console.log('[App] handleConnectWallet called');
     try {
       setLoading(true);
       setError('');
+      console.log('[App] Calling connectWallet()...');
       const { address } = await connectWallet();
+      console.log('[App] Wallet connected:', address);
       setWalletAddress(address);
       // After successful connection, redirect to intended destination
       const from = location.state?.from || '/patient';
+      console.log('[App] Navigating to:', from);
       navigate(from, { replace: true });
     } catch (err) {
-      console.error('Wallet connection error:', err);
+      console.error('[App] Wallet connection error:', err);
       setError(err.message);
+      throw err; // Re-throw so ConnectWallet can catch it
     } finally {
       setLoading(false);
     }
@@ -1026,6 +1032,16 @@ function AppRoutes() {
   // Protected routes that require wallet connection
   const protectedPaths = ['/mvp', '/patient', '/doctor', '/admin', '/ceo', '/ceo-main'];
   const isProtectedRoute = protectedPaths.some(path => location.pathname.startsWith(path));
+
+  // Debug logging
+  console.log('[AppRoutes] Render - path:', location.pathname, 'walletAddress:', walletAddress, 'isPublicRoute:', isPublicRoute, 'isProtectedRoute:', isProtectedRoute, 'checkingWallet:', checkingWallet);
+
+  // CRITICAL: If we're on a protected route with a wallet, show protected app immediately
+  // This prevents the blank page issue when navigating after connection
+  if (walletAddress && isProtectedRoute) {
+    console.log('[AppRoutes] Fast path: wallet + protected route -> ProtectedApp');
+    return <ProtectedApp walletAddress={walletAddress} handleDisconnect={handleDisconnect} />;
+  }
 
   // Show loading while checking wallet
   if (checkingWallet && isProtectedRoute) {
@@ -1084,30 +1100,84 @@ function AppRoutes() {
 
   // Wallet connected - show protected app
   if (walletAddress) {
-    return <ProtectedApp walletAddress={walletAddress} handleDisconnect={handleDisconnect} />;
+    console.log('[AppRoutes] Rendering ProtectedApp');
+    try {
+      return <ProtectedApp walletAddress={walletAddress} handleDisconnect={handleDisconnect} />;
+    } catch (err) {
+      console.error('[AppRoutes] Error rendering ProtectedApp:', err);
+      return (
+        <div style={{ minHeight: '100vh', background: '#0a0e14', color: 'white', padding: '40px', textAlign: 'center' }}>
+          <h1>Error Loading App</h1>
+          <p style={{ color: '#f87171' }}>{err.message}</p>
+          <button onClick={handleDisconnect} style={{ marginTop: '20px', padding: '10px 20px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+            Disconnect Wallet
+          </button>
+        </div>
+      );
+    }
   }
 
   // Fallback: redirect to home
+  console.log('[AppRoutes] Fallback - redirecting to home');
   return <Navigate to="/" replace />;
+}
+
+// Error Boundary Component
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('[ErrorBoundary] Caught error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ minHeight: '100vh', background: '#0a0e14', color: 'white', padding: '40px', textAlign: 'center' }}>
+          <h1 style={{ color: '#f87171', marginBottom: '20px' }}>Something went wrong</h1>
+          <p style={{ color: '#94a3b8', marginBottom: '20px' }}>{this.state.error?.message || 'Unknown error'}</p>
+          <button
+            onClick={() => {
+              this.setState({ hasError: false, error: null });
+              window.location.href = '/';
+            }}
+            style={{ padding: '12px 24px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+          >
+            Go to Home
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 function App() {
   return (
-    <MaintenanceProvider>
-      <FoundingMemberProvider>
-        <LeadAnalyticsProvider>
-          <RevenueAlertProvider>
-            <DisasterRecoveryProvider>
-              <BillingProvider>
-                <BrowserRouter>
-                  <AppRoutes />
-                </BrowserRouter>
-              </BillingProvider>
-            </DisasterRecoveryProvider>
-          </RevenueAlertProvider>
-        </LeadAnalyticsProvider>
-      </FoundingMemberProvider>
-    </MaintenanceProvider>
+    <ErrorBoundary>
+      <MaintenanceProvider>
+        <FoundingMemberProvider>
+          <LeadAnalyticsProvider>
+            <RevenueAlertProvider>
+              <DisasterRecoveryProvider>
+                <BillingProvider>
+                  <BrowserRouter>
+                    <AppRoutes />
+                  </BrowserRouter>
+                </BillingProvider>
+              </DisasterRecoveryProvider>
+            </RevenueAlertProvider>
+          </LeadAnalyticsProvider>
+        </FoundingMemberProvider>
+      </MaintenanceProvider>
+    </ErrorBoundary>
   );
 }
 

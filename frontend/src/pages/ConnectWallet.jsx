@@ -165,27 +165,58 @@ export default function ConnectWallet({ onConnect, loading, error }) {
   const [pendingAdmin, setPendingAdmin] = useState(getInitialPendingAdmin);
   const autoConnectTriggeredRef = useRef(false);
   const [showSecurityAnimation, setShowSecurityAnimation] = useState(false);
+  const [localError, setLocalError] = useState('');
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  // Check if MetaMask is installed
+  const isMetaMaskInstalled = typeof window !== 'undefined' && Boolean(window.ethereum);
 
   // WEALTH 2026 DEMO: Wrap onConnect to show security animation first
   const handleSecureConnect = async () => {
+    console.log('[ConnectWallet] Button clicked');
+    console.log('[ConnectWallet] MetaMask installed:', isMetaMaskInstalled);
+
+    // Clear any previous errors
+    setLocalError('');
+
+    // Check if MetaMask is installed first
+    if (!isMetaMaskInstalled) {
+      console.log('[ConnectWallet] MetaMask not installed, showing error');
+      setLocalError('MetaMask is not installed. Please install MetaMask to continue.');
+      return;
+    }
+
+    console.log('[ConnectWallet] Starting security animation');
     setShowSecurityAnimation(true);
   };
 
-  const handleAnimationComplete = () => {
+  const handleAnimationComplete = async () => {
+    console.log('[ConnectWallet] Animation complete, starting connection');
     setShowSecurityAnimation(false);
-    onConnect();
+    setIsConnecting(true);
+
+    try {
+      console.log('[ConnectWallet] Calling onConnect()...');
+      await onConnect();
+      console.log('[ConnectWallet] onConnect() completed successfully');
+    } catch (err) {
+      console.error('[ConnectWallet] Connection error:', err);
+      setLocalError(err.message || 'Failed to connect wallet. Please try again.');
+      setIsConnecting(false);
+    }
+    // Note: Don't set isConnecting to false on success - we're navigating away
   };
 
-  // Show Security Verified animation
-  if (showSecurityAnimation) {
-    return <SecurityVerifiedAnimation onComplete={handleAnimationComplete} />;
-  }
-
-  // Get the intended destination
+  // Get the intended destination (moved before any returns)
   const from = location.state?.from || '/patient';
   const isFromDoctorPortal = from.includes('doctor');
 
-  // Handle auto-connect for pending admin
+  // Combined error from parent or local
+  const displayError = localError || error;
+  // Combined loading state
+  const isLoading = loading || isConnecting;
+
+  // Handle auto-connect for pending admin - MUST be before any early returns (Rules of Hooks)
   useEffect(() => {
     if (!pendingAdmin?.autoConnect || autoConnectTriggeredRef.current) return;
 
@@ -195,6 +226,39 @@ export default function ConnectWallet({ onConnect, loading, error }) {
     const timer = setTimeout(() => handleSecureConnect(), 500);
     return () => clearTimeout(timer);
   }, [pendingAdmin]);
+
+  // Show Security Verified animation
+  if (showSecurityAnimation) {
+    return <SecurityVerifiedAnimation onComplete={handleAnimationComplete} />;
+  }
+
+  // Show connecting state after animation
+  if (isConnecting) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#0a0e14'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            width: '64px',
+            height: '64px',
+            border: '4px solid rgba(246, 133, 27, 0.2)',
+            borderTopColor: '#f6851b',
+            borderRadius: '50%',
+            margin: '0 auto 24px',
+            animation: 'spin 1s linear infinite'
+          }} />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          <h2 style={{ color: 'white', fontSize: '20px', marginBottom: '8px' }}>Connecting to MetaMask...</h2>
+          <p style={{ color: '#9ca3af', fontSize: '14px' }}>Please confirm the connection in your wallet</p>
+        </div>
+      </div>
+    );
+  }
 
   // Pending Admin UI
   if (pendingAdmin) {
@@ -328,8 +392,35 @@ export default function ConnectWallet({ onConnect, loading, error }) {
             </p>
           </div>
 
+          {/* MetaMask Not Installed Warning */}
+          {!isMetaMaskInstalled && (
+            <div style={{
+              padding: '16px',
+              borderRadius: '12px',
+              marginBottom: '24px',
+              fontSize: '14px',
+              background: 'rgba(251, 191, 36, 0.1)',
+              border: '1px solid rgba(251, 191, 36, 0.3)',
+              color: '#fbbf24',
+              textAlign: 'left'
+            }}>
+              <p style={{ fontWeight: '600', marginBottom: '8px' }}>MetaMask Required</p>
+              <p style={{ margin: 0, color: '#94a3b8' }}>
+                Please install the MetaMask browser extension to connect your wallet.{' '}
+                <a
+                  href="https://metamask.io/download/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: '#f6851b', textDecoration: 'underline' }}
+                >
+                  Download MetaMask
+                </a>
+              </p>
+            </div>
+          )}
+
           {/* Error Message */}
-          {error && (
+          {displayError && (
             <div style={{
               padding: '16px',
               borderRadius: '12px',
@@ -340,12 +431,15 @@ export default function ConnectWallet({ onConnect, loading, error }) {
               color: '#f87171',
               textAlign: 'left'
             }}>
-              {error}
+              {displayError}
             </div>
           )}
 
           {/* MetaMask button hover styles */}
           <style>{`
+            @keyframes spin {
+              to { transform: rotate(360deg); }
+            }
             .metamask-connect-btn {
               transition: all 0.3s ease !important;
             }
@@ -362,28 +456,44 @@ export default function ConnectWallet({ onConnect, loading, error }) {
           {/* MetaMask button */}
           <button
             onClick={handleSecureConnect}
-            disabled={loading}
+            disabled={isLoading || !isMetaMaskInstalled}
             className="metamask-connect-btn"
             style={{
               width: '100%',
-              background: 'linear-gradient(135deg, #f6851b, #e2761b)',
+              background: !isMetaMaskInstalled
+                ? 'linear-gradient(135deg, #6b7280, #4b5563)'
+                : 'linear-gradient(135deg, #f6851b, #e2761b)',
               color: 'white',
               padding: '16px 24px',
               borderRadius: '12px',
               fontWeight: '600',
               border: 'none',
-              cursor: loading ? 'not-allowed' : 'pointer',
+              cursor: (isLoading || !isMetaMaskInstalled) ? 'not-allowed' : 'pointer',
               fontSize: '16px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '12px',
-              opacity: loading ? 0.7 : 1,
-              boxShadow: '0 8px 32px rgba(246, 133, 27, 0.4)'
+              opacity: (isLoading || !isMetaMaskInstalled) ? 0.7 : 1,
+              boxShadow: !isMetaMaskInstalled
+                ? 'none'
+                : '0 8px 32px rgba(246, 133, 27, 0.4)'
             }}
           >
-            {loading ? (
-              'Connecting...'
+            {isLoading ? (
+              <>
+                <div style={{
+                  width: '20px',
+                  height: '20px',
+                  border: '2px solid rgba(255,255,255,0.3)',
+                  borderTopColor: 'white',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite'
+                }} />
+                Connecting...
+              </>
+            ) : !isMetaMaskInstalled ? (
+              '🦊 MetaMask Not Installed'
             ) : (
               <>
                 🦊 Connect MetaMask Wallet
@@ -476,29 +586,56 @@ export default function ConnectWallet({ onConnect, loading, error }) {
               </div>
             </div>
 
+            {/* MetaMask Not Installed Warning */}
+            {!isMetaMaskInstalled && (
+              <div className="bg-amber-500/10 border border-amber-500/30 text-amber-400 p-4 rounded-xl mb-6 text-sm">
+                <p className="font-semibold mb-2">MetaMask Required</p>
+                <p className="text-slate-400">
+                  Please install the MetaMask browser extension to connect your wallet.{' '}
+                  <a
+                    href="https://metamask.io/download/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-400 hover:underline"
+                  >
+                    Download MetaMask
+                  </a>
+                </p>
+              </div>
+            )}
+
             {/* Error Message */}
-            {error && (
+            {displayError && (
               <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-xl mb-6 text-sm flex items-start gap-3">
                 <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span>{error}</span>
+                <span>{displayError}</span>
               </div>
             )}
 
             {/* Connect Button */}
             <button
               onClick={handleSecureConnect}
-              disabled={loading}
-              className="w-full py-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-xl hover:from-blue-500 hover:to-cyan-500 transition-all disabled:opacity-50 flex items-center justify-center gap-3 shadow-lg shadow-blue-500/20"
+              disabled={isLoading || !isMetaMaskInstalled}
+              className={`w-full py-4 text-white font-bold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-3 shadow-lg ${
+                !isMetaMaskInstalled
+                  ? 'bg-gradient-to-r from-gray-600 to-gray-700 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 shadow-blue-500/20'
+              }`}
             >
-              {loading ? (
+              {isLoading ? (
                 <>
                   <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
                   Connecting to MetaMask...
+                </>
+              ) : !isMetaMaskInstalled ? (
+                <>
+                  <span>🦊</span>
+                  MetaMask Not Installed
                 </>
               ) : (
                 <>
