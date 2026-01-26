@@ -344,10 +344,26 @@ export default function ConnectWallet({ onConnect, loading, error }) {
             </div>
           )}
 
+          {/* MetaMask button hover styles */}
+          <style>{`
+            .metamask-connect-btn {
+              transition: all 0.3s ease !important;
+            }
+            .metamask-connect-btn:hover:not(:disabled) {
+              transform: translateY(-2px);
+              box-shadow: 0 12px 40px rgba(246, 133, 27, 0.6), 0 0 20px rgba(246, 133, 27, 0.3) !important;
+              filter: brightness(1.1);
+            }
+            .metamask-connect-btn:active:not(:disabled) {
+              transform: translateY(0);
+            }
+          `}</style>
+
           {/* MetaMask button */}
           <button
             onClick={handleSecureConnect}
             disabled={loading}
+            className="metamask-connect-btn"
             style={{
               width: '100%',
               background: 'linear-gradient(135deg, #f6851b, #e2761b)',
