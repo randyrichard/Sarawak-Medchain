@@ -31,173 +31,83 @@ function SecurityVerifiedAnimation({ onComplete }) {
 
   const isVerified = phase === 'verified' || phase === 'complete';
 
-  // All styles as inline for consistency
-  const containerStyle = {
-    position: 'fixed',
-    inset: 0,
-    zIndex: 100,
-    background: 'linear-gradient(180deg, #030712 0%, #0a1628 50%, #030712 100%)',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: '100vh',
-  };
-
-  const gridOverlayStyle = {
-    position: 'absolute',
-    inset: 0,
-    overflow: 'hidden',
-    opacity: 0.15,
-    backgroundImage: `
-      linear-gradient(rgba(16, 185, 129, 0.2) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(16, 185, 129, 0.2) 1px, transparent 1px)
-    `,
-    backgroundSize: '40px 40px',
-  };
-
-  const shieldContainerStyle = {
-    position: 'relative',
-    width: '160px',
-    height: '160px',
-    marginBottom: '32px',
-  };
-
-  const pulseRing1Style = {
-    position: 'absolute',
-    inset: 0,
-    borderRadius: '50%',
-    border: '2px solid rgba(16, 185, 129, 0.3)',
-    animation: phase === 'scanning' ? 'pulse-ring 2s ease-out infinite' : 'none',
-  };
-
-  const pulseRing2Style = {
-    position: 'absolute',
-    inset: '8px',
-    borderRadius: '50%',
-    border: '2px solid rgba(16, 185, 129, 0.4)',
-    animation: phase === 'scanning' ? 'pulse-ring 2s ease-out infinite 0.3s' : 'none',
-  };
-
-  const pulseRing3Style = {
-    position: 'absolute',
-    inset: '16px',
-    borderRadius: '50%',
-    border: '2px solid rgba(16, 185, 129, 0.5)',
-    animation: phase === 'scanning' ? 'pulse-ring 2s ease-out infinite 0.6s' : 'none',
-  };
-
-  const shieldBackgroundStyle = {
-    position: 'absolute',
-    inset: '24px',
-    borderRadius: '50%',
-    background: isVerified
-      ? 'radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, rgba(16, 185, 129, 0.1) 70%, transparent 100%)'
-      : 'rgba(30, 41, 59, 0.5)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'all 0.5s ease',
-    transform: isVerified ? 'scale(1.1)' : 'scale(1)',
-    boxShadow: isVerified
-      ? '0 0 60px rgba(16, 185, 129, 0.4), 0 0 100px rgba(16, 185, 129, 0.2), inset 0 0 30px rgba(16, 185, 129, 0.1)'
-      : '0 0 30px rgba(16, 185, 129, 0.1)',
-  };
-
-  const shieldIconStyle = {
-    width: '80px',
-    height: '80px',
-    color: isVerified ? '#34d399' : '#64748b',
-    transition: 'all 0.5s ease',
-    filter: isVerified ? 'drop-shadow(0 0 20px rgba(52, 211, 153, 0.6))' : 'none',
-  };
-
-  const titleStyle = {
-    fontSize: '28px',
-    fontWeight: '700',
-    color: isVerified ? '#34d399' : '#ffffff',
-    marginBottom: '8px',
-    letterSpacing: '0.5px',
-    textShadow: isVerified ? '0 0 20px rgba(52, 211, 153, 0.5)' : 'none',
-    transition: 'all 0.5s ease',
-  };
-
-  const subtitleStyle = {
-    fontSize: '14px',
-    color: '#94a3b8',
-    marginBottom: '24px',
-  };
-
-  const badgeContainerStyle = {
-    display: 'flex',
-    gap: '12px',
-    justifyContent: 'center',
-    marginTop: '16px',
-  };
-
-  const encryptionBadgeStyle = {
-    padding: '8px 16px',
-    background: 'rgba(16, 185, 129, 0.15)',
-    border: '1px solid rgba(16, 185, 129, 0.3)',
-    borderRadius: '20px',
-    color: '#34d399',
-    fontSize: '12px',
-    fontWeight: '600',
-    letterSpacing: '0.5px',
-  };
-
-  const blockchainBadgeStyle = {
-    padding: '8px 16px',
-    background: 'rgba(59, 130, 246, 0.15)',
-    border: '1px solid rgba(59, 130, 246, 0.3)',
-    borderRadius: '20px',
-    color: '#60a5fa',
-    fontSize: '12px',
-    fontWeight: '600',
-    letterSpacing: '0.5px',
-  };
-
-  const loadingDotsStyle = {
-    display: 'flex',
-    gap: '8px',
-    justifyContent: 'center',
-    marginTop: '32px',
-  };
-
-  const dotStyle = (delay) => ({
-    width: '10px',
-    height: '10px',
-    borderRadius: '50%',
-    background: isVerified ? '#34d399' : '#64748b',
-    animation: 'loading-dot 1.4s ease-in-out infinite',
-    animationDelay: delay,
-  });
-
-  const footerTextStyle = {
-    fontSize: '13px',
-    color: '#64748b',
-    marginTop: '24px',
-  };
-
   return (
-    <div style={containerStyle}>
-      {/* Background grid */}
-      <div style={gridOverlayStyle} />
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 100,
+      background: '#030712',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      margin: 0,
+      padding: 0,
+    }}>
+      {/* Card container */}
+      <div style={{
+        background: 'rgba(15, 23, 42, 0.95)',
+        borderRadius: '20px',
+        border: isVerified
+          ? '1px solid rgba(16, 185, 129, 0.5)'
+          : '1px solid rgba(100, 116, 139, 0.3)',
+        boxShadow: isVerified
+          ? '0 0 40px rgba(16, 185, 129, 0.3), 0 0 80px rgba(16, 185, 129, 0.1)'
+          : '0 0 40px rgba(0, 0, 0, 0.5)',
+        padding: '48px',
+        textAlign: 'center',
+        minWidth: '380px',
+        transition: 'all 0.5s ease',
+      }}>
+        {/* Shield Icon Container */}
+        <div style={{
+          position: 'relative',
+          width: '120px',
+          height: '120px',
+          margin: '0 auto 32px auto',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          {/* Pulse ring (only during scanning) */}
+          {phase === 'scanning' && (
+            <div style={{
+              position: 'absolute',
+              inset: '-10px',
+              borderRadius: '50%',
+              border: '2px solid rgba(16, 185, 129, 0.4)',
+              animation: 'pulse-ring 1.5s ease-out infinite',
+            }} />
+          )}
 
-      {/* Main content */}
-      <div style={{ position: 'relative', textAlign: 'center' }}>
-        {/* Shield Icon with Pulse Effect */}
-        <div style={shieldContainerStyle}>
-          {/* Pulse rings */}
-          <div style={pulseRing1Style} />
-          <div style={pulseRing2Style} />
-          <div style={pulseRing3Style} />
-
-          {/* Shield background with glow */}
-          <div style={shieldBackgroundStyle}>
-            {/* Shield SVG - larger size */}
+          {/* Shield background circle */}
+          <div style={{
+            width: '100%',
+            height: '100%',
+            borderRadius: '50%',
+            background: isVerified
+              ? 'radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(16, 185, 129, 0.1) 70%)'
+              : 'rgba(30, 41, 59, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.5s ease',
+            boxShadow: isVerified
+              ? '0 0 40px rgba(16, 185, 129, 0.4), inset 0 0 20px rgba(16, 185, 129, 0.1)'
+              : 'none',
+            animation: isVerified ? 'shield-glow 2s ease-in-out infinite' : 'none',
+          }}>
+            {/* Shield SVG with checkmark */}
             <svg
-              style={shieldIconStyle}
+              style={{
+                width: '64px',
+                height: '64px',
+                color: isVerified ? '#34d399' : '#64748b',
+                transition: 'all 0.5s ease',
+                filter: isVerified ? 'drop-shadow(0 0 12px rgba(52, 211, 153, 0.6))' : 'none',
+              }}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -212,48 +122,122 @@ function SecurityVerifiedAnimation({ onComplete }) {
           </div>
         </div>
 
-        {/* Status Text */}
-        <div>
-          <h2 style={titleStyle}>
-            {isVerified ? 'Security Verified' : 'Verifying Identity...'}
-          </h2>
-          <p style={subtitleStyle}>
-            {isVerified ? 'Military-grade encryption active' : 'Cryptographic signature check in progress'}
-          </p>
+        {/* Title */}
+        <h2 style={{
+          fontSize: '26px',
+          fontWeight: '700',
+          color: isVerified ? '#34d399' : '#ffffff',
+          margin: '0 0 8px 0',
+          letterSpacing: '0.3px',
+          transition: 'color 0.5s ease',
+        }}>
+          {isVerified ? 'Security Verified' : 'Verifying Identity...'}
+        </h2>
 
-          {/* Security badges */}
-          {isVerified && (
-            <div style={badgeContainerStyle}>
-              <span style={encryptionBadgeStyle}>AES-256-GCM</span>
-              <span style={blockchainBadgeStyle}>BLOCKCHAIN VERIFIED</span>
-            </div>
-          )}
-
-          {/* Loading dots indicator */}
-          {phase === 'scanning' && (
-            <div style={loadingDotsStyle}>
-              <div style={dotStyle('0s')} />
-              <div style={dotStyle('0.2s')} />
-              <div style={dotStyle('0.4s')} />
-            </div>
-          )}
-        </div>
-
-        {/* Footer text */}
-        <p style={footerTextStyle}>
-          {isVerified ? 'Redirecting to dashboard...' : 'Please wait while we verify your credentials'}
+        {/* Subtitle */}
+        <p style={{
+          fontSize: '14px',
+          color: '#94a3b8',
+          margin: '0 0 24px 0',
+        }}>
+          {isVerified ? 'Military-grade encryption active' : 'Cryptographic signature check in progress'}
         </p>
+
+        {/* Security badges (only when verified) */}
+        {isVerified && (
+          <div style={{
+            display: 'flex',
+            gap: '12px',
+            justifyContent: 'center',
+            marginBottom: '24px',
+          }}>
+            <span style={{
+              padding: '8px 16px',
+              background: 'rgba(16, 185, 129, 0.15)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              borderRadius: '20px',
+              color: '#34d399',
+              fontSize: '11px',
+              fontWeight: '600',
+              letterSpacing: '0.5px',
+            }}>AES-256-GCM</span>
+            <span style={{
+              padding: '8px 16px',
+              background: 'rgba(59, 130, 246, 0.15)',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              borderRadius: '20px',
+              color: '#60a5fa',
+              fontSize: '11px',
+              fontWeight: '600',
+              letterSpacing: '0.5px',
+            }}>BLOCKCHAIN VERIFIED</span>
+          </div>
+        )}
+
+        {/* Loading dots (only during scanning) */}
+        {phase === 'scanning' && (
+          <div style={{
+            display: 'flex',
+            gap: '8px',
+            justifyContent: 'center',
+            marginBottom: '24px',
+          }}>
+            {[0, 0.2, 0.4].map((delay, i) => (
+              <div key={i} style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: '#64748b',
+                animation: 'loading-dot 1.4s ease-in-out infinite',
+                animationDelay: `${delay}s`,
+              }} />
+            ))}
+          </div>
+        )}
+
+        {/* Footer text with spinner */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+        }}>
+          {isVerified && (
+            <div style={{
+              width: '14px',
+              height: '14px',
+              border: '2px solid rgba(52, 211, 153, 0.3)',
+              borderTopColor: '#34d399',
+              borderRadius: '50%',
+              animation: 'spinner 0.8s linear infinite',
+            }} />
+          )}
+          <p style={{
+            fontSize: '13px',
+            color: '#64748b',
+            margin: 0,
+          }}>
+            {isVerified ? 'Redirecting to dashboard...' : 'Please wait while we verify your credentials'}
+          </p>
+        </div>
       </div>
 
       {/* CSS for animations */}
       <style>{`
         @keyframes pulse-ring {
           0% { transform: scale(1); opacity: 1; }
-          100% { transform: scale(1.5); opacity: 0; }
+          100% { transform: scale(1.4); opacity: 0; }
         }
         @keyframes loading-dot {
           0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
           40% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes shield-glow {
+          0%, 100% { box-shadow: 0 0 40px rgba(16, 185, 129, 0.4), inset 0 0 20px rgba(16, 185, 129, 0.1); }
+          50% { box-shadow: 0 0 60px rgba(16, 185, 129, 0.5), inset 0 0 30px rgba(16, 185, 129, 0.15); }
+        }
+        @keyframes spinner {
+          to { transform: rotate(360deg); }
         }
       `}</style>
     </div>
