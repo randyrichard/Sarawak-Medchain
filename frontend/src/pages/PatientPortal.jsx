@@ -95,56 +95,53 @@ export default function PatientPortal({ walletAddress }) {
 
   const isButtonDisabled = loading || !doctorAddress;
 
-  // Premium card styles
+  // Card styles - polished
   const cardStyle = {
-    background: 'linear-gradient(145deg, rgba(20, 184, 166, 0.04) 0%, rgba(20, 184, 166, 0.01) 50%, transparent 100%)',
-    border: '1px solid rgba(20, 184, 166, 0.15)',
-    borderRadius: '20px',
-    padding: '32px',
-    boxShadow: '0 4px 24px rgba(0, 0, 0, 0.4), 0 0 40px rgba(20, 184, 166, 0.03)',
+    border: '1px solid rgba(20, 184, 166, 0.2)',
+    borderRadius: '16px',
+    backgroundColor: 'rgba(20, 184, 166, 0.02)',
+    padding: '24px',
     display: 'flex',
     flexDirection: 'column',
-    backdropFilter: 'blur(10px)'
+    height: '100%',
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)'
   };
 
-  // Premium button styles
+  // Button styles with hover transitions
   const primaryButtonStyle = {
     width: '100%',
-    padding: '14px 20px',
-    borderRadius: '12px',
+    padding: '12px 18px',
+    borderRadius: '10px',
     background: isButtonDisabled
-      ? 'linear-gradient(135deg, #1e293b 0%, #1e293b 100%)'
+      ? '#1e293b'
       : 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
     border: 'none',
     color: isButtonDisabled ? '#475569' : '#fff',
-    fontSize: '0.9rem',
+    fontSize: '0.85rem',
     fontWeight: '600',
     cursor: isButtonDisabled ? 'not-allowed' : 'pointer',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '10px',
-    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-    boxShadow: isButtonDisabled ? 'none' : '0 4px 15px rgba(20, 184, 166, 0.3)',
-    letterSpacing: '0.3px'
+    gap: '8px',
+    transition: 'all 0.2s ease'
   };
 
   const secondaryButtonStyle = {
     width: '100%',
-    padding: '14px 20px',
-    borderRadius: '12px',
-    background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(30, 41, 59, 0.6) 100%)',
-    border: '1px solid rgba(148, 163, 184, 0.2)',
+    padding: '12px 18px',
+    borderRadius: '10px',
+    background: 'rgba(30, 41, 59, 0.6)',
+    border: '1px solid rgba(148, 163, 184, 0.15)',
     color: isButtonDisabled ? '#475569' : '#e2e8f0',
-    fontSize: '0.9rem',
+    fontSize: '0.85rem',
     fontWeight: '500',
     cursor: isButtonDisabled ? 'not-allowed' : 'pointer',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '10px',
-    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-    letterSpacing: '0.3px'
+    gap: '8px',
+    transition: 'all 0.2s ease'
   };
 
   return (
@@ -284,36 +281,37 @@ export default function PatientPortal({ walletAddress }) {
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
-          gap: '28px',
+          gap: '24px',
+          padding: '24px',
           alignItems: 'stretch'
         }}>
 
           {/* LEFT CARD - Access Control */}
-          <div className="premium-card" style={cardStyle}>
-            {/* Card Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '28px' }}>
+          <div className="patient-portal-card" style={cardStyle}>
+            {/* Header row - fixed at top */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
               <div style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '14px',
+                width: '40px',
+                height: '40px',
+                borderRadius: '10px',
                 background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 4px 15px rgba(20, 184, 166, 0.25)'
+                flexShrink: 0
               }}>
-                <svg style={{ width: '22px', height: '22px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg style={{ width: '20px', height: '20px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                 </svg>
               </div>
-              <div>
-                <h2 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: '700', margin: 0, letterSpacing: '-0.01em' }}>Access Control</h2>
+              <div style={{ flex: 1 }}>
+                <h2 style={{ color: '#fff', fontSize: '1.1rem', fontWeight: '600', margin: 0 }}>Access Control</h2>
                 <span style={{ color: '#64748b', fontSize: '0.75rem' }}>Manage doctor permissions</span>
               </div>
             </div>
 
             {/* Input Field */}
-            <div style={{ marginBottom: '24px' }}>
+            <div style={{ marginBottom: '16px', flexShrink: 0 }}>
               <label style={{
                 display: 'block',
                 fontSize: '0.7rem',
@@ -346,7 +344,7 @@ export default function PatientPortal({ walletAddress }) {
             </div>
 
             {/* Buttons */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: 'auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: 'auto', flexShrink: 0 }}>
               <button
                 onClick={handleGrantAccess}
                 disabled={isButtonDisabled}
@@ -386,76 +384,72 @@ export default function PatientPortal({ walletAddress }) {
           </div>
 
           {/* RIGHT CARD - My Medical Records */}
-          <div className="premium-card" style={cardStyle}>
-            {/* Card Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '28px', flexShrink: 0 }}>
+          <div className="patient-portal-card" style={cardStyle}>
+            {/* Header row - fixed at top */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
               <div style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '14px',
+                width: '40px',
+                height: '40px',
+                borderRadius: '10px',
                 background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 4px 15px rgba(20, 184, 166, 0.25)'
+                flexShrink: 0
               }}>
-                <svg style={{ width: '22px', height: '22px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg style={{ width: '20px', height: '20px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <div>
-                <h2 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: '700', margin: 0, letterSpacing: '-0.01em' }}>My Medical Records</h2>
+              <div style={{ flex: 1 }}>
+                <h2 style={{ color: '#fff', fontSize: '1.1rem', fontWeight: '600', margin: 0 }}>My Medical Records</h2>
                 <span style={{ color: '#64748b', fontSize: '0.75rem' }}>Blockchain-secured documents</span>
               </div>
               <span style={{
-                marginLeft: 'auto',
-                padding: '6px 14px',
-                borderRadius: '20px',
-                background: 'linear-gradient(135deg, rgba(20, 184, 166, 0.15) 0%, rgba(20, 184, 166, 0.08) 100%)',
-                border: '1px solid rgba(20, 184, 166, 0.2)',
-                color: '#14b8a6',
-                fontSize: '0.8rem',
-                fontWeight: '600'
+                padding: '3px 10px',
+                borderRadius: '10px',
+                backgroundColor: 'rgba(20, 184, 166, 0.1)',
+                color: 'rgba(20, 184, 166, 0.8)',
+                fontSize: '0.7rem',
+                fontWeight: '500',
+                flexShrink: 0
               }}>{records.length} records</span>
             </div>
 
-            {/* Content */}
+            {/* Content - grows and centers */}
             {records.length === 0 ? (
               <div style={{
-                flex: 1,
+                flexGrow: 1,
                 display: 'flex',
                 flexDirection: 'column',
-                alignItems: 'center',
                 justifyContent: 'center',
-                textAlign: 'center',
-                padding: '20px 0'
+                alignItems: 'center'
               }}>
-                {/* Glowing Shield Icon */}
+                {/* Shield Icon */}
                 <div className="shield-glow" style={{
-                  width: '100px',
-                  height: '100px',
+                  width: '80px',
+                  height: '80px',
                   borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(20, 184, 166, 0.12) 0%, rgba(20, 184, 166, 0.04) 50%, transparent 70%)',
-                  border: '1px solid rgba(20, 184, 166, 0.2)',
+                  background: 'radial-gradient(circle, rgba(20, 184, 166, 0.15) 0%, rgba(20, 184, 166, 0.05) 60%, transparent 80%)',
+                  border: '1px solid rgba(20, 184, 166, 0.3)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginBottom: '24px',
-                  boxShadow: '0 0 40px rgba(20, 184, 166, 0.15), 0 0 80px rgba(20, 184, 166, 0.08)'
+                  marginBottom: '16px'
                 }}>
-                  <svg style={{ width: '50px', height: '50px', color: '#14b8a6' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg style={{ width: '40px', height: '40px', color: '#14b8a6' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                 </div>
-                <p style={{ color: '#fff', fontSize: '1.05rem', fontWeight: '600', margin: '0 0 6px 0', letterSpacing: '-0.01em' }}>
+                <p style={{ color: '#fff', fontSize: '0.95rem', fontWeight: '600', margin: '0 0 4px 0' }}>
                   Your medical history is secured
                 </p>
-                <p style={{ color: '#14b8a6', fontSize: '0.9rem', fontWeight: '500', margin: 0 }}>
+                <p style={{ color: '#14b8a6', fontSize: '0.85rem', fontWeight: '500', margin: 0 }}>
                   on the Sarawak Blockchain
                 </p>
               </div>
             ) : (
-              <div style={{ flex: 1, overflowY: 'auto', maxHeight: '320px' }}>
+              <div style={{ flexGrow: 1, overflowY: 'auto' }}>
                 {records.map((record, index) => (
                   <div
                     key={index}
@@ -564,13 +558,26 @@ export default function PatientPortal({ walletAddress }) {
           color: #475569;
         }
 
-        .premium-card {
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        .patient-portal-card {
+          border: 1px solid rgba(20, 184, 166, 0.2) !important;
+          border-radius: 16px !important;
+          background-color: rgba(20, 184, 166, 0.02) !important;
+          transition: all 0.2s ease;
         }
 
-        .premium-card:hover {
-          border-color: rgba(20, 184, 166, 0.25);
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 60px rgba(20, 184, 166, 0.05);
+        .patient-portal-card:hover {
+          border-color: rgba(20, 184, 166, 0.3) !important;
+          box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+          filter: brightness(1.1);
+          box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+          background: rgba(51, 65, 85, 0.7) !important;
+          border-color: rgba(148, 163, 184, 0.25) !important;
         }
 
         .shield-glow {

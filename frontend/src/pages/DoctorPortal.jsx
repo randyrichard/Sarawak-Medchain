@@ -68,11 +68,11 @@ export default function DoctorPortal({ walletAddress }) {
   const [mcSuccess, setMcSuccess] = useState(null);
   const qrRef = useRef(null);
 
-  // Gold Confetti Celebration state
+  // Confetti Celebration state
   const [showConfetti, setShowConfetti] = useState(false);
 
-  // Trigger gold confetti celebration
-  const triggerGoldConfetti = () => {
+  // Trigger confetti celebration
+  const triggerConfetti = () => {
     setShowConfetti(true);
     setTimeout(() => setShowConfetti(false), 3000);
   };
@@ -283,8 +283,8 @@ export default function DoctorPortal({ walletAddress }) {
 
       setMessage('✓ Medical Certificate secured on blockchain!');
 
-      // Trigger gold confetti celebration
-      triggerGoldConfetti();
+      // Trigger confetti celebration
+      triggerConfetti();
 
       // Show receipt modal with QR code
       setReceiptData({
@@ -575,10 +575,10 @@ export default function DoctorPortal({ walletAddress }) {
               </div>
 
               {/* Outstanding Balance */}
-              <div className="p-5 rounded-xl border" style={{ backgroundColor: '#f59e0b10', borderColor: '#f59e0b30' }}>
+              <div className="p-5 rounded-xl border" style={{ backgroundColor: 'rgba(239, 68, 68, 0.05)', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
                 <div className="flex items-center justify-between mb-3">
                   <span style={{ color: terminalTheme.textMuted }}>Outstanding Balance</span>
-                  <span className="text-2xl font-bold text-amber-400">RM 10,000.00</span>
+                  <span className="text-2xl font-bold text-red-400">RM 10,000.00</span>
                 </div>
                 <p className="text-xs" style={{ color: terminalTheme.textMuted }}>
                   Monthly subscription fee for blockchain network access
@@ -643,664 +643,542 @@ export default function DoctorPortal({ walletAddress }) {
 
   return (
     <div className="min-h-screen font-sans doctor-portal" style={{ backgroundColor: '#0a0e14' }}>
-      {/* Maintenance Banner REMOVED - Clean dark aesthetic for client demo */}
-
-      {/* Network-Wide Broadcast Notification - Hidden for demo */}
-
-      {/* Gold Confetti Celebration */}
+      {/* Success Celebration */}
       {showConfetti && (
         <div className="fixed inset-0 z-[100] pointer-events-none overflow-hidden">
-          {/* Generate 50 gold confetti particles */}
-          {[...Array(50)].map((_, i) => (
+          {[...Array(30)].map((_, i) => (
             <div
               key={i}
               className="absolute animate-confetti"
               style={{
                 left: `${Math.random() * 100}%`,
                 top: '-20px',
-                width: `${8 + Math.random() * 12}px`,
-                height: `${8 + Math.random() * 12}px`,
-                background: `linear-gradient(135deg, #daa520 0%, #ffd700 50%, #b8860b 100%)`,
-                borderRadius: Math.random() > 0.5 ? '50%' : '2px',
-                boxShadow: '0 0 10px rgba(218, 165, 32, 0.8)',
+                width: `${6 + Math.random() * 8}px`,
+                height: `${6 + Math.random() * 8}px`,
+                background: `linear-gradient(135deg, #14b8a6 0%, #10b981 100%)`,
+                borderRadius: '2px',
                 animationDelay: `${Math.random() * 0.5}s`,
                 animationDuration: `${2 + Math.random() * 2}s`,
-                transform: `rotate(${Math.random() * 360}deg)`,
               }}
             />
           ))}
-          {/* Center burst glow */}
-          <div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full animate-pulse"
-            style={{
-              background: 'radial-gradient(circle, rgba(218, 165, 32, 0.4) 0%, transparent 70%)',
-              boxShadow: '0 0 100px rgba(218, 165, 32, 0.6), 0 0 200px rgba(218, 165, 32, 0.3)',
-            }}
-          />
         </div>
       )}
 
-      {/* Blockchain Receipt Modal */}
+      {/* Receipt Modal */}
       {showReceipt && receiptData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div
             className="rounded-2xl max-w-md w-full overflow-hidden"
             style={{
               backgroundColor: '#111827',
-              border: '2px solid #daa520',
-              boxShadow: '0 0 40px rgba(218, 165, 32, 0.3), 0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+              border: '1px solid rgba(20, 184, 166, 0.3)'
             }}
           >
-            {/* Receipt Header */}
-            <div
-              className="px-6 py-5 text-center"
-              style={{
-                background: 'linear-gradient(135deg, rgba(218, 165, 32, 0.15) 0%, rgba(218, 165, 32, 0.05) 100%)',
-                borderBottom: '1px solid rgba(218, 165, 32, 0.3)'
-              }}
-            >
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(16, 185, 129, 0.2)', border: '2px solid #10b981' }}>
-                <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            <div className="px-6 py-5 text-center" style={{ borderBottom: '1px solid rgba(20, 184, 166, 0.15)' }}>
+              <div className="w-14 h-14 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)' }}>
+                <svg className="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h2 className="text-2xl font-black text-white mb-1">Transaction Successful</h2>
-              <p className="text-slate-400 text-sm">Medical Certificate secured on blockchain</p>
+              <h2 className="text-xl font-bold text-white mb-1">Transaction Successful</h2>
+              <p className="text-slate-500 text-sm">Medical Certificate secured on blockchain</p>
             </div>
-
-            {/* Receipt Details */}
-            <div className="px-6 py-5 space-y-4">
-              {/* Service */}
-              <div className="flex justify-between items-center py-3 border-b border-white/10">
-                <span className="text-slate-400 text-sm">Service</span>
-                <span className="text-white font-semibold">Medical Certificate Issuance</span>
+            <div className="px-6 py-5 space-y-3">
+              <div className="flex justify-between py-2 border-b border-white/5">
+                <span className="text-slate-500 text-sm">Cost</span>
+                <span className="text-lg font-bold text-white">RM 1.00</span>
               </div>
-
-              {/* Cost */}
-              <div className="flex justify-between items-center py-3 border-b border-white/10">
-                <span className="text-slate-400 text-sm">Cost</span>
-                <span className="text-2xl font-black" style={{ color: '#daa520' }}>RM 1.00</span>
+              <div className="flex justify-between py-2 border-b border-white/5">
+                <span className="text-slate-500 text-sm">Patient</span>
+                <span className="text-white font-medium">{receiptData.patientName}</span>
               </div>
-
-              {/* Patient */}
-              <div className="flex justify-between items-center py-3 border-b border-white/10">
-                <span className="text-slate-400 text-sm">Patient</span>
-                <span className="text-white font-semibold">{receiptData.patientName}</span>
-              </div>
-
-              {/* Blockchain Hash */}
-              <div className="py-3">
-                <p className="text-xs uppercase tracking-wider mb-2" style={{ color: '#daa520' }}>Blockchain Hash</p>
-                <code className="text-xs font-mono break-all block" style={{ color: '#daa520' }}>
-                  {receiptData.txHash}
-                </code>
+              <div className="py-2">
+                <p className="text-xs text-slate-500 mb-1">Blockchain Hash</p>
+                <code className="text-xs font-mono text-teal-400 break-all">{receiptData.txHash}</code>
               </div>
             </div>
-
-            {/* Close Button */}
             <div className="px-6 pb-6">
               <button
                 onClick={closeReceipt}
-                className="w-full py-4 rounded-xl font-black text-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
-                style={{
-                  backgroundColor: '#ffffff',
-                  color: '#000000',
-                  boxShadow: '0 0 20px rgba(218, 165, 32, 0.5)'
-                }}
+                className="w-full py-3 rounded-lg font-semibold transition-all hover:opacity-90"
+                style={{ background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)', color: '#fff' }}
               >
                 Close
               </button>
-            </div>
-
-            {/* Branding Footer */}
-            <div className="px-6 pb-5 flex items-center justify-center gap-2">
-              <div className="w-5 h-5 rounded-md flex items-center justify-center" style={{ backgroundColor: '#daa520' }}>
-                <svg className="w-3 h-3 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-              </div>
-              <span className="text-slate-500 text-xs">Secured by Sarawak MedChain</span>
             </div>
           </div>
         </div>
       )}
 
-      {/* PREMIUM ELITE HEADER */}
-      <header
-        className="px-8 py-5"
-        style={{
-          backgroundColor: '#0a0e14',
-          borderBottom: '1px solid rgba(218, 165, 32, 0.2)',
-          boxShadow: '0 4px 30px rgba(0, 0, 0, 0.3)'
-        }}
-      >
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }} className="flex items-center justify-between">
-          {/* Left: Premium Hospital Branding */}
+      {/* Premium Enterprise Header */}
+      <header style={{ backgroundColor: '#0a0e14', borderBottom: '1px solid rgba(20, 184, 166, 0.08)' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '16px 40px' }} className="flex items-center justify-between">
+          {/* Hospital Name & Title */}
           <div className="flex items-center gap-4">
-            <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center relative"
-              style={{
-                background: 'linear-gradient(135deg, #daa520 0%, #b8860b 100%)',
-                boxShadow: '0 0 20px rgba(218, 165, 32, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)'
-              }}
-            >
-              <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)', boxShadow: '0 4px 12px rgba(20, 184, 166, 0.25)' }}>
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
-              {/* Premium glow ring */}
-              <div className="absolute inset-0 rounded-2xl animate-pulse" style={{ boxShadow: '0 0 15px rgba(218, 165, 32, 0.3)' }}></div>
             </div>
             <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-black tracking-tight" style={{ color: '#ffffff' }}>{hospitalName}</h1>
-                <FoundingPartnerBadge walletAddress={walletAddress} size="small" showTooltip={true} />
-              </div>
-              <p className="text-sm font-medium" style={{ color: '#daa520' }}>
-                Enterprise Medical Certificate Terminal
-              </p>
+              <h1 className="text-base font-semibold text-white tracking-tight">{hospitalName}</h1>
+              <p className="text-xs text-slate-500">Medical Certificate Terminal</p>
             </div>
           </div>
 
-          {/* Center: Premium Network Status */}
-          <div
-            className="flex items-center gap-4 px-6 py-3 rounded-2xl"
-            style={{
-              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 182, 212, 0.1) 100%)',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
-              boxShadow: '0 0 20px rgba(16, 185, 129, 0.15)'
-            }}
-          >
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-            </span>
-            <div>
-              <p className="text-xs uppercase tracking-wider text-emerald-400/70">Blockchain Status</p>
-              <p className="text-sm font-bold text-emerald-400">LIVE • Sarawak MedChain</p>
-            </div>
-          </div>
-
-          {/* Right: MC Credits + Doctor Badge - ANCHORED TO HEADER */}
-          <div className="flex items-center gap-4">
-            {/* MC CREDITS - Perfectly Aligned */}
-            <div
-              className="flex items-center gap-4 px-5 py-3 rounded-xl"
-              style={{
-                backgroundColor: '#111827',
-                border: '1px solid #daa520',
-                boxShadow: '0 0 15px rgba(218, 165, 32, 0.2)'
-              }}
-            >
-              <span className="text-sm font-bold" style={{ color: '#daa520' }}>MC Credits:</span>
-              <span className="text-lg font-black text-white">
-                RM {creditBalance !== null ? creditBalance.toLocaleString() : '10'}
+          {/* Right: Status Items */}
+          <div className="flex items-center gap-3">
+            {/* Blockchain Status */}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.1)' }}>
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              <button
-                onClick={handleTopUp}
-                className="topup-btn px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 hover:scale-105"
-                style={{
-                  backgroundColor: '#ffffff',
-                  color: '#000000',
-                  border: '1px solid #daa520',
-                  boxShadow: '0 0 8px rgba(218, 165, 32, 0.3)'
-                }}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
+              <span className="text-[11px] font-semibold text-emerald-400 tracking-wide">LIVE</span>
+            </div>
+
+            {/* Credits */}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(20, 184, 166, 0.04)', border: '1px solid rgba(20, 184, 166, 0.08)' }}>
+              <span className="text-[11px] text-slate-500">Balance</span>
+              <span className="text-sm font-bold text-white">RM {creditBalance !== null ? creditBalance : '10'}</span>
+              <button onClick={handleTopUp} className="ml-1 px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all hover:opacity-90" style={{ background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)', color: '#fff' }}>
                 Top Up
               </button>
             </div>
 
-            {/* Doctor Badge */}
-            <div
-              className="px-4 py-2 rounded-xl font-bold text-sm flex items-center gap-2"
-              style={{
-                background: isVerified
-                  ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%)'
-                  : 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%)',
-                border: isVerified ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(239, 68, 68, 0.4)',
-                color: isVerified ? '#10b981' : '#ef4444',
-                boxShadow: isVerified ? '0 0 15px rgba(16, 185, 129, 0.2)' : 'none'
-              }}
-            >
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: isVerified ? '#10b981' : '#ef4444' }}></span>
-              {isVerified ? 'MMC VERIFIED' : 'UNVERIFIED'}
+            {/* Verified Badge */}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg" style={{ backgroundColor: isVerified ? 'rgba(16, 185, 129, 0.06)' : 'rgba(239, 68, 68, 0.06)', border: `1px solid ${isVerified ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)'}` }}>
+              <svg className="w-3.5 h-3.5" style={{ color: isVerified ? '#22c55e' : '#ef4444' }} fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <span className="text-[11px] font-semibold" style={{ color: isVerified ? '#22c55e' : '#ef4444' }}>{isVerified ? 'Verified' : 'Unverified'}</span>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content - MASTER COMMAND CENTER SYMMETRY */}
-      <div
-        style={{
-          backgroundColor: '#0a0e14',
-          minHeight: 'calc(100vh - 80px)',
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'center',
-          padding: '32px 24px'
-        }}
-      >
-        {/* Centered Container - DEAD CENTER max-width 1200px */}
-        <div
-          style={{
-            maxWidth: '1200px',
-            width: '100%',
-            display: 'flex',
-            gap: '32px',
-            margin: '0 auto'
-          }}
-        >
-          {/* Issue MC Form - Main Panel */}
-          <div style={{ flex: 1 }}>
-            {/* Message */}
-            {message && (
-              <div className={`mb-6 p-4 rounded-xl border ${
-                message.includes('Error') || message.includes('⚠️')
-                  ? 'border-red-500/30 bg-red-500/10'
-                  : 'border-emerald-500/30 bg-emerald-500/10'
-              }`}>
-                <p className={message.includes('Error') ? 'text-red-400' : 'text-emerald-400'}>{message}</p>
-              </div>
-            )}
+      {/* Main Content */}
+      <div style={{ backgroundColor: '#0a0e14', minHeight: 'calc(100vh - 64px)', padding: '32px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
 
-            {/* PREMIUM FORM CARD */}
+          {/* Status Message */}
+          {message && (
             <div
-              className="rounded-3xl overflow-hidden"
               style={{
-                backgroundColor: '#111827',
-                border: '1px solid #daa520',
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                marginBottom: '24px',
+                padding: '16px 20px',
+                borderRadius: '12px',
+                fontSize: '14px',
+                fontWeight: 500,
+                backgroundColor: message.includes('Error') || message.includes('⚠️') ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                border: `1px solid ${message.includes('Error') || message.includes('⚠️') ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)'}`,
+                color: message.includes('Error') || message.includes('⚠️') ? '#f87171' : '#34d399'
               }}
             >
-              {/* Premium Card Header */}
-              <div
-                className="px-8 py-6"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(218, 165, 32, 0.15) 0%, rgba(218, 165, 32, 0.05) 100%)',
-                  borderBottom: '1px solid rgba(218, 165, 32, 0.2)'
-                }}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div
-                      className="w-12 h-12 rounded-2xl flex items-center justify-center"
-                      style={{
-                        background: 'linear-gradient(135deg, #daa520 0%, #b8860b 100%)',
-                        boxShadow: '0 0 20px rgba(218, 165, 32, 0.4)'
-                      }}
-                    >
-                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-bold text-white">Issue Medical Certificate</h2>
-                      <p className="text-sm text-slate-400">Blockchain-secured • Tamper-proof • Instant verification</p>
-                    </div>
-                  </div>
+              {message}
+            </div>
+          )}
 
+          {/* ========== TWO COLUMN GRID ========== */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '2fr 1fr',
+            gap: '24px',
+            alignItems: 'stretch'
+          }}>
+
+            {/* ========== LEFT COLUMN: FORM CARD ========== */}
+            <div style={{
+              backgroundColor: 'rgba(15, 23, 42, 0.6)',
+              border: '1px solid rgba(20, 184, 166, 0.2)',
+              borderRadius: '16px',
+              padding: '24px',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
+              {/* Card Header */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                paddingBottom: '20px',
+                marginBottom: '20px',
+                borderBottom: '1px solid rgba(20, 184, 166, 0.1)'
+              }}>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <svg style={{ width: '24px', height: '24px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff', margin: 0 }}>Issue Medical Certificate</h2>
+                  <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>Blockchain-secured • Tamper-proof</p>
                 </div>
               </div>
 
-              {/* Form Content */}
-              <div className="p-8">
-
-            {/* Premium Patient Info Section */}
-            <div className="grid grid-cols-2 gap-6 mb-8">
-              <div>
-                <label className="block text-sm font-semibold mb-3 uppercase tracking-wider" style={{ color: '#daa520' }}>
-                  Patient IC Number *
-                </label>
-                <input
-                  type="text"
-                  name="patientIC"
-                  value={mcFormData.patientIC}
-                  onChange={handleMcInputChange}
-                  placeholder="e.g., 901201-13-5678"
-                  className="w-full px-5 py-4 rounded-xl border-2 outline-none transition-all focus:ring-2 focus:ring-amber-500/50"
-                  style={{
-                    backgroundColor: '#0a0e14',
-                    borderColor: 'rgba(218, 165, 32, 0.3)',
-                    color: '#ffffff',
-                    fontSize: '16px'
-                  }}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-3 uppercase tracking-wider" style={{ color: '#daa520' }}>
-                  Patient Name *
-                </label>
-                <input
-                  type="text"
-                  name="patientName"
-                  value={mcFormData.patientName}
-                  onChange={handleMcInputChange}
-                  placeholder="e.g., Ahmad bin Hassan"
-                  className="w-full px-5 py-4 rounded-xl border-2 outline-none transition-all focus:ring-2 focus:ring-amber-500/50"
-                  style={{
-                    backgroundColor: '#0a0e14',
-                    borderColor: 'rgba(218, 165, 32, 0.3)',
-                    color: '#ffffff',
-                    fontSize: '16px'
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Premium Diagnosis & Duration Section */}
-            <div className="grid grid-cols-3 gap-6 mb-8">
-              <div className="col-span-2">
-                <label className="block text-sm font-semibold mb-3 uppercase tracking-wider" style={{ color: '#daa520' }}>
-                  Diagnosis *
-                </label>
-                <input
-                  type="text"
-                  name="diagnosis"
-                  value={mcFormData.diagnosis}
-                  onChange={handleMcInputChange}
-                  placeholder="e.g., Upper Respiratory Tract Infection"
-                  className="w-full px-5 py-4 rounded-xl border-2 outline-none transition-all focus:ring-2 focus:ring-amber-500/50"
-                  style={{
-                    backgroundColor: '#0a0e14',
-                    borderColor: 'rgba(218, 165, 32, 0.3)',
-                    color: '#ffffff',
-                    fontSize: '16px'
-                  }}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-3 uppercase tracking-wider" style={{ color: '#daa520' }}>
-                  Duration
-                </label>
-                <select
-                  name="duration"
-                  value={mcFormData.duration}
-                  onChange={handleMcInputChange}
-                  className="w-full px-5 py-4 rounded-xl border-2 outline-none transition-all cursor-pointer focus:ring-2 focus:ring-amber-500/50"
-                  style={{
-                    backgroundColor: '#0a0e14',
-                    borderColor: 'rgba(218, 165, 32, 0.3)',
-                    color: '#ffffff',
-                    fontSize: '16px'
-                  }}
-                >
-                  {[1, 2, 3, 4, 5, 6, 7, 14].map(d => (
-                    <option key={d} value={d}>{d} day{d > 1 ? 's' : ''}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Premium Remarks */}
-            <div className="mb-8">
-              <label className="block text-sm font-semibold mb-3 uppercase tracking-wider" style={{ color: '#daa520' }}>
-                Additional Remarks
-              </label>
-              <textarea
-                name="remarks"
-                value={mcFormData.remarks}
-                onChange={handleMcInputChange}
-                placeholder="Optional clinical notes..."
-                rows={2}
-                className="w-full px-5 py-4 rounded-xl border-2 outline-none transition-all resize-none focus:ring-2 focus:ring-amber-500/50"
-                style={{
-                  backgroundColor: '#0a0e14',
-                  borderColor: 'rgba(218, 165, 32, 0.3)',
-                  color: '#ffffff',
-                  fontSize: '16px'
-                }}
-              />
-            </div>
-
-            {/* PREMIUM Digital Signature Section */}
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center"
-                    style={{
-                      background: 'linear-gradient(135deg, #daa520 0%, #b8860b 100%)',
-                      boxShadow: '0 0 15px rgba(218, 165, 32, 0.3)'
-                    }}
-                  >
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                    </svg>
+              {/* Form Fields */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {/* Row 1: Patient IC & Name */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Patient IC Number *
+                    </label>
+                    <input
+                      type="text"
+                      name="patientIC"
+                      value={mcFormData.patientIC}
+                      onChange={handleMcInputChange}
+                      placeholder="e.g., 901201-13-5678"
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(20, 184, 166, 0.15)',
+                        backgroundColor: '#0f172a',
+                        color: '#ffffff',
+                        fontSize: '14px',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
+                    />
                   </div>
                   <div>
-                    <label className="text-sm font-semibold uppercase tracking-wider" style={{ color: '#daa520' }}>
-                      Physician Digital Signature *
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Patient Name *
                     </label>
-                    <p className="text-xs text-slate-400">Cryptographically secured on blockchain</p>
+                    <input
+                      type="text"
+                      name="patientName"
+                      value={mcFormData.patientName}
+                      onChange={handleMcInputChange}
+                      placeholder="e.g., Ahmad bin Hassan"
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(20, 184, 166, 0.15)',
+                        backgroundColor: '#0f172a',
+                        color: '#ffffff',
+                        fontSize: '14px',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
+                    />
                   </div>
                 </div>
-                <button
-                  onClick={clearSignature}
-                  className="text-xs px-4 py-2 rounded-lg transition-all hover:scale-105 font-semibold"
-                  style={{
-                    backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                    color: '#ef4444',
-                    border: '1px solid rgba(239, 68, 68, 0.3)'
-                  }}
-                >
-                  Clear Signature
-                </button>
-              </div>
-              <div
-                ref={signatureContainerRef}
-                className="rounded-2xl overflow-hidden signature-container"
-                style={{
-                  border: '1px solid #daa520',
-                  backgroundColor: '#0a0e14',
-                  width: '100%',
-                  boxShadow: isSigning
-                    ? '0 0 30px rgba(218, 165, 32, 0.4), inset 0 0 20px rgba(218, 165, 32, 0.08)'
-                    : '0 0 15px rgba(218, 165, 32, 0.15)'
-                }}
-              >
-                <SignatureCanvas
-                  ref={signaturePadRef}
-                  penColor="#daa520"
-                  backgroundColor="#0a0e14"
-                  canvasProps={{
-                    style: {
-                      width: '100%',
-                      height: '160px',
-                      display: 'block',
-                      backgroundColor: '#0a0e14'
-                    },
-                    className: 'signature-canvas cursor-crosshair'
-                  }}
-                  onBegin={() => setIsSigning(true)}
-                />
-              </div>
-              <div className="mt-3 flex items-center justify-between">
-                <p className="text-xs flex items-center gap-2" style={{ color: '#daa520' }}>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                  Sign with MedChain Gold ink • Tamper-proof • Legally binding
-                </p>
-                <span className="text-xs text-slate-500 font-mono">SHA-256 Encrypted</span>
-              </div>
-            </div>
 
-            {/* Transaction Hash Display */}
-            {transactionHash && (
-              <div className="mb-6 p-4 rounded-xl border" style={{ backgroundColor: `${terminalTheme.success}10`, borderColor: `${terminalTheme.success}30` }}>
-                <p className="text-sm font-semibold mb-2" style={{ color: terminalTheme.success }}>Transaction Secured!</p>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 text-xs font-mono p-2 rounded-lg truncate" style={{ backgroundColor: terminalTheme.bg, color: terminalTheme.textSecondary }}>
-                    {transactionHash}
-                  </code>
-                  <button
-                    onClick={() => navigator.clipboard.writeText(transactionHash)}
-                    className="p-2 rounded-lg transition-colors"
-                    style={{ backgroundColor: terminalTheme.bg }}
-                  >
-                    <svg className="w-4 h-4" style={{ color: terminalTheme.textMuted }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                  </button>
+                {/* Row 2: Diagnosis & Duration */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Diagnosis *
+                    </label>
+                    <input
+                      type="text"
+                      name="diagnosis"
+                      value={mcFormData.diagnosis}
+                      onChange={handleMcInputChange}
+                      placeholder="e.g., Upper Respiratory Tract Infection"
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(20, 184, 166, 0.15)',
+                        backgroundColor: '#0f172a',
+                        color: '#ffffff',
+                        fontSize: '14px',
+                        outline: 'none',
+                        boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Duration
+                    </label>
+                    <select
+                      name="duration"
+                      value={mcFormData.duration}
+                      onChange={handleMcInputChange}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(20, 184, 166, 0.15)',
+                        backgroundColor: '#0f172a',
+                        color: '#ffffff',
+                        fontSize: '14px',
+                        outline: 'none',
+                        cursor: 'pointer',
+                        boxSizing: 'border-box'
+                      }}
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 14].map(d => (
+                        <option key={d} value={d}>{d} day{d > 1 ? 's' : ''}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-              </div>
-            )}
 
-            {/* PREMIUM Secure on Blockchain Button - HIGH CONTRAST WHITE */}
-            <div className="flex justify-center mt-6">
-              <button
-                onClick={handleSecureOnBlockchain}
-                disabled={isMinting || !isVerified}
-                className="secure-btn w-full py-5 rounded-2xl text-lg transition-all flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-[0.98]"
-                style={{
-                  backgroundColor: isMinting ? '#374151' : '#ffffff',
-                  color: isMinting ? '#9ca3af' : '#000000',
-                  fontWeight: 900,
-                  boxShadow: isMinting
-                    ? 'none'
-                    : '0 0 25px rgba(218, 165, 32, 0.8), 0 0 60px rgba(218, 165, 32, 0.5), 0 0 100px rgba(218, 165, 32, 0.3)',
-                  border: '2px solid #daa520',
-                  opacity: (isMinting || !isVerified) ? 0.7 : 1
-                }}
-              >
-              {isMinting ? (
-                <>
-                  <svg className="animate-spin h-6 w-6" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  <span style={{ fontWeight: 900, color: '#9ca3af' }}>Securing on Blockchain...</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-6 h-6" fill="none" stroke="#000000" strokeWidth="2.5" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                  <span style={{ fontWeight: 900, color: '#000000', letterSpacing: '0.05em' }}>SECURE ON BLOCKCHAIN</span>
-                  <svg className="w-5 h-5" fill="none" stroke="#000000" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                  </svg>
-                </>
-              )}
-            </button>
-          </div>
-          </div>
-          </div>
-          </div>
-        </div>
-
-        {/* PREMIUM Live Feed Sidebar */}
-        <div
-          className="w-80 rounded-3xl overflow-hidden"
-          style={{
-            backgroundColor: '#111827',
-            border: '1px solid #daa520',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
-          }}
-        >
-          {/* Sidebar Header */}
-          <div
-            className="px-6 py-5"
-            style={{
-              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 182, 212, 0.1) 100%)',
-              borderBottom: '1px solid rgba(16, 185, 129, 0.2)'
-            }}
-          >
-            <div className="flex items-center gap-3">
-              <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center relative"
-                style={{
-                  background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
-                  boxShadow: '0 0 20px rgba(16, 185, 129, 0.4)'
-                }}
-              >
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full animate-pulse border-2 border-slate-900"></div>
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-white">Live Feed</h2>
-                <p className="text-xs text-emerald-400">Real-time blockchain activity</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-5">
-
-          {/* Premium Live Feed Items */}
-          <div className="space-y-3">
-            {liveFeed.map((item, index) => (
-              <div
-                key={item.id}
-                className="p-4 rounded-xl transition-all hover:scale-[1.02]"
-                style={{
-                  backgroundColor: '#0a0e14',
-                  border: item.status === 'confirming'
-                    ? '1px solid rgba(245, 158, 11, 0.4)'
-                    : '1px solid rgba(16, 185, 129, 0.2)',
-                  boxShadow: item.status === 'confirming'
-                    ? '0 0 15px rgba(245, 158, 11, 0.15)'
-                    : index === 0 ? '0 0 20px rgba(16, 185, 129, 0.15)' : 'none'
-                }}
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <p className="text-sm font-bold truncate text-white">
-                    {item.patientName}
-                  </p>
-                  <span
-                    className="text-xs px-3 py-1 rounded-full font-bold flex items-center gap-1.5"
+                {/* Row 3: Remarks */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Additional Remarks
+                  </label>
+                  <textarea
+                    name="remarks"
+                    value={mcFormData.remarks}
+                    onChange={handleMcInputChange}
+                    placeholder="Optional clinical notes..."
+                    rows={2}
                     style={{
-                      backgroundColor: item.status === 'confirming' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.25)',
-                      color: item.status === 'confirming' ? '#f59e0b' : '#10b981',
-                      border: item.status === 'confirming' ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(16, 185, 129, 0.4)'
+                      width: '100%',
+                      padding: '12px 16px',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(20, 184, 166, 0.15)',
+                      backgroundColor: '#0f172a',
+                      color: '#ffffff',
+                      fontSize: '14px',
+                      outline: 'none',
+                      resize: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                {/* Row 4: Digital Signature */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Physician Digital Signature *
+                    </label>
+                    <button
+                      onClick={clearSignature}
+                      style={{
+                        fontSize: '11px',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        border: 'none',
+                        backgroundColor: 'transparent',
+                        color: '#64748b',
+                        cursor: 'pointer',
+                        transition: 'color 0.2s'
+                      }}
+                      onMouseOver={(e) => e.target.style.color = '#14b8a6'}
+                      onMouseOut={(e) => e.target.style.color = '#64748b'}
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  <div
+                    ref={signatureContainerRef}
+                    style={{
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      border: '1px solid rgba(20, 184, 166, 0.1)',
+                      backgroundColor: '#0f172a'
                     }}
                   >
-                    {item.status === 'confirming' && (
-                      <span className="w-2 h-2 rounded-full animate-pulse bg-amber-500"></span>
-                    )}
-                    {item.status === 'confirming' ? 'PENDING' : 'CONFIRMED'}
-                  </span>
+                    <SignatureCanvas
+                      ref={signaturePadRef}
+                      penColor="#14b8a6"
+                      backgroundColor="#0f172a"
+                      canvasProps={{
+                        style: {
+                          width: '100%',
+                          height: '120px',
+                          display: 'block'
+                        }
+                      }}
+                      onBegin={() => setIsSigning(true)}
+                    />
+                  </div>
+                  <p style={{ fontSize: '11px', color: '#475569', marginTop: '8px' }}>
+                    Sign above • Cryptographically secured on blockchain
+                  </p>
                 </div>
-                <p className="text-xs mb-3 truncate text-slate-400">
-                  {item.diagnosis}
-                </p>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold" style={{ color: '#daa520' }}>
-                    {item.duration} day{item.duration > 1 ? 's' : ''} MC
-                  </span>
-                  <code className="text-xs font-mono px-2 py-1 rounded-lg bg-slate-800 text-cyan-400">
-                    {item.txHash}
-                  </code>
-                </div>
-                <p className="text-xs mt-2 text-slate-500">{item.time}</p>
-              </div>
-            ))}
-          </div>
 
-          {/* Premium Stats Summary */}
-          <div
-            className="mt-6 p-5 rounded-2xl"
-            style={{
-              background: 'linear-gradient(135deg, rgba(218, 165, 32, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%)',
-              border: '1px solid rgba(218, 165, 32, 0.2)'
-            }}
-          >
-            <p className="text-xs font-bold uppercase tracking-wider mb-4" style={{ color: '#daa520' }}>Today's Performance</p>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-3 rounded-xl" style={{ backgroundColor: 'rgba(6, 182, 212, 0.1)' }}>
-                <p className="text-3xl font-black text-cyan-400">{liveFeed.length}</p>
-                <p className="text-xs text-slate-400 font-semibold">MCs Issued</p>
-              </div>
-              <div className="text-center p-3 rounded-xl" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}>
-                <p className="text-3xl font-black text-emerald-400">100%</p>
-                <p className="text-xs text-slate-400 font-semibold">Success Rate</p>
+                {/* Transaction Hash (conditional) */}
+                {transactionHash && (
+                  <div style={{
+                    padding: '16px',
+                    borderRadius: '12px',
+                    backgroundColor: 'rgba(34, 197, 94, 0.08)',
+                    border: '1px solid rgba(34, 197, 94, 0.2)'
+                  }}>
+                    <p style={{ fontSize: '14px', fontWeight: 600, color: '#22c55e', marginBottom: '8px' }}>Transaction Secured!</p>
+                    <code style={{ fontSize: '12px', color: '#14b8a6', wordBreak: 'break-all' }}>{transactionHash}</code>
+                  </div>
+                )}
+
+                {/* Submit Button */}
+                <button
+                  onClick={handleSecureOnBlockchain}
+                  disabled={isMinting || !isVerified}
+                  style={{
+                    width: '100%',
+                    padding: '16px',
+                    borderRadius: '12px',
+                    border: 'none',
+                    background: (isMinting || !isVerified) ? '#1e293b' : 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
+                    color: '#ffffff',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    cursor: (isMinting || !isVerified) ? 'not-allowed' : 'pointer',
+                    opacity: (isMinting || !isVerified) ? 0.5 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    marginTop: '8px'
+                  }}
+                >
+                  {isMinting ? (
+                    <>
+                      <svg style={{ width: '20px', height: '20px', animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24">
+                        <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      <span>Securing on Blockchain...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>SECURE ON BLOCKCHAIN</span>
+                      <svg style={{ width: '20px', height: '20px' }} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
+            {/* END LEFT COLUMN */}
+
+            {/* ========== RIGHT COLUMN: LIVE FEED CARD ========== */}
+            <div style={{
+              backgroundColor: 'rgba(15, 23, 42, 0.6)',
+              border: '1px solid rgba(20, 184, 166, 0.2)',
+              borderRadius: '16px',
+              padding: '24px',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
+              {/* Card Header */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                paddingBottom: '16px',
+                marginBottom: '16px',
+                borderBottom: '1px solid rgba(20, 184, 166, 0.1)'
+              }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <svg style={{ width: '20px', height: '20px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff', margin: 0 }}>Live Feed</h2>
+                  <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0 0 0' }}>Real-time activity</p>
+                </div>
+              </div>
+
+              {/* Activity List */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
+                {liveFeed.slice(0, 4).map((item) => (
+                  <div
+                    key={item.id}
+                    style={{
+                      padding: '12px',
+                      borderRadius: '8px',
+                      backgroundColor: '#0f172a'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <p style={{ fontSize: '13px', fontWeight: 600, color: '#ffffff', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
+                        {item.patientName}
+                      </p>
+                      <span style={{
+                        fontSize: '10px',
+                        padding: '2px 8px',
+                        borderRadius: '20px',
+                        fontWeight: 700,
+                        backgroundColor: item.status === 'confirming' ? 'rgba(6, 182, 212, 0.15)' : 'rgba(34, 197, 94, 0.15)',
+                        color: item.status === 'confirming' ? '#22d3ee' : '#22c55e'
+                      }}>
+                        {item.status === 'confirming' ? 'PENDING' : 'CONFIRMED'}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '11px', color: '#64748b', margin: '0 0 6px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {item.diagnosis} • {item.duration}d
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <code style={{ fontSize: '10px', color: '#14b8a6' }}>{item.txHash}</code>
+                      <span style={{ fontSize: '10px', color: '#475569' }}>{item.time}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Performance Stats */}
+              <div style={{
+                paddingTop: '16px',
+                marginTop: '16px',
+                borderTop: '1px solid rgba(20, 184, 166, 0.1)'
+              }}>
+                <p style={{ fontSize: '10px', fontWeight: 600, color: '#64748b', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  TODAY'S PERFORMANCE
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div style={{
+                    textAlign: 'center',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(20, 184, 166, 0.08)',
+                    border: '1px solid rgba(20, 184, 166, 0.1)'
+                  }}>
+                    <p style={{ fontSize: '24px', fontWeight: 700, color: '#14b8a6', margin: 0 }}>{liveFeed.length}</p>
+                    <p style={{ fontSize: '10px', color: '#64748b', margin: '4px 0 0 0' }}>MCs Issued</p>
+                  </div>
+                  <div style={{
+                    textAlign: 'center',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    backgroundColor: 'rgba(34, 197, 94, 0.08)',
+                    border: '1px solid rgba(34, 197, 94, 0.1)'
+                  }}>
+                    <p style={{ fontSize: '24px', fontWeight: 700, color: '#22c55e', margin: 0 }}>100%</p>
+                    <p style={{ fontSize: '10px', color: '#64748b', margin: '4px 0 0 0' }}>Success</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* END RIGHT COLUMN */}
+
           </div>
-          </div>
+          {/* END GRID */}
         </div>
       </div>
     </div>

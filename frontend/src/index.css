@@ -767,17 +767,17 @@ body:has(.ceo-dashboard) [class*="Subscription"]:not(.ceo-dashboard *) {
   box-shadow: 0 0 15px rgba(218, 165, 32, 0.6) !important;
 }
 
-/* Secure on Blockchain Button - White with Gold Glow, Gold Hover */
+/* Secure on Blockchain Button - Teal gradient */
 .secure-btn {
-  background-color: #ffffff !important;
-  color: #000000 !important;
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%) !important;
+  color: #ffffff !important;
   transition: all 0.2s ease-in-out !important;
+  border: none !important;
 }
 
 .secure-btn:hover:not(:disabled) {
-  background-color: #daa520 !important;
-  color: #ffffff !important;
-  box-shadow: 0 0 35px rgba(218, 165, 32, 0.9), 0 0 70px rgba(218, 165, 32, 0.6), 0 0 110px rgba(218, 165, 32, 0.4) !important;
+  opacity: 0.9 !important;
+  box-shadow: 0 4px 20px rgba(20, 184, 166, 0.4) !important;
 }
 
 .secure-btn:hover:not(:disabled) span {
@@ -790,24 +790,22 @@ body:has(.ceo-dashboard) [class*="Subscription"]:not(.ceo-dashboard *) {
 
 /* Disabled state maintains gray styling */
 .secure-btn:disabled {
-  background-color: #374151 !important;
+  background: #374151 !important;
   color: #9ca3af !important;
-  opacity: 0.7 !important;
+  opacity: 0.6 !important;
 }
 
-/* Credit Warning Top Up Button - Premium Gold Glow Hover */
+/* Credit Warning Top Up Button - Teal theme */
 .credit-topup-btn {
-  background-color: #ffffff !important;
-  color: #000000 !important;
-  border: 1px solid #daa520 !important;
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
   transition: all 0.3s ease-in-out !important;
 }
 
 .credit-topup-btn:hover {
-  background-color: #daa520 !important;
-  color: #ffffff !important;
-  border-color: #daa520 !important;
-  box-shadow: 0 0 20px rgba(218, 165, 32, 0.7), 0 0 40px rgba(218, 165, 32, 0.4) !important;
+  opacity: 0.9 !important;
+  box-shadow: 0 4px 20px rgba(20, 184, 166, 0.4) !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
@@ -1210,9 +1208,10 @@ option {
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 .patient-portal-card {
-  border: 1px solid rgba(20, 184, 166, 0.3) !important;
-  border-color: rgba(20, 184, 166, 0.3) !important;
-  box-shadow: 0 0 15px rgba(20, 184, 166, 0.08) !important;
+  border: 1px solid rgba(20, 184, 166, 0.2) !important;
+  border-radius: 16px !important;
+  background-color: rgba(20, 184, 166, 0.02) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
 }
 
 /* Extra specificity to override ALL nuclear rules */
@@ -1223,8 +1222,10 @@ body .patient-portal-card,
 #root main .patient-portal-card,
 body #root main .patient-portal-card,
 html body #root main .patient-portal-card {
-  border: 1px solid rgba(20, 184, 166, 0.3) !important;
-  border-color: rgba(20, 184, 166, 0.3) !important;
+  border: 1px solid rgba(20, 184, 166, 0.2) !important;
+  border-radius: 16px !important;
+  background-color: rgba(20, 184, 166, 0.02) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════

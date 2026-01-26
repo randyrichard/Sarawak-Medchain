@@ -180,8 +180,8 @@ function StickyBalanceHeader({ walletAddress }) {
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [buttonLoading, setButtonLoading] = useState(false);
 
-  // Show on Doctor and Admin portals where billing matters
-  const showOnRoutes = ['/doctor', '/admin'];
+  // Show only on Admin portal - Doctor portal has its own credit display in header
+  const showOnRoutes = ['/admin'];
   const shouldShow = showOnRoutes.includes(location.pathname);
 
   const criticalThreshold = 100; // RM100 - critical (red)
@@ -271,7 +271,7 @@ function StickyBalanceHeader({ walletAddress }) {
 
   const styles = getStatusStyles();
 
-  // Show warning banner for low credit - DARK THEME with gold accents
+  // Show warning banner for low credit - DARK THEME with teal accents
   if (needsAttention) {
     return (
       <>
@@ -280,63 +280,48 @@ function StickyBalanceHeader({ walletAddress }) {
         style={{
           width: '100%',
           backgroundColor: '#0a0e14',
-          borderBottom: '1px solid rgba(218, 165, 32, 0.3)',
+          borderBottom: '1px solid rgba(20, 184, 166, 0.2)',
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)'
         }}
       >
         <div style={{ maxWidth: '1200px', margin: '0 auto' }} className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            {/* Warning Icon - Soft Gold */}
+            {/* Warning Icon - Teal */}
             <div
               className="w-12 h-12 rounded-full flex items-center justify-center"
               style={{
-                backgroundColor: 'rgba(218, 165, 32, 0.15)',
-                border: '1px solid rgba(218, 165, 32, 0.3)'
+                backgroundColor: 'rgba(20, 184, 166, 0.15)',
+                border: '1px solid rgba(20, 184, 166, 0.3)'
               }}
             >
-              <svg className="w-6 h-6" style={{ color: '#daa520' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6" style={{ color: '#14b8a6' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
 
-            {/* Alert Message - Clean Sharp White Text */}
+            {/* Alert Message */}
             <div>
               <div className="flex items-center gap-3">
-                <h3 className="text-lg font-black" style={{ color: '#ffffff', letterSpacing: '0.02em' }}>
-                  {isCriticalBalance ? 'Critical: Low Credit Balance' : 'Low Credit Warning'}
+                <h3 className="text-lg font-bold" style={{ color: '#ffffff' }}>
+                  {isCriticalBalance ? 'Low Credit Balance' : 'Credit Warning'}
                 </h3>
-                <span
-                  className="px-3 py-1 rounded-full text-sm font-black uppercase tracking-wider"
-                  style={{
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    color: '#ffffff'
-                  }}
-                >
+                <span className="text-sm font-semibold" style={{ color: '#14b8a6' }}>
                   RM {loading ? '...' : creditBalance?.toLocaleString() || 0}
                 </span>
               </div>
               <p className="text-sm mt-1" style={{ color: '#94a3b8' }}>
                 {isCriticalBalance
-                  ? 'Immediate top-up required. MC issuance may be interrupted.'
-                  : 'Please top up to ensure uninterrupted MC issuance.'}
+                  ? 'Top-up required to continue issuing MCs.'
+                  : 'Consider topping up soon.'}
               </p>
             </div>
           </div>
 
-          {/* Top Up Now Button - SOLID WHITE with GOLD HOVER */}
+          {/* Top Up Now Button */}
           <button
             onClick={handleTopUp}
             disabled={buttonLoading}
-            className="credit-topup-btn px-6 py-3 rounded-xl font-bold text-sm shadow-lg transform hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer"
-            style={{
-              backgroundColor: '#ffffff',
-              color: '#000000',
-              border: '1px solid #daa520',
-              boxShadow: '0 0 15px rgba(218, 165, 32, 0.4)',
-              transition: 'all 0.3s ease-in-out',
-              cursor: 'pointer'
-            }}
+            className="credit-topup-btn px-6 py-3 rounded-xl font-semibold text-sm transform hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer"
           >
             {buttonLoading ? (
               <>
@@ -388,11 +373,15 @@ function StickyBalanceHeader({ walletAddress }) {
 // Glowing Top Up Required Badge (shows in sidebar when credits < RM500)
 function TopUpRequiredBadge({ walletAddress }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [creditBalance, setCreditBalance] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Don't show on Doctor route - Doctor Portal has its own credit display
+  const isOnDoctorRoute = location.pathname === '/doctor';
+
   const topUpThreshold = 500; // RM500 threshold
-  const needsTopUp = creditBalance !== null && creditBalance < topUpThreshold;
+  const needsTopUp = creditBalance !== null && creditBalance < topUpThreshold && !isOnDoctorRoute;
 
   useEffect(() => {
     if (walletAddress) {
@@ -484,98 +473,9 @@ function TopUpRequiredBadge({ walletAddress }) {
 
 // Credit Balance Sidebar Component (needs to be inside Router)
 function CreditBalanceSidebar({ walletAddress }) {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [creditBalance, setCreditBalance] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  const isOnDoctorRoute = location.pathname === '/doctor';
-  const lowBalanceThreshold = 5;
-  const isLowBalance = creditBalance !== null && creditBalance <= lowBalanceThreshold;
-
-  useEffect(() => {
-    if (isOnDoctorRoute && walletAddress) {
-      fetchCreditBalance();
-    }
-  }, [isOnDoctorRoute, walletAddress]);
-
-  const fetchCreditBalance = async () => {
-    try {
-      setLoading(true);
-      // First check localStorage for hospital node credits (from FPX payment)
-      const hospitalNode = localStorage.getItem('medchain_hospital_node');
-      if (hospitalNode) {
-        const nodeData = JSON.parse(hospitalNode);
-        if (nodeData.credits?.balance !== undefined) {
-          // Credits are already in RM value (1 credit = RM 1)
-          setCreditBalance(nodeData.credits.balance);
-          setLoading(false);
-          return;
-        }
-      }
-      // Fall back to blockchain call
-      const balance = await getMyBalance();
-      setCreditBalance(balance);
-    } catch (error) {
-      console.error('Error fetching credit balance:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleTopUp = () => {
-    navigate('/admin');
-  };
-
-  if (!isOnDoctorRoute) return null;
-
-  return (
-    <div className="p-4" style={{ borderTop: 'none' }}>
-      <div className={`rounded-xl p-4 ${
-        isLowBalance
-          ? 'bg-gradient-to-r from-amber-600 to-amber-700'
-          : 'bg-gradient-to-r from-emerald-600 to-emerald-700'
-      }`}>
-        <div className="flex items-center justify-between mb-3">
-          <p className={`text-xs font-semibold uppercase tracking-wide ${
-            isLowBalance ? 'text-amber-200' : 'text-emerald-200'
-          }`}>
-            Credits Loaded
-          </p>
-          {isLowBalance && (
-            <span className="px-2 py-0.5 bg-amber-500/30 rounded-full text-xs font-bold text-amber-100">
-              LOW
-            </span>
-          )}
-        </div>
-        <div className="flex items-end justify-between">
-          <div>
-            <p className="text-3xl font-black text-white">
-              {loading ? '...' : creditBalance !== null ? `RM ${creditBalance.toLocaleString()}` : '--'}
-            </p>
-            <p className={`text-xs mt-1 ${isLowBalance ? 'text-amber-200/70' : 'text-emerald-200/70'}`}>
-              {creditBalance !== null ? `${creditBalance} MC credits` : 'credits available'}
-            </p>
-          </div>
-          <button
-            onClick={handleTopUp}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-              isLowBalance
-                ? 'bg-white text-amber-700 hover:bg-amber-100'
-                : 'bg-white/20 text-white hover:bg-white/30'
-            }`}
-          >
-            Top Up
-          </button>
-        </div>
-        {isLowBalance && (
-          <p className="text-xs text-amber-200/80 mt-3 pt-3 border-t border-amber-500/30">
-            RM1.00 per MC issued
-          </p>
-        )}
-      </div>
-    </div>
-  );
+  // Disabled - Doctor Portal has its own credit display in header
+  // This prevents duplicate credit displays
+  return null;
 }
 
 // Protected App Layout - requires wallet connection
