@@ -1101,10 +1101,10 @@ export default function FPXPayment() {
           <div
             style={{
               backgroundColor: 'rgba(15, 23, 42, 0.6)',
-              border: '1px solid rgba(20, 184, 166, 0.2)',
+              border: '1px solid rgba(20, 184, 166, 0.3)',
               borderRadius: '16px',
               padding: '32px',
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)'
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)'
             }}
           >
             <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff', marginBottom: '24px' }}>Order Summary</h2>
@@ -1317,10 +1317,10 @@ export default function FPXPayment() {
           <div
             style={{
               backgroundColor: 'rgba(15, 23, 42, 0.6)',
-              border: '1px solid rgba(20, 184, 166, 0.2)',
+              border: '1px solid rgba(20, 184, 166, 0.3)',
               borderRadius: '16px',
               padding: '32px',
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
               display: 'flex',
               flexDirection: 'column'
             }}
