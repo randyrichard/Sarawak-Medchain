@@ -1064,7 +1064,8 @@ export default function FPXPayment() {
         .bank-card:hover {
           transform: translateY(-2px);
           border-color: rgba(20, 184, 166, 0.5) !important;
-          background: rgba(20, 184, 166, 0.08) !important;
+          background: rgba(20, 184, 166, 0.12) !important;
+          box-shadow: 0 4px 12px rgba(20, 184, 166, 0.15);
         }
         .package-card {
           transition: all 0.2s ease;
@@ -1072,6 +1073,15 @@ export default function FPXPayment() {
         .package-card:hover {
           transform: translateY(-1px);
           border-color: rgba(20, 184, 166, 0.4) !important;
+          background: rgba(20, 184, 166, 0.08) !important;
+          box-shadow: 0 4px 12px rgba(20, 184, 166, 0.1);
+        }
+        .pay-btn {
+          transition: all 0.2s ease;
+        }
+        .pay-btn:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 8px 30px rgba(20, 184, 166, 0.4) !important;
         }
       `}</style>
 
@@ -1086,7 +1096,7 @@ export default function FPXPayment() {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px', alignItems: 'stretch' }}>
           {/* ========== LEFT CARD: ORDER SUMMARY ========== */}
           <div
             style={{
@@ -1321,7 +1331,7 @@ export default function FPXPayment() {
             </p>
 
             {/* Bank Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px' }}>
               {MALAYSIAN_BANKS.map((bank) => (
                 <button
                   key={bank.code}
@@ -1368,23 +1378,24 @@ export default function FPXPayment() {
             <button
               onClick={handlePayment}
               disabled={!selectedBank || (isTopUp && !selectedPackage)}
+              className="pay-btn"
               style={{
                 width: '100%',
-                padding: '16px',
+                padding: '18px 24px',
                 borderRadius: '12px',
                 border: 'none',
                 background: (selectedBank && (!isTopUp || selectedPackage))
                   ? 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)'
                   : 'rgba(55, 65, 81, 0.5)',
                 color: (selectedBank && (!isTopUp || selectedPackage)) ? '#ffffff' : '#6b7280',
-                fontSize: '15px',
+                fontSize: '16px',
                 fontWeight: 700,
                 cursor: (selectedBank && (!isTopUp || selectedPackage)) ? 'pointer' : 'not-allowed',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '10px',
-                boxShadow: (selectedBank && (!isTopUp || selectedPackage)) ? '0 4px 20px rgba(20, 184, 166, 0.3)' : 'none'
+                boxShadow: (selectedBank && (!isTopUp || selectedPackage)) ? '0 6px 24px rgba(20, 184, 166, 0.35)' : 'none'
               }}
             >
               {(selectedBank && (!isTopUp || selectedPackage)) ? (
