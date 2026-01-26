@@ -202,8 +202,8 @@ export default function PatientPortal({ walletAddress }) {
 
           {/* LEFT CARD - Access Control */}
           <div style={{
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.1)',
+            background: 'rgba(17, 24, 39, 0.8)',
+            border: '1px solid rgba(148, 163, 184, 0.2)',
             borderRadius: '16px',
             padding: '24px'
           }}>
@@ -260,12 +260,13 @@ export default function PatientPortal({ walletAddress }) {
               <button
                 onClick={handleGrantAccess}
                 disabled={isButtonDisabled}
+                className="btn-grant"
                 style={{
                   width: '100%',
-                  padding: '12px',
+                  padding: '12px 16px',
                   borderRadius: '8px',
-                  backgroundColor: isButtonDisabled ? 'rgba(255,255,255,0.05)' : '#14b8a6',
-                  border: 'none',
+                  backgroundColor: isButtonDisabled ? '#1e293b' : '#14b8a6',
+                  border: isButtonDisabled ? '1px solid rgba(148, 163, 184, 0.2)' : '1px solid #14b8a6',
                   color: isButtonDisabled ? '#475569' : '#fff',
                   fontSize: '0.9rem',
                   fontWeight: '500',
@@ -274,7 +275,7 @@ export default function PatientPortal({ walletAddress }) {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
-                  opacity: isButtonDisabled ? 0.5 : 1
+                  transition: 'all 0.2s ease'
                 }}
               >
                 <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -286,13 +287,14 @@ export default function PatientPortal({ walletAddress }) {
               <button
                 onClick={handleRevokeAccess}
                 disabled={isButtonDisabled}
+                className="btn-secondary"
                 style={{
                   width: '100%',
-                  padding: '12px',
+                  padding: '12px 16px',
                   borderRadius: '8px',
-                  backgroundColor: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  color: isButtonDisabled ? '#475569' : '#94a3b8',
+                  backgroundColor: '#1e293b',
+                  border: '1px solid rgba(148, 163, 184, 0.3)',
+                  color: isButtonDisabled ? '#475569' : '#e2e8f0',
                   fontSize: '0.9rem',
                   fontWeight: '500',
                   cursor: isButtonDisabled ? 'not-allowed' : 'pointer',
@@ -300,7 +302,7 @@ export default function PatientPortal({ walletAddress }) {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
-                  opacity: isButtonDisabled ? 0.5 : 1
+                  transition: 'all 0.2s ease'
                 }}
               >
                 <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -312,13 +314,14 @@ export default function PatientPortal({ walletAddress }) {
               <button
                 onClick={handleCheckAccess}
                 disabled={isButtonDisabled}
+                className="btn-secondary"
                 style={{
                   width: '100%',
-                  padding: '12px',
+                  padding: '12px 16px',
                   borderRadius: '8px',
-                  backgroundColor: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  color: isButtonDisabled ? '#475569' : '#94a3b8',
+                  backgroundColor: '#1e293b',
+                  border: '1px solid rgba(148, 163, 184, 0.3)',
+                  color: isButtonDisabled ? '#475569' : '#e2e8f0',
                   fontSize: '0.9rem',
                   fontWeight: '500',
                   cursor: isButtonDisabled ? 'not-allowed' : 'pointer',
@@ -326,7 +329,7 @@ export default function PatientPortal({ walletAddress }) {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
-                  opacity: isButtonDisabled ? 0.5 : 1
+                  transition: 'all 0.2s ease'
                 }}
               >
                 <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -339,8 +342,8 @@ export default function PatientPortal({ walletAddress }) {
 
           {/* RIGHT CARD - My Medical Records */}
           <div style={{
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.1)',
+            background: 'rgba(17, 24, 39, 0.8)',
+            border: '1px solid rgba(148, 163, 184, 0.2)',
             borderRadius: '16px',
             padding: '24px'
           }}>
@@ -469,6 +472,24 @@ export default function PatientPortal({ walletAddress }) {
 
         </div>
       </main>
+
+      {/* CSS for hover effects */}
+      <style>{`
+        .btn-grant:hover:not(:disabled) {
+          background-color: #0d9488 !important;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
+        }
+        .btn-secondary:hover:not(:disabled) {
+          background-color: #334155 !important;
+          border-color: rgba(148, 163, 184, 0.5) !important;
+          transform: translateY(-1px);
+        }
+        .btn-grant:active:not(:disabled),
+        .btn-secondary:active:not(:disabled) {
+          transform: translateY(0);
+        }
+      `}</style>
     </div>
   );
 }
