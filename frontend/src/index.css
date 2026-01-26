@@ -1210,9 +1210,9 @@ option {
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 .patient-portal-card {
-  border: 2px solid #14b8a6 !important;
-  border-color: #14b8a6 !important;
-  box-shadow: 0 0 20px rgba(20, 184, 166, 0.15) !important;
+  border: 1px solid rgba(20, 184, 166, 0.3) !important;
+  border-color: rgba(20, 184, 166, 0.3) !important;
+  box-shadow: 0 0 15px rgba(20, 184, 166, 0.08) !important;
 }
 
 /* Extra specificity to override ALL nuclear rules */
@@ -1223,8 +1223,8 @@ body .patient-portal-card,
 #root main .patient-portal-card,
 body #root main .patient-portal-card,
 html body #root main .patient-portal-card {
-  border: 2px solid #14b8a6 !important;
-  border-color: #14b8a6 !important;
+  border: 1px solid rgba(20, 184, 166, 0.3) !important;
+  border-color: rgba(20, 184, 166, 0.3) !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════

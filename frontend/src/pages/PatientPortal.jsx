@@ -197,14 +197,16 @@ export default function PatientPortal({ walletAddress }) {
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
           gap: '24px',
-          alignItems: 'start'
+          alignItems: 'stretch'
         }}>
 
           {/* LEFT CARD - Access Control */}
           <div className="patient-portal-card" style={{
-            background: 'rgba(20, 184, 166, 0.05)',
+            background: 'rgba(20, 184, 166, 0.02)',
             borderRadius: '16px',
-            padding: '24px'
+            padding: '24px',
+            display: 'flex',
+            flexDirection: 'column'
           }}>
             {/* Card Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
@@ -341,12 +343,14 @@ export default function PatientPortal({ walletAddress }) {
 
           {/* RIGHT CARD - My Medical Records */}
           <div className="patient-portal-card" style={{
-            background: 'rgba(20, 184, 166, 0.05)',
+            background: 'rgba(20, 184, 166, 0.02)',
             borderRadius: '16px',
-            padding: '24px'
+            padding: '24px',
+            display: 'flex',
+            flexDirection: 'column'
           }}>
-            {/* Card Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+            {/* Card Header - Fixed at top */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', flexShrink: 0 }}>
               <div style={{
                 width: '40px',
                 height: '40px',
@@ -373,14 +377,14 @@ export default function PatientPortal({ walletAddress }) {
               }}>{records.length} records</span>
             </div>
 
-            {/* Content */}
+            {/* Content - Grows to fill remaining space */}
             {records.length === 0 ? (
               <div style={{
+                flex: 1,
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: '40px 20px',
                 textAlign: 'center'
               }}>
                 <div style={{
