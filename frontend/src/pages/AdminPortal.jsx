@@ -36,10 +36,10 @@ const Card = ({ children, className = '', noPadding = false }) => (
   <div
     className={`backdrop-blur-sm ${noPadding ? '' : 'p-6'} ${className}`}
     style={{
-      border: '1px solid #2dd4bf40',
+      border: '1px solid rgba(20, 184, 166, 0.3)',
       borderRadius: '16px',
-      background: 'rgba(10, 20, 30, 0.3)',
-      boxShadow: '0 2px 16px rgba(0, 0, 0, 0.2)'
+      padding: noPadding ? '0' : '24px',
+      background: 'rgba(10, 20, 30, 0.3)'
     }}
   >
     {children}
@@ -601,7 +601,7 @@ export default function AdminPortal({ walletAddress }) {
 
             {/* Card 1: Doctor Leaderboard (2 cols) */}
             <Card noPadding className="lg:col-span-2">
-              <div className="px-6 py-4 border-b" style={{ borderColor: '#2dd4bf30' }}>
+              <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(20, 184, 166, 0.3)' }}>
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-bold text-white">Doctor Leaderboard</h3>
@@ -642,7 +642,7 @@ export default function AdminPortal({ walletAddress }) {
                   </div>
                 ))}
               </div>
-              <div className="px-6 py-4 border-t bg-slate-800/30" style={{ borderColor: '#2dd4bf30' }}>
+              <div className="px-6 py-4 border-t bg-slate-800/30" style={{ borderColor: 'rgba(20, 184, 166, 0.3)' }}>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs text-slate-400">Total Revenue</p>
@@ -765,7 +765,7 @@ export default function AdminPortal({ walletAddress }) {
 
           {/* Monthly Dues Table */}
           <Card noPadding className="mb-6">
-            <div className="px-6 py-4 border-b" style={{ borderColor: '#2dd4bf30' }}>
+            <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(20, 184, 166, 0.3)' }}>
               <h3 className="text-lg font-bold text-white">Monthly Dues</h3>
               <p className="text-slate-400 text-sm">Invoice history and payment status</p>
             </div>
@@ -950,7 +950,7 @@ export default function AdminPortal({ walletAddress }) {
         <div className="mb-8">
           <SectionLabel>Account Details</SectionLabel>
           <Card noPadding>
-            <div className="px-6 py-4 border-b" style={{ borderColor: '#2dd4bf30' }}>
+            <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(20, 184, 166, 0.3)' }}>
               <h3 className="text-lg font-bold text-white">Hospital Balances</h3>
               <p className="text-slate-400 text-sm">Detailed breakdown by hospital/doctor</p>
             </div>
