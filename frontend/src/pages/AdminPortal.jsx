@@ -34,12 +34,12 @@ const generateDoctorPerformanceData = () => {
 // Reusable Card Component for consistent styling
 const Card = ({ children, className = '', noPadding = false }) => (
   <div
-    className={`backdrop-blur-sm ${className}`}
+    className={`backdrop-blur-sm border border-teal-500/30 ${className}`}
     style={{
-      border: '1px solid #14b8a650',
       borderRadius: '16px',
       padding: noPadding ? '0' : '24px',
-      background: 'rgba(15, 23, 42, 0.5)'
+      background: 'rgba(15, 23, 42, 0.6)',
+      boxShadow: '0 0 0 1px rgba(20, 184, 166, 0.15)'
     }}
   >
     {children}
@@ -820,7 +820,7 @@ export default function AdminPortal({ walletAddress }) {
           </Card>
 
           {/* Admin Transfer + Doctor Management */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
 
             {/* Admin Transfer */}
             <Card className="h-full">
@@ -889,7 +889,7 @@ export default function AdminPortal({ walletAddress }) {
             </Card>
 
             {/* Doctor Management */}
-            <Card className="lg:col-span-2 h-full">
+            <Card className="h-full">
               <SectionHeader
                 title="Doctor Management"
                 subtitle={isAdmin ? 'Add or remove verified doctors' : 'Admin access required'}
