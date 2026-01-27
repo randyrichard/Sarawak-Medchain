@@ -34,12 +34,12 @@ const generateDoctorPerformanceData = () => {
 // Reusable Card Component for consistent styling
 const Card = ({ children, className = '', noPadding = false }) => (
   <div
-    className={`backdrop-blur-sm border border-teal-500/30 ${className}`}
+    className={`backdrop-blur-sm ${className}`}
     style={{
+      border: '1px solid rgba(20, 184, 166, 0.35)',
       borderRadius: '16px',
       padding: noPadding ? '0' : '24px',
-      background: 'rgba(15, 23, 42, 0.6)',
-      boxShadow: '0 0 0 1px rgba(20, 184, 166, 0.15)'
+      background: 'rgba(15, 23, 42, 0.6)'
     }}
   >
     {children}
