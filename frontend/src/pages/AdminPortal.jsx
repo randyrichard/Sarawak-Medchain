@@ -39,7 +39,8 @@ const Card = ({ children, className = '', noPadding = false }) => (
       border: '2px solid #14b8a6',
       borderRadius: '16px',
       padding: noPadding ? '0' : '24px',
-      background: 'rgba(15, 23, 42, 0.6)'
+      background: 'rgba(15, 23, 42, 0.6)',
+      boxShadow: 'inset 0 0 0 2px #14b8a6, 0 4px 20px rgba(20, 184, 166, 0.15)'
     }}
   >
     {children}
@@ -312,10 +313,10 @@ export default function AdminPortal({ walletAddress }) {
     <div className="flex-1 flex-grow w-full min-h-full font-sans" style={{ backgroundColor: '#0a0e14' }}>
       <BroadcastNotification />
 
-      <div className="px-8 lg:px-12 py-8" style={{ maxWidth: '1600px', margin: '0 auto' }}>
+      <div className="px-8 lg:px-12 py-10" style={{ maxWidth: '1600px', margin: '0 auto', padding: '40px 48px' }}>
 
         {/* ==================== HEADER SECTION ==================== */}
-        <div className="mb-8">
+        <div style={{ marginBottom: '32px' }}>
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
               <h1 className="text-3xl lg:text-4xl font-bold text-white mb-2">Hospital Admin Portal</h1>
@@ -391,7 +392,7 @@ export default function AdminPortal({ walletAddress }) {
         )}
 
         {/* ==================== ROW 1: BILLING SUMMARY (3 Cards) ==================== */}
-        <div className="mb-8">
+        <div style={{ marginBottom: '32px' }}>
           <SectionLabel>Billing Summary</SectionLabel>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
 
@@ -513,7 +514,7 @@ export default function AdminPortal({ walletAddress }) {
         </div>
 
         {/* ==================== ROW 2: OPERATIONS (2 Cards) ==================== */}
-        <div className="mb-8">
+        <div style={{ marginBottom: '32px' }}>
           <SectionLabel>Operations</SectionLabel>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
 
@@ -595,12 +596,12 @@ export default function AdminPortal({ walletAddress }) {
         </div>
 
         {/* ==================== ROW 3: PERFORMANCE (2 Cards) ==================== */}
-        <div className="mb-8">
+        <div style={{ marginBottom: '32px' }}>
           <SectionLabel>Performance</SectionLabel>
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
 
             {/* Card 1: Doctor Leaderboard (2 cols) */}
-            <div className="lg:col-span-2 h-full" style={{ border: '2px solid #14b8a6', borderRadius: '16px', background: 'rgba(15, 23, 42, 0.6)' }}>
+            <div className="lg:col-span-2 h-full" style={{ border: '2px solid #14b8a6', borderRadius: '16px', background: 'rgba(15, 23, 42, 0.6)', boxShadow: 'inset 0 0 0 2px #14b8a6, 0 4px 20px rgba(20, 184, 166, 0.15)' }}>
               <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(20, 184, 166, 0.3)' }}>
                 <div className="flex items-center justify-between">
                   <div>
@@ -657,7 +658,7 @@ export default function AdminPortal({ walletAddress }) {
             </div>
 
             {/* Card 2: Performance Overview + Top Performer (3 cols) */}
-            <div className="lg:col-span-3 h-full" style={{ border: '2px solid #14b8a6', borderRadius: '16px', padding: '24px', background: 'rgba(15, 23, 42, 0.6)' }}>
+            <div className="lg:col-span-3 h-full" style={{ border: '2px solid #14b8a6', borderRadius: '16px', padding: '24px', background: 'rgba(15, 23, 42, 0.6)', boxShadow: 'inset 0 0 0 2px #14b8a6, 0 4px 20px rgba(20, 184, 166, 0.15)' }}>
               <SectionHeader
                 title="Performance Overview"
                 icon={<svg className="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>}
@@ -711,7 +712,7 @@ export default function AdminPortal({ walletAddress }) {
         </div>
 
         {/* ==================== ROW 4: STATISTICS (3 Cards) ==================== */}
-        <div className="mb-8">
+        <div style={{ marginBottom: '32px' }}>
           <SectionLabel>Statistics</SectionLabel>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
 
@@ -760,11 +761,11 @@ export default function AdminPortal({ walletAddress }) {
         </div>
 
         {/* ==================== ROW 5: MANAGEMENT ==================== */}
-        <div className="mb-8">
+        <div style={{ marginBottom: '32px' }}>
           <SectionLabel>Management</SectionLabel>
 
           {/* Monthly Dues Table */}
-          <div className="mb-6" style={{ border: '2px solid #14b8a6', borderRadius: '16px', background: 'rgba(15, 23, 42, 0.6)' }}>
+          <div className="mb-6" style={{ border: '2px solid #14b8a6', borderRadius: '16px', background: 'rgba(15, 23, 42, 0.6)', boxShadow: 'inset 0 0 0 2px #14b8a6, 0 4px 20px rgba(20, 184, 166, 0.15)' }}>
             <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(20, 184, 166, 0.3)' }}>
               <h3 className="text-lg font-bold text-white">Monthly Dues</h3>
               <p className="text-slate-400 text-sm">Invoice history and payment status</p>
@@ -823,7 +824,7 @@ export default function AdminPortal({ walletAddress }) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
 
             {/* Admin Transfer */}
-            <div className="h-full" style={{ border: '2px solid #14b8a6', borderRadius: '16px', padding: '24px', background: 'rgba(15, 23, 42, 0.6)' }}>
+            <div className="h-full" style={{ border: '2px solid #14b8a6', borderRadius: '16px', padding: '24px', background: 'rgba(15, 23, 42, 0.6)', boxShadow: 'inset 0 0 0 2px #14b8a6, 0 4px 20px rgba(20, 184, 166, 0.15)', display: 'flex', flexDirection: 'column' }}>
               <SectionHeader
                 title="Admin Transfer"
                 icon={<svg className="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>}
@@ -889,56 +890,60 @@ export default function AdminPortal({ walletAddress }) {
             </div>
 
             {/* Doctor Management */}
-            <div className="h-full" style={{ border: '2px solid #14b8a6', borderRadius: '16px', padding: '24px', background: 'rgba(15, 23, 42, 0.6)' }}>
-              <SectionHeader
-                title="Doctor Management"
-                subtitle={isAdmin ? 'Add or remove verified doctors' : 'Admin access required'}
-                icon={<svg className="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>}
-              />
+            <div className="h-full" style={{ border: '2px solid #14b8a6', borderRadius: '16px', padding: '24px', background: 'rgba(15, 23, 42, 0.6)', boxShadow: 'inset 0 0 0 2px #14b8a6, 0 4px 20px rgba(20, 184, 166, 0.15)', display: 'flex', flexDirection: 'column' }}>
               {isAdmin ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="text-slate-300 text-sm mb-2 block">Add Verified Doctor</label>
-                    <input
-                      type="text"
-                      placeholder="0x..."
-                      value={newDoctorAddress}
-                      onChange={(e) => setNewDoctorAddress(e.target.value)}
-                      className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-500 mb-3 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                    />
-                    <button
-                      onClick={handleAddDoctor}
-                      disabled={actionLoading}
-                      className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                    >
-                      {actionLoading ? 'Processing...' : 'Verify Doctor'}
-                    </button>
+                <>
+                  <SectionHeader
+                    title="Doctor Management"
+                    subtitle="Add or remove verified doctors"
+                    icon={<svg className="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>}
+                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="text-slate-300 text-sm mb-2 block">Add Verified Doctor</label>
+                      <input
+                        type="text"
+                        placeholder="0x..."
+                        value={newDoctorAddress}
+                        onChange={(e) => setNewDoctorAddress(e.target.value)}
+                        className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-500 mb-3 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      />
+                      <button
+                        onClick={handleAddDoctor}
+                        disabled={actionLoading}
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                      >
+                        {actionLoading ? 'Processing...' : 'Verify Doctor'}
+                      </button>
+                    </div>
+                    <div>
+                      <label className="text-slate-300 text-sm mb-2 block">Remove Verified Doctor</label>
+                      <input
+                        type="text"
+                        placeholder="0x..."
+                        value={removeDoctorAddress}
+                        onChange={(e) => setRemoveDoctorAddress(e.target.value)}
+                        className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-500 mb-3 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      />
+                      <button
+                        onClick={handleRemoveDoctor}
+                        disabled={actionLoading}
+                        className="w-full bg-red-600 hover:bg-red-700 disabled:bg-slate-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                      >
+                        {actionLoading ? 'Processing...' : 'Remove Doctor'}
+                      </button>
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-slate-300 text-sm mb-2 block">Remove Verified Doctor</label>
-                    <input
-                      type="text"
-                      placeholder="0x..."
-                      value={removeDoctorAddress}
-                      onChange={(e) => setRemoveDoctorAddress(e.target.value)}
-                      className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-500 mb-3 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                    />
-                    <button
-                      onClick={handleRemoveDoctor}
-                      disabled={actionLoading}
-                      className="w-full bg-red-600 hover:bg-red-700 disabled:bg-slate-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                    >
-                      {actionLoading ? 'Processing...' : 'Remove Doctor'}
-                    </button>
-                  </div>
-                </div>
+                </>
               ) : (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-slate-700/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', flex: 1, minHeight: '200px' }}>
+                  <div className="w-16 h-16 bg-slate-700/50 rounded-full flex items-center justify-center mb-4">
                     <svg className="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                   </div>
+                  <h3 className="text-lg font-bold text-white mb-2">Doctor Management</h3>
+                  <p className="text-slate-500 text-sm mb-1">Admin access required</p>
                   <p className="text-slate-400">Only the admin can manage doctors</p>
                 </div>
               )}
@@ -947,9 +952,9 @@ export default function AdminPortal({ walletAddress }) {
         </div>
 
         {/* ==================== ROW 6: HOSPITAL BALANCES ==================== */}
-        <div className="mb-8">
+        <div style={{ marginBottom: '32px' }}>
           <SectionLabel>Account Details</SectionLabel>
-          <div style={{ border: '2px solid #14b8a6', borderRadius: '16px', background: 'rgba(15, 23, 42, 0.6)' }}>
+          <div style={{ border: '2px solid #14b8a6', borderRadius: '16px', background: 'rgba(15, 23, 42, 0.6)', boxShadow: 'inset 0 0 0 2px #14b8a6, 0 4px 20px rgba(20, 184, 166, 0.15)' }}>
             <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(20, 184, 166, 0.3)' }}>
               <h3 className="text-lg font-bold text-white">Hospital Balances</h3>
               <p className="text-slate-400 text-sm">Detailed breakdown by hospital/doctor</p>
