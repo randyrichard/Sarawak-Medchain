@@ -34,12 +34,12 @@ const generateDoctorPerformanceData = () => {
 // Reusable Card Component for consistent styling
 const Card = ({ children, className = '', noPadding = false }) => (
   <div
-    className={`backdrop-blur-sm ${noPadding ? '' : 'p-6'} ${className}`}
+    className={`backdrop-blur-sm ${className}`}
     style={{
-      border: '1px solid rgba(20, 184, 166, 0.3)',
+      border: '1px solid #14b8a650',
       borderRadius: '16px',
       padding: noPadding ? '0' : '24px',
-      background: 'rgba(10, 20, 30, 0.3)'
+      background: 'rgba(15, 23, 42, 0.5)'
     }}
   >
     {children}
@@ -600,7 +600,7 @@ export default function AdminPortal({ walletAddress }) {
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
 
             {/* Card 1: Doctor Leaderboard (2 cols) */}
-            <Card noPadding className="lg:col-span-2">
+            <Card noPadding className="lg:col-span-2 h-full">
               <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(20, 184, 166, 0.3)' }}>
                 <div className="flex items-center justify-between">
                   <div>
@@ -657,7 +657,7 @@ export default function AdminPortal({ walletAddress }) {
             </Card>
 
             {/* Card 2: Performance Overview + Top Performer (3 cols) */}
-            <Card className="lg:col-span-3">
+            <Card className="lg:col-span-3 h-full">
               <SectionHeader
                 title="Performance Overview"
                 icon={<svg className="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>}
@@ -823,7 +823,7 @@ export default function AdminPortal({ walletAddress }) {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
 
             {/* Admin Transfer */}
-            <Card>
+            <Card className="h-full">
               <SectionHeader
                 title="Admin Transfer"
                 icon={<svg className="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>}
@@ -889,7 +889,7 @@ export default function AdminPortal({ walletAddress }) {
             </Card>
 
             {/* Doctor Management */}
-            <Card className="lg:col-span-2">
+            <Card className="lg:col-span-2 h-full">
               <SectionHeader
                 title="Doctor Management"
                 subtitle={isAdmin ? 'Add or remove verified doctors' : 'Admin access required'}
