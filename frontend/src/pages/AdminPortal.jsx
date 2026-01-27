@@ -36,9 +36,9 @@ const Card = ({ children, className = '', noPadding = false }) => (
   <div
     className={`backdrop-blur-sm rounded-2xl ${noPadding ? '' : 'p-6'} ${className}`}
     style={{
-      border: '1px solid rgba(20, 184, 166, 0.3)',
-      background: 'rgba(15, 23, 42, 0.6)',
-      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)'
+      border: '2px solid rgba(20, 184, 166, 0.4)',
+      background: 'rgba(10, 20, 30, 0.5)',
+      boxShadow: '0 4px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(20, 184, 166, 0.1)'
     }}
   >
     {children}
@@ -600,7 +600,7 @@ export default function AdminPortal({ walletAddress }) {
 
             {/* Card 1: Doctor Leaderboard (2 cols) */}
             <Card noPadding className="lg:col-span-2">
-              <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(20, 184, 166, 0.3)' }}>
+              <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(20, 184, 166, 0.4)' }}>
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-bold text-white">Doctor Leaderboard</h3>
@@ -641,7 +641,7 @@ export default function AdminPortal({ walletAddress }) {
                   </div>
                 ))}
               </div>
-              <div className="px-6 py-4 border-t bg-slate-800/30" style={{ borderColor: 'rgba(20, 184, 166, 0.3)' }}>
+              <div className="px-6 py-4 border-t bg-slate-800/30" style={{ borderColor: 'rgba(20, 184, 166, 0.4)' }}>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs text-slate-400">Total Revenue</p>
@@ -764,7 +764,7 @@ export default function AdminPortal({ walletAddress }) {
 
           {/* Monthly Dues Table */}
           <Card noPadding className="mb-6">
-            <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(20, 184, 166, 0.3)' }}>
+            <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(20, 184, 166, 0.4)' }}>
               <h3 className="text-lg font-bold text-white">Monthly Dues</h3>
               <p className="text-slate-400 text-sm">Invoice history and payment status</p>
             </div>
@@ -781,7 +781,7 @@ export default function AdminPortal({ walletAddress }) {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="border-t hover:bg-slate-700/20 transition-colors" style={{ borderColor: 'rgba(20, 184, 166, 0.2)' }}>
+                  <tr className="border-t hover:bg-slate-700/20 transition-colors" style={{ borderColor: 'rgba(20, 184, 166, 0.3)' }}>
                     <td className="px-6 py-4 text-slate-200 font-medium">January 2026</td>
                     <td className="px-6 py-4 text-right text-slate-300">RM {baseFee.toLocaleString()}</td>
                     <td className="px-6 py-4 text-right text-slate-300">RM {meteredUsageCost.toLocaleString()}</td>
@@ -949,7 +949,7 @@ export default function AdminPortal({ walletAddress }) {
         <div className="mb-8">
           <SectionLabel>Account Details</SectionLabel>
           <Card noPadding>
-            <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(20, 184, 166, 0.3)' }}>
+            <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(20, 184, 166, 0.4)' }}>
               <h3 className="text-lg font-bold text-white">Hospital Balances</h3>
               <p className="text-slate-400 text-sm">Detailed breakdown by hospital/doctor</p>
             </div>
@@ -973,7 +973,7 @@ export default function AdminPortal({ walletAddress }) {
                     </tr>
                   ) : (
                     hospitalBalances.map((item, index) => (
-                      <tr key={index} className="border-t hover:bg-slate-700/20 transition-colors" style={{ borderColor: 'rgba(20, 184, 166, 0.2)' }}>
+                      <tr key={index} className="border-t hover:bg-slate-700/20 transition-colors" style={{ borderColor: 'rgba(20, 184, 166, 0.3)' }}>
                         <td className="px-6 py-4">
                           <code className="text-slate-200 bg-slate-700/50 px-2 py-1 rounded text-sm">
                             {formatAddress(item.hospital)}
