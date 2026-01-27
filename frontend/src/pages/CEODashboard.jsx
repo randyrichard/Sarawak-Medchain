@@ -107,14 +107,39 @@ const generateRevenueForecastData = (facilityType, currentMCs) => {
   });
 };
 
+// Section Label Component for consistent styling
+const SectionLabel = ({ children }) => (
+  <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-5">
+    {children}
+  </h3>
+);
+
+// Card wrapper component for consistent styling
+const CardWrapper = ({ children, className = '', noPadding = false }) => (
+  <div
+    className={className}
+    style={{
+      border: '1px solid rgba(20, 184, 166, 0.2)',
+      borderRadius: '16px',
+      padding: noPadding ? '0' : '24px',
+      background: 'rgba(15, 23, 42, 0.6)'
+    }}
+  >
+    {children}
+  </div>
+);
+
 // Stat Card Component - Enterprise Style
 function StatCard({ title, value, subtitle, icon, trend, darkMode }) {
   return (
-    <div className={`rounded-xl p-6 shadow-lg transition-all duration-300 hover:shadow-xl ${
-      darkMode
-        ? 'bg-gray-800 border border-gray-700'
-        : 'bg-white border border-gray-100'
-    }`}>
+    <div
+      className="rounded-xl p-6 shadow-lg transition-all duration-300 hover:shadow-xl"
+      style={{
+        border: '1px solid rgba(20, 184, 166, 0.2)',
+        borderRadius: '16px',
+        background: darkMode ? 'rgba(15, 23, 42, 0.6)' : 'white'
+      }}
+    >
       <div className="flex items-center justify-start gap-x-4">
         <div>
           <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -625,7 +650,7 @@ export default function CEODashboard({ walletAddress }) {
       {/* Service Restored Toast Notification */}
       <ServiceRestoredToast />
 
-      <div className="px-12 py-10" style={{ maxWidth: '1400px', margin: '0 auto' }}>
+      <div className="px-12 py-10" style={{ maxWidth: '1600px', margin: '0 auto', padding: '40px 48px' }}>
       {/* Header - Full Width Enterprise Style */}
       <div className="mb-8 flex flex-col lg:flex-row lg:items-center justify-start gap-6">
         <div className="flex items-center gap-4">
@@ -1003,13 +1028,17 @@ export default function CEODashboard({ walletAddress }) {
           </div>
         )}
 
+        {/* ==================== BILLING SECTION ==================== */}
+        <div style={{ marginBottom: '32px' }}>
+          <SectionLabel>Billing</SectionLabel>
+        </div>
+
         {/* ========== SUBSCRIPTION & USAGE CARD (col-span-12) ========== */}
-        <div className="col-span-12 mb-8">
-          <div className={`rounded-2xl shadow-2xl overflow-hidden ${
-            darkMode
-              ? 'bg-gradient-to-br from-slate-800 via-slate-800 to-slate-900 border border-slate-700/50'
-              : 'bg-white border border-gray-200'
-          }`}>
+        <div className="col-span-12" style={{ marginBottom: '24px' }}>
+          <div className="rounded-2xl shadow-2xl overflow-hidden" style={{
+            border: '1px solid rgba(20, 184, 166, 0.2)',
+            background: 'rgba(15, 23, 42, 0.6)'
+          }}>
             {/* Card Header */}
             <div className={`px-8 py-5 border-b ${
               darkMode ? 'border-slate-700/50 bg-slate-800/80' : 'border-gray-100 bg-gray-50'
@@ -1180,16 +1209,11 @@ export default function CEODashboard({ walletAddress }) {
         </div>
 
         {/* Monetization Engine - Full Width Subscription Banner */}
-        <div className="col-span-12 mb-8">
-          <div className={`rounded-2xl p-6 ${
-            isSubscriptionOverdue
-              ? darkMode
-                ? 'bg-gradient-to-r from-red-900/40 to-slate-900 border-2 border-red-500/50'
-                : 'bg-gradient-to-r from-red-50 to-white border-2 border-red-300'
-              : darkMode
-                ? 'bg-gradient-to-r from-sky-900/40 to-slate-900 border border-sky-500/30'
-                : 'bg-gradient-to-r from-sky-50 to-white border border-sky-200 shadow-lg'
-          }`}>
+        <div className="col-span-12" style={{ marginBottom: '32px' }}>
+          <div className="rounded-2xl p-6" style={{
+            border: isSubscriptionOverdue ? '2px solid rgba(239, 68, 68, 0.5)' : '1px solid rgba(20, 184, 166, 0.2)',
+            background: isSubscriptionOverdue ? 'rgba(127, 29, 29, 0.3)' : 'rgba(15, 23, 42, 0.6)'
+          }}>
             <div className="flex flex-col gap-4">
               {/* Entity Type & Subscription Info */}
               <div className="flex items-start gap-4">
@@ -1248,14 +1272,17 @@ export default function CEODashboard({ walletAddress }) {
           </div>
         </div>
 
-        {/* Transaction Meter & Real-time Costing */}
-        <div className="grid grid-cols-12 gap-6 w-full mb-8">
+        {/* ==================== OPERATIONS SECTION ==================== */}
+        <div style={{ marginBottom: '32px' }}>
+          <SectionLabel>Operations</SectionLabel>
+
+          {/* Transaction Meter & Real-time Costing */}
+          <div className="grid grid-cols-12 gap-6 w-full" style={{ marginBottom: '24px' }}>
           {/* Live Transaction Meter */}
-          <div className={`col-span-12 lg:col-span-4 rounded-2xl p-6 ${
-            darkMode
-              ? 'bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700'
-              : 'bg-white border border-gray-100 shadow-lg'
-          }`}>
+          <div className="col-span-12 lg:col-span-4 rounded-2xl p-6" style={{
+            border: '1px solid rgba(20, 184, 166, 0.2)',
+            background: 'rgba(15, 23, 42, 0.6)'
+          }}>
             <div className="flex items-center justify-between mb-4">
               <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Transaction Meter</h2>
               <span className="flex items-center gap-1.5 text-emerald-500 text-xs font-medium">
@@ -1276,11 +1303,10 @@ export default function CEODashboard({ walletAddress }) {
           </div>
 
           {/* Real-time Costing */}
-          <div className={`col-span-12 lg:col-span-4 rounded-2xl p-6 ${
-            darkMode
-              ? 'bg-gradient-to-br from-emerald-900/30 to-slate-900 border border-emerald-700/30'
-              : 'bg-gradient-to-br from-emerald-50 to-white border border-emerald-100 shadow-lg'
-          }`}>
+          <div className="col-span-12 lg:col-span-4 rounded-2xl p-6" style={{
+            border: '1px solid rgba(20, 184, 166, 0.2)',
+            background: 'rgba(15, 23, 42, 0.6)'
+          }}>
             <h2 className={`text-lg font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Real-time Costing</h2>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -1339,12 +1365,13 @@ export default function CEODashboard({ walletAddress }) {
               </button>
             )}
           </div>
-        </div>
+          </div>
 
-        {/* Monthly Dues Table */}
-        <div className={`rounded-2xl overflow-hidden mb-8 ${
-          darkMode ? 'bg-slate-800/50 border border-slate-700' : 'bg-white shadow-lg'
-        }`}>
+          {/* Monthly Dues Table */}
+          <div className="rounded-2xl overflow-hidden" style={{
+            border: '1px solid rgba(20, 184, 166, 0.2)',
+            background: 'rgba(15, 23, 42, 0.6)'
+          }}>
           <div className={`px-6 py-4 border-b ${darkMode ? 'border-slate-700' : 'border-gray-100'}`}>
             <h2 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Monthly Dues</h2>
             <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-gray-500'}`}>Invoice history and payment status</p>
@@ -1405,6 +1432,7 @@ export default function CEODashboard({ walletAddress }) {
               </tbody>
             </table>
           </div>
+          </div>
         </div>
 
         {/* Loading State */}
@@ -1416,8 +1444,11 @@ export default function CEODashboard({ walletAddress }) {
           </div>
         ) : (
           <>
-            {/* Stats Cards Grid - Full Width 12 Column */}
-            <div className="grid grid-cols-12 gap-10 w-full mb-8">
+            {/* ==================== STATISTICS SECTION ==================== */}
+            <div style={{ marginBottom: '32px' }}>
+              <SectionLabel>Statistics</SectionLabel>
+              {/* Stats Cards Grid - Full Width 12 Column */}
+              <div className="grid grid-cols-12 gap-6 w-full">
               <div className="col-span-12 md:col-span-4">
                 <StatCard
                   title="Total MCs Issued"
@@ -1449,12 +1480,18 @@ export default function CEODashboard({ walletAddress }) {
                 />
               </div>
             </div>
+            </div>
 
-            {/* Revenue Forecast Chart - col-span-8 with Soft Green Gradient */}
-            <div className="grid grid-cols-12 gap-8 mb-8">
-              <div className={`col-span-12 xl:col-span-8 rounded-3xl p-8 shadow-lg ${
-                darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'
-              }`}>
+            {/* ==================== ANALYTICS SECTION ==================== */}
+            <div style={{ marginBottom: '32px' }}>
+              <SectionLabel>Analytics</SectionLabel>
+
+              {/* Revenue Forecast Chart - col-span-8 with Soft Green Gradient */}
+              <div className="grid grid-cols-12 gap-6" style={{ marginBottom: '24px' }}>
+                <div className="col-span-12 xl:col-span-8 rounded-2xl p-6" style={{
+                  border: '1px solid rgba(20, 184, 166, 0.2)',
+                  background: 'rgba(15, 23, 42, 0.6)'
+                }}>
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -1581,9 +1618,10 @@ export default function CEODashboard({ walletAddress }) {
 
               {/* Doctor Performance Leaderboard - col-span-4 */}
               <div className="col-span-12 xl:col-span-4">
-                <div className={`rounded-2xl overflow-hidden h-full ${
-                  darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white shadow-lg'
-                }`}>
+                <div className="rounded-2xl overflow-hidden h-full" style={{
+                  border: '1px solid rgba(20, 184, 166, 0.2)',
+                  background: 'rgba(15, 23, 42, 0.6)'
+                }}>
                   {/* Leaderboard Header */}
                   <div className={`px-6 py-4 border-b ${
                     darkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-100 bg-gray-50'
@@ -1720,11 +1758,12 @@ export default function CEODashboard({ walletAddress }) {
             </div>
 
             {/* Charts Grid - Full Width */}
-            <div className="grid grid-cols-12 gap-8 mb-8">
+            <div className="grid grid-cols-12 gap-6">
               {/* Flu Season Chart - col-span-7 */}
-              <div className={`col-span-12 xl:col-span-7 rounded-3xl p-8 shadow-md ${
-                darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'
-              }`}>
+              <div className="col-span-12 xl:col-span-7 rounded-2xl p-6" style={{
+                border: '1px solid rgba(20, 184, 166, 0.2)',
+                background: 'rgba(15, 23, 42, 0.6)'
+              }}>
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -1785,9 +1824,10 @@ export default function CEODashboard({ walletAddress }) {
               </div>
 
               {/* Revenue Chart - col-span-5 */}
-              <div className={`col-span-12 xl:col-span-5 rounded-3xl p-8 shadow-md ${
-                darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'
-              }`}>
+              <div className="col-span-12 xl:col-span-5 rounded-2xl p-6" style={{
+                border: '1px solid rgba(20, 184, 166, 0.2)',
+                background: 'rgba(15, 23, 42, 0.6)'
+              }}>
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -1839,34 +1879,42 @@ export default function CEODashboard({ walletAddress }) {
                 </div>
               </div>
             </div>
-
-            {/* Key Insights Card */}
-            <div className={`rounded-3xl p-8 shadow-md mb-8 ${
-              darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'
-            }`}>
-              <h3 className={`text-xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                📊 Key Insights
-              </h3>
-              <div className="grid grid-cols-12 gap-6">
-                <div className={`col-span-12 md:col-span-4 p-5 rounded-2xl ${darkMode ? 'bg-gray-700' : 'bg-blue-50'}`}>
-                  <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Peak Season</p>
-                  <p className={`text-sm mt-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>October - February (Monsoon season flu spike)</p>
-                </div>
-                <div className={`col-span-12 md:col-span-4 p-5 rounded-2xl ${darkMode ? 'bg-gray-700' : 'bg-emerald-50'}`}>
-                  <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Recommendation</p>
-                  <p className={`text-sm mt-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>Increase staff allocation by 40% during peak months</p>
-                </div>
-                <div className={`col-span-12 md:col-span-4 p-5 rounded-2xl ${darkMode ? 'bg-gray-700' : 'bg-amber-50'}`}>
-                  <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>YoY Trend</p>
-                  <p className={`text-sm mt-1 ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>12% increase in MC issuance compared to last year</p>
-                </div>
-              </div>
             </div>
 
-            {/* Hospital Performance Table */}
-            <div className={`rounded-3xl p-8 shadow-md ${
-              darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'
-            }`}>
+            {/* ==================== PERFORMANCE SECTION ==================== */}
+            <div style={{ marginBottom: '32px' }}>
+              <SectionLabel>Performance</SectionLabel>
+
+              {/* Key Insights Card */}
+              <div className="rounded-2xl p-6" style={{
+                border: '1px solid rgba(20, 184, 166, 0.2)',
+                background: 'rgba(15, 23, 42, 0.6)',
+                marginBottom: '24px'
+              }}>
+                <h3 className="text-xl font-bold mb-4 text-white">
+                  Key Insights
+                </h3>
+                <div className="grid grid-cols-12 gap-6">
+                  <div className="col-span-12 md:col-span-4 p-5 rounded-xl bg-blue-500/10">
+                    <p className="font-semibold text-white">Peak Season</p>
+                    <p className="text-sm mt-1 text-slate-300">October - February (Monsoon season flu spike)</p>
+                  </div>
+                  <div className="col-span-12 md:col-span-4 p-5 rounded-xl bg-emerald-500/10">
+                    <p className="font-semibold text-white">Recommendation</p>
+                    <p className="text-sm mt-1 text-slate-300">Increase staff allocation by 40% during peak months</p>
+                  </div>
+                  <div className="col-span-12 md:col-span-4 p-5 rounded-xl bg-amber-500/10">
+                    <p className="font-semibold text-white">YoY Trend</p>
+                    <p className="text-sm mt-1 text-slate-300">12% increase in MC issuance compared to last year</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Hospital Performance Table */}
+              <div className="rounded-2xl p-6" style={{
+                border: '1px solid rgba(20, 184, 166, 0.2)',
+                background: 'rgba(15, 23, 42, 0.6)'
+              }}>
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -1931,6 +1979,7 @@ export default function CEODashboard({ walletAddress }) {
                     )}
                   </tbody>
                 </table>
+              </div>
               </div>
             </div>
 
