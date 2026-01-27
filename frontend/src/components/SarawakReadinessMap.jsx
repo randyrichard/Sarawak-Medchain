@@ -330,12 +330,16 @@ export default function SarawakReadinessMap() {
             <rect x="0" y="0" width="100" height="100" fill={isProtected ? "#070b14" : "#0a0505"} />
             <circle cx="50" cy="50" r="45" fill="url(#mapGlow)" />
 
-            {/* Sarawak landmass */}
+            {/* Sarawak landmass - Teal glow effect */}
             <path
               d="M5 88 Q8 78 12 72 L18 68 Q28 62 35 58 L45 52 Q55 44 65 38 L75 28 Q85 20 94 16 L97 22 Q94 32 88 42 L82 52 Q76 60 70 65 L60 70 Q50 74 40 78 L28 82 Q18 86 10 88 L5 88 Z"
-              fill={isProtected ? "#111827" : "#1a1010"}
-              stroke={isProtected ? "#1e3a5f" : "#5f2020"}
-              strokeWidth="0.3"
+              fill={isProtected ? "rgba(20, 184, 166, 0.1)" : "#1a1010"}
+              stroke={isProtected ? "#14b8a6" : "#5f2020"}
+              strokeWidth={isProtected ? "1.5" : "0.3"}
+              style={{
+                filter: isProtected ? 'drop-shadow(0 0 10px rgba(20, 184, 166, 0.5))' : 'none',
+                transition: 'all 0.5s ease',
+              }}
             />
 
             {/* FRAUD STATE: Red heatmaps */}
@@ -351,8 +355,8 @@ export default function SarawakReadinessMap() {
               />
             ))}
 
-            {/* Connection lines */}
-            <g stroke={isProtected ? "#3b82f6" : "#ef4444"} strokeWidth="0.2" opacity="0.3">
+            {/* Connection lines - Teal network lines */}
+            <g stroke={isProtected ? "#14b8a6" : "#ef4444"} strokeWidth="0.4" opacity={isProtected ? "0.5" : "0.3"} style={{ filter: isProtected ? 'drop-shadow(0 0 3px rgba(20, 184, 166, 0.5))' : 'none' }}>
               <line x1="18" y1="78" x2="45" y2="55" />
               <line x1="45" y1="55" x2="60" y2="40" />
               <line x1="60" y1="40" x2="78" y2="22" />
