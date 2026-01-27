@@ -1,3 +1,81 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   SARAWAK MEDCHAIN - ENTERPRISE DESIGN SYSTEM
+   CSS Variables & Animations for Premium RM10K/month Experience
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Primary Brand - Teal */
+  --teal-50: rgba(20, 184, 166, 0.05);
+  --teal-100: rgba(20, 184, 166, 0.1);
+  --teal-200: rgba(20, 184, 166, 0.2);
+  --teal-300: rgba(20, 184, 166, 0.3);
+  --teal-400: rgba(20, 184, 166, 0.4);
+  --teal-500: #14b8a6;
+  --teal-600: #0d9488;
+  --teal-700: #0f766e;
+  --teal-glow: rgba(20, 184, 166, 0.3);
+
+  /* Accent - Gold */
+  --gold-50: rgba(245, 158, 11, 0.05);
+  --gold-100: rgba(245, 158, 11, 0.1);
+  --gold-200: rgba(245, 158, 11, 0.2);
+  --gold-300: rgba(245, 158, 11, 0.3);
+  --gold-400: #fbbf24;
+  --gold-500: #f59e0b;
+  --gold-600: #d97706;
+  --gold-700: #b45309;
+  --gold-glow: rgba(245, 158, 11, 0.4);
+
+  /* Dark Theme */
+  --dark-bg: #0a0e14;
+  --dark-card: rgba(15, 23, 42, 0.6);
+  --dark-card-solid: #0f172a;
+  --dark-elevated: rgba(15, 31, 56, 0.8);
+  --dark-border: rgba(30, 58, 95, 0.5);
+  --dark-border-light: rgba(51, 65, 85, 0.3);
+
+  /* Card Styling */
+  --card-border: rgba(20, 184, 166, 0.2);
+  --card-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  --card-shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --card-shadow-teal: 0 0 20px rgba(20, 184, 166, 0.15);
+  --card-shadow-gold: 0 0 20px rgba(245, 158, 11, 0.3);
+
+  /* Text Colors */
+  --text-primary: #ffffff;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-disabled: #475569;
+
+  /* Status Colors */
+  --status-success: #10b981;
+  --status-warning: #f59e0b;
+  --status-error: #ef4444;
+  --status-info: #3b82f6;
+  --status-purple: #8b5cf6;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+
+  /* Border Radius */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: all 0.15s ease;
+  --transition-normal: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -1069,4 +1147,393 @@ span[class*="rounded"],
   .text-gray-800 {
     color: #1f2937 !important;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ENTERPRISE ANIMATIONS - Premium Micro-interactions
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Card Hover Effect - Smooth Lift */
+.card-hover {
+  transition: var(--transition-normal);
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--card-shadow-hover), var(--card-shadow-teal);
+}
+
+/* Live Indicator Pulse */
+@keyframes live-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+.live-indicator {
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+/* Teal Glow Pulse */
+@keyframes teal-glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(20, 184, 166, 0.2), 0 0 20px rgba(20, 184, 166, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(20, 184, 166, 0.4), 0 0 40px rgba(20, 184, 166, 0.2);
+  }
+}
+
+.teal-glow-pulse {
+  animation: teal-glow-pulse 3s ease-in-out infinite;
+}
+
+/* Skeleton Loading */
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.skeleton-pulse {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+/* Fade In Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Slide In From Right */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.slide-in-right {
+  animation: slideInRight 0.3s ease-out forwards;
+}
+
+/* Scale In */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.scale-in {
+  animation: scaleIn 0.2s ease-out forwards;
+}
+
+/* Floating Effect */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.float {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Scanning Line Effect */
+@keyframes scan {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+.scan-line {
+  animation: scan 2s linear infinite;
+}
+
+/* Progress Bar Animation */
+@keyframes progress {
+  0% {
+    width: 0%;
+  }
+  100% {
+    width: var(--progress-width, 100%);
+  }
+}
+
+.progress-animate {
+  animation: progress 1s ease-out forwards;
+}
+
+/* Shimmer Effect */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ENTERPRISE CARD STYLES - Consistent Across All Dashboards
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.medchain-card {
+  background-color: var(--dark-card-solid);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--card-shadow);
+  transition: var(--transition-normal);
+}
+
+.medchain-card:hover {
+  box-shadow: var(--card-shadow-hover), var(--card-shadow-teal);
+}
+
+/* Glass Card Variant */
+.medchain-card-glass {
+  background-color: var(--dark-card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-xl);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--card-shadow);
+}
+
+/* Elevated Card Variant */
+.medchain-card-elevated {
+  background-color: var(--dark-elevated);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--card-shadow), var(--card-shadow-teal);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ENTERPRISE BUTTONS - Premium Gold & Teal Variants
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.medchain-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  transition: var(--transition-normal);
+  cursor: pointer;
+}
+
+.medchain-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Teal Button */
+.medchain-btn-teal {
+  background: linear-gradient(135deg, var(--teal-500), var(--teal-600));
+  color: white;
+  border: none;
+}
+
+.medchain-btn-teal:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--teal-400), var(--teal-500));
+  box-shadow: var(--card-shadow-teal);
+  transform: translateY(-2px);
+}
+
+/* Gold Button - Solid */
+.medchain-btn-gold {
+  background: linear-gradient(135deg, var(--gold-500), var(--gold-600));
+  color: #0a0e14;
+  border: none;
+  font-weight: 700;
+}
+
+.medchain-btn-gold:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--gold-400), var(--gold-500));
+  box-shadow: var(--card-shadow-gold);
+  transform: translateY(-2px);
+}
+
+/* Gold Button - Outline */
+.medchain-btn-gold-outline {
+  background: transparent;
+  color: var(--gold-500);
+  border: 2px solid var(--gold-500);
+}
+
+.medchain-btn-gold-outline:hover:not(:disabled) {
+  background: var(--gold-500);
+  color: #0a0e14;
+  box-shadow: var(--card-shadow-gold);
+  transform: translateY(-2px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ENTERPRISE STAT CARDS - KPI Display
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.stat-card-teal {
+  border-left: 4px solid var(--teal-500);
+}
+
+.stat-card-gold {
+  border-left: 4px solid var(--gold-500);
+}
+
+.stat-card-success {
+  border-left: 4px solid var(--status-success);
+}
+
+.stat-card-purple {
+  border-left: 4px solid var(--status-purple);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   SECTION SPACING - Consistent Dashboard Layout
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.section-gap {
+  margin-bottom: var(--spacing-xl);
+}
+
+.card-gap {
+  gap: var(--spacing-lg);
+}
+
+.content-padding {
+  padding: var(--spacing-lg);
+}
+
+/* Section Labels */
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--dark-border);
+}
+
+.section-label span {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   CHART STYLING - Consistent Data Visualization
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: var(--dark-border);
+  stroke-opacity: 0.5;
+}
+
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background-color: var(--dark-elevated) !important;
+  border: 1px solid var(--teal-500) !important;
+  border-radius: var(--radius-lg) !important;
+  backdrop-filter: blur(10px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   SCROLLBAR STYLING - Premium Dark Theme
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--dark-bg);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--dark-border);
+  border-radius: var(--radius-full);
+  border: 2px solid var(--dark-bg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--teal-400);
+}
+
+/* Firefox Scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--dark-border) var(--dark-bg);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   FOCUS STATES - Accessibility
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+:focus-visible {
+  outline: 2px solid var(--teal-500);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--teal-500);
+  outline-offset: 2px;
 }

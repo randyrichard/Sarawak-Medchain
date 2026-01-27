@@ -4,21 +4,61 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import SignatureCanvas from 'react-signature-canvas';
 
-// Midnight Navy Theme Colors - Master: #0a0e14
+// Enterprise Design Theme - Teal Primary Accent
 const theme = {
   bg: '#0a0e14',
-  bgCard: '#0a0e14',
+  bgCard: 'rgba(15, 23, 42, 0.6)',
+  bgCardSolid: '#0f172a',
   bgCardHover: '#142847',
-  border: '#1e3a5f',
+  border: 'rgba(30, 58, 95, 0.5)',
+  borderTeal: 'rgba(20, 184, 166, 0.2)',
   textPrimary: '#ffffff',
   textSecondary: '#94a3b8',
   textMuted: '#64748b',
-  accent: '#3b82f6',
+  // Primary accent is now teal
+  accent: '#14b8a6',
+  teal: '#14b8a6',
+  gold: '#f59e0b',
   success: '#10b981',
   warning: '#f59e0b',
   danger: '#ef4444',
   purple: '#8b5cf6',
+  blue: '#3b82f6',
+  // Card styling
+  cardBorder: '1px solid rgba(20, 184, 166, 0.2)',
+  cardShadow: '0 4px 24px rgba(0, 0, 0, 0.2)',
+  cardGlow: '0 0 20px rgba(20, 184, 166, 0.15)',
 };
+
+// Section Label Component for consistent styling
+const SectionLabel = ({ icon, text }) => (
+  <div className="flex items-center gap-2 mb-4 pb-2" style={{ borderBottom: `1px solid ${theme.border}` }}>
+    <span style={{ color: theme.teal }}>{icon}</span>
+    <span style={{
+      fontSize: '11px',
+      fontWeight: 700,
+      letterSpacing: '0.1em',
+      textTransform: 'uppercase',
+      color: theme.textMuted
+    }}>{text}</span>
+  </div>
+);
+
+// Card Wrapper Component for consistent card styling
+const CardWrapper = ({ children, className = '', style = {}, glow = false }) => (
+  <div
+    className={`rounded-2xl p-6 ${className}`}
+    style={{
+      backgroundColor: theme.bgCardSolid,
+      border: theme.cardBorder,
+      boxShadow: glow ? `${theme.cardShadow}, ${theme.cardGlow}` : theme.cardShadow,
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      ...style
+    }}
+  >
+    {children}
+  </div>
+);
 
 // Market data
 const TOTAL_SARAWAK_HOSPITALS = 24;
@@ -1982,9 +2022,9 @@ export default function FounderAdmin() {
           <div className="flex justify-center mb-6">
             <div
               className="w-20 h-20 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: theme.bg, border: `2px solid ${theme.accent}` }}
+              style={{ backgroundColor: theme.bg, border: `2px solid ${theme.teal}` }}
             >
-              <svg className="w-10 h-10" fill={theme.accent} viewBox="0 0 20 20">
+              <svg className="w-10 h-10" fill={theme.teal} viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
               </svg>
             </div>
@@ -2028,7 +2068,7 @@ export default function FounderAdmin() {
             <button
               type="submit"
               className="w-full py-4 rounded-xl font-bold text-white transition-all hover:opacity-90"
-              style={{ backgroundColor: theme.accent }}
+              style={{ background: `linear-gradient(135deg, ${theme.teal}, #0d9488)` }}
             >
               Access Dashboard
             </button>
@@ -2059,7 +2099,7 @@ export default function FounderAdmin() {
           <div className="flex items-center gap-3 mb-2">
             <div
               className="w-10 h-10 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: theme.accent }}
+              style={{ backgroundColor: theme.teal }}
             >
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -2117,13 +2157,12 @@ export default function FounderAdmin() {
         </div>
       </div>
 
-      {/* Revenue Cards */}
+      {/* FINANCIAL OVERVIEW */}
+      <SectionLabel icon="$" text="Financial Overview" />
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
         {/* Total Bank Balance */}
-        <div
-          className="rounded-2xl p-6 border"
-          style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}
-        >
+        <CardWrapper glow>
+
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-medium" style={{ color: theme.textSecondary }}>
               Total Bank Balance
@@ -2143,13 +2182,10 @@ export default function FounderAdmin() {
           <p className="text-sm" style={{ color: theme.textMuted }}>
             From Payment Gateway API
           </p>
-        </div>
+        </CardWrapper>
 
         {/* Monthly Recurring Revenue */}
-        <div
-          className="rounded-2xl p-6 border"
-          style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}
-        >
+        <CardWrapper>
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-medium" style={{ color: theme.textSecondary }}>
               Monthly Recurring Revenue
@@ -2163,21 +2199,18 @@ export default function FounderAdmin() {
               </svg>
             </div>
           </div>
-          <p className="text-3xl font-black mb-2" style={{ color: theme.accent }}>
+          <p className="text-3xl font-black mb-2" style={{ color: theme.teal }}>
             RM {mrr.toLocaleString()}
           </p>
           <div className="flex items-center gap-2">
-            <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: `${theme.accent}20`, color: theme.accent }}>
+            <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: `${theme.teal}20`, color: theme.teal }}>
               {Math.round((mrr / REVENUE_TARGET) * 100)}% to goal
             </span>
           </div>
-        </div>
+        </CardWrapper>
 
         {/* Pending Payments */}
-        <div
-          className="rounded-2xl p-6 border"
-          style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}
-        >
+        <CardWrapper>
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-medium" style={{ color: theme.textSecondary }}>
               Pending Payments
@@ -2197,13 +2230,10 @@ export default function FounderAdmin() {
           <p className="text-sm" style={{ color: theme.textMuted }}>
             {pendingPayments.length} clients overdue
           </p>
-        </div>
+        </CardWrapper>
 
         {/* Market Share */}
-        <div
-          className="rounded-2xl p-6 border"
-          style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}
-        >
+        <CardWrapper>
           <div className="flex items-center justify-between mb-4">
             <p className="text-sm font-medium" style={{ color: theme.textSecondary }}>
               Sarawak Market Share
@@ -2225,15 +2255,17 @@ export default function FounderAdmin() {
             <p>Hospitals: {connectedHospitals}/{TOTAL_SARAWAK_HOSPITALS} ({hospitalMarketShare}%)</p>
             <p>Clinics: {connectedClinics}/{TOTAL_SARAWAK_CLINICS} ({clinicMarketShare}%)</p>
           </div>
-        </div>
+        </CardWrapper>
       </div>
 
-      {/* Strategic Revenue Projection */}
+      {/* STRATEGIC PLANNING */}
+      <SectionLabel icon="📊" text="Strategic Planning" />
       <div className="mb-8">
         <StrategicRevenueProjection />
       </div>
 
-      {/* Automation Command Center - Solo Founder */}
+      {/* AUTOMATION */}
+      <SectionLabel icon="🤖" text="Automation Command Center" />
       <div className="mb-8">
         <AutomationCommandCenter
           bankBalance={bankBalance}
@@ -2242,13 +2274,11 @@ export default function FounderAdmin() {
         />
       </div>
 
-      {/* Revenue Projection Chart & Market Share */}
+      {/* ANALYTICS & INFRASTRUCTURE */}
+      <SectionLabel icon="📈" text="Analytics & Infrastructure" />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Revenue Projection Chart */}
-        <div
-          className="lg:col-span-2 rounded-2xl p-6 border"
-          style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}
-        >
+        <CardWrapper className="lg:col-span-2">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-xl font-bold" style={{ color: theme.textPrimary }}>
@@ -2301,7 +2331,7 @@ export default function FounderAdmin() {
               <p className="text-xs" style={{ color: theme.textMuted }}>Current Clients</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-black" style={{ color: theme.accent }}>50</p>
+              <p className="text-2xl font-black" style={{ color: theme.teal }}>50</p>
               <p className="text-xs" style={{ color: theme.textMuted }}>Q2 Target</p>
             </div>
             <div className="text-center">
@@ -2313,13 +2343,10 @@ export default function FounderAdmin() {
               <p className="text-xs" style={{ color: theme.textMuted }}>Year-End Goal</p>
             </div>
           </div>
-        </div>
+        </CardWrapper>
 
         {/* Node Status */}
-        <div
-          className="rounded-2xl p-6 border"
-          style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}
-        >
+        <CardWrapper>
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-xl font-bold" style={{ color: theme.textPrimary }}>
@@ -2396,7 +2423,7 @@ export default function FounderAdmin() {
               <p className="text-xs" style={{ color: theme.textMuted }}>Nodes Online</p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-bold" style={{ color: theme.accent }}>
+              <p className="text-lg font-bold" style={{ color: theme.teal }}>
                 {blockchainNodes[0].blocks.toLocaleString()}
               </p>
               <p className="text-xs" style={{ color: theme.textMuted }}>Block Height</p>
@@ -2408,16 +2435,14 @@ export default function FounderAdmin() {
               <p className="text-xs" style={{ color: theme.textMuted }}>Total Peers</p>
             </div>
           </div>
-        </div>
+        </CardWrapper>
       </div>
 
-      {/* Map and Live Feed Row */}
+      {/* OPERATIONS */}
+      <SectionLabel icon="🗺️" text="Operations & Real-time Data" />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Hospital Map */}
-        <div
-          className="rounded-2xl p-6 border"
-          style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}
-        >
+        <CardWrapper>
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-xl font-bold" style={{ color: theme.textPrimary }}>
@@ -2429,7 +2454,7 @@ export default function FounderAdmin() {
             </div>
             <div
               className="px-3 py-1 rounded-full text-sm font-medium"
-              style={{ backgroundColor: `${theme.accent}20`, color: theme.accent }}
+              style={{ backgroundColor: `${theme.teal}20`, color: theme.teal }}
             >
               {mockHospitals.length} Clients
             </div>
@@ -2441,14 +2466,14 @@ export default function FounderAdmin() {
           <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium" style={{ color: theme.textSecondary }}>Connected vs Target</span>
-              <span className="text-sm font-bold" style={{ color: theme.accent }}>{mockHospitals.length} / {TARGET_CLIENTS}</span>
+              <span className="text-sm font-bold" style={{ color: theme.teal }}>{mockHospitals.length} / {TARGET_CLIENTS}</span>
             </div>
             <div className="h-3 rounded-full overflow-hidden" style={{ backgroundColor: theme.bg }}>
               <div
                 className="h-full rounded-full transition-all duration-500"
                 style={{
                   width: `${(mockHospitals.length / TARGET_CLIENTS) * 100}%`,
-                  background: `linear-gradient(90deg, ${theme.accent}, ${theme.success})`
+                  background: `linear-gradient(90deg, ${theme.teal}, ${theme.success})`
                 }}
               ></div>
             </div>
@@ -2460,13 +2485,10 @@ export default function FounderAdmin() {
               <span>200</span>
             </div>
           </div>
-        </div>
+        </CardWrapper>
 
         {/* Live MC Feed */}
-        <div
-          className="rounded-2xl p-6 border"
-          style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}
-        >
+        <CardWrapper glow>
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-xl font-bold" style={{ color: theme.textPrimary }}>
@@ -2539,14 +2561,12 @@ export default function FounderAdmin() {
               Listening for blockchain events...
             </span>
           </div>
-        </div>
+        </CardWrapper>
       </div>
 
-      {/* Lead Pipeline Section */}
-      <div
-        className="rounded-2xl p-6 border mb-8"
-        style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}
-      >
+      {/* SALES PIPELINE */}
+      <SectionLabel icon="🎯" text="Sales Pipeline" />
+      <CardWrapper className="mb-8">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-xl font-bold" style={{ color: theme.textPrimary }}>
@@ -2567,7 +2587,7 @@ export default function FounderAdmin() {
             </div>
             <div
               className="px-3 py-1 rounded-full text-sm font-medium"
-              style={{ backgroundColor: `${theme.accent}20`, color: theme.accent }}
+              style={{ backgroundColor: `${theme.teal}20`, color: theme.teal }}
             >
               {hospitalLeads.length} Leads
             </div>
@@ -2609,12 +2629,12 @@ export default function FounderAdmin() {
                       <span
                         className="px-3 py-1 rounded-full text-xs font-medium"
                         style={{
-                          backgroundColor: lead.facilityType === 'Private Hospital' ? `${theme.accent}20` :
+                          backgroundColor: lead.facilityType === 'Private Hospital' ? `${theme.teal}20` :
                                           lead.facilityType === 'Private Specialist' ? `${theme.purple}20` :
-                                          `${theme.warning}20`,
-                          color: lead.facilityType === 'Private Hospital' ? theme.accent :
+                                          `${theme.gold}20`,
+                          color: lead.facilityType === 'Private Hospital' ? theme.teal :
                                  lead.facilityType === 'Private Specialist' ? theme.purple :
-                                 theme.warning
+                                 theme.gold
                         }}
                       >
                         {lead.facilityType}
@@ -2644,7 +2664,7 @@ export default function FounderAdmin() {
                       <div className="flex items-center justify-center gap-2">
                         <button
                           className="px-3 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-80"
-                          style={{ backgroundColor: theme.accent, color: theme.textPrimary }}
+                          style={{ backgroundColor: theme.teal, color: theme.textPrimary }}
                           onClick={() => window.location.href = `mailto:${lead.email}?subject=Sarawak MedChain Partnership`}
                         >
                           Contact {lead.decisionMaker.split(' ')[0]}
@@ -2671,7 +2691,7 @@ export default function FounderAdmin() {
           style={{ borderTop: `1px solid ${theme.border}` }}
         >
           <div className="text-center">
-            <p className="text-2xl font-black" style={{ color: theme.accent }}>
+            <p className="text-2xl font-black" style={{ color: theme.teal }}>
               {hospitalLeads.filter(l => l.facilityType === 'Private Hospital').length}
             </p>
             <p className="text-xs" style={{ color: theme.textMuted }}>Private Hospitals</p>
@@ -2695,13 +2715,11 @@ export default function FounderAdmin() {
             <p className="text-xs" style={{ color: theme.textMuted }}>Total Pipeline MRR</p>
           </div>
         </div>
-      </div>
+      </CardWrapper>
 
-      {/* Footer Stats */}
-      <div
-        className="rounded-2xl p-6 border"
-        style={{ backgroundColor: theme.bgCard, borderColor: theme.border }}
-      >
+      {/* SUMMARY STATS */}
+      <SectionLabel icon="📊" text="Summary Statistics" />
+      <CardWrapper>
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-6">
           <div className="text-center">
             <p className="text-sm" style={{ color: theme.textSecondary }}>Total MCs Issued</p>
@@ -2734,7 +2752,7 @@ export default function FounderAdmin() {
             </p>
           </div>
         </div>
-      </div>
+      </CardWrapper>
 
       {/* Security Notice */}
       <p className="text-center mt-6 text-xs" style={{ color: theme.textMuted }}>
