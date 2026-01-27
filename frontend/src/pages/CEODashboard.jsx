@@ -1031,10 +1031,9 @@ export default function CEODashboard({ walletAddress }) {
         {/* ==================== BILLING SECTION ==================== */}
         <div style={{ marginBottom: '32px' }}>
           <SectionLabel>Billing</SectionLabel>
-        </div>
 
-        {/* ========== SUBSCRIPTION & USAGE CARD (col-span-12) ========== */}
-        <div className="col-span-12" style={{ marginBottom: '24px' }}>
+          {/* ========== SUBSCRIPTION & USAGE CARD (col-span-12) ========== */}
+          <div style={{ marginBottom: '24px' }}>
           <div className="rounded-2xl shadow-2xl overflow-hidden" style={{
             border: '1px solid rgba(20, 184, 166, 0.2)',
             background: 'rgba(15, 23, 42, 0.6)'
@@ -1206,10 +1205,10 @@ export default function CEODashboard({ walletAddress }) {
               </div>
             </div>
           </div>
-        </div>
+          </div>
 
-        {/* Monetization Engine - Full Width Subscription Banner */}
-        <div className="col-span-12" style={{ marginBottom: '32px' }}>
+          {/* Monetization Engine - Full Width Subscription Banner */}
+          <div style={{ marginBottom: '0' }}>
           <div className="rounded-2xl p-6" style={{
             border: isSubscriptionOverdue ? '2px solid rgba(239, 68, 68, 0.5)' : '1px solid rgba(20, 184, 166, 0.2)',
             background: isSubscriptionOverdue ? 'rgba(127, 29, 29, 0.3)' : 'rgba(15, 23, 42, 0.6)'
@@ -1269,6 +1268,7 @@ export default function CEODashboard({ walletAddress }) {
                 </div>
               </div>
             </div>
+          </div>
           </div>
         </div>
 
@@ -1985,11 +1985,10 @@ export default function CEODashboard({ walletAddress }) {
 
             {/* Data Privacy Notice */}
             {connectedHospital && (
-              <div className={`mt-8 p-4 rounded-xl border flex items-center gap-4 ${
-                darkMode
-                  ? 'bg-sky-500/10 border-sky-500/30'
-                  : 'bg-sky-50 border-sky-200'
-              }`}>
+              <div className="mt-8 p-4 rounded-xl flex items-center gap-4" style={{
+                border: '1px solid rgba(20, 184, 166, 0.2)',
+                background: 'rgba(14, 165, 233, 0.1)'
+              }}>
                 <svg className={`w-6 h-6 flex-shrink-0 ${darkMode ? 'text-sky-400' : 'text-sky-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
