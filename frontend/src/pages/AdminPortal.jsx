@@ -34,11 +34,22 @@ const generateDoctorPerformanceData = () => {
 // Reusable Card Component for consistent styling
 const Card = ({ children, className = '', noPadding = false }) => (
   <div
-    className={`bg-slate-800/60 backdrop-blur-sm rounded-2xl ${noPadding ? '' : 'p-6'} ${className}`}
-    style={{ border: '1px solid rgba(20, 184, 166, 0.2)' }}
+    className={`backdrop-blur-sm rounded-2xl ${noPadding ? '' : 'p-6'} ${className}`}
+    style={{
+      border: '1px solid rgba(20, 184, 166, 0.3)',
+      background: 'rgba(15, 23, 42, 0.6)',
+      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)'
+    }}
   >
     {children}
   </div>
+);
+
+// Section Label Component
+const SectionLabel = ({ children }) => (
+  <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-5">
+    {children}
+  </h3>
 );
 
 // Section Header Component
@@ -380,8 +391,8 @@ export default function AdminPortal({ walletAddress }) {
 
         {/* ==================== ROW 1: BILLING SUMMARY (3 Cards) ==================== */}
         <div className="mb-8">
-          <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">Billing Summary</h3>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <SectionLabel>Billing Summary</SectionLabel>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
 
             {/* Card 1: Subscription & Usage */}
             <Card>
@@ -502,8 +513,8 @@ export default function AdminPortal({ walletAddress }) {
 
         {/* ==================== ROW 2: OPERATIONS (2 Cards) ==================== */}
         <div className="mb-8">
-          <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">Operations</h3>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <SectionLabel>Operations</SectionLabel>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
 
             {/* Card 1: Transaction Meter + Real-time Costing */}
             <Card>
@@ -584,12 +595,12 @@ export default function AdminPortal({ walletAddress }) {
 
         {/* ==================== ROW 3: PERFORMANCE (2 Cards) ==================== */}
         <div className="mb-8">
-          <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">Performance</h3>
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <SectionLabel>Performance</SectionLabel>
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
 
             {/* Card 1: Doctor Leaderboard (2 cols) */}
             <Card noPadding className="lg:col-span-2">
-              <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(20, 184, 166, 0.2)' }}>
+              <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(20, 184, 166, 0.3)' }}>
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-bold text-white">Doctor Leaderboard</h3>
@@ -630,7 +641,7 @@ export default function AdminPortal({ walletAddress }) {
                   </div>
                 ))}
               </div>
-              <div className="px-6 py-4 border-t bg-slate-800/30" style={{ borderColor: 'rgba(20, 184, 166, 0.2)' }}>
+              <div className="px-6 py-4 border-t bg-slate-800/30" style={{ borderColor: 'rgba(20, 184, 166, 0.3)' }}>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs text-slate-400">Total Revenue</p>
@@ -700,11 +711,11 @@ export default function AdminPortal({ walletAddress }) {
 
         {/* ==================== ROW 4: STATISTICS (3 Cards) ==================== */}
         <div className="mb-8">
-          <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">Statistics</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <SectionLabel>Statistics</SectionLabel>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
 
             {/* Total MCs Issued */}
-            <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-6 shadow-xl" style={{ border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+            <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-6" style={{ border: '1px solid rgba(59, 130, 246, 0.4)', boxShadow: '0 8px 32px rgba(59, 130, 246, 0.2)' }}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-blue-500/30 rounded-xl flex items-center justify-center">
                   <svg className="w-5 h-5 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -718,7 +729,7 @@ export default function AdminPortal({ walletAddress }) {
             </div>
 
             {/* Active Doctors */}
-            <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 rounded-2xl p-6 shadow-xl" style={{ border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+            <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 rounded-2xl p-6" style={{ border: '1px solid rgba(16, 185, 129, 0.4)', boxShadow: '0 8px 32px rgba(16, 185, 129, 0.2)' }}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-emerald-500/30 rounded-xl flex items-center justify-center">
                   <svg className="w-5 h-5 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -732,7 +743,7 @@ export default function AdminPortal({ walletAddress }) {
             </div>
 
             {/* Available Credits */}
-            <div className="bg-gradient-to-br from-violet-600 to-violet-800 rounded-2xl p-6 shadow-xl" style={{ border: '1px solid rgba(139, 92, 246, 0.3)' }}>
+            <div className="bg-gradient-to-br from-violet-600 to-violet-800 rounded-2xl p-6" style={{ border: '1px solid rgba(139, 92, 246, 0.4)', boxShadow: '0 8px 32px rgba(139, 92, 246, 0.2)' }}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-violet-500/30 rounded-xl flex items-center justify-center">
                   <svg className="w-5 h-5 text-violet-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -749,11 +760,11 @@ export default function AdminPortal({ walletAddress }) {
 
         {/* ==================== ROW 5: MANAGEMENT ==================== */}
         <div className="mb-8">
-          <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">Management</h3>
+          <SectionLabel>Management</SectionLabel>
 
           {/* Monthly Dues Table */}
           <Card noPadding className="mb-6">
-            <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(20, 184, 166, 0.2)' }}>
+            <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(20, 184, 166, 0.3)' }}>
               <h3 className="text-lg font-bold text-white">Monthly Dues</h3>
               <p className="text-slate-400 text-sm">Invoice history and payment status</p>
             </div>
@@ -770,7 +781,7 @@ export default function AdminPortal({ walletAddress }) {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="border-t hover:bg-slate-700/20 transition-colors" style={{ borderColor: 'rgba(20, 184, 166, 0.1)' }}>
+                  <tr className="border-t hover:bg-slate-700/20 transition-colors" style={{ borderColor: 'rgba(20, 184, 166, 0.2)' }}>
                     <td className="px-6 py-4 text-slate-200 font-medium">January 2026</td>
                     <td className="px-6 py-4 text-right text-slate-300">RM {baseFee.toLocaleString()}</td>
                     <td className="px-6 py-4 text-right text-slate-300">RM {meteredUsageCost.toLocaleString()}</td>
@@ -808,7 +819,7 @@ export default function AdminPortal({ walletAddress }) {
           </Card>
 
           {/* Admin Transfer + Doctor Management */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
 
             {/* Admin Transfer */}
             <Card>
@@ -936,9 +947,9 @@ export default function AdminPortal({ walletAddress }) {
 
         {/* ==================== ROW 6: HOSPITAL BALANCES ==================== */}
         <div className="mb-8">
-          <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4">Account Details</h3>
+          <SectionLabel>Account Details</SectionLabel>
           <Card noPadding>
-            <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(20, 184, 166, 0.2)' }}>
+            <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(20, 184, 166, 0.3)' }}>
               <h3 className="text-lg font-bold text-white">Hospital Balances</h3>
               <p className="text-slate-400 text-sm">Detailed breakdown by hospital/doctor</p>
             </div>
@@ -962,7 +973,7 @@ export default function AdminPortal({ walletAddress }) {
                     </tr>
                   ) : (
                     hospitalBalances.map((item, index) => (
-                      <tr key={index} className="border-t hover:bg-slate-700/20 transition-colors" style={{ borderColor: 'rgba(20, 184, 166, 0.1)' }}>
+                      <tr key={index} className="border-t hover:bg-slate-700/20 transition-colors" style={{ borderColor: 'rgba(20, 184, 166, 0.2)' }}>
                         <td className="px-6 py-4">
                           <code className="text-slate-200 bg-slate-700/50 px-2 py-1 rounded text-sm">
                             {formatAddress(item.hospital)}
