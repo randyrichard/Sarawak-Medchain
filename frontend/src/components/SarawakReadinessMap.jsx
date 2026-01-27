@@ -330,14 +330,21 @@ export default function SarawakReadinessMap() {
             <rect x="0" y="0" width="100" height="100" fill={isProtected ? "#070b14" : "#0a0505"} />
             <circle cx="50" cy="50" r="45" fill="url(#mapGlow)" />
 
-            {/* Sarawak landmass - Teal glow effect */}
+            {/* Sarawak landmass - Enhanced teal glow effect */}
+            <defs>
+              <linearGradient id="sarawakFill" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="rgba(20, 184, 166, 0.15)" />
+                <stop offset="50%" stopColor="rgba(20, 184, 166, 0.08)" />
+                <stop offset="100%" stopColor="rgba(20, 184, 166, 0.12)" />
+              </linearGradient>
+            </defs>
             <path
               d="M5 88 Q8 78 12 72 L18 68 Q28 62 35 58 L45 52 Q55 44 65 38 L75 28 Q85 20 94 16 L97 22 Q94 32 88 42 L82 52 Q76 60 70 65 L60 70 Q50 74 40 78 L28 82 Q18 86 10 88 L5 88 Z"
-              fill={isProtected ? "rgba(20, 184, 166, 0.1)" : "#1a1010"}
+              fill={isProtected ? "url(#sarawakFill)" : "#1a1010"}
               stroke={isProtected ? "#14b8a6" : "#5f2020"}
-              strokeWidth={isProtected ? "1.5" : "0.3"}
+              strokeWidth={isProtected ? "2.5" : "0.3"}
               style={{
-                filter: isProtected ? 'drop-shadow(0 0 10px rgba(20, 184, 166, 0.5))' : 'none',
+                filter: isProtected ? 'drop-shadow(0 0 15px rgba(20, 184, 166, 0.4)) drop-shadow(0 0 30px rgba(20, 184, 166, 0.2))' : 'none',
                 transition: 'all 0.5s ease',
               }}
             />
@@ -383,23 +390,39 @@ export default function SarawakReadinessMap() {
                     />
                   )}
 
-                  {/* PROTECTED STATE: Green integrity nodes */}
+                  {/* PROTECTED STATE: Teal integrity nodes with pulse */}
                   {isProtected ? (
                     <>
+                      {/* Outer pulse ring */}
+                      <circle
+                        cx={division.position.x}
+                        cy={division.position.y}
+                        r={isSelected ? 5 : 4}
+                        fill="none"
+                        stroke="#14b8a6"
+                        strokeWidth="0.3"
+                        opacity="0.4"
+                        className="map-city-dot"
+                      />
+                      {/* Main dot with glow */}
                       <circle
                         cx={division.position.x}
                         cy={division.position.y}
                         r={isSelected ? 3 : 2.5}
-                        fill="#10b981"
-                        filter={isMiri && flyInComplete ? 'url(#glow)' : undefined}
+                        fill="#14b8a6"
+                        filter="url(#glow)"
                         className="transition-all duration-300"
+                        style={{
+                          filter: 'drop-shadow(0 0 4px rgba(20, 184, 166, 0.8))',
+                        }}
                       />
+                      {/* Center highlight */}
                       <circle
                         cx={division.position.x}
                         cy={division.position.y}
                         r="1"
                         fill="white"
-                        opacity="0.5"
+                        opacity="0.7"
                       />
                     </>
                   ) : (

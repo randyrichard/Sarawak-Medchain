@@ -7,11 +7,11 @@ import SignatureCanvas from 'react-signature-canvas';
 // Enterprise Design Theme - Teal Primary Accent
 const theme = {
   bg: '#0a0e14',
-  bgCard: 'rgba(15, 23, 42, 0.6)',
-  bgCardSolid: '#0f172a',
-  bgCardHover: '#142847',
+  bgCard: 'rgba(15, 23, 42, 0.8)',
+  bgCardSolid: 'rgba(15, 23, 42, 0.8)',
+  bgCardHover: 'rgba(20, 184, 166, 0.05)',
   border: 'rgba(30, 58, 95, 0.5)',
-  borderTeal: 'rgba(20, 184, 166, 0.2)',
+  borderTeal: 'rgba(20, 184, 166, 0.3)',
   textPrimary: '#ffffff',
   textSecondary: '#94a3b8',
   textMuted: '#64748b',
@@ -24,34 +24,57 @@ const theme = {
   danger: '#ef4444',
   purple: '#8b5cf6',
   blue: '#3b82f6',
-  // Card styling
-  cardBorder: '1px solid rgba(20, 184, 166, 0.2)',
-  cardShadow: '0 4px 24px rgba(0, 0, 0, 0.2)',
+  // Card styling - CONSISTENT across all cards
+  cardBorder: '1px solid rgba(20, 184, 166, 0.3)',
+  cardShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
   cardGlow: '0 0 20px rgba(20, 184, 166, 0.15)',
 };
 
-// Section Label Component for consistent styling
-const SectionLabel = ({ icon, text }) => (
-  <div className="flex items-center gap-2 mb-4 pb-2" style={{ borderBottom: `1px solid ${theme.border}` }}>
-    <span style={{ color: theme.teal }}>{icon}</span>
-    <span style={{
-      fontSize: '11px',
-      fontWeight: 700,
-      letterSpacing: '0.1em',
-      textTransform: 'uppercase',
-      color: theme.textMuted
-    }}>{text}</span>
+// Section Label Component - Professional styling with icon background
+const SectionLabel = ({ icon, text, subtitle }) => (
+  <div style={{ marginBottom: '20px' }}>
+    <div className="flex items-center gap-3">
+      <div
+        style={{
+          width: '40px',
+          height: '40px',
+          borderRadius: '12px',
+          background: 'rgba(20, 184, 166, 0.15)',
+          border: '1px solid rgba(20, 184, 166, 0.3)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '18px',
+        }}
+      >
+        {icon}
+      </div>
+      <div>
+        <h3 style={{
+          fontSize: '18px',
+          fontWeight: 700,
+          color: theme.textPrimary,
+          margin: 0,
+        }}>{text}</h3>
+        {subtitle && (
+          <p style={{ fontSize: '13px', color: theme.textMuted, margin: 0 }}>{subtitle}</p>
+        )}
+      </div>
+    </div>
   </div>
 );
 
-// Card Wrapper Component for consistent card styling
-const CardWrapper = ({ children, className = '', style = {}, glow = false }) => (
+// Card Wrapper Component - CONSISTENT styling for ALL cards
+const CardWrapper = ({ children, className = '', style = {}, glow = false, hover = true }) => (
   <div
-    className={`rounded-2xl p-6 ${className}`}
+    className={`card-hover ${className}`}
     style={{
-      backgroundColor: theme.bgCardSolid,
-      border: theme.cardBorder,
-      boxShadow: glow ? `${theme.cardShadow}, ${theme.cardGlow}` : theme.cardShadow,
+      background: 'rgba(15, 23, 42, 0.8)',
+      backdropFilter: 'blur(10px)',
+      border: '1px solid rgba(20, 184, 166, 0.3)',
+      borderRadius: '16px',
+      padding: '24px',
+      boxShadow: glow ? '0 4px 20px rgba(0, 0, 0, 0.3), 0 0 20px rgba(20, 184, 166, 0.15)' : '0 4px 20px rgba(0, 0, 0, 0.3)',
       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       ...style
     }}
@@ -59,6 +82,140 @@ const CardWrapper = ({ children, className = '', style = {}, glow = false }) => 
     {children}
   </div>
 );
+
+// Stat Card Component - For KPI displays with proper hierarchy
+const StatCardMini = ({ label, value, icon, color = theme.teal, subValue }) => (
+  <div
+    style={{
+      background: 'rgba(15, 23, 42, 0.8)',
+      border: '1px solid rgba(20, 184, 166, 0.3)',
+      borderRadius: '12px',
+      padding: '16px',
+      textAlign: 'center',
+    }}
+  >
+    {icon && (
+      <div
+        style={{
+          width: '36px',
+          height: '36px',
+          borderRadius: '50%',
+          background: `${color}20`,
+          border: `1px solid ${color}40`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto 12px',
+        }}
+      >
+        {icon}
+      </div>
+    )}
+    <p style={{
+      fontSize: '11px',
+      fontWeight: 600,
+      letterSpacing: '0.1em',
+      textTransform: 'uppercase',
+      color: theme.textMuted,
+      marginBottom: '8px',
+    }}>{label}</p>
+    <p style={{
+      fontSize: '28px',
+      fontWeight: 700,
+      color: color,
+      margin: 0,
+      lineHeight: 1,
+    }}>{value}</p>
+    {subValue && (
+      <p style={{ fontSize: '12px', color: theme.textSecondary, marginTop: '4px' }}>{subValue}</p>
+    )}
+  </div>
+);
+
+// Gold Button Component
+const GoldButton = ({ children, onClick, disabled = false, size = 'md', fullWidth = false }) => (
+  <button
+    onClick={onClick}
+    disabled={disabled}
+    style={{
+      background: disabled ? '#6b7280' : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+      border: 'none',
+      borderRadius: '8px',
+      padding: size === 'sm' ? '8px 16px' : size === 'lg' ? '16px 32px' : '12px 24px',
+      color: disabled ? '#9ca3af' : '#000',
+      fontWeight: 600,
+      fontSize: size === 'sm' ? '13px' : '14px',
+      cursor: disabled ? 'not-allowed' : 'pointer',
+      transition: 'all 0.3s ease',
+      width: fullWidth ? '100%' : 'auto',
+      boxShadow: disabled ? 'none' : '0 4px 15px rgba(245, 158, 11, 0.3)',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px',
+    }}
+    onMouseEnter={(e) => {
+      if (!disabled) {
+        e.target.style.transform = 'translateY(-2px)';
+        e.target.style.boxShadow = '0 6px 20px rgba(245, 158, 11, 0.5)';
+      }
+    }}
+    onMouseLeave={(e) => {
+      if (!disabled) {
+        e.target.style.transform = 'translateY(0)';
+        e.target.style.boxShadow = '0 4px 15px rgba(245, 158, 11, 0.3)';
+      }
+    }}
+  >
+    {children}
+  </button>
+);
+
+// Status Badge Component
+const StatusBadge = ({ status, pulse = false }) => {
+  const colors = {
+    active: { bg: 'rgba(16, 185, 129, 0.2)', text: '#10b981', border: '#10b981' },
+    online: { bg: 'rgba(16, 185, 129, 0.2)', text: '#10b981', border: '#10b981' },
+    standby: { bg: 'rgba(245, 158, 11, 0.2)', text: '#f59e0b', border: '#f59e0b' },
+    warning: { bg: 'rgba(245, 158, 11, 0.2)', text: '#f59e0b', border: '#f59e0b' },
+    error: { bg: 'rgba(239, 68, 68, 0.2)', text: '#ef4444', border: '#ef4444' },
+  };
+  const style = colors[status?.toLowerCase()] || colors.active;
+
+  return (
+    <span
+      className={pulse ? 'live-indicator' : ''}
+      style={{
+        background: style.bg,
+        color: style.text,
+        border: `1px solid ${style.border}`,
+        padding: '4px 12px',
+        borderRadius: '20px',
+        fontSize: '11px',
+        fontWeight: 700,
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '6px',
+      }}
+    >
+      {pulse && (
+        <span
+          className="live-indicator"
+          style={{
+            width: '6px',
+            height: '6px',
+            borderRadius: '50%',
+            background: style.text,
+            boxShadow: `0 0 8px ${style.text}`,
+          }}
+        />
+      )}
+      {status}
+    </span>
+  );
+};
 
 // Market data
 const TOTAL_SARAWAK_HOSPITALS = 24;
@@ -166,11 +323,14 @@ function StrategicRevenueProjection() {
 
   return (
     <div
-      className="rounded-2xl p-6 border relative overflow-hidden"
+      className="card-hover relative overflow-hidden"
       style={{
-        backgroundColor: 'rgba(15, 31, 56, 0.6)',
-        borderColor: theme.border,
-        backdropFilter: 'blur(20px)'
+        background: 'rgba(15, 23, 42, 0.8)',
+        backdropFilter: 'blur(10px)',
+        border: '1px solid rgba(20, 184, 166, 0.3)',
+        borderRadius: '16px',
+        padding: '24px',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
       }}
     >
       {/* Background glow effect */}
@@ -463,10 +623,14 @@ function AutomationCommandCenter({ bankBalance, mrr, leadsCount }) {
     <div className="space-y-6">
       {/* Daily Briefing Card - Solo Founder */}
       <div
-        className="rounded-2xl p-6 border relative overflow-hidden"
+        className="card-hover relative overflow-hidden"
         style={{
-          background: `linear-gradient(135deg, ${theme.bgCard} 0%, rgba(16, 185, 129, 0.1) 100%)`,
-          borderColor: theme.success
+          background: 'rgba(15, 23, 42, 0.8)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(16, 185, 129, 0.4)',
+          borderRadius: '16px',
+          padding: '24px',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
         }}
       >
         {/* Animated corner accent */}
