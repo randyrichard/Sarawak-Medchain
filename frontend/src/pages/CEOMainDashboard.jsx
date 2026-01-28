@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -127,26 +128,92 @@ const glassCard = {
   transition: 'all 0.3s ease',
 };
 
-// Reusable Glass Card Component with hover effects
-const GlassCard = ({ children, className = '', style = {} }) => {
+// Animation variants for stagger effect
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: i * 0.1,
+      duration: 0.5,
+      ease: 'easeOut',
+    },
+  }),
+};
+
+// Animated Number Component - counts up from 0
+const AnimatedNumber = ({ value, duration = 1.5, prefix = '', suffix = '' }) => {
+  const [displayValue, setDisplayValue] = useState(0);
+  const countRef = useRef(null);
+
+  useEffect(() => {
+    // Parse the numeric value
+    const numericValue = typeof value === 'string'
+      ? parseFloat(value.replace(/[^0-9.]/g, ''))
+      : value;
+
+    if (isNaN(numericValue)) {
+      setDisplayValue(value);
+      return;
+    }
+
+    const startTime = Date.now();
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / (duration * 1000), 1);
+
+      // Ease out cubic
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      const current = Math.floor(easeOut * numericValue);
+
+      setDisplayValue(current);
+
+      if (progress < 1) {
+        countRef.current = requestAnimationFrame(animate);
+      } else {
+        setDisplayValue(numericValue);
+      }
+    };
+
+    countRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (countRef.current) {
+        cancelAnimationFrame(countRef.current);
+      }
+    };
+  }, [value, duration]);
+
+  return <>{prefix}{typeof displayValue === 'number' ? displayValue.toLocaleString() : displayValue}{suffix}</>;
+};
+
+// Reusable Glass Card Component with hover effects and fade-in animation
+const GlassCard = ({ children, className = '', style = {}, index = 0 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <div
+    <motion.div
       className={className}
+      custom={index}
+      initial="hidden"
+      animate="visible"
+      variants={cardVariants}
       style={{
         ...glassCard,
         padding: '24px',
         border: isHovered ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid rgba(255, 255, 255, 0.1)',
-        transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
-        boxShadow: isHovered ? '0 12px 40px rgba(0, 0, 0, 0.4)' : '0 8px 32px rgba(0, 0, 0, 0.3)',
+        boxShadow: isHovered
+          ? '0 12px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(14, 165, 233, 0.1)'
+          : '0 8px 32px rgba(0, 0, 0, 0.3)',
         ...style,
       }}
+      whileHover={{ y: -2 }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {children}
-    </div>
+    </motion.div>
   );
 };
 
@@ -155,17 +222,27 @@ const GlassCard = ({ children, className = '', style = {} }) => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // Metric Card Component
-const MetricCard = ({ title, value, subtitle, icon, trend, trendUp, accentColor = theme.accent }) => {
+const MetricCard = ({ title, value, subtitle, icon, trend, trendUp, accentColor = theme.accent, index = 0 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
+  // Check if value is a number that can be animated
+  const isAnimatable = typeof value === 'number' || (typeof value === 'string' && /^\d/.test(value));
+
   return (
-    <div
+    <motion.div
+      custom={index}
+      initial="hidden"
+      animate="visible"
+      variants={cardVariants}
       style={{
         ...glassCard,
         padding: '24px',
         border: isHovered ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid rgba(255, 255, 255, 0.1)',
-        transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
+        boxShadow: isHovered
+          ? '0 12px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(14, 165, 233, 0.1)'
+          : '0 8px 32px rgba(0, 0, 0, 0.3)',
       }}
+      whileHover={{ y: -2 }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -189,7 +266,7 @@ const MetricCard = ({ title, value, subtitle, icon, trend, trendUp, accentColor 
       </div>
     </div>
     <p style={{ fontSize: '32px', fontWeight: 700, color: theme.textPrimary, marginBottom: '4px' }}>
-      {value}
+      {isAnimatable ? <AnimatedNumber value={value} /> : value}
     </p>
     <div className="flex items-center gap-2">
       {trend && (
@@ -208,9 +285,31 @@ const MetricCard = ({ title, value, subtitle, icon, trend, trendUp, accentColor 
       )}
       <span style={{ fontSize: '13px', color: theme.textMuted }}>{subtitle}</span>
     </div>
-  </div>
+  </motion.div>
   );
 };
+
+// Pulse Indicator Component for status dots
+const PulseIndicator = ({ color, size = 10 }) => (
+  <motion.div
+    style={{
+      width: size,
+      height: size,
+      borderRadius: '50%',
+      background: color,
+      boxShadow: `0 0 10px ${color}`,
+    }}
+    animate={{
+      scale: [1, 1.2, 1],
+      opacity: [1, 0.8, 1],
+    }}
+    transition={{
+      duration: 2,
+      repeat: Infinity,
+      ease: 'easeInOut',
+    }}
+  />
+);
 
 // Status Badge Component
 const StatusBadge = ({ status }) => {
@@ -368,8 +467,9 @@ export default function CEOMainDashboard({ walletAddress }) {
             ═══════════════════════════════════════════════════════════════════ */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <MetricCard
+            index={0}
             title="Total MCs Issued"
-            value={totalMCs.toLocaleString()}
+            value={totalMCs}
             subtitle="This month"
             trend="+12.5%"
             trendUp={true}
@@ -382,6 +482,7 @@ export default function CEOMainDashboard({ walletAddress }) {
           />
 
           <MetricCard
+            index={1}
             title="Active Doctors"
             value={`${onlineDoctors}/${totalDoctors}`}
             subtitle="Currently online"
@@ -394,6 +495,7 @@ export default function CEOMainDashboard({ walletAddress }) {
           />
 
           <MetricCard
+            index={2}
             title="Subscription Status"
             value="Active"
             subtitle={`Next billing: ${new Date(currentInvoice.dueDate).toLocaleDateString('en-MY', { month: 'short', day: 'numeric' })}`}
@@ -406,8 +508,9 @@ export default function CEOMainDashboard({ walletAddress }) {
           />
 
           <MetricCard
+            index={3}
             title="Verification Rate"
-            value={`${verificationRate}%`}
+            value={verificationRate}
             subtitle="MCs verified on-chain"
             trend="+2.3%"
             trendUp={true}
@@ -425,7 +528,7 @@ export default function CEOMainDashboard({ walletAddress }) {
             ═══════════════════════════════════════════════════════════════════ */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Daily MC Chart - Takes 2 columns */}
-          <GlassCard className="lg:col-span-2">
+          <GlassCard className="lg:col-span-2" index={4}>
             <SectionHeader
               title="MC Issuance Trend"
               subtitle="Last 30 days"
@@ -484,7 +587,7 @@ export default function CEOMainDashboard({ walletAddress }) {
           </GlassCard>
 
           {/* Department Breakdown */}
-          <GlassCard>
+          <GlassCard index={5}>
             <SectionHeader title="By Department" subtitle="MC distribution" />
             <div className="space-y-3">
               {DEPARTMENT_DATA.map((dept, idx) => (
@@ -522,7 +625,7 @@ export default function CEOMainDashboard({ walletAddress }) {
             ═══════════════════════════════════════════════════════════════════ */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Doctor Performance */}
-          <GlassCard style={{ overflow: 'hidden' }}>
+          <GlassCard index={6} style={{ overflow: 'hidden' }}>
             <SectionHeader
               title="Doctor Performance"
               subtitle={`${totalDoctors} registered doctors`}
@@ -557,7 +660,7 @@ export default function CEOMainDashboard({ walletAddress }) {
           </GlassCard>
 
           {/* Recent MCs */}
-          <GlassCard style={{ overflow: 'hidden' }}>
+          <GlassCard index={7} style={{ overflow: 'hidden' }}>
             <SectionHeader
               title="Recent MCs"
               subtitle="Latest certificates issued"
@@ -611,7 +714,7 @@ export default function CEOMainDashboard({ walletAddress }) {
             ═══════════════════════════════════════════════════════════════════ */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Billing & Subscription */}
-          <GlassCard>
+          <GlassCard index={8}>
             <SectionHeader title="Billing & Subscription" subtitle="Current billing period" />
 
             {/* Current Bill Summary */}
@@ -672,7 +775,7 @@ export default function CEOMainDashboard({ walletAddress }) {
           </GlassCard>
 
           {/* System Status */}
-          <GlassCard>
+          <GlassCard index={9}>
             <SectionHeader title="System Status" subtitle="Infrastructure health" />
 
             <div className="space-y-4">
@@ -686,7 +789,7 @@ export default function CEOMainDashboard({ walletAddress }) {
                 }}
               >
                 <div className="flex items-center gap-3 mb-2">
-                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: theme.success, boxShadow: `0 0 10px ${theme.success}` }} />
+                  <PulseIndicator color={theme.success} />
                   <span style={{ fontSize: '14px', fontWeight: 600, color: theme.textPrimary }}>Blockchain Sync</span>
                   <span style={{ marginLeft: 'auto', fontSize: '12px', color: theme.success, fontWeight: 600 }}>Synced</span>
                 </div>
@@ -705,7 +808,7 @@ export default function CEOMainDashboard({ walletAddress }) {
                 }}
               >
                 <div className="flex items-center gap-3 mb-2">
-                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: theme.success, boxShadow: `0 0 10px ${theme.success}` }} />
+                  <PulseIndicator color={theme.success} />
                   <span style={{ fontSize: '14px', fontWeight: 600, color: theme.textPrimary }}>Node Health</span>
                   <span style={{ marginLeft: 'auto', fontSize: '12px', color: theme.success, fontWeight: 600 }}>Healthy</span>
                 </div>
@@ -724,7 +827,7 @@ export default function CEOMainDashboard({ walletAddress }) {
                 }}
               >
                 <div className="flex items-center gap-3 mb-2">
-                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: theme.accent }} />
+                  <PulseIndicator color={theme.accent} />
                   <span style={{ fontSize: '14px', fontWeight: 600, color: theme.textPrimary }}>Data Backup</span>
                   <span style={{ marginLeft: 'auto', fontSize: '12px', color: theme.textSecondary }}>2 hours ago</span>
                 </div>
@@ -743,7 +846,7 @@ export default function CEOMainDashboard({ walletAddress }) {
                 }}
               >
                 <div className="flex items-center gap-3 mb-2">
-                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: theme.success, boxShadow: `0 0 10px ${theme.success}` }} />
+                  <PulseIndicator color={theme.success} />
                   <span style={{ fontSize: '14px', fontWeight: 600, color: theme.textPrimary }}>Security</span>
                   <span style={{ marginLeft: 'auto', fontSize: '12px', color: theme.success, fontWeight: 600 }}>Secure</span>
                 </div>
