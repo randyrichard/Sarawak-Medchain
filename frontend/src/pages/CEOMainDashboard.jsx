@@ -114,20 +114,61 @@ const INVOICE_HISTORY = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// SHARED STYLES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Glassmorphism card style
+const glassCard = {
+  background: 'rgba(13, 17, 23, 0.8)',
+  border: '1px solid rgba(255, 255, 255, 0.1)',
+  borderRadius: '16px',
+  backdropFilter: 'blur(10px)',
+  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+  transition: 'all 0.3s ease',
+};
+
+// Reusable Glass Card Component with hover effects
+const GlassCard = ({ children, className = '', style = {} }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <div
+      className={className}
+      style={{
+        ...glassCard,
+        padding: '24px',
+        border: isHovered ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid rgba(255, 255, 255, 0.1)',
+        transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
+        boxShadow: isHovered ? '0 12px 40px rgba(0, 0, 0, 0.4)' : '0 8px 32px rgba(0, 0, 0, 0.3)',
+        ...style,
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {children}
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // COMPONENTS
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // Metric Card Component
-const MetricCard = ({ title, value, subtitle, icon, trend, trendUp, accentColor = theme.accent }) => (
-  <div
-    style={{
-      background: theme.bgCard,
-      border: `1px solid ${theme.border}`,
-      borderRadius: '16px',
-      padding: '24px',
-      backdropFilter: 'blur(10px)',
-    }}
-  >
+const MetricCard = ({ title, value, subtitle, icon, trend, trendUp, accentColor = theme.accent }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <div
+      style={{
+        ...glassCard,
+        padding: '24px',
+        border: isHovered ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid rgba(255, 255, 255, 0.1)',
+        transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
     <div className="flex items-start justify-between mb-3">
       <span style={{ color: theme.textMuted, fontSize: '13px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
         {title}
@@ -168,7 +209,8 @@ const MetricCard = ({ title, value, subtitle, icon, trend, trendUp, accentColor 
       <span style={{ fontSize: '13px', color: theme.textMuted }}>{subtitle}</span>
     </div>
   </div>
-);
+  );
+};
 
 // Status Badge Component
 const StatusBadge = ({ status }) => {
@@ -383,15 +425,7 @@ export default function CEOMainDashboard({ walletAddress }) {
             ═══════════════════════════════════════════════════════════════════ */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Daily MC Chart - Takes 2 columns */}
-          <div
-            className="lg:col-span-2"
-            style={{
-              background: theme.bgCard,
-              border: `1px solid ${theme.border}`,
-              borderRadius: '16px',
-              padding: '24px',
-            }}
-          >
+          <GlassCard className="lg:col-span-2">
             <SectionHeader
               title="MC Issuance Trend"
               subtitle="Last 30 days"
@@ -447,17 +481,10 @@ export default function CEOMainDashboard({ walletAddress }) {
                 </AreaChart>
               </ResponsiveContainer>
             </div>
-          </div>
+          </GlassCard>
 
           {/* Department Breakdown */}
-          <div
-            style={{
-              background: theme.bgCard,
-              border: `1px solid ${theme.border}`,
-              borderRadius: '16px',
-              padding: '24px',
-            }}
-          >
+          <GlassCard>
             <SectionHeader title="By Department" subtitle="MC distribution" />
             <div className="space-y-3">
               {DEPARTMENT_DATA.map((dept, idx) => (
@@ -487,7 +514,7 @@ export default function CEOMainDashboard({ walletAddress }) {
                 </ResponsiveContainer>
               </div>
             </div>
-          </div>
+          </GlassCard>
         </div>
 
         {/* ═══════════════════════════════════════════════════════════════════
@@ -495,15 +522,7 @@ export default function CEOMainDashboard({ walletAddress }) {
             ═══════════════════════════════════════════════════════════════════ */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Doctor Performance */}
-          <div
-            style={{
-              background: theme.bgCard,
-              border: `1px solid ${theme.border}`,
-              borderRadius: '16px',
-              padding: '24px',
-              overflow: 'hidden',
-            }}
-          >
+          <GlassCard style={{ overflow: 'hidden' }}>
             <SectionHeader
               title="Doctor Performance"
               subtitle={`${totalDoctors} registered doctors`}
@@ -535,18 +554,10 @@ export default function CEOMainDashboard({ walletAddress }) {
                 </tbody>
               </table>
             </div>
-          </div>
+          </GlassCard>
 
           {/* Recent MCs */}
-          <div
-            style={{
-              background: theme.bgCard,
-              border: `1px solid ${theme.border}`,
-              borderRadius: '16px',
-              padding: '24px',
-              overflow: 'hidden',
-            }}
-          >
+          <GlassCard style={{ overflow: 'hidden' }}>
             <SectionHeader
               title="Recent MCs"
               subtitle="Latest certificates issued"
@@ -592,7 +603,7 @@ export default function CEOMainDashboard({ walletAddress }) {
                 </div>
               ))}
             </div>
-          </div>
+          </GlassCard>
         </div>
 
         {/* ═══════════════════════════════════════════════════════════════════
@@ -600,14 +611,7 @@ export default function CEOMainDashboard({ walletAddress }) {
             ═══════════════════════════════════════════════════════════════════ */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Billing & Subscription */}
-          <div
-            style={{
-              background: theme.bgCard,
-              border: `1px solid ${theme.border}`,
-              borderRadius: '16px',
-              padding: '24px',
-            }}
-          >
+          <GlassCard>
             <SectionHeader title="Billing & Subscription" subtitle="Current billing period" />
 
             {/* Current Bill Summary */}
@@ -665,17 +669,10 @@ export default function CEOMainDashboard({ walletAddress }) {
                 </div>
               ))}
             </div>
-          </div>
+          </GlassCard>
 
           {/* System Status */}
-          <div
-            style={{
-              background: theme.bgCard,
-              border: `1px solid ${theme.border}`,
-              borderRadius: '16px',
-              padding: '24px',
-            }}
-          >
+          <GlassCard>
             <SectionHeader title="System Status" subtitle="Infrastructure health" />
 
             <div className="space-y-4">
@@ -755,7 +752,7 @@ export default function CEOMainDashboard({ walletAddress }) {
                 </p>
               </div>
             </div>
-          </div>
+          </GlassCard>
         </div>
 
         {/* ═══════════════════════════════════════════════════════════════════
