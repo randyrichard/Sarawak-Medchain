@@ -324,7 +324,7 @@ export default function CEOMainDashboard({ walletAddress }) {
         {/* ═══════════════════════════════════════════════════════════════════
             KEY METRICS ROW
             ═══════════════════════════════════════════════════════════════════ */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <MetricCard
             title="Total MCs Issued"
             value={totalMCs.toLocaleString()}
@@ -381,7 +381,7 @@ export default function CEOMainDashboard({ walletAddress }) {
         {/* ═══════════════════════════════════════════════════════════════════
             MC ANALYTICS SECTION
             ═══════════════════════════════════════════════════════════════════ */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Daily MC Chart - Takes 2 columns */}
           <div
             className="lg:col-span-2"
@@ -493,7 +493,7 @@ export default function CEOMainDashboard({ walletAddress }) {
         {/* ═══════════════════════════════════════════════════════════════════
             DOCTOR PERFORMANCE & RECENT MCS
             ═══════════════════════════════════════════════════════════════════ */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Doctor Performance */}
           <div
             style={{
@@ -501,6 +501,7 @@ export default function CEOMainDashboard({ walletAddress }) {
               border: `1px solid ${theme.border}`,
               borderRadius: '16px',
               padding: '24px',
+              overflow: 'hidden',
             }}
           >
             <SectionHeader
@@ -543,6 +544,7 @@ export default function CEOMainDashboard({ walletAddress }) {
               border: `1px solid ${theme.border}`,
               borderRadius: '16px',
               padding: '24px',
+              overflow: 'hidden',
             }}
           >
             <SectionHeader
@@ -596,7 +598,7 @@ export default function CEOMainDashboard({ walletAddress }) {
         {/* ═══════════════════════════════════════════════════════════════════
             BILLING & SYSTEM STATUS
             ═══════════════════════════════════════════════════════════════════ */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Billing & Subscription */}
           <div
             style={{
