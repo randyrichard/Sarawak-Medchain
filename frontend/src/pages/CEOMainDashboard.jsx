@@ -265,7 +265,17 @@ const MetricCard = ({ title, value, subtitle, icon, trend, trendUp, accentColor 
         {icon}
       </div>
     </div>
-    <p style={{ fontSize: '32px', fontWeight: 700, color: theme.textPrimary, marginBottom: '4px' }}>
+    <p
+      style={{
+        fontSize: '36px',
+        fontWeight: 700,
+        marginBottom: '4px',
+        background: 'linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        backgroundClip: 'text',
+      }}
+    >
       {isAnimatable ? <AnimatedNumber value={value} /> : value}
     </p>
     <div className="flex items-center gap-2">
@@ -343,10 +353,10 @@ const StatusBadge = ({ status }) => {
 
 // Section Header Component
 const SectionHeader = ({ title, subtitle, action }) => (
-  <div className="flex items-center justify-between mb-4">
+  <div className="flex items-center justify-between mb-5">
     <div>
-      <h2 style={{ fontSize: '18px', fontWeight: 600, color: theme.textPrimary, marginBottom: '2px' }}>{title}</h2>
-      {subtitle && <p style={{ fontSize: '13px', color: theme.textMuted }}>{subtitle}</p>}
+      <h2 style={{ fontSize: '18px', fontWeight: 700, color: theme.textPrimary, marginBottom: '4px', letterSpacing: '-0.01em' }}>{title}</h2>
+      {subtitle && <p style={{ fontSize: '13px', color: theme.textMuted, fontWeight: 500 }}>{subtitle}</p>}
     </div>
     {action}
   </div>
@@ -740,7 +750,18 @@ export default function CEOMainDashboard({ walletAddress }) {
               <div style={{ borderTop: `1px solid ${theme.border}`, paddingTop: '16px' }}>
                 <div className="flex items-center justify-between">
                   <span style={{ fontSize: '14px', fontWeight: 600, color: theme.textSecondary }}>Total Due</span>
-                  <span style={{ fontSize: '24px', fontWeight: 700, color: theme.accent }}>RM {currentInvoice.total.toLocaleString()}</span>
+                  <span
+                    style={{
+                      fontSize: '28px',
+                      fontWeight: 700,
+                      background: 'linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text',
+                    }}
+                  >
+                    RM {currentInvoice.total.toLocaleString()}
+                  </span>
                 </div>
                 <p style={{ fontSize: '12px', color: theme.textMuted, marginTop: '4px' }}>
                   Due by {new Date(currentInvoice.dueDate).toLocaleDateString('en-MY', { year: 'numeric', month: 'long', day: 'numeric' })}
