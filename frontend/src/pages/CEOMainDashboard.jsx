@@ -238,7 +238,7 @@ export default function CEOMainDashboard({ walletAddress }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: theme.bg }}>
+    <div style={{ backgroundColor: theme.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* ═══════════════════════════════════════════════════════════════════
           HEADER
           ═══════════════════════════════════════════════════════════════════ */}
@@ -319,7 +319,7 @@ export default function CEOMainDashboard({ walletAddress }) {
       {/* ═══════════════════════════════════════════════════════════════════
           MAIN CONTENT
           ═══════════════════════════════════════════════════════════════════ */}
-      <main style={{ padding: '24px 32px', maxWidth: '1400px', margin: '0 auto', width: '100%', flex: 1 }}>
+      <main style={{ padding: '24px 32px', maxWidth: '1400px', margin: '0 auto', width: '100%', flexGrow: 1 }}>
 
         {/* ═══════════════════════════════════════════════════════════════════
             KEY METRICS ROW
@@ -761,24 +761,26 @@ export default function CEOMainDashboard({ walletAddress }) {
       </main>
 
       {/* ═══════════════════════════════════════════════════════════════════
-          FOOTER
+          FOOTER - Must be LAST element, at very bottom of page
           ═══════════════════════════════════════════════════════════════════ */}
       <footer
         style={{
           width: '100%',
-          borderTop: `1px solid ${theme.border}`,
-          padding: '16px 32px',
+          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+          padding: '20px 32px',
           textAlign: 'center',
-          marginTop: 'auto',
+          marginTop: '40px',
+          background: 'rgba(15, 23, 42, 0.5)',
+          flexShrink: 0,
         }}
       >
-        <p style={{ fontSize: '13px', color: theme.textMuted }}>
-          Powered by <span style={{ fontWeight: 500, color: theme.textSecondary }}>Sarawak MedChain</span>
-          <span style={{ margin: '0 12px', color: theme.border }}>|</span>
+        <p style={{ fontSize: '13px', color: theme.textMuted, margin: 0 }}>
+          Powered by <span style={{ fontWeight: 600, color: theme.textSecondary }}>Sarawak MedChain</span>
+          <span style={{ margin: '0 16px', opacity: 0.3 }}>|</span>
           <a href="mailto:support@sarawakmedchain.com" style={{ color: theme.textMuted, textDecoration: 'none' }}>
             support@sarawakmedchain.com
           </a>
-          <span style={{ margin: '0 12px', color: theme.border }}>|</span>
+          <span style={{ margin: '0 16px', opacity: 0.3 }}>|</span>
           +60 82-XXX-XXX
         </p>
       </footer>
