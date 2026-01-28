@@ -238,7 +238,7 @@ export default function CEOMainDashboard({ walletAddress }) {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: theme.bg }}>
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: theme.bg }}>
       {/* ═══════════════════════════════════════════════════════════════════
           HEADER
           ═══════════════════════════════════════════════════════════════════ */}
@@ -319,7 +319,7 @@ export default function CEOMainDashboard({ walletAddress }) {
       {/* ═══════════════════════════════════════════════════════════════════
           MAIN CONTENT
           ═══════════════════════════════════════════════════════════════════ */}
-      <main style={{ padding: '24px 32px', maxWidth: '1400px', margin: '0 auto' }}>
+      <main style={{ padding: '24px 32px', maxWidth: '1400px', margin: '0 auto', width: '100%', flex: 1 }}>
 
         {/* ═══════════════════════════════════════════════════════════════════
             KEY METRICS ROW
@@ -763,31 +763,22 @@ export default function CEOMainDashboard({ walletAddress }) {
           ═══════════════════════════════════════════════════════════════════ */}
       <footer
         style={{
-          background: theme.bgCardSolid,
+          width: '100%',
           borderTop: `1px solid ${theme.border}`,
-          padding: '20px 32px',
-          marginTop: '40px',
+          padding: '16px 32px',
+          textAlign: 'center',
+          marginTop: 'auto',
         }}
       >
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4" style={{ maxWidth: '1400px', margin: '0 auto' }}>
-          <div className="flex items-center gap-3">
-            <svg className="w-5 h-5" fill={theme.accent} viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            <span style={{ fontSize: '14px', color: theme.textSecondary }}>
-              Powered by <span style={{ fontWeight: 600, color: theme.textPrimary }}>Sarawak MedChain</span>
-            </span>
-          </div>
-
-          <div className="flex items-center gap-6">
-            <a href="mailto:support@sarawakmedchain.com" style={{ fontSize: '13px', color: theme.textMuted, textDecoration: 'none' }}>
-              support@sarawakmedchain.com
-            </a>
-            <span style={{ fontSize: '13px', color: theme.textMuted }}>
-              +60 82-XXX-XXX
-            </span>
-          </div>
-        </div>
+        <p style={{ fontSize: '13px', color: theme.textMuted }}>
+          Powered by <span style={{ fontWeight: 500, color: theme.textSecondary }}>Sarawak MedChain</span>
+          <span style={{ margin: '0 12px', color: theme.border }}>|</span>
+          <a href="mailto:support@sarawakmedchain.com" style={{ color: theme.textMuted, textDecoration: 'none' }}>
+            support@sarawakmedchain.com
+          </a>
+          <span style={{ margin: '0 12px', color: theme.border }}>|</span>
+          +60 82-XXX-XXX
+        </p>
       </footer>
     </div>
   );
