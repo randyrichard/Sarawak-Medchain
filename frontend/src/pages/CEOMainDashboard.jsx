@@ -758,32 +758,30 @@ export default function CEOMainDashboard({ walletAddress }) {
           </div>
         </div>
 
-      </main>
+        {/* ═══════════════════════════════════════════════════════════════════
+            FOOTER - LAST element inside main, at very bottom of page
+            ═══════════════════════════════════════════════════════════════════ */}
+        <footer
+          style={{
+            width: '100%',
+            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+            padding: '20px 0',
+            textAlign: 'center',
+            marginTop: '40px',
+          }}
+        >
+          <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
+            Powered by <span style={{ fontWeight: 600, color: '#94a3b8' }}>Sarawak MedChain</span>
+            <span style={{ margin: '0 16px', opacity: 0.3 }}>|</span>
+            <a href="mailto:support@sarawakmedchain.com" style={{ color: '#64748b', textDecoration: 'none' }}>
+              support@sarawakmedchain.com
+            </a>
+            <span style={{ margin: '0 16px', opacity: 0.3 }}>|</span>
+            +60 82-XXX-XXX
+          </p>
+        </footer>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          FOOTER - Must be LAST element, at very bottom of page
-          ═══════════════════════════════════════════════════════════════════ */}
-      <footer
-        style={{
-          width: '100%',
-          borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-          padding: '20px 32px',
-          textAlign: 'center',
-          marginTop: '40px',
-          background: 'rgba(15, 23, 42, 0.5)',
-          flexShrink: 0,
-        }}
-      >
-        <p style={{ fontSize: '13px', color: theme.textMuted, margin: 0 }}>
-          Powered by <span style={{ fontWeight: 600, color: theme.textSecondary }}>Sarawak MedChain</span>
-          <span style={{ margin: '0 16px', opacity: 0.3 }}>|</span>
-          <a href="mailto:support@sarawakmedchain.com" style={{ color: theme.textMuted, textDecoration: 'none' }}>
-            support@sarawakmedchain.com
-          </a>
-          <span style={{ margin: '0 16px', opacity: 0.3 }}>|</span>
-          +60 82-XXX-XXX
-        </p>
-      </footer>
+      </main>
     </div>
   );
 }
