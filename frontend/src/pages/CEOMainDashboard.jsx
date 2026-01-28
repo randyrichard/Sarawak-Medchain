@@ -321,42 +321,63 @@ const PulseIndicator = ({ color, size = 10 }) => (
   />
 );
 
-// Status Badge Component
+// Status Badge Component with glow effect for verified/paid
 const StatusBadge = ({ status }) => {
   const styles = {
-    verified: { bg: 'rgba(16, 185, 129, 0.15)', color: '#10b981', text: 'Verified' },
-    pending: { bg: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', text: 'Pending' },
-    paid: { bg: 'rgba(16, 185, 129, 0.15)', color: '#10b981', text: 'Paid' },
-    active: { bg: 'rgba(16, 185, 129, 0.15)', color: '#10b981', text: 'Active' },
-    due: { bg: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', text: 'Due' },
-    online: { bg: 'rgba(16, 185, 129, 0.15)', color: '#10b981', text: '●' },
-    away: { bg: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', text: '●' },
-    offline: { bg: 'rgba(100, 116, 139, 0.15)', color: '#64748b', text: '●' },
+    verified: { bg: 'rgba(16, 185, 129, 0.15)', color: '#10b981', text: 'Verified', glow: true },
+    pending: { bg: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', text: 'Pending', glow: false },
+    paid: { bg: 'rgba(16, 185, 129, 0.15)', color: '#10b981', text: 'Paid', glow: true },
+    active: { bg: 'rgba(16, 185, 129, 0.15)', color: '#10b981', text: 'Active', glow: true },
+    due: { bg: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', text: 'Due', glow: false },
+    online: { bg: 'rgba(16, 185, 129, 0.15)', color: '#10b981', text: '●', glow: false },
+    away: { bg: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', text: '●', glow: false },
+    offline: { bg: 'rgba(100, 116, 139, 0.15)', color: '#64748b', text: '●', glow: false },
   };
   const s = styles[status] || styles.pending;
+  const isCompact = status === 'online' || status === 'away' || status === 'offline';
 
   return (
     <span
       style={{
         background: s.bg,
         color: s.color,
-        padding: status === 'online' || status === 'away' || status === 'offline' ? '4px 8px' : '4px 12px',
+        padding: isCompact ? '4px 8px' : '4px 12px',
         borderRadius: '20px',
         fontSize: '12px',
         fontWeight: 600,
+        boxShadow: s.glow ? `0 0 12px ${s.color}40` : 'none',
+        border: s.glow ? `1px solid ${s.color}30` : 'none',
       }}
     >
-      {s.text}
+      {s.glow && !isCompact && '✓ '}{s.text}
     </span>
   );
 };
 
 // Section Header Component
-const SectionHeader = ({ title, subtitle, action }) => (
+const SectionHeader = ({ title, subtitle, action, icon }) => (
   <div className="flex items-center justify-between mb-5">
-    <div>
-      <h2 style={{ fontSize: '18px', fontWeight: 700, color: theme.textPrimary, marginBottom: '4px', letterSpacing: '-0.01em' }}>{title}</h2>
-      {subtitle && <p style={{ fontSize: '13px', color: theme.textMuted, fontWeight: 500 }}>{subtitle}</p>}
+    <div className="flex items-center gap-3">
+      {icon && (
+        <div
+          style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '8px',
+            background: 'rgba(14, 165, 233, 0.1)',
+            border: '1px solid rgba(14, 165, 233, 0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {icon}
+        </div>
+      )}
+      <div>
+        <h2 style={{ fontSize: '18px', fontWeight: 700, color: theme.textPrimary, marginBottom: '4px', letterSpacing: '-0.01em' }}>{title}</h2>
+        {subtitle && <p style={{ fontSize: '13px', color: theme.textMuted, fontWeight: 500 }}>{subtitle}</p>}
+      </div>
     </div>
     {action}
   </div>
@@ -542,6 +563,7 @@ export default function CEOMainDashboard({ walletAddress }) {
             <SectionHeader
               title="MC Issuance Trend"
               subtitle="Last 30 days"
+              icon={<svg className="w-4 h-4" fill={theme.accent} viewBox="0 0 20 20"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zm6-4a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zm6-3a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" /></svg>}
               action={
                 <select
                   style={{
@@ -564,31 +586,43 @@ export default function CEOMainDashboard({ walletAddress }) {
                 <AreaChart data={dailyMCData}>
                   <defs>
                     <linearGradient id="mcGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={theme.accent} stopOpacity={0.3} />
-                      <stop offset="100%" stopColor={theme.accent} stopOpacity={0} />
+                      <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.4} />
+                      <stop offset="50%" stopColor="#14b8a6" stopOpacity={0.2} />
+                      <stop offset="100%" stopColor="#14b8a6" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#0ea5e9" />
+                      <stop offset="100%" stopColor="#14b8a6" />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke={theme.border} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                   <XAxis
                     dataKey="date"
                     stroke={theme.textMuted}
-                    tick={{ fontSize: 11 }}
+                    tick={{ fontSize: 11, fill: theme.textMuted }}
                     interval={4}
+                    axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
                   />
-                  <YAxis stroke={theme.textMuted} tick={{ fontSize: 11 }} />
+                  <YAxis
+                    stroke={theme.textMuted}
+                    tick={{ fontSize: 11, fill: theme.textMuted }}
+                    axisLine={{ stroke: 'rgba(255,255,255,0.1)' }}
+                  />
                   <Tooltip
                     contentStyle={{
-                      background: theme.bgCardSolid,
-                      border: `1px solid ${theme.border}`,
-                      borderRadius: '8px',
+                      background: 'rgba(13, 17, 23, 0.95)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '12px',
+                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
                     }}
-                    labelStyle={{ color: theme.textPrimary }}
+                    labelStyle={{ color: theme.textPrimary, fontWeight: 600 }}
+                    itemStyle={{ color: theme.accent }}
                   />
                   <Area
                     type="monotone"
                     dataKey="mcs"
-                    stroke={theme.accent}
-                    strokeWidth={2}
+                    stroke="url(#lineGradient)"
+                    strokeWidth={3}
                     fill="url(#mcGradient)"
                   />
                 </AreaChart>
@@ -598,7 +632,7 @@ export default function CEOMainDashboard({ walletAddress }) {
 
           {/* Department Breakdown */}
           <GlassCard index={5}>
-            <SectionHeader title="By Department" subtitle="MC distribution" />
+            <SectionHeader title="By Department" subtitle="MC distribution" icon={<svg className="w-4 h-4" fill={theme.accent} viewBox="0 0 20 20"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" /><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" /></svg>} />
             <div className="space-y-3">
               {DEPARTMENT_DATA.map((dept, idx) => (
                 <div key={idx} className="flex items-center gap-3">
@@ -639,6 +673,7 @@ export default function CEOMainDashboard({ walletAddress }) {
             <SectionHeader
               title="Doctor Performance"
               subtitle={`${totalDoctors} registered doctors`}
+              icon={<svg className="w-4 h-4" fill={theme.accent} viewBox="0 0 20 20"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" /></svg>}
             />
             <div className="overflow-x-auto">
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -674,6 +709,7 @@ export default function CEOMainDashboard({ walletAddress }) {
             <SectionHeader
               title="Recent MCs"
               subtitle="Latest certificates issued"
+              icon={<svg className="w-4 h-4" fill={theme.accent} viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" /></svg>}
               action={
                 <button
                   style={{
@@ -725,7 +761,7 @@ export default function CEOMainDashboard({ walletAddress }) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Billing & Subscription */}
           <GlassCard index={8}>
-            <SectionHeader title="Billing & Subscription" subtitle="Current billing period" />
+            <SectionHeader title="Billing & Subscription" subtitle="Current billing period" icon={<svg className="w-4 h-4" fill={theme.accent} viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>} />
 
             {/* Current Bill Summary */}
             <div
@@ -797,7 +833,7 @@ export default function CEOMainDashboard({ walletAddress }) {
 
           {/* System Status */}
           <GlassCard index={9}>
-            <SectionHeader title="System Status" subtitle="Infrastructure health" />
+            <SectionHeader title="System Status" subtitle="Infrastructure health" icon={<svg className="w-4 h-4" fill={theme.accent} viewBox="0 0 20 20"><path fillRule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" /></svg>} />
 
             <div className="space-y-4">
               {/* Blockchain Sync */}
