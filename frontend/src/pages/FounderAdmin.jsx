@@ -1,36 +1,408 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, Component } from 'react';
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Legend } from 'recharts';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import SignatureCanvas from 'react-signature-canvas';
+import { motion, AnimatePresence, useInView } from 'framer-motion';
+import toast from 'react-hot-toast';
+import CommandBar from '../components/ui/CommandBar';
+import ConfirmationModal from '../components/ui/ConfirmationModal';
+import { SkeletonStatCard, SkeletonChart, SkeletonTable, SkeletonCard } from '../components/ui/SkeletonLoader';
 
-// Enterprise Design Theme - Teal Primary Accent
-const theme = {
-  bg: '#0a0e14',
-  bgCard: 'rgba(15, 23, 42, 0.8)',
-  bgCardSolid: 'rgba(15, 23, 42, 0.8)',
-  bgCardHover: 'rgba(20, 184, 166, 0.05)',
-  border: 'rgba(30, 58, 95, 0.5)',
-  borderTeal: 'rgba(20, 184, 166, 0.3)',
-  textPrimary: '#ffffff',
-  textSecondary: '#94a3b8',
-  textMuted: '#64748b',
-  // Primary accent is now teal
-  accent: '#14b8a6',
-  teal: '#14b8a6',
-  gold: '#f59e0b',
-  success: '#10b981',
-  warning: '#f59e0b',
-  danger: '#ef4444',
-  purple: '#8b5cf6',
-  blue: '#3b82f6',
-  // Card styling - CONSISTENT across all cards
-  cardBorder: '1px solid rgba(20, 184, 166, 0.3)',
-  cardShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
-  cardGlow: '0 0 20px rgba(20, 184, 166, 0.15)',
+// ═══════════════════════════════════════════════════════════════════════════
+// PHASE 6: Error Boundary Component
+// ═══════════════════════════════════════════════════════════════════════════
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Section Error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="error-fallback">
+          <svg className="error-fallback-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <h3 className="error-fallback-title">{this.props.fallbackTitle || 'Something went wrong'}</h3>
+          <p className="error-fallback-message">{this.props.fallbackMessage || 'This section failed to load'}</p>
+          <button className="error-fallback-button" onClick={() => this.setState({ hasError: false, error: null })}>
+            Try Again
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// Loading Skeleton Wrapper Component
+const LoadingSection = ({ isLoading, variant = 'card', children, ...props }) => {
+  if (isLoading) {
+    switch (variant) {
+      case 'stat':
+        return <SkeletonStatCard {...props} />;
+      case 'chart':
+        return <SkeletonChart {...props} />;
+      case 'table':
+        return <SkeletonTable {...props} />;
+      default:
+        return <SkeletonCard {...props} />;
+    }
+  }
+  return children;
 };
 
-// Section Label Component - Professional styling with icon background
+// ═══════════════════════════════════════════════════════════════════════════
+// PHASE 3: ANIMATION SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Animation Variants for consistent motion
+const fadeInUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
+};
+
+const fadeInScale = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: { opacity: 1, scale: 1 }
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.1
+    }
+  }
+};
+
+const staggerItem = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: [0.4, 0, 0.2, 1] }
+  }
+};
+
+// Slide in from right for notifications
+const slideInRight = {
+  hidden: { opacity: 0, x: 100 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: { type: 'spring', stiffness: 300, damping: 30 }
+  },
+  exit: {
+    opacity: 0,
+    x: 100,
+    transition: { duration: 0.2 }
+  }
+};
+
+// Pulse animation for live indicators
+const pulseGlow = {
+  animate: {
+    boxShadow: [
+      '0 0 0 0 rgba(0, 212, 170, 0.4)',
+      '0 0 0 8px rgba(0, 212, 170, 0)',
+    ],
+    transition: {
+      duration: 1.5,
+      repeat: Infinity,
+      ease: 'easeOut'
+    }
+  }
+};
+
+// Button tap effect
+const buttonTap = {
+  tap: { scale: 0.97 },
+  hover: { scale: 1.02 }
+};
+
+// Enhanced Animated Number Component with better formatting
+const AnimatedNumber = ({ value, prefix = '', suffix = '', duration = 1.2, decimals = 0 }) => {
+  const [displayValue, setDisplayValue] = useState(0);
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: '-50px' });
+
+  useEffect(() => {
+    if (!isInView || hasAnimated) return;
+
+    const endValue = typeof value === 'number' ? value : parseFloat(value) || 0;
+    const startTime = Date.now();
+    const durationMs = duration * 1000;
+    let animationFrame;
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / durationMs, 1);
+      // Smooth easing with bounce at end
+      const easeOutBack = 1 - Math.pow(1 - progress, 3);
+      const current = endValue * easeOutBack;
+
+      setDisplayValue(current);
+
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(animate);
+      } else {
+        setHasAnimated(true);
+      }
+    };
+
+    animationFrame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [value, duration, isInView, hasAnimated]);
+
+  const formatted = displayValue >= 1000
+    ? Math.round(displayValue).toLocaleString()
+    : decimals > 0
+      ? displayValue.toFixed(decimals)
+      : Math.round(displayValue).toString();
+
+  return (
+    <motion.span
+      ref={ref}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      {prefix}{formatted}{suffix}
+    </motion.span>
+  );
+};
+
+// Live Pulse Dot Component
+const LivePulseDot = ({ color = '#00d4aa', size = 8 }) => (
+  <motion.span
+    style={{
+      width: size,
+      height: size,
+      borderRadius: '50%',
+      backgroundColor: color,
+      display: 'inline-block',
+    }}
+    animate={{
+      scale: [1, 1.2, 1],
+      opacity: [1, 0.7, 1],
+      boxShadow: [
+        `0 0 0 0 ${color}66`,
+        `0 0 0 ${size/2}px ${color}00`,
+        `0 0 0 0 ${color}66`,
+      ]
+    }}
+    transition={{
+      duration: 1.5,
+      repeat: Infinity,
+      ease: 'easeInOut'
+    }}
+  />
+);
+
+// Animated Button Component
+const AnimatedButton = ({ children, onClick, variant = 'primary', disabled = false, className = '', style = {} }) => {
+  const variants = {
+    primary: {
+      bg: '#00d4aa',
+      color: '#0a0e14',
+      hoverShadow: '0 4px 20px rgba(0, 212, 170, 0.4)',
+    },
+    secondary: {
+      bg: '#7c5cff',
+      color: '#ffffff',
+      hoverShadow: '0 4px 20px rgba(124, 92, 255, 0.4)',
+    },
+    ghost: {
+      bg: 'rgba(255, 255, 255, 0.05)',
+      color: '#94a3b8',
+      hoverShadow: 'none',
+    },
+    danger: {
+      bg: '#ef4444',
+      color: '#ffffff',
+      hoverShadow: '0 4px 20px rgba(239, 68, 68, 0.4)',
+    }
+  };
+
+  const v = variants[variant] || variants.primary;
+
+  return (
+    <motion.button
+      onClick={onClick}
+      disabled={disabled}
+      className={className}
+      whileHover={{ scale: disabled ? 1 : 1.02, boxShadow: disabled ? 'none' : v.hoverShadow }}
+      whileTap={{ scale: disabled ? 1 : 0.98 }}
+      transition={{ duration: 0.15 }}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '8px',
+        padding: '10px 20px',
+        borderRadius: '10px',
+        fontSize: '13px',
+        fontWeight: 600,
+        border: variant === 'ghost' ? '1px solid rgba(255,255,255,0.1)' : 'none',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        background: disabled ? '#374151' : v.bg,
+        color: disabled ? '#6b7280' : v.color,
+        opacity: disabled ? 0.6 : 1,
+        transition: 'background 0.2s, border-color 0.2s',
+        ...style
+      }}
+    >
+      {children}
+    </motion.button>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ENTERPRISE DESIGN SYSTEM - Phase 2 Color Palette
+// ═══════════════════════════════════════════════════════════════════════════
+const theme = {
+  // Background colors
+  bg: '#0a0e14',                                    // Deep navy black
+  bgCard: '#0d1117',                                // Card background
+  bgCardGradient: 'linear-gradient(135deg, rgba(13,17,23,0.95) 0%, rgba(13,17,23,0.8) 100%)',
+  bgElevated: 'rgba(13, 17, 23, 0.98)',
+  bgHover: 'rgba(0, 212, 170, 0.05)',
+
+  // Border colors
+  border: 'rgba(255, 255, 255, 0.08)',              // Subtle white border
+  borderHover: 'rgba(255, 255, 255, 0.15)',
+  borderAccent: 'rgba(0, 212, 170, 0.25)',
+  borderPurple: 'rgba(124, 92, 255, 0.25)',
+
+  // Text colors
+  textPrimary: '#e2e8f0',                           // Primary text
+  textSecondary: '#94a3b8',                         // Secondary text
+  textMuted: '#64748b',                             // Muted/label text
+  textWhite: '#ffffff',
+
+  // Accent colors - Enterprise palette
+  primary: '#00d4aa',                               // Cyan/teal - money, success, active
+  accent: '#00d4aa',
+  teal: '#00d4aa',
+  success: '#00d4aa',
+  secondary: '#7c5cff',                             // Purple - premium feel
+  purple: '#7c5cff',
+  warning: '#f59e0b',                               // Orange - warnings
+  gold: '#f59e0b',
+  danger: '#ef4444',                                // Red - errors
+  blue: '#3b82f6',
+
+  // Card styling constants
+  cardRadius: '16px',
+  cardPadding: '24px',
+  cardShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+  cardShadowHover: '0 12px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(0, 212, 170, 0.1)',
+  cardBlur: 'blur(20px)',
+  cardGlow: '0 0 40px rgba(0, 212, 170, 0.15)',
+
+  // Transitions
+  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+  transitionSlow: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TYPOGRAPHY COMPONENTS - Phase 2 Typography System
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Display - For hero metrics (48px, 800 weight)
+const TextDisplay = ({ children, color = theme.textPrimary, className = '' }) => (
+  <span className={className} style={{
+    fontSize: '48px',
+    fontWeight: 800,
+    letterSpacing: '-0.02em',
+    lineHeight: 1.1,
+    color,
+  }}>{children}</span>
+);
+
+// Headline - Section titles (24px, 700 weight)
+const TextHeadline = ({ children, color = theme.textPrimary, className = '' }) => (
+  <h2 className={className} style={{
+    fontSize: '24px',
+    fontWeight: 700,
+    letterSpacing: '-0.01em',
+    lineHeight: 1.2,
+    color,
+    margin: 0,
+  }}>{children}</h2>
+);
+
+// Title - Card headers (18px, 600 weight)
+const TextTitle = ({ children, color = theme.textPrimary, className = '' }) => (
+  <h3 className={className} style={{
+    fontSize: '18px',
+    fontWeight: 600,
+    letterSpacing: '-0.01em',
+    lineHeight: 1.3,
+    color,
+    margin: 0,
+  }}>{children}</h3>
+);
+
+// Label - Uppercase small labels (11px, 600 weight)
+const TextLabel = ({ children, color = theme.textMuted, className = '' }) => (
+  <span className={className} style={{
+    fontSize: '11px',
+    fontWeight: 600,
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+    color,
+  }}>{children}</span>
+);
+
+// Metric - Large numbers (32px, 800 weight)
+const TextMetric = ({ children, color = theme.primary, className = '' }) => (
+  <span className={className} style={{
+    fontSize: '32px',
+    fontWeight: 800,
+    letterSpacing: '-0.02em',
+    lineHeight: 1,
+    color,
+  }}>{children}</span>
+);
+
+// Body - Regular text (14px, 400 weight)
+const TextBody = ({ children, color = theme.textSecondary, className = '' }) => (
+  <p className={className} style={{
+    fontSize: '14px',
+    fontWeight: 400,
+    lineHeight: 1.5,
+    color,
+    margin: 0,
+  }}>{children}</p>
+);
+
+// Caption - Small muted text (12px)
+const TextCaption = ({ children, color = theme.textMuted, className = '' }) => (
+  <span className={className} style={{
+    fontSize: '12px',
+    fontWeight: 500,
+    color,
+  }}>{children}</span>
+);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SECTION LABEL - Updated with Phase 2 Design
+// ═══════════════════════════════════════════════════════════════════════════
 const SectionLabel = ({ icon, text, subtitle }) => (
   <div style={{ marginBottom: '20px' }}>
     <div className="flex items-center gap-3">
@@ -39,8 +411,8 @@ const SectionLabel = ({ icon, text, subtitle }) => (
           width: '40px',
           height: '40px',
           borderRadius: '12px',
-          background: 'rgba(20, 184, 166, 0.15)',
-          border: '1px solid rgba(20, 184, 166, 0.3)',
+          background: 'rgba(0, 212, 170, 0.1)',
+          border: '1px solid rgba(0, 212, 170, 0.2)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -64,34 +436,80 @@ const SectionLabel = ({ icon, text, subtitle }) => (
   </div>
 );
 
-// Card Wrapper Component - CONSISTENT styling for ALL cards
-const CardWrapper = ({ children, className = '', style = {}, glow = false, hover = true }) => (
-  <div
-    className={`card-hover ${className}`}
-    style={{
-      background: 'rgba(15, 23, 42, 0.8)',
-      backdropFilter: 'blur(10px)',
-      border: '1px solid rgba(20, 184, 166, 0.3)',
-      borderRadius: '16px',
-      padding: '24px',
-      boxShadow: glow ? '0 4px 20px rgba(0, 0, 0, 0.3), 0 0 20px rgba(20, 184, 166, 0.15)' : '0 4px 20px rgba(0, 0, 0, 0.3)',
-      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-      ...style
-    }}
-  >
-    {children}
-  </div>
-);
+// Card Wrapper Component - CONSISTENT styling for ALL cards with animations
+// ═══════════════════════════════════════════════════════════════════════════
+// CARD WRAPPER - Enterprise Card Component with Phase 2 Design System
+// ═══════════════════════════════════════════════════════════════════════════
+const CardWrapper = ({ children, className = '', style = {}, glow = false, hover = true, delay = 0, variant = 'default' }) => {
+  const variants = {
+    default: {
+      background: theme.bgCardGradient,
+      border: `1px solid ${theme.border}`,
+      boxShadow: theme.cardShadow,
+    },
+    elevated: {
+      background: 'linear-gradient(135deg, rgba(13, 17, 23, 0.98) 0%, rgba(13, 17, 23, 0.9) 100%)',
+      border: `1px solid ${theme.borderAccent}`,
+      boxShadow: `${theme.cardShadow}, 0 0 30px rgba(0, 212, 170, 0.08)`,
+    },
+    highlight: {
+      background: 'linear-gradient(135deg, rgba(0, 212, 170, 0.1) 0%, rgba(13, 17, 23, 0.95) 100%)',
+      border: '1px solid rgba(0, 212, 170, 0.3)',
+      boxShadow: `${theme.cardShadow}, ${theme.cardGlow}`,
+    },
+    purple: {
+      background: 'linear-gradient(135deg, rgba(124, 92, 255, 0.08) 0%, rgba(13, 17, 23, 0.95) 100%)',
+      border: `1px solid ${theme.borderPurple}`,
+      boxShadow: `${theme.cardShadow}, 0 0 30px rgba(124, 92, 255, 0.1)`,
+    }
+  };
+
+  const currentVariant = variants[variant] || variants.default;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay, ease: 'easeOut' }}
+      whileHover={hover ? {
+        y: -2,
+        boxShadow: theme.cardShadowHover,
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+      } : {}}
+      className={`card-hover ${className}`}
+      style={{
+        background: currentVariant.background,
+        backdropFilter: theme.cardBlur,
+        WebkitBackdropFilter: theme.cardBlur,
+        border: glow ? '1px solid rgba(0, 212, 170, 0.35)' : currentVariant.border,
+        borderRadius: theme.cardRadius,
+        padding: theme.cardPadding,
+        boxShadow: glow ? `${theme.cardShadow}, ${theme.cardGlow}` : currentVariant.boxShadow,
+        transition: theme.transitionSlow,
+        ...style
+      }}
+    >
+      {children}
+    </motion.div>
+  );
+};
 
 // Stat Card Component - For KPI displays with proper hierarchy
-const StatCardMini = ({ label, value, icon, color = theme.teal, subValue }) => (
-  <div
+// Stat Card Mini - Using Phase 2 Design System
+const StatCardMini = ({ label, value, icon, color = theme.primary, subValue }) => (
+  <motion.div
+    whileHover={{ y: -2, boxShadow: theme.cardShadowHover }}
+    transition={{ duration: 0.2 }}
     style={{
-      background: 'rgba(15, 23, 42, 0.8)',
-      border: '1px solid rgba(20, 184, 166, 0.3)',
-      borderRadius: '12px',
-      padding: '16px',
+      background: theme.bgCardGradient,
+      backdropFilter: theme.cardBlur,
+      WebkitBackdropFilter: theme.cardBlur,
+      border: `1px solid ${theme.border}`,
+      borderRadius: '14px',
+      padding: '18px',
       textAlign: 'center',
+      boxShadow: theme.cardShadow,
+      transition: theme.transition,
     }}
   >
     {icon && (
@@ -99,9 +517,9 @@ const StatCardMini = ({ label, value, icon, color = theme.teal, subValue }) => (
         style={{
           width: '36px',
           height: '36px',
-          borderRadius: '50%',
-          background: `${color}20`,
-          border: `1px solid ${color}40`,
+          borderRadius: '10px',
+          background: `${color}15`,
+          border: `1px solid ${color}30`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -112,7 +530,7 @@ const StatCardMini = ({ label, value, icon, color = theme.teal, subValue }) => (
       </div>
     )}
     <p style={{
-      fontSize: '11px',
+      fontSize: '10px',
       fontWeight: 600,
       letterSpacing: '0.1em',
       textTransform: 'uppercase',
@@ -121,15 +539,16 @@ const StatCardMini = ({ label, value, icon, color = theme.teal, subValue }) => (
     }}>{label}</p>
     <p style={{
       fontSize: '28px',
-      fontWeight: 700,
+      fontWeight: 800,
       color: color,
       margin: 0,
       lineHeight: 1,
+      letterSpacing: '-0.02em',
     }}>{value}</p>
     {subValue && (
-      <p style={{ fontSize: '12px', color: theme.textSecondary, marginTop: '4px' }}>{subValue}</p>
+      <p style={{ fontSize: '11px', color: theme.textSecondary, marginTop: '6px' }}>{subValue}</p>
     )}
-  </div>
+  </motion.div>
 );
 
 // Gold Button Component
@@ -664,10 +1083,10 @@ function AutomationCommandCenter({ bankBalance, mrr, leadsCount }) {
               </div>
             </div>
             <div
-              className="px-4 py-2 rounded-full flex items-center gap-2"
-              style={{ backgroundColor: `${theme.success}20` }}
+              className="px-4 py-2 rounded-full flex items-center gap-2 live-badge"
+              style={{ backgroundColor: `${theme.success}20`, border: `1px solid ${theme.success}40` }}
             >
-              <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: theme.success }} />
+              <LivePulseDot color={theme.success} size={8} />
               <span className="text-sm font-bold" style={{ color: theme.success }}>All Systems Automated</span>
             </div>
           </div>
@@ -691,7 +1110,7 @@ function AutomationCommandCenter({ bankBalance, mrr, leadsCount }) {
                 </span>
               </div>
               <p className="text-3xl font-black" style={{ color: theme.success }}>
-                RM {(bankBalance || 36485).toLocaleString()}
+                <AnimatedNumber value={bankBalance || 36485} prefix="RM " duration={1.2} />
               </p>
               <p className="text-xs mt-1" style={{ color: theme.textSecondary }}>
                 +RM 2,340 today
@@ -715,7 +1134,7 @@ function AutomationCommandCenter({ bankBalance, mrr, leadsCount }) {
                 </span>
               </div>
               <p className="text-3xl font-black" style={{ color: theme.accent }}>
-                {leadsCount || 6}
+                <AnimatedNumber value={leadsCount || 6} duration={0.8} />
               </p>
               <p className="text-xs mt-1" style={{ color: theme.textSecondary }}>
                 3 hot, 2 warm, 1 cold
@@ -739,7 +1158,7 @@ function AutomationCommandCenter({ bankBalance, mrr, leadsCount }) {
                 </span>
               </div>
               <p className="text-3xl font-black" style={{ color: theme.warning }}>
-                RM {revenueGap.toLocaleString()}
+                <AnimatedNumber value={revenueGap} prefix="RM " duration={1.0} />
               </p>
               <div className="mt-2">
                 <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: theme.border }}>
@@ -1799,10 +2218,10 @@ function ProposalModal({ isOpen, onClose, lead, onDealClosed }) {
 
               {/* Node Active Status */}
               <div
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-4 live-badge"
                 style={{ backgroundColor: `${theme.success}20`, border: `1px solid ${theme.success}` }}
               >
-                <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: theme.success }} />
+                <LivePulseDot color={theme.success} size={8} />
                 <span className="text-sm font-bold" style={{ color: theme.success }}>
                   NODE SC-{nodeId} ONLINE
                 </span>
@@ -1937,6 +2356,24 @@ export default function FounderAdmin() {
   const [closedDeals, setClosedDeals] = useState([]);
   const [dealNotification, setDealNotification] = useState(null);
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PHASE 5: Command Bar & Confirmation Modal State
+  // ═══════════════════════════════════════════════════════════════════════════
+  const [commandBarOpen, setCommandBarOpen] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: null });
+  const [recentCommands, setRecentCommands] = useState([]);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PHASE 6: Loading States
+  // ═══════════════════════════════════════════════════════════════════════════
+  const [isLoading, setIsLoading] = useState(true);
+  const [sectionsLoaded, setSectionsLoaded] = useState({
+    metrics: false,
+    chart: false,
+    pipeline: false,
+    network: false,
+  });
+
   // Super Admin password (in production, this would be server-side)
   const SUPER_ADMIN_PASSWORD = 'founder2026';
 
@@ -1983,11 +2420,113 @@ export default function FounderAdmin() {
       value: leadValue
     });
 
+    // Phase 5: Show toast notification
+    toast.success(
+      <div className="flex items-center gap-3">
+        <span className="text-xl">🎉</span>
+        <div>
+          <p className="font-bold">{closedDeal.facilityName}</p>
+          <p className="text-sm opacity-80">+RM {leadValue.toLocaleString()} MRR</p>
+        </div>
+      </div>,
+      { duration: 5000 }
+    );
+
     // Clear notification after 5 seconds
     setTimeout(() => {
       setDealNotification(null);
     }, 5000);
   };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PHASE 5: Keyboard Shortcuts
+  // ═══════════════════════════════════════════════════════════════════════════
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const handleKeyDown = (e) => {
+      // Cmd/Ctrl + K - Open Command Bar
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCommandBarOpen(prev => !prev);
+      }
+      // Cmd/Ctrl + E - Export Deck
+      if ((e.metaKey || e.ctrlKey) && e.key === 'e' && !e.shiftKey) {
+        e.preventDefault();
+        exportInvestorDeck();
+      }
+      // Escape - Close modals
+      if (e.key === 'Escape') {
+        setCommandBarOpen(false);
+        setConfirmModal({ isOpen: false, type: null });
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isAuthenticated]);
+
+  // Phase 5: Command execution handler
+  const handleCommandExecute = useCallback((command) => {
+    // Add to recent commands
+    setRecentCommands(prev => {
+      const updated = [command.id, ...prev.filter(id => id !== command.id)].slice(0, 5);
+      return updated;
+    });
+
+    // Show toast for feedback
+    toast.success(`Executed: ${command.label}`, { duration: 2000, icon: '⚡' });
+  }, []);
+
+  // Phase 5: Command bar commands
+  const commandBarCommands = [
+    {
+      id: 'export-deck',
+      label: 'Export Investor Deck PDF',
+      group: 'Actions',
+      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+      shortcut: ['⌘', 'E'],
+      action: () => exportInvestorDeck(),
+    },
+    {
+      id: 'refresh-data',
+      label: 'Refresh Dashboard Data',
+      group: 'Actions',
+      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>,
+      action: () => {
+        toast.success('Dashboard refreshed', { icon: '🔄' });
+        window.location.reload();
+      },
+    },
+    {
+      id: 'show-metrics',
+      label: 'View Key Metrics',
+      group: 'Navigation',
+      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
+      action: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
+    },
+    {
+      id: 'show-pipeline',
+      label: 'View Sales Pipeline',
+      group: 'Navigation',
+      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>,
+      action: () => document.querySelector('[data-section="pipeline"]')?.scrollIntoView({ behavior: 'smooth' }),
+    },
+    {
+      id: 'system-check',
+      label: 'Check System Status',
+      group: 'System',
+      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
+      action: () => toast.success('All systems operational ✓', { icon: '💚', duration: 3000 }),
+    },
+    {
+      id: 'logout',
+      label: 'Logout',
+      group: 'System',
+      icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>,
+      action: () => setIsAuthenticated(false),
+    },
+  ];
 
   // Export Investor Deck PDF
   const exportInvestorDeck = async () => {
@@ -2127,26 +2666,45 @@ export default function FounderAdmin() {
     }
   };
 
-  // Initialize data
+  // Initialize data with loading state
   useEffect(() => {
     if (isAuthenticated) {
-      // Calculate MRR
-      const totalMRR = mockHospitals.reduce((sum, h) => sum + h.monthlyFee, 0);
-      setMrr(totalMRR);
+      // Simulate async data loading (in production, this would be real API calls)
+      setIsLoading(true);
 
-      // Calculate bank balance (mock - paid subscriptions + MC revenue)
-      const paidSubscriptions = mockHospitals.filter(h => h.paid).reduce((sum, h) => sum + h.monthlyFee, 0);
-      const mcRevenue = mockHospitals.reduce((sum, h) => sum + h.mcs, 0);
-      setBankBalance(paidSubscriptions + mcRevenue);
+      // Stagger the loading of sections for visual effect
+      const loadData = async () => {
+        // Load metrics first
+        await new Promise(resolve => setTimeout(resolve, 300));
+        const totalMRR = mockHospitals.reduce((sum, h) => sum + h.monthlyFee, 0);
+        setMrr(totalMRR);
+        const paidSubscriptions = mockHospitals.filter(h => h.paid).reduce((sum, h) => sum + h.monthlyFee, 0);
+        const mcRevenue = mockHospitals.reduce((sum, h) => sum + h.mcs, 0);
+        setBankBalance(paidSubscriptions + mcRevenue);
+        setSectionsLoaded(prev => ({ ...prev, metrics: true }));
 
-      // Get pending payments
-      const pending = mockHospitals.filter(h => !h.paid);
-      setPendingPayments(pending);
+        // Load chart data
+        await new Promise(resolve => setTimeout(resolve, 200));
+        setSectionsLoaded(prev => ({ ...prev, chart: true }));
 
-      // Initialize MC feed with some entries
-      const initialFeed = Array.from({ length: 5 }, () => generateMockMCFeed());
-      setMcFeed(initialFeed);
-      setTotalProfit(initialFeed.length);
+        // Load pipeline
+        await new Promise(resolve => setTimeout(resolve, 200));
+        const pending = mockHospitals.filter(h => !h.paid);
+        setPendingPayments(pending);
+        setSectionsLoaded(prev => ({ ...prev, pipeline: true }));
+
+        // Load network/feed
+        await new Promise(resolve => setTimeout(resolve, 200));
+        const initialFeed = Array.from({ length: 5 }, () => generateMockMCFeed());
+        setMcFeed(initialFeed);
+        setTotalProfit(initialFeed.length);
+        setSectionsLoaded(prev => ({ ...prev, network: true }));
+
+        // All done
+        setIsLoading(false);
+      };
+
+      loadData();
     }
   }, [isAuthenticated]);
 
@@ -2249,511 +2807,1068 @@ export default function FounderAdmin() {
   // Main Dashboard
   return (
     <div
-      className="min-h-screen p-8 founder-admin-dashboard founder-command"
+      className="min-h-screen founder-admin-dashboard founder-command"
       style={{ backgroundColor: '#0a0e14' }}
     >
       {/* Global background override */}
       <style>{`
         html, body, #root { background-color: #0a0e14 !important; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        .founder-admin-dashboard { font-family: 'Inter', system-ui, sans-serif; }
       `}</style>
-      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          STICKY TOP BAR - Enterprise Navigation
+          ═══════════════════════════════════════════════════════════════════ */}
+      <header
+        className="sticky top-0 z-50 px-6 py-3"
+        style={{
+          backgroundColor: 'rgba(10, 14, 20, 0.95)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+        }}
+      >
+        <div className="flex items-center justify-between" style={{ maxWidth: '1600px', margin: '0 auto' }}>
+          {/* LEFT: Logo + Brand */}
+          <div className="flex items-center gap-3">
             <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: theme.teal }}
+              className="w-9 h-9 rounded-lg flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg, #00d4aa 0%, #00b894 100%)' }}
             >
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
             </div>
-            <h1 className="text-3xl font-bold" style={{ color: theme.textPrimary }}>
-              Founder Command Center
-            </h1>
+            <div>
+              <h1 className="text-lg font-bold tracking-tight" style={{ color: '#ffffff' }}>
+                Sarawak MedChain
+              </h1>
+              <p className="text-xs" style={{ color: '#64748b' }}>Founder Command</p>
+            </div>
           </div>
-          <p style={{ color: theme.textSecondary }}>
-            Path to RM500,000 MRR
-          </p>
+
+          {/* CENTER: Command Bar Button + System Status */}
+          <div className="hidden md:flex items-center gap-4">
+            {/* Phase 5: Command Bar Trigger */}
+            <motion.button
+              onClick={() => setCommandBarOpen(true)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all"
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+              }}
+              whileHover={{ scale: 1.02, backgroundColor: 'rgba(255, 255, 255, 0.08)' }}
+              whileTap={{ scale: 0.98 }}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="#64748b" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <span className="text-xs" style={{ color: '#64748b' }}>Search</span>
+              <kbd className="px-1.5 py-0.5 text-[10px] font-mono rounded" style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', color: '#64748b' }}>
+                ⌘K
+              </kbd>
+            </motion.button>
+
+            <div className="h-5 w-px" style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
+
+            <motion.div
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+              style={{ backgroundColor: 'rgba(0, 212, 170, 0.1)' }}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+            >
+              <LivePulseDot color="#00d4aa" size={8} />
+              <span className="text-xs font-medium" style={{ color: '#00d4aa' }}>99.99% Uptime</span>
+            </motion.div>
+            <motion.div
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+              style={{ backgroundColor: 'rgba(124, 92, 255, 0.1)' }}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.2 }}
+            >
+              <LivePulseDot color="#7c5cff" size={8} />
+              <span className="text-xs font-medium" style={{ color: '#7c5cff' }}>
+                {blockchainNodes.filter(n => n.status === 'online').length}/{blockchainNodes.length} Nodes
+              </span>
+            </motion.div>
+            <motion.div
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
+              style={{ backgroundColor: 'rgba(0, 212, 170, 0.1)' }}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+            >
+              <svg className="w-3.5 h-3.5" fill="#00d4aa" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <span className="text-xs font-medium" style={{ color: '#00d4aa' }}>Network Healthy</span>
+            </motion.div>
+          </div>
+
+          {/* RIGHT: Actions + Profile */}
+          <div className="flex items-center gap-3">
+            <AnimatedButton
+              onClick={exportInvestorDeck}
+              disabled={exportingDeck}
+              variant="secondary"
+              className="hidden sm:flex"
+            >
+              {exportingDeck ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Export Deck
+                </>
+              )}
+            </AnimatedButton>
+
+            <div className="h-6 w-px" style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}></div>
+
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+              <span className="text-xs font-bold" style={{ color: '#f59e0b' }}>FOUNDER</span>
+            </div>
+
+            <button
+              onClick={() => setIsAuthenticated(false)}
+              className="p-2 rounded-lg transition-all hover:opacity-80"
+              style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
+              title="Logout"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="#94a3b8" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
+          </div>
         </div>
+      </header>
 
-        <div className="flex items-center gap-4">
-          {/* Export Investor Deck Button */}
-          <button
-            onClick={exportInvestorDeck}
-            disabled={exportingDeck}
-            className="flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all hover:opacity-90 disabled:opacity-50"
-            style={{ backgroundColor: theme.purple, color: theme.textPrimary }}
+      {/* ═══════════════════════════════════════════════════════════════════
+          MAIN CONTENT AREA
+          ═══════════════════════════════════════════════════════════════════ */}
+      <main className="px-6 py-6 pb-20" style={{ maxWidth: '1600px', margin: '0 auto' }}>
+
+      {/* Phase 6: Global Loading Overlay */}
+      <AnimatePresence>
+        {isLoading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 flex items-center justify-center"
+            style={{ backgroundColor: 'rgba(10, 14, 20, 0.9)', backdropFilter: 'blur(8px)' }}
           >
-            {exportingDeck ? (
-              <>
-                <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Generating...
-              </>
-            ) : (
-              <>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Export Investor Deck
-              </>
-            )}
-          </button>
+            <div className="text-center">
+              <div className="loading-spinner mx-auto mb-4" style={{ width: 48, height: 48 }}></div>
+              <p className="text-sm font-medium" style={{ color: '#00d4aa' }}>Loading Founder Command...</p>
+              <p className="text-xs mt-2" style={{ color: '#64748b' }}>Syncing blockchain data</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          <div
-            className="flex items-center gap-2 px-4 py-2 rounded-full"
-            style={{ backgroundColor: `${theme.success}20`, color: theme.success }}
-          >
-            <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: theme.success }}></span>
-            <span className="text-sm font-medium">System Online</span>
-          </div>
-          <button
-            onClick={() => setIsAuthenticated(false)}
-            className="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:opacity-80"
-            style={{ backgroundColor: theme.bgCard, color: theme.textSecondary, border: `1px solid ${theme.border}` }}
-          >
-            Logout
-          </button>
-        </div>
-      </div>
-
-      {/* FINANCIAL OVERVIEW */}
-      <SectionLabel icon="$" text="Financial Overview" />
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-        {/* Total Bank Balance */}
-        <CardWrapper glow>
-
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-medium" style={{ color: theme.textSecondary }}>
-              Total Bank Balance
+      {/* ═══════════════════════════════════════════════════════════════════
+          ROW 1: KEY METRICS - 4 Cards
+          ═══════════════════════════════════════════════════════════════════ */}
+      <ErrorBoundary fallbackTitle="Metrics Error" fallbackMessage="Failed to load key metrics">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: sectionsLoaded.metrics ? 1 : 0.5, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+      >
+        {/* Live MRR - Primary Metric */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0 }}
+          whileHover={{ y: -2, transition: { duration: 0.2 } }}
+          className="relative overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, rgba(13, 17, 23, 0.95) 0%, rgba(13, 17, 23, 0.8) 100%)',
+            border: '1px solid rgba(0, 212, 170, 0.2)',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+          }}
+        >
+          {/* Glow effect */}
+          <div className="absolute inset-0 opacity-20" style={{
+            background: 'radial-gradient(circle at 50% 0%, rgba(0, 212, 170, 0.3), transparent 70%)',
+          }}></div>
+          <div className="relative">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-medium uppercase tracking-wider" style={{ color: '#64748b' }}>
+                Live MRR
+              </span>
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(0, 212, 170, 0.15)' }}>
+                <LivePulseDot color="#00d4aa" size={6} />
+                <span className="text-[10px] font-medium" style={{ color: '#00d4aa' }}>LIVE</span>
+              </div>
+            </div>
+            <p className="text-4xl font-extrabold mb-1" style={{ color: '#00d4aa', letterSpacing: '-0.02em' }}>
+              <AnimatedNumber value={mrr} prefix="RM " duration={1.5} />
             </p>
-            <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: `${theme.success}20` }}
-            >
-              <svg className="w-5 h-5" fill={theme.success} viewBox="0 0 20 20">
-                <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" />
+            <div className="flex items-center gap-2 mt-2">
+              <div className="flex items-center gap-1">
+                <svg className="w-3 h-3" fill="#00d4aa" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
+                </svg>
+                <span className="text-xs font-medium" style={{ color: '#00d4aa' }}>+12.5%</span>
+              </div>
+              <span className="text-xs" style={{ color: '#64748b' }}>vs last month</span>
+            </div>
+            <div className="mt-3 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(0, 212, 170, 0.1)' }}>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.min((mrr / REVENUE_TARGET) * 100, 100)}%` }}
+                transition={{ duration: 1.5, delay: 0.5 }}
+                className="h-full rounded-full"
+                style={{ background: 'linear-gradient(90deg, #00d4aa, #00b894)' }}
+              ></motion.div>
+            </div>
+            <p className="text-[10px] mt-1" style={{ color: '#64748b' }}>{Math.round((mrr / REVENUE_TARGET) * 100)}% to RM500k goal</p>
+          </div>
+        </motion.div>
+
+        {/* Active Hospitals */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          whileHover={{ y: -2, transition: { duration: 0.2 } }}
+          style={{
+            background: 'linear-gradient(135deg, rgba(13, 17, 23, 0.95) 0%, rgba(13, 17, 23, 0.8) 100%)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+          }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-medium uppercase tracking-wider" style={{ color: '#64748b' }}>
+              Active Hospitals
+            </span>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(124, 92, 255, 0.15)' }}>
+              <svg className="w-4 h-4" fill="#7c5cff" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clipRule="evenodd" />
               </svg>
             </div>
           </div>
-          <p className="text-3xl font-black mb-2" style={{ color: theme.success }}>
-            RM {bankBalance.toLocaleString()}
+          <p className="text-4xl font-extrabold mb-1" style={{ color: '#e2e8f0', letterSpacing: '-0.02em' }}>
+            <AnimatedNumber value={mockHospitals.length} duration={1} />
           </p>
-          <p className="text-sm" style={{ color: theme.textMuted }}>
-            From Payment Gateway API
+          <p className="text-xs" style={{ color: '#64748b' }}>
+            of {TARGET_CLIENTS} target • <span style={{ color: '#7c5cff' }}>{Math.round((mockHospitals.length / TARGET_CLIENTS) * 100)}%</span>
           </p>
-        </CardWrapper>
-
-        {/* Monthly Recurring Revenue */}
-        <CardWrapper>
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-medium" style={{ color: theme.textSecondary }}>
-              Monthly Recurring Revenue
-            </p>
-            <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: `${theme.accent}20` }}
-            >
-              <svg className="w-5 h-5" fill={theme.accent} viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
-              </svg>
-            </div>
-          </div>
-          <p className="text-3xl font-black mb-2" style={{ color: theme.teal }}>
-            RM {mrr.toLocaleString()}
-          </p>
-          <div className="flex items-center gap-2">
-            <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: `${theme.teal}20`, color: theme.teal }}>
-              {Math.round((mrr / REVENUE_TARGET) * 100)}% to goal
+          <div className="flex items-center gap-2 mt-3">
+            <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(124, 92, 255, 0.15)', color: '#7c5cff' }}>
+              +2 this week
             </span>
           </div>
-        </CardWrapper>
+        </motion.div>
 
-        {/* Pending Payments */}
-        <CardWrapper>
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-medium" style={{ color: theme.textSecondary }}>
-              Pending Payments
-            </p>
-            <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: `${theme.warning}20` }}
-            >
-              <svg className="w-5 h-5" fill={theme.warning} viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+        {/* MCs This Month */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          whileHover={{ y: -2, transition: { duration: 0.2 } }}
+          style={{
+            background: 'linear-gradient(135deg, rgba(13, 17, 23, 0.95) 0%, rgba(13, 17, 23, 0.8) 100%)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+          }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-medium uppercase tracking-wider" style={{ color: '#64748b' }}>
+              MCs This Month
+            </span>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(0, 212, 170, 0.15)' }}>
+              <svg className="w-4 h-4" fill="#00d4aa" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm2 10a1 1 0 10-2 0v3a1 1 0 102 0v-3zm2-3a1 1 0 011 1v5a1 1 0 11-2 0v-5a1 1 0 011-1zm4-1a1 1 0 10-2 0v7a1 1 0 102 0V8z" clipRule="evenodd" />
               </svg>
             </div>
           </div>
-          <p className="text-3xl font-black mb-2" style={{ color: theme.warning }}>
-            RM {pendingPayments.reduce((sum, h) => sum + h.monthlyFee, 0).toLocaleString()}
+          <p className="text-4xl font-extrabold mb-1" style={{ color: '#e2e8f0', letterSpacing: '-0.02em' }}>
+            <AnimatedNumber value={mockHospitals.reduce((sum, h) => sum + h.mcs, 0)} duration={1.2} />
           </p>
-          <p className="text-sm" style={{ color: theme.textMuted }}>
-            {pendingPayments.length} clients overdue
+          <p className="text-xs" style={{ color: '#64748b' }}>
+            RM <AnimatedNumber value={mockHospitals.reduce((sum, h) => sum + h.mcs, 0)} duration={1} /> in MC fees
           </p>
-        </CardWrapper>
+          <div className="flex items-center gap-1 mt-3">
+            <svg className="w-3 h-3" fill="#00d4aa" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clipRule="evenodd" />
+            </svg>
+            <span className="text-xs" style={{ color: '#00d4aa' }}>+8.2% from last month</span>
+          </div>
+        </motion.div>
 
-        {/* Market Share */}
-        <CardWrapper>
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-medium" style={{ color: theme.textSecondary }}>
-              Sarawak Market Share
-            </p>
-            <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: `${theme.purple}20` }}
-            >
-              <svg className="w-5 h-5" fill={theme.purple} viewBox="0 0 20 20">
-                <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" />
-                <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" />
+        {/* Conversion Rate */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          whileHover={{ y: -2, transition: { duration: 0.2 } }}
+          style={{
+            background: 'linear-gradient(135deg, rgba(13, 17, 23, 0.95) 0%, rgba(13, 17, 23, 0.8) 100%)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+          }}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-medium uppercase tracking-wider" style={{ color: '#64748b' }}>
+              Conversion Rate
+            </span>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)' }}>
+              <svg className="w-4 h-4" fill="#f59e0b" viewBox="0 0 20 20">
+                <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
               </svg>
             </div>
           </div>
-          <p className="text-3xl font-black mb-2" style={{ color: theme.purple }}>
-            {totalMarketShare}%
+          <p className="text-4xl font-extrabold mb-1" style={{ color: '#e2e8f0', letterSpacing: '-0.02em' }}>
+            67<span className="text-2xl">%</span>
           </p>
-          <div className="text-xs space-y-1" style={{ color: theme.textMuted }}>
-            <p>Hospitals: {connectedHospitals}/{TOTAL_SARAWAK_HOSPITALS} ({hospitalMarketShare}%)</p>
-            <p>Clinics: {connectedClinics}/{TOTAL_SARAWAK_CLINICS} ({clinicMarketShare}%)</p>
+          <p className="text-xs" style={{ color: '#64748b' }}>
+            Lead to customer
+          </p>
+          <div className="flex items-center gap-2 mt-3">
+            <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' }}>
+              Above target
+            </span>
           </div>
-        </CardWrapper>
-      </div>
+        </motion.div>
+      </motion.div>
+      </ErrorBoundary>
 
-      {/* STRATEGIC PLANNING */}
-      <SectionLabel icon="📊" text="Strategic Planning" />
-      <div className="mb-8">
-        <StrategicRevenueProjection />
-      </div>
-
-      {/* AUTOMATION */}
-      <SectionLabel icon="🤖" text="Automation Command Center" />
-      <div className="mb-8">
-        <AutomationCommandCenter
-          bankBalance={bankBalance}
-          mrr={mrr}
-          leadsCount={hospitalLeads.length}
-        />
-      </div>
-
-      {/* ANALYTICS & INFRASTRUCTURE */}
-      <SectionLabel icon="📈" text="Analytics & Infrastructure" />
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        {/* Revenue Projection Chart */}
-        <CardWrapper className="lg:col-span-2">
+      {/* ═══════════════════════════════════════════════════════════════════
+          ROW 2: Revenue Analytics (LEFT) + Live Activity Feed (RIGHT)
+          ═══════════════════════════════════════════════════════════════════ */}
+      <ErrorBoundary fallbackTitle="Analytics Error" fallbackMessage="Failed to load analytics data">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-6">
+        {/* LEFT: Revenue & Analytics - Takes 3 columns */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="lg:col-span-3"
+          style={{
+            background: 'linear-gradient(135deg, rgba(13, 17, 23, 0.95) 0%, rgba(13, 17, 23, 0.8) 100%)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+          }}
+        >
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-xl font-bold" style={{ color: theme.textPrimary }}>
-                Path to RM500,000
+              <h2 className="text-lg font-bold" style={{ color: '#e2e8f0' }}>
+                Revenue Projection
               </h2>
-              <p className="text-sm" style={{ color: theme.textSecondary }}>
-                Revenue projection: 6 clients → 200 clients
+              <p className="text-xs" style={{ color: '#64748b' }}>
+                Path to RM500,000 MRR
               </p>
             </div>
-            <div
-              className="px-4 py-2 rounded-xl"
-              style={{ backgroundColor: `${theme.success}20` }}
-            >
-              <p className="text-sm font-bold" style={{ color: theme.success }}>Target: RM500k MRR</p>
+            <div className="flex items-center gap-2">
+              <div className="px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(0, 212, 170, 0.15)' }}>
+                <span className="text-xs font-semibold" style={{ color: '#00d4aa' }}>Target: RM500k</span>
+              </div>
             </div>
           </div>
 
-          <div className="h-64">
+          <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={projectionData}>
                 <defs>
-                  <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={theme.success} stopOpacity={0.3} />
-                    <stop offset="95%" stopColor={theme.success} stopOpacity={0} />
+                  <linearGradient id="revenueGradient2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#00d4aa" stopOpacity={0.5} />
+                    <stop offset="50%" stopColor="#00d4aa" stopOpacity={0.2} />
+                    <stop offset="100%" stopColor="#00d4aa" stopOpacity={0} />
                   </linearGradient>
+                  <filter id="glow">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                    <feMerge>
+                      <feMergeNode in="coloredBlur"/>
+                      <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                  </filter>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={theme.border} />
-                <XAxis dataKey="month" stroke={theme.textMuted} fontSize={12} />
-                <YAxis
-                  stroke={theme.textMuted}
-                  fontSize={12}
-                  tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                <XAxis
+                  dataKey="month"
+                  stroke="#64748b"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  dy={10}
                 />
-                <Tooltip content={<CustomTooltip />} />
+                <YAxis
+                  stroke="#64748b"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+                  dx={-10}
+                />
+                <ReferenceLine
+                  y={500000}
+                  stroke="#f59e0b"
+                  strokeDasharray="5 5"
+                  strokeOpacity={0.6}
+                  label={{
+                    value: 'Target RM500k',
+                    position: 'right',
+                    fill: '#f59e0b',
+                    fontSize: 10,
+                    fontWeight: 600
+                  }}
+                />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const value = payload[0].value;
+                      const percentToTarget = ((value / 500000) * 100).toFixed(1);
+                      return (
+                        <div style={{
+                          background: 'rgba(13, 17, 23, 0.98)',
+                          border: '1px solid rgba(0, 212, 170, 0.3)',
+                          borderRadius: '12px',
+                          padding: '12px 16px',
+                          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+                        }}>
+                          <p style={{ color: '#94a3b8', fontSize: '11px', marginBottom: '4px' }}>{label} 2026</p>
+                          <p style={{ color: '#00d4aa', fontSize: '20px', fontWeight: 800, margin: 0 }}>
+                            RM {value?.toLocaleString()}
+                          </p>
+                          <div style={{
+                            marginTop: '8px',
+                            paddingTop: '8px',
+                            borderTop: '1px solid rgba(255,255,255,0.08)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}>
+                            <div style={{
+                              width: '60px',
+                              height: '4px',
+                              borderRadius: '2px',
+                              background: 'rgba(255,255,255,0.1)',
+                              overflow: 'hidden'
+                            }}>
+                              <div style={{
+                                width: `${Math.min(percentToTarget, 100)}%`,
+                                height: '100%',
+                                background: percentToTarget >= 100 ? '#00d4aa' : '#f59e0b',
+                                borderRadius: '2px'
+                              }}></div>
+                            </div>
+                            <span style={{ color: '#64748b', fontSize: '10px' }}>{percentToTarget}% to goal</span>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
                 <Area
                   type="monotone"
                   dataKey="revenue"
-                  stroke={theme.success}
+                  stroke="#00d4aa"
                   strokeWidth={3}
-                  fill="url(#revenueGradient)"
+                  fill="url(#revenueGradient2)"
+                  filter="url(#glow)"
+                  animationDuration={1500}
+                  animationEasing="ease-out"
                 />
               </AreaChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Milestones */}
-          <div className="grid grid-cols-4 gap-4 mt-6 pt-6" style={{ borderTop: `1px solid ${theme.border}` }}>
-            <div className="text-center">
-              <p className="text-2xl font-black" style={{ color: theme.textPrimary }}>6</p>
-              <p className="text-xs" style={{ color: theme.textMuted }}>Current Clients</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-black" style={{ color: theme.teal }}>50</p>
-              <p className="text-xs" style={{ color: theme.textMuted }}>Q2 Target</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-black" style={{ color: theme.warning }}>120</p>
-              <p className="text-xs" style={{ color: theme.textMuted }}>Q3 Target</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-black" style={{ color: theme.success }}>200</p>
-              <p className="text-xs" style={{ color: theme.textMuted }}>Year-End Goal</p>
-            </div>
-          </div>
-        </CardWrapper>
+          {/* Milestones Row */}
+          <motion.div
+            className="grid grid-cols-4 gap-3 mt-4 pt-4"
+            style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            <motion.div
+              variants={staggerItem}
+              whileHover={{ scale: 1.02, backgroundColor: 'rgba(255,255,255,0.05)' }}
+              className="text-center p-3 rounded-xl cursor-default"
+              style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}
+            >
+              <p className="text-2xl font-extrabold" style={{ color: '#e2e8f0' }}>
+                <AnimatedNumber value={6} duration={0.8} />
+              </p>
+              <p className="text-[10px] font-medium uppercase tracking-wider mt-1" style={{ color: '#64748b' }}>Current</p>
+            </motion.div>
+            <motion.div
+              variants={staggerItem}
+              whileHover={{ scale: 1.02, backgroundColor: 'rgba(0, 212, 170, 0.08)' }}
+              className="text-center p-3 rounded-xl cursor-default"
+              style={{ backgroundColor: 'rgba(0, 212, 170, 0.05)', border: '1px solid rgba(0, 212, 170, 0.15)' }}
+            >
+              <p className="text-2xl font-extrabold" style={{ color: '#00d4aa' }}>
+                <AnimatedNumber value={50} duration={1} />
+              </p>
+              <p className="text-[10px] font-medium uppercase tracking-wider mt-1" style={{ color: '#64748b' }}>Q2 Target</p>
+            </motion.div>
+            <motion.div
+              variants={staggerItem}
+              whileHover={{ scale: 1.02, backgroundColor: 'rgba(245, 158, 11, 0.08)' }}
+              className="text-center p-3 rounded-xl cursor-default"
+              style={{ backgroundColor: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.15)' }}
+            >
+              <p className="text-2xl font-extrabold" style={{ color: '#f59e0b' }}>
+                <AnimatedNumber value={120} duration={1.2} />
+              </p>
+              <p className="text-[10px] font-medium uppercase tracking-wider mt-1" style={{ color: '#64748b' }}>Q3 Target</p>
+            </motion.div>
+            <motion.div
+              variants={staggerItem}
+              whileHover={{ scale: 1.02, backgroundColor: 'rgba(0, 212, 170, 0.15)' }}
+              className="text-center p-3 rounded-xl cursor-default"
+              style={{ backgroundColor: 'rgba(0, 212, 170, 0.1)', border: '1px solid rgba(0, 212, 170, 0.25)' }}
+            >
+              <p className="text-2xl font-extrabold" style={{ color: '#00d4aa' }}>
+                <AnimatedNumber value={200} duration={1.4} />
+              </p>
+              <p className="text-[10px] font-medium uppercase tracking-wider mt-1" style={{ color: '#00d4aa' }}>Year End</p>
+            </motion.div>
+          </motion.div>
+        </motion.div>
 
-        {/* Node Status */}
-        <CardWrapper>
+        {/* RIGHT: Live Activity Feed - Takes 2 columns */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          className="lg:col-span-2"
+          style={{
+            background: 'linear-gradient(135deg, rgba(13, 17, 23, 0.95) 0%, rgba(13, 17, 23, 0.8) 100%)',
+            border: '1px solid rgba(0, 212, 170, 0.15)',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 212, 170, 0.05)',
+          }}
+        >
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-bold" style={{ color: theme.textPrimary }}>
-                Node Status
+              <h2 className="text-lg font-bold" style={{ color: '#e2e8f0' }}>
+                Live Activity
               </h2>
-              <p className="text-sm" style={{ color: theme.textSecondary }}>
-                Distributed blockchain network
+              <p className="text-xs" style={{ color: '#64748b' }}>
+                Real-time platform events
               </p>
             </div>
-            <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: `${theme.success}20` }}
-            >
-              <svg className="w-5 h-5" fill={theme.success} viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm14 1a1 1 0 11-2 0 1 1 0 012 0zM2 13a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2zm14 1a1 1 0 11-2 0 1 1 0 012 0z" clipRule="evenodd" />
-              </svg>
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full" style={{ backgroundColor: 'rgba(0, 212, 170, 0.15)' }}>
+              <LivePulseDot color="#00d4aa" size={6} />
+              <span className="text-[10px] font-medium" style={{ color: '#00d4aa' }}>LIVE</span>
             </div>
           </div>
 
-          <div className="space-y-3">
-            {blockchainNodes.map((node) => (
-              <div
-                key={node.id}
-                className="p-3 rounded-xl"
-                style={{ backgroundColor: theme.bg, border: `1px solid ${theme.border}` }}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`w-2 h-2 rounded-full ${node.status === 'online' ? 'animate-pulse' : ''}`}
-                      style={{ backgroundColor: node.status === 'online' ? theme.success : theme.warning }}
-                    ></span>
-                    <span className="font-medium text-sm" style={{ color: theme.textPrimary }}>
-                      {node.city}
-                    </span>
-                  </div>
-                  <span
-                    className="text-xs px-2 py-1 rounded-full uppercase font-bold"
-                    style={{
-                      backgroundColor: node.status === 'online' ? `${theme.success}20` : `${theme.warning}20`,
-                      color: node.status === 'online' ? theme.success : theme.warning
-                    }}
-                  >
-                    {node.status}
-                  </span>
-                </div>
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  <div>
-                    <p style={{ color: theme.textMuted }}>Latency</p>
-                    <p style={{ color: theme.textSecondary }}>{node.latency}ms</p>
-                  </div>
-                  <div>
-                    <p style={{ color: theme.textMuted }}>Blocks</p>
-                    <p style={{ color: theme.textSecondary }}>{node.blocks.toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <p style={{ color: theme.textMuted }}>Peers</p>
-                    <p style={{ color: theme.textSecondary }}>{node.peers}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Network Summary */}
-          <div
-            className="mt-4 pt-4 flex items-center justify-between"
-            style={{ borderTop: `1px solid ${theme.border}` }}
+          {/* Today's Summary Bar */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
+            className="grid grid-cols-3 gap-2 mb-4 p-3 rounded-xl"
+            style={{ backgroundColor: 'rgba(0, 212, 170, 0.08)', border: '1px solid rgba(0, 212, 170, 0.15)' }}
           >
             <div className="text-center">
-              <p className="text-lg font-bold" style={{ color: theme.success }}>
-                {blockchainNodes.filter(n => n.status === 'online').length}/{blockchainNodes.length}
+              <p className="text-lg font-extrabold" style={{ color: '#00d4aa' }}>
+                <AnimatedNumber value={mcFeed.length} duration={0.8} />
               </p>
-              <p className="text-xs" style={{ color: theme.textMuted }}>Nodes Online</p>
+              <p className="text-[9px] uppercase tracking-wider" style={{ color: '#64748b' }}>MCs Today</p>
+            </div>
+            <div className="text-center" style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', borderRight: '1px solid rgba(255,255,255,0.08)' }}>
+              <p className="text-lg font-extrabold" style={{ color: '#e2e8f0' }}>
+                <AnimatedNumber value={mockHospitals.length} duration={0.8} />
+              </p>
+              <p className="text-[9px] uppercase tracking-wider" style={{ color: '#64748b' }}>Hospitals</p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-bold" style={{ color: theme.teal }}>
-                {blockchainNodes[0].blocks.toLocaleString()}
+              <p className="text-lg font-extrabold" style={{ color: '#00d4aa' }}>
+                +<AnimatedNumber value={totalProfit} duration={1} decimals={0} />
               </p>
-              <p className="text-xs" style={{ color: theme.textMuted }}>Block Height</p>
+              <p className="text-[9px] uppercase tracking-wider" style={{ color: '#64748b' }}>Revenue</p>
             </div>
-            <div className="text-center">
-              <p className="text-lg font-bold" style={{ color: theme.purple }}>
-                {blockchainNodes.reduce((sum, n) => sum + n.peers, 0)}
-              </p>
-              <p className="text-xs" style={{ color: theme.textMuted }}>Total Peers</p>
-            </div>
-          </div>
-        </CardWrapper>
-      </div>
+          </motion.div>
 
-      {/* OPERATIONS */}
-      <SectionLabel icon="🗺️" text="Operations & Real-time Data" />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Hospital Map */}
-        <CardWrapper>
+          {/* Activity Feed */}
+          <div
+            ref={feedRef}
+            className="space-y-2 h-52 overflow-y-auto pr-2 custom-scrollbar"
+            style={{ scrollbarWidth: 'thin' }}
+          >
+            <AnimatePresence>
+              {mcFeed.slice(0, 8).map((item, index) => (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, x: 30, scale: 0.95 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  exit={{ opacity: 0, x: -30 }}
+                  transition={{ duration: 0.3, delay: index * 0.05, type: 'spring', stiffness: 300, damping: 25 }}
+                  whileHover={{ scale: 1.01, x: 4 }}
+                  className="p-3 rounded-xl cursor-default"
+                  style={{
+                    backgroundColor: index === 0 ? 'rgba(0, 212, 170, 0.12)' : 'rgba(255, 255, 255, 0.02)',
+                    border: `1px solid ${index === 0 ? 'rgba(0, 212, 170, 0.25)' : 'rgba(255,255,255,0.04)'}`,
+                    boxShadow: index === 0 ? '0 4px 20px rgba(0, 212, 170, 0.1)' : 'none',
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <motion.div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold relative"
+                        style={{ backgroundColor: 'rgba(0, 212, 170, 0.2)', color: '#00d4aa' }}
+                        whileHover={{ scale: 1.1 }}
+                      >
+                        {index === 0 && (
+                          <motion.div
+                            className="absolute inset-0 rounded-lg"
+                            style={{ border: '2px solid #00d4aa' }}
+                            animate={{ scale: [1, 1.2, 1], opacity: [1, 0, 1] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                          />
+                        )}
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                        </svg>
+                      </motion.div>
+                      <div>
+                        <p className="text-xs font-semibold" style={{ color: '#e2e8f0' }}>
+                          {item.hospital.name}
+                        </p>
+                        <p className="text-[10px] flex items-center gap-1" style={{ color: '#64748b' }}>
+                          <span>MC issued</span>
+                          <span>•</span>
+                          <span>{item.hospital.city}</span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <motion.p
+                        className="text-sm font-bold"
+                        style={{ color: '#00d4aa' }}
+                        initial={index === 0 ? { scale: 1.2 } : {}}
+                        animate={index === 0 ? { scale: 1 } : {}}
+                        transition={{ duration: 0.3 }}
+                      >
+                        +RM{item.profit.toFixed(2)}
+                      </motion.p>
+                      <p className="text-[10px]" style={{ color: '#64748b' }}>
+                        {index === 0 ? (
+                          <span className="flex items-center justify-end gap-1">
+                            <LivePulseDot color="#00d4aa" size={4} />
+                            Just now
+                          </span>
+                        ) : `${index * 2}m ago`}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+
+          {/* Footer */}
+          <div
+            className="mt-3 pt-3 flex items-center justify-between"
+            style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+          >
+            <div className="flex items-center gap-2">
+              <LivePulseDot color="#00d4aa" size={8} />
+              <span className="text-[10px]" style={{ color: '#64748b' }}>Listening for events...</span>
+            </div>
+            <p className="text-sm font-bold" style={{ color: '#00d4aa' }}>
+              +RM <AnimatedNumber value={totalProfit} duration={0.8} /> today
+            </p>
+          </div>
+        </motion.div>
+      </div>
+      </ErrorBoundary>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          ROW 3: Hospital Map (LEFT) + Lead Funnel (RIGHT)
+          ═══════════════════════════════════════════════════════════════════ */}
+      <ErrorBoundary fallbackTitle="Network Error" fallbackMessage="Failed to load network data">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6" data-section="pipeline">
+        {/* LEFT: Sarawak Hospital Network Map */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.6 }}
+          style={{
+            background: 'linear-gradient(135deg, rgba(13, 17, 23, 0.95) 0%, rgba(13, 17, 23, 0.8) 100%)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+          }}
+        >
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-bold" style={{ color: theme.textPrimary }}>
-                Sarawak Client Map
+              <h2 className="text-lg font-bold flex items-center gap-2" style={{ color: '#e2e8f0' }}>
+                <svg className="w-5 h-5" fill="#7c5cff" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                </svg>
+                Sarawak Network
               </h2>
-              <p className="text-sm" style={{ color: theme.textSecondary }}>
-                Active healthcare facilities
+              <p className="text-xs" style={{ color: '#64748b' }}>
+                {mockHospitals.length} active healthcare facilities
               </p>
             </div>
-            <div
-              className="px-3 py-1 rounded-full text-sm font-medium"
-              style={{ backgroundColor: `${theme.teal}20`, color: theme.teal }}
+            <motion.div
+              className="px-3 py-1.5 rounded-lg flex items-center gap-2"
+              style={{ backgroundColor: 'rgba(124, 92, 255, 0.15)', border: '1px solid rgba(124, 92, 255, 0.25)' }}
+              whileHover={{ scale: 1.02 }}
             >
-              {mockHospitals.length} Clients
-            </div>
+              <LivePulseDot color="#7c5cff" size={6} />
+              <span className="text-xs font-semibold" style={{ color: '#7c5cff' }}>
+                <AnimatedNumber value={mockHospitals.length} duration={0.8} /> Active
+              </span>
+            </motion.div>
           </div>
 
           <SarawakMap clients={mockHospitals} />
 
-          {/* Market Share Visual */}
-          <div className="mt-4 pt-4" style={{ borderTop: `1px solid ${theme.border}` }}>
+          {/* Regional Breakdown */}
+          <motion.div
+            className="grid grid-cols-3 gap-2 mt-4 mb-4"
+            variants={staggerContainer}
+            initial="hidden"
+            animate="visible"
+          >
+            {[
+              { region: 'Kuching', count: 3, color: '#00d4aa' },
+              { region: 'Miri', count: 2, color: '#7c5cff' },
+              { region: 'Sibu', count: 1, color: '#f59e0b' },
+            ].map((item, index) => (
+              <motion.div
+                key={item.region}
+                variants={staggerItem}
+                whileHover={{ scale: 1.03, y: -2 }}
+                className="text-center p-2 rounded-lg cursor-default"
+                style={{ backgroundColor: `${item.color}10`, border: `1px solid ${item.color}25` }}
+              >
+                <p className="text-lg font-bold" style={{ color: item.color }}>
+                  <AnimatedNumber value={item.count} duration={0.6 + index * 0.2} />
+                </p>
+                <p className="text-[9px] uppercase tracking-wider" style={{ color: '#64748b' }}>{item.region}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* Progress Bar */}
+          <div className="pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium" style={{ color: theme.textSecondary }}>Connected vs Target</span>
-              <span className="text-sm font-bold" style={{ color: theme.teal }}>{mockHospitals.length} / {TARGET_CLIENTS}</span>
+              <span className="text-xs font-medium" style={{ color: '#94a3b8' }}>Market Coverage</span>
+              <span className="text-xs font-bold" style={{ color: '#00d4aa' }}>
+                <AnimatedNumber value={mockHospitals.length} duration={0.8} />/{TARGET_CLIENTS} (<AnimatedNumber value={Math.round((mockHospitals.length / TARGET_CLIENTS) * 100)} duration={1} />%)
+              </span>
             </div>
-            <div className="h-3 rounded-full overflow-hidden" style={{ backgroundColor: theme.bg }}>
-              <div
-                className="h-full rounded-full transition-all duration-500"
-                style={{
-                  width: `${(mockHospitals.length / TARGET_CLIENTS) * 100}%`,
-                  background: `linear-gradient(90deg, ${theme.teal}, ${theme.success})`
-                }}
-              ></div>
-            </div>
-            <div className="flex justify-between mt-2 text-xs" style={{ color: theme.textMuted }}>
-              <span>0</span>
-              <span>50</span>
-              <span>100</span>
-              <span>150</span>
-              <span>200</span>
+            <div className="h-2.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${(mockHospitals.length / TARGET_CLIENTS) * 100}%` }}
+                transition={{ duration: 1.5, delay: 0.8, ease: 'easeOut' }}
+                className="h-full rounded-full relative"
+                style={{ background: 'linear-gradient(90deg, #00d4aa, #7c5cff)' }}
+              >
+                <motion.div
+                  className="absolute inset-0 rounded-full"
+                  style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)' }}
+                  animate={{ x: ['-100%', '100%'] }}
+                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+                />
+              </motion.div>
             </div>
           </div>
-        </CardWrapper>
+        </motion.div>
 
-        {/* Live MC Feed */}
-        <CardWrapper glow>
+        {/* RIGHT: Sales Pipeline / Lead Funnel */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.7 }}
+          style={{
+            background: 'linear-gradient(135deg, rgba(13, 17, 23, 0.95) 0%, rgba(13, 17, 23, 0.8) 100%)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+          }}
+        >
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-bold" style={{ color: theme.textPrimary }}>
-                Live Revenue Feed
+              <h2 className="text-lg font-bold flex items-center gap-2" style={{ color: '#e2e8f0' }}>
+                <svg className="w-5 h-5" fill="#f59e0b" viewBox="0 0 20 20">
+                  <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+                </svg>
+                Sales Pipeline
               </h2>
-              <p className="text-sm" style={{ color: theme.textSecondary }}>
-                RM1.00 per MC issued
+              <p className="text-xs" style={{ color: '#64748b' }}>
+                Lead conversion funnel
               </p>
             </div>
-            <div className="text-right">
-              <p className="text-2xl font-black" style={{ color: theme.success }}>
-                +RM {totalProfit.toLocaleString()}
-              </p>
-              <p className="text-xs" style={{ color: theme.textMuted }}>Today's MC Profit</p>
-            </div>
+            <motion.div
+              className="px-3 py-1.5 rounded-lg"
+              style={{ backgroundColor: 'rgba(0, 212, 170, 0.15)', border: '1px solid rgba(0, 212, 170, 0.25)' }}
+              whileHover={{ scale: 1.02 }}
+            >
+              <span className="text-xs font-bold" style={{ color: '#00d4aa' }}>
+                RM <AnimatedNumber value={hospitalLeads.reduce((sum, lead) => sum + calculateLeadValue(lead.estimatedMCs), 0)} duration={1.2} />/mo
+              </span>
+            </motion.div>
           </div>
 
-          {/* Feed List */}
-          <div
-            ref={feedRef}
-            className="space-y-2 h-48 overflow-y-auto pr-2"
-            style={{ scrollbarWidth: 'thin' }}
-          >
-            {mcFeed.map((item, index) => (
-              <div
-                key={item.id}
-                className={`p-3 rounded-xl transition-all ${index === 0 ? 'animate-pulse' : ''}`}
-                style={{
-                  backgroundColor: index === 0 ? `${theme.success}15` : theme.bg,
-                  border: `1px solid ${index === 0 ? theme.success : theme.border}`
-                }}
+          {/* Funnel Visualization */}
+          <div className="space-y-3">
+            {[
+              { stage: 'Leads', count: hospitalLeads.length + 12, pct: 100, color: '#64748b', icon: '🎯' },
+              { stage: 'Qualified', count: hospitalLeads.length + 4, pct: 75, color: '#7c5cff', icon: '✓' },
+              { stage: 'Proposal Sent', count: hospitalLeads.length, pct: 50, color: '#f59e0b', icon: '📋' },
+              { stage: 'Negotiating', count: Math.floor(hospitalLeads.length * 0.6), pct: 30, color: '#3b82f6', icon: '🤝' },
+              { stage: 'Closed Won', count: closedDeals.length + mockHospitals.length, pct: 15, color: '#00d4aa', icon: '🎉' },
+            ].map((item, index) => (
+              <motion.div
+                key={item.stage}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: 0.6 + (index * 0.1) }}
+                whileHover={{ x: 4 }}
+                className="group cursor-default"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
-                      style={{ backgroundColor: `${theme.success}20`, color: theme.success }}
-                    >
-                      +1
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium" style={{ color: theme.textPrimary }}>
-                        {item.hospital.name}
-                      </p>
-                      <p className="text-xs" style={{ color: theme.textMuted }}>
-                        {item.doctor} • {item.hospital.city}
-                      </p>
-                    </div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs">{item.icon}</span>
+                    <span className="text-xs font-medium group-hover:text-white transition-colors" style={{ color: '#94a3b8' }}>{item.stage}</span>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold" style={{ color: theme.success }}>
-                      +RM {item.profit.toFixed(2)}
-                    </p>
-                    <p className="text-xs" style={{ color: theme.textMuted }}>
-                      {item.timestamp.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                    </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold" style={{ color: item.color }}>
+                      <AnimatedNumber value={item.count} duration={0.8 + index * 0.1} />
+                    </span>
+                    {index === 4 && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: `${item.color}20`, color: item.color }}>
+                        +{closedDeals.length} new
+                      </span>
+                    )}
                   </div>
                 </div>
-              </div>
+                <div className="h-2.5 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${item.pct}%` }}
+                    transition={{ duration: 1.2, delay: 0.8 + (index * 0.15), ease: 'easeOut' }}
+                    className="h-full rounded-full relative"
+                    style={{ background: `linear-gradient(90deg, ${item.color}cc, ${item.color})` }}
+                  >
+                    {index === 4 && (
+                      <motion.div
+                        className="absolute inset-0 rounded-full"
+                        style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)' }}
+                        animate={{ x: ['-100%', '200%'] }}
+                        transition={{ duration: 2, repeat: Infinity, repeatDelay: 2 }}
+                      />
+                    )}
+                  </motion.div>
+                </div>
+              </motion.div>
             ))}
           </div>
 
-          {/* Live Indicator */}
-          <div
-            className="mt-4 pt-4 flex items-center justify-center gap-2"
-            style={{ borderTop: `1px solid ${theme.border}` }}
+          {/* Conversion Rate */}
+          <motion.div
+            className="mt-4 pt-4 flex items-center justify-between"
+            style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.5 }}
           >
-            <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: theme.success }}></span>
-            <span className="text-sm font-medium" style={{ color: theme.success }}>
-              Listening for blockchain events...
-            </span>
-          </div>
-        </CardWrapper>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium" style={{ color: '#94a3b8' }}>Overall Conversion</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(0, 212, 170, 0.15)', color: '#00d4aa' }}>
+                Above Average
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-2xl font-extrabold" style={{ color: '#00d4aa' }}>
+                <AnimatedNumber value={67} duration={1.5} />
+              </span>
+              <span className="text-sm font-bold" style={{ color: '#00d4aa' }}>%</span>
+            </div>
+          </motion.div>
+        </motion.div>
       </div>
+      </ErrorBoundary>
 
-      {/* SALES PIPELINE */}
-      <SectionLabel icon="🎯" text="Sales Pipeline" />
-      <CardWrapper className="mb-8">
-        <div className="flex items-center justify-between mb-6">
+      {/* ═══════════════════════════════════════════════════════════════════
+          ROW 4: Infrastructure Status (Full Width)
+          ═══════════════════════════════════════════════════════════════════ */}
+      <ErrorBoundary fallbackTitle="Infrastructure Error" fallbackMessage="Failed to load infrastructure status">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.8 }}
+        className="mb-6"
+        style={{
+          background: 'linear-gradient(135deg, rgba(13, 17, 23, 0.95) 0%, rgba(13, 17, 23, 0.8) 100%)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '16px',
+          padding: '24px',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+        }}
+      >
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-xl font-bold" style={{ color: theme.textPrimary }}>
-              High-Value Hospital Leads
+            <h2 className="text-lg font-bold" style={{ color: '#e2e8f0' }}>
+              Infrastructure Status
             </h2>
-            <p className="text-sm" style={{ color: theme.textSecondary }}>
-              Pipeline from Request Access submissions
+            <p className="text-xs" style={{ color: '#64748b' }}>
+              Blockchain nodes, DR systems, network health
             </p>
           </div>
-          <div className="flex items-center gap-4">
-            <div
-              className="px-4 py-2 rounded-xl"
-              style={{ backgroundColor: `${theme.success}20` }}
-            >
-              <p className="text-sm font-bold" style={{ color: theme.success }}>
-                Total Pipeline: RM {hospitalLeads.reduce((sum, lead) => sum + calculateLeadValue(lead.estimatedMCs), 0).toLocaleString()}/mo
-              </p>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(0, 212, 170, 0.15)' }}>
+              <LivePulseDot color="#00d4aa" size={8} />
+              <span className="text-xs font-medium" style={{ color: '#00d4aa' }}>99.99% Uptime</span>
             </div>
-            <div
-              className="px-3 py-1 rounded-full text-sm font-medium"
-              style={{ backgroundColor: `${theme.teal}20`, color: theme.teal }}
+            <motion.div
+              className="px-3 py-1.5 rounded-lg"
+              style={{ backgroundColor: 'rgba(124, 92, 255, 0.15)' }}
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.15 }}
             >
-              {hospitalLeads.length} Leads
+              <span className="text-xs font-medium" style={{ color: '#7c5cff' }}>Bank-Level Security</span>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Node Status Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          {blockchainNodes.map((node, index) => (
+            <motion.div
+              key={node.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.9 + (index * 0.05) }}
+              className="p-3 rounded-xl"
+              style={{
+                backgroundColor: node.status === 'online' ? 'rgba(0, 212, 170, 0.08)' : 'rgba(245, 158, 11, 0.08)',
+                border: `1px solid ${node.status === 'online' ? 'rgba(0, 212, 170, 0.2)' : 'rgba(245, 158, 11, 0.2)'}`,
+              }}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                {node.status === 'online' ? (
+                  <LivePulseDot color="#00d4aa" size={8} />
+                ) : (
+                  <span
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: '#f59e0b' }}
+                  ></span>
+                )}
+                <span className="text-xs font-medium" style={{ color: '#e2e8f0' }}>{node.city}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-1 text-[10px]">
+                <div>
+                  <p style={{ color: '#64748b' }}>Latency</p>
+                  <p style={{ color: node.latency < 20 ? '#00d4aa' : '#f59e0b' }}>{node.latency}ms</p>
+                </div>
+                <div>
+                  <p style={{ color: '#64748b' }}>Blocks</p>
+                  <p style={{ color: '#94a3b8' }}>{(node.blocks / 1000).toFixed(1)}k</p>
+                </div>
+                <div>
+                  <p style={{ color: '#64748b' }}>Peers</p>
+                  <p style={{ color: '#94a3b8' }}>{node.peers}</p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Network Summary */}
+        <div
+          className="mt-4 pt-4 grid grid-cols-4 gap-4"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+        >
+          <div className="text-center">
+            <p className="text-lg font-bold" style={{ color: '#00d4aa' }}>
+              {blockchainNodes.filter(n => n.status === 'online').length}/{blockchainNodes.length}
+            </p>
+            <p className="text-xs" style={{ color: '#64748b' }}>Nodes Online</p>
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-bold" style={{ color: '#00d4aa' }}>
+              {blockchainNodes[0].blocks.toLocaleString()}
+            </p>
+            <p className="text-xs" style={{ color: '#64748b' }}>Block Height</p>
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-bold" style={{ color: '#7c5cff' }}>
+              {blockchainNodes.reduce((sum, n) => sum + n.peers, 0)}
+            </p>
+            <p className="text-xs" style={{ color: '#64748b' }}>Total Peers</p>
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-bold" style={{ color: '#00d4aa' }}>
+              &lt;50ms
+            </p>
+            <p className="text-xs" style={{ color: '#64748b' }}>Avg Latency</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          SALES PIPELINE TABLE (Simplified)
+          ═══════════════════════════════════════════════════════════════════ */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.9 }}
+        className="mb-6"
+        style={{
+          background: 'linear-gradient(135deg, rgba(13, 17, 23, 0.95) 0%, rgba(13, 17, 23, 0.8) 100%)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '16px',
+          padding: '24px',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+        }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-bold" style={{ color: '#e2e8f0' }}>
+              High-Value Leads
+            </h2>
+            <p className="text-xs" style={{ color: '#64748b' }}>
+              Hospital pipeline from Request Access
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(0, 212, 170, 0.15)' }}>
+              <span className="text-xs font-semibold" style={{ color: '#00d4aa' }}>
+                {hospitalLeads.length} Active Leads
+              </span>
             </div>
           </div>
         </div>
@@ -2762,166 +3877,127 @@ export default function FounderAdmin() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr style={{ borderBottom: `1px solid ${theme.border}` }}>
-                <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: theme.textSecondary }}>Facility Name</th>
-                <th className="text-left py-3 px-4 text-sm font-semibold" style={{ color: theme.textSecondary }}>Facility Type</th>
-                <th className="text-center py-3 px-4 text-sm font-semibold" style={{ color: theme.textSecondary }}>Est. Monthly MCs</th>
-                <th className="text-center py-3 px-4 text-sm font-semibold" style={{ color: theme.textSecondary }}>Lead Value (MRR)</th>
-                <th className="text-center py-3 px-4 text-sm font-semibold" style={{ color: theme.textSecondary }}>Decision Maker</th>
-                <th className="text-center py-3 px-4 text-sm font-semibold" style={{ color: theme.textSecondary }}>Actions</th>
+              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: '#64748b' }}>Facility</th>
+                <th className="text-left py-3 px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: '#64748b' }}>Type</th>
+                <th className="text-center py-3 px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: '#64748b' }}>Est. MCs</th>
+                <th className="text-center py-3 px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: '#64748b' }}>Value</th>
+                <th className="text-center py-3 px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: '#64748b' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {hospitalLeads.map((lead, index) => {
+              {hospitalLeads.slice(0, 5).map((lead, index) => {
                 const leadValue = calculateLeadValue(lead.estimatedMCs);
                 return (
-                  <tr
+                  <motion.tr
                     key={lead.id}
-                    className="transition-all hover:opacity-80"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: index * 0.1 }}
+                    whileHover={{ backgroundColor: 'rgba(255,255,255,0.02)' }}
                     style={{
-                      backgroundColor: index % 2 === 0 ? 'transparent' : `${theme.bg}50`,
-                      borderBottom: `1px solid ${theme.border}30`
+                      borderBottom: '1px solid rgba(255,255,255,0.04)',
                     }}
                   >
-                    <td className="py-4 px-4">
+                    <td className="py-3 px-4">
                       <div>
-                        <p className="font-semibold text-sm" style={{ color: theme.textPrimary }}>{lead.facilityName}</p>
-                        <p className="text-xs" style={{ color: theme.textMuted }}>{lead.email}</p>
+                        <p className="text-sm font-medium" style={{ color: '#e2e8f0' }}>{lead.facilityName}</p>
+                        <p className="text-xs" style={{ color: '#64748b' }}>{lead.email}</p>
                       </div>
                     </td>
-                    <td className="py-4 px-4">
+                    <td className="py-3 px-4">
                       <span
-                        className="px-3 py-1 rounded-full text-xs font-medium"
+                        className="px-2 py-1 rounded-full text-xs font-medium"
                         style={{
-                          backgroundColor: lead.facilityType === 'Private Hospital' ? `${theme.teal}20` :
-                                          lead.facilityType === 'Private Specialist' ? `${theme.purple}20` :
-                                          `${theme.gold}20`,
-                          color: lead.facilityType === 'Private Hospital' ? theme.teal :
-                                 lead.facilityType === 'Private Specialist' ? theme.purple :
-                                 theme.gold
+                          backgroundColor: lead.facilityType === 'Private Hospital' ? 'rgba(0, 212, 170, 0.15)' : 'rgba(124, 92, 255, 0.15)',
+                          color: lead.facilityType === 'Private Hospital' ? '#00d4aa' : '#7c5cff'
                         }}
                       >
                         {lead.facilityType}
                       </span>
                     </td>
-                    <td className="py-4 px-4 text-center">
-                      <p className="font-bold" style={{ color: theme.textPrimary }}>{lead.estimatedMCs.toLocaleString()}</p>
-                      <p className="text-xs" style={{ color: theme.textMuted }}>MCs/month</p>
+                    <td className="py-3 px-4 text-center">
+                      <p className="text-sm font-bold" style={{ color: '#e2e8f0' }}>{lead.estimatedMCs.toLocaleString()}</p>
                     </td>
-                    <td className="py-4 px-4 text-center">
-                      <p className="text-lg font-black" style={{ color: theme.success }}>
+                    <td className="py-3 px-4 text-center">
+                      <p className="text-sm font-bold" style={{ color: '#00d4aa' }}>
                         RM {leadValue.toLocaleString()}
                       </p>
-                      <p className="text-xs" style={{ color: theme.textMuted }}>
-                        (RM10k + {lead.estimatedMCs} MCs)
-                      </p>
                     </td>
-                    <td className="py-4 px-4 text-center">
-                      <span
-                        className="px-2 py-1 rounded text-xs font-medium"
-                        style={{ backgroundColor: `${theme.success}20`, color: theme.success }}
+                    <td className="py-3 px-4 text-center">
+                      <AnimatedButton
+                        onClick={() => openProposal(lead)}
+                        variant="secondary"
+                        style={{ padding: '6px 12px', fontSize: '12px' }}
                       >
-                        {lead.decisionMaker}
-                      </span>
+                        Send Proposal
+                      </AnimatedButton>
                     </td>
-                    <td className="py-4 px-4">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          className="px-3 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-80"
-                          style={{ backgroundColor: theme.teal, color: theme.textPrimary }}
-                          onClick={() => window.location.href = `mailto:${lead.email}?subject=Sarawak MedChain Partnership`}
-                        >
-                          Contact {lead.decisionMaker.split(' ')[0]}
-                        </button>
-                        <button
-                          className="px-3 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-80"
-                          style={{ backgroundColor: theme.success, color: theme.textPrimary }}
-                          onClick={() => openProposal(lead)}
-                        >
-                          Close Deal
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                  </motion.tr>
                 );
               })}
             </tbody>
           </table>
         </div>
+      </motion.div>
+      </ErrorBoundary>
 
-        {/* Pipeline Summary */}
-        <div
-          className="mt-6 pt-6 grid grid-cols-4 gap-4"
-          style={{ borderTop: `1px solid ${theme.border}` }}
-        >
-          <div className="text-center">
-            <p className="text-2xl font-black" style={{ color: theme.teal }}>
-              {hospitalLeads.filter(l => l.facilityType === 'Private Hospital').length}
-            </p>
-            <p className="text-xs" style={{ color: theme.textMuted }}>Private Hospitals</p>
+      {/* Close main content area */}
+      </main>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          STICKY BOTTOM BAR - Live Transaction Ticker
+          ═══════════════════════════════════════════════════════════════════ */}
+      <footer
+        className="fixed bottom-0 left-0 right-0 z-50 px-6 py-2"
+        style={{
+          backgroundColor: 'rgba(10, 14, 20, 0.95)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+        }}
+      >
+        <div className="flex items-center justify-between" style={{ maxWidth: '1600px', margin: '0 auto' }}>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <LivePulseDot color="#00d4aa" size={8} />
+              <span className="text-xs font-medium" style={{ color: '#00d4aa' }}>Live Transactions</span>
+            </div>
+            <div className="overflow-hidden" style={{ maxWidth: '600px' }}>
+              <div className="animate-marquee whitespace-nowrap">
+                {mcFeed.slice(0, 5).map((item, i) => (
+                  <motion.span
+                    key={i}
+                    className="inline-flex items-center gap-2 mx-4"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: i * 0.1 }}
+                  >
+                    <span className="text-xs" style={{ color: '#64748b' }}>{item.hospital.name}</span>
+                    <span className="text-xs font-bold" style={{ color: '#00d4aa' }}>+RM{item.profit.toFixed(2)}</span>
+                  </motion.span>
+                ))}
+              </div>
+            </div>
           </div>
-          <div className="text-center">
-            <p className="text-2xl font-black" style={{ color: theme.purple }}>
-              {hospitalLeads.filter(l => l.facilityType === 'Private Specialist').length}
-            </p>
-            <p className="text-xs" style={{ color: theme.textMuted }}>Specialists</p>
-          </div>
-          <div className="text-center">
-            <p className="text-2xl font-black" style={{ color: theme.warning }}>
-              {hospitalLeads.reduce((sum, l) => sum + l.estimatedMCs, 0).toLocaleString()}
-            </p>
-            <p className="text-xs" style={{ color: theme.textMuted }}>Total Est. MCs</p>
-          </div>
-          <div className="text-center">
-            <p className="text-2xl font-black" style={{ color: theme.success }}>
-              RM {hospitalLeads.reduce((sum, l) => sum + calculateLeadValue(l.estimatedMCs), 0).toLocaleString()}
-            </p>
-            <p className="text-xs" style={{ color: theme.textMuted }}>Total Pipeline MRR</p>
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <p className="text-xs" style={{ color: '#64748b' }}>Today's Revenue</p>
+              <p className="text-sm font-bold" style={{ color: '#00d4aa' }}>
+                +RM <AnimatedNumber value={totalProfit} duration={0.8} />
+              </p>
+            </div>
+            <motion.div
+              className="px-3 py-1.5 rounded-lg"
+              style={{ backgroundColor: 'rgba(0, 212, 170, 0.15)' }}
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.15 }}
+            >
+              <span className="text-xs font-medium" style={{ color: '#00d4aa' }}>Enterprise Grade</span>
+            </motion.div>
           </div>
         </div>
-      </CardWrapper>
-
-      {/* SUMMARY STATS */}
-      <SectionLabel icon="📊" text="Summary Statistics" />
-      <CardWrapper>
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-6">
-          <div className="text-center">
-            <p className="text-sm" style={{ color: theme.textSecondary }}>Total MCs Issued</p>
-            <p className="text-2xl font-bold" style={{ color: theme.textPrimary }}>
-              {mockHospitals.reduce((sum, h) => sum + h.mcs, 0).toLocaleString()}
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="text-sm" style={{ color: theme.textSecondary }}>Active Hospitals</p>
-            <p className="text-2xl font-bold" style={{ color: theme.textPrimary }}>
-              {mockHospitals.filter(h => h.tier === 'Hospital').length}
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="text-sm" style={{ color: theme.textSecondary }}>Active Clinics</p>
-            <p className="text-2xl font-bold" style={{ color: theme.textPrimary }}>
-              {mockHospitals.filter(h => h.tier === 'Clinic').length}
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="text-sm" style={{ color: theme.textSecondary }}>Payment Rate</p>
-            <p className="text-2xl font-bold" style={{ color: theme.success }}>
-              {Math.round((mockHospitals.filter(h => h.paid).length / mockHospitals.length) * 100)}%
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="text-sm" style={{ color: theme.textSecondary }}>Revenue Goal</p>
-            <p className="text-2xl font-bold" style={{ color: theme.purple }}>
-              {Math.round((mrr / REVENUE_TARGET) * 100)}%
-            </p>
-          </div>
-        </div>
-      </CardWrapper>
-
-      {/* Security Notice */}
-      <p className="text-center mt-6 text-xs" style={{ color: theme.textMuted }}>
-        Founder Command Center • Access Logged • Session Encrypted
-      </p>
+      </footer>
 
       {/* Proposal Modal */}
       <ProposalModal
@@ -2935,60 +4011,108 @@ export default function FounderAdmin() {
       />
 
       {/* Deal Closed Notification Toast */}
-      {dealNotification && (
-        <div
-          className="fixed bottom-6 right-6 z-50 animate-slide-in-right"
-          style={{
-            animation: 'slideInRight 0.5s ease-out'
-          }}
-        >
-          <div
-            className="rounded-2xl p-6 border shadow-2xl min-w-[380px]"
-            style={{
-              backgroundColor: theme.bgCard,
-              borderColor: theme.success,
-              boxShadow: `0 0 40px ${theme.success}40`
-            }}
+      <AnimatePresence>
+        {dealNotification && (
+          <motion.div
+            className="fixed bottom-6 right-6 z-50"
+            variants={slideInRight}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
           >
-            <div className="flex items-start gap-4">
-              {/* Success Icon */}
-              <div
-                className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: `${theme.success}20` }}
-              >
-                <svg className="w-6 h-6" fill={theme.success} viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-              </div>
-
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: theme.success }}></span>
-                  <p className="text-xs font-bold uppercase tracking-wide" style={{ color: theme.success }}>
-                    Deal Closed
-                  </p>
-                </div>
-                <p className="font-bold text-lg mb-1" style={{ color: theme.textPrimary }}>
-                  {dealNotification.facilityName}
-                </p>
-                <p className="text-sm mb-3" style={{ color: theme.textSecondary }}>
-                  Payment received and recorded on blockchain
-                </p>
-                <div
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl"
-                  style={{ backgroundColor: `${theme.success}15` }}
+            <motion.div
+              className="rounded-2xl p-6 border shadow-2xl min-w-[380px]"
+              style={{
+                backgroundColor: theme.bgCard,
+                borderColor: theme.success,
+                boxShadow: `0 0 40px ${theme.success}40`
+              }}
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.15 }}
+            >
+              <div className="flex items-start gap-4">
+                {/* Success Icon */}
+                <motion.div
+                  className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: `${theme.success}20` }}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 25, delay: 0.2 }}
                 >
-                  <span className="text-sm" style={{ color: theme.textSecondary }}>Revenue Added:</span>
-                  <span className="text-xl font-black" style={{ color: theme.success }}>
-                    +RM {dealNotification.value?.toLocaleString()}
-                  </span>
+                  <svg className="w-6 h-6" fill={theme.success} viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </motion.div>
+
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <LivePulseDot color={theme.success} size={8} />
+                    <p className="text-xs font-bold uppercase tracking-wide" style={{ color: theme.success }}>
+                      Deal Closed
+                    </p>
+                  </div>
+                  <motion.p
+                    className="font-bold text-lg mb-1"
+                    style={{ color: theme.textPrimary }}
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    {dealNotification.facilityName}
+                  </motion.p>
+                  <p className="text-sm mb-3" style={{ color: theme.textSecondary }}>
+                    Payment received and recorded on blockchain
+                  </p>
+                  <motion.div
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl"
+                    style={{ backgroundColor: `${theme.success}15` }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                  >
+                    <span className="text-sm" style={{ color: theme.textSecondary }}>Revenue Added:</span>
+                    <span className="text-xl font-black" style={{ color: theme.success }}>
+                      +RM <AnimatedNumber value={dealNotification.value || 0} duration={0.8} />
+                    </span>
+                  </motion.div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-      </div>{/* End centering wrapper */}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          PHASE 5: Command Bar (Cmd+K)
+          ═══════════════════════════════════════════════════════════════════ */}
+      <CommandBar
+        open={commandBarOpen}
+        onOpenChange={setCommandBarOpen}
+        commands={commandBarCommands}
+        recentCommands={recentCommands}
+        onCommandExecute={handleCommandExecute}
+        placeholder="Search commands, hospitals, or actions..."
+      />
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          PHASE 5: Confirmation Modal (for critical actions)
+          ═══════════════════════════════════════════════════════════════════ */}
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, type: null })}
+        onConfirm={() => {
+          if (confirmModal.type === 'logout') {
+            setIsAuthenticated(false);
+            toast.success('Logged out successfully');
+          }
+          setConfirmModal({ isOpen: false, type: null });
+        }}
+        title={confirmModal.type === 'logout' ? 'Confirm Logout' : 'Confirm Action'}
+        message={confirmModal.type === 'logout' ? 'Are you sure you want to logout from Founder Command?' : 'Are you sure you want to proceed?'}
+        variant={confirmModal.type === 'logout' ? 'warning' : 'danger'}
+        confirmText="Confirm"
+        cancelText="Cancel"
+      />
 
       {/* Animation styles */}
       <style>{`
@@ -3001,6 +4125,38 @@ export default function FounderAdmin() {
             transform: translateX(0);
             opacity: 1;
           }
+        }
+        /* Phase 5: cmdk styles */
+        [cmdk-group-heading] {
+          padding: 8px 8px 4px;
+        }
+        [cmdk-item] {
+          content-visibility: auto;
+        }
+        [cmdk-item][data-selected='true'] {
+          background: rgba(20, 184, 166, 0.1);
+        }
+        [cmdk-item][data-selected='true'] span {
+          background: rgba(20, 184, 166, 0.2) !important;
+          border-color: rgba(20, 184, 166, 0.4) !important;
+        }
+        [cmdk-item]:active {
+          transition-property: background;
+          background: rgba(20, 184, 166, 0.15);
+        }
+        [cmdk-list] {
+          scroll-padding-block-start: 8px;
+          scroll-padding-block-end: 8px;
+        }
+        [cmdk-list]::-webkit-scrollbar {
+          width: 6px;
+        }
+        [cmdk-list]::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        [cmdk-list]::-webkit-scrollbar-thumb {
+          background: rgba(20, 184, 166, 0.3);
+          border-radius: 3px;
         }
       `}</style>
     </div>

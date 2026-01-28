@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(node scripts/deploy.cjs:*)",
-      "Bash(npx hardhat node)"
+      "Bash(npx hardhat node)",
+      "Bash(copy:*)",
+      "Bash(copy \"C:\\\\Users\\\\randyrichardd\\\\Desktop\\\\sarawak-medchain\\\\frontend\\\\src\\\\App.css\" \"C:\\\\Users\\\\RANDYR~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-randyrichardd-Desktop-sarawak-medchain\\\\4dbce8e8-2289-47d1-9996-653040bf222f\\\\scratchpad\\\\backup_files\\\\App.css\")",
+      "Bash(copy \"C:\\\\Users\\\\randyrichardd\\\\Desktop\\\\sarawak-medchain\\\\frontend\\\\src\\\\components\\\\SarawakReadinessMap.jsx\" \"C:\\\\Users\\\\RANDYR~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-randyrichardd-Desktop-sarawak-medchain\\\\4dbce8e8-2289-47d1-9996-653040bf222f\\\\scratchpad\\\\backup_files\\\\SarawakReadinessMap.jsx\")",
+      "Bash(powershell -Command \"Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep -Seconds 2; Write-Host ''Done''\")",
+      "Bash(npm run build:*)",
+      "Bash(powershell -Command \"Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep -Seconds 1\")"
     ]
   }
 }

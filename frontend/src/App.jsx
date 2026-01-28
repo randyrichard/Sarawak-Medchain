@@ -29,6 +29,7 @@ import VerifyAgreement from './pages/VerifyAgreement';
 import SystemStatus from './pages/SystemStatus';
 import CouncilorView from './pages/CouncilorView';
 import { ServiceRestoredToast } from './components/ServiceNotifications';
+import { Toaster } from 'react-hot-toast';
 import './App.css';
 
 // Top-Up Modal Component
@@ -1104,6 +1105,39 @@ function App() {
                 <BillingProvider>
                   <BrowserRouter>
                     <AppRoutes />
+                    {/* Global Toast Notifications - Phase 5 */}
+                    <Toaster
+                      position="top-right"
+                      toastOptions={{
+                        duration: 4000,
+                        style: {
+                          background: '#0d1117',
+                          color: '#e2e8f0',
+                          border: '1px solid rgba(0, 212, 170, 0.2)',
+                          borderRadius: '12px',
+                          padding: '16px',
+                          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
+                        },
+                        success: {
+                          iconTheme: {
+                            primary: '#00d4aa',
+                            secondary: '#0d1117',
+                          },
+                          style: {
+                            border: '1px solid rgba(0, 212, 170, 0.3)',
+                          },
+                        },
+                        error: {
+                          iconTheme: {
+                            primary: '#ef4444',
+                            secondary: '#0d1117',
+                          },
+                          style: {
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                          },
+                        },
+                      }}
+                    />
                   </BrowserRouter>
                 </BillingProvider>
               </DisasterRecoveryProvider>
