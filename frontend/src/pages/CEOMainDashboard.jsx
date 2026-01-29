@@ -17,9 +17,9 @@ const FOUNDER_WALLET = '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'; // Your wal
 
 // Professional Theme - Enterprise Dashboard
 const theme = {
-  bg: '#0f172a',
-  bgCard: 'rgba(15, 23, 42, 0.8)',
-  border: 'rgba(56, 189, 248, 0.25)',
+  bg: '#0a0e14',
+  bgCard: 'rgba(15, 23, 36, 0.9)',
+  border: 'rgba(56, 189, 248, 0.15)',
   textPrimary: '#e2e8f0',
   textSecondary: '#94a3b8',
   textMuted: '#64748b',
@@ -1007,9 +1007,9 @@ export default function CEOMainDashboard({ walletAddress }) {
   };
 
   return (
-    <div className="min-h-screen pb-12 founder-command" style={{ backgroundColor: theme.bg }}>
+    <div className="min-h-screen pb-12 founder-command" style={{ backgroundColor: theme.bg, fontFamily: "'Inter', sans-serif" }}>
       {/* Header */}
-      <header className="px-8 py-4" style={{ backgroundColor: theme.bg, border: 'none', boxShadow: 'none', maxWidth: '1600px', margin: '0 auto' }}>
+      <header className="px-8 py-6" style={{ backgroundColor: 'transparent', border: 'none', boxShadow: 'none', maxWidth: '1600px', margin: '0 auto' }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${theme.gold}, ${theme.warning})` }}>

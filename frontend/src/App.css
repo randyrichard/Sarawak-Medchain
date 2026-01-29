@@ -637,7 +637,7 @@ nav {
 .fpx-payment,
 .doctor-portal,
 .patient-portal {
-  background-color: #0f172a !important;
+  background-color: #0a0e14 !important;
   min-height: 100%;
 }
 
@@ -732,6 +732,181 @@ body:has(.founder-command) [class*="HospitalCard"] {
 .founder-command {
   position: relative;
   z-index: 100;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   PROFESSIONAL CEO DASHBOARD STYLING - Enterprise Grade
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* CEO Dashboard base typography */
+.founder-command,
+.founder-command * {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Professional Card Styling */
+.founder-command .rounded-2xl,
+.founder-command .rounded-xl,
+.founder-command [class*="card"],
+.founder-command [class*="panel"] {
+  background: rgba(15, 23, 36, 0.9) !important;
+  border: 1px solid rgba(56, 189, 248, 0.15) !important;
+  border-radius: 16px !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+/* Card hover effect */
+.founder-command .rounded-2xl:hover,
+.founder-command .rounded-xl:hover,
+.founder-command [class*="card"]:hover,
+.founder-command [class*="panel"]:hover {
+  border-color: rgba(56, 189, 248, 0.3) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* Big metric numbers */
+.founder-command .text-2xl,
+.founder-command .text-3xl,
+.founder-command .text-4xl {
+  font-weight: 700 !important;
+  letter-spacing: -0.02em;
+}
+
+/* Section titles */
+.founder-command .text-xl.font-bold,
+.founder-command .text-lg.font-bold,
+.founder-command h2 {
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  color: #e2e8f0 !important;
+  letter-spacing: -0.01em;
+}
+
+/* Labels and secondary text */
+.founder-command .text-xs,
+.founder-command .text-sm {
+  font-size: 14px;
+  color: #94a3b8;
+}
+
+/* Layout spacing */
+.founder-command .gap-4 {
+  gap: 24px !important;
+}
+
+.founder-command .gap-6 {
+  gap: 24px !important;
+}
+
+.founder-command .mb-8 {
+  margin-bottom: 32px !important;
+}
+
+/* Metric cards - consistent padding */
+.founder-command .p-5,
+.founder-command .p-6 {
+  padding: 24px !important;
+}
+
+/* Grid layout for metric cards */
+.founder-command .grid.grid-cols-5 {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 24px !important;
+}
+
+/* Chart styling */
+.founder-command .recharts-cartesian-grid-horizontal line,
+.founder-command .recharts-cartesian-grid-vertical line {
+  stroke: rgba(255, 255, 255, 0.05) !important;
+}
+
+.founder-command .recharts-line-curve {
+  stroke-width: 3 !important;
+}
+
+/* Table styling */
+.founder-command table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.founder-command table thead th {
+  background: rgba(15, 23, 42, 0.5) !important;
+  color: #94a3b8 !important;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.1);
+}
+
+.founder-command table tbody tr {
+  transition: background 0.2s ease;
+}
+
+.founder-command table tbody tr:nth-child(even) {
+  background: rgba(15, 23, 42, 0.3);
+}
+
+.founder-command table tbody tr:hover {
+  background: rgba(56, 189, 248, 0.1) !important;
+}
+
+.founder-command table tbody td {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+}
+
+/* Status badges */
+.founder-command .rounded-full {
+  border-radius: 9999px !important;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+/* Buttons - professional look */
+.founder-command button {
+  transition: all 0.2s ease;
+}
+
+.founder-command button:hover {
+  transform: translateY(-1px);
+}
+
+/* Footer styling */
+.founder-command footer,
+.founder-command .footer {
+  border-top: 1px solid rgba(56, 189, 248, 0.1);
+  padding-top: 24px;
+  margin-top: 32px;
+  text-align: center;
+  color: #64748b;
+}
+
+/* Smooth scrollbar */
+.founder-command::-webkit-scrollbar {
+  width: 8px;
+}
+
+.founder-command::-webkit-scrollbar-track {
+  background: rgba(15, 23, 36, 0.5);
+}
+
+.founder-command::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.3);
+  border-radius: 4px;
+}
+
+.founder-command::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.5);
 }
 
 /* Hide hospital balances table when in Founder Command */
