@@ -14,7 +14,6 @@ import PatientPortal from './pages/PatientPortal';
 import DoctorPortal from './pages/DoctorPortal';
 import AdminPortal from './pages/AdminPortal';
 import CEODashboard from './pages/CEODashboard';
-import CEOMainDashboard from './pages/CEOMainDashboard';
 import HospitalPitch from './pages/HospitalPitch';
 import ConnectWallet from './pages/ConnectWallet';
 import DoctorPortalDemo from './pages/DoctorPortalDemo';
@@ -29,7 +28,6 @@ import VerifyAgreement from './pages/VerifyAgreement';
 import SystemStatus from './pages/SystemStatus';
 import CouncilorView from './pages/CouncilorView';
 import { ServiceRestoredToast } from './components/ServiceNotifications';
-import { Toaster } from 'react-hot-toast';
 import './App.css';
 
 // Top-Up Modal Component
@@ -557,21 +555,17 @@ function ProtectedApp({ walletAddress, handleDisconnect }) {
                 <span className={`${currentPath === '/admin' ? 'text-white font-semibold' : 'text-slate-300 group-hover:text-white'}`}>Admin Portal</span>
               </Link>
             </li>
-            <li>
-              <Link
-                to="/ceo"
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
-                  currentPath === '/ceo'
-                    ? 'bg-gradient-to-r from-teal-500/20 to-teal-500/5 border-l-2 border-teal-400'
-                    : 'hover:bg-slate-800/50'
-                }`}
-              >
-                <svg className={`w-5 h-5 ${currentPath === '/ceo' ? 'text-teal-400' : 'text-slate-400 group-hover:text-white'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                <span className={`${currentPath === '/ceo' ? 'text-white font-semibold' : 'text-slate-300 group-hover:text-white'}`}>CEO Dashboard</span>
-              </Link>
-            </li>
+            {/* Founder Dashboard - Only shows for founder wallet */}
+            {walletAddress?.toLowerCase() === '0x70997970c51812dc3a010c7d01b50e0d17dc79c8' && (
+              <li>
+                <Link to="/founder-admin-secret-99" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-amber-500/20 transition-colors group border border-amber-500/30 bg-amber-500/10">
+                  <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                  <span className="text-amber-400 font-semibold">Founder Command</span>
+                </Link>
+              </li>
+            )}
           </ul>
         </nav>
 
@@ -627,7 +621,6 @@ function ProtectedApp({ walletAddress, handleDisconnect }) {
           <Route path="/doctor" element={<DoctorPortal walletAddress={walletAddress} />} />
           <Route path="/admin" element={<AdminPortal walletAddress={walletAddress} />} />
           <Route path="/ceo" element={<CEODashboard walletAddress={walletAddress} />} />
-          <Route path="/ceo-main" element={<CEOMainDashboard walletAddress={walletAddress} />} />
           <Route path="*" element={<Navigate to="/patient" replace />} />
         </Routes>
       </main>
@@ -949,7 +942,7 @@ function AppRoutes() {
   }, []);
 
   // Public routes that don't need wallet - NO MetaMask trigger
-  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch', '/pricing', '/connect', '/demo', '/agreement', '/payment', '/ceo/quarterly', '/status', '/gov-preview', '/portal/gov-preview', '/admin/gov-dashboard', '/pwa/verify', '/pwa/issue', '/verify-agreement', '/ceo-main'];
+  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch', '/pricing', '/connect', '/demo', '/agreement', '/payment', '/ceo/quarterly', '/status', '/gov-preview', '/portal/gov-preview', '/admin/gov-dashboard', '/pwa/verify', '/pwa/issue', '/verify-agreement'];
   const isPublicRoute = publicPaths.includes(location.pathname);
   const isVerificationRoute = location.pathname.startsWith('/verify/');
 
@@ -1004,7 +997,6 @@ function AppRoutes() {
         <Route path="/pwa/verify" element={<VerificationPage />} />
         <Route path="/pwa/issue" element={<DoctorPortalDemo />} />
         <Route path="/verify-agreement" element={<VerifyAgreement />} />
-        <Route path="/ceo-main" element={<CEOMainDashboard />} />
       </Routes>
     );
   }
@@ -1095,39 +1087,6 @@ function App() {
                 <BillingProvider>
                   <BrowserRouter>
                     <AppRoutes />
-                    {/* Global Toast Notifications - Phase 5 */}
-                    <Toaster
-                      position="top-right"
-                      toastOptions={{
-                        duration: 4000,
-                        style: {
-                          background: '#0d1117',
-                          color: '#e2e8f0',
-                          border: '1px solid rgba(0, 212, 170, 0.2)',
-                          borderRadius: '12px',
-                          padding: '16px',
-                          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
-                        },
-                        success: {
-                          iconTheme: {
-                            primary: '#00d4aa',
-                            secondary: '#0d1117',
-                          },
-                          style: {
-                            border: '1px solid rgba(0, 212, 170, 0.3)',
-                          },
-                        },
-                        error: {
-                          iconTheme: {
-                            primary: '#ef4444',
-                            secondary: '#0d1117',
-                          },
-                          style: {
-                            border: '1px solid rgba(239, 68, 68, 0.3)',
-                          },
-                        },
-                      }}
-                    />
                   </BrowserRouter>
                 </BillingProvider>
               </DisasterRecoveryProvider>
