@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar } from 'recharts';
+import { useState, useEffect, useRef } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 
 // Theme colors
 const theme = {
@@ -75,15 +75,147 @@ const PAYMENT_HISTORY = [
   { month: 'November 2025', amount: 10523, status: 'Paid', paidDate: '14 Dec 2025' },
 ];
 
-// Card component
-function Card({ children, className = '', hover = true }) {
+// CSS Styles for animations
+const styles = `
+  @keyframes countUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0.7; }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 5px currentColor; }
+    50% { box-shadow: 0 0 15px currentColor, 0 0 25px currentColor; }
+  }
+
+  @keyframes progress-grow {
+    from { width: 0%; }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  @keyframes check-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  .card-hover {
+    transition: all 0.3s ease;
+  }
+
+  .card-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(56, 189, 248, 0.15);
+    border-color: rgba(56, 189, 248, 0.4) !important;
+  }
+
+  .btn-hover {
+    transition: all 0.2s ease;
+  }
+
+  .btn-hover:hover {
+    filter: brightness(1.15);
+    transform: scale(1.02);
+  }
+
+  .row-hover {
+    transition: background 0.2s ease;
+  }
+
+  .row-hover:hover {
+    background: rgba(56, 189, 248, 0.05) !important;
+  }
+
+  .badge-glow-green {
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+  }
+
+  .badge-glow-orange {
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+  }
+
+  .dot-pulse {
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  .check-pulse {
+    animation: check-pulse 2s ease-in-out infinite;
+  }
+
+  .status-glow {
+    text-shadow: 0 0 10px currentColor;
+  }
+
+  .skeleton {
+    background: linear-gradient(90deg, rgba(56, 189, 248, 0.1) 25%, rgba(56, 189, 248, 0.2) 50%, rgba(56, 189, 248, 0.1) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 8px;
+  }
+
+  .progress-bar {
+    animation: progress-grow 1s ease-out forwards;
+  }
+
+  .avatar-glow {
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+  }
+`;
+
+// Animated Number Component
+function AnimatedNumber({ value, duration = 1500, prefix = '', suffix = '' }) {
+  const [displayValue, setDisplayValue] = useState(0);
+  const startTime = useRef(null);
+  const animationFrame = useRef(null);
+
+  useEffect(() => {
+    const animate = (timestamp) => {
+      if (!startTime.current) startTime.current = timestamp;
+      const progress = Math.min((timestamp - startTime.current) / duration, 1);
+
+      // Easing function (ease-out)
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      setDisplayValue(Math.floor(easeOut * value));
+
+      if (progress < 1) {
+        animationFrame.current = requestAnimationFrame(animate);
+      }
+    };
+
+    animationFrame.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationFrame.current);
+  }, [value, duration]);
+
+  return <span>{prefix}{displayValue.toLocaleString()}{suffix}</span>;
+}
+
+// Skeleton Loader
+function Skeleton({ className = '' }) {
+  return <div className={`skeleton ${className}`} />;
+}
+
+// Card component with enhanced hover
+function Card({ children, className = '', hover = true, delay = 0 }) {
   return (
     <div
-      className={`rounded-2xl p-6 transition-all duration-300 ${hover ? 'hover:border-cyan-400/40 hover:-translate-y-0.5' : ''} ${className}`}
+      className={`rounded-2xl p-6 ${hover ? 'card-hover' : ''} ${className}`}
       style={{
         background: theme.bgCard,
         border: `1px solid ${theme.border}`,
         boxShadow: '0 4px 24px rgba(0, 0, 0, 0.4)',
+        animation: `fadeInUp 0.5s ease-out ${delay}ms backwards`,
       }}
     >
       {children}
@@ -91,14 +223,20 @@ function Card({ children, className = '', hover = true }) {
   );
 }
 
-// Metric Card component
-function MetricCard({ icon, label, value, trend, trendUp }) {
+// Metric Card component with animated number
+function MetricCard({ icon, label, value, trend, trendUp, isLoading, delay = 0, isNumeric = true }) {
   return (
-    <Card>
+    <Card delay={delay}>
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm mb-2" style={{ color: theme.textSecondary }}>{label}</p>
-          <p className="text-4xl font-bold" style={{ color: theme.textPrimary }}>{value}</p>
+          {isLoading ? (
+            <Skeleton className="h-10 w-24" />
+          ) : (
+            <p className="text-4xl font-bold" style={{ color: theme.textPrimary }}>
+              {isNumeric ? <AnimatedNumber value={parseInt(value) || 0} /> : value}
+            </p>
+          )}
         </div>
         <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${theme.accent}20` }}>
           {icon}
@@ -116,26 +254,50 @@ function MetricCard({ icon, label, value, trend, trendUp }) {
   );
 }
 
-// Status Badge
+// Status Badge with glow
 function StatusBadge({ status }) {
   const colors = {
-    verified: { bg: 'rgba(16, 185, 129, 0.2)', text: '#10b981' },
-    pending: { bg: 'rgba(245, 158, 11, 0.2)', text: '#f59e0b' },
-    active: { bg: 'rgba(16, 185, 129, 0.2)', text: '#10b981' },
-    online: { bg: 'rgba(16, 185, 129, 0.2)', text: '#10b981' },
-    offline: { bg: 'rgba(100, 116, 139, 0.2)', text: '#64748b' },
-    paid: { bg: 'rgba(16, 185, 129, 0.2)', text: '#10b981' },
-    due: { bg: 'rgba(245, 158, 11, 0.2)', text: '#f59e0b' },
+    verified: { bg: 'rgba(16, 185, 129, 0.2)', text: '#10b981', glow: 'badge-glow-green' },
+    pending: { bg: 'rgba(245, 158, 11, 0.2)', text: '#f59e0b', glow: 'badge-glow-orange' },
+    active: { bg: 'rgba(16, 185, 129, 0.2)', text: '#10b981', glow: 'badge-glow-green' },
+    online: { bg: 'rgba(16, 185, 129, 0.2)', text: '#10b981', glow: 'badge-glow-green' },
+    offline: { bg: 'rgba(100, 116, 139, 0.2)', text: '#64748b', glow: '' },
+    paid: { bg: 'rgba(16, 185, 129, 0.2)', text: '#10b981', glow: 'badge-glow-green' },
+    due: { bg: 'rgba(245, 158, 11, 0.2)', text: '#f59e0b', glow: 'badge-glow-orange' },
   };
   const style = colors[status.toLowerCase()] || colors.pending;
 
   return (
     <span
-      className="px-3 py-1 rounded-full text-xs font-semibold uppercase"
+      className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${style.glow}`}
       style={{ backgroundColor: style.bg, color: style.text }}
     >
       {status}
     </span>
+  );
+}
+
+// Progress Bar with animation
+function AnimatedProgressBar({ value, maxValue, color, delay = 0 }) {
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setWidth((value / maxValue) * 100);
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [value, maxValue, delay]);
+
+  return (
+    <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
+      <div
+        className="h-2 rounded-full transition-all duration-1000 ease-out"
+        style={{
+          width: `${width}%`,
+          background: `linear-gradient(90deg, ${color}, ${color}dd)`,
+        }}
+      />
+    </div>
   );
 }
 
@@ -149,6 +311,7 @@ function CustomTooltip({ active, payload, label }) {
           background: 'rgba(15, 23, 42, 0.95)',
           border: '1px solid rgba(56, 189, 248, 0.3)',
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4)',
+          backdropFilter: 'blur(10px)',
         }}
       >
         <p className="text-sm font-medium" style={{ color: theme.textPrimary }}>{label}</p>
@@ -163,6 +326,13 @@ export default function HospitalCEODashboard() {
   const [mcTrendData] = useState(generateMCTrendData());
   const [timeframe, setTimeframe] = useState('30');
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Simulate loading
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Update time every minute
   useEffect(() => {
@@ -172,6 +342,7 @@ export default function HospitalCEODashboard() {
 
   // Calculate totals
   const totalMCs = DEPARTMENT_DATA.reduce((sum, d) => sum + d.mcs, 0);
+  const maxDeptMCs = Math.max(...DEPARTMENT_DATA.map(d => d.mcs));
   const onlineDoctors = DOCTORS_DATA.filter(d => d.status === 'online').length;
   const verificationRate = Math.round((RECENT_MCS.filter(m => m.status === 'verified').length / RECENT_MCS.length) * 100);
   const variableFee = totalMCs * HOSPITAL_DATA.mcRate;
@@ -179,6 +350,9 @@ export default function HospitalCEODashboard() {
 
   return (
     <div className="min-h-screen hospital-ceo-dashboard" style={{ backgroundColor: theme.bg }}>
+      {/* Inject styles */}
+      <style>{styles}</style>
+
       {/* Header */}
       <header className="px-8 py-6" style={{ borderBottom: `1px solid ${theme.border}` }}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -211,7 +385,7 @@ export default function HospitalCEODashboard() {
 
             {/* CEO Info */}
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: `${theme.accent}20` }}>
+              <div className="w-10 h-10 rounded-full flex items-center justify-center avatar-glow" style={{ backgroundColor: `${theme.accent}20`, border: `2px solid ${theme.accent}40` }}>
                 <span className="text-sm font-bold" style={{ color: theme.accent }}>AH</span>
               </div>
               <div>
@@ -222,8 +396,8 @@ export default function HospitalCEODashboard() {
 
             {/* Logout */}
             <button
-              className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-              style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)' }}
+              className="px-4 py-2 rounded-lg text-sm font-medium btn-hover"
+              style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px' }}
             >
               Logout
             </button>
@@ -238,35 +412,46 @@ export default function HospitalCEODashboard() {
           <MetricCard
             icon={<svg className="w-6 h-6" style={{ color: theme.accent }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
             label="MCs Issued This Month"
-            value={totalMCs.toLocaleString()}
+            value={totalMCs}
             trend="12.5%"
             trendUp={true}
+            isLoading={isLoading}
+            delay={0}
           />
           <MetricCard
             icon={<svg className="w-6 h-6" style={{ color: theme.success }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>}
             label="Active Doctors"
             value={`${onlineDoctors}/${DOCTORS_DATA.length}`}
             trend={null}
+            isLoading={isLoading}
+            delay={50}
+            isNumeric={false}
           />
           <MetricCard
             icon={<svg className="w-6 h-6" style={{ color: theme.success }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
             label="Subscription Status"
             value={<StatusBadge status="Active" />}
             trend={null}
+            isLoading={isLoading}
+            delay={100}
+            isNumeric={false}
           />
           <MetricCard
             icon={<svg className="w-6 h-6" style={{ color: theme.warning }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>}
             label="MC Verification Rate"
-            value={`${verificationRate}%`}
+            value={verificationRate}
             trend="2.3%"
             trendUp={true}
+            isLoading={isLoading}
+            delay={150}
+            isNumeric={false}
           />
         </div>
 
         {/* Section 1: MC Analytics */}
         <div className="grid grid-cols-5 gap-6 mb-8">
           {/* MC Trend Chart - 60% */}
-          <Card className="col-span-3" hover={false}>
+          <Card className="col-span-3" hover={false} delay={200}>
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-lg font-semibold" style={{ color: theme.textPrimary }}>MC Issuance Trend</h2>
@@ -275,8 +460,8 @@ export default function HospitalCEODashboard() {
               <select
                 value={timeframe}
                 onChange={(e) => setTimeframe(e.target.value)}
-                className="px-4 py-2 rounded-lg text-sm"
-                style={{ backgroundColor: 'rgba(56, 189, 248, 0.1)', color: theme.textPrimary, border: `1px solid ${theme.border}` }}
+                className="px-4 py-2 rounded-lg text-sm btn-hover cursor-pointer"
+                style={{ backgroundColor: 'rgba(56, 189, 248, 0.1)', color: theme.textPrimary, border: `1px solid ${theme.border}`, borderRadius: '8px' }}
               >
                 <option value="7">Last 7 days</option>
                 <option value="30">Last 30 days</option>
@@ -284,40 +469,54 @@ export default function HospitalCEODashboard() {
               </select>
             </div>
             <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={mcTrendData}>
-                  <defs>
-                    <linearGradient id="mcGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={theme.accent} stopOpacity={0.3} />
-                      <stop offset="95%" stopColor={theme.accent} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="date" stroke={theme.textMuted} fontSize={12} />
-                  <YAxis stroke={theme.textMuted} fontSize={12} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Area type="monotone" dataKey="mcs" stroke={theme.accent} strokeWidth={2} fill="url(#mcGradient)" />
-                </AreaChart>
-              </ResponsiveContainer>
+              {isLoading ? (
+                <Skeleton className="h-full w-full" />
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={mcTrendData}>
+                    <defs>
+                      <linearGradient id="mcGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={theme.accent} stopOpacity={0.4} />
+                        <stop offset="95%" stopColor={theme.accent} stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis dataKey="date" stroke={theme.textMuted} fontSize={11} tickLine={false} />
+                    <YAxis stroke={theme.textMuted} fontSize={11} tickLine={false} axisLine={false} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Area
+                      type="monotone"
+                      dataKey="mcs"
+                      stroke={theme.accent}
+                      strokeWidth={2.5}
+                      fill="url(#mcGradient)"
+                      dot={false}
+                      activeDot={{ r: 6, fill: theme.accent, stroke: '#fff', strokeWidth: 2 }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </Card>
 
           {/* Department Breakdown - 40% */}
-          <Card className="col-span-2" hover={false}>
+          <Card className="col-span-2" hover={false} delay={250}>
             <h2 className="text-lg font-semibold mb-6" style={{ color: theme.textPrimary }}>By Department</h2>
             <div className="space-y-4">
-              {DEPARTMENT_DATA.map((dept) => (
+              {DEPARTMENT_DATA.map((dept, idx) => (
                 <div key={dept.name}>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm" style={{ color: theme.textSecondary }}>{dept.name}</span>
-                    <span className="text-sm font-semibold" style={{ color: theme.textPrimary }}>{dept.mcs}</span>
+                    <span className="text-sm font-semibold" style={{ color: theme.textPrimary }}>
+                      {isLoading ? '...' : dept.mcs}
+                    </span>
                   </div>
-                  <div className="h-2 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}>
-                    <div
-                      className="h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${(dept.mcs / DEPARTMENT_DATA[0].mcs) * 100}%`, backgroundColor: dept.color }}
-                    />
-                  </div>
+                  <AnimatedProgressBar
+                    value={dept.mcs}
+                    maxValue={maxDeptMCs}
+                    color={dept.color}
+                    delay={300 + idx * 100}
+                  />
                 </div>
               ))}
             </div>
@@ -327,10 +526,10 @@ export default function HospitalCEODashboard() {
         {/* Section 2: Doctor Performance & Recent MCs */}
         <div className="grid grid-cols-2 gap-6 mb-8">
           {/* Doctor Performance */}
-          <Card hover={false}>
+          <Card hover={false} delay={300}>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold" style={{ color: theme.textPrimary }}>Doctor Performance</h2>
-              <button className="text-sm font-medium" style={{ color: theme.accent }}>View All</button>
+              <button className="text-sm font-medium btn-hover px-3 py-1 rounded-lg" style={{ color: theme.accent, backgroundColor: `${theme.accent}10`, borderRadius: '8px' }}>View All</button>
             </div>
             <div className="overflow-hidden rounded-xl" style={{ border: `1px solid ${theme.border}` }}>
               <table className="w-full">
@@ -345,14 +544,14 @@ export default function HospitalCEODashboard() {
                 </thead>
                 <tbody>
                   {DOCTORS_DATA.map((doctor) => (
-                    <tr key={doctor.id} className="transition-colors hover:bg-white/5" style={{ borderBottom: `1px solid ${theme.border}` }}>
+                    <tr key={doctor.id} className="row-hover" style={{ borderBottom: `1px solid ${theme.border}` }}>
                       <td className="px-4 py-3 text-sm font-medium" style={{ color: theme.textPrimary }}>{doctor.name}</td>
                       <td className="px-4 py-3 text-sm" style={{ color: theme.textSecondary }}>{doctor.department}</td>
                       <td className="px-4 py-3 text-sm text-right font-semibold" style={{ color: theme.accent }}>{doctor.mcsIssued}</td>
                       <td className="px-4 py-3 text-sm text-right" style={{ color: theme.textSecondary }}>{doctor.avgDays}</td>
                       <td className="px-4 py-3 text-center">
-                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${doctor.status === 'online' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-500/20 text-slate-400'}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${doctor.status === 'online' ? 'bg-emerald-400' : 'bg-slate-400'}`} />
+                        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${doctor.status === 'online' ? 'bg-emerald-500/20 text-emerald-400 badge-glow-green' : 'bg-slate-500/20 text-slate-400'}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${doctor.status === 'online' ? 'bg-emerald-400 dot-pulse' : 'bg-slate-400'}`} />
                           {doctor.status}
                         </span>
                       </td>
@@ -364,16 +563,16 @@ export default function HospitalCEODashboard() {
           </Card>
 
           {/* Recent MCs */}
-          <Card hover={false}>
+          <Card hover={false} delay={350}>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold" style={{ color: theme.textPrimary }}>Recent MCs</h2>
-              <button className="text-sm font-medium" style={{ color: theme.accent }}>View All</button>
+              <button className="text-sm font-medium btn-hover px-3 py-1 rounded-lg" style={{ color: theme.accent, backgroundColor: `${theme.accent}10`, borderRadius: '8px' }}>View All</button>
             </div>
             <div className="space-y-3">
               {RECENT_MCS.map((mc) => (
                 <div
                   key={mc.id}
-                  className="flex items-center justify-between p-4 rounded-xl transition-colors hover:bg-white/5"
+                  className="flex items-center justify-between p-4 rounded-xl row-hover"
                   style={{ border: `1px solid ${theme.border}` }}
                 >
                   <div className="flex items-center gap-4">
@@ -400,7 +599,7 @@ export default function HospitalCEODashboard() {
         {/* Section 3: Billing & System Status */}
         <div className="grid grid-cols-2 gap-6">
           {/* Billing & Subscription */}
-          <Card hover={false}>
+          <Card hover={false} delay={400}>
             <h2 className="text-lg font-semibold mb-6" style={{ color: theme.textPrimary }}>Billing & Subscription</h2>
 
             {/* Current Bill */}
@@ -427,8 +626,8 @@ export default function HospitalCEODashboard() {
               <div className="flex items-center justify-between">
                 <span className="text-sm" style={{ color: theme.textMuted }}>Due: 15 Feb 2026</span>
                 <button
-                  className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
-                  style={{ backgroundColor: theme.accent, color: '#0a0e14' }}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold btn-hover"
+                  style={{ backgroundColor: theme.accent, color: '#0a0e14', borderRadius: '8px' }}
                 >
                   View Invoice
                 </button>
@@ -439,7 +638,7 @@ export default function HospitalCEODashboard() {
             <h3 className="text-sm font-semibold mb-3" style={{ color: theme.textSecondary }}>Payment History</h3>
             <div className="space-y-2">
               {PAYMENT_HISTORY.map((payment, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.03)' }}>
+                <div key={idx} className="flex items-center justify-between p-3 rounded-lg row-hover" style={{ backgroundColor: 'rgba(255,255,255,0.03)' }}>
                   <div>
                     <p className="text-sm font-medium" style={{ color: theme.textPrimary }}>{payment.month}</p>
                     <p className="text-xs" style={{ color: theme.textMuted }}>{payment.status === 'Paid' ? `Paid ${payment.paidDate}` : `Due ${payment.dueDate}`}</p>
@@ -454,7 +653,7 @@ export default function HospitalCEODashboard() {
           </Card>
 
           {/* System Status */}
-          <Card hover={false}>
+          <Card hover={false} delay={450}>
             <h2 className="text-lg font-semibold mb-6" style={{ color: theme.textPrimary }}>System Status</h2>
 
             <div className="space-y-4">
@@ -465,11 +664,11 @@ export default function HospitalCEODashboard() {
                 { label: 'Security', status: 'Secure', ok: true, detail: 'All checks passed' },
                 { label: 'API Status', status: 'Operational', ok: true, detail: 'Latency: 45ms' },
               ].map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between p-4 rounded-xl" style={{ border: `1px solid ${theme.border}` }}>
+                <div key={idx} className="flex items-center justify-between p-4 rounded-xl row-hover" style={{ border: `1px solid ${theme.border}` }}>
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${item.ok ? 'bg-emerald-500/20' : 'bg-red-500/20'}`}>
                       {item.ok ? (
-                        <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-emerald-400 check-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                       ) : (
@@ -483,7 +682,7 @@ export default function HospitalCEODashboard() {
                       <p className="text-xs" style={{ color: theme.textMuted }}>{item.detail}</p>
                     </div>
                   </div>
-                  <span className={`text-sm font-semibold ${item.ok ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <span className={`text-sm font-semibold ${item.ok ? 'text-emerald-400 status-glow' : 'text-red-400'}`}>
                     {item.status}
                   </span>
                 </div>
@@ -500,7 +699,7 @@ export default function HospitalCEODashboard() {
             Powered by <span style={{ color: theme.accent }}>Sarawak MedChain</span>
           </p>
           <div className="flex items-center gap-6">
-            <a href="mailto:support@sarawakmedchain.com" className="text-sm hover:underline" style={{ color: theme.textMuted }}>
+            <a href="mailto:support@sarawakmedchain.com" className="text-sm btn-hover" style={{ color: theme.textMuted }}>
               support@sarawakmedchain.com
             </a>
             <span className="text-sm" style={{ color: theme.textMuted }}>
