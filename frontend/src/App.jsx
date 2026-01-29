@@ -21,6 +21,7 @@ import ServiceAgreement from './pages/ServiceAgreement';
 import FPXPayment from './pages/FPXPayment';
 import CEOQuarterlySummary from './pages/CEOQuarterlySummary';
 import FounderAdmin from './pages/FounderAdmin';
+import HospitalCEODashboard from './pages/HospitalCEODashboard';
 import BusinessOverview from './pages/BusinessOverview';
 import LandingPage from './pages/LandingPage';
 import VerificationPage from './pages/VerificationPage';
@@ -555,6 +556,21 @@ function ProtectedApp({ walletAddress, handleDisconnect }) {
                 <span className={`${currentPath === '/admin' ? 'text-white font-semibold' : 'text-slate-300 group-hover:text-white'}`}>Admin Portal</span>
               </Link>
             </li>
+            <li>
+              <Link
+                to="/ceo-dashboard"
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
+                  currentPath === '/ceo-dashboard'
+                    ? 'bg-gradient-to-r from-teal-500/20 to-teal-500/5 border-l-2 border-teal-400'
+                    : 'hover:bg-slate-800/50'
+                }`}
+              >
+                <svg className={`w-5 h-5 ${currentPath === '/ceo-dashboard' ? 'text-teal-400' : 'text-slate-400 group-hover:text-white'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span className={`${currentPath === '/ceo-dashboard' ? 'text-white font-semibold' : 'text-slate-300 group-hover:text-white'}`}>CEO Dashboard</span>
+              </Link>
+            </li>
             {/* Founder Dashboard - Only shows for founder wallet */}
             {walletAddress?.toLowerCase() === '0x70997970c51812dc3a010c7d01b50e0d17dc79c8' && (
               <li>
@@ -621,6 +637,7 @@ function ProtectedApp({ walletAddress, handleDisconnect }) {
           <Route path="/doctor" element={<DoctorPortal walletAddress={walletAddress} />} />
           <Route path="/admin" element={<AdminPortal walletAddress={walletAddress} />} />
           <Route path="/ceo" element={<CEODashboard walletAddress={walletAddress} />} />
+          <Route path="/ceo-dashboard" element={<HospitalCEODashboard />} />
           <Route path="*" element={<Navigate to="/patient" replace />} />
         </Routes>
       </main>
@@ -947,7 +964,7 @@ function AppRoutes() {
   const isVerificationRoute = location.pathname.startsWith('/verify/');
 
   // Protected routes that require wallet connection
-  const protectedPaths = ['/mvp', '/patient', '/doctor', '/admin', '/ceo'];
+  const protectedPaths = ['/mvp', '/patient', '/doctor', '/admin', '/ceo', '/ceo-dashboard'];
   const isProtectedRoute = protectedPaths.some(path => location.pathname.startsWith(path));
 
   // Debug logging
