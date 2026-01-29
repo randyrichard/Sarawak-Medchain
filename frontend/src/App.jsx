@@ -960,12 +960,12 @@ function AppRoutes() {
   }, []);
 
   // Public routes that don't need wallet - NO MetaMask trigger
-  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch', '/pricing', '/connect', '/demo', '/agreement', '/payment', '/ceo/quarterly', '/status', '/gov-preview', '/portal/gov-preview', '/admin/gov-dashboard', '/pwa/verify', '/pwa/issue', '/verify-agreement'];
+  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch', '/pricing', '/connect', '/demo', '/agreement', '/payment', '/ceo/quarterly', '/status', '/gov-preview', '/portal/gov-preview', '/admin/gov-dashboard', '/pwa/verify', '/pwa/issue', '/verify-agreement', '/ceo-main'];
   const isPublicRoute = publicPaths.includes(location.pathname);
   const isVerificationRoute = location.pathname.startsWith('/verify/');
 
   // Protected routes that require wallet connection
-  const protectedPaths = ['/mvp', '/patient', '/doctor', '/admin', '/ceo', '/ceo-main'];
+  const protectedPaths = ['/mvp', '/patient', '/doctor', '/admin', '/ceo'];
   const isProtectedRoute = protectedPaths.some(path => location.pathname.startsWith(path));
 
   // Debug logging
@@ -1015,6 +1015,7 @@ function AppRoutes() {
         <Route path="/pwa/verify" element={<VerificationPage />} />
         <Route path="/pwa/issue" element={<DoctorPortalDemo />} />
         <Route path="/verify-agreement" element={<VerifyAgreement />} />
+        <Route path="/ceo-main" element={<CEOMainDashboard />} />
       </Routes>
     );
   }

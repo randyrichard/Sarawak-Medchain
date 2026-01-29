@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
@@ -403,11 +402,6 @@ export default function CEOMainDashboard({ walletAddress }) {
   const onlineDoctors = DOCTORS_DATA.filter(d => d.status === 'online').length;
   const verificationRate = Math.round((RECENT_MCS.filter(mc => mc.status === 'verified').length / RECENT_MCS.length) * 100);
   const currentInvoice = INVOICE_HISTORY[0];
-
-  // Check if wallet is connected (for demo, allow any wallet)
-  if (!walletAddress) {
-    return <Navigate to="/" replace />;
-  }
 
   return (
     <div style={{ backgroundColor: theme.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
