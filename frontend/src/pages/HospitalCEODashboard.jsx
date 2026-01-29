@@ -4,10 +4,19 @@ import { useState, useEffect } from 'react';
 export default function HospitalCEODashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [hoveredCard, setHoveredCard] = useState(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
+  // Time update
   useEffect(() => {
     const interval = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Mobile detection
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   // Static demo data
@@ -34,43 +43,45 @@ export default function HospitalCEODashboard() {
     { name: 'Database', status: 'operational' },
   ];
 
-  // Premium Styles
+  // Premium Styles - Responsive
   const styles = {
     container: {
       minHeight: '100vh',
       background: '#0a0e14',
       color: '#e2e8f0',
-      padding: '32px',
+      padding: isMobile ? '16px' : '32px',
       fontFamily: 'system-ui, -apple-system, sans-serif',
     },
     header: {
       display: 'flex',
       justifyContent: 'space-between',
-      alignItems: 'flex-start',
-      marginBottom: '40px',
+      alignItems: isMobile ? 'flex-start' : 'flex-start',
+      marginBottom: isMobile ? '24px' : '40px',
       flexWrap: 'wrap',
-      gap: '24px',
+      gap: isMobile ? '16px' : '24px',
+      flexDirection: isMobile ? 'column' : 'row',
     },
     headerLeft: {
       display: 'flex',
       alignItems: 'center',
-      gap: '16px',
+      gap: isMobile ? '12px' : '16px',
     },
     logoContainer: {
-      width: '56px',
-      height: '56px',
+      width: isMobile ? '44px' : '56px',
+      height: isMobile ? '44px' : '56px',
       background: 'linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%)',
-      borderRadius: '14px',
+      borderRadius: isMobile ? '10px' : '14px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       boxShadow: '0 4px 20px rgba(56, 189, 248, 0.3)',
+      flexShrink: 0,
     },
     titleWrapper: {
       position: 'relative',
     },
     title: {
-      fontSize: '32px',
+      fontSize: isMobile ? '20px' : '32px',
       fontWeight: '700',
       margin: 0,
       color: '#ffffff',
@@ -80,14 +91,14 @@ export default function HospitalCEODashboard() {
       position: 'absolute',
       bottom: '-8px',
       left: 0,
-      width: '60px',
+      width: isMobile ? '40px' : '60px',
       height: '3px',
       background: 'linear-gradient(90deg, #38bdf8, transparent)',
       borderRadius: '2px',
     },
     subtitle: {
       color: '#94a3b8',
-      fontSize: '14px',
+      fontSize: isMobile ? '12px' : '14px',
       marginTop: '16px',
       display: 'flex',
       alignItems: 'center',
@@ -102,38 +113,38 @@ export default function HospitalCEODashboard() {
       animation: 'pulse 2s ease-in-out infinite',
     },
     dateTime: {
-      textAlign: 'right',
+      textAlign: isMobile ? 'left' : 'right',
       color: '#94a3b8',
     },
     metricsGrid: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-      gap: '24px',
-      marginBottom: '32px',
+      gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(240px, 1fr))',
+      gap: isMobile ? '12px' : '24px',
+      marginBottom: isMobile ? '20px' : '32px',
     },
     metricCard: (isHovered) => ({
       background: 'rgba(15, 23, 42, 0.8)',
       backdropFilter: 'blur(10px)',
       border: `1px solid ${isHovered ? 'rgba(56, 189, 248, 0.4)' : 'rgba(56, 189, 248, 0.2)'}`,
-      borderRadius: '16px',
-      padding: '24px',
+      borderRadius: isMobile ? '12px' : '16px',
+      padding: isMobile ? '16px' : '24px',
       transition: 'all 0.3s ease',
-      transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
-      boxShadow: isHovered
+      transform: isHovered && !isMobile ? 'translateY(-2px)' : 'translateY(0)',
+      boxShadow: isHovered && !isMobile
         ? '0 8px 32px rgba(0,0,0,0.4), 0 0 20px rgba(56, 189, 248, 0.1)'
         : '0 4px 20px rgba(0,0,0,0.3)',
       cursor: 'default',
     }),
     cardLabel: {
       color: '#94a3b8',
-      fontSize: '12px',
-      marginBottom: '12px',
+      fontSize: isMobile ? '10px' : '12px',
+      marginBottom: isMobile ? '8px' : '12px',
       textTransform: 'uppercase',
       letterSpacing: '1px',
       fontWeight: '500',
     },
     cardValue: {
-      fontSize: '36px',
+      fontSize: isMobile ? '24px' : '36px',
       fontWeight: '700',
       color: '#38bdf8',
       margin: 0,
@@ -141,31 +152,31 @@ export default function HospitalCEODashboard() {
     },
     cardSubtext: {
       color: '#64748b',
-      fontSize: '13px',
-      marginTop: '8px',
+      fontSize: isMobile ? '11px' : '13px',
+      marginTop: isMobile ? '6px' : '8px',
     },
     twoColumns: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
-      gap: '24px',
-      marginBottom: '32px',
+      gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(420px, 1fr))',
+      gap: isMobile ? '16px' : '24px',
+      marginBottom: isMobile ? '20px' : '32px',
     },
     sectionCard: {
       background: 'rgba(15, 23, 42, 0.8)',
       backdropFilter: 'blur(10px)',
       border: '1px solid rgba(56, 189, 248, 0.2)',
-      borderRadius: '16px',
-      padding: '24px',
+      borderRadius: isMobile ? '12px' : '16px',
+      padding: isMobile ? '16px' : '24px',
       boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
     },
     sectionHeader: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: '20px',
+      marginBottom: isMobile ? '16px' : '20px',
     },
     sectionTitle: {
-      fontSize: '16px',
+      fontSize: isMobile ? '14px' : '16px',
       fontWeight: '600',
       color: '#e2e8f0',
       margin: 0,
@@ -174,36 +185,43 @@ export default function HospitalCEODashboard() {
       background: 'transparent',
       border: '1px solid rgba(56, 189, 248, 0.3)',
       borderRadius: '8px',
-      padding: '6px 14px',
+      padding: isMobile ? '5px 10px' : '6px 14px',
       color: '#38bdf8',
-      fontSize: '12px',
+      fontSize: isMobile ? '11px' : '12px',
       fontWeight: '600',
       cursor: 'pointer',
       transition: 'all 0.2s ease',
     },
+    tableWrapper: {
+      overflowX: 'auto',
+      WebkitOverflowScrolling: 'touch',
+    },
     table: {
       width: '100%',
       borderCollapse: 'collapse',
-      fontSize: '14px',
+      fontSize: isMobile ? '12px' : '14px',
+      minWidth: isMobile ? '500px' : 'auto',
     },
     th: {
       textAlign: 'left',
-      padding: '12px 8px',
+      padding: isMobile ? '10px 6px' : '12px 8px',
       borderBottom: '1px solid rgba(56, 189, 248, 0.2)',
       color: '#94a3b8',
-      fontSize: '11px',
+      fontSize: isMobile ? '10px' : '11px',
       textTransform: 'uppercase',
       letterSpacing: '0.5px',
+      whiteSpace: 'nowrap',
     },
     td: {
-      padding: '14px 8px',
+      padding: isMobile ? '10px 6px' : '14px 8px',
       borderBottom: '1px solid rgba(255,255,255,0.05)',
+      whiteSpace: 'nowrap',
     },
     statusBadge: (status) => ({
       display: 'inline-block',
-      padding: '5px 12px',
+      padding: isMobile ? '4px 8px' : '5px 12px',
       borderRadius: '20px',
-      fontSize: '11px',
+      fontSize: isMobile ? '10px' : '11px',
       fontWeight: '600',
       background: status === 'online' || status === 'verified' || status === 'operational'
         ? 'rgba(16, 185, 129, 0.15)'
@@ -213,76 +231,79 @@ export default function HospitalCEODashboard() {
         : '#f59e0b',
     }),
     mcItem: {
-      padding: '14px',
+      padding: isMobile ? '12px' : '14px',
       background: 'rgba(255,255,255,0.03)',
       borderRadius: '10px',
-      marginBottom: '10px',
+      marginBottom: isMobile ? '8px' : '10px',
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
       transition: 'background 0.2s ease',
+      gap: '12px',
     },
     mcId: {
       color: '#38bdf8',
       fontFamily: 'monospace',
-      fontSize: '13px',
+      fontSize: isMobile ? '11px' : '13px',
       fontWeight: '600',
     },
     billingBox: {
       background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.08) 0%, rgba(56, 189, 248, 0.03) 100%)',
       border: '1px solid rgba(56, 189, 248, 0.2)',
-      borderRadius: '14px',
-      padding: '24px',
-      marginBottom: '20px',
+      borderRadius: isMobile ? '10px' : '14px',
+      padding: isMobile ? '16px' : '24px',
+      marginBottom: isMobile ? '16px' : '20px',
     },
     billingRow: {
       display: 'flex',
       justifyContent: 'space-between',
-      padding: '10px 0',
+      padding: isMobile ? '8px 0' : '10px 0',
       borderBottom: '1px solid rgba(255,255,255,0.05)',
+      fontSize: isMobile ? '13px' : '14px',
     },
     billingTotal: {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      padding: '16px 0',
+      padding: isMobile ? '12px 0' : '16px 0',
       marginTop: '8px',
     },
     billingTotalLabel: {
-      fontSize: '16px',
+      fontSize: isMobile ? '14px' : '16px',
       fontWeight: '600',
       color: '#e2e8f0',
     },
     billingTotalValue: {
-      fontSize: '28px',
+      fontSize: isMobile ? '22px' : '28px',
       fontWeight: '700',
       color: '#10b981',
     },
     buttonRow: {
       display: 'flex',
-      gap: '12px',
+      gap: isMobile ? '8px' : '12px',
       marginTop: '8px',
+      flexDirection: isMobile ? 'column' : 'row',
     },
     buttonCyan: {
       flex: 1,
-      padding: '14px',
+      padding: isMobile ? '12px' : '14px',
       background: 'rgba(56, 189, 248, 0.15)',
       border: '1px solid rgba(56, 189, 248, 0.3)',
       borderRadius: '10px',
       color: '#38bdf8',
-      fontSize: '14px',
+      fontSize: isMobile ? '13px' : '14px',
       fontWeight: '600',
       cursor: 'pointer',
       transition: 'all 0.2s ease',
     },
     buttonGreen: {
       flex: 1,
-      padding: '14px',
+      padding: isMobile ? '12px' : '14px',
       background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
       border: 'none',
       borderRadius: '10px',
       color: '#ffffff',
-      fontSize: '14px',
+      fontSize: isMobile ? '13px' : '14px',
       fontWeight: '600',
       cursor: 'pointer',
       boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)',
@@ -292,15 +313,15 @@ export default function HospitalCEODashboard() {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
-      padding: '14px 16px',
+      padding: isMobile ? '12px' : '14px 16px',
       background: 'rgba(16, 185, 129, 0.05)',
       border: '1px solid rgba(16, 185, 129, 0.15)',
       borderRadius: '10px',
-      marginBottom: '10px',
+      marginBottom: isMobile ? '8px' : '10px',
     },
     statusDot: {
-      width: '10px',
-      height: '10px',
+      width: isMobile ? '8px' : '10px',
+      height: isMobile ? '8px' : '10px',
       background: '#10b981',
       borderRadius: '50%',
       boxShadow: '0 0 10px #10b981',
@@ -309,8 +330,8 @@ export default function HospitalCEODashboard() {
     lastChecked: {
       textAlign: 'center',
       color: '#64748b',
-      fontSize: '12px',
-      marginTop: '16px',
+      fontSize: isMobile ? '11px' : '12px',
+      marginTop: isMobile ? '12px' : '16px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -318,11 +339,11 @@ export default function HospitalCEODashboard() {
     },
     footer: {
       textAlign: 'center',
-      padding: '32px',
+      padding: isMobile ? '20px' : '32px',
       borderTop: '1px solid rgba(255,255,255,0.08)',
-      marginTop: '24px',
+      marginTop: isMobile ? '16px' : '24px',
       color: '#64748b',
-      fontSize: '13px',
+      fontSize: isMobile ? '11px' : '13px',
     },
   };
 
@@ -341,7 +362,7 @@ export default function HospitalCEODashboard() {
         <div>
           <div style={styles.headerLeft}>
             <div style={styles.logoContainer}>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+              <svg width={isMobile ? "22" : "28"} height={isMobile ? "22" : "28"} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
                 <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
@@ -352,14 +373,19 @@ export default function HospitalCEODashboard() {
           </div>
           <p style={styles.subtitle}>
             <span style={styles.liveDot}></span>
-            CEO Dashboard • Dr. Ahmad bin Hassan
+            CEO Dashboard {!isMobile && '•'} {!isMobile && 'Dr. Ahmad bin Hassan'}
           </p>
         </div>
         <div style={styles.dateTime}>
-          <div style={{ fontSize: '24px', fontWeight: '600', color: '#e2e8f0', marginBottom: '4px' }}>
+          <div style={{ fontSize: isMobile ? '18px' : '24px', fontWeight: '600', color: '#e2e8f0', marginBottom: '4px' }}>
             {currentTime.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' })}
           </div>
-          <div>{currentTime.toLocaleDateString('en-MY', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</div>
+          <div style={{ fontSize: isMobile ? '12px' : '14px' }}>
+            {isMobile
+              ? currentTime.toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })
+              : currentTime.toLocaleDateString('en-MY', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+            }
+          </div>
         </div>
       </div>
 
@@ -392,30 +418,32 @@ export default function HospitalCEODashboard() {
             <h3 style={styles.sectionTitle}>Doctor Performance</h3>
             <button style={styles.viewAllBtn}>View All</button>
           </div>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Doctor</th>
-                <th style={styles.th}>Department</th>
-                <th style={{ ...styles.th, textAlign: 'center' }}>MCs</th>
-                <th style={{ ...styles.th, textAlign: 'right' }}>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {doctors.map((doc, i) => (
-                <tr key={i}>
-                  <td style={styles.td}>{doc.name}</td>
-                  <td style={{ ...styles.td, color: '#94a3b8' }}>{doc.dept}</td>
-                  <td style={{ ...styles.td, textAlign: 'center', fontWeight: '600', color: '#38bdf8' }}>{doc.mcs}</td>
-                  <td style={{ ...styles.td, textAlign: 'right' }}>
-                    <span style={styles.statusBadge(doc.status)}>
-                      {doc.status === 'online' ? '● Online' : '○ Offline'}
-                    </span>
-                  </td>
+          <div style={styles.tableWrapper}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>Doctor</th>
+                  <th style={styles.th}>Department</th>
+                  <th style={{ ...styles.th, textAlign: 'center' }}>MCs</th>
+                  <th style={{ ...styles.th, textAlign: 'right' }}>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {doctors.map((doc, i) => (
+                  <tr key={i}>
+                    <td style={styles.td}>{doc.name}</td>
+                    <td style={{ ...styles.td, color: '#94a3b8' }}>{doc.dept}</td>
+                    <td style={{ ...styles.td, textAlign: 'center', fontWeight: '600', color: '#38bdf8' }}>{doc.mcs}</td>
+                    <td style={{ ...styles.td, textAlign: 'right' }}>
+                      <span style={styles.statusBadge(doc.status)}>
+                        {doc.status === 'online' ? '● Online' : '○ Offline'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Recent MCs */}
@@ -426,9 +454,9 @@ export default function HospitalCEODashboard() {
           </div>
           {recentMCs.map((mc, i) => (
             <div key={i} style={styles.mcItem}>
-              <div>
+              <div style={{ minWidth: 0, flex: 1 }}>
                 <span style={styles.mcId}>{mc.id}</span>
-                <div style={{ color: '#94a3b8', fontSize: '12px', marginTop: '6px' }}>
+                <div style={{ color: '#94a3b8', fontSize: isMobile ? '11px' : '12px', marginTop: '6px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {mc.patient} • {mc.doctor} • {mc.date}
                 </div>
               </div>
@@ -449,13 +477,13 @@ export default function HospitalCEODashboard() {
           </div>
           <div style={styles.billingBox}>
             <div style={{ marginBottom: '8px' }}>
-              <span style={{ color: '#94a3b8', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Current Plan</span>
-              <span style={{ float: 'right', color: '#38bdf8', fontWeight: '600', fontSize: '12px' }}>HOSPITAL TIER</span>
+              <span style={{ color: '#94a3b8', fontSize: isMobile ? '10px' : '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Current Plan</span>
+              <span style={{ float: 'right', color: '#38bdf8', fontWeight: '600', fontSize: isMobile ? '10px' : '12px' }}>HOSPITAL TIER</span>
             </div>
-            <div style={{ fontSize: '28px', fontWeight: '700', marginBottom: '4px', color: '#ffffff' }}>
-              RM 10,000<span style={{ fontSize: '14px', color: '#94a3b8', fontWeight: '400' }}>/month</span>
+            <div style={{ fontSize: isMobile ? '22px' : '28px', fontWeight: '700', marginBottom: '4px', color: '#ffffff' }}>
+              RM 10,000<span style={{ fontSize: isMobile ? '12px' : '14px', color: '#94a3b8', fontWeight: '400' }}>/month</span>
             </div>
-            <div style={{ color: '#64748b', fontSize: '13px' }}>+ RM 1.00 per MC issued</div>
+            <div style={{ color: '#64748b', fontSize: isMobile ? '11px' : '13px' }}>+ RM 1.00 per MC issued</div>
           </div>
           <div style={styles.billingRow}>
             <span style={{ color: '#94a3b8' }}>Base Fee</span>
@@ -482,9 +510,9 @@ export default function HospitalCEODashboard() {
           </div>
           {systemStatus.map((item, i) => (
             <div key={i} style={styles.statusItem}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '10px' : '12px' }}>
                 <span style={styles.statusDot}></span>
-                <span style={{ fontWeight: '500' }}>{item.name}</span>
+                <span style={{ fontWeight: '500', fontSize: isMobile ? '13px' : '14px' }}>{item.name}</span>
               </div>
               <span style={styles.statusBadge(item.status)}>Operational</span>
             </div>
@@ -501,7 +529,7 @@ export default function HospitalCEODashboard() {
 
       {/* Footer */}
       <div style={styles.footer}>
-        Powered by <span style={{ color: '#38bdf8', fontWeight: '600' }}>Sarawak MedChain</span> • Blockchain-Verified Medical Certificates
+        Powered by <span style={{ color: '#38bdf8', fontWeight: '600' }}>Sarawak MedChain</span> {!isMobile && '•'} {!isMobile && 'Blockchain-Verified Medical Certificates'}
       </div>
     </div>
   );
