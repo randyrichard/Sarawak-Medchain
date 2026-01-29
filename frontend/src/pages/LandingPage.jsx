@@ -925,21 +925,27 @@ export default function LandingPage() {
           .stats-row .stat-item {
             text-align: center !important;
             width: 100% !important;
-            max-width: 280px !important;
-            padding: 20px !important;
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
-            border-radius: 16px !important;
-            border: 1px solid #e2e8f0 !important;
+            max-width: 100% !important;
+            padding: 16px 0 !important;
+            background: transparent !important;
+            border-radius: 0 !important;
+            border: none !important;
             box-sizing: border-box !important;
           }
 
           .stats-row .stat-number {
             font-size: 36px !important;
+            color: #0f172a !important;
+          }
+
+          .stats-row .stat-number-blue {
+            color: #2563eb !important;
           }
 
           .stats-row .stat-label {
             font-size: 11px !important;
-            margin-top: 4px !important;
+            margin-top: 6px !important;
+            color: #64748b !important;
           }
 
           /* Problem section */
