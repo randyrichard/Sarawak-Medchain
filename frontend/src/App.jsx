@@ -15,6 +15,7 @@ import DoctorPortal from './pages/DoctorPortal';
 import AdminPortal from './pages/AdminPortal';
 import CEODashboard from './pages/CEODashboard';
 import CEOMainDashboard from './pages/CEOMainDashboard';
+import HospitalCEODashboard from './pages/HospitalCEODashboard';
 import HospitalPitch from './pages/HospitalPitch';
 import ConnectWallet from './pages/ConnectWallet';
 import DoctorPortalDemo from './pages/DoctorPortalDemo';
@@ -637,7 +638,8 @@ function ProtectedApp({ walletAddress, handleDisconnect }) {
           <Route path="/doctor" element={<DoctorPortal walletAddress={walletAddress} />} />
           <Route path="/admin" element={<AdminPortal walletAddress={walletAddress} />} />
           <Route path="/ceo" element={<CEODashboard walletAddress={walletAddress} />} />
-          <Route path="/ceo-main" element={<CEOMainDashboard walletAddress={walletAddress} />} />
+          <Route path="/ceo-main" element={<HospitalCEODashboard />} />
+          <Route path="/founder-command" element={<CEOMainDashboard walletAddress={walletAddress} />} />
           <Route path="*" element={<Navigate to="/patient" replace />} />
         </Routes>
       </main>
