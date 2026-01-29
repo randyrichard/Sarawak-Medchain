@@ -15,20 +15,20 @@ import { useDisasterRecovery } from '../context/DisasterRecoveryContext';
 // FOUNDER WALLET ADDRESS - Only this address can access this dashboard
 const FOUNDER_WALLET = '0x70997970C51812dc3A010C7d01b50e0d17dc79C8'; // Your wallet
 
-// Terminal Theme - Master: #0a0e14
+// Professional Theme - Enterprise Dashboard
 const theme = {
-  bg: '#0a0e14',
-  bgCard: '#0a0e14',
-  border: '#1e3a5f',
-  textPrimary: '#ffffff',
+  bg: '#0f172a',
+  bgCard: 'rgba(15, 23, 42, 0.8)',
+  border: 'rgba(56, 189, 248, 0.25)',
+  textPrimary: '#e2e8f0',
   textSecondary: '#94a3b8',
   textMuted: '#64748b',
-  accent: '#3b82f6',
+  accent: '#38bdf8',
   success: '#10b981',
   warning: '#f59e0b',
   danger: '#ef4444',
   gold: '#fbbf24',
-  cyan: '#06b6d4',
+  cyan: '#38bdf8',
 };
 
 // City coordinates on the Sarawak map (relative positions)
@@ -1007,9 +1007,9 @@ export default function CEOMainDashboard({ walletAddress }) {
   };
 
   return (
-    <div className="min-h-screen pb-12 founder-command" style={{ backgroundColor: '#0a0e14' }}>
+    <div className="min-h-screen pb-12 founder-command" style={{ backgroundColor: theme.bg }}>
       {/* Header */}
-      <header className="px-8 py-4" style={{ backgroundColor: '#0a0e14', border: 'none', boxShadow: 'none', maxWidth: '1600px', margin: '0 auto' }}>
+      <header className="px-8 py-4" style={{ backgroundColor: theme.bg, border: 'none', boxShadow: 'none', maxWidth: '1600px', margin: '0 auto' }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${theme.gold}, ${theme.warning})` }}>
