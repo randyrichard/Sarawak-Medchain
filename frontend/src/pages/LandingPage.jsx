@@ -832,11 +832,236 @@ export default function LandingPage() {
 
         /* Red glow for fraud stat */
         .red-glow { text-shadow: 0 0 40px rgba(239, 68, 68, 0.5); }
+
+        /* ========== STATS ROW - Desktop ========== */
+        .stats-row {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 48px;
+        }
+        .stat-item {
+          text-align: center;
+        }
+        .stat-number {
+          font-size: 48px;
+          font-weight: 700;
+          color: #0f172a;
+          line-height: 1;
+        }
+        .stat-number-blue {
+          color: #2563eb;
+        }
+        .stat-label {
+          font-size: 13px;
+          color: #64748b;
+          margin-top: 8px;
+          font-weight: 500;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+        }
+        .stat-divider {
+          width: 1px;
+          height: 48px;
+          background: linear-gradient(to bottom, transparent, #cbd5e1, transparent);
+        }
+
+        /* ========== MOBILE RESPONSIVE ========== */
+        @media (max-width: 768px) {
+          /* Main container padding */
+          .landing-content {
+            padding: 0 16px !important;
+          }
+
+          /* Header nav */
+          .landing-nav {
+            padding: 0 16px !important;
+          }
+
+          /* Hero section */
+          .hero-section {
+            padding-top: 48px !important;
+            padding-bottom: 48px !important;
+            width: 100% !important;
+            overflow: visible !important;
+            box-sizing: border-box !important;
+          }
+
+          .hero-headline {
+            font-size: 28px !important;
+            line-height: 1.15 !important;
+            margin-bottom: 16px !important;
+          }
+
+          .hero-subtitle {
+            font-size: 16px !important;
+            margin-bottom: 32px !important;
+          }
+
+          .hero-cta {
+            width: 100% !important;
+            margin-bottom: 48px !important;
+          }
+
+          .hero-cta button {
+            width: 100% !important;
+          }
+
+          /* Stats row - single column stack on mobile */
+          .stats-row {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 16px !important;
+            width: 100% !important;
+            padding: 0 16px !important;
+            box-sizing: border-box !important;
+          }
+
+          .stats-row .stat-divider {
+            display: none !important;
+          }
+
+          .stats-row .stat-item {
+            text-align: center !important;
+            width: 100% !important;
+            max-width: 280px !important;
+            padding: 20px !important;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+            border-radius: 16px !important;
+            border: 1px solid #e2e8f0 !important;
+            box-sizing: border-box !important;
+          }
+
+          .stats-row .stat-number {
+            font-size: 36px !important;
+          }
+
+          .stats-row .stat-label {
+            font-size: 11px !important;
+            margin-top: 4px !important;
+          }
+
+          /* Problem section */
+          .problem-section {
+            padding: 48px 0 !important;
+          }
+
+          .problem-card {
+            padding: 32px 20px !important;
+            border-radius: 16px !important;
+          }
+
+          .problem-headline {
+            font-size: 36px !important;
+          }
+
+          .problem-subhead {
+            font-size: 18px !important;
+          }
+
+          .problem-description {
+            font-size: 15px !important;
+          }
+
+          .pain-points-row {
+            flex-direction: column !important;
+            gap: 8px !important;
+          }
+
+          .solution-cards {
+            flex-direction: column !important;
+            gap: 12px !important;
+          }
+
+          .solution-cards > div {
+            width: 100% !important;
+          }
+
+          /* Map section */
+          .map-section {
+            padding: 48px 0 !important;
+          }
+
+          .section-title {
+            font-size: 28px !important;
+          }
+
+          /* Hospital grid */
+          .hospital-section {
+            padding: 48px 0 !important;
+          }
+
+          .hospital-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 12px !important;
+          }
+
+          .hospital-card {
+            padding: 16px !important;
+          }
+
+          .hospital-card .hospital-short {
+            font-size: 18px !important;
+          }
+
+          .hospital-card .hospital-name {
+            font-size: 11px !important;
+          }
+
+          /* Pricing section */
+          .pricing-section {
+            padding: 48px 0 !important;
+            margin: 0 -16px !important;
+            border-radius: 20px !important;
+          }
+
+          .pricing-grid {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 16px !important;
+            padding: 0 16px !important;
+          }
+
+          .pricing-grid > div {
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 24px 20px !important;
+          }
+
+          /* Footer */
+          .landing-footer {
+            padding: 32px 16px !important;
+          }
+
+          .footer-links {
+            flex-direction: column !important;
+            gap: 12px !important;
+          }
+
+          /* Prevent horizontal scroll */
+          .landing-page {
+            overflow-x: hidden !important;
+            width: 100% !important;
+          }
+
+          .landing-page .landing-content {
+            overflow: visible !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
+
+          /* Ensure all content fits */
+          .landing-page section {
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
+        }
       `}</style>
 
       {/* ===== STICKY HEADER - Premium ===== */}
       <header className="sticky top-0 z-50 border-b border-slate-200/50 backdrop-blur-xl" style={{ width: '100%', backgroundColor: 'rgba(255,255,255,0.8)' }}>
-        <nav style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 32px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <nav className="landing-nav" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 32px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           {/* Logo */}
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-violet-600 rounded-lg flex items-center justify-center">
@@ -862,10 +1087,10 @@ export default function LandingPage() {
       </header>
 
       {/* ===== MAIN CONTENT ===== */}
-      <div style={{ width: '100%', maxWidth: '1200px', margin: '0 auto', padding: '0 32px' }}>
+      <div className="landing-content" style={{ width: '100%', maxWidth: '1200px', margin: '0 auto', padding: '0 32px' }}>
 
       {/* ========== HERO SECTION - Premium ========== */}
-      <section style={{ paddingTop: '96px', paddingBottom: '80px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+      <section className="hero-section" style={{ paddingTop: '96px', paddingBottom: '80px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
         {/* Badge */}
         <div style={{ marginBottom: '32px' }}>
           <span style={{
@@ -903,17 +1128,17 @@ export default function LandingPage() {
         </div>
 
         {/* Headline */}
-        <h1 className="font-heading gradient-text" style={{ fontSize: 'clamp(44px, 5vw, 64px)', fontWeight: 800, letterSpacing: '-0.02em', color: '#0f172a', textAlign: 'center', lineHeight: 1.08, marginBottom: '24px', maxWidth: '900px' }}>
+        <h1 className="font-heading gradient-text hero-headline" style={{ fontSize: 'clamp(44px, 5vw, 64px)', fontWeight: 800, letterSpacing: '-0.02em', color: '#0f172a', textAlign: 'center', lineHeight: 1.08, marginBottom: '24px', maxWidth: '900px' }}>
           Blockchain-Secured Medical Records <span className="gradient-text">for Sarawak</span>
         </h1>
 
         {/* Subtitle */}
-        <p className="font-body" style={{ fontSize: '20px', color: '#64748b', lineHeight: 1.6, marginBottom: '48px', maxWidth: '580px', textAlign: 'center', fontWeight: 400 }}>
+        <p className="font-body hero-subtitle" style={{ fontSize: '20px', color: '#64748b', lineHeight: 1.6, marginBottom: '48px', maxWidth: '580px', textAlign: 'center', fontWeight: 400 }}>
           Sarawak's first tamper-proof healthcare platform. Eliminate MC fraud with military-grade encryption.
         </p>
 
         {/* CTA Button */}
-        <div style={{ marginBottom: '80px' }}>
+        <div className="hero-cta" style={{ marginBottom: '80px' }}>
           <button
             onClick={handleGetStarted}
             className="group"
@@ -950,29 +1175,27 @@ export default function LandingPage() {
         </div>
 
         {/* Stats Row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '48px' }}>
-          <div style={{ textAlign: 'center' }}>
-            <p className="font-heading" style={{ fontSize: '48px', fontWeight: 700, color: '#0f172a', lineHeight: 1 }}>24</p>
-            <p className="font-body" style={{ fontSize: '13px', color: '#64748b', marginTop: '8px', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Hospitals</p>
+        <div className="stats-row">
+          <div className="stat-item">
+            <p className="font-heading stat-number">24</p>
+            <p className="font-body stat-label">Hospitals</p>
           </div>
-          {/* Divider */}
-          <div style={{ width: '1px', height: '48px', background: 'linear-gradient(to bottom, transparent, #cbd5e1, transparent)' }}></div>
-          <div style={{ textAlign: 'center' }}>
-            <p className="font-heading" style={{ fontSize: '48px', fontWeight: 700, color: '#0f172a', lineHeight: 1 }}>180+</p>
-            <p className="font-body" style={{ fontSize: '13px', color: '#64748b', marginTop: '8px', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Clinics</p>
+          <div className="stat-divider"></div>
+          <div className="stat-item">
+            <p className="font-heading stat-number">180+</p>
+            <p className="font-body stat-label">Clinics</p>
           </div>
-          {/* Divider */}
-          <div style={{ width: '1px', height: '48px', background: 'linear-gradient(to bottom, transparent, #cbd5e1, transparent)' }}></div>
-          <div style={{ textAlign: 'center' }}>
-            <p className="font-heading" style={{ fontSize: '48px', fontWeight: 700, color: '#2563eb', lineHeight: 1 }}>99.9%</p>
-            <p className="font-body" style={{ fontSize: '13px', color: '#64748b', marginTop: '8px', fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Uptime</p>
+          <div className="stat-divider"></div>
+          <div className="stat-item stat-item-blue">
+            <p className="font-heading stat-number stat-number-blue">99.9%</p>
+            <p className="font-body stat-label">Uptime</p>
           </div>
         </div>
       </section>
 
       {/* ========== THE PROBLEM SECTION - Premium ========== */}
-      <section style={{ padding: '96px 0' }}>
-        <div style={{ position: 'relative', background: 'linear-gradient(to bottom, #0f172a, #020617)', color: 'white', borderRadius: '20px', padding: '64px', overflow: 'hidden' }}>
+      <section className="problem-section" style={{ padding: '96px 0' }}>
+        <div className="problem-card" style={{ position: 'relative', background: 'linear-gradient(to bottom, #0f172a, #020617)', color: 'white', borderRadius: '20px', padding: '64px', overflow: 'hidden' }}>
           {/* Subtle gradient orb */}
           <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translate(-50%, -50%)', width: '600px', height: '600px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '50%', filter: 'blur(120px)' }}></div>
 
@@ -981,18 +1204,18 @@ export default function LandingPage() {
             <p className="font-heading" style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '32px', textTransform: 'uppercase', letterSpacing: '0.2em' }}>The Problem</p>
 
             {/* Main Stat with red glow */}
-            <h2 className="font-heading red-glow" style={{ fontSize: 'clamp(56px, 8vw, 72px)', fontWeight: 800, color: 'white', marginBottom: '16px', lineHeight: 1 }}>
+            <h2 className="font-heading red-glow problem-headline" style={{ fontSize: 'clamp(56px, 8vw, 72px)', fontWeight: 800, color: 'white', marginBottom: '16px', lineHeight: 1 }}>
               RM 2.3 Billion
             </h2>
-            <p className="font-heading" style={{ fontSize: 'clamp(20px, 3vw, 24px)', fontWeight: 600, color: '#f87171', marginBottom: '40px' }}>Lost to MC Fraud Annually</p>
+            <p className="font-heading problem-subhead" style={{ fontSize: 'clamp(20px, 3vw, 24px)', fontWeight: 600, color: '#f87171', marginBottom: '40px' }}>Lost to MC Fraud Annually</p>
 
             {/* Description */}
-            <p className="font-body" style={{ fontSize: '18px', color: '#94a3b8', lineHeight: 1.7, marginBottom: '48px', maxWidth: '540px', marginLeft: 'auto', marginRight: 'auto' }}>
+            <p className="font-body problem-description" style={{ fontSize: '18px', color: '#94a3b8', lineHeight: 1.7, marginBottom: '48px', maxWidth: '540px', marginLeft: 'auto', marginRight: 'auto' }}>
               Malaysian employers lose billions annually to fraudulent medical certificates. Paper-based systems are easily forged, impossible to verify, and create zero accountability.
             </p>
 
             {/* Pain points row */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: '12px', marginBottom: '64px' }}>
+            <div className="pain-points-row" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: '12px', marginBottom: '64px' }}>
               {['Paper MCs easily forged', 'No employer verification', 'Zero audit trail'].map((problem, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '9999px' }}>
                   <svg style={{ width: '14px', height: '14px', color: '#f87171' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1004,7 +1227,7 @@ export default function LandingPage() {
             </div>
 
             {/* Solution cards - glassmorphism */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
+            <div className="solution-cards" style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
               <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 backdrop-blur-sm hover-lift">
                 <div className="w-11 h-11 bg-emerald-500/15 rounded-xl flex items-center justify-center mx-auto mb-4">
                   <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1038,11 +1261,11 @@ export default function LandingPage() {
       </section>
 
       {/* ========== NETWORK READINESS MAP - Premium ========== */}
-      <section style={{ padding: '96px 0' }}>
+      <section className="map-section" style={{ padding: '96px 0' }}>
         {/* Section Header */}
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
           <p className="font-heading" style={{ fontSize: '11px', fontWeight: 600, color: '#2563eb', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.2em' }}>Infrastructure</p>
-          <h2 className="font-heading" style={{ fontSize: 'clamp(36px, 5vw, 44px)', fontWeight: 800, color: '#0f172a', marginBottom: '16px', letterSpacing: '-0.02em' }}>Sarawak Network Readiness</h2>
+          <h2 className="font-heading section-title" style={{ fontSize: 'clamp(36px, 5vw, 44px)', fontWeight: 800, color: '#0f172a', marginBottom: '16px', letterSpacing: '-0.02em' }}>Sarawak Network Readiness</h2>
           <p className="font-body" style={{ fontSize: '17px', color: '#64748b', maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>Real-time deployment status across all 13 divisions</p>
         </div>
 
@@ -1053,16 +1276,16 @@ export default function LandingPage() {
       </section>
 
       {/* ========== HOSPITAL NETWORK GRID - Premium ========== */}
-      <section style={{ padding: '96px 0' }}>
+      <section className="hospital-section" style={{ padding: '96px 0' }}>
         {/* Section Header */}
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
           <p className="font-heading" style={{ fontSize: '11px', fontWeight: 600, color: '#059669', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.2em' }}>Network</p>
-          <h2 className="font-heading" style={{ fontSize: 'clamp(36px, 5vw, 44px)', fontWeight: 800, color: '#0f172a', marginBottom: '16px', letterSpacing: '-0.02em' }}>Hospital Network</h2>
+          <h2 className="font-heading section-title" style={{ fontSize: 'clamp(36px, 5vw, 44px)', fontWeight: 800, color: '#0f172a', marginBottom: '16px', letterSpacing: '-0.02em' }}>Hospital Network</h2>
           <p className="font-body" style={{ fontSize: '17px', color: '#64748b', maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>24 hospitals across Sarawak already connected</p>
         </div>
 
         {/* Hospital Grid - Premium cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px' }}>
+        <div className="hospital-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px' }}>
             {[
               { name: 'Sarawak General Hospital', short: 'SGH', division: 'Kuching', status: 'live' },
               { name: 'Normah Medical Centre', short: 'NMC', division: 'Kuching', status: 'live' },
@@ -1287,7 +1510,7 @@ export default function LandingPage() {
       </section>
 
       {/* ========== PRICING SECTION - Premium Dark ========== */}
-      <section id="pricing" style={{
+      <section id="pricing" className="pricing-section" style={{
         padding: '96px 0',
         background: 'linear-gradient(to bottom, #0f172a, #1e293b)',
         borderRadius: '32px',
@@ -1308,7 +1531,7 @@ export default function LandingPage() {
           </div>
 
           {/* Pricing Grid - Premium cards */}
-          <div style={{
+          <div className="pricing-grid" style={{
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'stretch',
@@ -1759,7 +1982,7 @@ export default function LandingPage() {
       </div>{/* END CONTENT WRAPPER */}
 
       {/* ========== FOOTER - Premium ========== */}
-      <footer style={{ width: '100%', padding: '40px 0', borderTop: '1px solid #e2e8f0', backgroundColor: 'white' }}>
+      <footer className="landing-footer" style={{ width: '100%', padding: '40px 0', borderTop: '1px solid #e2e8f0', backgroundColor: 'white' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 32px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', textAlign: 'center' }}>
             {/* Logo */}
@@ -1773,7 +1996,7 @@ export default function LandingPage() {
             </div>
 
             {/* Links */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+            <div className="footer-links" style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
               <a href="#features" style={{ fontSize: '14px', color: '#64748b', fontWeight: 500, textDecoration: 'none' }}>Features</a>
               <a href="#pricing" style={{ fontSize: '14px', color: '#64748b', fontWeight: 500, textDecoration: 'none' }}>Pricing</a>
               <a href="mailto:enterprise@medchain.sarawak.gov.my" style={{ fontSize: '14px', color: '#64748b', fontWeight: 500, textDecoration: 'none' }}>Contact</a>
