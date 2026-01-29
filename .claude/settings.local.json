@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(node scripts/deploy.cjs:*)",
-      "Bash(npx hardhat node)"
+      "Bash(npx hardhat node)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

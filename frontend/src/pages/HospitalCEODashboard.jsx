@@ -207,15 +207,16 @@ function Skeleton({ className = '' }) {
 }
 
 // Card component with enhanced hover
-function Card({ children, className = '', hover = true, delay = 0 }) {
+function Card({ children, className = '', hover = true, delay = 0, padding = '32px' }) {
   return (
     <div
-      className={`rounded-2xl p-6 ${hover ? 'card-hover' : ''} ${className}`}
+      className={`rounded-2xl ${hover ? 'card-hover' : ''} ${className}`}
       style={{
         background: theme.bgCard,
         border: `1px solid ${theme.border}`,
         boxShadow: '0 4px 24px rgba(0, 0, 0, 0.4)',
         animation: `fadeInUp 0.5s ease-out ${delay}ms backwards`,
+        padding: padding,
       }}
     >
       {children}
@@ -349,13 +350,13 @@ export default function HospitalCEODashboard() {
   const totalDue = HOSPITAL_DATA.monthlyBase + variableFee;
 
   return (
-    <div className="min-h-screen hospital-ceo-dashboard" style={{ backgroundColor: theme.bg }}>
+    <div className="min-h-screen hospital-ceo-dashboard" style={{ backgroundColor: theme.bg, display: 'flex', flexDirection: 'column' }}>
       {/* Inject styles */}
       <style>{styles}</style>
 
       {/* Header */}
-      <header className="px-8 py-6" style={{ borderBottom: `1px solid ${theme.border}` }}>
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+      <header style={{ padding: '24px 40px', marginBottom: '40px', borderBottom: `1px solid ${theme.border}` }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto' }} className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             {/* Hospital Logo Placeholder */}
             <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${theme.accent}, #0ea5e9)` }}>
@@ -406,9 +407,9 @@ export default function HospitalCEODashboard() {
       </header>
 
       {/* Main Content */}
-      <main className="px-8 py-8 max-w-7xl mx-auto">
+      <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 40px 40px 40px', flexGrow: 1 }}>
         {/* Top Metrics Row */}
-        <div className="grid grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-4" style={{ gap: '32px', marginBottom: '40px' }}>
           <MetricCard
             icon={<svg className="w-6 h-6" style={{ color: theme.accent }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
             label="MCs Issued This Month"
@@ -449,7 +450,7 @@ export default function HospitalCEODashboard() {
         </div>
 
         {/* Section 1: MC Analytics */}
-        <div className="grid grid-cols-5 gap-6 mb-8">
+        <div className="grid grid-cols-5" style={{ gap: '32px', marginBottom: '40px' }}>
           {/* MC Trend Chart - 60% */}
           <Card className="col-span-3" hover={false} delay={200}>
             <div className="flex items-center justify-between mb-6">
@@ -524,7 +525,7 @@ export default function HospitalCEODashboard() {
         </div>
 
         {/* Section 2: Doctor Performance & Recent MCs */}
-        <div className="grid grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-2" style={{ gap: '40px', marginBottom: '40px' }}>
           {/* Doctor Performance */}
           <Card hover={false} delay={300}>
             <div className="flex items-center justify-between mb-6">
@@ -535,21 +536,21 @@ export default function HospitalCEODashboard() {
               <table className="w-full">
                 <thead>
                   <tr style={{ backgroundColor: 'rgba(56, 189, 248, 0.1)' }}>
-                    <th className="text-left px-4 py-3 text-xs font-semibold uppercase" style={{ color: theme.textMuted }}>Doctor</th>
-                    <th className="text-left px-4 py-3 text-xs font-semibold uppercase" style={{ color: theme.textMuted }}>Dept</th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold uppercase" style={{ color: theme.textMuted }}>MCs</th>
-                    <th className="text-right px-4 py-3 text-xs font-semibold uppercase" style={{ color: theme.textMuted }}>Avg Days</th>
-                    <th className="text-center px-4 py-3 text-xs font-semibold uppercase" style={{ color: theme.textMuted }}>Status</th>
+                    <th className="text-left px-4 py-4 text-xs font-semibold uppercase" style={{ color: theme.textMuted }}>Doctor</th>
+                    <th className="text-left px-4 py-4 text-xs font-semibold uppercase" style={{ color: theme.textMuted }}>Dept</th>
+                    <th className="text-right px-4 py-4 text-xs font-semibold uppercase" style={{ color: theme.textMuted }}>MCs</th>
+                    <th className="text-right px-4 py-4 text-xs font-semibold uppercase" style={{ color: theme.textMuted }}>Avg Days</th>
+                    <th className="text-center px-4 py-4 text-xs font-semibold uppercase" style={{ color: theme.textMuted }}>Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {DOCTORS_DATA.map((doctor) => (
                     <tr key={doctor.id} className="row-hover" style={{ borderBottom: `1px solid ${theme.border}` }}>
-                      <td className="px-4 py-3 text-sm font-medium" style={{ color: theme.textPrimary }}>{doctor.name}</td>
-                      <td className="px-4 py-3 text-sm" style={{ color: theme.textSecondary }}>{doctor.department}</td>
-                      <td className="px-4 py-3 text-sm text-right font-semibold" style={{ color: theme.accent }}>{doctor.mcsIssued}</td>
-                      <td className="px-4 py-3 text-sm text-right" style={{ color: theme.textSecondary }}>{doctor.avgDays}</td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-4 py-4 text-sm font-medium" style={{ color: theme.textPrimary }}>{doctor.name}</td>
+                      <td className="px-4 py-4 text-sm" style={{ color: theme.textSecondary }}>{doctor.department}</td>
+                      <td className="px-4 py-4 text-sm text-right font-semibold" style={{ color: theme.accent }}>{doctor.mcsIssued}</td>
+                      <td className="px-4 py-4 text-sm text-right" style={{ color: theme.textSecondary }}>{doctor.avgDays}</td>
+                      <td className="px-4 py-4 text-center">
                         <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${doctor.status === 'online' ? 'bg-emerald-500/20 text-emerald-400 badge-glow-green' : 'bg-slate-500/20 text-slate-400'}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${doctor.status === 'online' ? 'bg-emerald-400 dot-pulse' : 'bg-slate-400'}`} />
                           {doctor.status}
@@ -597,7 +598,7 @@ export default function HospitalCEODashboard() {
         </div>
 
         {/* Section 3: Billing & System Status */}
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-2" style={{ gap: '40px' }}>
           {/* Billing & Subscription */}
           <Card hover={false} delay={400}>
             <h2 className="text-lg font-semibold mb-6" style={{ color: theme.textPrimary }}>Billing & Subscription</h2>
@@ -690,24 +691,27 @@ export default function HospitalCEODashboard() {
             </div>
           </Card>
         </div>
-      </main>
 
-      {/* Footer */}
-      <footer className="px-8 py-6 mt-8" style={{ borderTop: `1px solid ${theme.border}` }}>
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <p className="text-sm" style={{ color: theme.textMuted }}>
-            Powered by <span style={{ color: theme.accent }}>Sarawak MedChain</span>
-          </p>
-          <div className="flex items-center gap-6">
-            <a href="mailto:support@sarawakmedchain.com" className="text-sm btn-hover" style={{ color: theme.textMuted }}>
-              support@sarawakmedchain.com
-            </a>
-            <span className="text-sm" style={{ color: theme.textMuted }}>
-              +60 82-XXX-XXX
-            </span>
-          </div>
+        {/* ===== FOOTER - COMPLETELY SEPARATE ===== */}
+        <div style={{
+          width: '100%',
+          marginTop: '60px',
+          paddingTop: '24px',
+          paddingBottom: '24px',
+          borderTop: '1px solid rgba(255,255,255,0.1)',
+          textAlign: 'center',
+          color: '#64748b',
+          fontSize: '14px',
+          gridColumn: '1 / -1'
+        }}>
+          Powered by <span style={{color: '#38bdf8', fontWeight: 600}}>Sarawak MedChain</span>
+          {' • '}
+          <a href="mailto:support@sarawakmedchain.com" style={{color: '#64748b'}}>support@sarawakmedchain.com</a>
+          {' • '}
+          +60 82-XXX-XXX
         </div>
-      </footer>
+
+      </main>
     </div>
   );
 }
