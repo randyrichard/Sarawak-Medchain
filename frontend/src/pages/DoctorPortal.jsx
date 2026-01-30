@@ -693,18 +693,57 @@ export default function DoctorPortal({ walletAddress }) {
                 <span className="text-slate-500 text-sm">Patient</span>
                 <span className="text-white font-medium">{receiptData.patientName}</span>
               </div>
-              <div className="py-2">
+              <div className="py-2 border-b border-white/5">
                 <p className="text-xs text-slate-500 mb-1">Blockchain Hash</p>
                 <code className="text-xs font-mono text-teal-400 break-all">{receiptData.txHash}</code>
               </div>
+
+              {/* QR Code for Verification */}
+              <div ref={qrRef} className="py-4 text-center">
+                <p className="text-xs text-slate-400 mb-3">Scan to Verify MC</p>
+                <div className="inline-block p-3 rounded-xl" style={{ backgroundColor: '#ffffff' }}>
+                  <QRCodeSVG
+                    value={`https://sarawak-medchain.pages.dev/verify/${receiptData.txHash}`}
+                    size={140}
+                    bgColor="#ffffff"
+                    fgColor="#0f172a"
+                    level="M"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-500 mt-2 font-mono">{receiptData.txHash.slice(0, 20)}...</p>
+              </div>
             </div>
-            <div className="px-6 pb-6">
+
+            {/* Action Buttons */}
+            <div className="px-6 pb-6 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={downloadQRCode}
+                  className="py-3 rounded-lg font-semibold transition-all hover:opacity-90 flex items-center justify-center gap-2"
+                  style={{ backgroundColor: 'rgba(20, 184, 166, 0.1)', border: '1px solid rgba(20, 184, 166, 0.3)', color: '#14b8a6' }}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Download QR
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  className="py-3 rounded-lg font-semibold transition-all hover:opacity-90 flex items-center justify-center gap-2"
+                  style={{ backgroundColor: 'rgba(20, 184, 166, 0.1)', border: '1px solid rgba(20, 184, 166, 0.3)', color: '#14b8a6' }}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  </svg>
+                  Print MC
+                </button>
+              </div>
               <button
                 onClick={closeReceipt}
                 className="w-full py-3 rounded-lg font-semibold transition-all hover:opacity-90"
                 style={{ background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)', color: '#fff' }}
               >
-                Close
+                Done
               </button>
             </div>
           </div>
