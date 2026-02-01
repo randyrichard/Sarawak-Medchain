@@ -7,7 +7,8 @@ import { FoundingMemberProvider } from './context/FoundingMemberContext';
 import { LeadAnalyticsProvider } from './context/LeadAnalyticsContext';
 import { RevenueAlertProvider } from './context/RevenueAlertContext';
 import { DisasterRecoveryProvider } from './context/DisasterRecoveryContext';
-import { DemoProvider } from './context/DemoContext';
+import { DemoProvider, useDemo } from './context/DemoContext';
+import DemoBanner from './components/DemoBanner';
 import { CEOAlertToast } from './components/CEOLeadAlerts';
 import RevenueAlertToast from './components/RevenueAlertToast';
 import { DRAlertToast } from './components/DisasterRecoveryDashboard';
@@ -482,12 +483,16 @@ function CreditBalanceSidebar({ walletAddress }) {
 }
 
 // Protected App Layout - requires wallet connection
-function ProtectedApp({ walletAddress, handleDisconnect }) {
+function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
   const location = useLocation();
   const currentPath = location.pathname;
-  console.log('[ProtectedApp] Rendering with walletAddress:', walletAddress);
+  console.log('[ProtectedApp] Rendering with walletAddress:', walletAddress, 'isDemo:', isDemo);
   return (
-    <div className="flex h-screen w-full overflow-hidden" style={{ backgroundColor: '#0a0e14' }}>
+    <div className="flex flex-col h-screen w-full overflow-hidden" style={{ backgroundColor: '#0a0e14' }}>
+      {/* Demo Mode Banner */}
+      {isDemo && <DemoBanner />}
+
+      <div className="flex flex-1 overflow-hidden">
       {/* Service Restored Toast Notification */}
       <ServiceRestoredToast />
       {/* Fixed Sidebar */}
@@ -574,8 +579,8 @@ function ProtectedApp({ walletAddress, handleDisconnect }) {
                 <span className={`${currentPath === '/ceo-dashboard' ? 'text-white font-semibold' : 'text-slate-300 group-hover:text-white'}`}>CEO Dashboard</span>
               </Link>
             </li>
-            {/* Founder Dashboard - Only shows for founder wallet */}
-            {walletAddress?.toLowerCase() === '0x70997970c51812dc3a010c7d01b50e0d17dc79c8' && (
+            {/* Founder Dashboard - Only shows for founder wallet AND not in demo mode */}
+            {!isDemo && walletAddress?.toLowerCase() === '0x70997970c51812dc3a010c7d01b50e0d17dc79c8' && (
               <li>
                 <Link to="/founder-admin-secret-99" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-amber-500/20 transition-colors group border border-amber-500/30 bg-amber-500/10">
                   <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -644,6 +649,7 @@ function ProtectedApp({ walletAddress, handleDisconnect }) {
           <Route path="*" element={<Navigate to="/patient" replace />} />
         </Routes>
       </main>
+      </div>
     </div>
   );
 }
@@ -909,10 +915,14 @@ function ConnectScreen({ onConnect, loading, error }) {
 function AppRoutes() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isDemoMode, getDemoWallet, exitDemoMode } = useDemo();
   const [walletAddress, setWalletAddress] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [checkingWallet, setCheckingWallet] = useState(true);
+
+  // Demo mode: use mock wallet address
+  const effectiveWalletAddress = isDemoMode ? getDemoWallet() : walletAddress;
 
   const handleConnectWallet = async () => {
     console.log('[App] handleConnectWallet called');
@@ -939,6 +949,9 @@ function AppRoutes() {
   const handleDisconnect = () => {
     setWalletAddress(null);
     setError('');
+    if (isDemoMode) {
+      exitDemoMode();
+    }
     navigate('/');
   };
 
@@ -971,17 +984,23 @@ function AppRoutes() {
   const isProtectedRoute = protectedPaths.some(path => location.pathname.startsWith(path));
 
   // Debug logging
-  console.log('[AppRoutes] Render - path:', location.pathname, 'walletAddress:', walletAddress, 'isPublicRoute:', isPublicRoute, 'isProtectedRoute:', isProtectedRoute, 'checkingWallet:', checkingWallet);
+  console.log('[AppRoutes] Render - path:', location.pathname, 'walletAddress:', walletAddress, 'isDemoMode:', isDemoMode, 'effectiveWallet:', effectiveWalletAddress, 'isPublicRoute:', isPublicRoute, 'isProtectedRoute:', isProtectedRoute, 'checkingWallet:', checkingWallet);
+
+  // DEMO MODE: Allow access to protected routes with mock wallet
+  if (isDemoMode && isProtectedRoute) {
+    console.log('[AppRoutes] Demo mode: allowing protected route with mock wallet');
+    return <ProtectedApp walletAddress={effectiveWalletAddress} handleDisconnect={handleDisconnect} isDemo={true} />;
+  }
 
   // CRITICAL: If we're on a protected route with a wallet, show protected app immediately
   // This prevents the blank page issue when navigating after connection
   if (walletAddress && isProtectedRoute) {
     console.log('[AppRoutes] Fast path: wallet + protected route -> ProtectedApp');
-    return <ProtectedApp walletAddress={walletAddress} handleDisconnect={handleDisconnect} />;
+    return <ProtectedApp walletAddress={walletAddress} handleDisconnect={handleDisconnect} isDemo={false} />;
   }
 
-  // Show loading while checking wallet
-  if (checkingWallet && isProtectedRoute) {
+  // Show loading while checking wallet (skip if in demo mode)
+  if (checkingWallet && isProtectedRoute && !isDemoMode) {
     return (
       <div className="min-h-screen bg-[#0a0e14] flex items-center justify-center">
         <div className="text-center">
@@ -1032,8 +1051,8 @@ function AppRoutes() {
     );
   }
 
-  // THE GATE: Protected routes redirect to /connect if no wallet
-  if (isProtectedRoute && !walletAddress) {
+  // THE GATE: Protected routes redirect to /connect if no wallet (unless demo mode)
+  if (isProtectedRoute && !walletAddress && !isDemoMode) {
     return <Navigate to="/connect" state={{ from: location.pathname }} replace />;
   }
 

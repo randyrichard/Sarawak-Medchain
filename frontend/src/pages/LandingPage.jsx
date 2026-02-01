@@ -614,7 +614,7 @@ export default function LandingPage() {
   // Handle demo mode entry
   const handleTryDemo = () => {
     enterDemoMode('doctor');
-    navigate('/demo-app');
+    navigate('/patient');
   };
 
   // LANDING PAGE: NO PWA - just a regular website

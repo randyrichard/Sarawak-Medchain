@@ -6,6 +6,7 @@ import { isVerifiedDoctor, writeRecord, readRecords, getMyBalance, requestEmerge
 import { uploadMedicalRecord, checkStatus } from '../utils/api';
 import { useBilling } from '../context/BillingContext';
 import { useFoundingMember } from '../context/FoundingMemberContext';
+import { useDemo, DEMO_DOCTOR_INFO } from '../context/DemoContext';
 import BroadcastNotification from '../components/BroadcastNotification';
 import MaintenanceBanner from '../components/MaintenanceBanner';
 import FoundingPartnerBadge from '../components/FoundingPartnerBadge';
@@ -29,6 +30,9 @@ const terminalTheme = {
 export default function DoctorPortal({ walletAddress }) {
   // Navigation hook - must be at top before any conditionals
   const navigate = useNavigate();
+
+  // Demo mode hook
+  const { isDemoMode, addDemoMC } = useDemo();
 
   // Use Billing Context
   const {
@@ -327,9 +331,15 @@ export default function DoctorPortal({ walletAddress }) {
     checkDoctorStatus();
     checkBackendStatus();
     fetchCreditBalance();
-  }, [walletAddress]);
+  }, [walletAddress, isDemoMode]);
 
   const fetchCreditBalance = async () => {
+    // Demo mode: use fake balance
+    if (isDemoMode) {
+      setCreditBalance(5000); // Demo balance: RM 5,000
+      return;
+    }
+
     try {
       const balance = await getMyBalance();
       setCreditBalance(balance);
@@ -339,6 +349,13 @@ export default function DoctorPortal({ walletAddress }) {
   };
 
   const checkDoctorStatus = async () => {
+    // Demo mode: skip blockchain validation, show as verified
+    if (isDemoMode) {
+      setIsVerified(true);
+      setMessage(`✓ Demo Doctor: ${DEMO_DOCTOR_INFO.name} (${DEMO_DOCTOR_INFO.mmcNumber})`);
+      return;
+    }
+
     try {
       const verified = await isVerifiedDoctor(walletAddress);
       setIsVerified(verified);
@@ -354,6 +371,12 @@ export default function DoctorPortal({ walletAddress }) {
   };
 
   const checkBackendStatus = async () => {
+    // Demo mode: skip backend check, assume everything is working
+    if (isDemoMode) {
+      setBackendStatus({ ipfs: 'connected', server: 'running' });
+      return;
+    }
+
     try {
       const status = await checkStatus();
       setBackendStatus(status);

@@ -13,83 +13,90 @@ export default function DemoBanner() {
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      zIndex: 9999,
-      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-      padding: '10px 20px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '16px',
-      boxShadow: '0 4px 20px rgba(245, 158, 11, 0.4)',
-    }}>
-      {/* Demo Icon */}
+    <>
+      {/* Pulsing dot animation */}
+      <style>{`
+        @keyframes pulse-dot {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.5; transform: scale(0.8); }
+        }
+      `}</style>
+
       <div style={{
+        width: '100%',
+        height: '40px',
+        background: 'linear-gradient(90deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%)',
+        borderBottom: '1px solid rgba(56, 189, 248, 0.3)',
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
+        justifyContent: 'center',
+        gap: '12px',
+        flexShrink: 0,
       }}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
-          <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-        </svg>
+        {/* Pulsing cyan dot */}
+        <div style={{
+          width: '6px',
+          height: '6px',
+          borderRadius: '50%',
+          backgroundColor: '#38bdf8',
+          animation: 'pulse-dot 2s ease-in-out infinite',
+          boxShadow: '0 0 8px rgba(56, 189, 248, 0.6)',
+        }} />
+
+        {/* DEMO MODE text */}
         <span style={{
-          color: '#fff',
+          color: '#ffffff',
           fontWeight: '700',
-          fontSize: '14px',
+          fontSize: '12px',
           letterSpacing: '0.5px',
         }}>
           DEMO MODE
         </span>
-      </div>
 
-      {/* Message */}
-      <span style={{
-        color: 'rgba(255,255,255,0.9)',
-        fontSize: '13px',
-      }}>
-        Exploring with sample data
-      </span>
-
-      {/* Separator */}
-      <div style={{
-        width: '1px',
-        height: '20px',
-        background: 'rgba(255,255,255,0.3)',
-      }} />
-
-      {/* Connect Wallet Button */}
-      <button
-        onClick={handleConnectWallet}
-        style={{
-          background: 'rgba(255,255,255,0.2)',
-          border: '1px solid rgba(255,255,255,0.3)',
-          borderRadius: '6px',
-          padding: '6px 14px',
-          color: '#fff',
+        {/* Separator */}
+        <span style={{
+          color: '#64748b',
           fontSize: '12px',
-          fontWeight: '600',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          transition: 'all 0.2s',
-        }}
-        onMouseEnter={(e) => {
-          e.target.style.background = 'rgba(255,255,255,0.3)';
-        }}
-        onMouseLeave={(e) => {
-          e.target.style.background = 'rgba(255,255,255,0.2)';
-        }}
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-        </svg>
-        Connect Wallet for Live
-      </button>
-    </div>
+        }}>
+          |
+        </span>
+
+        {/* Description */}
+        <span style={{
+          color: '#64748b',
+          fontSize: '12px',
+        }}>
+          Exploring with sample data
+        </span>
+
+        {/* Connect Wallet Button - positioned to the right */}
+        <button
+          onClick={handleConnectWallet}
+          style={{
+            position: 'absolute',
+            right: '20px',
+            background: 'transparent',
+            border: '1px solid #38bdf8',
+            borderRadius: '20px',
+            padding: '6px 16px',
+            color: '#38bdf8',
+            fontSize: '11px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(56, 189, 248, 0.1)';
+            e.currentTarget.style.boxShadow = '0 0 12px rgba(56, 189, 248, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+        >
+          Connect Wallet for Live
+        </button>
+      </div>
+    </>
   );
 }
