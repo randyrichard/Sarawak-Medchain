@@ -665,7 +665,7 @@ export default function DoctorPortal({ walletAddress }) {
   };
 
   return (
-    <div className="min-h-screen font-sans doctor-portal" style={{ backgroundColor: '#0a0e14' }}>
+    <div className="min-h-screen font-sans doctor-portal" style={{ backgroundColor: '#0a0e14', overflowX: 'hidden' }}>
       {/* Success Celebration */}
       {showConfetti && (
         <div className="fixed inset-0 z-[100] pointer-events-none overflow-hidden">
@@ -821,8 +821,8 @@ export default function DoctorPortal({ walletAddress }) {
       </header>
 
       {/* Main Content */}
-      <div style={{ backgroundColor: '#0a0e14', minHeight: 'calc(100vh - 64px)', padding: '32px' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <div className="doctor-main-content" style={{ backgroundColor: '#0a0e14', minHeight: 'calc(100vh - 64px)', padding: '32px' }}>
+        <div className="doctor-content-inner" style={{ maxWidth: '1200px', margin: '0 auto' }}>
 
           {/* Verification Badge - Centered */}
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
@@ -906,7 +906,7 @@ export default function DoctorPortal({ walletAddress }) {
           )}
 
           {/* ========== TWO COLUMN GRID ========== */}
-          <div style={{
+          <div className="doctor-portal-grid" style={{
             display: 'grid',
             gridTemplateColumns: '2fr 1fr',
             gap: '24px',
@@ -914,7 +914,7 @@ export default function DoctorPortal({ walletAddress }) {
           }}>
 
             {/* ========== LEFT COLUMN: FORM CARD ========== */}
-            <div style={{
+            <div className="issue-mc-card" style={{
               backgroundColor: 'rgba(15, 23, 42, 0.6)',
               border: '1px solid rgba(20, 184, 166, 0.2)',
               borderRadius: '16px',
@@ -955,7 +955,7 @@ export default function DoctorPortal({ walletAddress }) {
               {/* Form Fields */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {/* Row 1: Patient IC & Name */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       Patient IC Number *
@@ -1005,7 +1005,7 @@ export default function DoctorPortal({ walletAddress }) {
                 </div>
 
                 {/* Row 2: Diagnosis & Duration */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       Diagnosis *
@@ -1192,7 +1192,7 @@ export default function DoctorPortal({ walletAddress }) {
             {/* END LEFT COLUMN */}
 
             {/* ========== RIGHT COLUMN: LIVE FEED CARD ========== */}
-            <div style={{
+            <div className="live-feed-card" style={{
               backgroundColor: 'rgba(15, 23, 42, 0.6)',
               border: '1px solid rgba(20, 184, 166, 0.2)',
               borderRadius: '16px',
@@ -1306,6 +1306,139 @@ export default function DoctorPortal({ walletAddress }) {
           {/* END GRID */}
         </div>
       </div>
+
+      {/* Mobile Responsive CSS */}
+      <style>{`
+        /* Spin animation for loading */
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
+        /* Confetti animation */
+        @keyframes confetti {
+          0% {
+            transform: translateY(0) rotateZ(0deg);
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(100vh) rotateZ(720deg);
+            opacity: 0;
+          }
+        }
+        .animate-confetti {
+          animation: confetti 3s ease-out forwards;
+        }
+
+        /* ============ MOBILE RESPONSIVE STYLES ============ */
+        @media (max-width: 768px) {
+          .doctor-portal {
+            overflow-x: hidden !important;
+          }
+
+          /* Header adjustments */
+          .doctor-portal header > div {
+            flex-direction: column !important;
+            gap: 16px !important;
+            padding: 16px !important;
+            align-items: flex-start !important;
+          }
+
+          .doctor-portal header > div > div:last-child {
+            width: 100% !important;
+            flex-wrap: wrap !important;
+            gap: 8px !important;
+          }
+
+          /* Main content padding */
+          .doctor-main-content {
+            padding: 16px !important;
+          }
+
+          /* Main grid - stack vertically */
+          .doctor-portal-grid {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 20px !important;
+          }
+
+          /* Cards full width */
+          .issue-mc-card,
+          .live-feed-card {
+            width: 100% !important;
+            min-width: unset !important;
+            max-width: 100% !important;
+            padding: 20px !important;
+            box-sizing: border-box !important;
+          }
+
+          /* Form rows - stack vertically */
+          .form-row {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 16px !important;
+          }
+
+          /* Form inputs full width */
+          .issue-mc-card input,
+          .issue-mc-card select,
+          .issue-mc-card textarea {
+            width: 100% !important;
+            min-width: unset !important;
+            box-sizing: border-box !important;
+          }
+
+          /* Signature canvas container */
+          .issue-mc-card canvas {
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+
+          /* Performance stats grid */
+          .live-feed-card > div:last-child > div:last-child {
+            grid-template-columns: 1fr 1fr !important;
+          }
+
+          /* Hide some header elements on mobile */
+          .doctor-portal header .text-xs:not(:first-child) {
+            font-size: 10px !important;
+          }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 480px) {
+          .doctor-main-content {
+            padding: 12px !important;
+          }
+
+          .issue-mc-card,
+          .live-feed-card {
+            padding: 16px !important;
+            border-radius: 12px !important;
+          }
+
+          .doctor-portal header > div {
+            padding: 12px !important;
+          }
+
+          /* Smaller text on mobile */
+          .issue-mc-card h2,
+          .live-feed-card h2 {
+            font-size: 16px !important;
+          }
+
+          /* Compact live feed items */
+          .live-feed-card > div > div {
+            padding: 10px !important;
+          }
+
+          /* Smaller button */
+          .issue-mc-card button[style*="padding: 16px"] {
+            padding: 14px !important;
+            font-size: 13px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
