@@ -12,6 +12,7 @@ import {
   isVerifiedDoctor
 } from '../utils/contract';
 import { useBilling } from '../context/BillingContext';
+import { useDemo } from '../context/DemoContext';
 import BroadcastNotification from '../components/BroadcastNotification';
 
 // Doctor Performance Leaderboard Data
@@ -72,6 +73,9 @@ const SectionHeader = ({ title, subtitle, icon, badge }) => (
 );
 
 export default function AdminPortal({ walletAddress }) {
+  // Demo mode hook
+  const { isDemoMode } = useDemo();
+
   // Use Billing Context
   const {
     accountType,
@@ -136,9 +140,28 @@ export default function AdminPortal({ walletAddress }) {
   useEffect(() => {
     fetchData();
     setDoctorPerformance(generateDoctorPerformanceData());
-  }, [walletAddress]);
+  }, [walletAddress, isDemoMode]);
 
   const fetchData = async () => {
+    // Demo mode: use mock data, no blockchain calls
+    if (isDemoMode) {
+      setTotalMCs(156);
+      setActiveDoctors(12);
+      setTotalCredits(45000);
+      setTotalOwed(0);
+      setHospitalBalances([
+        { address: '0x1234...5678', name: 'Dr. Sarah Lim', balance: 5000 },
+        { address: '0x2345...6789', name: 'Dr. Ahmad Razak', balance: 3500 },
+        { address: '0x3456...7890', name: 'Dr. James Wong', balance: 2800 },
+      ]);
+      setCurrentAdmin(walletAddress);
+      setPendingAdminAddr('0x0000000000000000000000000000000000000000');
+      setIsAdmin(true);
+      setIsPendingAdmin(false);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const billing = getBillingContract();

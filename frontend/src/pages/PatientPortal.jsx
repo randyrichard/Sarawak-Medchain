@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { getMyRecords, grantAccess, revokeAccess, hasAccess, formatTimestamp } from '../utils/contract';
 import { retrieveMedicalRecord, openPDFInNewTab } from '../utils/api';
+import { useDemo, DEMO_MCS } from '../context/DemoContext';
 
 export default function PatientPortal({ walletAddress }) {
+  const { isDemoMode, demoMCs } = useDemo();
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -11,9 +13,23 @@ export default function PatientPortal({ walletAddress }) {
 
   useEffect(() => {
     loadRecords();
-  }, []);
+  }, [isDemoMode]);
 
   const loadRecords = async () => {
+    // Demo mode: use demo data, no blockchain calls
+    if (isDemoMode) {
+      setRecords(demoMCs.map(mc => ({
+        ipfsHash: mc.txHash,
+        timestamp: mc.timestamp,
+        doctor: mc.doctor,
+        diagnosis: mc.diagnosis,
+        patientName: mc.patientName,
+        mcDays: mc.mcDays,
+      })));
+      setMessage('');
+      return;
+    }
+
     try {
       setLoading(true);
       const myRecords = await getMyRecords();
@@ -27,6 +43,13 @@ export default function PatientPortal({ walletAddress }) {
   };
 
   const handleGrantAccess = async () => {
+    // Demo mode: simulate success
+    if (isDemoMode) {
+      setMessage(`✓ Demo: Access granted to ${doctorAddress}`);
+      setDoctorAddress('');
+      return;
+    }
+
     try {
       setLoading(true);
       setMessage('Granting access...');
@@ -42,6 +65,13 @@ export default function PatientPortal({ walletAddress }) {
   };
 
   const handleRevokeAccess = async () => {
+    // Demo mode: simulate success
+    if (isDemoMode) {
+      setMessage(`✓ Demo: Access revoked from ${doctorAddress}`);
+      setDoctorAddress('');
+      return;
+    }
+
     try {
       setLoading(true);
       setMessage('Revoking access...');
@@ -57,6 +87,12 @@ export default function PatientPortal({ walletAddress }) {
   };
 
   const handleCheckAccess = async () => {
+    // Demo mode: simulate success
+    if (isDemoMode) {
+      setMessage(`✓ Demo: Doctor ${doctorAddress} HAS access`);
+      return;
+    }
+
     try {
       setLoading(true);
       const access = await hasAccess(doctorAddress);

@@ -486,17 +486,60 @@ function CreditBalanceSidebar({ walletAddress }) {
 function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
   const location = useLocation();
   const currentPath = location.pathname;
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   console.log('[ProtectedApp] Rendering with walletAddress:', walletAddress, 'isDemo:', isDemo);
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
   return (
     <div className="flex flex-col h-screen w-full overflow-hidden" style={{ backgroundColor: '#0a0e14' }}>
       {/* Demo Mode Banner */}
       {isDemo && <DemoBanner />}
 
+      {/* Mobile Header */}
+      <div className="md:hidden flex items-center justify-between p-4 border-b border-slate-800" style={{ backgroundColor: '#0a0e14' }}>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)' }}>
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
+          <span className="text-white font-bold">MedChain</span>
+        </div>
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
+        >
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {mobileMenuOpen ? (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            )}
+          </svg>
+        </button>
+      </div>
+
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={() => setMobileMenuOpen(false)}
+          style={{ top: isDemo ? '96px' : '56px' }}
+        />
+      )}
+
       <div className="flex flex-1 overflow-hidden">
       {/* Service Restored Toast Notification */}
       <ServiceRestoredToast />
-      {/* Fixed Sidebar */}
-      <aside className="w-72 h-full text-white flex flex-col flex-shrink-0" style={{ backgroundColor: '#0a0e14', borderRight: 'none', boxShadow: 'none' }}>
+      {/* Sidebar - hidden on mobile unless menu open */}
+      <aside
+        className={`${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:relative z-50 w-72 h-full text-white flex flex-col flex-shrink-0 transition-transform duration-300`}
+        style={{ backgroundColor: '#0a0e14', borderRight: 'none', boxShadow: mobileMenuOpen ? '4px 0 20px rgba(0,0,0,0.5)' : 'none', top: isDemo ? '40px' : '0', height: isDemo ? 'calc(100% - 40px)' : '100%' }}
+      >
         {/* Logo & Title */}
         <div className="p-6" style={{ borderBottom: 'none' }}>
           <div className="flex items-center gap-3">
