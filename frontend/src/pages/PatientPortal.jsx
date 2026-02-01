@@ -3,6 +3,32 @@ import { getMyRecords, grantAccess, revokeAccess, hasAccess, formatTimestamp } f
 import { retrieveMedicalRecord, openPDFInNewTab } from '../utils/api';
 import { useDemo, DEMO_MCS } from '../context/DemoContext';
 
+// Format date for display - handles both Unix timestamps and ISO strings
+const formatRecordDate = (timestamp, dateIssued) => {
+  // If dateIssued is provided (demo mode), use it directly
+  if (dateIssued) return dateIssued;
+
+  // Handle Unix timestamp (from blockchain)
+  if (typeof timestamp === 'number' || !isNaN(Number(timestamp))) {
+    const ts = Number(timestamp);
+    // If it's a Unix timestamp (seconds), convert to milliseconds
+    const date = new Date(ts > 9999999999 ? ts : ts * 1000);
+    if (!isNaN(date.getTime())) {
+      return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+  }
+
+  // Handle ISO string
+  if (typeof timestamp === 'string') {
+    const date = new Date(timestamp);
+    if (!isNaN(date.getTime())) {
+      return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+  }
+
+  return 'Date unavailable';
+};
+
 export default function PatientPortal({ walletAddress }) {
   const { isDemoMode, demoMCs } = useDemo();
   const [records, setRecords] = useState([]);
@@ -21,7 +47,9 @@ export default function PatientPortal({ walletAddress }) {
       setRecords(demoMCs.map(mc => ({
         ipfsHash: mc.txHash,
         timestamp: mc.timestamp,
+        dateIssued: mc.dateIssued, // Use formatted date from demo data
         doctor: mc.doctor,
+        doctorAddress: mc.txHash?.slice(0, 42) || '0xDemoDoctor',
         diagnosis: mc.diagnosis,
         patientName: mc.patientName,
         mcDays: mc.mcDays,
@@ -187,10 +215,11 @@ export default function PatientPortal({ walletAddress }) {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      width: '100%'
+      width: '100%',
+      overflowX: 'hidden'
     }}>
       {/* Premium Header */}
-      <header style={{
+      <header className="patient-header" style={{
         background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.8) 100%)',
         borderBottom: '1px solid rgba(20, 184, 166, 0.1)',
         padding: '20px 24px',
@@ -198,46 +227,49 @@ export default function PatientPortal({ walletAddress }) {
         boxSizing: 'border-box',
         backdropFilter: 'blur(10px)'
       }}>
-        <div style={{
+        <div className="header-content" style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           maxWidth: '920px',
           margin: '0 auto',
-          width: '100%'
+          width: '100%',
+          flexWrap: 'wrap',
+          gap: '16px'
         }}>
           {/* Left: Title */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div className="header-title" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: '14px',
+              width: '44px',
+              height: '44px',
+              borderRadius: '12px',
               background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 15px rgba(20, 184, 166, 0.3)'
+              boxShadow: '0 4px 15px rgba(20, 184, 166, 0.3)',
+              flexShrink: 0
             }}>
-              <svg style={{ width: '24px', height: '24px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg style={{ width: '22px', height: '22px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </div>
             <div>
-              <h1 style={{ color: '#fff', fontSize: '1.4rem', fontWeight: '700', margin: 0, letterSpacing: '-0.02em' }}>Patient Portal</h1>
+              <h1 className="portal-title" style={{ color: '#fff', fontSize: '1.3rem', fontWeight: '700', margin: 0, letterSpacing: '-0.02em' }}>Patient Portal</h1>
               <span style={{
-                fontSize: '0.7rem',
+                fontSize: '0.65rem',
                 fontWeight: '600',
                 color: '#14b8a6',
                 textTransform: 'uppercase',
-                letterSpacing: '1px'
+                letterSpacing: '0.8px'
               }}>Secure Patient View</span>
             </div>
           </div>
 
           {/* Right: Wallet + Refresh */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{
-              padding: '10px 16px',
+          <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <div className="wallet-badge" style={{
+              padding: '8px 12px',
               borderRadius: '10px',
               background: 'rgba(20, 184, 166, 0.08)',
               border: '1px solid rgba(20, 184, 166, 0.15)',
@@ -245,8 +277,8 @@ export default function PatientPortal({ walletAddress }) {
               alignItems: 'center',
               gap: '8px'
             }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', boxShadow: '0 0 8px #10b981' }}></div>
-              <code style={{ color: '#94a3b8', fontSize: '0.8rem', fontFamily: 'monospace' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', boxShadow: '0 0 8px #10b981', flexShrink: 0 }}></div>
+              <code className="wallet-address" style={{ color: '#94a3b8', fontSize: '0.75rem', fontFamily: 'monospace' }}>
                 {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
               </code>
             </div>
@@ -255,32 +287,32 @@ export default function PatientPortal({ walletAddress }) {
               disabled={loading}
               className="refresh-btn"
               style={{
-                padding: '10px 18px',
+                padding: '8px 14px',
                 borderRadius: '10px',
                 background: 'linear-gradient(135deg, rgba(20, 184, 166, 0.15) 0%, rgba(20, 184, 166, 0.05) 100%)',
                 border: '1px solid rgba(20, 184, 166, 0.2)',
                 color: '#14b8a6',
-                fontSize: '0.85rem',
+                fontSize: '0.8rem',
                 fontWeight: '600',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
+                gap: '6px',
                 transition: 'all 0.2s ease'
               }}
             >
-              <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg style={{ width: '16px', height: '16px', flexShrink: 0 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
-              Refresh
+              <span className="refresh-text">Refresh</span>
             </button>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <div style={{
-        padding: '40px 24px',
+      <div className="main-content" style={{
+        padding: '32px 16px',
         width: '100%',
         maxWidth: '1000px',
         boxSizing: 'border-box'
@@ -313,8 +345,8 @@ export default function PatientPortal({ walletAddress }) {
           </div>
         )}
 
-        {/* Two Column Grid */}
-        <div style={{
+        {/* Two Column Grid - Responsive */}
+        <div className="patient-grid" style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
           gap: '24px',
@@ -502,7 +534,7 @@ export default function PatientPortal({ walletAddress }) {
                     <div style={{ display: 'flex', gap: '20px', marginBottom: '14px' }}>
                       <div>
                         <span style={{ color: '#64748b', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>Date</span>
-                        <p style={{ color: '#fff', margin: '4px 0 0 0', fontWeight: '500' }}>{formatTimestamp(record.timestamp)}</p>
+                        <p style={{ color: '#fff', margin: '4px 0 0 0', fontWeight: '500' }}>{formatRecordDate(record.timestamp, record.dateIssued)}</p>
                       </div>
                       <div>
                         <span style={{ color: '#64748b', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>Doctor</span>
@@ -653,6 +685,117 @@ export default function PatientPortal({ walletAddress }) {
         }
         ::-webkit-scrollbar-thumb:hover {
           background: rgba(20, 184, 166, 0.5);
+        }
+
+        /* ============ MOBILE RESPONSIVE STYLES ============ */
+        @media (max-width: 768px) {
+          .patient-portal {
+            overflow-x: hidden !important;
+          }
+
+          /* Stack cards vertically */
+          .patient-grid {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 20px !important;
+            padding: 8px !important;
+          }
+
+          /* Full width cards */
+          .patient-portal-card {
+            width: 100% !important;
+            min-width: unset !important;
+            max-width: 100% !important;
+            padding: 20px !important;
+            box-sizing: border-box !important;
+          }
+
+          /* Header adjustments */
+          .header-content {
+            flex-direction: column !important;
+            gap: 16px !important;
+            align-items: stretch !important;
+          }
+
+          .header-title {
+            width: 100% !important;
+          }
+
+          .portal-title {
+            font-size: 1.15rem !important;
+          }
+
+          /* Wallet + refresh row */
+          .header-actions {
+            width: 100% !important;
+            justify-content: space-between !important;
+          }
+
+          .wallet-badge {
+            flex: 1 !important;
+            min-width: 0 !important;
+          }
+
+          .wallet-address {
+            font-size: 0.7rem !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+          }
+
+          /* Main content padding */
+          .main-content {
+            padding: 20px 12px !important;
+          }
+
+          /* Smaller buttons */
+          .btn-primary, .btn-secondary {
+            padding: 14px 16px !important;
+            font-size: 0.9rem !important;
+          }
+
+          /* Record items stack */
+          .record-item > div:first-child {
+            flex-direction: column !important;
+            gap: 12px !important;
+          }
+
+          /* Input and view button stack */
+          .record-item > div:last-child {
+            flex-direction: column !important;
+            gap: 10px !important;
+          }
+
+          .record-item .view-btn,
+          .view-btn {
+            width: 100% !important;
+          }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 480px) {
+          .patient-grid {
+            padding: 4px !important;
+          }
+
+          .patient-portal-card {
+            padding: 16px !important;
+            border-radius: 12px !important;
+          }
+
+          .patient-header {
+            padding: 16px 12px !important;
+          }
+
+          /* Shorter wallet display */
+          .wallet-address {
+            max-width: 80px !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+          }
+
+          .refresh-text {
+            display: none !important;
+          }
         }
       `}</style>
     </div>
