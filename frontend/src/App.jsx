@@ -665,7 +665,7 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-              <span className="text-xs text-slate-400 font-mono">{walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</span>
+              <span className="text-xs text-slate-400 font-mono">{(walletAddress || '').slice(0, 6)}...{(walletAddress || '').slice(-4)}</span>
             </div>
             <button
               onClick={handleDisconnect}

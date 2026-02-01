@@ -63,6 +63,7 @@ export default function VerificationPage() {
 
   // Mask IC number
   const maskIC = (ic) => {
+    if (!ic) return '******-**-****';
     return ic.slice(0, 6) + '-**-' + ic.slice(-4);
   };
 

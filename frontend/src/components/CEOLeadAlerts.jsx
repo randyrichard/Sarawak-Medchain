@@ -198,7 +198,7 @@ export function LiveViewersPanel() {
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
                   <span className="text-white font-bold text-sm">
-                    {viewer.hospitalName.split(' ').map(w => w[0]).slice(0, 2).join('')}
+                    {(viewer.hospitalName || 'Hospital').split(' ').map(w => w[0]).slice(0, 2).join('')}
                   </span>
                 </div>
                 <div>

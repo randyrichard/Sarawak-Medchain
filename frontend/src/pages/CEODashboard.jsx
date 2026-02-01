@@ -1954,7 +1954,7 @@ export default function CEODashboard({ walletAddress }) {
                           className={`${darkMode ? 'border-b border-gray-700 hover:bg-gray-700' : 'border-b border-gray-100 hover:bg-gray-50'}`}
                         >
                           <td className={`py-3 px-4 font-mono text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                            {hospital.hospital.slice(0, 10)}...{hospital.hospital.slice(-8)}
+                            {(hospital.hospital || '').slice(0, 10)}...{(hospital.hospital || '').slice(-8)}
                           </td>
                           <td className={`py-3 px-4 ${hospital.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                             {hospital.balance} credits

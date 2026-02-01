@@ -506,7 +506,7 @@ export default function PatientPortal({ walletAddress }) {
                       </div>
                       <div>
                         <span style={{ color: '#64748b', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>Doctor</span>
-                        <p style={{ color: '#94a3b8', margin: '4px 0 0 0', fontFamily: 'monospace', fontSize: '0.85rem' }}>{record.doctorAddress.slice(0, 10)}...</p>
+                        <p style={{ color: '#94a3b8', margin: '4px 0 0 0', fontFamily: 'monospace', fontSize: '0.85rem' }}>{(record.doctorAddress || '0xDemoDoctor').slice(0, 10)}...</p>
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '10px' }}>

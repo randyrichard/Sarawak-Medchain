@@ -733,7 +733,7 @@ export default function DoctorPortal({ walletAddress }) {
                     level="M"
                   />
                 </div>
-                <p className="text-[10px] text-slate-500 mt-2 font-mono">{receiptData.txHash.slice(0, 20)}...</p>
+                <p className="text-[10px] text-slate-500 mt-2 font-mono">{(receiptData?.txHash || '').slice(0, 20)}...</p>
               </div>
             </div>
 

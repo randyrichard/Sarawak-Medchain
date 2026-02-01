@@ -1238,7 +1238,7 @@ export default function AdminPortal({ walletAddress }) {
                       <div className="text-left">
                         <p className="text-slate-400 text-sm mb-2">Transaction Hash</p>
                         <code className="block bg-slate-900/50 px-4 py-3 rounded-xl text-xs font-mono text-emerald-400 break-all border border-slate-700">
-                          {transactionHash.slice(0, 10)}...{transactionHash.slice(-8)}
+                          {(transactionHash || '').slice(0, 10)}...{(transactionHash || '').slice(-8)}
                         </code>
                       </div>
                     </div>
