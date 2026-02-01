@@ -7,6 +7,7 @@ import { FoundingMemberProvider } from './context/FoundingMemberContext';
 import { LeadAnalyticsProvider } from './context/LeadAnalyticsContext';
 import { RevenueAlertProvider } from './context/RevenueAlertContext';
 import { DisasterRecoveryProvider } from './context/DisasterRecoveryContext';
+import { DemoProvider } from './context/DemoContext';
 import { CEOAlertToast } from './components/CEOLeadAlerts';
 import RevenueAlertToast from './components/RevenueAlertToast';
 import { DRAlertToast } from './components/DisasterRecoveryDashboard';
@@ -29,6 +30,7 @@ import VerifyMC from './pages/VerifyMC';
 import VerifyAgreement from './pages/VerifyAgreement';
 import SystemStatus from './pages/SystemStatus';
 import CouncilorView from './pages/CouncilorView';
+import DemoApp from './pages/DemoApp';
 import { ServiceRestoredToast } from './components/ServiceNotifications';
 import './App.css';
 
@@ -960,7 +962,7 @@ function AppRoutes() {
   }, []);
 
   // Public routes that don't need wallet - NO MetaMask trigger
-  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch', '/pricing', '/connect', '/demo', '/agreement', '/payment', '/ceo/quarterly', '/status', '/gov-preview', '/portal/gov-preview', '/admin/gov-dashboard', '/pwa/verify', '/pwa/issue', '/verify-agreement'];
+  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch', '/pricing', '/connect', '/demo', '/demo-app', '/ceo-dashboard', '/agreement', '/payment', '/ceo/quarterly', '/status', '/gov-preview', '/portal/gov-preview', '/admin/gov-dashboard', '/pwa/verify', '/pwa/issue', '/verify-agreement'];
   const isPublicRoute = publicPaths.includes(location.pathname);
   const isVerificationRoute = location.pathname.startsWith('/verify/');
 
@@ -1005,6 +1007,8 @@ function AppRoutes() {
             : <ConnectWallet onConnect={handleConnectWallet} loading={loading} error={error} />
         } />
         <Route path="/demo" element={<DoctorPortalDemo />} />
+        <Route path="/demo-app" element={<DemoApp />} />
+        <Route path="/ceo-dashboard" element={<HospitalCEODashboard />} />
         <Route path="/agreement" element={<ServiceAgreement />} />
         <Route path="/payment" element={<FPXPayment />} />
         <Route path="/ceo/quarterly" element={<CEOQuarterlySummary />} />
@@ -1097,21 +1101,23 @@ class ErrorBoundary extends React.Component {
 function App() {
   return (
     <ErrorBoundary>
-      <MaintenanceProvider>
-        <FoundingMemberProvider>
-          <LeadAnalyticsProvider>
-            <RevenueAlertProvider>
-              <DisasterRecoveryProvider>
-                <BillingProvider>
-                  <BrowserRouter>
-                    <AppRoutes />
-                  </BrowserRouter>
-                </BillingProvider>
-              </DisasterRecoveryProvider>
-            </RevenueAlertProvider>
-          </LeadAnalyticsProvider>
-        </FoundingMemberProvider>
-      </MaintenanceProvider>
+      <DemoProvider>
+        <MaintenanceProvider>
+          <FoundingMemberProvider>
+            <LeadAnalyticsProvider>
+              <RevenueAlertProvider>
+                <DisasterRecoveryProvider>
+                  <BillingProvider>
+                    <BrowserRouter>
+                      <AppRoutes />
+                    </BrowserRouter>
+                  </BillingProvider>
+                </DisasterRecoveryProvider>
+              </RevenueAlertProvider>
+            </LeadAnalyticsProvider>
+          </FoundingMemberProvider>
+        </MaintenanceProvider>
+      </DemoProvider>
     </ErrorBoundary>
   );
 }

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import PublicImpactCounter from '../components/PublicImpactCounter';
 import SarawakReadinessMap from '../components/SarawakReadinessMap';
 import { usePWA, PWA_CONFIGS } from '../hooks/usePWA';
+import { useDemo } from '../context/DemoContext';
 
 // Facility types for dropdown
 const FACILITY_TYPES = [
@@ -603,11 +604,18 @@ function ProvisioningOverlay({ isVisible, facilityName, blockchainRef, onComplet
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { enterDemoMode } = useDemo();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showProvisioning, setShowProvisioning] = useState(false);
   const [provisioningData, setProvisioningData] = useState({ facilityName: '', blockchainRef: '' });
   const [securityLoading, setSecurityLoading] = useState(null); // 'clinic' | 'hospital' | null
   const [integrityFlash, setIntegrityFlash] = useState(false); // Flash 100% Integrity badge on click
+
+  // Handle demo mode entry
+  const handleTryDemo = () => {
+    enterDemoMode('doctor');
+    navigate('/demo-app');
+  };
 
   // LANDING PAGE: NO PWA - just a regular website
   // This prevents iOS from hijacking the session
@@ -1143,8 +1151,8 @@ export default function LandingPage() {
           Sarawak's first tamper-proof healthcare platform. Eliminate MC fraud with military-grade encryption.
         </p>
 
-        {/* CTA Button */}
-        <div className="hero-cta" style={{ marginBottom: '80px' }}>
+        {/* CTA Buttons */}
+        <div className="hero-cta" style={{ marginBottom: '80px', display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' }}>
           <button
             onClick={handleGetStarted}
             className="group"
@@ -1176,6 +1184,43 @@ export default function LandingPage() {
               <svg className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
+            </span>
+          </button>
+
+          {/* Try Demo Button */}
+          <button
+            onClick={handleTryDemo}
+            className="group"
+            style={{
+              padding: '14px 28px',
+              backgroundColor: 'transparent',
+              color: '#f59e0b',
+              fontSize: '15px',
+              fontWeight: 600,
+              borderRadius: '12px',
+              border: '2px solid #f59e0b',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#f59e0b';
+              e.currentTarget.style.color = '#0a0e14';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 0 30px rgba(245, 158, 11, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.color = '#f59e0b';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Try Demo
             </span>
           </button>
         </div>
