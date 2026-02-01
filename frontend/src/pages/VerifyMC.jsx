@@ -224,6 +224,9 @@ const styles = {
     backgroundColor: '#0a0e14',
     color: '#fff',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
   },
 
   // Loading styles
@@ -234,6 +237,7 @@ const styles = {
     justifyContent: 'center',
     minHeight: '100vh',
     padding: '20px',
+    width: '100%',
   },
   spinnerOuter: {
     width: '80px',
@@ -274,12 +278,14 @@ const styles = {
     padding: '20px',
     borderBottom: '1px solid rgba(255,255,255,0.1)',
     background: 'linear-gradient(180deg, rgba(20, 184, 166, 0.1) 0%, transparent 100%)',
+    width: '100%',
   },
   logoContainer: {
     display: 'flex',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: '12px',
-    maxWidth: '600px',
+    maxWidth: '500px',
     margin: '0 auto',
   },
   logo: {
@@ -306,7 +312,8 @@ const styles = {
   // Main content styles
   main: {
     padding: '20px',
-    maxWidth: '600px',
+    maxWidth: '500px',
+    width: '100%',
     margin: '0 auto',
   },
 
@@ -494,6 +501,8 @@ const styles = {
     textAlign: 'center',
     padding: '24px 20px',
     borderTop: '1px solid rgba(255,255,255,0.1)',
+    width: '100%',
+    maxWidth: '500px',
   },
   footerText: {
     fontSize: '14px',
