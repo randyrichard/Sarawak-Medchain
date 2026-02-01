@@ -25,6 +25,7 @@ import HospitalCEODashboard from './pages/HospitalCEODashboard';
 import BusinessOverview from './pages/BusinessOverview';
 import LandingPage from './pages/LandingPage';
 import VerificationPage from './pages/VerificationPage';
+import VerifyMC from './pages/VerifyMC';
 import VerifyAgreement from './pages/VerifyAgreement';
 import SystemStatus from './pages/SystemStatus';
 import CouncilorView from './pages/CouncilorView';
@@ -1022,7 +1023,7 @@ function AppRoutes() {
   if (isVerificationRoute) {
     return (
       <Routes>
-        <Route path="/verify/:txHash" element={<VerificationPage />} />
+        <Route path="/verify/:hash" element={<VerifyMC />} />
       </Routes>
     );
   }
