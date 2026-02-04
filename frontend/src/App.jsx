@@ -532,13 +532,13 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
         />
       )}
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden h-full">
       {/* Service Restored Toast Notification */}
       <ServiceRestoredToast />
-      {/* Sidebar - hidden on mobile unless menu open */}
+      {/* Sidebar - hidden on mobile unless menu open, ALWAYS visible on desktop */}
       <aside
-        className={`${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:relative z-50 w-72 h-full text-white flex flex-col flex-shrink-0 transition-transform duration-300`}
-        style={{ backgroundColor: '#0a0e14', borderRight: 'none', boxShadow: mobileMenuOpen ? '4px 0 20px rgba(0,0,0,0.5)' : 'none', top: isDemo ? '40px' : '0', height: isDemo ? 'calc(100% - 40px)' : '100%' }}
+        className={`sidebar-nav ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} fixed md:relative z-50 w-72 text-white flex flex-col flex-shrink-0 transition-transform duration-300`}
+        style={{ backgroundColor: '#0a0e14', borderRight: '1px solid rgba(20, 184, 166, 0.1)', boxShadow: mobileMenuOpen ? '4px 0 20px rgba(0,0,0,0.5)' : 'none', height: '100%', minHeight: '100vh' }}
       >
         {/* Logo & Title */}
         <div className="p-6" style={{ borderBottom: 'none' }}>
@@ -962,6 +962,14 @@ function AppRoutes() {
     try {
       setLoading(true);
       setError('');
+      // IMPORTANT: Clear demo mode SYNCHRONOUSLY before connecting
+      // This ensures routing logic sees demo mode as false immediately
+      console.log('[App] Clearing demo mode from localStorage');
+      localStorage.removeItem('medchain_demo_mode');
+      localStorage.removeItem('medchain_demo_role');
+      // Also call exitDemoMode to update React state
+      exitDemoMode();
+
       console.log('[App] Calling connectWallet()...');
       const { address } = await connectWallet();
       console.log('[App] Wallet connected:', address);
@@ -1016,19 +1024,22 @@ function AppRoutes() {
   const protectedPaths = ['/mvp', '/patient', '/doctor', '/admin', '/ceo', '/ceo-dashboard'];
   const isProtectedRoute = protectedPaths.some(path => location.pathname.startsWith(path));
 
-  // Debug logging
-  console.log('[AppRoutes] Render - path:', location.pathname, 'walletAddress:', walletAddress, 'isDemoMode:', isDemoMode, 'effectiveWallet:', effectiveWalletAddress, 'isPublicRoute:', isPublicRoute, 'isProtectedRoute:', isProtectedRoute, 'checkingWallet:', checkingWallet);
+  // Check localStorage directly for demo mode (React state might be stale after clearing)
+  const demoModeInStorage = localStorage.getItem('medchain_demo_mode') === 'true';
 
-  // DEMO MODE: Allow access to protected routes with mock wallet
-  if (isDemoMode && isProtectedRoute) {
-    console.log('[AppRoutes] Demo mode: allowing protected route with mock wallet');
+  // Debug logging
+  console.log('[AppRoutes] Render - path:', location.pathname, 'walletAddress:', walletAddress, 'isDemoMode:', isDemoMode, 'demoModeInStorage:', demoModeInStorage);
+
+  // PRIORITY 1: Demo mode - user EXPLICITLY clicked "Try Demo"
+  // Check localStorage directly (more reliable than React state)
+  if (demoModeInStorage && isProtectedRoute) {
+    console.log('[AppRoutes] Demo mode active -> ProtectedApp with demo wallet');
     return <ProtectedApp walletAddress={effectiveWalletAddress} handleDisconnect={handleDisconnect} isDemo={true} />;
   }
 
-  // CRITICAL: If we're on a protected route with a wallet, show protected app immediately
-  // This prevents the blank page issue when navigating after connection
-  if (walletAddress && isProtectedRoute) {
-    console.log('[AppRoutes] Fast path: wallet + protected route -> ProtectedApp');
+  // PRIORITY 2: Real wallet connected (and NOT in demo mode)
+  if (walletAddress && isProtectedRoute && !demoModeInStorage) {
+    console.log('[AppRoutes] Real wallet connected (not demo) -> ProtectedApp');
     return <ProtectedApp walletAddress={walletAddress} handleDisconnect={handleDisconnect} isDemo={false} />;
   }
 

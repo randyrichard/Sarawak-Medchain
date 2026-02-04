@@ -737,6 +737,35 @@ nav {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
+   SIDEBAR VISIBILITY - Desktop vs Mobile
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Desktop: Sidebar ALWAYS visible and full height */
+@media (min-width: 768px) {
+  .sidebar-nav {
+    transform: translateX(0) !important;
+    position: relative !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: 100% !important;
+    min-height: 100vh !important;
+    flex-shrink: 0 !important;
+  }
+}
+
+/* Mobile: Sidebar hidden by default (hamburger menu controls it) */
+@media (max-width: 767px) {
+  .sidebar-nav {
+    position: fixed !important;
+    left: 0;
+    top: 0;
+    height: 100vh !important;
+    z-index: 50;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
    ROUTE CONTAINERS - Background consistency
    ═══════════════════════════════════════════════════════════════════════════════ */
 

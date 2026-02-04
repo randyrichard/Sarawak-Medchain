@@ -76,6 +76,10 @@ export function DemoProvider({ children }) {
   }, [demoRole]);
 
   const enterDemoMode = (role = 'doctor') => {
+    // Set localStorage IMMEDIATELY (synchronous) so routing can read it right away
+    localStorage.setItem('medchain_demo_mode', 'true');
+    localStorage.setItem('medchain_demo_role', role);
+    // Also update React state
     setIsDemoMode(true);
     setDemoRole(role);
   };
