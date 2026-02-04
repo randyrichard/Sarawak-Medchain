@@ -495,7 +495,7 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
   }, [location.pathname]);
 
   return (
-    <div className="flex flex-col h-screen w-full overflow-hidden" style={{ backgroundColor: '#0a0e14' }}>
+    <div className={`flex flex-col h-screen w-full overflow-hidden ${isDemo ? 'demo-mode' : ''}`} style={{ backgroundColor: '#0a0e14' }}>
       {/* Demo Mode Banner */}
       {isDemo && <DemoBanner />}
 
@@ -540,8 +540,8 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
         className={`sidebar-nav ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} fixed md:relative z-50 w-72 text-white flex flex-col flex-shrink-0 transition-transform duration-300`}
         style={{ backgroundColor: '#0a0e14', borderRight: '1px solid rgba(20, 184, 166, 0.1)', boxShadow: mobileMenuOpen ? '4px 0 20px rgba(0,0,0,0.5)' : 'none', height: '100%', minHeight: '100vh' }}
       >
-        {/* Logo & Title */}
-        <div className="p-6" style={{ borderBottom: 'none' }}>
+        {/* Logo & Title - Hidden on mobile (mobile has close header instead) */}
+        <div className="hidden md:block p-6" style={{ borderBottom: 'none' }}>
           <div className="flex items-center gap-3">
             <div
               className="w-10 h-10 rounded-lg flex items-center justify-center"
@@ -558,12 +558,26 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
           </div>
         </div>
 
+        {/* Mobile Close Button - Only show on mobile when menu is open */}
+        <div className="md:hidden flex items-center justify-between p-4 border-b border-slate-800">
+          <span className="text-white font-bold">Menu</span>
+          <button
+            onClick={() => setMobileMenuOpen(false)}
+            className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
+          >
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
         {/* Navigation Links */}
         <nav className="flex-1 p-4">
           <ul className="space-y-1">
             <li>
               <Link
                 to="/patient"
+                onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
                   currentPath === '/patient'
                     ? 'bg-gradient-to-r from-teal-500/20 to-teal-500/5 border-l-2 border-teal-400'
@@ -579,6 +593,7 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
             <li>
               <Link
                 to="/doctor"
+                onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
                   currentPath === '/doctor'
                     ? 'bg-gradient-to-r from-teal-500/20 to-teal-500/5 border-l-2 border-teal-400'
@@ -594,6 +609,7 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
             <li>
               <Link
                 to="/admin"
+                onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
                   currentPath === '/admin'
                     ? 'bg-gradient-to-r from-teal-500/20 to-teal-500/5 border-l-2 border-teal-400'
@@ -610,6 +626,7 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
             <li>
               <Link
                 to="/ceo-dashboard"
+                onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
                   currentPath === '/ceo-dashboard'
                     ? 'bg-gradient-to-r from-teal-500/20 to-teal-500/5 border-l-2 border-teal-400'
@@ -625,7 +642,11 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
             {/* Founder Dashboard - Only shows for founder wallet AND not in demo mode */}
             {!isDemo && walletAddress?.toLowerCase() === '0x70997970c51812dc3a010c7d01b50e0d17dc79c8' && (
               <li>
-                <Link to="/founder-admin-secret-99" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-amber-500/20 transition-colors group border border-amber-500/30 bg-amber-500/10">
+                <Link
+                  to="/founder-admin-secret-99"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-amber-500/20 transition-colors group border border-amber-500/30 bg-amber-500/10"
+                >
                   <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>

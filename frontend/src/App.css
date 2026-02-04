@@ -759,9 +759,19 @@ nav {
   .sidebar-nav {
     position: fixed !important;
     left: 0;
-    top: 0;
-    height: 100vh !important;
-    z-index: 50;
+    top: 56px !important; /* Below mobile header */
+    height: calc(100vh - 56px) !important;
+    z-index: 9999 !important;
+    background-color: #0a0e14 !important;
+    border-right: 1px solid rgba(20, 184, 166, 0.2) !important;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.5) !important;
+    overflow-y: auto !important;
+  }
+
+  /* When demo mode is active, account for demo banner */
+  .demo-mode .sidebar-nav {
+    top: 96px !important; /* 40px demo banner + 56px mobile header */
+    height: calc(100vh - 96px) !important;
   }
 }
 
