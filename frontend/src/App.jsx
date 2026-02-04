@@ -642,37 +642,27 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
         {/* Credit Balance - Shows only on Doctor Portal */}
         <CreditBalanceSidebar walletAddress={walletAddress} />
 
-        {/* Verified Badge */}
-        <div className="p-4" style={{ borderTop: 'none' }}>
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-4">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
-                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+        {/* Professional Footer */}
+        <div className="mt-auto" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+          <div className="px-5 py-4">
+            <div className="flex items-center gap-2.5 mb-1.5">
+              <div
+                className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
+                style={{ background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)' }}
+              >
+                <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
               </div>
-              <div>
-                <p className="text-xs text-blue-200 font-medium uppercase tracking-wide">Verified by</p>
-                <p className="text-sm font-bold text-white">Sarawak MedChain</p>
-              </div>
+              <span className="text-sm font-semibold text-white">Sarawak MedChain</span>
             </div>
-            <p className="text-xs text-blue-200/70">Blockchain-secured medical records</p>
-          </div>
-        </div>
-
-        {/* Wallet Info */}
-        <div className="p-4" style={{ borderTop: 'none' }}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-              <span className="text-xs text-slate-400 font-mono">{(walletAddress || '').slice(0, 6)}...{(walletAddress || '').slice(-4)}</span>
-            </div>
+            <p className="text-xs text-slate-500 mb-3 pl-0.5">Blockchain-secured medical records</p>
             <button
               onClick={handleDisconnect}
-              className="text-xs text-slate-400 hover:text-red-400 transition-colors"
+              className="text-xs text-slate-500 hover:text-slate-300 transition-colors pl-0.5"
               style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
             >
-              Disconnect
+              Disconnect wallet
             </button>
           </div>
         </div>
