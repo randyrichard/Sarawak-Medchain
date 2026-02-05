@@ -47,8 +47,8 @@ export default function HospitalCEODashboard() {
   const styles = {
     container: {
       minHeight: '100vh',
-      background: '#0a0e14',
-      color: '#e2e8f0',
+      background: '#FFFFFF',
+      color: '#64748B',
       padding: isMobile ? '16px' : '32px',
       fontFamily: 'system-ui, -apple-system, sans-serif',
     },
@@ -84,7 +84,7 @@ export default function HospitalCEODashboard() {
       fontSize: isMobile ? '20px' : '32px',
       fontWeight: '700',
       margin: 0,
-      color: '#ffffff',
+      color: '#1E293B',
       letterSpacing: '-0.5px',
     },
     titleUnderline: {
@@ -123,16 +123,15 @@ export default function HospitalCEODashboard() {
       marginBottom: isMobile ? '20px' : '32px',
     },
     metricCard: (isHovered) => ({
-      background: 'rgba(15, 23, 42, 0.8)',
-      backdropFilter: 'blur(10px)',
-      border: `1px solid ${isHovered ? 'rgba(56, 189, 248, 0.4)' : 'rgba(56, 189, 248, 0.2)'}`,
+      background: '#FFFFFF',
+      border: `1px solid ${isHovered ? '#0EA5E9' : '#E2E8F0'}`,
       borderRadius: isMobile ? '12px' : '16px',
       padding: isMobile ? '16px' : '24px',
       transition: 'all 0.3s ease',
       transform: isHovered && !isMobile ? 'translateY(-2px)' : 'translateY(0)',
       boxShadow: isHovered && !isMobile
-        ? '0 8px 32px rgba(0,0,0,0.4), 0 0 20px rgba(56, 189, 248, 0.1)'
-        : '0 4px 20px rgba(0,0,0,0.3)',
+        ? '0 8px 24px rgba(0,0,0,0.1)'
+        : '0 4px 12px rgba(0,0,0,0.06)',
       cursor: 'default',
     }),
     cardLabel: {
@@ -162,12 +161,11 @@ export default function HospitalCEODashboard() {
       marginBottom: isMobile ? '20px' : '32px',
     },
     sectionCard: {
-      background: 'rgba(15, 23, 42, 0.8)',
-      backdropFilter: 'blur(10px)',
-      border: '1px solid rgba(56, 189, 248, 0.2)',
+      background: '#FFFFFF',
+      border: '1px solid #E2E8F0',
       borderRadius: isMobile ? '12px' : '16px',
       padding: isMobile ? '16px' : '24px',
-      boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
     },
     sectionHeader: {
       display: 'flex',
@@ -178,12 +176,12 @@ export default function HospitalCEODashboard() {
     sectionTitle: {
       fontSize: isMobile ? '14px' : '16px',
       fontWeight: '600',
-      color: '#e2e8f0',
+      color: '#1E293B',
       margin: 0,
     },
     viewAllBtn: {
       background: 'transparent',
-      border: '1px solid rgba(56, 189, 248, 0.3)',
+      border: '1px solid #E2E8F0',
       borderRadius: '8px',
       padding: isMobile ? '5px 10px' : '6px 14px',
       color: '#38bdf8',
@@ -205,7 +203,7 @@ export default function HospitalCEODashboard() {
     th: {
       textAlign: 'left',
       padding: isMobile ? '10px 6px' : '12px 8px',
-      borderBottom: '1px solid rgba(56, 189, 248, 0.2)',
+      borderBottom: '1px solid #E2E8F0',
       color: '#94a3b8',
       fontSize: isMobile ? '10px' : '11px',
       textTransform: 'uppercase',
@@ -214,7 +212,7 @@ export default function HospitalCEODashboard() {
     },
     td: {
       padding: isMobile ? '10px 6px' : '14px 8px',
-      borderBottom: '1px solid rgba(255,255,255,0.05)',
+      borderBottom: '1px solid #F1F5F9',
       whiteSpace: 'nowrap',
     },
     statusBadge: (status) => ({
@@ -232,7 +230,7 @@ export default function HospitalCEODashboard() {
     }),
     mcItem: {
       padding: isMobile ? '12px' : '14px',
-      background: 'rgba(255,255,255,0.03)',
+      background: '#F8FAFC',
       borderRadius: '10px',
       marginBottom: isMobile ? '8px' : '10px',
       display: 'flex',
@@ -248,7 +246,7 @@ export default function HospitalCEODashboard() {
       fontWeight: '600',
     },
     billingBox: {
-      background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.08) 0%, rgba(56, 189, 248, 0.03) 100%)',
+      background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.06) 0%, rgba(56, 189, 248, 0.02) 100%)',
       border: '1px solid rgba(56, 189, 248, 0.2)',
       borderRadius: isMobile ? '10px' : '14px',
       padding: isMobile ? '16px' : '24px',
@@ -258,7 +256,7 @@ export default function HospitalCEODashboard() {
       display: 'flex',
       justifyContent: 'space-between',
       padding: isMobile ? '8px 0' : '10px 0',
-      borderBottom: '1px solid rgba(255,255,255,0.05)',
+      borderBottom: '1px solid #F1F5F9',
       fontSize: isMobile ? '13px' : '14px',
     },
     billingTotal: {
@@ -271,7 +269,7 @@ export default function HospitalCEODashboard() {
     billingTotalLabel: {
       fontSize: isMobile ? '14px' : '16px',
       fontWeight: '600',
-      color: '#e2e8f0',
+      color: '#1E293B',
     },
     billingTotalValue: {
       fontSize: isMobile ? '22px' : '28px',
@@ -340,9 +338,9 @@ export default function HospitalCEODashboard() {
     footer: {
       textAlign: 'center',
       padding: isMobile ? '20px' : '32px',
-      borderTop: '1px solid rgba(255,255,255,0.08)',
+      borderTop: '1px solid #E2E8F0',
       marginTop: isMobile ? '16px' : '24px',
-      color: '#64748b',
+      color: '#94A3B8',
       fontSize: isMobile ? '11px' : '13px',
     },
   };
@@ -377,7 +375,7 @@ export default function HospitalCEODashboard() {
           </p>
         </div>
         <div style={styles.dateTime}>
-          <div style={{ fontSize: isMobile ? '18px' : '24px', fontWeight: '600', color: '#e2e8f0', marginBottom: '4px' }}>
+          <div style={{ fontSize: isMobile ? '18px' : '24px', fontWeight: '600', color: '#1E293B', marginBottom: '4px' }}>
             {currentTime.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' })}
           </div>
           <div style={{ fontSize: isMobile ? '12px' : '14px' }}>
@@ -480,7 +478,7 @@ export default function HospitalCEODashboard() {
               <span style={{ color: '#94a3b8', fontSize: isMobile ? '10px' : '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Current Plan</span>
               <span style={{ float: 'right', color: '#38bdf8', fontWeight: '600', fontSize: isMobile ? '10px' : '12px' }}>HOSPITAL TIER</span>
             </div>
-            <div style={{ fontSize: isMobile ? '22px' : '28px', fontWeight: '700', marginBottom: '4px', color: '#ffffff' }}>
+            <div style={{ fontSize: isMobile ? '22px' : '28px', fontWeight: '700', marginBottom: '4px', color: '#1E293B' }}>
               RM 10,000<span style={{ fontSize: isMobile ? '12px' : '14px', color: '#94a3b8', fontWeight: '400' }}>/month</span>
             </div>
             <div style={{ color: '#64748b', fontSize: isMobile ? '11px' : '13px' }}>+ RM 1.00 per MC issued</div>

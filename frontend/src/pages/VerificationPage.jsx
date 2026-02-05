@@ -79,14 +79,14 @@ export default function VerificationPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0a0e14' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#FFFFFF' }}>
         <div className="text-center">
           <div className="w-20 h-20 mx-auto mb-6 relative">
             <div className="absolute inset-0 rounded-full border-4 border-cyan-500/30 animate-ping"></div>
             <div className="absolute inset-0 rounded-full border-4 border-t-cyan-500 animate-spin"></div>
           </div>
-          <h2 className="text-xl font-bold text-white mb-2">Verifying on Blockchain...</h2>
-          <p className="text-slate-400">Querying Sarawak MedChain network</p>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">Verifying on Blockchain...</h2>
+          <p className="text-slate-500">Querying Sarawak MedChain network</p>
         </div>
       </div>
     );
@@ -95,12 +95,12 @@ export default function VerificationPage() {
   return (
     <div
       className="min-h-screen py-12 px-4 flex flex-col items-center justify-start"
-      style={{ backgroundColor: '#0a0e14', width: '100%' }}
+      style={{ backgroundColor: '#FFFFFF', width: '100%' }}
     >
       {/* Global CSS & Print Styles */}
       <style>{`
         html, body, #root {
-          background-color: #0a0e14 !important;
+          background-color: #FFFFFF !important;
         }
         @media print {
           body { background: white !important; }
@@ -120,14 +120,14 @@ export default function VerificationPage() {
               <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
               <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
             </div>
-            <span className="text-emerald-400 font-bold text-lg">VERIFIED ON MEDCHAIN</span>
+            <span className="text-emerald-600 font-bold text-lg">VERIFIED ON MEDCHAIN</span>
           </div>
         </div>
 
         {/* Digital MC Card */}
         <div
           ref={cardRef}
-          className="print-card bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl overflow-hidden shadow-2xl border border-white/10"
+          className="print-card bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200"
           style={{ maxWidth: '800px', margin: '0 auto' }}
         >
           {/* Card Header */}
@@ -160,8 +160,8 @@ export default function VerificationPage() {
               <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span className="text-emerald-400 font-bold">VERIFIED ON MEDCHAIN</span>
-              <span className="text-slate-400 text-sm ml-auto">Block #{mcData?.blockNumber?.toLocaleString()}</span>
+              <span className="text-emerald-600 font-bold">VERIFIED ON MEDCHAIN</span>
+              <span className="text-slate-500 text-sm ml-auto">Block #{mcData?.blockNumber?.toLocaleString()}</span>
             </div>
           </div>
 
@@ -171,18 +171,18 @@ export default function VerificationPage() {
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <p className="text-slate-500 text-sm uppercase tracking-wider mb-1">Patient Name</p>
-                <p className="text-white text-lg font-semibold">{mcData?.patientName}</p>
+                <p className="text-slate-800 text-lg font-semibold">{mcData?.patientName}</p>
               </div>
               <div>
                 <p className="text-slate-500 text-sm uppercase tracking-wider mb-1">IC Number</p>
-                <p className="text-white text-lg font-semibold font-mono">{mcData?.patientIC}</p>
+                <p className="text-slate-800 text-lg font-semibold font-mono">{mcData?.patientIC}</p>
               </div>
             </div>
 
             {/* Diagnosis */}
             <div>
               <p className="text-slate-500 text-sm uppercase tracking-wider mb-1">Certificate Type</p>
-              <p className="text-white text-lg font-semibold">{mcData?.diagnosis}</p>
+              <p className="text-slate-800 text-lg font-semibold">{mcData?.diagnosis}</p>
             </div>
 
             {/* Duration & Date */}
@@ -193,37 +193,37 @@ export default function VerificationPage() {
               </div>
               <div>
                 <p className="text-slate-500 text-sm uppercase tracking-wider mb-1">Issue Date</p>
-                <p className="text-white text-lg font-semibold">{mcData?.issueDate}</p>
+                <p className="text-slate-800 text-lg font-semibold">{mcData?.issueDate}</p>
               </div>
             </div>
 
             {/* Divider */}
-            <div className="border-t border-white/10"></div>
+            <div className="border-t border-slate-200"></div>
 
             {/* Hospital & Doctor */}
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <p className="text-slate-500 text-sm uppercase tracking-wider mb-1">Healthcare Facility</p>
-                <p className="text-white font-semibold">{mcData?.hospital}</p>
+                <p className="text-slate-800 font-semibold">{mcData?.hospital}</p>
               </div>
               <div>
                 <p className="text-slate-500 text-sm uppercase tracking-wider mb-1">Issuing Doctor</p>
-                <p className="text-white font-semibold">{mcData?.doctorName}</p>
+                <p className="text-slate-800 font-semibold">{mcData?.doctorName}</p>
                 <p className="text-slate-400 text-sm">{mcData?.doctorMMC}</p>
               </div>
             </div>
 
             {/* Blockchain Hash */}
-            <div className="bg-slate-800/50 rounded-xl p-4">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
               <p className="text-slate-500 text-sm uppercase tracking-wider mb-2">Blockchain Record ID</p>
-              <code className="text-cyan-400 text-xs font-mono break-all block">
+              <code className="text-cyan-600 text-xs font-mono break-all block">
                 {mcData?.blockchainHash}
               </code>
             </div>
           </div>
 
           {/* Card Footer - Branding */}
-          <div className="px-8 py-5 bg-slate-950/50 border-t border-white/5">
+          <div className="px-8 py-5 bg-slate-50 border-t border-slate-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center">
@@ -232,7 +232,7 @@ export default function VerificationPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-white font-bold text-sm">Secured by Sarawak MedChain</p>
+                  <p className="text-slate-800 font-bold text-sm">Secured by Sarawak MedChain</p>
                   <p className="text-slate-500 text-xs">Immutable. Verifiable. Trusted.</p>
                 </div>
               </div>
@@ -257,7 +257,7 @@ export default function VerificationPage() {
           </button>
           <button
             onClick={handleSave}
-            className="px-8 py-4 bg-white/10 border border-white/20 text-white font-bold rounded-xl hover:bg-white/20 transition-all flex items-center gap-3"
+            className="px-8 py-4 bg-slate-100 border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-all flex items-center gap-3"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -271,7 +271,7 @@ export default function VerificationPage() {
           <p className="text-slate-500 text-sm mb-2">
             This medical certificate has been cryptographically secured on the Sarawak MedChain blockchain.
           </p>
-          <p className="text-slate-600 text-xs">
+          <p className="text-slate-400 text-xs">
             For verification inquiries, contact your healthcare provider or visit medchain.sarawak.gov.my
           </p>
         </div>

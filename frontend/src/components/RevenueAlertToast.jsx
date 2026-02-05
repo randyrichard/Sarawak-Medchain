@@ -230,7 +230,7 @@ export function MiniRevenueCounter() {
         <span className="text-2xl">💰</span>
         <div>
           <p className="text-emerald-400 text-xs font-semibold uppercase tracking-wider">Live MRR</p>
-          <p className="text-white font-black text-lg">
+          <p className="text-slate-800 font-black text-lg">
             RM {revenueData.mrr.toLocaleString()}
           </p>
         </div>
@@ -240,7 +240,7 @@ export function MiniRevenueCounter() {
 
       <div>
         <p className="text-slate-400 text-xs">Goal: RM {progress.goal.toLocaleString()}</p>
-        <div className="w-24 h-2 bg-slate-700 rounded-full mt-1 overflow-hidden">
+        <div className="w-24 h-2 bg-slate-200 rounded-full mt-1 overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-emerald-500 to-green-400 rounded-full transition-all duration-500"
             style={{ width: `${progress.percentage}%` }}
@@ -269,7 +269,7 @@ export function SoundToggleButton() {
       className={`p-2 rounded-lg transition-colors ${
         isSoundEnabled
           ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
-          : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
+          : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
       }`}
       title={isSoundEnabled ? 'Sound On' : 'Sound Off'}
     >

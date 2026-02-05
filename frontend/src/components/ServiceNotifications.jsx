@@ -108,7 +108,7 @@ export function ServiceNotificationsPanel() {
       {/* Bell icon trigger */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors"
+        className="relative p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors"
       >
         <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -130,14 +130,14 @@ export function ServiceNotificationsPanel() {
           />
 
           {/* Panel */}
-          <div className="absolute right-0 mt-2 w-80 bg-slate-800 border border-slate-700 rounded-xl shadow-xl z-50 overflow-hidden">
+          <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden">
             {/* Header */}
-            <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
-              <h3 className="text-white font-semibold">System Notifications</h3>
+            <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="text-slate-800 font-semibold">System Notifications</h3>
               {serviceNotifications.length > 0 && (
                 <button
                   onClick={clearNotifications}
-                  className="text-xs text-slate-400 hover:text-slate-300"
+                  className="text-xs text-slate-400 hover:text-slate-600"
                 >
                   Clear all
                 </button>
@@ -149,8 +149,8 @@ export function ServiceNotificationsPanel() {
               {serviceNotifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className={`px-4 py-3 border-b border-slate-700/50 last:border-0 transition-colors ${
-                    notification.read ? 'bg-slate-800/50' : 'bg-slate-700/50'
+                  className={`px-4 py-3 border-b border-slate-100 last:border-0 transition-colors ${
+                    notification.read ? 'bg-slate-50' : 'bg-white'
                   }`}
                   onClick={() => !notification.read && markNotificationRead(notification.id)}
                 >
@@ -172,7 +172,7 @@ export function ServiceNotificationsPanel() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="text-white text-sm font-medium">{notification.title}</p>
+                        <p className="text-slate-800 text-sm font-medium">{notification.title}</p>
                         {!notification.read && (
                           <span className="w-2 h-2 bg-emerald-400 rounded-full" />
                         )}
@@ -240,11 +240,11 @@ export function MaintenanceSchedulerButton({ onSchedule }) {
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 mt-2 w-80 bg-slate-800 border border-slate-700 rounded-xl shadow-xl z-50 p-4">
+          <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-200 rounded-xl shadow-xl z-50 p-4">
             {maintenanceSchedule?.status === 'scheduled' ? (
               // Show current schedule
               <div>
-                <h3 className="text-white font-semibold mb-3">Scheduled Maintenance</h3>
+                <h3 className="text-slate-800 font-semibold mb-3">Scheduled Maintenance</h3>
                 <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 mb-4">
                   <p className="text-amber-400 text-sm font-medium mb-1">
                     {new Date(maintenanceSchedule.scheduledStart).toLocaleDateString('en-MY', {
@@ -256,7 +256,7 @@ export function MaintenanceSchedulerButton({ onSchedule }) {
                   <p className="text-slate-400 text-xs">
                     {DEFAULT_MAINTENANCE_WINDOW.startHour}:00 AM - {DEFAULT_MAINTENANCE_WINDOW.endHour}:00 AM (Sarawak Time)
                   </p>
-                  <p className="text-slate-300 text-sm mt-2">{maintenanceSchedule.description}</p>
+                  <p className="text-slate-600 text-sm mt-2">{maintenanceSchedule.description}</p>
                 </div>
                 <button
                   onClick={handleCancel}
@@ -268,7 +268,7 @@ export function MaintenanceSchedulerButton({ onSchedule }) {
             ) : (
               // Schedule new maintenance
               <div>
-                <h3 className="text-white font-semibold mb-3">Schedule Maintenance</h3>
+                <h3 className="text-slate-800 font-semibold mb-3">Schedule Maintenance</h3>
                 <div className="space-y-3">
                   <div>
                     <label className="block text-slate-400 text-xs mb-1">Date</label>
@@ -277,7 +277,7 @@ export function MaintenanceSchedulerButton({ onSchedule }) {
                       min={getMinDate()}
                       value={selectedDate}
                       onChange={(e) => setSelectedDate(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:border-amber-500"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-sm focus:outline-none focus:border-amber-500"
                     />
                   </div>
                   <div>
@@ -287,12 +287,12 @@ export function MaintenanceSchedulerButton({ onSchedule }) {
                       placeholder="e.g., System update"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:border-amber-500 placeholder-slate-500"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-sm focus:outline-none focus:border-amber-500 placeholder-slate-500"
                     />
                   </div>
-                  <div className="bg-slate-700/50 rounded-lg p-3">
+                  <div className="bg-slate-50 rounded-lg p-3">
                     <p className="text-slate-400 text-xs mb-1">Maintenance Window</p>
-                    <p className="text-white text-sm font-medium">
+                    <p className="text-slate-800 text-sm font-medium">
                       {DEFAULT_MAINTENANCE_WINDOW.startHour}:00 AM - {DEFAULT_MAINTENANCE_WINDOW.endHour}:00 AM
                     </p>
                     <p className="text-emerald-400 text-xs mt-1">Off-peak hours (minimal disruption)</p>

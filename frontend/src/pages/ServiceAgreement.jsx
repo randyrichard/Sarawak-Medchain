@@ -10,7 +10,8 @@ import { QRCodeSVG } from 'qrcode.react';
 
 const MEDCHAIN_BLUE = '#0066CC';
 const MEDCHAIN_DARK = '#003366';
-const MEDCHAIN_GOLD = '#D4A017'; // Prestigious gold for signatures
+const MEDCHAIN_GOLD = '#D4A017'; // Prestigious gold (kept for reference)
+const SIGNATURE_INK = '#1E293B'; // Dark ink for light canvas
 const MEDCHAIN_GREEN = '#10B981';
 
 // Contract template
@@ -125,8 +126,8 @@ export default function ServiceAgreement() {
       const ctx = canvas.getContext('2d');
       ctx.scale(dpr, dpr);
 
-      // Fill with dark background color to ensure proper initialization
-      ctx.fillStyle = '#0f172a';
+      // Fill with light background color to ensure proper initialization
+      ctx.fillStyle = '#F1F5F9';
       ctx.fillRect(0, 0, displayWidth, displayHeight);
 
       // Clear canvas state after resize
@@ -252,10 +253,10 @@ export default function ServiceAgreement() {
   return (
     <div
       className="min-h-screen flex flex-col items-center"
-      style={{ backgroundColor: '#0a0e14', width: '100%' }}
+      style={{ backgroundColor: '#FFFFFF', width: '100%' }}
     >
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full" style={{ backgroundColor: '#0a0e14', borderBottom: '1px solid rgba(51, 65, 85, 0.3)' }}>
+      <header className="sticky top-0 z-50 w-full" style={{ backgroundColor: '#FFFFFF', borderBottom: '1px solid #E2E8F0' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto' }} className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: MEDCHAIN_BLUE }}>
@@ -264,18 +265,18 @@ export default function ServiceAgreement() {
               </svg>
             </div>
             <div>
-              <span className="text-xl font-bold text-white">Sarawak</span>
+              <span className="text-xl font-bold text-slate-800">Sarawak</span>
               <span className="text-xl font-bold text-amber-400 ml-1">MedChain</span>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="px-3 py-1 bg-blue-500/20 border border-blue-500/30 rounded-full text-blue-400 text-xs font-bold">
+            <span className="px-3 py-1 bg-blue-50 border border-blue-200 rounded-full text-blue-600 text-xs font-bold">
               {CONTRACT_VERSION}
             </span>
             {/* Real-Time Digital Clock */}
-            <div className="flex items-center gap-2 px-3 py-1 bg-slate-800/80 border border-slate-700 rounded-full">
+            <div className="flex items-center gap-2 px-3 py-1 bg-slate-50 border border-slate-200 rounded-full">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-              <span className="text-emerald-400 text-sm font-mono font-bold tracking-wider">
+              <span className="text-emerald-600 text-sm font-mono font-bold tracking-wider">
                 {currentTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
               </span>
             </div>
@@ -305,9 +306,9 @@ export default function ServiceAgreement() {
                 </svg>
               </div>
               <div>
-                <p className="text-emerald-400 font-semibold">You were referred by a partner hospital!</p>
-                <p className="text-slate-400 text-sm mt-0.5">
-                  Referral Code: <span className="font-mono text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded">{referralCode}</span>
+                <p className="text-emerald-600 font-semibold">You were referred by a partner hospital!</p>
+                <p className="text-slate-500 text-sm mt-0.5">
+                  Referral Code: <span className="font-mono text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">{referralCode}</span>
                 </p>
               </div>
             </div>
@@ -326,23 +327,24 @@ export default function ServiceAgreement() {
           >
             Digital Service Agreement
           </span>
-          <h1 className="text-4xl font-bold text-white mb-3 tracking-tight">Service Agreement</h1>
-          <p className="text-slate-400">Please review and sign to activate your hospital node</p>
+          <h1 className="text-4xl font-bold text-slate-800 mb-3 tracking-tight">Service Agreement</h1>
+          <p className="text-slate-500">Please review and sign to activate your hospital node</p>
         </div>
 
         {/* Contract Form - Floating Document */}
         <div
-          className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl overflow-hidden w-full"
+          className="rounded-3xl overflow-hidden w-full"
           style={{
-            border: '1px solid rgba(100, 116, 139, 0.4)',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05)'
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #E2E8F0',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(226, 232, 240, 0.5)'
           }}
         >
           {/* Contract Header */}
           <div
-            className="p-8 border-b border-slate-700/50"
+            className="p-8 border-b border-slate-200"
             style={{
-              background: `linear-gradient(135deg, ${MEDCHAIN_BLUE}08 0%, ${MEDCHAIN_DARK}05 100%)`,
+              background: `linear-gradient(135deg, ${MEDCHAIN_BLUE}06 0%, ${MEDCHAIN_DARK}03 100%)`,
             }}
           >
             <div className="flex items-start justify-between">
@@ -359,46 +361,46 @@ export default function ServiceAgreement() {
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-white tracking-tight">Sarawak MedChain Service Agreement</h2>
-                  <p className="text-slate-400 mt-1">Blockchain Medical Certificate Verification Services</p>
+                  <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Sarawak MedChain Service Agreement</h2>
+                  <p className="text-slate-500 mt-1">Blockchain Medical Certificate Verification Services</p>
                 </div>
               </div>
               <div className="text-right flex-shrink-0">
                 <div
                   className="inline-flex flex-col items-end px-4 py-3 rounded-xl"
                   style={{
-                    background: 'rgba(30, 41, 59, 0.5)',
-                    border: '1px solid rgba(71, 85, 105, 0.3)',
+                    background: '#F8FAFC',
+                    border: '1px solid #E2E8F0',
                   }}
                 >
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Effective Date</p>
-                  <p className="text-white font-semibold">{EFFECTIVE_DATE}</p>
+                  <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">Effective Date</p>
+                  <p className="text-slate-800 font-semibold">{EFFECTIVE_DATE}</p>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Parties */}
-          <div className="p-8 border-b border-slate-700/50">
-            <h3 className="text-lg font-bold text-white mb-6">Parties to this Agreement</h3>
+          <div className="p-8 border-b border-slate-200">
+            <h3 className="text-lg font-bold text-slate-800 mb-6">Parties to this Agreement</h3>
             <div className="grid md:grid-cols-2 gap-6">
               {/* Provider */}
               <div
                 className="rounded-2xl p-6"
                 style={{
-                  background: 'rgba(30, 41, 59, 0.4)',
+                  background: '#F8FAFC',
                   border: '1px solid rgba(59, 130, 246, 0.2)',
                 }}
               >
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="w-2 h-2 rounded-full bg-blue-400"></div>
-                  <p className="text-xs font-bold text-blue-400 uppercase tracking-wider">Service Provider</p>
+                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                  <p className="text-xs font-bold text-blue-500 uppercase tracking-wider">Service Provider</p>
                 </div>
-                <p className="text-lg font-bold text-white">Sarawak MedChain Sdn Bhd</p>
+                <p className="text-lg font-bold text-slate-800">Sarawak MedChain Sdn Bhd</p>
                 <div className="mt-3 space-y-1">
-                  <p className="text-sm text-slate-400">Level 15, Wisma Saberkas</p>
-                  <p className="text-sm text-slate-400">Jalan Tun Abang Haji Openg</p>
-                  <p className="text-sm text-slate-400">93000 Kuching, Sarawak</p>
+                  <p className="text-sm text-slate-500">Level 15, Wisma Saberkas</p>
+                  <p className="text-sm text-slate-500">Jalan Tun Abang Haji Openg</p>
+                  <p className="text-sm text-slate-500">93000 Kuching, Sarawak</p>
                 </div>
               </div>
 
@@ -406,13 +408,13 @@ export default function ServiceAgreement() {
               <div
                 className="rounded-2xl p-6"
                 style={{
-                  background: 'rgba(30, 41, 59, 0.4)',
+                  background: '#F8FAFC',
                   border: '1px solid rgba(16, 185, 129, 0.2)',
                 }}
               >
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-                  <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Client (Hospital/Clinic)</p>
+                  <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                  <p className="text-xs font-bold text-emerald-500 uppercase tracking-wider">Client (Hospital/Clinic)</p>
                 </div>
                 <div className="space-y-3">
                   <input
@@ -420,17 +422,17 @@ export default function ServiceAgreement() {
                     value={formData.hospitalName}
                     onChange={(e) => setFormData({ ...formData, hospitalName: e.target.value })}
                     placeholder="Hospital / Clinic Name"
-                    className="w-full rounded-xl px-4 py-3 text-white text-base font-semibold placeholder-slate-500 focus:outline-none transition-all"
+                    className="w-full rounded-xl px-4 py-3 text-slate-800 text-base font-semibold placeholder-slate-400 focus:outline-none transition-all"
                     style={{
-                      background: 'rgba(15, 23, 42, 0.8)',
-                      border: '1px solid rgba(71, 85, 105, 0.5)',
+                      background: '#F8FAFC',
+                      border: '1px solid #E2E8F0',
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = MEDCHAIN_GREEN;
                       e.target.style.boxShadow = `0 0 0 3px ${MEDCHAIN_GREEN}20`;
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'rgba(71, 85, 105, 0.5)';
+                      e.target.style.borderColor = '#E2E8F0';
                       e.target.style.boxShadow = 'none';
                     }}
                   />
@@ -439,17 +441,17 @@ export default function ServiceAgreement() {
                     value={formData.address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     placeholder="Business Address"
-                    className="w-full rounded-xl px-4 py-2.5 text-slate-300 text-sm placeholder-slate-500 focus:outline-none transition-all"
+                    className="w-full rounded-xl px-4 py-2.5 text-slate-700 text-sm placeholder-slate-400 focus:outline-none transition-all"
                     style={{
-                      background: 'rgba(15, 23, 42, 0.8)',
-                      border: '1px solid rgba(71, 85, 105, 0.5)',
+                      background: '#F8FAFC',
+                      border: '1px solid #E2E8F0',
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = MEDCHAIN_GREEN;
                       e.target.style.boxShadow = `0 0 0 3px ${MEDCHAIN_GREEN}20`;
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'rgba(71, 85, 105, 0.5)';
+                      e.target.style.borderColor = '#E2E8F0';
                       e.target.style.boxShadow = 'none';
                     }}
                   />
@@ -459,8 +461,8 @@ export default function ServiceAgreement() {
           </div>
 
           {/* Selected Plan */}
-          <div className="p-8 border-b border-slate-700/50">
-            <h3 className="text-lg font-bold text-white mb-6">Selected Service Plan</h3>
+          <div className="p-8 border-b border-slate-200">
+            <h3 className="text-lg font-bold text-slate-800 mb-6">Selected Service Plan</h3>
             <div
               className="rounded-2xl p-6"
               style={{
@@ -469,7 +471,7 @@ export default function ServiceAgreement() {
               }}
             >
               <div className="flex items-center justify-between mb-6">
-                <h4 className="text-xl font-bold text-white">{currentPlan.name}</h4>
+                <h4 className="text-xl font-bold text-slate-800">{currentPlan.name}</h4>
                 <span
                   className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider"
                   style={{
@@ -483,29 +485,29 @@ export default function ServiceAgreement() {
               </div>
               <div className="grid grid-cols-3 gap-0">
                 <div className="text-center py-4 px-2">
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Monthly Subscription</p>
-                  <p className="text-2xl font-bold text-white">RM {currentPlan.baseFee.toLocaleString()}</p>
+                  <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Monthly Subscription</p>
+                  <p className="text-2xl font-bold text-slate-800">RM {currentPlan.baseFee.toLocaleString()}</p>
                 </div>
-                <div className="text-center py-4 px-2 border-x border-slate-700/50">
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Per MC Fee</p>
-                  <p className="text-2xl font-bold text-white">RM {currentPlan.mcFee.toFixed(2)}</p>
+                <div className="text-center py-4 px-2 border-x border-slate-200">
+                  <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Per MC Fee</p>
+                  <p className="text-2xl font-bold text-slate-800">RM {currentPlan.mcFee.toFixed(2)}</p>
                 </div>
                 <div className="text-center py-4 px-2">
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">Billing Cycle</p>
-                  <p className="text-2xl font-bold text-white">Monthly</p>
+                  <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Billing Cycle</p>
+                  <p className="text-2xl font-bold text-slate-800">Monthly</p>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Terms */}
-          <div className="p-8 border-b border-slate-700/50">
-            <h3 className="text-lg font-bold text-white mb-6">Terms and Conditions</h3>
+          <div className="p-8 border-b border-slate-200">
+            <h3 className="text-lg font-bold text-slate-800 mb-6">Terms and Conditions</h3>
             <div
               className="rounded-2xl p-6 max-h-72 overflow-y-auto custom-scrollbar"
               style={{
-                background: 'rgba(30, 41, 59, 0.4)',
-                border: '1px solid rgba(71, 85, 105, 0.4)',
+                background: '#F8FAFC',
+                border: '1px solid #E2E8F0',
               }}
             >
               <div className="space-y-4">
@@ -518,9 +520,9 @@ export default function ServiceAgreement() {
                   { num: '6', title: 'Liability', content: "Provider's liability is limited to the value of services paid in the preceding 12 months." },
                   { num: '7', title: 'Governing Law', content: 'This agreement is governed by the laws of Malaysia and subject to the jurisdiction of Sarawak courts.' },
                 ].map((term, idx) => (
-                  <div key={idx} className="pb-4 border-b border-slate-700/30 last:border-0 last:pb-0">
-                    <p style={{ lineHeight: '1.6' }} className="text-sm text-slate-300">
-                      <span className="text-white font-bold">{term.num}. {term.title}:</span>{' '}
+                  <div key={idx} className="pb-4 border-b border-slate-100 last:border-0 last:pb-0">
+                    <p style={{ lineHeight: '1.6' }} className="text-sm text-slate-600">
+                      <span className="text-slate-800 font-bold">{term.num}. {term.title}:</span>{' '}
                       {term.content}
                     </p>
                   </div>
@@ -530,56 +532,56 @@ export default function ServiceAgreement() {
           </div>
 
           {/* Signatory Details */}
-          <div className="p-8 border-b border-slate-700/50">
-            <h3 className="text-lg font-bold text-white mb-6">Authorized Signatory</h3>
+          <div className="p-8 border-b border-slate-200">
+            <h3 className="text-lg font-bold text-slate-800 mb-6">Authorized Signatory</h3>
             <div
               className="rounded-2xl p-6"
               style={{
-                background: 'rgba(30, 41, 59, 0.3)',
-                border: '1px solid rgba(71, 85, 105, 0.3)',
+                background: '#F8FAFC',
+                border: '1px solid #E2E8F0',
               }}
             >
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Full Name</label>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Full Name</label>
                   <input
                     type="text"
                     value={formData.ceoName}
                     onChange={(e) => setFormData({ ...formData, ceoName: e.target.value })}
                     placeholder="Full legal name"
-                    className="w-full rounded-xl px-4 py-3.5 text-white placeholder-slate-500 focus:outline-none transition-all"
+                    className="w-full rounded-xl px-4 py-3.5 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
                     style={{
-                      background: 'rgba(15, 23, 42, 0.8)',
-                      border: '1px solid rgba(71, 85, 105, 0.5)',
+                      background: '#FFFFFF',
+                      border: '1px solid #E2E8F0',
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = MEDCHAIN_BLUE;
                       e.target.style.boxShadow = `0 0 0 3px ${MEDCHAIN_BLUE}20`;
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'rgba(71, 85, 105, 0.5)';
+                      e.target.style.borderColor = '#E2E8F0';
                       e.target.style.boxShadow = 'none';
                     }}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Title / Position</label>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Title / Position</label>
                   <input
                     type="text"
                     value={formData.ceoTitle}
                     onChange={(e) => setFormData({ ...formData, ceoTitle: e.target.value })}
                     placeholder="e.g., Chief Executive Officer"
-                    className="w-full rounded-xl px-4 py-3.5 text-white placeholder-slate-500 focus:outline-none transition-all"
+                    className="w-full rounded-xl px-4 py-3.5 text-slate-800 placeholder-slate-400 focus:outline-none transition-all"
                     style={{
-                      background: 'rgba(15, 23, 42, 0.8)',
-                      border: '1px solid rgba(71, 85, 105, 0.5)',
+                      background: '#FFFFFF',
+                      border: '1px solid #E2E8F0',
                     }}
                     onFocus={(e) => {
                       e.target.style.borderColor = MEDCHAIN_BLUE;
                       e.target.style.boxShadow = `0 0 0 3px ${MEDCHAIN_BLUE}20`;
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = 'rgba(71, 85, 105, 0.5)';
+                      e.target.style.borderColor = '#E2E8F0';
                       e.target.style.boxShadow = 'none';
                     }}
                   />
@@ -589,19 +591,19 @@ export default function ServiceAgreement() {
           </div>
 
           {/* Signature Pad */}
-          <div className="p-8 border-b border-slate-700/50 relative">
-            <h3 className="text-lg font-bold text-white mb-2">Digital Signature</h3>
-            <p className="text-sm text-slate-400 mb-6">Please sign in the box below using your mouse or touchscreen</p>
+          <div className="p-8 border-b border-slate-200 relative">
+            <h3 className="text-lg font-bold text-slate-800 mb-2">Digital Signature</h3>
+            <p className="text-sm text-slate-500 mb-6">Please sign in the box below using your mouse or touchscreen</p>
 
             <div
               ref={signatureContainerRef}
               className="rounded-2xl p-3 mb-4 w-full relative overflow-hidden"
               style={{
                 width: '100%',
-                border: `2px solid ${MEDCHAIN_GOLD}40`,
+                border: '2px solid #CBD5E1',
                 boxSizing: 'border-box',
-                backgroundColor: '#0f172a',
-                boxShadow: `inset 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 0 1px ${MEDCHAIN_GOLD}10`
+                backgroundColor: '#F1F5F9',
+                boxShadow: 'inset 0 2px 8px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(203, 213, 225, 0.3)'
               }}
             >
               <SignatureCanvas
@@ -615,8 +617,8 @@ export default function ServiceAgreement() {
                     touchAction: 'none'
                   }
                 }}
-                backgroundColor="#0f172a"
-                penColor={MEDCHAIN_GOLD}
+                backgroundColor="#F1F5F9"
+                penColor="#1E293B"
                 onEnd={checkSignature}
               />
 
@@ -685,17 +687,17 @@ export default function ServiceAgreement() {
                 onClick={clearSignature}
                 className="px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 transition-all"
                 style={{
-                  background: 'rgba(71, 85, 105, 0.3)',
-                  border: '1px solid rgba(71, 85, 105, 0.5)',
-                  color: '#94A3B8',
+                  background: '#F1F5F9',
+                  border: '1px solid #E2E8F0',
+                  color: '#64748B',
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(71, 85, 105, 0.5)';
-                  e.target.style.color = '#ffffff';
+                  e.target.style.background = '#E2E8F0';
+                  e.target.style.color = '#1E293B';
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.background = 'rgba(71, 85, 105, 0.3)';
-                  e.target.style.color = '#94A3B8';
+                  e.target.style.background = '#F1F5F9';
+                  e.target.style.color = '#64748B';
                 }}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -722,9 +724,9 @@ export default function ServiceAgreement() {
 
             {/* CSS Keyframe Animations & Global Background Unity */}
             <style>{`
-              /* Perfect Background Unity - #0a0e14 everywhere */
+              /* Perfect Background Unity - white everywhere */
               html, body, #root {
-                background-color: #0a0e14 !important;
+                background-color: #FFFFFF !important;
               }
 
               /* Custom Scrollbar for Terms */
@@ -732,15 +734,15 @@ export default function ServiceAgreement() {
                 width: 6px;
               }
               .custom-scrollbar::-webkit-scrollbar-track {
-                background: rgba(30, 41, 59, 0.3);
+                background: #F1F5F9;
                 border-radius: 3px;
               }
               .custom-scrollbar::-webkit-scrollbar-thumb {
-                background: rgba(71, 85, 105, 0.6);
+                background: #CBD5E1;
                 border-radius: 3px;
               }
               .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                background: rgba(100, 116, 139, 0.8);
+                background: #94A3B8;
               }
 
               @keyframes fadeInScale {
@@ -763,15 +765,15 @@ export default function ServiceAgreement() {
             <label
               className="flex items-start gap-4 cursor-pointer group p-5 rounded-2xl transition-all"
               style={{
-                background: agreedToTerms ? 'rgba(16, 185, 129, 0.08)' : 'rgba(30, 41, 59, 0.3)',
-                border: agreedToTerms ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(71, 85, 105, 0.3)',
+                background: agreedToTerms ? 'rgba(16, 185, 129, 0.06)' : '#F8FAFC',
+                border: agreedToTerms ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid #E2E8F0',
               }}
             >
               <div
                 className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 transition-all"
                 style={{
-                  background: agreedToTerms ? MEDCHAIN_GREEN : 'rgba(15, 23, 42, 0.8)',
-                  border: agreedToTerms ? 'none' : '2px solid rgba(71, 85, 105, 0.6)',
+                  background: agreedToTerms ? MEDCHAIN_GREEN : '#F8FAFC',
+                  border: agreedToTerms ? 'none' : '2px solid #CBD5E1',
                 }}
               >
                 {agreedToTerms && (
@@ -786,8 +788,8 @@ export default function ServiceAgreement() {
                 onChange={(e) => setAgreedToTerms(e.target.checked)}
                 className="sr-only"
               />
-              <span className="text-slate-300 text-sm leading-relaxed">
-                I, <strong className="text-white">{formData.ceoName || '[Signatory Name]'}</strong>, as the authorized representative of <strong className="text-white">{formData.hospitalName || '[Hospital Name]'}</strong>, have read, understood, and agree to be bound by the terms and conditions outlined in this Digital Service Agreement. I confirm that I have the authority to enter into this agreement on behalf of the organization.
+              <span className="text-slate-600 text-sm leading-relaxed">
+                I, <strong className="text-slate-800">{formData.ceoName || '[Signatory Name]'}</strong>, as the authorized representative of <strong className="text-slate-800">{formData.hospitalName || '[Hospital Name]'}</strong>, have read, understood, and agree to be bound by the terms and conditions outlined in this Digital Service Agreement. I confirm that I have the authority to enter into this agreement on behalf of the organization.
               </span>
             </label>
           </div>
@@ -839,7 +841,7 @@ export default function ServiceAgreement() {
             </button>
 
             {(!hasSignature || !agreedToTerms) && (
-              <p className="text-center text-slate-500 text-sm mt-4">
+              <p className="text-center text-slate-400 text-sm mt-4">
                 {!hasSignature && !agreedToTerms
                   ? 'Please sign above and accept the terms to continue'
                   : !hasSignature
@@ -862,8 +864,9 @@ export default function ServiceAgreement() {
             <div
               className="relative p-5 rounded-2xl"
               style={{
-                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+                background: '#FFFFFF',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                border: '1px solid #E2E8F0',
               }}
             >
               {/* Corner Brackets for Scan Effect */}
@@ -877,7 +880,7 @@ export default function ServiceAgreement() {
                 size={160}
                 level="H"
                 bgColor="transparent"
-                fgColor="#ffffff"
+                fgColor="#1E293B"
                 imageSettings={{
                   src: '',
                   height: 0,
@@ -914,17 +917,17 @@ export default function ServiceAgreement() {
           <div
             className="mt-4 px-4 py-2 rounded-xl flex items-center gap-2"
             style={{
-              background: 'rgba(30, 41, 59, 0.6)',
-              border: '1px solid rgba(71, 85, 105, 0.4)',
+              background: '#F8FAFC',
+              border: '1px solid #E2E8F0',
             }}
           >
-            <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
-            <span className="text-xs font-mono text-slate-400">{documentId}</span>
+            <span className="text-xs font-mono text-slate-500">{documentId}</span>
           </div>
 
-          <p className="mt-3 text-slate-500 text-xs font-medium tracking-wider uppercase">
+          <p className="mt-3 text-slate-400 text-xs font-medium tracking-wider uppercase">
             Scan to verify document authenticity
           </p>
 
@@ -950,19 +953,19 @@ export default function ServiceAgreement() {
             onClick={() => window.print()}
             className="px-6 py-3 rounded-xl font-medium text-sm flex items-center gap-3 transition-all"
             style={{
-              background: 'rgba(30, 41, 59, 0.5)',
-              border: '1px solid rgba(71, 85, 105, 0.4)',
-              color: '#94A3B8',
+              background: '#F8FAFC',
+              border: '1px solid #E2E8F0',
+              color: '#64748B',
             }}
             onMouseEnter={(e) => {
-              e.target.style.background = 'rgba(30, 41, 59, 0.8)';
-              e.target.style.borderColor = 'rgba(100, 116, 139, 0.6)';
-              e.target.style.color = '#ffffff';
+              e.target.style.background = '#E2E8F0';
+              e.target.style.borderColor = '#CBD5E1';
+              e.target.style.color = '#1E293B';
             }}
             onMouseLeave={(e) => {
-              e.target.style.background = 'rgba(30, 41, 59, 0.5)';
-              e.target.style.borderColor = 'rgba(71, 85, 105, 0.4)';
-              e.target.style.color = '#94A3B8';
+              e.target.style.background = '#F8FAFC';
+              e.target.style.borderColor = '#E2E8F0';
+              e.target.style.color = '#64748B';
             }}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

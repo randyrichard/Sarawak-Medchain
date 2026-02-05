@@ -189,7 +189,7 @@ export default function BusinessOverview() {
               Technology Stack
             </h2>
 
-            <div className="bg-slate-900 rounded-xl p-6 text-white">
+            <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -197,48 +197,48 @@ export default function BusinessOverview() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold">Secure Private Blockchain</h3>
-                  <p className="text-slate-400">Enterprise-grade infrastructure</p>
+                  <h3 className="text-xl font-bold text-slate-800">Secure Private Blockchain</h3>
+                  <p className="text-slate-500">Enterprise-grade infrastructure</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-slate-800 rounded-lg p-4 text-center">
-                  <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
-                    <span className="text-green-400 font-bold text-sm">JS</span>
+                <div className="bg-white rounded-lg p-4 text-center border border-slate-200">
+                  <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center mx-auto mb-2">
+                    <span className="text-green-600 font-bold text-sm">JS</span>
                   </div>
-                  <p className="font-semibold">Node.js</p>
-                  <p className="text-xs text-slate-400">Backend Runtime</p>
+                  <p className="font-semibold text-slate-800">Node.js</p>
+                  <p className="text-xs text-slate-500">Backend Runtime</p>
                 </div>
-                <div className="bg-slate-800 rounded-lg p-4 text-center">
-                  <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
-                    <span className="text-blue-400 font-bold text-sm">R</span>
+                <div className="bg-white rounded-lg p-4 text-center border border-slate-200">
+                  <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center mx-auto mb-2">
+                    <span className="text-blue-600 font-bold text-sm">R</span>
                   </div>
-                  <p className="font-semibold">React</p>
-                  <p className="text-xs text-slate-400">Frontend Framework</p>
+                  <p className="font-semibold text-slate-800">React</p>
+                  <p className="text-xs text-slate-500">Frontend Framework</p>
                 </div>
-                <div className="bg-slate-800 rounded-lg p-4 text-center">
-                  <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
-                    <span className="text-purple-400 font-bold text-sm">ETH</span>
+                <div className="bg-white rounded-lg p-4 text-center border border-slate-200">
+                  <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center mx-auto mb-2">
+                    <span className="text-purple-600 font-bold text-sm">ETH</span>
                   </div>
-                  <p className="font-semibold">Ethereum</p>
-                  <p className="text-xs text-slate-400">Smart Contracts</p>
+                  <p className="font-semibold text-slate-800">Ethereum</p>
+                  <p className="text-xs text-slate-500">Smart Contracts</p>
                 </div>
-                <div className="bg-slate-800 rounded-lg p-4 text-center">
-                  <div className="w-10 h-10 bg-cyan-500/20 rounded-lg flex items-center justify-center mx-auto mb-2">
-                    <span className="text-cyan-400 font-bold text-sm">IPFS</span>
+                <div className="bg-white rounded-lg p-4 text-center border border-slate-200">
+                  <div className="w-10 h-10 bg-cyan-500/10 rounded-lg flex items-center justify-center mx-auto mb-2">
+                    <span className="text-cyan-600 font-bold text-sm">IPFS</span>
                   </div>
-                  <p className="font-semibold">IPFS</p>
-                  <p className="text-xs text-slate-400">Decentralized Storage</p>
+                  <p className="font-semibold text-slate-800">IPFS</p>
+                  <p className="text-xs text-slate-500">Decentralized Storage</p>
                 </div>
               </div>
 
-              <div className="mt-6 pt-6 border-t border-slate-700">
+              <div className="mt-6 pt-6 border-t border-slate-200">
                 <div className="flex flex-wrap gap-2">
-                  <span className="px-3 py-1 bg-slate-700 rounded-full text-xs">AES-256 Encryption</span>
-                  <span className="px-3 py-1 bg-slate-700 rounded-full text-xs">MetaMask Integration</span>
-                  <span className="px-3 py-1 bg-slate-700 rounded-full text-xs">Role-Based Access</span>
-                  <span className="px-3 py-1 bg-slate-700 rounded-full text-xs">Audit Trail</span>
+                  <span className="px-3 py-1 bg-slate-200 text-slate-700 rounded-full text-xs">AES-256 Encryption</span>
+                  <span className="px-3 py-1 bg-slate-200 text-slate-700 rounded-full text-xs">MetaMask Integration</span>
+                  <span className="px-3 py-1 bg-slate-200 text-slate-700 rounded-full text-xs">Role-Based Access</span>
+                  <span className="px-3 py-1 bg-slate-200 text-slate-700 rounded-full text-xs">Audit Trail</span>
                 </div>
               </div>
             </div>

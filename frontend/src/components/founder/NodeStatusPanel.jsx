@@ -11,10 +11,10 @@ const theme = {
   teal: '#14b8a6',
   warning: '#f59e0b',
   danger: '#ef4444',
-  textPrimary: '#ffffff',
-  textSecondary: '#94a3b8',
-  textMuted: '#64748b',
-  border: 'rgba(30, 58, 95, 0.5)',
+  textPrimary: '#1E293B',
+  textSecondary: '#64748B',
+  textMuted: '#94A3B8',
+  border: '#E2E8F0',
 };
 
 // Default node data
@@ -113,10 +113,10 @@ export default function NodeStatusPanel({
               className="cursor-pointer"
             >
               <div
-                className="p-4 rounded-xl transition-all hover:bg-slate-800/50"
+                className="p-4 rounded-xl transition-all hover:bg-slate-50"
                 style={{
-                  background: 'rgba(30, 41, 59, 0.3)',
-                  border: `1px solid ${isExpanded ? theme.teal : 'rgba(51, 65, 85, 0.3)'}`,
+                  background: '#F8FAFC',
+                  border: `1px solid ${isExpanded ? theme.teal : '#E2E8F0'}`,
                 }}
               >
                 <div className="flex items-center justify-between">
@@ -227,8 +227,8 @@ export default function NodeStatusPanel({
                       }}
                       className="flex-1 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105"
                       style={{
-                        backgroundColor: 'rgba(30, 41, 59, 0.5)',
-                        border: '1px solid rgba(51, 65, 85, 0.5)',
+                        backgroundColor: '#F1F5F9',
+                        border: '1px solid #E2E8F0',
                         color: theme.textSecondary,
                       }}
                     >

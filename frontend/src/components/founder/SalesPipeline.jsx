@@ -13,10 +13,10 @@ const theme = {
   warning: '#f59e0b',
   purple: '#8b5cf6',
   danger: '#ef4444',
-  textPrimary: '#ffffff',
-  textSecondary: '#94a3b8',
-  textMuted: '#64748b',
-  border: 'rgba(30, 58, 95, 0.5)',
+  textPrimary: '#1E293B',
+  textSecondary: '#64748B',
+  textMuted: '#94A3B8',
+  border: '#E2E8F0',
 };
 
 // Default leads data
@@ -109,7 +109,7 @@ export default function SalesPipeline({
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-3 py-1.5 rounded-lg text-sm bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-teal-500"
+            className="px-3 py-1.5 rounded-lg text-sm bg-white border border-slate-200 text-slate-800 focus:outline-none focus:border-teal-500"
           >
             <option value="all">All Status</option>
             {Object.entries(statusConfig).map(([key, config]) => (
@@ -119,7 +119,7 @@ export default function SalesPipeline({
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="px-3 py-1.5 rounded-lg text-sm bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-teal-500"
+            className="px-3 py-1.5 rounded-lg text-sm bg-white border border-slate-200 text-slate-800 focus:outline-none focus:border-teal-500"
           >
             <option value="value">Sort by Value</option>
             <option value="date">Sort by Date</option>
@@ -163,7 +163,7 @@ export default function SalesPipeline({
                     animate={{ opacity: isClosed ? 0.5 : 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ delay: index * 0.03 }}
-                    className="group hover:bg-slate-800/30 transition-colors"
+                    className="group hover:bg-slate-50 transition-colors"
                     style={{ borderBottom: `1px solid ${theme.border}` }}
                   >
                     <td className="py-4 px-4">
@@ -205,7 +205,7 @@ export default function SalesPipeline({
                         {onCallLead && (
                           <button
                             onClick={() => onCallLead(lead)}
-                            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-slate-700"
+                            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-slate-100"
                             style={{ color: theme.textSecondary }}
                             title="Call"
                           >
@@ -217,7 +217,7 @@ export default function SalesPipeline({
                         {onSendEmail && (
                           <button
                             onClick={() => onSendEmail(lead)}
-                            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-slate-700"
+                            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-slate-100"
                             style={{ color: theme.textSecondary }}
                             title="Email"
                           >

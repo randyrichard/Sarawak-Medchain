@@ -119,10 +119,10 @@ const CardWrapper = ({ children, className = '', noPadding = false }) => (
   <div
     className={className}
     style={{
-      border: '1px solid rgba(20, 184, 166, 0.2)',
+      border: '1px solid #E2E8F0',
       borderRadius: '16px',
       padding: noPadding ? '0' : '24px',
-      background: 'rgba(15, 23, 42, 0.6)'
+      background: '#FFFFFF'
     }}
   >
     {children}
@@ -135,21 +135,21 @@ function StatCard({ title, value, subtitle, icon, trend, darkMode }) {
     <div
       className="rounded-xl p-6 shadow-lg transition-all duration-300 hover:shadow-xl"
       style={{
-        border: '1px solid rgba(20, 184, 166, 0.2)',
+        border: '1px solid #E2E8F0',
         borderRadius: '16px',
-        background: darkMode ? 'rgba(15, 23, 42, 0.6)' : 'white'
+        background: 'white'
       }}
     >
       <div className="flex items-center justify-start gap-x-4">
         <div>
-          <p className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          <p className="text-sm font-medium text-gray-500">
             {title}
           </p>
-          <p className={`text-3xl font-bold mt-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+          <p className="text-3xl font-bold mt-2 text-gray-900">
             {value}
           </p>
           {subtitle && (
-            <p className={`text-sm mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+            <p className="text-sm mt-1 text-gray-400">
               {subtitle}
             </p>
           )}
@@ -159,9 +159,7 @@ function StatCard({ title, value, subtitle, icon, trend, darkMode }) {
             </p>
           )}
         </div>
-        <div className={`p-4 rounded-full ${
-          darkMode ? 'bg-gray-700' : 'bg-blue-50'
-        }`}>
+        <div className="p-4 rounded-full bg-blue-50">
           <span className="text-3xl">{icon}</span>
         </div>
       </div>
@@ -643,7 +641,7 @@ export default function CEODashboard({ walletAddress }) {
   const contributorTier = getContributorTier();
 
   return (
-    <div className="flex-1 flex-grow w-full min-h-full font-sans ceo-dashboard" style={{ backgroundColor: '#0a0e14' }}>
+    <div className="flex-1 flex-grow w-full min-h-full font-sans ceo-dashboard" style={{ backgroundColor: '#FFFFFF' }}>
       {/* Network-Wide Broadcast Notification */}
       <BroadcastNotification />
 
@@ -655,18 +653,16 @@ export default function CEODashboard({ walletAddress }) {
       <div className="mb-8 flex flex-col lg:flex-row lg:items-center justify-start gap-6">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className={`text-3xl lg:text-4xl font-bold ${darkMode ? 'text-white' : 'text-slate-800'}`}>
+            <h1 className="text-3xl lg:text-4xl font-bold text-slate-800">
               {connectedHospital ? connectedHospital.name : 'Hospital CEO Dashboard'}
             </h1>
             {connectedHospital && (
-              <p className={`text-sm mt-1 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+              <p className="text-sm mt-1 text-slate-500">
                 {connectedHospital.location} • {connectedHospital.tier}
               </p>
             )}
           </div>
-          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-            darkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'
-          }`}>
+          <span className="px-3 py-1 rounded-full text-sm font-medium bg-slate-100 text-slate-600">
             Analytics
           </span>
         </div>
@@ -676,11 +672,7 @@ export default function CEODashboard({ walletAddress }) {
           {/* Quarterly Summary Button */}
           <button
             onClick={() => navigate('/ceo/quarterly')}
-            className={`relative flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all shadow-lg hover:scale-[1.02] active:scale-[0.98] ${
-              darkMode
-                ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:from-purple-400 hover:to-indigo-500'
-                : 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:from-purple-400 hover:to-indigo-500'
-            }`}
+            className="relative flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-all shadow-lg hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-r from-purple-500 to-indigo-600 text-white hover:from-purple-400 hover:to-indigo-500"
             style={{ boxShadow: '0 10px 30px rgba(139, 92, 246, 0.3)' }}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -692,11 +684,7 @@ export default function CEODashboard({ walletAddress }) {
           {/* Expand the Network Button */}
           <button
             onClick={() => setShowReferralModal(true)}
-            className={`relative flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:scale-[1.02] active:scale-[0.98] overflow-hidden ${
-              darkMode
-                ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-400 hover:to-teal-500'
-                : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-400 hover:to-teal-500'
-            }`}
+            className="relative flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:scale-[1.02] active:scale-[0.98] overflow-hidden bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-400 hover:to-teal-500"
             style={{ boxShadow: '0 10px 30px rgba(16, 185, 129, 0.3)' }}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -717,9 +705,7 @@ export default function CEODashboard({ walletAddress }) {
             className={`relative flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:scale-[1.02] active:scale-[0.98] overflow-hidden ${
               generatingPDF
                 ? 'bg-slate-600 cursor-wait'
-                : darkMode
-                  ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white hover:from-sky-400 hover:to-blue-500'
-                  : 'bg-gradient-to-r from-sky-500 to-blue-600 text-white hover:from-sky-400 hover:to-blue-500'
+                : 'bg-gradient-to-r from-sky-500 to-blue-600 text-white hover:from-sky-400 hover:to-blue-500'
             }`}
             style={{ boxShadow: generatingPDF ? 'none' : '0 10px 30px rgba(14, 165, 233, 0.3)' }}
           >
@@ -752,9 +738,7 @@ export default function CEODashboard({ walletAddress }) {
       {/* Referral Modal */}
       {showReferralModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className={`w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden ${
-            darkMode ? 'bg-slate-800' : 'bg-white'
-          }`}>
+          <div className="w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden bg-white">
             {/* Modal Header */}
             <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-6 text-white">
               <div className="flex items-center justify-between">
@@ -789,18 +773,18 @@ export default function CEODashboard({ walletAddress }) {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <h3 className={`text-xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  <h3 className="text-xl font-bold mb-2 text-gray-900">
                     Invitation Sent!
                   </h3>
-                  <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <p className="text-gray-600">
                     You will earn 1,000 free MC credits when they sign up and pay.
                   </p>
                 </div>
               ) : (
                 <>
                   {/* Your Referral Link */}
-                  <div className={`mb-6 p-4 rounded-xl ${darkMode ? 'bg-slate-700/50' : 'bg-gray-50'}`}>
-                    <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  <div className="mb-6 p-4 rounded-xl bg-gray-50">
+                    <label className="block text-sm font-semibold mb-2 text-gray-700">
                       Your Partner Link
                     </label>
                     <div className="flex gap-2">
@@ -808,41 +792,35 @@ export default function CEODashboard({ walletAddress }) {
                         type="text"
                         readOnly
                         value={referralLink}
-                        className={`flex-1 px-3 py-2 rounded-lg text-sm font-mono truncate ${
-                          darkMode
-                            ? 'bg-slate-800 border border-slate-600 text-gray-300'
-                            : 'bg-white border border-gray-200 text-gray-700'
-                        }`}
+                        className="flex-1 px-3 py-2 rounded-lg text-sm font-mono truncate bg-white border border-gray-200 text-gray-700"
                       />
                       <button
                         onClick={copyReferralLink}
                         className={`px-4 py-2 rounded-lg font-medium transition-all ${
                           copiedLink
                             ? 'bg-emerald-500 text-white'
-                            : darkMode
-                              ? 'bg-slate-600 text-white hover:bg-slate-500'
-                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                         }`}
                       >
                         {copiedLink ? 'Copied!' : 'Copy'}
                       </button>
                     </div>
-                    <p className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                    <p className="text-xs mt-2 text-gray-500">
                       Referral Code: <span className="font-mono font-bold text-emerald-500">{referralCode}</span>
                     </p>
                   </div>
 
                   {/* Divider */}
                   <div className="flex items-center gap-4 mb-6">
-                    <div className={`flex-1 h-px ${darkMode ? 'bg-slate-700' : 'bg-gray-200'}`}></div>
-                    <span className={`text-sm ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>or invite directly</span>
-                    <div className={`flex-1 h-px ${darkMode ? 'bg-slate-700' : 'bg-gray-200'}`}></div>
+                    <div className="flex-1 h-px bg-gray-200"></div>
+                    <span className="text-sm text-gray-400">or invite directly</span>
+                    <div className="flex-1 h-px bg-gray-200"></div>
                   </div>
 
                   {/* Direct Invite Form */}
                   <div className="space-y-4">
                     <div>
-                      <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      <label className="block text-sm font-semibold mb-2 text-gray-700">
                         Hospital Name
                       </label>
                       <input
@@ -850,15 +828,11 @@ export default function CEODashboard({ walletAddress }) {
                         value={referralHospitalName}
                         onChange={(e) => setReferralHospitalName(e.target.value)}
                         placeholder="e.g., Normah Medical Specialist"
-                        className={`w-full px-4 py-3 rounded-xl ${
-                          darkMode
-                            ? 'bg-slate-700 border border-slate-600 text-white placeholder-gray-500'
-                            : 'bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400'
-                        }`}
+                        className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400"
                       />
                     </div>
                     <div>
-                      <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      <label className="block text-sm font-semibold mb-2 text-gray-700">
                         CEO/Admin Email
                       </label>
                       <input
@@ -866,28 +840,20 @@ export default function CEODashboard({ walletAddress }) {
                         value={referralEmail}
                         onChange={(e) => setReferralEmail(e.target.value)}
                         placeholder="ceo@hospital.com"
-                        className={`w-full px-4 py-3 rounded-xl ${
-                          darkMode
-                            ? 'bg-slate-700 border border-slate-600 text-white placeholder-gray-500'
-                            : 'bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400'
-                        }`}
+                        className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400"
                       />
                     </div>
                   </div>
 
                   {/* Reward Info */}
-                  <div className={`mt-6 p-4 rounded-xl border ${
-                    darkMode
-                      ? 'bg-amber-500/10 border-amber-500/30'
-                      : 'bg-amber-50 border-amber-200'
-                  }`}>
+                  <div className="mt-6 p-4 rounded-xl border bg-amber-50 border-amber-200">
                     <div className="flex items-start gap-3">
                       <span className="text-2xl">🎁</span>
                       <div>
-                        <p className={`font-semibold ${darkMode ? 'text-amber-400' : 'text-amber-700'}`}>
+                        <p className="font-semibold text-amber-700">
                           Your Reward: 1,000 Free MC Credits
                         </p>
-                        <p className={`text-sm ${darkMode ? 'text-amber-400/70' : 'text-amber-600'}`}>
+                        <p className="text-sm text-amber-600">
                           Worth RM 1,000 — credited automatically when they complete their first RM 10,000 payment.
                         </p>
                       </div>
@@ -923,16 +889,16 @@ export default function CEODashboard({ walletAddress }) {
             {/* Your Stats */}
             {!referralSuccess && (
               <div className={`px-6 pb-6 pt-0`}>
-                <div className={`p-4 rounded-xl ${darkMode ? 'bg-slate-700/30' : 'bg-gray-50'}`}>
+                <div className="p-4 rounded-xl bg-gray-50">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Your Referrals</p>
-                      <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      <p className="text-sm text-gray-500">Your Referrals</p>
+                      <p className="text-2xl font-bold text-gray-900">
                         {referralStats.referred.length} hospitals
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Credits Earned</p>
+                      <p className="text-sm text-gray-500">Credits Earned</p>
                       <p className="text-2xl font-bold text-emerald-500">
                         {referralStats.totalEarned.toLocaleString()}
                       </p>
@@ -947,9 +913,7 @@ export default function CEODashboard({ walletAddress }) {
 
         {/* Network Contributor Badge */}
         {referralStats.referred.length > 0 && (
-          <div className={`mb-6 rounded-2xl overflow-hidden ${
-            darkMode ? 'bg-slate-800 border border-slate-700' : 'bg-white shadow-lg'
-          }`}>
+          <div className="mb-6 rounded-2xl overflow-hidden bg-white shadow-lg">
             <div className={`bg-gradient-to-r ${contributorTier.color} p-4`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -971,20 +935,20 @@ export default function CEODashboard({ walletAddress }) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-6">
                   <div>
-                    <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Hospitals Referred</p>
-                    <p className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <p className="text-xs text-gray-400">Hospitals Referred</p>
+                    <p className="text-xl font-bold text-gray-900">
                       {referralStats.referred.length}
                     </p>
                   </div>
                   <div>
-                    <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Total Value</p>
+                    <p className="text-xs text-gray-400">Total Value</p>
                     <p className="text-xl font-bold text-emerald-500">
                       RM {contributorTier.credits.toLocaleString()}
                     </p>
                   </div>
                   <div>
-                    <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Next Tier</p>
-                    <p className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <p className="text-xs text-gray-400">Next Tier</p>
+                    <p className="text-xl font-bold text-gray-900">
                       {referralStats.referred.length < 1 ? '1 more' :
                        referralStats.referred.length < 3 ? `${3 - referralStats.referred.length} more` :
                        referralStats.referred.length < 5 ? `${5 - referralStats.referred.length} more` :
@@ -994,11 +958,7 @@ export default function CEODashboard({ walletAddress }) {
                 </div>
                 <button
                   onClick={() => setShowReferralModal(true)}
-                  className={`px-5 py-2.5 rounded-xl font-semibold transition-all ${
-                    darkMode
-                      ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
-                      : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-                  }`}
+                  className="px-5 py-2.5 rounded-xl font-semibold transition-all bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
                 >
                   Refer More
                 </button>
@@ -1009,21 +969,15 @@ export default function CEODashboard({ walletAddress }) {
 
         {/* Payment Success Notification */}
         {paymentSuccess && (
-          <div className={`mb-6 rounded-xl px-6 py-4 flex items-center gap-3 ${
-            darkMode
-              ? 'bg-emerald-500/10 border border-emerald-500/30'
-              : 'bg-emerald-50 border border-emerald-200'
-          }`}>
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-              darkMode ? 'bg-emerald-500/20' : 'bg-emerald-100'
-            }`}>
+          <div className="mb-6 rounded-xl px-6 py-4 flex items-center gap-3 bg-emerald-50 border border-emerald-200">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-emerald-100">
               <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
             <div>
-              <p className={`font-semibold ${darkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>Payment Successful!</p>
-              <p className={`text-sm ${darkMode ? 'text-emerald-400/80' : 'text-emerald-600'}`}>Your monthly payment has been processed</p>
+              <p className="font-semibold text-emerald-700">Payment Successful!</p>
+              <p className="text-sm text-emerald-600">Your monthly payment has been processed</p>
             </div>
           </div>
         )}
@@ -1035,13 +989,11 @@ export default function CEODashboard({ walletAddress }) {
           {/* ========== SUBSCRIPTION & USAGE CARD (col-span-12) ========== */}
           <div style={{ marginBottom: '24px' }}>
           <div className="rounded-2xl shadow-2xl overflow-hidden" style={{
-            border: '1px solid rgba(20, 184, 166, 0.2)',
-            background: 'rgba(15, 23, 42, 0.6)'
+            border: '1px solid #E2E8F0',
+            background: '#FFFFFF'
           }}>
             {/* Card Header */}
-            <div className={`px-8 py-5 border-b ${
-              darkMode ? 'border-slate-700/50 bg-slate-800/80' : 'border-gray-100 bg-gray-50'
-            }`}>
+            <div className="px-8 py-5 border-b border-slate-200 bg-slate-50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${sarawakBlue}20` }}>
@@ -1050,8 +1002,8 @@ export default function CEODashboard({ walletAddress }) {
                     </svg>
                   </div>
                   <div>
-                    <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Subscription & Usage</h2>
-                    <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-gray-500'}`}>January 2026 Billing Period</p>
+                    <h2 className="text-2xl font-bold text-gray-900">Subscription & Usage</h2>
+                    <p className="text-sm text-slate-500">January 2026 Billing Period</p>
                   </div>
                 </div>
                 {/* Tier Selector */}
@@ -1059,19 +1011,15 @@ export default function CEODashboard({ walletAddress }) {
                   <select
                     value={facilityType}
                     onChange={(e) => setFacilityType(e.target.value)}
-                    className={`text-sm font-medium rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 ${
-                      darkMode
-                        ? 'bg-slate-700 border border-slate-600 text-white'
-                        : 'bg-white border border-gray-200 text-gray-900'
-                    }`}
+                    className="text-sm font-medium rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 bg-white border border-slate-200 text-slate-800"
                   >
                     <option value="Hospital">Hospital</option>
                     <option value="Clinic">Clinic</option>
                   </select>
                   <span className={`px-4 py-2 rounded-full text-sm font-bold ${
                     subscriptionPaid
-                      ? darkMode ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'
-                      : darkMode ? 'bg-amber-500/20 text-amber-400' : 'bg-amber-100 text-amber-700'
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : 'bg-amber-100 text-amber-700'
                   }`}>
                     {subscriptionPaid ? 'PAID' : 'DUE'}
                   </span>
@@ -1085,54 +1033,46 @@ export default function CEODashboard({ walletAddress }) {
                 {/* Left Side: Fee Breakdown */}
                 <div className="col-span-12 lg:col-span-7 space-y-6">
                   {/* Base Fee */}
-                  <div className={`rounded-xl p-5 border ${
-                    darkMode ? 'bg-slate-700/30 border-slate-600/30' : 'bg-gray-50 border-gray-100'
-                  }`}>
+                  <div className="rounded-xl p-5 border bg-slate-50 border-gray-100">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                          facilityType === 'Hospital'
-                            ? darkMode ? 'bg-sky-500/20' : 'bg-sky-100'
-                            : darkMode ? 'bg-emerald-500/20' : 'bg-emerald-100'
+                          facilityType === 'Hospital' ? 'bg-sky-100' : 'bg-emerald-100'
                         }`}>
                           <svg className={`w-6 h-6 ${facilityType === 'Hospital' ? 'text-sky-500' : 'text-emerald-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                           </svg>
                         </div>
                         <div>
-                          <p className={`font-semibold text-lg ${darkMode ? 'text-white' : 'text-gray-900'}`}>Base Fee</p>
-                          <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-gray-500'}`}>{tierName}</p>
+                          <p className="font-semibold text-lg text-gray-900">Base Fee</p>
+                          <p className="text-sm text-slate-500">{tierName}</p>
                         </div>
                       </div>
-                      <p className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      <p className="text-3xl font-bold text-gray-900">
                         RM {baseFee.toLocaleString()}
                       </p>
                     </div>
                   </div>
 
                   {/* MC Usage - Live Counter */}
-                  <div className={`rounded-xl p-5 border ${
-                    darkMode ? 'bg-slate-700/30 border-slate-600/30' : 'bg-gray-50 border-gray-100'
-                  }`}>
+                  <div className="rounded-xl p-5 border bg-slate-50 border-gray-100">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                          darkMode ? 'bg-emerald-500/20' : 'bg-emerald-100'
-                        }`}>
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-emerald-100">
                           <svg className="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <p className={`font-semibold text-lg ${darkMode ? 'text-white' : 'text-gray-900'}`}>MC Usage</p>
+                            <p className="font-semibold text-lg text-gray-900">MC Usage</p>
                             <span className="flex items-center gap-1 text-emerald-500 text-xs font-medium bg-emerald-500/20 px-2 py-0.5 rounded-full">
                               <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
                               LIVE
                             </span>
                           </div>
-                          <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-gray-500'}`}>
-                            <span className={`font-bold text-xl ${darkMode ? 'text-white' : 'text-gray-900'}`}>{mcsIssuedThisMonth}</span> MCs × RM {mcCost.toFixed(2)}
+                          <p className="text-sm text-slate-500">
+                            <span className="font-bold text-xl text-gray-900">{mcsIssuedThisMonth}</span> MCs × RM {mcCost.toFixed(2)}
                           </p>
                         </div>
                       </div>
@@ -1149,33 +1089,27 @@ export default function CEODashboard({ walletAddress }) {
                     isSubscriptionOverdue
                       ? 'bg-gradient-to-br from-red-600 to-red-800'
                       : subscriptionPaid
-                        ? darkMode
-                          ? 'bg-gradient-to-br from-emerald-600/20 to-emerald-800/20 border border-emerald-500/30'
-                          : 'bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200'
-                        : darkMode
-                          ? 'bg-gradient-to-br from-slate-700 to-slate-800 border border-slate-600/50'
-                          : 'bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300'
+                        ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200'
+                        : 'bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300'
                   }`}>
                     <p className={`text-sm font-semibold uppercase tracking-wider mb-2 ${
-                      isSubscriptionOverdue ? 'text-red-200' : subscriptionPaid ? (darkMode ? 'text-emerald-400' : 'text-emerald-700') : (darkMode ? 'text-slate-400' : 'text-gray-600')
+                      isSubscriptionOverdue ? 'text-red-200' : subscriptionPaid ? 'text-emerald-700' : 'text-gray-600'
                     }`}>
                       Total Due
                     </p>
                     <p className={`text-6xl font-black mb-2 ${
-                      isSubscriptionOverdue ? 'text-white' : subscriptionPaid ? (darkMode ? 'text-emerald-400' : 'text-emerald-700') : (darkMode ? 'text-white' : 'text-gray-900')
+                      isSubscriptionOverdue ? 'text-white' : subscriptionPaid ? 'text-emerald-700' : 'text-gray-900'
                     }`}>
                       RM {totalDue.toLocaleString()}
                     </p>
                     <p className={`text-sm mb-6 ${
-                      isSubscriptionOverdue ? 'text-red-200' : subscriptionPaid ? (darkMode ? 'text-emerald-400/70' : 'text-emerald-600') : (darkMode ? 'text-slate-400' : 'text-gray-500')
+                      isSubscriptionOverdue ? 'text-red-200' : subscriptionPaid ? 'text-emerald-600' : 'text-gray-500'
                     }`}>
                       Base: RM {baseFee.toLocaleString()} + Usage: RM {meteredUsageCost.toLocaleString()}
                     </p>
 
                     {subscriptionPaid ? (
-                      <div className={`flex items-center gap-2 px-4 py-3 rounded-xl ${
-                        darkMode ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-200/50 text-emerald-700'
-                      }`}>
+                      <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-200/50 text-emerald-700">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
@@ -1210,16 +1144,14 @@ export default function CEODashboard({ walletAddress }) {
           {/* Monetization Engine - Full Width Subscription Banner */}
           <div style={{ marginBottom: '0' }}>
           <div className="rounded-2xl p-6" style={{
-            border: isSubscriptionOverdue ? '2px solid rgba(239, 68, 68, 0.5)' : '1px solid rgba(20, 184, 166, 0.2)',
-            background: isSubscriptionOverdue ? 'rgba(127, 29, 29, 0.3)' : 'rgba(15, 23, 42, 0.6)'
+            border: isSubscriptionOverdue ? '2px solid rgba(239, 68, 68, 0.5)' : '1px solid #E2E8F0',
+            background: isSubscriptionOverdue ? 'rgba(127, 29, 29, 0.3)' : '#FFFFFF'
           }}>
             <div className="flex flex-col gap-4">
               {/* Entity Type & Subscription Info */}
               <div className="flex items-start gap-4">
                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-                  facilityType === 'Hospital'
-                    ? darkMode ? 'bg-sky-500/20' : 'bg-sky-100'
-                    : darkMode ? 'bg-emerald-500/20' : 'bg-emerald-100'
+                  facilityType === 'Hospital' ? 'bg-sky-100' : 'bg-emerald-100'
                 }`}>
                   <svg className={`w-7 h-7 ${facilityType === 'Hospital' ? 'text-sky-500' : 'text-emerald-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -1230,11 +1162,7 @@ export default function CEODashboard({ walletAddress }) {
                     <select
                       value={facilityType}
                       onChange={(e) => setFacilityType(e.target.value)}
-                      className={`text-sm rounded-lg px-3 py-1 focus:ring-2 focus:ring-sky-500 ${
-                        darkMode
-                          ? 'bg-slate-700/50 border border-slate-600 text-white'
-                          : 'bg-white border border-gray-200 text-gray-900'
-                      }`}
+                      className="text-sm rounded-lg px-3 py-1 focus:ring-2 focus:ring-sky-500 bg-white border border-slate-200 text-slate-800"
                     >
                       <option value="Hospital">Hospital</option>
                       <option value="Clinic">Clinic</option>
@@ -1245,9 +1173,9 @@ export default function CEODashboard({ walletAddress }) {
                       </span>
                     )}
                   </div>
-                  <p className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  <p className="text-2xl font-bold text-gray-900">
                     <span className="flex items-center gap-4 flex-wrap">
-                      <span>{tierName} <span className={darkMode ? 'text-slate-400' : 'text-gray-400'}>—</span> <span className="text-sky-500">RM {baseFee.toLocaleString()}/mo</span></span>
+                      <span>{tierName} <span className="text-gray-400">—</span> <span className="text-sky-500">RM {baseFee.toLocaleString()}/mo</span></span>
                       {/* View Invoice Button - Positioned near tier title */}
                       <button
                         onClick={handlePayNow}
@@ -1260,7 +1188,7 @@ export default function CEODashboard({ walletAddress }) {
                       </button>
                     </span>
                   </p>
-                  <p className={`text-sm mt-1 ${darkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+                  <p className="text-sm mt-1 text-slate-500">
                     {facilityType === 'Hospital'
                       ? 'Unlimited doctors • Priority support • Full API access'
                       : 'Up to 5 doctors • Email support • Standard API access'}
@@ -1280,50 +1208,50 @@ export default function CEODashboard({ walletAddress }) {
           <div className="grid grid-cols-12 gap-6 w-full" style={{ marginBottom: '24px' }}>
           {/* Live Transaction Meter */}
           <div className="col-span-12 lg:col-span-4 rounded-2xl p-6" style={{
-            border: '1px solid rgba(20, 184, 166, 0.2)',
-            background: 'rgba(15, 23, 42, 0.6)'
+            border: '1px solid #E2E8F0',
+            background: '#FFFFFF'
           }}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Transaction Meter</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Transaction Meter</h2>
               <span className="flex items-center gap-1.5 text-emerald-500 text-xs font-medium">
                 <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
                 LIVE
               </span>
             </div>
             <div className="text-center py-4">
-              <p className={`text-6xl font-black tabular-nums ${darkMode ? 'text-white' : 'text-gray-900'}`}>{stats.totalMCs}</p>
-              <p className={`text-sm mt-2 ${darkMode ? 'text-slate-400' : 'text-gray-500'}`}>MCs Issued This Month</p>
+              <p className="text-6xl font-black tabular-nums text-gray-900">{stats.totalMCs}</p>
+              <p className="text-sm mt-2 text-slate-500">MCs Issued This Month</p>
             </div>
-            <div className={`mt-4 pt-4 border-t ${darkMode ? 'border-slate-700' : 'border-gray-100'}`}>
+            <div className="mt-4 pt-4 border-t border-slate-200">
               <div className="flex items-center justify-between text-sm">
-                <span className={darkMode ? 'text-slate-400' : 'text-gray-500'}>Rate per MC</span>
-                <span className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>RM {mcCost.toFixed(2)}</span>
+                <span className="text-slate-500">Rate per MC</span>
+                <span className="font-semibold text-gray-900">RM {mcCost.toFixed(2)}</span>
               </div>
             </div>
           </div>
 
           {/* Real-time Costing */}
           <div className="col-span-12 lg:col-span-4 rounded-2xl p-6" style={{
-            border: '1px solid rgba(20, 184, 166, 0.2)',
-            background: 'rgba(15, 23, 42, 0.6)'
+            border: '1px solid #E2E8F0',
+            background: '#FFFFFF'
           }}>
-            <h2 className={`text-lg font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>Real-time Costing</h2>
+            <h2 className="text-lg font-semibold mb-4 text-gray-900">Real-time Costing</h2>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className={darkMode ? 'text-slate-400' : 'text-gray-500'}>Base Subscription</span>
-                <span className={`font-medium ${darkMode ? 'text-white' : 'text-gray-900'}`}>RM {baseFee.toLocaleString()}</span>
+                <span className="text-slate-500">Base Subscription</span>
+                <span className="font-medium text-gray-900">RM {baseFee.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className={darkMode ? 'text-slate-400' : 'text-gray-500'}>Metered Usage ({stats.totalMCs} × RM1)</span>
+                <span className="text-slate-500">Metered Usage ({stats.totalMCs} × RM1)</span>
                 <span className="text-emerald-500 font-medium">RM {meteredUsageCost.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className={darkMode ? 'text-slate-400' : 'text-gray-500'}>Payments Received</span>
+                <span className="text-slate-500">Payments Received</span>
                 <span className="text-sky-500 font-medium">- RM {baseFeePayment.toLocaleString()}</span>
               </div>
-              <div className={`pt-4 border-t ${darkMode ? 'border-slate-700' : 'border-emerald-100'}`}>
+              <div className="pt-4 border-t border-slate-200">
                 <div className="flex items-center justify-between">
-                  <span className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Sub-Total Due</span>
+                  <span className="font-semibold text-gray-900">Sub-Total Due</span>
                   <span className={`text-2xl font-bold ${isSubscriptionOverdue ? 'text-red-500' : 'text-emerald-500'}`}>
                     RM {totalDue.toLocaleString()}
                   </span>
@@ -1369,34 +1297,32 @@ export default function CEODashboard({ walletAddress }) {
 
           {/* Monthly Dues Table */}
           <div className="rounded-2xl overflow-hidden" style={{
-            border: '1px solid rgba(20, 184, 166, 0.2)',
-            background: 'rgba(15, 23, 42, 0.6)'
+            border: '1px solid #E2E8F0',
+            background: '#FFFFFF'
           }}>
-          <div className={`px-6 py-4 border-b ${darkMode ? 'border-slate-700' : 'border-gray-100'}`}>
-            <h2 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Monthly Dues</h2>
-            <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-gray-500'}`}>Invoice history and payment status</p>
+          <div className="px-6 py-4 border-b border-slate-200">
+            <h2 className="text-xl font-semibold text-gray-900">Monthly Dues</h2>
+            <p className="text-sm text-slate-500">Invoice history and payment status</p>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className={darkMode ? 'bg-slate-700/30' : 'bg-gray-50'}>
-                  <th className={`text-left px-6 py-4 font-medium text-sm ${darkMode ? 'text-slate-300' : 'text-gray-600'}`}>Billing Period</th>
-                  <th className={`text-right px-6 py-4 font-medium text-sm ${darkMode ? 'text-slate-300' : 'text-gray-600'}`}>Base Fee</th>
-                  <th className={`text-right px-6 py-4 font-medium text-sm ${darkMode ? 'text-slate-300' : 'text-gray-600'}`}>Metered Usage</th>
-                  <th className={`text-right px-6 py-4 font-medium text-sm ${darkMode ? 'text-slate-300' : 'text-gray-600'}`}>Total</th>
-                  <th className={`text-right px-6 py-4 font-medium text-sm ${darkMode ? 'text-slate-300' : 'text-gray-600'}`}>Status</th>
-                  <th className={`text-right px-6 py-4 font-medium text-sm ${darkMode ? 'text-slate-300' : 'text-gray-600'}`}>Action</th>
+                <tr className="bg-slate-50">
+                  <th className="text-left px-6 py-4 font-medium text-sm text-slate-600">Billing Period</th>
+                  <th className="text-right px-6 py-4 font-medium text-sm text-slate-600">Base Fee</th>
+                  <th className="text-right px-6 py-4 font-medium text-sm text-slate-600">Metered Usage</th>
+                  <th className="text-right px-6 py-4 font-medium text-sm text-slate-600">Total</th>
+                  <th className="text-right px-6 py-4 font-medium text-sm text-slate-600">Status</th>
+                  <th className="text-right px-6 py-4 font-medium text-sm text-slate-600">Action</th>
                 </tr>
               </thead>
               <tbody>
-                <tr className={`border-t transition-colors ${
-                  darkMode ? 'border-slate-700/30 hover:bg-slate-700/20' : 'border-gray-100 hover:bg-gray-50'
-                }`}>
-                  <td className={`px-6 py-4 font-medium ${darkMode ? 'text-slate-200' : 'text-gray-900'}`}>January 2026</td>
-                  <td className={`px-6 py-4 text-right ${darkMode ? 'text-slate-300' : 'text-gray-600'}`}>RM {baseFee.toLocaleString()}</td>
-                  <td className={`px-6 py-4 text-right ${darkMode ? 'text-slate-300' : 'text-gray-600'}`}>RM {meteredUsageCost.toLocaleString()}</td>
-                  <td className={`px-6 py-4 text-right font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>RM {totalDue.toLocaleString()}</td>
+                <tr className="border-t transition-colors border-slate-200 hover:bg-slate-50">
+                  <td className="px-6 py-4 font-medium text-slate-700">January 2026</td>
+                  <td className="px-6 py-4 text-right text-slate-600">RM {baseFee.toLocaleString()}</td>
+                  <td className="px-6 py-4 text-right text-slate-600">RM {meteredUsageCost.toLocaleString()}</td>
+                  <td className="px-6 py-4 text-right font-bold text-gray-900">RM {totalDue.toLocaleString()}</td>
                   <td className="px-6 py-4 text-right">
                     {baseFeeDetected ? (
                       <span className="inline-flex items-center gap-1 text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-full text-sm font-medium">
@@ -1438,7 +1364,7 @@ export default function CEODashboard({ walletAddress }) {
         {/* Loading State */}
         {loading ? (
           <div className="flex items-center justify-start h-64">
-            <div className={`text-lg ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <div className="text-lg text-gray-500">
               Loading dashboard data...
             </div>
           </div>
@@ -1489,21 +1415,19 @@ export default function CEODashboard({ walletAddress }) {
               {/* Revenue Forecast Chart - col-span-8 with Soft Green Gradient */}
               <div className="grid grid-cols-12 gap-6" style={{ marginBottom: '24px' }}>
                 <div className="col-span-12 xl:col-span-8 rounded-2xl p-6" style={{
-                  border: '1px solid rgba(20, 184, 166, 0.2)',
-                  background: 'rgba(15, 23, 42, 0.6)'
+                  border: '1px solid #E2E8F0',
+                  background: '#FFFFFF'
                 }}>
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <h2 className="text-xl font-bold text-gray-900">
                       Revenue Forecast
                     </h2>
-                    <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    <p className="text-sm mt-1 text-gray-500">
                       12-month projection: Base RM {facilityType === 'Hospital' ? '10,000' : '2,000'}/mo + RM1/MC
                     </p>
                   </div>
-                  <div className={`px-4 py-2 rounded-xl text-sm font-semibold ${
-                    darkMode ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'
-                  }`}>
+                  <div className="px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-100 text-emerald-700">
                     {facilityType}
                   </div>
                 </div>
@@ -1524,25 +1448,25 @@ export default function CEODashboard({ walletAddress }) {
                       </defs>
                       <CartesianGrid
                         strokeDasharray="3 3"
-                        stroke={darkMode ? '#374151' : '#e5e7eb'}
+                        stroke="#E2E8F0"
                         vertical={false}
                       />
                       <XAxis
                         dataKey="month"
-                        stroke={darkMode ? '#9ca3af' : '#6b7280'}
-                        tick={{ fill: darkMode ? '#9ca3af' : '#6b7280', fontSize: 12 }}
-                        axisLine={{ stroke: darkMode ? '#4b5563' : '#d1d5db' }}
+                        stroke="#64748B"
+                        tick={{ fill: '#64748B', fontSize: 12 }}
+                        axisLine={{ stroke: '#E2E8F0' }}
                       />
                       <YAxis
-                        stroke={darkMode ? '#9ca3af' : '#6b7280'}
-                        tick={{ fill: darkMode ? '#9ca3af' : '#6b7280', fontSize: 12 }}
+                        stroke="#64748B"
+                        tick={{ fill: '#64748B', fontSize: 12 }}
                         tickFormatter={(value) => `RM ${(value/1000).toFixed(0)}k`}
-                        axisLine={{ stroke: darkMode ? '#4b5563' : '#d1d5db' }}
+                        axisLine={{ stroke: '#E2E8F0' }}
                       />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: darkMode ? '#1f2937' : '#ffffff',
-                          border: `1px solid ${darkMode ? '#374151' : '#e5e7eb'}`,
+                          backgroundColor: '#FFFFFF',
+                          border: '1px solid #E2E8F0',
                           borderRadius: '12px',
                           boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
                           padding: '12px 16px'
@@ -1555,7 +1479,7 @@ export default function CEODashboard({ walletAddress }) {
                           };
                           return [`RM ${value.toLocaleString()}`, labels[name] || name];
                         }}
-                        labelStyle={{ color: darkMode ? '#fff' : '#111', fontWeight: 'bold', marginBottom: '8px' }}
+                        labelStyle={{ color: '#1E293B', fontWeight: 'bold', marginBottom: '8px' }}
                       />
                       <Legend
                         wrapperStyle={{ paddingTop: '20px' }}
@@ -1565,7 +1489,7 @@ export default function CEODashboard({ walletAddress }) {
                             baseSubscription: 'Base Fee',
                             usageRevenue: 'MC Usage'
                           };
-                          return <span className={darkMode ? 'text-gray-300' : 'text-gray-600'}>{labels[value] || value}</span>;
+                          return <span className="text-gray-600">{labels[value] || value}</span>;
                         }}
                       />
                       <Area
@@ -1592,23 +1516,21 @@ export default function CEODashboard({ walletAddress }) {
                 </div>
 
                 {/* Forecast Summary */}
-                <div className={`mt-6 pt-6 border-t grid grid-cols-3 gap-4 ${
-                  darkMode ? 'border-gray-700' : 'border-gray-100'
-                }`}>
+                <div className="mt-6 pt-6 border-t grid grid-cols-3 gap-4 border-gray-100">
                   <div className="text-center">
-                    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Base Fee</p>
-                    <p className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <p className="text-sm text-gray-500">Base Fee</p>
+                    <p className="text-xl font-bold text-gray-900">
                       RM {(facilityType === 'Hospital' ? 10000 : 2000).toLocaleString()}
                     </p>
                   </div>
                   <div className="text-center">
-                    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Projected MC Revenue</p>
+                    <p className="text-sm text-gray-500">Projected MC Revenue</p>
                     <p className="text-xl font-bold text-emerald-500">
                       RM {(forecastData[11]?.usageRevenue || 0).toLocaleString()}
                     </p>
                   </div>
                   <div className="text-center">
-                    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Year-End Total</p>
+                    <p className="text-sm text-gray-500">Year-End Total</p>
                     <p className="text-xl font-bold text-emerald-500">
                       RM {(forecastData[11]?.totalRevenue || 0).toLocaleString()}
                     </p>
@@ -1619,25 +1541,21 @@ export default function CEODashboard({ walletAddress }) {
               {/* Doctor Performance Leaderboard - col-span-4 */}
               <div className="col-span-12 xl:col-span-4">
                 <div className="rounded-2xl overflow-hidden h-full" style={{
-                  border: '1px solid rgba(20, 184, 166, 0.2)',
-                  background: 'rgba(15, 23, 42, 0.6)'
+                  border: '1px solid #E2E8F0',
+                  background: '#FFFFFF'
                 }}>
                   {/* Leaderboard Header */}
-                  <div className={`px-6 py-4 border-b ${
-                    darkMode ? 'border-gray-700 bg-gray-800/50' : 'border-gray-100 bg-gray-50'
-                  }`}>
+                  <div className="px-6 py-4 border-b border-gray-100 bg-slate-50">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                        <h3 className="text-lg font-bold text-gray-900">
                           Doctor Leaderboard
                         </h3>
-                        <p className={`text-xs mt-0.5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        <p className="text-xs mt-0.5 text-gray-500">
                           Top performers this month
                         </p>
                       </div>
-                      <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        darkMode ? 'bg-amber-500/20 text-amber-400' : 'bg-amber-100 text-amber-700'
-                      }`}>
+                      <div className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
                         {doctorPerformance.length} Doctors
                       </div>
                     </div>
@@ -1653,11 +1571,7 @@ export default function CEODashboard({ walletAddress }) {
                         return (
                           <div
                             key={doctor.id}
-                            className={`relative p-4 rounded-2xl transition-all cursor-pointer ${
-                              darkMode
-                                ? 'hover:bg-gray-700/50'
-                                : 'hover:bg-slate-50'
-                            } ${index === 0 ? (darkMode ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-amber-50 border border-amber-200') : ''}`}
+                            className={`relative p-4 rounded-2xl transition-all cursor-pointer hover:bg-slate-50 ${index === 0 ? 'bg-amber-50 border border-amber-200' : ''}`}
                           >
                             <div className="flex items-center gap-3">
                               {/* Rank Badge */}
@@ -1668,9 +1582,7 @@ export default function CEODashboard({ walletAddress }) {
                                     ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-white'
                                     : index === 2
                                       ? 'bg-gradient-to-br from-amber-600 to-amber-800 text-white'
-                                      : darkMode
-                                        ? 'bg-gray-700 text-gray-400'
-                                        : 'bg-gray-100 text-gray-500'
+                                      : 'bg-gray-100 text-gray-500'
                               }`}>
                                 {doctor.rank}
                               </div>
@@ -1678,7 +1590,7 @@ export default function CEODashboard({ walletAddress }) {
                               {/* Doctor Info */}
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
-                                  <p className={`font-semibold text-sm truncate ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                                  <p className="font-semibold text-sm truncate text-gray-900">
                                     {doctor.name}
                                   </p>
                                   {index === 0 && (
@@ -1690,7 +1602,7 @@ export default function CEODashboard({ walletAddress }) {
                                     </span>
                                   )}
                                 </div>
-                                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                <p className="text-xs text-gray-500">
                                   {doctor.department}
                                 </p>
                               </div>
@@ -1700,7 +1612,7 @@ export default function CEODashboard({ walletAddress }) {
                                 <p className={`font-bold ${index === 0 ? 'text-amber-500' : 'text-emerald-500'}`}>
                                   RM {doctor.revenue}
                                 </p>
-                                <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                                <p className="text-xs text-gray-400">
                                   {doctor.mcsIssued} MCs
                                 </p>
                               </div>
@@ -1708,9 +1620,7 @@ export default function CEODashboard({ walletAddress }) {
 
                             {/* Progress Bar */}
                             <div className="mt-3">
-                              <div className={`h-1.5 rounded-full overflow-hidden ${
-                                darkMode ? 'bg-gray-700' : 'bg-gray-100'
-                              }`}>
+                              <div className="h-1.5 rounded-full overflow-hidden bg-gray-100">
                                 <div
                                   className={`h-full rounded-full transition-all ${
                                     index === 0
@@ -1720,7 +1630,7 @@ export default function CEODashboard({ walletAddress }) {
                                   style={{ width: `${progressPercent}%` }}
                                 />
                               </div>
-                              <p className={`text-xs mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                              <p className="text-xs mt-1 text-gray-400">
                                 {progressPercent.toFixed(1)}% of RM{monthlyGoal.toLocaleString()} goal
                               </p>
                             </div>
@@ -1731,12 +1641,10 @@ export default function CEODashboard({ walletAddress }) {
                   </div>
 
                   {/* Leaderboard Footer */}
-                  <div className={`px-6 py-4 border-t ${
-                    darkMode ? 'border-gray-700 bg-gray-800/30' : 'border-gray-100 bg-gray-50/50'
-                  }`}>
+                  <div className="px-6 py-4 border-t border-gray-100 bg-slate-50">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className={`text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        <p className="text-xs font-medium text-gray-500">
                           Total Revenue
                         </p>
                         <p className="text-lg font-bold text-emerald-500">
@@ -1744,10 +1652,10 @@ export default function CEODashboard({ walletAddress }) {
                         </p>
                       </div>
                       <div className={`text-right`}>
-                        <p className={`text-xs font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        <p className="text-xs font-medium text-gray-500">
                           Total MCs
                         </p>
-                        <p className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                        <p className="text-lg font-bold text-gray-900">
                           {doctorPerformance.reduce((sum, d) => sum + d.mcsIssued, 0)}
                         </p>
                       </div>
@@ -1761,15 +1669,15 @@ export default function CEODashboard({ walletAddress }) {
             <div className="grid grid-cols-12 gap-6">
               {/* Flu Season Chart - col-span-7 */}
               <div className="col-span-12 xl:col-span-7 rounded-2xl p-6" style={{
-                border: '1px solid rgba(20, 184, 166, 0.2)',
-                background: 'rgba(15, 23, 42, 0.6)'
+                border: '1px solid #E2E8F0',
+                background: '#FFFFFF'
               }}>
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <h2 className="text-xl font-bold text-gray-900">
                       12-Month MC Issuance Trend
                     </h2>
-                    <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    <p className="text-sm mt-1 text-gray-500">
                       Flu season spikes for staff allocation planning
                     </p>
                   </div>
@@ -1780,23 +1688,23 @@ export default function CEODashboard({ walletAddress }) {
                     <LineChart data={fluData}>
                       <CartesianGrid
                         strokeDasharray="3 3"
-                        stroke={darkMode ? '#374151' : '#e5e7eb'}
+                        stroke="#E2E8F0"
                       />
                       <XAxis
                         dataKey="month"
-                        stroke={darkMode ? '#9ca3af' : '#6b7280'}
-                        tick={{ fill: darkMode ? '#9ca3af' : '#6b7280', fontSize: 12 }}
+                        stroke="#64748B"
+                        tick={{ fill: '#64748B', fontSize: 12 }}
                       />
                       <YAxis
-                        stroke={darkMode ? '#9ca3af' : '#6b7280'}
-                        tick={{ fill: darkMode ? '#9ca3af' : '#6b7280', fontSize: 12 }}
+                        stroke="#64748B"
+                        tick={{ fill: '#64748B', fontSize: 12 }}
                       />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: darkMode ? '#1f2937' : '#ffffff',
-                          border: `1px solid ${darkMode ? '#374151' : '#e5e7eb'}`,
+                          backgroundColor: '#FFFFFF',
+                          border: '1px solid #E2E8F0',
                           borderRadius: '12px',
-                          color: darkMode ? '#ffffff' : '#000000'
+                          color: '#1E293B'
                         }}
                       />
                       <Legend />
@@ -1825,15 +1733,15 @@ export default function CEODashboard({ walletAddress }) {
 
               {/* Revenue Chart - col-span-5 */}
               <div className="col-span-12 xl:col-span-5 rounded-2xl p-6" style={{
-                border: '1px solid rgba(20, 184, 166, 0.2)',
-                background: 'rgba(15, 23, 42, 0.6)'
+                border: '1px solid #E2E8F0',
+                background: '#FFFFFF'
               }}>
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                    <h2 className="text-xl font-bold text-gray-900">
                       Revenue Trend (RM)
                     </h2>
-                    <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    <p className="text-sm mt-1 text-gray-500">
                       Monthly revenue at RM1/MC
                     </p>
                   </div>
@@ -1844,23 +1752,23 @@ export default function CEODashboard({ walletAddress }) {
                     <LineChart data={fluData}>
                       <CartesianGrid
                         strokeDasharray="3 3"
-                        stroke={darkMode ? '#374151' : '#e5e7eb'}
+                        stroke="#E2E8F0"
                       />
                       <XAxis
                         dataKey="month"
-                        stroke={darkMode ? '#9ca3af' : '#6b7280'}
-                        tick={{ fill: darkMode ? '#9ca3af' : '#6b7280', fontSize: 12 }}
+                        stroke="#64748B"
+                        tick={{ fill: '#64748B', fontSize: 12 }}
                       />
                       <YAxis
-                        stroke={darkMode ? '#9ca3af' : '#6b7280'}
-                        tick={{ fill: darkMode ? '#9ca3af' : '#6b7280', fontSize: 12 }}
+                        stroke="#64748B"
+                        tick={{ fill: '#64748B', fontSize: 12 }}
                       />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: darkMode ? '#1f2937' : '#ffffff',
-                          border: `1px solid ${darkMode ? '#374151' : '#e5e7eb'}`,
+                          backgroundColor: '#FFFFFF',
+                          border: '1px solid #E2E8F0',
                           borderRadius: '12px',
-                          color: darkMode ? '#ffffff' : '#000000'
+                          color: '#1E293B'
                         }}
                         formatter={(value) => [`RM ${value}`, 'Revenue']}
                       />
@@ -1887,40 +1795,40 @@ export default function CEODashboard({ walletAddress }) {
 
               {/* Key Insights Card */}
               <div className="rounded-2xl p-6" style={{
-                border: '1px solid rgba(20, 184, 166, 0.2)',
-                background: 'rgba(15, 23, 42, 0.6)',
+                border: '1px solid #E2E8F0',
+                background: '#FFFFFF',
                 marginBottom: '24px'
               }}>
-                <h3 className="text-xl font-bold mb-4 text-white">
+                <h3 className="text-xl font-bold mb-4 text-slate-800">
                   Key Insights
                 </h3>
                 <div className="grid grid-cols-12 gap-6">
                   <div className="col-span-12 md:col-span-4 p-5 rounded-xl bg-blue-500/10">
-                    <p className="font-semibold text-white">Peak Season</p>
-                    <p className="text-sm mt-1 text-slate-300">October - February (Monsoon season flu spike)</p>
+                    <p className="font-semibold text-slate-800">Peak Season</p>
+                    <p className="text-sm mt-1 text-slate-600">October - February (Monsoon season flu spike)</p>
                   </div>
                   <div className="col-span-12 md:col-span-4 p-5 rounded-xl bg-emerald-500/10">
-                    <p className="font-semibold text-white">Recommendation</p>
-                    <p className="text-sm mt-1 text-slate-300">Increase staff allocation by 40% during peak months</p>
+                    <p className="font-semibold text-slate-800">Recommendation</p>
+                    <p className="text-sm mt-1 text-slate-600">Increase staff allocation by 40% during peak months</p>
                   </div>
                   <div className="col-span-12 md:col-span-4 p-5 rounded-xl bg-amber-500/10">
-                    <p className="font-semibold text-white">YoY Trend</p>
-                    <p className="text-sm mt-1 text-slate-300">12% increase in MC issuance compared to last year</p>
+                    <p className="font-semibold text-slate-800">YoY Trend</p>
+                    <p className="text-sm mt-1 text-slate-600">12% increase in MC issuance compared to last year</p>
                   </div>
                 </div>
               </div>
 
               {/* Hospital Performance Table */}
               <div className="rounded-2xl p-6" style={{
-                border: '1px solid rgba(20, 184, 166, 0.2)',
-                background: 'rgba(15, 23, 42, 0.6)'
+                border: '1px solid #E2E8F0',
+                background: '#FFFFFF'
               }}>
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  <h2 className="text-xl font-bold text-gray-900">
                     Doctor Performance Overview
                   </h2>
-                  <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <p className="text-sm mt-1 text-gray-500">
                     Credit balances and activity status
                   </p>
                 </div>
@@ -1934,14 +1842,14 @@ export default function CEODashboard({ walletAddress }) {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className={darkMode ? 'border-b border-gray-700' : 'border-b border-gray-200'}>
-                      <th className={`text-left py-3 px-4 font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                    <tr className="border-b border-slate-200">
+                      <th className="text-left py-3 px-4 font-semibold text-slate-600">
                         Doctor Address
                       </th>
-                      <th className={`text-left py-3 px-4 font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      <th className="text-left py-3 px-4 font-semibold text-slate-600">
                         Credit Balance
                       </th>
-                      <th className={`text-left py-3 px-4 font-semibold ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      <th className="text-left py-3 px-4 font-semibold text-slate-600">
                         Status
                       </th>
                     </tr>
@@ -1951,9 +1859,9 @@ export default function CEODashboard({ walletAddress }) {
                       hospitalBalances.map((hospital, index) => (
                         <tr
                           key={index}
-                          className={`${darkMode ? 'border-b border-gray-700 hover:bg-gray-700' : 'border-b border-gray-100 hover:bg-gray-50'}`}
+                          className="border-b border-gray-100 hover:bg-gray-50"
                         >
-                          <td className={`py-3 px-4 font-mono text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          <td className="py-3 px-4 font-mono text-sm text-gray-700">
                             {(hospital.hospital || '').slice(0, 10)}...{(hospital.hospital || '').slice(-8)}
                           </td>
                           <td className={`py-3 px-4 ${hospital.balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
@@ -1972,7 +1880,7 @@ export default function CEODashboard({ walletAddress }) {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={3} className={`py-8 text-center ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        <td colSpan={3} className="py-8 text-center text-gray-500">
                           No doctor data available
                         </td>
                       </tr>
@@ -1986,15 +1894,15 @@ export default function CEODashboard({ walletAddress }) {
             {/* Data Privacy Notice */}
             {connectedHospital && (
               <div className="mt-8 p-4 rounded-xl flex items-center gap-4" style={{
-                border: '1px solid rgba(20, 184, 166, 0.2)',
+                border: '1px solid #E2E8F0',
                 background: 'rgba(14, 165, 233, 0.1)'
               }}>
-                <svg className={`w-6 h-6 flex-shrink-0 ${darkMode ? 'text-sky-400' : 'text-sky-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6 flex-shrink-0 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
                 <div>
-                  <p className={`font-semibold text-sm ${darkMode ? 'text-sky-300' : 'text-sky-700'}`}>Data Privacy</p>
-                  <p className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                  <p className="font-semibold text-sm text-sky-700">Data Privacy</p>
+                  <p className="text-xs text-slate-500">
                     You are viewing data for <strong>{connectedHospital.name}</strong> only.
                     Other hospitals' data is not accessible from this dashboard.
                     Contact MedChain support if you need cross-facility access.

@@ -116,34 +116,34 @@ export default function AuditLogPanel({
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className="fixed right-0 top-0 bottom-0 w-[380px] z-[100] flex flex-col"
               style={{
-                background: 'rgba(15, 23, 42, 0.98)',
-                borderLeft: '1px solid rgba(20, 184, 166, 0.2)',
-                backdropFilter: 'blur(20px)',
+                background: '#FFFFFF',
+                borderLeft: '1px solid #E2E8F0',
+                boxShadow: '-4px 0 20px rgba(0, 0, 0, 0.08)',
               }}
             >
               {/* Header */}
-              <div className="p-4 border-b border-slate-700/50">
+              <div className="p-4 border-b border-slate-200">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center"
                       style={{
-                        background: 'rgba(20, 184, 166, 0.15)',
-                        border: '1px solid rgba(20, 184, 166, 0.3)',
+                        background: 'rgba(20, 184, 166, 0.1)',
+                        border: '1px solid rgba(20, 184, 166, 0.2)',
                       }}
                     >
-                      <svg className="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                     </div>
                     <div>
-                      <h2 className="text-lg font-bold text-white">Audit Log</h2>
+                      <h2 className="text-lg font-bold text-slate-800">Audit Log</h2>
                       <p className="text-xs text-slate-500">{filteredLogs.length} entries</p>
                     </div>
                   </div>
                   <button
                     onClick={onClose}
-                    className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition-colors"
+                    className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
                   >
                     <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -161,7 +161,7 @@ export default function AuditLogPanel({
                     placeholder="Search logs..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 rounded-lg bg-slate-800/50 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-teal-500 transition-colors"
+                    className="w-full pl-10 pr-4 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 placeholder-slate-400 text-sm focus:outline-none focus:border-teal-500 transition-colors"
                   />
                 </div>
 
@@ -171,8 +171,8 @@ export default function AuditLogPanel({
                     onClick={() => setFilter('all')}
                     className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                       filter === 'all'
-                        ? 'bg-teal-500/20 text-teal-400 border border-teal-500/30'
-                        : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                        ? 'bg-teal-500/10 text-teal-600 border border-teal-500/30'
+                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                     }`}
                   >
                     All
@@ -183,8 +183,8 @@ export default function AuditLogPanel({
                       onClick={() => setFilter(key)}
                       className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
                         filter === key
-                          ? 'text-white border'
-                          : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                          ? 'text-slate-800 border'
+                          : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                       }`}
                       style={filter === key ? {
                         backgroundColor: `${config.color}20`,
@@ -214,10 +214,10 @@ export default function AuditLogPanel({
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: index * 0.05 }}
-                            className="p-3 rounded-xl transition-colors hover:bg-slate-800/50"
+                            className="p-3 rounded-xl transition-colors hover:bg-slate-50"
                             style={{
-                              background: 'rgba(30, 41, 59, 0.3)',
-                              border: '1px solid rgba(51, 65, 85, 0.3)',
+                              background: '#F8FAFC',
+                              border: '1px solid #E2E8F0',
                             }}
                           >
                             <div className="flex items-start gap-3">
@@ -231,7 +231,7 @@ export default function AuditLogPanel({
                                 {config.icon}
                               </span>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-white truncate">{log.action}</p>
+                                <p className="text-sm font-medium text-slate-800 truncate">{log.action}</p>
                                 {log.details && (
                                   <p className="text-xs text-slate-500 mt-0.5 truncate">{log.details}</p>
                                 )}
@@ -249,8 +249,8 @@ export default function AuditLogPanel({
 
                 {filteredLogs.length === 0 && (
                   <div className="text-center py-12">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-slate-800 flex items-center justify-center">
-                      <svg className="w-8 h-8 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-slate-100 flex items-center justify-center">
+                      <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                     </div>
@@ -261,7 +261,7 @@ export default function AuditLogPanel({
               </div>
 
               {/* Footer */}
-              <div className="p-4 border-t border-slate-700/50">
+              <div className="p-4 border-t border-slate-200">
                 <button
                   onClick={handleExport}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm transition-all hover:scale-[1.02]"

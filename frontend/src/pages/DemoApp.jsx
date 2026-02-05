@@ -46,10 +46,10 @@ function DemoDoctorPortal({ onIssueMC }) {
     <div style={{ padding: '24px' }}>
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#fff', marginBottom: '8px' }}>
+        <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#1E293B', marginBottom: '8px' }}>
           Issue Medical Certificate
         </h1>
-        <p style={{ color: '#64748b' }}>Demo Doctor: Dr. Sarah Lim (MMC-45678)</p>
+        <p style={{ color: '#94A3B8' }}>Demo Doctor: Dr. Sarah Lim (MMC-45678)</p>
       </div>
 
       {/* Success Modal */}
@@ -65,7 +65,7 @@ function DemoDoctorPortal({ onIssueMC }) {
           backdropFilter: 'blur(4px)',
         }}>
           <div style={{
-            background: 'linear-gradient(135deg, #0f172a, #1e293b)',
+            background: '#FFFFFF',
             borderRadius: '24px',
             padding: '32px',
             maxWidth: '400px',
@@ -90,31 +90,31 @@ function DemoDoctorPortal({ onIssueMC }) {
               </svg>
             </div>
 
-            <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#fff', textAlign: 'center', marginBottom: '8px' }}>
+            <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#1E293B', textAlign: 'center', marginBottom: '8px' }}>
               MC Secured on Blockchain!
             </h2>
-            <p style={{ color: '#64748b', textAlign: 'center', marginBottom: '24px' }}>
+            <p style={{ color: '#94A3B8', textAlign: 'center', marginBottom: '24px' }}>
               Transaction confirmed in demo network
             </p>
 
             {/* MC Details */}
             <div style={{
-              background: 'rgba(0,0,0,0.3)',
+              background: '#F8FAFC',
               borderRadius: '12px',
               padding: '16px',
               marginBottom: '24px',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ color: '#64748b', fontSize: '14px' }}>MC ID</span>
+                <span style={{ color: '#94A3B8', fontSize: '14px' }}>MC ID</span>
                 <span style={{ color: '#14b8a6', fontWeight: '600' }}>{lastMC.id}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ color: '#64748b', fontSize: '14px' }}>Patient</span>
-                <span style={{ color: '#fff' }}>{lastMC.patientName}</span>
+                <span style={{ color: '#94A3B8', fontSize: '14px' }}>Patient</span>
+                <span style={{ color: '#1E293B' }}>{lastMC.patientName}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#64748b', fontSize: '14px' }}>Duration</span>
-                <span style={{ color: '#fff' }}>{lastMC.mcDays} day(s)</span>
+                <span style={{ color: '#94A3B8', fontSize: '14px' }}>Duration</span>
+                <span style={{ color: '#1E293B' }}>{lastMC.mcDays} day(s)</span>
               </div>
             </div>
 
@@ -157,16 +157,16 @@ function DemoDoctorPortal({ onIssueMC }) {
 
       {/* Issue MC Form */}
       <div style={{
-        background: 'rgba(255,255,255,0.05)',
+        background: '#F8FAFC',
         borderRadius: '16px',
         padding: '24px',
-        border: '1px solid rgba(255,255,255,0.1)',
+        border: '1px solid #E2E8F0',
         maxWidth: '600px',
       }}>
         <form onSubmit={handleSubmit}>
           {/* Patient Name */}
           <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', color: '#94a3b8', fontSize: '14px', marginBottom: '8px' }}>
+            <label style={{ display: 'block', color: '#64748B', fontSize: '14px', marginBottom: '8px' }}>
               Patient Name
             </label>
             <input
@@ -178,10 +178,10 @@ function DemoDoctorPortal({ onIssueMC }) {
               style={{
                 width: '100%',
                 padding: '12px 16px',
-                background: 'rgba(0,0,0,0.3)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                background: '#F8FAFC',
+                border: '1px solid #E2E8F0',
                 borderRadius: '10px',
-                color: '#fff',
+                color: '#1E293B',
                 fontSize: '16px',
                 outline: 'none',
               }}
@@ -190,7 +190,7 @@ function DemoDoctorPortal({ onIssueMC }) {
 
           {/* Patient IC */}
           <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', color: '#94a3b8', fontSize: '14px', marginBottom: '8px' }}>
+            <label style={{ display: 'block', color: '#64748B', fontSize: '14px', marginBottom: '8px' }}>
               IC Number
             </label>
             <input
@@ -202,10 +202,10 @@ function DemoDoctorPortal({ onIssueMC }) {
               style={{
                 width: '100%',
                 padding: '12px 16px',
-                background: 'rgba(0,0,0,0.3)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                background: '#F8FAFC',
+                border: '1px solid #E2E8F0',
                 borderRadius: '10px',
-                color: '#fff',
+                color: '#1E293B',
                 fontSize: '16px',
                 outline: 'none',
               }}
@@ -214,7 +214,7 @@ function DemoDoctorPortal({ onIssueMC }) {
 
           {/* Diagnosis */}
           <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', color: '#94a3b8', fontSize: '14px', marginBottom: '8px' }}>
+            <label style={{ display: 'block', color: '#64748B', fontSize: '14px', marginBottom: '8px' }}>
               Diagnosis
             </label>
             <select
@@ -224,10 +224,10 @@ function DemoDoctorPortal({ onIssueMC }) {
               style={{
                 width: '100%',
                 padding: '12px 16px',
-                background: 'rgba(0,0,0,0.3)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                background: '#F8FAFC',
+                border: '1px solid #E2E8F0',
                 borderRadius: '10px',
-                color: '#fff',
+                color: '#1E293B',
                 fontSize: '16px',
                 outline: 'none',
               }}
@@ -244,7 +244,7 @@ function DemoDoctorPortal({ onIssueMC }) {
 
           {/* MC Days */}
           <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', color: '#94a3b8', fontSize: '14px', marginBottom: '8px' }}>
+            <label style={{ display: 'block', color: '#64748B', fontSize: '14px', marginBottom: '8px' }}>
               MC Duration (Days)
             </label>
             <div style={{ display: 'flex', gap: '12px' }}>
@@ -256,10 +256,10 @@ function DemoDoctorPortal({ onIssueMC }) {
                   style={{
                     flex: 1,
                     padding: '12px',
-                    background: formData.mcDays === day ? '#2563eb' : 'rgba(0,0,0,0.3)',
-                    border: formData.mcDays === day ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                    background: formData.mcDays === day ? '#2563eb' : '#F8FAFC',
+                    border: formData.mcDays === day ? 'none' : '1px solid #E2E8F0',
                     borderRadius: '10px',
-                    color: '#fff',
+                    color: formData.mcDays === day ? '#fff' : '#1E293B',
                     fontWeight: '600',
                     cursor: 'pointer',
                   }}
@@ -312,7 +312,7 @@ function DemoDoctorPortal({ onIssueMC }) {
 
       {/* Recent MCs */}
       <div style={{ marginTop: '32px' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#fff', marginBottom: '16px' }}>
+        <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#1E293B', marginBottom: '16px' }}>
           Recent MCs Issued
         </h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -320,22 +320,22 @@ function DemoDoctorPortal({ onIssueMC }) {
             <div
               key={mc.id}
               style={{
-                background: 'rgba(255,255,255,0.03)',
+                background: '#F8FAFC',
                 borderRadius: '12px',
                 padding: '16px',
-                border: '1px solid rgba(255,255,255,0.08)',
+                border: '1px solid #E2E8F0',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
               }}
             >
               <div>
-                <p style={{ color: '#fff', fontWeight: '600' }}>{mc.patientName}</p>
-                <p style={{ color: '#64748b', fontSize: '14px' }}>{mc.diagnosis} • {mc.mcDays} day(s)</p>
+                <p style={{ color: '#1E293B', fontWeight: '600' }}>{mc.patientName}</p>
+                <p style={{ color: '#94A3B8', fontSize: '14px' }}>{mc.diagnosis} • {mc.mcDays} day(s)</p>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <p style={{ color: '#14b8a6', fontWeight: '600', fontSize: '14px' }}>{mc.id}</p>
-                <p style={{ color: '#64748b', fontSize: '12px' }}>{mc.dateIssued}</p>
+                <p style={{ color: '#94A3B8', fontSize: '12px' }}>{mc.dateIssued}</p>
               </div>
             </div>
           ))}
@@ -353,10 +353,10 @@ function DemoPatientPortal() {
     <div style={{ padding: '24px' }}>
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#fff', marginBottom: '8px' }}>
+        <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#1E293B', marginBottom: '8px' }}>
           My Medical Records
         </h1>
-        <p style={{ color: '#64748b' }}>Demo Patient: Ahmad bin Hassan</p>
+        <p style={{ color: '#94A3B8' }}>Demo Patient: Ahmad bin Hassan</p>
       </div>
 
       {/* MC Cards */}
@@ -365,10 +365,10 @@ function DemoPatientPortal() {
           <div
             key={mc.id}
             style={{
-              background: 'rgba(255,255,255,0.05)',
+              background: '#F8FAFC',
               borderRadius: '16px',
               padding: '20px',
-              border: '1px solid rgba(255,255,255,0.1)',
+              border: '1px solid #E2E8F0',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
@@ -387,26 +387,26 @@ function DemoPatientPortal() {
               <span style={{ color: '#14b8a6', fontWeight: '600' }}>{mc.id}</span>
             </div>
 
-            <h3 style={{ color: '#fff', fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>
+            <h3 style={{ color: '#1E293B', fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>
               {mc.diagnosis}
             </h3>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
               <div>
-                <p style={{ color: '#64748b', fontSize: '12px' }}>Duration</p>
-                <p style={{ color: '#fff', fontWeight: '600' }}>{mc.mcDays} Day(s)</p>
+                <p style={{ color: '#94A3B8', fontSize: '12px' }}>Duration</p>
+                <p style={{ color: '#1E293B', fontWeight: '600' }}>{mc.mcDays} Day(s)</p>
               </div>
               <div>
-                <p style={{ color: '#64748b', fontSize: '12px' }}>Issue Date</p>
-                <p style={{ color: '#fff', fontWeight: '600' }}>{mc.dateIssued}</p>
+                <p style={{ color: '#94A3B8', fontSize: '12px' }}>Issue Date</p>
+                <p style={{ color: '#1E293B', fontWeight: '600' }}>{mc.dateIssued}</p>
               </div>
               <div>
-                <p style={{ color: '#64748b', fontSize: '12px' }}>Doctor</p>
-                <p style={{ color: '#fff', fontWeight: '600' }}>{mc.doctor}</p>
+                <p style={{ color: '#94A3B8', fontSize: '12px' }}>Doctor</p>
+                <p style={{ color: '#1E293B', fontWeight: '600' }}>{mc.doctor}</p>
               </div>
               <div>
-                <p style={{ color: '#64748b', fontSize: '12px' }}>Hospital</p>
-                <p style={{ color: '#fff', fontWeight: '600' }}>{mc.hospital}</p>
+                <p style={{ color: '#94A3B8', fontSize: '12px' }}>Hospital</p>
+                <p style={{ color: '#1E293B', fontWeight: '600' }}>{mc.hospital}</p>
               </div>
             </div>
 
@@ -457,7 +457,7 @@ export default function DemoApp() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0a0e14' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#FFFFFF' }}>
       {/* Demo Banner */}
       <DemoBanner />
 
@@ -467,8 +467,8 @@ export default function DemoApp() {
         <aside style={{
           width: '280px',
           minHeight: 'calc(100vh - 48px)',
-          backgroundColor: '#0a0e14',
-          borderRight: '1px solid rgba(255,255,255,0.1)',
+          backgroundColor: '#FFFFFF',
+          borderRight: '1px solid #E2E8F0',
           padding: '24px 16px',
         }}>
           {/* Logo */}
@@ -487,7 +487,7 @@ export default function DemoApp() {
               </svg>
             </div>
             <div>
-              <h1 style={{ fontSize: '18px', fontWeight: '700', color: '#fff', margin: 0 }}>Sarawak</h1>
+              <h1 style={{ fontSize: '18px', fontWeight: '700', color: '#1E293B', margin: 0 }}>Sarawak</h1>
               <p style={{ fontSize: '12px', color: '#14b8a6', margin: 0, fontWeight: '600' }}>MedChain Demo</p>
             </div>
           </div>
@@ -504,7 +504,7 @@ export default function DemoApp() {
                     background: activeTab === 'doctor' ? 'rgba(20, 184, 166, 0.15)' : 'transparent',
                     border: 'none',
                     borderRadius: '10px',
-                    color: activeTab === 'doctor' ? '#fff' : '#94a3b8',
+                    color: activeTab === 'doctor' ? '#1E293B' : '#64748B',
                     fontSize: '14px',
                     fontWeight: activeTab === 'doctor' ? '600' : '400',
                     cursor: 'pointer',
@@ -530,7 +530,7 @@ export default function DemoApp() {
                     background: activeTab === 'patient' ? 'rgba(20, 184, 166, 0.15)' : 'transparent',
                     border: 'none',
                     borderRadius: '10px',
-                    color: activeTab === 'patient' ? '#fff' : '#94a3b8',
+                    color: activeTab === 'patient' ? '#1E293B' : '#64748B',
                     fontSize: '14px',
                     fontWeight: activeTab === 'patient' ? '600' : '400',
                     cursor: 'pointer',
@@ -557,7 +557,7 @@ export default function DemoApp() {
                     padding: '12px 16px',
                     background: 'transparent',
                     borderRadius: '10px',
-                    color: '#94a3b8',
+                    color: '#64748B',
                     fontSize: '14px',
                     textDecoration: 'none',
                     borderLeft: '2px solid transparent',
@@ -586,7 +586,7 @@ export default function DemoApp() {
             <p style={{ color: '#f59e0b', fontSize: '12px', fontWeight: '600', marginBottom: '4px' }}>
               Demo Mode Active
             </p>
-            <p style={{ color: '#94a3b8', fontSize: '11px', margin: 0 }}>
+            <p style={{ color: '#64748B', fontSize: '11px', margin: 0 }}>
               All data is simulated. No real blockchain transactions.
             </p>
           </div>

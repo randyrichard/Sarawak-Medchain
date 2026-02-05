@@ -176,9 +176,9 @@ export default function SystemStatus() {
   const statusColor = getStatusColor(overallStatus);
 
   return (
-    <div className="min-h-screen bg-[#030712]" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <div className="min-h-screen bg-white" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
       {/* Header */}
-      <header className="border-b border-white/10">
+      <header className="border-b border-slate-200">
         <div className="max-w-5xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center gap-3">
@@ -188,7 +188,7 @@ export default function SystemStatus() {
                 </svg>
               </div>
               <div>
-                <span className="block text-lg font-bold text-white">Sarawak MedChain</span>
+                <span className="block text-lg font-bold text-slate-800">Sarawak MedChain</span>
                 <span className="block text-xs text-amber-400 font-semibold">System Status</span>
               </div>
             </Link>
@@ -199,7 +199,7 @@ export default function SystemStatus() {
               </span>
               <Link
                 to="/"
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-sm font-medium rounded-lg transition-colors"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors"
               >
                 Back to Home
               </Link>
@@ -270,7 +270,7 @@ export default function SystemStatus() {
             {blockchainStats && (
               <div className="text-right">
                 <p className="text-slate-400 text-sm mb-1">Total Records Secured</p>
-                <p className="text-3xl font-bold text-white">{blockchainStats.totalRecords.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-slate-800">{blockchainStats.totalRecords.toLocaleString()}</p>
               </div>
             )}
           </div>
@@ -287,7 +287,7 @@ export default function SystemStatus() {
               </div>
               <div>
                 <h3 className="text-amber-400 font-bold text-lg mb-1">Upcoming Maintenance</h3>
-                <p className="text-slate-300 mb-2">{maintenanceSchedule.description}</p>
+                <p className="text-slate-600 mb-2">{maintenanceSchedule.description}</p>
                 <p className="text-slate-400 text-sm">
                   Scheduled for {new Date(maintenanceSchedule.scheduledStart).toLocaleDateString('en-MY', {
                     weekday: 'long',
@@ -308,7 +308,7 @@ export default function SystemStatus() {
         )}
 
         {/* System Components */}
-        <h2 className="text-xl font-bold text-white mb-6">System Components</h2>
+        <h2 className="text-xl font-bold text-slate-800 mb-6">System Components</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
           {SYSTEM_COMPONENTS.map((component) => {
             const status = systemStatus[component.id] || { status: 'checking' };
@@ -317,11 +317,11 @@ export default function SystemStatus() {
             return (
               <div
                 key={component.id}
-                className={`bg-white/5 border rounded-xl p-6 transition-all hover:bg-white/[0.07] ${
+                className={`bg-slate-50 border rounded-xl p-6 transition-all hover:bg-slate-100 ${
                   color === 'emerald' ? 'border-emerald-500/30' :
                   color === 'amber' ? 'border-amber-500/30' :
                   color === 'red' ? 'border-red-500/30' :
-                  'border-white/10'
+                  'border-slate-200'
                 }`}
               >
                 <div className="flex items-start justify-between">
@@ -335,7 +335,7 @@ export default function SystemStatus() {
                       {component.icon}
                     </div>
                     <div>
-                      <h3 className="text-white font-semibold mb-1">{component.name}</h3>
+                      <h3 className="text-slate-800 font-semibold mb-1">{component.name}</h3>
                       <p className="text-slate-400 text-sm">{component.description}</p>
                     </div>
                   </div>
@@ -366,10 +366,10 @@ export default function SystemStatus() {
 
                 {/* Metrics */}
                 {status.responseTime && (
-                  <div className="flex gap-6 mt-4 pt-4 border-t border-white/10">
+                  <div className="flex gap-6 mt-4 pt-4 border-t border-slate-200">
                     <div>
                       <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">Response Time</p>
-                      <p className="text-white font-semibold">{status.responseTime}ms</p>
+                      <p className="text-slate-800 font-semibold">{status.responseTime}ms</p>
                     </div>
                     <div>
                       <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">Uptime (30d)</p>
@@ -383,15 +383,15 @@ export default function SystemStatus() {
         </div>
 
         {/* Node Locations */}
-        <h2 className="text-xl font-bold text-white mb-6">Sarawak Node Network</h2>
-        <div className="bg-white/5 border border-white/10 rounded-xl p-6 mb-12">
+        <h2 className="text-xl font-bold text-slate-800 mb-6">Sarawak Node Network</h2>
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 mb-12">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {NODE_LOCATIONS.map((node) => (
-              <div key={node.city} className="text-center p-4 bg-white/5 rounded-xl">
+              <div key={node.city} className="text-center p-4 bg-slate-50 rounded-xl">
                 <div className="w-10 h-10 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
                   <span className="w-3 h-3 bg-emerald-400 rounded-full animate-pulse" />
                 </div>
-                <h3 className="text-white font-semibold mb-1">{node.city}</h3>
+                <h3 className="text-slate-800 font-semibold mb-1">{node.city}</h3>
                 <p className="text-emerald-400 text-sm font-medium">{node.latency}</p>
                 <p className="text-slate-500 text-xs mt-1">Operational</p>
               </div>
@@ -400,13 +400,13 @@ export default function SystemStatus() {
         </div>
 
         {/* Recent Incidents */}
-        <h2 className="text-xl font-bold text-white mb-6">Recent Incidents</h2>
+        <h2 className="text-xl font-bold text-slate-800 mb-6">Recent Incidents</h2>
         <div className="space-y-4">
           {RECENT_INCIDENTS.map((incident, index) => (
-            <div key={index} className="bg-white/5 border border-white/10 rounded-xl p-6">
+            <div key={index} className="bg-slate-50 border border-slate-200 rounded-xl p-6">
               <div className="flex items-start justify-between mb-2">
                 <div>
-                  <h3 className="text-white font-semibold">{incident.title}</h3>
+                  <h3 className="text-slate-800 font-semibold">{incident.title}</h3>
                   <p className="text-slate-400 text-sm">{incident.description}</p>
                 </div>
                 <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 text-xs font-semibold rounded-full">
@@ -422,7 +422,7 @@ export default function SystemStatus() {
         </div>
 
         {/* Footer */}
-        <div className="mt-12 pt-8 border-t border-white/10 text-center">
+        <div className="mt-12 pt-8 border-t border-slate-200 text-center">
           <p className="text-slate-500 text-sm">
             This page auto-refreshes every 30 seconds. For urgent issues, contact{' '}
             <a href="mailto:support@medchain.sarawak.gov.my" className="text-emerald-400 hover:text-emerald-300">

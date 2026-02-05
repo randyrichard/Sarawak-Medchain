@@ -221,8 +221,8 @@ function DetailRow({ label, value, highlight }) {
 const styles = {
   container: {
     minHeight: '100vh',
-    backgroundColor: '#0a0e14',
-    color: '#fff',
+    backgroundColor: '#FFFFFF',
+    color: '#1E293B',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     display: 'flex',
     flexDirection: 'column',
@@ -256,11 +256,11 @@ const styles = {
     fontSize: '24px',
     fontWeight: '700',
     marginBottom: '8px',
-    color: '#fff',
+    color: '#1E293B',
   },
   loadingSubtitle: {
     fontSize: '16px',
-    color: '#64748b',
+    color: '#94A3B8',
     marginBottom: '20px',
   },
   dotsContainer: {
@@ -276,8 +276,8 @@ const styles = {
   // Header styles
   header: {
     padding: '20px',
-    borderBottom: '1px solid rgba(255,255,255,0.1)',
-    background: 'linear-gradient(180deg, rgba(20, 184, 166, 0.1) 0%, transparent 100%)',
+    borderBottom: '1px solid #E2E8F0',
+    background: 'linear-gradient(180deg, rgba(20, 184, 166, 0.06) 0%, transparent 100%)',
     width: '100%',
   },
   logoContainer: {
@@ -301,11 +301,11 @@ const styles = {
     fontSize: '20px',
     fontWeight: '700',
     margin: 0,
-    color: '#fff',
+    color: '#1E293B',
   },
   headerSubtitle: {
     fontSize: '14px',
-    color: '#64748b',
+    color: '#94A3B8',
     margin: 0,
   },
 
@@ -363,16 +363,17 @@ const styles = {
   },
   verifiedSubtext: {
     fontSize: '16px',
-    color: '#94a3b8',
+    color: '#64748B',
   },
 
   // Details card
   detailsCard: {
-    background: 'rgba(255,255,255,0.05)',
+    background: '#FFFFFF',
     borderRadius: '16px',
     padding: '24px',
     marginBottom: '20px',
-    border: '1px solid rgba(255,255,255,0.1)',
+    border: '1px solid #E2E8F0',
+    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
   },
   cardTitle: {
     fontSize: '18px',
@@ -380,7 +381,7 @@ const styles = {
     marginBottom: '20px',
     display: 'flex',
     alignItems: 'center',
-    color: '#fff',
+    color: '#1E293B',
   },
   detailsGrid: {
     display: 'flex',
@@ -392,16 +393,16 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '8px 0',
-    borderBottom: '1px solid rgba(255,255,255,0.05)',
+    borderBottom: '1px solid #F1F5F9',
   },
   detailLabel: {
     fontSize: '14px',
-    color: '#64748b',
+    color: '#94A3B8',
   },
   detailValue: {
     fontSize: '14px',
     fontWeight: '500',
-    color: '#fff',
+    color: '#1E293B',
     textAlign: 'right',
   },
   detailValueHighlight: {
@@ -411,13 +412,13 @@ const styles = {
   },
   divider: {
     height: '1px',
-    background: 'rgba(255,255,255,0.1)',
+    background: '#E2E8F0',
     margin: '20px 0',
   },
   sectionTitle: {
     fontSize: '14px',
     fontWeight: '600',
-    color: '#94a3b8',
+    color: '#64748B',
     marginBottom: '16px',
     display: 'flex',
     alignItems: 'center',
@@ -436,7 +437,7 @@ const styles = {
   hashLabel: {
     display: 'block',
     fontSize: '12px',
-    color: '#64748b',
+    color: '#94A3B8',
     marginBottom: '4px',
   },
   hashValue: {
@@ -444,7 +445,7 @@ const styles = {
     color: '#14b8a6',
     wordBreak: 'break-all',
     fontFamily: 'monospace',
-    background: 'rgba(0,0,0,0.3)',
+    background: '#F1F5F9',
     padding: '8px',
     borderRadius: '6px',
     display: 'block',
@@ -456,12 +457,12 @@ const styles = {
   },
   blockLabel: {
     fontSize: '12px',
-    color: '#64748b',
+    color: '#94A3B8',
   },
   blockValue: {
     fontSize: '14px',
     fontWeight: '600',
-    color: '#fff',
+    color: '#1E293B',
   },
   timestampInfo: {
     display: 'flex',
@@ -469,11 +470,11 @@ const styles = {
   },
   timestampLabel: {
     fontSize: '12px',
-    color: '#64748b',
+    color: '#94A3B8',
   },
   timestampValue: {
     fontSize: '14px',
-    color: '#94a3b8',
+    color: '#64748B',
   },
 
   // Trust indicators
@@ -500,17 +501,17 @@ const styles = {
   footer: {
     textAlign: 'center',
     padding: '24px 20px',
-    borderTop: '1px solid rgba(255,255,255,0.1)',
+    borderTop: '1px solid #E2E8F0',
     width: '100%',
     maxWidth: '500px',
   },
   footerText: {
     fontSize: '14px',
-    color: '#64748b',
+    color: '#94A3B8',
     marginBottom: '4px',
   },
   footerSubtext: {
     fontSize: '12px',
-    color: '#475569',
+    color: '#94A3B8',
   },
 };

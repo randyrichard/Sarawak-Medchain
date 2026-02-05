@@ -6,15 +6,15 @@ import AnimatedNumber from '../ui/AnimatedNumber';
  * Shows: Bank Balance, MRR, Pending Payments, Market Cap projection
  */
 
-// Theme constants (matching main dashboard)
+// Theme constants - Light theme
 const theme = {
   success: '#10b981',
   teal: '#14b8a6',
   warning: '#f59e0b',
   purple: '#8b5cf6',
-  textPrimary: '#ffffff',
-  textSecondary: '#94a3b8',
-  textMuted: '#64748b',
+  textPrimary: '#1E293B',
+  textSecondary: '#64748B',
+  textMuted: '#94A3B8',
 };
 
 // Financial card data generator
@@ -107,7 +107,7 @@ export default function FinancialOverview({
           </p>
 
           {card.showProgress && (
-            <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden mb-2">
+            <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden mb-2">
               <motion.div
                 className="h-full rounded-full"
                 style={{ backgroundColor: card.color }}

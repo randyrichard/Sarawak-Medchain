@@ -142,10 +142,9 @@ export default function ConfirmationModal({
             <div
               className="w-full max-w-md rounded-2xl overflow-hidden"
               style={{
-                background: 'rgba(15, 23, 42, 0.95)',
+                background: '#FFFFFF',
                 border: `1px solid ${style.iconBorder}`,
-                boxShadow: `0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px ${style.iconBg}`,
-                backdropFilter: 'blur(20px)',
+                boxShadow: `0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 40px ${style.iconBg}`,
               }}
               onClick={e => e.stopPropagation()}
             >
@@ -163,8 +162,8 @@ export default function ConfirmationModal({
                   </span>
                 </div>
 
-                <h2 className="text-xl font-bold text-white mb-2">{title}</h2>
-                <p className="text-slate-400 text-sm">{message}</p>
+                <h2 className="text-xl font-bold text-slate-800 mb-2">{title}</h2>
+                <p className="text-slate-500 text-sm">{message}</p>
               </div>
 
               {/* Custom content */}
@@ -177,15 +176,15 @@ export default function ConfirmationModal({
               {/* Confirm input if required */}
               {confirmInput && (
                 <div className="px-6 pb-4">
-                  <label className="block text-sm text-slate-400 mb-2">
-                    Type <span className="font-mono text-white bg-slate-800 px-2 py-0.5 rounded">{confirmInput}</span> to confirm
+                  <label className="block text-sm text-slate-500 mb-2">
+                    Type <span className="font-mono text-slate-800 bg-slate-100 px-2 py-0.5 rounded">{confirmInput}</span> to confirm
                   </label>
                   <input
                     type="text"
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     placeholder={confirmInput}
-                    className="w-full px-4 py-3 rounded-xl bg-slate-800/50 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-teal-500 transition-colors"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-teal-500 transition-colors"
                   />
                 </div>
               )}
@@ -194,7 +193,7 @@ export default function ConfirmationModal({
               <div className="p-6 pt-2 flex gap-3">
                 <button
                   onClick={onClose}
-                  className="flex-1 px-4 py-3 rounded-xl font-semibold text-slate-300 bg-slate-800/50 border border-slate-700 hover:bg-slate-700 transition-all"
+                  className="flex-1 px-4 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 border border-slate-200 hover:bg-slate-200 transition-all"
                 >
                   {cancelText}
                 </button>

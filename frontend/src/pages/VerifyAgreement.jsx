@@ -53,7 +53,7 @@ export default function VerifyAgreement() {
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center p-6"
-      style={{ backgroundColor: '#0a0e14' }}
+      style={{ backgroundColor: '#FFFFFF' }}
     >
       {/* Logo */}
       <div className="flex items-center gap-3 mb-8">
@@ -66,8 +66,8 @@ export default function VerifyAgreement() {
           </svg>
         </div>
         <div>
-          <span className="text-xl font-bold text-white">Sarawak</span>
-          <span className="text-xl font-bold text-amber-400 ml-1">MedChain</span>
+          <span className="text-xl font-bold text-slate-800">Sarawak</span>
+          <span className="text-xl font-bold text-amber-500 ml-1">MedChain</span>
         </div>
       </div>
 
@@ -75,9 +75,9 @@ export default function VerifyAgreement() {
       <div
         className="w-full max-w-md rounded-3xl p-8"
         style={{
-          background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%)',
-          border: '1px solid rgba(71, 85, 105, 0.4)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          background: '#FFFFFF',
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.1)',
         }}
       >
         {/* Verifying State */}
@@ -89,7 +89,7 @@ export default function VerifyAgreement() {
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
             </div>
-            <h2 className="text-xl font-bold text-white mb-2">Verifying Document</h2>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Verifying Document</h2>
             <p className="text-slate-400 text-sm">Please wait while we verify the authenticity...</p>
           </div>
         )}
@@ -108,21 +108,21 @@ export default function VerifyAgreement() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-xl font-bold text-white mb-2">Document Verified</h2>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Document Verified</h2>
             <p className="text-emerald-400 text-sm font-medium mb-6">This is an authentic MedChain agreement</p>
 
             {/* Agreement Details */}
             <div
               className="text-left rounded-xl p-4 mb-6"
               style={{
-                background: 'rgba(15, 23, 42, 0.6)',
-                border: '1px solid rgba(71, 85, 105, 0.3)',
+                background: '#F8FAFC',
+                border: '1px solid #E2E8F0',
               }}
             >
               <div className="space-y-3">
                 <div>
                   <p className="text-xs text-slate-500 uppercase tracking-wider">Hospital</p>
-                  <p className="text-white font-semibold">{agreementData?.hospitalName || hospitalName || 'N/A'}</p>
+                  <p className="text-slate-800 font-semibold">{agreementData?.hospitalName || hospitalName || 'N/A'}</p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-500 uppercase tracking-wider">Document ID</p>
@@ -175,20 +175,20 @@ export default function VerifyAgreement() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h2 className="text-xl font-bold text-white mb-2">Pending Signature</h2>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Pending Signature</h2>
             <p className="text-amber-400 text-sm font-medium mb-4">This document is awaiting signature</p>
 
             <div
               className="text-left rounded-xl p-4 mb-6"
               style={{
-                background: 'rgba(15, 23, 42, 0.6)',
-                border: '1px solid rgba(71, 85, 105, 0.3)',
+                background: '#F8FAFC',
+                border: '1px solid #E2E8F0',
               }}
             >
               <div className="space-y-3">
                 <div>
                   <p className="text-xs text-slate-500 uppercase tracking-wider">Hospital</p>
-                  <p className="text-white font-semibold">{decodeURIComponent(hospitalName || 'N/A')}</p>
+                  <p className="text-slate-800 font-semibold">{decodeURIComponent(hospitalName || 'N/A')}</p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-500 uppercase tracking-wider">Document ID</p>
@@ -221,7 +221,7 @@ export default function VerifyAgreement() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <h2 className="text-xl font-bold text-white mb-2">Invalid Document</h2>
+            <h2 className="text-xl font-bold text-slate-800 mb-2">Invalid Document</h2>
             <p className="text-red-400 text-sm font-medium mb-4">This document could not be verified</p>
             <p className="text-slate-500 text-xs">The QR code may be damaged or the document ID is invalid.</p>
           </div>

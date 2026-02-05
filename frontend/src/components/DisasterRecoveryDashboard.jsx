@@ -46,8 +46,8 @@ export default function DisasterRecoveryDashboard() {
             </svg>
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white">Disaster Recovery Suite</h2>
-            <p className="text-slate-400 text-sm">Cross-region replication & auto-failover</p>
+            <h2 className="text-xl font-bold text-slate-800">Disaster Recovery Suite</h2>
+            <p className="text-slate-500 text-sm">Cross-region replication & auto-failover</p>
           </div>
         </div>
 
@@ -63,7 +63,7 @@ export default function DisasterRecoveryDashboard() {
             drState.failoverActive ? 'bg-amber-400' : drState.primaryStatus === 'HEALTHY' ? 'bg-emerald-400' : 'bg-red-400'
           }`}></span>
           <span className={`font-bold text-sm ${
-            drState.failoverActive ? 'text-amber-400' : drState.primaryStatus === 'HEALTHY' ? 'text-emerald-400' : 'text-red-400'
+            drState.failoverActive ? 'text-amber-600' : drState.primaryStatus === 'HEALTHY' ? 'text-emerald-600' : 'text-red-600'
           }`}>
             {drState.failoverActive ? 'FAILOVER ACTIVE' : drState.primaryStatus}
           </span>
@@ -79,8 +79,8 @@ export default function DisasterRecoveryDashboard() {
                 <span className="text-2xl">🚨</span>
               </div>
               <div>
-                <p className="text-amber-300 font-bold">Failover Mode Active</p>
-                <p className="text-amber-200/70 text-sm">
+                <p className="text-amber-700 font-bold">Failover Mode Active</p>
+                <p className="text-amber-600/70 text-sm">
                   Traffic redirected to {config.backupNodes.find(n => n.id === drState.activeNode)?.region || 'backup'} node
                 </p>
               </div>
@@ -127,26 +127,26 @@ export default function DisasterRecoveryDashboard() {
       {/* Metrics Row */}
       <div className="grid grid-cols-4 gap-4">
         {/* Uptime */}
-        <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+        <div className="bg-white rounded-xl p-4 border border-slate-200">
           <div className="flex items-center gap-2 mb-2">
             <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span className="text-slate-400 text-sm">System Uptime</span>
+            <span className="text-slate-500 text-sm">System Uptime</span>
           </div>
-          <p className="text-2xl font-black text-white">{uptime.toFixed(2)}%</p>
+          <p className="text-2xl font-black text-slate-800">{uptime.toFixed(2)}%</p>
           <p className="text-emerald-400 text-xs mt-1">Last 30 days</p>
         </div>
 
         {/* Last Replication */}
-        <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+        <div className="bg-white rounded-xl p-4 border border-slate-200">
           <div className="flex items-center gap-2 mb-2">
             <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            <span className="text-slate-400 text-sm">Last Sync</span>
+            <span className="text-slate-500 text-sm">Last Sync</span>
           </div>
-          <p className="text-lg font-bold text-white">
+          <p className="text-lg font-bold text-slate-800">
             {drState.lastReplication
               ? new Date(drState.lastReplication.timestamp).toLocaleTimeString()
               : 'Never'}
@@ -157,14 +157,14 @@ export default function DisasterRecoveryDashboard() {
         </div>
 
         {/* Cold Backup */}
-        <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+        <div className="bg-white rounded-xl p-4 border border-slate-200">
           <div className="flex items-center gap-2 mb-2">
             <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
             </svg>
-            <span className="text-slate-400 text-sm">Cold Backup</span>
+            <span className="text-slate-500 text-sm">Cold Backup</span>
           </div>
-          <p className="text-lg font-bold text-white">
+          <p className="text-lg font-bold text-slate-800">
             {drState.lastColdBackup
               ? new Date(drState.lastColdBackup.timestamp).toLocaleDateString()
               : 'Scheduled'}
@@ -173,14 +173,14 @@ export default function DisasterRecoveryDashboard() {
         </div>
 
         {/* Failover Count */}
-        <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+        <div className="bg-white rounded-xl p-4 border border-slate-200">
           <div className="flex items-center gap-2 mb-2">
             <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-            <span className="text-slate-400 text-sm">Failovers</span>
+            <span className="text-slate-500 text-sm">Failovers</span>
           </div>
-          <p className="text-2xl font-black text-white">
+          <p className="text-2xl font-black text-slate-800">
             {drState.failoverHistory.filter(f => f.type === 'FAILOVER').length}
           </p>
           <p className="text-amber-400 text-xs mt-1">This month</p>
@@ -188,8 +188,8 @@ export default function DisasterRecoveryDashboard() {
       </div>
 
       {/* Replication Panel */}
-      <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 overflow-hidden">
-        <div className="p-4 border-b border-slate-700/50 flex items-center justify-between">
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div className="p-4 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-cyan-500/20 rounded-lg flex items-center justify-center">
               <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -197,8 +197,8 @@ export default function DisasterRecoveryDashboard() {
               </svg>
             </div>
             <div>
-              <h3 className="text-white font-bold">Cross-Region Replication</h3>
-              <p className="text-slate-400 text-sm">Sync every 5 minutes</p>
+              <h3 className="text-slate-800 font-bold">Cross-Region Replication</h3>
+              <p className="text-slate-500 text-sm">Sync every 5 minutes</p>
             </div>
           </div>
           <button
@@ -217,17 +217,17 @@ export default function DisasterRecoveryDashboard() {
         {/* Replication History */}
         <div className="max-h-48 overflow-y-auto">
           {drState.replicationHistory.slice(0, 5).map((repl, idx) => (
-            <div key={repl.id} className={`p-3 flex items-center justify-between ${idx !== 0 ? 'border-t border-slate-700/30' : ''}`}>
+            <div key={repl.id} className={`p-3 flex items-center justify-between ${idx !== 0 ? 'border-t border-slate-200' : ''}`}>
               <div className="flex items-center gap-3">
                 <span className="w-2 h-2 bg-emerald-400 rounded-full"></span>
-                <span className="text-slate-300 text-sm">
+                <span className="text-slate-600 text-sm">
                   {new Date(repl.timestamp).toLocaleTimeString()}
                 </span>
               </div>
               <div className="flex items-center gap-4 text-sm">
-                <span className="text-slate-400">{repl.bytesTransferred}</span>
-                <span className="text-cyan-400">{repl.duration}</span>
-                <span className="text-emerald-400">{repl.nodesSuccess}/{repl.nodesTotal} nodes</span>
+                <span className="text-slate-500">{repl.bytesTransferred}</span>
+                <span className="text-cyan-500">{repl.duration}</span>
+                <span className="text-emerald-500">{repl.nodesSuccess}/{repl.nodesTotal} nodes</span>
               </div>
             </div>
           ))}
@@ -238,15 +238,15 @@ export default function DisasterRecoveryDashboard() {
       </div>
 
       {/* Cold Storage Panel */}
-      <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4">
+      <div className="bg-white rounded-xl border border-slate-200 p-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
               <span className="text-xl">🗄️</span>
             </div>
             <div>
-              <h3 className="text-white font-bold">'Black Box' Cold Storage</h3>
-              <p className="text-slate-400 text-sm">AES-256-GCM encrypted daily snapshots</p>
+              <h3 className="text-slate-800 font-bold">'Black Box' Cold Storage</h3>
+              <p className="text-slate-500 text-sm">AES-256-GCM encrypted daily snapshots</p>
             </div>
           </div>
           <button
@@ -263,22 +263,22 @@ export default function DisasterRecoveryDashboard() {
         </div>
 
         {drState.lastColdBackup && (
-          <div className="bg-slate-900/50 rounded-lg p-4 grid grid-cols-4 gap-4">
+          <div className="bg-slate-50 rounded-lg p-4 grid grid-cols-4 gap-4">
             <div>
-              <p className="text-slate-400 text-xs mb-1">Last Backup</p>
-              <p className="text-white font-bold">{new Date(drState.lastColdBackup.timestamp).toLocaleDateString()}</p>
+              <p className="text-slate-500 text-xs mb-1">Last Backup</p>
+              <p className="text-slate-800 font-bold">{new Date(drState.lastColdBackup.timestamp).toLocaleDateString()}</p>
             </div>
             <div>
-              <p className="text-slate-400 text-xs mb-1">Hospitals</p>
-              <p className="text-white font-bold">{drState.lastColdBackup.hospitalCount}</p>
+              <p className="text-slate-500 text-xs mb-1">Hospitals</p>
+              <p className="text-slate-800 font-bold">{drState.lastColdBackup.hospitalCount}</p>
             </div>
             <div>
-              <p className="text-slate-400 text-xs mb-1">Records</p>
-              <p className="text-white font-bold">{drState.lastColdBackup.totalRecords?.toLocaleString()}</p>
+              <p className="text-slate-500 text-xs mb-1">Records</p>
+              <p className="text-slate-800 font-bold">{drState.lastColdBackup.totalRecords?.toLocaleString()}</p>
             </div>
             <div>
-              <p className="text-slate-400 text-xs mb-1">Size</p>
-              <p className="text-white font-bold">{drState.lastColdBackup.encryptedSize}</p>
+              <p className="text-slate-500 text-xs mb-1">Size</p>
+              <p className="text-slate-800 font-bold">{drState.lastColdBackup.encryptedSize}</p>
             </div>
           </div>
         )}
@@ -295,10 +295,10 @@ export default function DisasterRecoveryDashboard() {
  */
 function NodeStatusCard({ name, region, url, status, isActive, metrics, onFailover, onActivate, isPrimary }) {
   return (
-    <div className={`relative bg-slate-800/50 rounded-xl border overflow-hidden transition-all ${
+    <div className={`relative bg-white rounded-xl border overflow-hidden transition-all ${
       isActive
         ? 'border-emerald-500/50 ring-2 ring-emerald-500/20'
-        : 'border-slate-700/50 hover:border-slate-600/50'
+        : 'border-slate-200 hover:border-slate-300'
     }`}>
       {/* Active indicator */}
       {isActive && (
@@ -309,31 +309,31 @@ function NodeStatusCard({ name, region, url, status, isActive, metrics, onFailov
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-              isPrimary ? 'bg-blue-500/20' : 'bg-slate-700'
+              isPrimary ? 'bg-blue-500/20' : 'bg-slate-100'
             }`}>
               {isPrimary ? (
                 <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
                 </svg>
               ) : (
-                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
                 </svg>
               )}
             </div>
             <div>
-              <p className="text-white font-bold text-sm">{name}</p>
-              <p className="text-slate-400 text-xs">{region}</p>
+              <p className="text-slate-800 font-bold text-sm">{name}</p>
+              <p className="text-slate-500 text-xs">{region}</p>
             </div>
           </div>
 
           {/* Status badge */}
           <div className={`px-2 py-1 rounded-full text-xs font-bold ${
             isActive && status !== 'DOWN'
-              ? 'bg-emerald-500/20 text-emerald-400'
+              ? 'bg-emerald-500/20 text-emerald-600'
               : status === 'DOWN'
-              ? 'bg-red-500/20 text-red-400'
-              : 'bg-slate-700 text-slate-400'
+              ? 'bg-red-500/20 text-red-500'
+              : 'bg-slate-100 text-slate-500'
           }`}>
             {isActive ? 'ACTIVE' : status}
           </div>
@@ -343,16 +343,16 @@ function NodeStatusCard({ name, region, url, status, isActive, metrics, onFailov
         {metrics && (
           <div className="space-y-2 mb-3">
             <div className="flex justify-between text-xs">
-              <span className="text-slate-400">Uptime</span>
-              <span className="text-white">{metrics.uptime}%</span>
+              <span className="text-slate-500">Uptime</span>
+              <span className="text-slate-800">{metrics.uptime}%</span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-slate-400">Response</span>
-              <span className="text-cyan-400">{metrics.responseTime}ms</span>
+              <span className="text-slate-500">Response</span>
+              <span className="text-cyan-500">{metrics.responseTime}ms</span>
             </div>
             <div className="flex justify-between text-xs">
-              <span className="text-slate-400">Req/min</span>
-              <span className="text-white">{metrics.requestsPerMin}</span>
+              <span className="text-slate-500">Req/min</span>
+              <span className="text-slate-800">{metrics.requestsPerMin}</span>
             </div>
           </div>
         )}
@@ -361,19 +361,19 @@ function NodeStatusCard({ name, region, url, status, isActive, metrics, onFailov
         {isPrimary && !isActive ? (
           <button
             onClick={onFailover}
-            className="w-full px-3 py-2 bg-amber-600/20 hover:bg-amber-600/30 text-amber-400 text-xs font-bold rounded-lg transition-colors"
+            className="w-full px-3 py-2 bg-amber-600/20 hover:bg-amber-600/30 text-amber-600 text-xs font-bold rounded-lg transition-colors"
           >
             Simulate Failover
           </button>
         ) : !isPrimary && !isActive ? (
           <button
             onClick={onActivate}
-            className="w-full px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-bold rounded-lg transition-colors"
+            className="w-full px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold rounded-lg transition-colors"
           >
             Activate Node
           </button>
         ) : (
-          <div className="w-full px-3 py-2 bg-emerald-500/10 text-emerald-400 text-xs font-bold rounded-lg text-center">
+          <div className="w-full px-3 py-2 bg-emerald-500/10 text-emerald-600 text-xs font-bold rounded-lg text-center">
             Currently Active
           </div>
         )}
@@ -389,8 +389,8 @@ function AlertHistoryPanel({ alerts }) {
   if (alerts.length === 0) return null;
 
   return (
-    <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 overflow-hidden">
-      <div className="p-4 border-b border-slate-700/50">
+    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="p-4 border-b border-slate-200">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
             <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -398,13 +398,13 @@ function AlertHistoryPanel({ alerts }) {
             </svg>
           </div>
           <div>
-            <h3 className="text-white font-bold">Emergency Alert History</h3>
-            <p className="text-slate-400 text-sm">SMS notifications sent to CEO</p>
+            <h3 className="text-slate-800 font-bold">Emergency Alert History</h3>
+            <p className="text-slate-500 text-sm">SMS notifications sent to CEO</p>
           </div>
         </div>
       </div>
 
-      <div className="max-h-48 overflow-y-auto divide-y divide-slate-700/30">
+      <div className="max-h-48 overflow-y-auto divide-y divide-slate-200">
         {alerts.slice(0, 10).map(alert => (
           <div key={alert.id} className="p-3 flex items-start gap-3">
             <span className={`mt-1 w-2 h-2 rounded-full ${
@@ -413,7 +413,7 @@ function AlertHistoryPanel({ alerts }) {
             <div className="flex-1">
               <div className="flex items-center justify-between">
                 <p className={`font-bold text-sm ${
-                  alert.severity === 'CRITICAL' ? 'text-red-400' : 'text-emerald-400'
+                  alert.severity === 'CRITICAL' ? 'text-red-500' : 'text-emerald-500'
                 }`}>
                   {alert.title}
                 </p>
@@ -421,7 +421,7 @@ function AlertHistoryPanel({ alerts }) {
                   {new Date(alert.timestamp).toLocaleTimeString()}
                 </span>
               </div>
-              <p className="text-slate-400 text-xs mt-1">{alert.message}</p>
+              <p className="text-slate-500 text-xs mt-1">{alert.message}</p>
             </div>
           </div>
         ))}
@@ -537,15 +537,15 @@ export function MiniDRStatus() {
     <div className={`flex items-center gap-3 px-4 py-2 rounded-xl border ${
       drState.failoverActive
         ? 'bg-amber-500/10 border-amber-500/30'
-        : 'bg-slate-800/50 border-slate-700/50'
+        : 'bg-white border-slate-200'
     }`}>
       <div className={`w-3 h-3 rounded-full animate-pulse ${
         drState.failoverActive ? 'bg-amber-400' : 'bg-emerald-400'
       }`}></div>
       <div>
-        <p className="text-xs text-slate-400">DR Status</p>
+        <p className="text-xs text-slate-500">DR Status</p>
         <p className={`font-bold text-sm ${
-          drState.failoverActive ? 'text-amber-400' : 'text-white'
+          drState.failoverActive ? 'text-amber-500' : 'text-slate-800'
         }`}>
           {drState.failoverActive ? 'Failover Active' : `${calculateUptime().toFixed(2)}% Uptime`}
         </p>

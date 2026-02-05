@@ -35,7 +35,7 @@ export function CEOAlertToast() {
       {alerts.map((alert) => (
         <div
           key={alert.id}
-          className="animate-slide-in-right bg-gradient-to-r from-slate-900 to-slate-800 border border-cyan-500/50 rounded-2xl p-4 shadow-2xl shadow-cyan-500/20"
+          className="animate-slide-in-right bg-white border border-cyan-500/30 rounded-2xl p-4 shadow-2xl shadow-cyan-500/10"
         >
           {/* Alert Header */}
           <div className="flex items-start justify-between gap-3">
@@ -74,13 +74,13 @@ export function CEOAlertToast() {
                   {alert.type === 'email_opened' && 'Email Opened'}
                   {alert.type === 'left_pitch' && 'Session Ended'}
                 </p>
-                <p className="text-white font-bold text-sm">{alert.hospitalName}</p>
+                <p className="text-slate-800 font-bold text-sm">{alert.hospitalName}</p>
               </div>
             </div>
 
             <button
               onClick={() => dismissAlert(alert.id)}
-              className="text-slate-500 hover:text-white transition-colors"
+              className="text-slate-400 hover:text-slate-600 transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -89,12 +89,12 @@ export function CEOAlertToast() {
           </div>
 
           {/* Alert Message */}
-          <p className="text-slate-300 text-sm mt-2">{alert.message}</p>
+          <p className="text-slate-600 text-sm mt-2">{alert.message}</p>
 
           {/* Alert Footer */}
-          <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-700">
+          <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-200">
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 bg-slate-700 rounded text-xs text-slate-400">{alert.region}</span>
+              <span className="px-2 py-0.5 bg-slate-100 rounded text-xs text-slate-500">{alert.region}</span>
               <span className="text-xs text-slate-500">
                 {new Date(alert.timestamp).toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' })}
               </span>
@@ -165,7 +165,7 @@ export function LiveViewersPanel() {
   ];
 
   return (
-    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-cyan-500/30 p-6">
+    <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -176,8 +176,8 @@ export function LiveViewersPanel() {
             </svg>
           </div>
           <div>
-            <h3 className="text-white font-bold">Live Viewers</h3>
-            <p className="text-slate-400 text-sm">Hospital executives on pitch page</p>
+            <h3 className="text-slate-800 font-bold">Live Viewers</h3>
+            <p className="text-slate-500 text-sm">Hospital executives on pitch page</p>
           </div>
         </div>
 
@@ -192,7 +192,7 @@ export function LiveViewersPanel() {
         {viewers.map((viewer) => (
           <div
             key={viewer.id}
-            className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 hover:border-cyan-500/30 transition-colors"
+            className="bg-slate-50 rounded-xl p-4 border border-slate-200 hover:border-cyan-500/30 transition-colors"
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
@@ -202,8 +202,8 @@ export function LiveViewersPanel() {
                   </span>
                 </div>
                 <div>
-                  <p className="text-white font-semibold text-sm">{viewer.hospitalName}</p>
-                  <p className="text-slate-400 text-xs">{viewer.ceoName}</p>
+                  <p className="text-slate-800 font-semibold text-sm">{viewer.hospitalName}</p>
+                  <p className="text-slate-500 text-xs">{viewer.ceoName}</p>
                 </div>
               </div>
 
@@ -214,13 +214,13 @@ export function LiveViewersPanel() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-slate-900/50 rounded-lg p-2">
+              <div className="bg-slate-50 rounded-lg p-2">
                 <p className="text-slate-500 text-xs">Current Section</p>
                 <p className="text-cyan-400 font-semibold text-sm capitalize">{viewer.currentSection.replace(/([A-Z])/g, ' $1').trim()}</p>
               </div>
-              <div className="bg-slate-900/50 rounded-lg p-2">
+              <div className="bg-slate-50 rounded-lg p-2">
                 <p className="text-slate-500 text-xs">Time on Page</p>
-                <p className="text-white font-semibold text-sm">
+                <p className="text-slate-800 font-semibold text-sm">
                   {Math.floor(viewer.totalTime / 60)}m {viewer.totalTime % 60}s
                 </p>
               </div>
@@ -317,7 +317,7 @@ export function AlertHistoryPanel() {
   ];
 
   return (
-    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-slate-700/50 p-6">
+    <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -327,15 +327,15 @@ export function AlertHistoryPanel() {
             </svg>
           </div>
           <div>
-            <h3 className="text-white font-bold">Lead Activity</h3>
-            <p className="text-slate-400 text-sm">Recent hospital lead actions</p>
+            <h3 className="text-slate-800 font-bold">Lead Activity</h3>
+            <p className="text-slate-500 text-sm">Recent hospital lead actions</p>
           </div>
         </div>
 
         {unreadCount > 0 && (
           <button
             onClick={markAllAlertsRead}
-            className="text-xs text-slate-400 hover:text-white transition-colors"
+            className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
           >
             Mark all read
           </button>
@@ -349,8 +349,8 @@ export function AlertHistoryPanel() {
             key={alert.id}
             onClick={() => markAlertRead(alert.id)}
             className={`p-3 rounded-xl cursor-pointer transition-all ${
-              alert.isRead ? 'bg-slate-800/30' : 'bg-slate-800/70 border border-slate-600/50'
-            } hover:bg-slate-700/50`}
+              alert.isRead ? 'bg-slate-50' : 'bg-white border border-slate-200'
+            } hover:bg-slate-100`}
           >
             <div className="flex items-start gap-3">
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${getAlertColor(alert.type)}`}>
@@ -359,14 +359,14 @@ export function AlertHistoryPanel() {
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className={`font-semibold text-sm ${alert.isRead ? 'text-slate-400' : 'text-white'}`}>
+                  <p className={`font-semibold text-sm ${alert.isRead ? 'text-slate-400' : 'text-slate-800'}`}>
                     {alert.hospitalName}
                   </p>
                   {!alert.isRead && (
                     <span className="w-2 h-2 bg-cyan-400 rounded-full"></span>
                   )}
                 </div>
-                <p className={`text-xs mt-0.5 ${alert.isRead ? 'text-slate-500' : 'text-slate-300'}`}>
+                <p className={`text-xs mt-0.5 ${alert.isRead ? 'text-slate-500' : 'text-slate-600'}`}>
                   {alert.message}
                 </p>
                 <div className="flex items-center gap-2 mt-1">

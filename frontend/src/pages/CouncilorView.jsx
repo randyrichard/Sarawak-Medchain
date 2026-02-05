@@ -8,7 +8,7 @@ import { usePWA, PWA_CONFIGS } from '../hooks/usePWA';
  *
  * OPTIMIZED FOR: iPhone 8 Plus (5.5-inch, 16:9 display)
  * - Touch targets: Minimum 48px for thumb-tapping
- * - Dark mode: High-contrast toggle for professional demos
+ * - Light theme: Professional clean look
  * - PWA: Offline caching enabled via service worker
  */
 
@@ -56,7 +56,6 @@ export default function CouncilorView() {
   const [mcsProcessed, setMcsProcessed] = useState(847000);
   const [animatedFraud, setAnimatedFraud] = useState(0);
   const [hoveredDistrict, setHoveredDistrict] = useState(null);
-  const [isDarkMode, setIsDarkMode] = useState(true); // Default dark for high-tech look
   const [isHighContrast, setIsHighContrast] = useState(false);
   const counterRef = useRef(null);
 
@@ -69,14 +68,14 @@ export default function CouncilorView() {
   // PWA: Only set manifest when on /pwa/gov route
   usePWA(isPWARoute ? PWA_CONFIGS.gov : null);
 
-  // Theme classes for dark/light mode - Master color: #0a0e14
+  // Theme classes for light mode
   const theme = {
-    bg: '#0a0e14', // Master background color
-    cardBg: isDarkMode ? 'bg-slate-900/50' : 'bg-white',
-    headerBg: '#0a0e14', // Seamless header - no gradient
-    text: isDarkMode ? 'text-white' : 'text-gray-900',
-    textMuted: isDarkMode ? 'text-slate-400' : 'text-gray-600',
-    border: isDarkMode ? 'border-slate-700/30' : 'border-gray-200',
+    bg: '#FFFFFF',
+    cardBg: 'bg-white',
+    headerBg: '#FFFFFF',
+    text: 'text-slate-800',
+    textMuted: 'text-slate-500',
+    border: 'border-slate-200',
     accent: isHighContrast ? 'text-yellow-400' : 'text-emerald-400',
     accentBg: isHighContrast ? 'bg-yellow-500/20' : 'bg-emerald-500/20',
   };
@@ -149,11 +148,8 @@ export default function CouncilorView() {
 
   return (
     <div className="min-h-screen transition-colors duration-300" style={{ backgroundColor: theme.bg }}>
-      {/* Global CSS Overrides for Perfect Background Unity */}
+      {/* Global CSS Overrides */}
       <style>{`
-        html, body, #root {
-          background-color: #0a0e14 !important;
-        }
         * {
           box-sizing: border-box;
         }
@@ -164,9 +160,9 @@ export default function CouncilorView() {
       <header
         className="sticky top-0 z-50 pt-[20px]"
         style={{
-          backgroundColor: '#0a0e14',
-          borderBottom: 'none',
-          boxShadow: 'none',
+          backgroundColor: '#FFFFFF',
+          borderBottom: '1px solid #E2E8F0',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
           paddingTop: 'calc(20px + env(safe-area-inset-top, 0px))'
         }}
       >
@@ -175,26 +171,26 @@ export default function CouncilorView() {
             {/* Logo Strip - Responsive */}
             <div className="flex items-center gap-2 sm:gap-6 overflow-x-auto">
               {/* Sarawak Digital Logo - Compact on mobile */}
-              <div className="flex items-center gap-2 sm:gap-3 pr-2 sm:pr-6 border-r border-slate-700 flex-shrink-0">
+              <div className="flex items-center gap-2 sm:gap-3 pr-2 sm:pr-6 border-r border-slate-200 flex-shrink-0">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center">
                   <span className="text-lg sm:text-2xl font-black text-white">SD</span>
                 </div>
                 <div className="hidden sm:block">
-                  <p className="text-white font-bold text-sm">Sarawak</p>
-                  <p className="text-cyan-400 text-xs font-semibold">DIGITAL</p>
+                  <p className="text-slate-800 font-bold text-sm">Sarawak</p>
+                  <p className="text-cyan-600 text-xs font-semibold">DIGITAL</p>
                 </div>
               </div>
 
               {/* Smart City Logo - Hidden on small mobile */}
-              <div className="hidden xs:flex items-center gap-2 sm:gap-3 pr-2 sm:pr-6 border-r border-slate-700 flex-shrink-0">
+              <div className="hidden xs:flex items-center gap-2 sm:gap-3 pr-2 sm:pr-6 border-r border-slate-200 flex-shrink-0">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center">
                   <svg className="w-5 h-5 sm:w-7 sm:h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
                 </div>
                 <div className="hidden sm:block">
-                  <p className="text-white font-bold text-sm">Smart City</p>
-                  <p className="text-emerald-400 text-xs font-semibold">INITIATIVE</p>
+                  <p className="text-slate-800 font-bold text-sm">Smart City</p>
+                  <p className="text-emerald-600 text-xs font-semibold">INITIATIVE</p>
                 </div>
               </div>
 
@@ -206,45 +202,28 @@ export default function CouncilorView() {
                   </svg>
                 </div>
                 <div className="hidden sm:block">
-                  <p className="text-white font-bold text-sm">Sarawak</p>
-                  <p className="text-orange-400 text-xs font-semibold">MEDCHAIN</p>
+                  <p className="text-slate-800 font-bold text-sm">Sarawak</p>
+                  <p className="text-orange-500 text-xs font-semibold">MEDCHAIN</p>
                 </div>
               </div>
             </div>
 
-            {/* Header Right - Dark Mode Toggle & Live Status */}
+            {/* Header Right - High Contrast Toggle & Live Status */}
             <div className="flex items-center gap-2 sm:gap-4">
-              {/* Dark Mode Toggle - Touch-friendly 48px minimum */}
-              <button
-                onClick={() => setIsDarkMode(!isDarkMode)}
-                className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-xl bg-slate-800/50 border border-slate-700 hover:bg-slate-700 active:scale-95 transition-all touch-manipulation"
-                aria-label="Toggle dark mode"
-              >
-                {isDarkMode ? (
-                  <svg className="w-6 h-6 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                  </svg>
-                ) : (
-                  <svg className="w-6 h-6 text-slate-300" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                  </svg>
-                )}
-              </button>
-
               {/* High Contrast Toggle */}
               <button
                 onClick={() => setIsHighContrast(!isHighContrast)}
-                className={`w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-xl border hover:bg-slate-700 active:scale-95 transition-all touch-manipulation ${
-                  isHighContrast ? 'bg-yellow-500/20 border-yellow-500/50' : 'bg-slate-800/50 border-slate-700'
+                className={`w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-xl border hover:bg-slate-100 active:scale-95 transition-all touch-manipulation ${
+                  isHighContrast ? 'bg-yellow-500/20 border-yellow-500/50' : 'bg-slate-50 border-slate-200'
                 }`}
                 aria-label="Toggle high contrast"
               >
-                <svg className={`w-6 h-6 ${isHighContrast ? 'text-yellow-400' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-6 h-6 ${isHighContrast ? 'text-yellow-400' : 'text-slate-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
               </button>
 
-              <div className="hidden sm:block w-px h-10 bg-slate-700"></div>
+              <div className="hidden sm:block w-px h-10 bg-slate-200"></div>
 
               {/* Live Status Badge */}
               <div className={`flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 ${theme.accentBg} border border-emerald-500/30 rounded-xl`}>
@@ -257,7 +236,7 @@ export default function CouncilorView() {
       </header>
 
       {/* Main Content - Centered with max-width 1400px */}
-      <main style={{ maxWidth: '1400px', margin: '0 auto', backgroundColor: '#0a0e14' }} className="px-3 sm:px-6 py-4 sm:py-8">
+      <main style={{ maxWidth: '1400px', margin: '0 auto', backgroundColor: '#FFFFFF' }} className="px-3 sm:px-6 py-4 sm:py-8">
         {/* Page Title */}
         <div className="mb-4 sm:mb-8 text-center sm:text-left">
           <h1 className={`text-xl sm:text-3xl font-black ${theme.text} mb-2`}>
@@ -313,7 +292,7 @@ export default function CouncilorView() {
                     </div>
                     <div>
                       <p className={`${isHighContrast ? 'text-yellow-300' : 'text-emerald-300'} text-xs sm:text-sm font-semibold uppercase tracking-wider`}>Economic Impact</p>
-                      <p className={`${theme.textMuted} text-xs sm:text-sm`}>Fraud Prevention Savings</p>
+                      <p className="text-slate-300 text-xs sm:text-sm">Fraud Prevention Savings</p>
                     </div>
                   </div>
 
@@ -322,7 +301,7 @@ export default function CouncilorView() {
                     <span className={`${isHighContrast ? 'text-yellow-400' : 'text-emerald-400'} text-lg sm:text-2xl font-bold`}>RM</span>
                     <span
                       ref={counterRef}
-                      className={`text-4xl sm:text-5xl lg:text-6xl font-black ${theme.text} tabular-nums`}
+                      className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tabular-nums"
                       style={{ fontFamily: 'monospace' }}
                     >
                       {animatedFraud.toLocaleString()}
@@ -335,17 +314,17 @@ export default function CouncilorView() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                       </svg>
                       <span className={`${isHighContrast ? 'text-yellow-400' : 'text-emerald-400'} font-bold text-sm`}>+RM 5,000</span>
-                      <span className={`${theme.textMuted} text-xs`}>/ 5 sec</span>
+                      <span className="text-slate-300 text-xs">/ 5 sec</span>
                     </div>
-                    <div className="hidden sm:block h-4 w-px bg-slate-700"></div>
-                    <div className={`${theme.textMuted} text-xs sm:text-sm`}>
-                      <span className={`${theme.text} font-bold`}>{mcsProcessed.toLocaleString()}</span> MCs verified
+                    <div className="hidden sm:block h-4 w-px bg-slate-500"></div>
+                    <div className="text-slate-300 text-xs sm:text-sm">
+                      <span className="text-white font-bold">{mcsProcessed.toLocaleString()}</span> MCs verified
                     </div>
                   </div>
                 </div>
 
                 {/* Impact Breakdown - Stacked on mobile */}
-                <div className={`${theme.cardBg} rounded-2xl p-4 sm:p-5 border ${theme.border}`}>
+                <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200">
                   <p className={`${theme.textMuted} text-xs font-semibold uppercase tracking-wider mb-3 sm:mb-4`}>Impact Breakdown</p>
                   <div className="space-y-3 sm:space-y-4">
                     <div>
@@ -353,7 +332,7 @@ export default function CouncilorView() {
                         <span className={theme.textMuted}>Fake MC Fraud Blocked</span>
                         <span className={`${theme.text} font-bold`}>RM 1.8B</span>
                       </div>
-                      <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-red-500 to-red-400 rounded-full" style={{ width: '78%' }}></div>
                       </div>
                     </div>
@@ -362,7 +341,7 @@ export default function CouncilorView() {
                         <span className={theme.textMuted}>Admin Cost Reduction</span>
                         <span className={`${theme.text} font-bold`}>RM 350M</span>
                       </div>
-                      <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full" style={{ width: '15%' }}></div>
                       </div>
                     </div>
@@ -371,7 +350,7 @@ export default function CouncilorView() {
                         <span className={theme.textMuted}>Healthcare Efficiency</span>
                         <span className={`${theme.text} font-bold`}>RM 150M</span>
                       </div>
-                      <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full" style={{ width: '7%' }}></div>
                       </div>
                     </div>
@@ -407,8 +386,8 @@ export default function CouncilorView() {
         {/* Main Grid - Responsive */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-8">
           {/* Health Heatmap */}
-          <div className={`lg:col-span-2 ${theme.cardBg} rounded-2xl border ${theme.border} overflow-hidden`}>
-            <div className="p-3 sm:p-5 border-b border-slate-700/50">
+          <div className={`lg:col-span-2 bg-white rounded-2xl border border-slate-200 overflow-hidden`}>
+            <div className="p-3 sm:p-5 border-b border-slate-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
@@ -417,8 +396,8 @@ export default function CouncilorView() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-white font-bold">Public Health Heatmap</h3>
-                    <p className="text-slate-400 text-sm">Anonymized medical certificate distribution by district</p>
+                    <h3 className="text-slate-800 font-bold">Public Health Heatmap</h3>
+                    <p className="text-slate-500 text-sm">Anonymized medical certificate distribution by district</p>
                   </div>
                 </div>
 
@@ -426,7 +405,7 @@ export default function CouncilorView() {
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="all">All Categories</option>
                   {HEALTH_CATEGORIES.map(cat => (
@@ -443,7 +422,7 @@ export default function CouncilorView() {
                 {/* Background shape of Sarawak */}
                 <path
                   d="M5,80 Q10,75 15,78 Q25,82 35,75 Q45,68 55,65 Q65,55 75,45 Q85,35 95,15 Q98,12 95,20 Q90,35 85,45 Q80,55 70,60 Q60,70 50,72 Q40,75 30,78 Q20,82 10,85 Q5,87 5,80 Z"
-                  fill="rgba(30, 58, 95, 0.3)"
+                  fill="rgba(219, 234, 254, 0.5)"
                   stroke="rgba(59, 130, 246, 0.5)"
                   strokeWidth="0.5"
                 />
@@ -480,7 +459,7 @@ export default function CouncilorView() {
                       y={district.y + 6}
                       textAnchor="middle"
                       fontSize="2.5"
-                      fill="#94a3b8"
+                      fill="#64748b"
                       className="pointer-events-none"
                     >
                       {district.name}
@@ -491,12 +470,12 @@ export default function CouncilorView() {
 
               {/* Hovered District Info */}
               {hoveredDistrict && (
-                <div className="absolute top-4 right-4 bg-slate-800 border border-slate-700 rounded-xl p-4 shadow-xl">
-                  <p className="text-white font-bold">{hoveredDistrict.name}</p>
+                <div className="absolute top-4 right-4 bg-white border border-slate-200 rounded-xl p-4 shadow-xl">
+                  <p className="text-slate-800 font-bold">{hoveredDistrict.name}</p>
                   <div className="mt-2 space-y-1 text-sm">
-                    <p className="text-slate-400">Population: <span className="text-white">{hoveredDistrict.population.toLocaleString()}</span></p>
-                    <p className="text-slate-400">MCs Issued: <span className="text-white">{hoveredDistrict.cases.toLocaleString()}</span></p>
-                    <p className="text-slate-400">Density: <span className={`font-bold ${
+                    <p className="text-slate-500">Population: <span className="text-slate-800">{hoveredDistrict.population.toLocaleString()}</span></p>
+                    <p className="text-slate-500">MCs Issued: <span className="text-slate-800">{hoveredDistrict.cases.toLocaleString()}</span></p>
+                    <p className="text-slate-500">Density: <span className={`font-bold ${
                       hoveredDistrict.color === '#ef4444' ? 'text-red-400' :
                       hoveredDistrict.color === '#f59e0b' ? 'text-amber-400' : 'text-emerald-400'
                     }`}>
@@ -510,22 +489,22 @@ export default function CouncilorView() {
               <div className="absolute bottom-4 left-4 flex items-center gap-4 text-xs">
                 <div className="flex items-center gap-1.5">
                   <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
-                  <span className="text-slate-400">Low</span>
+                  <span className="text-slate-500">Low</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="w-3 h-3 rounded-full bg-amber-500"></span>
-                  <span className="text-slate-400">Medium</span>
+                  <span className="text-slate-500">Medium</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="w-3 h-3 rounded-full bg-red-500"></span>
-                  <span className="text-slate-400">High</span>
+                  <span className="text-slate-500">High</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Health Categories Breakdown */}
-          <div className="bg-slate-900/50 rounded-2xl border border-slate-700/50 p-5">
+          <div className="bg-white rounded-2xl border border-slate-200 p-5">
             <div className="flex items-center gap-3 mb-5">
               <div className="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center">
                 <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -533,8 +512,8 @@ export default function CouncilorView() {
                 </svg>
               </div>
               <div>
-                <h3 className="text-white font-bold">Health Categories</h3>
-                <p className="text-slate-400 text-sm">MC distribution by type</p>
+                <h3 className="text-slate-800 font-bold">Health Categories</h3>
+                <p className="text-slate-500 text-sm">MC distribution by type</p>
               </div>
             </div>
 
@@ -546,11 +525,11 @@ export default function CouncilorView() {
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center gap-2">
                         <span className="text-lg">{cat.icon}</span>
-                        <span className="text-slate-300 text-sm">{cat.name}</span>
+                        <span className="text-slate-600 text-sm">{cat.name}</span>
                       </div>
-                      <span className="text-white font-bold text-sm">{percentage}%</span>
+                      <span className="text-slate-800 font-bold text-sm">{percentage}%</span>
                     </div>
-                    <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-500"
                         style={{
@@ -564,10 +543,10 @@ export default function CouncilorView() {
               })}
             </div>
 
-            <div className="mt-5 pt-5 border-t border-slate-700/50">
+            <div className="mt-5 pt-5 border-t border-slate-200">
               <div className="flex justify-between text-sm">
-                <span className="text-slate-400">Total MCs Today</span>
-                <span className="text-white font-bold">{getTotalCases().toLocaleString()}</span>
+                <span className="text-slate-500">Total MCs Today</span>
+                <span className="text-slate-800 font-bold">{getTotalCases().toLocaleString()}</span>
               </div>
             </div>
           </div>
@@ -596,7 +575,7 @@ export default function CouncilorView() {
                 </p>
                 <p className="text-green-400 text-sm mt-1">kilograms</p>
                 <div className="mt-3 pt-3 border-t border-green-500/20">
-                  <p className="text-slate-400 text-xs">
+                  <p className="text-slate-300 text-xs">
                     Equivalent to <span className="text-white font-bold">{Math.floor(paperSavedKg / 5).toLocaleString()}</span> reams
                   </p>
                 </div>
@@ -613,7 +592,7 @@ export default function CouncilorView() {
                 </p>
                 <p className="text-cyan-400 text-sm mt-1">kg CO2</p>
                 <div className="mt-3 pt-3 border-t border-cyan-500/20">
-                  <p className="text-slate-400 text-xs">
+                  <p className="text-slate-300 text-xs">
                     Like <span className="text-white font-bold">{Math.floor(co2Saved / 4.6).toLocaleString()}</span> car trips avoided
                   </p>
                 </div>
@@ -630,7 +609,7 @@ export default function CouncilorView() {
                 </p>
                 <p className="text-emerald-400 text-sm mt-1">trees</p>
                 <div className="mt-3 pt-3 border-t border-emerald-500/20">
-                  <p className="text-slate-400 text-xs">
+                  <p className="text-slate-300 text-xs">
                     <span className="text-white font-bold">{((treesSaved * 21) / 1000).toFixed(1)}</span> tons of oxygen/year
                   </p>
                 </div>
@@ -647,7 +626,7 @@ export default function CouncilorView() {
                 </p>
                 <p className="text-blue-400 text-sm mt-1">cubic meters</p>
                 <div className="mt-3 pt-3 border-t border-blue-500/20">
-                  <p className="text-slate-400 text-xs">
+                  <p className="text-slate-300 text-xs">
                     <span className="text-white font-bold">{Math.floor(waterSaved / 150).toLocaleString()}</span> households daily use
                   </p>
                 </div>
@@ -681,7 +660,7 @@ export default function CouncilorView() {
         </div>
 
         {/* Footer */}
-        <footer className="mt-12 pt-8 border-t border-slate-800">
+        <footer className="mt-12 pt-8 border-t border-slate-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
               <p className="text-slate-500 text-sm">
@@ -689,10 +668,10 @@ export default function CouncilorView() {
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <Link to="/pitch" className="text-slate-400 hover:text-white text-sm transition-colors">
+              <Link to="/pitch" className="text-slate-500 hover:text-slate-800 text-sm transition-colors">
                 Learn More
               </Link>
-              <Link to="/" className="text-slate-400 hover:text-white text-sm transition-colors">
+              <Link to="/" className="text-slate-500 hover:text-slate-800 text-sm transition-colors">
                 Back to Home
               </Link>
             </div>

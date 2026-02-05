@@ -165,21 +165,20 @@ export default function CommandBar({
             <Command
               className="rounded-2xl overflow-hidden"
               style={{
-                background: 'rgba(15, 23, 42, 0.98)',
-                border: '1px solid rgba(20, 184, 166, 0.3)',
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 60px rgba(20, 184, 166, 0.1)',
-                backdropFilter: 'blur(20px)',
+                background: '#FFFFFF',
+                border: '1px solid #E2E8F0',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 60px rgba(20, 184, 166, 0.05)',
               }}
             >
               {/* Search Input */}
               <div
                 className="flex items-center px-4 border-b"
-                style={{ borderColor: 'rgba(30, 58, 95, 0.5)' }}
+                style={{ borderColor: '#E2E8F0' }}
               >
                 <svg
                   className="w-5 h-5 mr-3"
                   fill="none"
-                  stroke="#64748b"
+                  stroke="#94A3B8"
                   viewBox="0 0 24 24"
                 >
                   <path
@@ -193,10 +192,10 @@ export default function CommandBar({
                   value={search}
                   onValueChange={setSearch}
                   placeholder={placeholder}
-                  className="flex-1 py-4 bg-transparent text-white placeholder-slate-500 outline-none text-base"
+                  className="flex-1 py-4 bg-transparent text-slate-800 placeholder-slate-400 outline-none text-base"
                 />
                 <kbd
-                  className="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-xs font-mono text-slate-500 bg-slate-800 rounded"
+                  className="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-xs font-mono text-slate-500 bg-slate-100 rounded"
                 >
                   ESC
                 </kbd>
@@ -253,19 +252,19 @@ export default function CommandBar({
               {/* Footer */}
               <div
                 className="flex items-center justify-between px-4 py-3 border-t text-xs text-slate-500"
-                style={{ borderColor: 'rgba(30, 58, 95, 0.5)' }}
+                style={{ borderColor: '#E2E8F0' }}
               >
                 <div className="flex items-center gap-4">
                   <span className="flex items-center gap-1">
-                    <kbd className="px-1.5 py-0.5 bg-slate-800 rounded text-slate-400">Enter</kbd>
+                    <kbd className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-500">Enter</kbd>
                     to select
                   </span>
                   <span className="flex items-center gap-1">
-                    <kbd className="px-1.5 py-0.5 bg-slate-800 rounded text-slate-400">Esc</kbd>
+                    <kbd className="px-1.5 py-0.5 bg-slate-100 rounded text-slate-500">Esc</kbd>
                     to close
                   </span>
                 </div>
-                <span className="text-slate-600">Founder Command</span>
+                <span className="text-slate-400">Founder Command</span>
               </div>
             </Command>
           </motion.div>
@@ -283,7 +282,7 @@ function CommandItem({ command, onSelect }) {
       onSelect={onSelect}
       className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors group"
       style={{
-        color: '#e2e8f0',
+        color: '#1E293B',
       }}
     >
       {command.icon && (
@@ -309,7 +308,7 @@ function CommandItem({ command, onSelect }) {
           {command.shortcut.map((key, i) => (
             <kbd
               key={i}
-              className="px-1.5 py-0.5 text-xs bg-slate-800 rounded text-slate-400"
+              className="px-1.5 py-0.5 text-xs bg-slate-100 rounded text-slate-500"
             >
               {key}
             </kbd>

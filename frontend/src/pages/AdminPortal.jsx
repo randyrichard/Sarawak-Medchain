@@ -32,15 +32,15 @@ const generateDoctorPerformanceData = () => {
   }));
 };
 
-// Reusable Card Component for consistent styling
+// Reusable Card Component - Light theme
 const Card = ({ children, className = '', noPadding = false }) => (
   <div
     className={`${className}`}
     style={{
-      border: '1px solid rgba(20, 184, 166, 0.3)',
+      border: '1px solid #E2E8F0',
       borderRadius: '16px',
       padding: noPadding ? '0' : '24px',
-      background: 'rgba(15, 23, 42, 0.6)'
+      background: '#FFFFFF'
     }}
   >
     {children}
@@ -49,12 +49,12 @@ const Card = ({ children, className = '', noPadding = false }) => (
 
 // Section Label Component
 const SectionLabel = ({ children }) => (
-  <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-5">
+  <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-5">
     {children}
   </h3>
 );
 
-// Section Header Component
+// Section Header Component - Light theme
 const SectionHeader = ({ title, subtitle, icon, badge }) => (
   <div className="flex items-center justify-between mb-6">
     <div className="flex items-center gap-3">
@@ -64,8 +64,8 @@ const SectionHeader = ({ title, subtitle, icon, badge }) => (
         </div>
       )}
       <div>
-        <h2 className="text-xl font-bold text-white">{title}</h2>
-        {subtitle && <p className="text-slate-400 text-sm">{subtitle}</p>}
+        <h2 className="text-xl font-bold text-slate-800">{title}</h2>
+        {subtitle && <p className="text-slate-500 text-sm">{subtitle}</p>}
       </div>
     </div>
     {badge}
@@ -332,7 +332,7 @@ export default function AdminPortal({ walletAddress }) {
   };
 
   return (
-    <div className="flex-1 flex-grow w-full min-h-full font-sans" style={{ backgroundColor: '#0a0e14' }}>
+    <div className="flex-1 flex-grow w-full min-h-full font-sans" style={{ backgroundColor: '#FFFFFF' }}>
       <BroadcastNotification />
 
       <div className="px-8 lg:px-12 py-10" style={{ maxWidth: '1600px', margin: '0 auto', padding: '40px 48px' }}>
@@ -341,24 +341,24 @@ export default function AdminPortal({ walletAddress }) {
         <div style={{ marginBottom: '32px' }}>
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl lg:text-4xl font-bold text-white mb-2">Hospital Admin Portal</h1>
-              <p className="text-slate-400">Sarawak MedChain Enterprise Billing Dashboard</p>
+              <h1 className="text-3xl lg:text-4xl font-bold text-slate-800 mb-2">Hospital Admin Portal</h1>
+              <p className="text-slate-500">Sarawak MedChain Enterprise Billing Dashboard</p>
             </div>
             <div className="flex items-center gap-3">
               <select
                 value={facilityType}
                 onChange={(e) => setFacilityType(e.target.value)}
-                className="bg-slate-700/50 border border-slate-600 text-white text-sm font-medium rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                className="bg-white border border-slate-200 text-slate-800 text-sm font-medium rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
               >
                 <option value="Hospital">Hospital</option>
                 <option value="Clinic">Clinic</option>
               </select>
               <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
                 isAdmin
-                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                  ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/30'
                   : isPendingAdmin
-                    ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                    : 'bg-slate-500/20 text-slate-400 border border-slate-500/30'
+                    ? 'bg-yellow-500/10 text-yellow-600 border border-yellow-500/30'
+                    : 'bg-slate-100 text-slate-500 border border-slate-200'
               }`}>
                 {isAdmin ? 'Admin' : isPendingAdmin ? 'Pending Admin' : 'Viewer'}
               </span>
@@ -368,16 +368,16 @@ export default function AdminPortal({ walletAddress }) {
 
         {/* ==================== ALERT BANNERS ==================== */}
         {isSubscriptionOverdue && (
-          <div className="mb-6 bg-red-500/10 rounded-2xl p-5 flex items-center justify-between" style={{ border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+          <div className="mb-6 bg-red-50 rounded-2xl p-5 flex items-center justify-between" style={{ border: '1px solid rgba(239, 68, 68, 0.3)' }}>
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 bg-red-500/10 rounded-xl flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
               <div>
-                <p className="text-red-300 font-semibold text-lg">Monthly Subscription Overdue</p>
-                <p className="text-red-400/80 text-sm">{tierName} subscription (RM {baseFee.toLocaleString()}/mo) requires immediate payment</p>
+                <p className="text-red-700 font-semibold text-lg">Monthly Subscription Overdue</p>
+                <p className="text-red-500 text-sm">{tierName} subscription (RM {baseFee.toLocaleString()}/mo) requires immediate payment</p>
               </div>
             </div>
             <button
@@ -390,15 +390,15 @@ export default function AdminPortal({ walletAddress }) {
         )}
 
         {paymentSuccess && (
-          <div className="mb-6 bg-emerald-500/10 rounded-2xl p-5 flex items-center gap-4" style={{ border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-            <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="mb-6 bg-emerald-50 rounded-2xl p-5 flex items-center gap-4" style={{ border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+            <div className="w-12 h-12 bg-emerald-500/10 rounded-xl flex items-center justify-center">
+              <svg className="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
             <div>
-              <p className="text-emerald-300 font-semibold text-lg">Payment Successful</p>
-              <p className="text-emerald-400/80 text-sm">Your monthly payment has been processed and recorded on the blockchain</p>
+              <p className="text-emerald-700 font-semibold text-lg">Payment Successful</p>
+              <p className="text-emerald-600 text-sm">Your monthly payment has been processed and recorded on the blockchain</p>
             </div>
           </div>
         )}
@@ -406,8 +406,8 @@ export default function AdminPortal({ walletAddress }) {
         {message && (
           <div className={`mb-6 p-4 rounded-xl ${
             message.includes('Error')
-              ? 'bg-red-500/10 border border-red-500/30 text-red-400'
-              : 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
+              ? 'bg-red-50 border border-red-200 text-red-600'
+              : 'bg-emerald-50 border border-emerald-200 text-emerald-600'
           }`}>
             {message}
           </div>
@@ -426,25 +426,25 @@ export default function AdminPortal({ walletAddress }) {
                 icon={<svg className="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>}
               />
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-slate-700/30 rounded-xl">
+                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
                   <div>
-                    <p className="text-slate-400 text-sm">Base Fee</p>
-                    <p className="text-white font-medium">{tierName}</p>
+                    <p className="text-slate-500 text-sm">Base Fee</p>
+                    <p className="text-slate-800 font-medium">{tierName}</p>
                   </div>
-                  <p className="text-2xl font-bold text-white">RM {baseFee.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-slate-800">RM {baseFee.toLocaleString()}</p>
                 </div>
-                <div className="flex items-center justify-between p-4 bg-slate-700/30 rounded-xl">
+                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
                   <div className="flex items-center gap-2">
                     <div>
-                      <p className="text-slate-400 text-sm">MC Usage</p>
-                      <p className="text-white font-medium">{mcsIssuedThisMonth} MCs × RM {mcCost.toFixed(2)}</p>
+                      <p className="text-slate-500 text-sm">MC Usage</p>
+                      <p className="text-slate-800 font-medium">{mcsIssuedThisMonth} MCs × RM {mcCost.toFixed(2)}</p>
                     </div>
-                    <span className="flex items-center gap-1 text-emerald-400 text-xs font-medium bg-emerald-500/20 px-2 py-0.5 rounded-full">
-                      <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
+                    <span className="flex items-center gap-1 text-emerald-600 text-xs font-medium bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                      <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
                       LIVE
                     </span>
                   </div>
-                  <p className="text-2xl font-bold text-emerald-400">RM {meteredUsageCost.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-emerald-600">RM {meteredUsageCost.toLocaleString()}</p>
                 </div>
               </div>
             </Card>
@@ -457,7 +457,7 @@ export default function AdminPortal({ walletAddress }) {
                 icon={<svg className="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
                 badge={
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    subscriptionPaid ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
+                    subscriptionPaid ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'
                   }`}>
                     {subscriptionPaid ? 'Paid' : 'Due'}
                   </span>
@@ -465,29 +465,29 @@ export default function AdminPortal({ walletAddress }) {
               />
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-400">Monthly Subscription</span>
-                  <span className="text-white font-medium">RM {baseFee.toLocaleString()}</span>
+                  <span className="text-slate-500">Monthly Subscription</span>
+                  <span className="text-slate-800 font-medium">RM {baseFee.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-400">Variable Usage</span>
-                  <span className="text-emerald-400 font-medium">RM {meteredUsageCost.toLocaleString()}</span>
+                  <span className="text-slate-500">Variable Usage</span>
+                  <span className="text-emerald-600 font-medium">RM {meteredUsageCost.toLocaleString()}</span>
                 </div>
                 {subscriptionPaid && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-400">Payment Received</span>
-                    <span className="text-sky-400 font-medium">- RM {baseFeePayment.toLocaleString()}</span>
+                    <span className="text-slate-500">Payment Received</span>
+                    <span className="text-sky-600 font-medium">- RM {baseFeePayment.toLocaleString()}</span>
                   </div>
                 )}
-                <div className="pt-3 border-t border-slate-700">
+                <div className="pt-3 border-t border-slate-200">
                   <div className="flex justify-between">
-                    <span className="text-white font-semibold">Total</span>
-                    <span className="text-xl font-bold text-teal-400">RM {totalDue.toLocaleString()}</span>
+                    <span className="text-slate-800 font-semibold">Total</span>
+                    <span className="text-xl font-bold text-teal-600">RM {totalDue.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
               <button
                 onClick={() => setShowInvoiceModal(true)}
-                className="w-full mt-4 py-3 bg-slate-700/50 hover:bg-slate-700 text-white rounded-xl font-medium transition-all flex items-center justify-center gap-2"
+                className="w-full mt-4 py-3 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl font-medium transition-all flex items-center justify-center gap-2 border border-slate-200"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                 View Full Invoice
@@ -495,23 +495,23 @@ export default function AdminPortal({ walletAddress }) {
             </Card>
 
             {/* Card 3: Total Due / Payment */}
-            <Card className={`${isSubscriptionOverdue ? 'bg-gradient-to-br from-red-900/40 to-red-950/40' : subscriptionPaid ? 'bg-gradient-to-br from-emerald-900/30 to-slate-800/60' : 'bg-gradient-to-br from-teal-900/30 to-slate-800/60'}`}>
+            <Card className={`${isSubscriptionOverdue ? 'bg-gradient-to-br from-red-50 to-red-100/50' : subscriptionPaid ? 'bg-gradient-to-br from-emerald-50 to-slate-50' : 'bg-gradient-to-br from-teal-50 to-slate-50'}`}>
               <div className="text-center py-4">
                 <p className={`text-sm font-semibold uppercase tracking-wider mb-2 ${
-                  isSubscriptionOverdue ? 'text-red-400' : subscriptionPaid ? 'text-emerald-400' : 'text-teal-400'
+                  isSubscriptionOverdue ? 'text-red-500' : subscriptionPaid ? 'text-emerald-600' : 'text-teal-600'
                 }`}>
                   {isSubscriptionOverdue ? 'Amount Overdue' : 'Total Due'}
                 </p>
                 <p className={`text-5xl font-black mb-2 ${
-                  isSubscriptionOverdue ? 'text-red-400' : subscriptionPaid ? 'text-emerald-400' : 'text-white'
+                  isSubscriptionOverdue ? 'text-red-500' : subscriptionPaid ? 'text-emerald-600' : 'text-slate-800'
                 }`}>
                   RM {totalDue.toLocaleString()}
                 </p>
-                <p className="text-slate-400 text-sm mb-6">
+                <p className="text-slate-500 text-sm mb-6">
                   Base + Usage = RM {(baseFee + meteredUsageCost).toLocaleString()}
                 </p>
                 {subscriptionPaid ? (
-                  <div className="flex items-center justify-center gap-2 bg-emerald-500/20 text-emerald-400 px-4 py-3 rounded-xl">
+                  <div className="flex items-center justify-center gap-2 bg-emerald-500/10 text-emerald-600 px-4 py-3 rounded-xl">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
@@ -544,40 +544,40 @@ export default function AdminPortal({ walletAddress }) {
             <Card>
               <div className="grid grid-cols-2 gap-6">
                 {/* Transaction Meter */}
-                <div className="text-center p-4 bg-slate-700/30 rounded-xl">
+                <div className="text-center p-4 bg-slate-50 rounded-xl">
                   <div className="flex items-center justify-center gap-2 mb-3">
-                    <span className="text-slate-400 text-sm font-medium">Transaction Meter</span>
-                    <span className="flex items-center gap-1 text-emerald-400 text-xs font-medium">
-                      <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
+                    <span className="text-slate-500 text-sm font-medium">Transaction Meter</span>
+                    <span className="flex items-center gap-1 text-emerald-600 text-xs font-medium">
+                      <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
                       LIVE
                     </span>
                   </div>
-                  <p className="text-5xl font-black text-white tabular-nums mb-2">{totalMCs}</p>
-                  <p className="text-slate-400 text-sm">MCs This Month</p>
-                  <div className="mt-3 pt-3 border-t border-slate-600">
-                    <p className="text-slate-400 text-xs">Rate: <span className="text-white font-semibold">RM {mcCost.toFixed(2)}/MC</span></p>
+                  <p className="text-5xl font-black text-slate-800 tabular-nums mb-2">{totalMCs}</p>
+                  <p className="text-slate-500 text-sm">MCs This Month</p>
+                  <div className="mt-3 pt-3 border-t border-slate-200">
+                    <p className="text-slate-500 text-xs">Rate: <span className="text-slate-800 font-semibold">RM {mcCost.toFixed(2)}/MC</span></p>
                   </div>
                 </div>
 
                 {/* Real-time Costing */}
                 <div className="space-y-3">
-                  <p className="text-slate-400 text-sm font-medium mb-3">Real-time Costing</p>
+                  <p className="text-slate-500 text-sm font-medium mb-3">Real-time Costing</p>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-400">Base Subscription</span>
-                    <span className="text-white font-medium">RM {baseFee.toLocaleString()}</span>
+                    <span className="text-slate-500">Base Subscription</span>
+                    <span className="text-slate-800 font-medium">RM {baseFee.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-400">Metered Usage</span>
-                    <span className="text-emerald-400 font-medium">RM {meteredUsageCost.toLocaleString()}</span>
+                    <span className="text-slate-500">Metered Usage</span>
+                    <span className="text-emerald-600 font-medium">RM {meteredUsageCost.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-400">Payments</span>
-                    <span className="text-sky-400 font-medium">- RM {baseFeePayment.toLocaleString()}</span>
+                    <span className="text-slate-500">Payments</span>
+                    <span className="text-sky-600 font-medium">- RM {baseFeePayment.toLocaleString()}</span>
                   </div>
-                  <div className="pt-3 border-t border-slate-600">
+                  <div className="pt-3 border-t border-slate-200">
                     <div className="flex items-center justify-between">
-                      <span className="text-white font-semibold">Sub-Total</span>
-                      <span className={`text-xl font-bold ${isSubscriptionOverdue ? 'text-red-400' : 'text-teal-400'}`}>
+                      <span className="text-slate-800 font-semibold">Sub-Total</span>
+                      <span className={`text-xl font-bold ${isSubscriptionOverdue ? 'text-red-500' : 'text-teal-600'}`}>
                         RM {totalDue.toLocaleString()}
                       </span>
                     </div>
@@ -587,30 +587,30 @@ export default function AdminPortal({ walletAddress }) {
             </Card>
 
             {/* Card 2: Outstanding Balance */}
-            <Card className={totalOwed > 0 ? 'bg-gradient-to-br from-amber-900/20 to-slate-800/60' : ''}>
+            <Card className={totalOwed > 0 ? 'bg-gradient-to-br from-amber-50 to-slate-50' : ''}>
               <SectionHeader
                 title="Outstanding Balance"
                 subtitle="Credit account status"
                 icon={<svg className="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
               />
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-slate-700/30 rounded-xl text-center">
-                  <p className="text-slate-400 text-sm mb-1">Total Credits</p>
-                  <p className="text-3xl font-bold text-emerald-400">{totalCredits}</p>
-                  <p className="text-emerald-400/60 text-xs">Available</p>
+                <div className="p-4 bg-slate-50 rounded-xl text-center">
+                  <p className="text-slate-500 text-sm mb-1">Total Credits</p>
+                  <p className="text-3xl font-bold text-emerald-600">{totalCredits}</p>
+                  <p className="text-emerald-500 text-xs">Available</p>
                 </div>
-                <div className={`p-4 rounded-xl text-center ${totalOwed > 0 ? 'bg-amber-500/10' : 'bg-slate-700/30'}`}>
-                  <p className="text-slate-400 text-sm mb-1">Total Owed</p>
-                  <p className={`text-3xl font-bold ${totalOwed > 0 ? 'text-amber-400' : 'text-slate-400'}`}>{totalOwed}</p>
-                  <p className={`text-xs ${totalOwed > 0 ? 'text-amber-400/60' : 'text-slate-500'}`}>{totalOwed > 0 ? 'Payment Due' : 'No dues'}</p>
+                <div className={`p-4 rounded-xl text-center ${totalOwed > 0 ? 'bg-amber-50' : 'bg-slate-50'}`}>
+                  <p className="text-slate-500 text-sm mb-1">Total Owed</p>
+                  <p className={`text-3xl font-bold ${totalOwed > 0 ? 'text-amber-600' : 'text-slate-400'}`}>{totalOwed}</p>
+                  <p className={`text-xs ${totalOwed > 0 ? 'text-amber-500' : 'text-slate-400'}`}>{totalOwed > 0 ? 'Payment Due' : 'No dues'}</p>
                 </div>
               </div>
               {totalOwed > 0 && (
-                <div className="mt-4 p-3 bg-amber-500/10 rounded-xl flex items-center gap-3">
-                  <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="mt-4 p-3 bg-amber-50 rounded-xl flex items-center gap-3 border border-amber-200">
+                  <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
-                  <span className="text-amber-300 text-sm font-medium">{totalOwed} credits owed across accounts</span>
+                  <span className="text-amber-700 text-sm font-medium">{totalOwed} credits owed across accounts</span>
                 </div>
               )}
             </Card>
@@ -623,14 +623,14 @@ export default function AdminPortal({ walletAddress }) {
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
 
             {/* Card 1: Doctor Leaderboard (2 cols) */}
-            <div className="lg:col-span-2 h-full" style={{ border: '1px solid rgba(20, 184, 166, 0.3)', borderRadius: '16px', background: 'rgba(15, 23, 42, 0.6)' }}>
-              <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(20, 184, 166, 0.3)' }}>
+            <div className="lg:col-span-2 h-full" style={{ border: '1px solid #E2E8F0', borderRadius: '16px', background: '#FFFFFF' }}>
+              <div className="px-6 py-4 border-b border-slate-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-lg font-bold text-white">Doctor Leaderboard</h3>
-                    <p className="text-slate-400 text-xs">Top performers this month</p>
+                    <h3 className="text-lg font-bold text-slate-800">Doctor Leaderboard</h3>
+                    <p className="text-slate-500 text-xs">Top performers this month</p>
                   </div>
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-400">
+                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600">
                     {doctorPerformance.length} Doctors
                   </span>
                 </div>
@@ -639,8 +639,8 @@ export default function AdminPortal({ walletAddress }) {
                 {doctorPerformance.map((doctor, index) => (
                   <div
                     key={doctor.id}
-                    className={`p-3 rounded-xl transition-all hover:bg-slate-700/50 ${
-                      index === 0 ? 'bg-amber-500/10' : ''
+                    className={`p-3 rounded-xl transition-all hover:bg-slate-50 ${
+                      index === 0 ? 'bg-amber-50' : ''
                     }`}
                     style={index === 0 ? { border: '1px solid rgba(245, 158, 11, 0.3)' } : {}}
                   >
@@ -649,38 +649,38 @@ export default function AdminPortal({ walletAddress }) {
                         index === 0 ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-white'
                           : index === 1 ? 'bg-slate-300 text-slate-700'
                           : index === 2 ? 'bg-amber-700 text-white'
-                          : 'bg-slate-700 text-slate-400'
+                          : 'bg-slate-200 text-slate-500'
                       }`}>
                         {doctor.rank}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm text-white truncate">{doctor.name}</p>
-                        <p className="text-xs text-slate-400">{doctor.department}</p>
+                        <p className="font-semibold text-sm text-slate-800 truncate">{doctor.name}</p>
+                        <p className="text-xs text-slate-500">{doctor.department}</p>
                       </div>
                       <div className="text-right">
-                        <p className={`font-bold ${index === 0 ? 'text-amber-400' : 'text-emerald-400'}`}>RM {doctor.revenue}</p>
-                        <p className="text-xs text-slate-500">{doctor.mcsIssued} MCs</p>
+                        <p className={`font-bold ${index === 0 ? 'text-amber-600' : 'text-emerald-600'}`}>RM {doctor.revenue}</p>
+                        <p className="text-xs text-slate-400">{doctor.mcsIssued} MCs</p>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-              <div className="px-6 py-4 border-t bg-slate-800/30" style={{ borderColor: 'rgba(20, 184, 166, 0.3)' }}>
+              <div className="px-6 py-4 border-t border-slate-200 bg-slate-50" style={{ borderRadius: '0 0 16px 16px' }}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-slate-400">Total Revenue</p>
-                    <p className="text-lg font-bold text-emerald-400">RM {doctorPerformance.reduce((sum, d) => sum + d.revenue, 0)}</p>
+                    <p className="text-xs text-slate-500">Total Revenue</p>
+                    <p className="text-lg font-bold text-emerald-600">RM {doctorPerformance.reduce((sum, d) => sum + d.revenue, 0)}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs text-slate-400">Total MCs</p>
-                    <p className="text-lg font-bold text-white">{doctorPerformance.reduce((sum, d) => sum + d.mcsIssued, 0)}</p>
+                    <p className="text-xs text-slate-500">Total MCs</p>
+                    <p className="text-lg font-bold text-slate-800">{doctorPerformance.reduce((sum, d) => sum + d.mcsIssued, 0)}</p>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Card 2: Performance Overview + Top Performer (3 cols) */}
-            <div className="lg:col-span-3 h-full" style={{ border: '1px solid rgba(20, 184, 166, 0.3)', borderRadius: '16px', padding: '24px', background: 'rgba(15, 23, 42, 0.6)' }}>
+            <div className="lg:col-span-3 h-full" style={{ border: '1px solid #E2E8F0', borderRadius: '16px', padding: '24px', background: '#FFFFFF' }}>
               <SectionHeader
                 title="Performance Overview"
                 icon={<svg className="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>}
@@ -688,7 +688,7 @@ export default function AdminPortal({ walletAddress }) {
 
               {/* Top Performer Highlight */}
               {doctorPerformance[0] && (
-                <div className="bg-gradient-to-r from-amber-500/10 to-amber-600/5 rounded-xl p-5 mb-6" style={{ border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                <div className="bg-gradient-to-r from-amber-50 to-amber-100/50 rounded-xl p-5 mb-6" style={{ border: '1px solid rgba(245, 158, 11, 0.3)' }}>
                   <div className="flex items-center gap-4">
                     <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/30">
                       <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -696,13 +696,13 @@ export default function AdminPortal({ walletAddress }) {
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <p className="text-amber-400 text-xs font-semibold uppercase tracking-wider">Top Performer</p>
-                      <p className="text-xl font-bold text-white">{doctorPerformance[0].name}</p>
-                      <p className="text-slate-400 text-sm">{doctorPerformance[0].department}</p>
+                      <p className="text-amber-600 text-xs font-semibold uppercase tracking-wider">Top Performer</p>
+                      <p className="text-xl font-bold text-slate-800">{doctorPerformance[0].name}</p>
+                      <p className="text-slate-500 text-sm">{doctorPerformance[0].department}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-3xl font-black text-amber-400">RM {doctorPerformance[0].revenue}</p>
-                      <p className="text-slate-400 text-sm">{doctorPerformance[0].mcsIssued} MCs issued</p>
+                      <p className="text-3xl font-black text-amber-600">RM {doctorPerformance[0].revenue}</p>
+                      <p className="text-slate-500 text-sm">{doctorPerformance[0].mcsIssued} MCs issued</p>
                     </div>
                   </div>
                 </div>
@@ -710,21 +710,21 @@ export default function AdminPortal({ walletAddress }) {
 
               {/* Stats Grid */}
               <div className="grid grid-cols-3 gap-4">
-                <div className="bg-slate-700/30 rounded-xl p-4 text-center">
-                  <p className="text-slate-400 text-xs mb-1">Avg MCs/Doctor</p>
-                  <p className="text-2xl font-bold text-white">
+                <div className="bg-slate-50 rounded-xl p-4 text-center">
+                  <p className="text-slate-500 text-xs mb-1">Avg MCs/Doctor</p>
+                  <p className="text-2xl font-bold text-slate-800">
                     {Math.round(doctorPerformance.reduce((sum, d) => sum + d.mcsIssued, 0) / doctorPerformance.length)}
                   </p>
                 </div>
-                <div className="bg-slate-700/30 rounded-xl p-4 text-center">
-                  <p className="text-slate-400 text-xs mb-1">Avg Revenue</p>
-                  <p className="text-2xl font-bold text-emerald-400">
+                <div className="bg-slate-50 rounded-xl p-4 text-center">
+                  <p className="text-slate-500 text-xs mb-1">Avg Revenue</p>
+                  <p className="text-2xl font-bold text-emerald-600">
                     RM {Math.round(doctorPerformance.reduce((sum, d) => sum + d.revenue, 0) / doctorPerformance.length)}
                   </p>
                 </div>
-                <div className="bg-slate-700/30 rounded-xl p-4 text-center">
-                  <p className="text-slate-400 text-xs mb-1">Goal Progress</p>
-                  <p className="text-2xl font-bold text-teal-400">
+                <div className="bg-slate-50 rounded-xl p-4 text-center">
+                  <p className="text-slate-500 text-xs mb-1">Goal Progress</p>
+                  <p className="text-2xl font-bold text-teal-600">
                     {((doctorPerformance.reduce((sum, d) => sum + d.revenue, 0) / (facilityType === 'Hospital' ? 10000 : 2000)) * 100).toFixed(1)}%
                   </p>
                 </div>
@@ -787,38 +787,38 @@ export default function AdminPortal({ walletAddress }) {
           <SectionLabel>Management</SectionLabel>
 
           {/* Monthly Dues Table */}
-          <div className="mb-6" style={{ border: '1px solid rgba(20, 184, 166, 0.3)', borderRadius: '16px', background: 'rgba(15, 23, 42, 0.6)' }}>
-            <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(20, 184, 166, 0.3)' }}>
-              <h3 className="text-lg font-bold text-white">Monthly Dues</h3>
-              <p className="text-slate-400 text-sm">Invoice history and payment status</p>
+          <div className="mb-6" style={{ border: '1px solid #E2E8F0', borderRadius: '16px', background: '#FFFFFF' }}>
+            <div className="px-6 py-4 border-b border-slate-200">
+              <h3 className="text-lg font-bold text-slate-800">Monthly Dues</h3>
+              <p className="text-slate-500 text-sm">Invoice history and payment status</p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-slate-700/30">
-                    <th className="text-left px-6 py-4 text-slate-300 font-medium text-sm">Billing Period</th>
-                    <th className="text-right px-6 py-4 text-slate-300 font-medium text-sm">Base Fee</th>
-                    <th className="text-right px-6 py-4 text-slate-300 font-medium text-sm">Metered Usage</th>
-                    <th className="text-right px-6 py-4 text-slate-300 font-medium text-sm">Total</th>
-                    <th className="text-right px-6 py-4 text-slate-300 font-medium text-sm">Status</th>
-                    <th className="text-right px-6 py-4 text-slate-300 font-medium text-sm">Action</th>
+                  <tr className="bg-slate-50">
+                    <th className="text-left px-6 py-4 text-slate-600 font-medium text-sm">Billing Period</th>
+                    <th className="text-right px-6 py-4 text-slate-600 font-medium text-sm">Base Fee</th>
+                    <th className="text-right px-6 py-4 text-slate-600 font-medium text-sm">Metered Usage</th>
+                    <th className="text-right px-6 py-4 text-slate-600 font-medium text-sm">Total</th>
+                    <th className="text-right px-6 py-4 text-slate-600 font-medium text-sm">Status</th>
+                    <th className="text-right px-6 py-4 text-slate-600 font-medium text-sm">Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr className="border-t hover:bg-slate-700/20 transition-colors" style={{ borderColor: 'rgba(20, 184, 166, 0.3)' }}>
-                    <td className="px-6 py-4 text-slate-200 font-medium">January 2026</td>
-                    <td className="px-6 py-4 text-right text-slate-300">RM {baseFee.toLocaleString()}</td>
-                    <td className="px-6 py-4 text-right text-slate-300">RM {meteredUsageCost.toLocaleString()}</td>
-                    <td className="px-6 py-4 text-right text-white font-bold">RM {totalDue.toLocaleString()}</td>
+                  <tr className="border-t border-slate-200 hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4 text-slate-700 font-medium">January 2026</td>
+                    <td className="px-6 py-4 text-right text-slate-600">RM {baseFee.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-right text-slate-600">RM {meteredUsageCost.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-right text-slate-800 font-bold">RM {totalDue.toLocaleString()}</td>
                     <td className="px-6 py-4 text-right">
                       {baseFeeDetected ? (
-                        <span className="inline-flex items-center gap-1 text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full text-sm font-medium">
-                          <span className="w-2 h-2 bg-emerald-400 rounded-full"></span>
+                        <span className="inline-flex items-center gap-1 text-emerald-600 bg-emerald-500/10 px-3 py-1 rounded-full text-sm font-medium">
+                          <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
                           Paid
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full text-sm font-medium">
-                          <span className="w-2 h-2 bg-amber-400 rounded-full"></span>
+                        <span className="inline-flex items-center gap-1 text-amber-600 bg-amber-500/10 px-3 py-1 rounded-full text-sm font-medium">
+                          <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
                           Pending
                         </span>
                       )}
@@ -846,40 +846,40 @@ export default function AdminPortal({ walletAddress }) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
 
             {/* Admin Transfer */}
-            <div className="h-full" style={{ border: '1px solid rgba(20, 184, 166, 0.3)', borderRadius: '16px', padding: '24px', background: 'rgba(15, 23, 42, 0.6)', display: 'flex', flexDirection: 'column' }}>
+            <div className="h-full" style={{ border: '1px solid #E2E8F0', borderRadius: '16px', padding: '24px', background: '#FFFFFF', display: 'flex', flexDirection: 'column' }}>
               <SectionHeader
                 title="Admin Transfer"
                 icon={<svg className="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>}
               />
               <div className="space-y-4">
                 <div>
-                  <p className="text-slate-400 text-sm mb-1">Current Admin</p>
-                  <code className="text-emerald-400 bg-slate-700/50 px-3 py-2 rounded-lg block text-sm">
+                  <p className="text-slate-500 text-sm mb-1">Current Admin</p>
+                  <code className="text-emerald-600 bg-slate-100 px-3 py-2 rounded-lg block text-sm">
                     {formatAddress(currentAdmin)}
                   </code>
                 </div>
                 <div>
-                  <p className="text-slate-400 text-sm mb-1">Pending Admin</p>
-                  <code className="text-yellow-400 bg-slate-700/50 px-3 py-2 rounded-lg block text-sm">
+                  <p className="text-slate-500 text-sm mb-1">Pending Admin</p>
+                  <code className="text-yellow-600 bg-amber-50 px-3 py-2 rounded-lg block text-sm">
                     {formatAddress(pendingAdminAddr)}
                   </code>
                 </div>
 
                 {isAdmin && (
-                  <div className="pt-4 border-t border-slate-700">
-                    <label className="text-slate-300 text-sm mb-2 block">Propose New Admin</label>
+                  <div className="pt-4 border-t border-slate-200">
+                    <label className="text-slate-600 text-sm mb-2 block">Propose New Admin</label>
                     <input
                       type="text"
                       placeholder="0x..."
                       value={newAdminAddress}
                       onChange={(e) => setNewAdminAddress(e.target.value)}
-                      className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-500 mb-3 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                      className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2 text-slate-800 placeholder-slate-400 mb-3 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                     />
                     <div className="flex gap-2">
                       <button
                         onClick={handleProposeAdmin}
                         disabled={actionLoading}
-                        className="flex-1 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                        className="flex-1 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-300 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                       >
                         {actionLoading ? 'Processing...' : 'Propose'}
                       </button>
@@ -887,7 +887,7 @@ export default function AdminPortal({ walletAddress }) {
                         <button
                           onClick={handleCancelTransfer}
                           disabled={actionLoading}
-                          className="bg-red-600 hover:bg-red-700 disabled:bg-slate-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                          className="bg-red-600 hover:bg-red-700 disabled:bg-slate-300 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                         >
                           Cancel
                         </button>
@@ -897,12 +897,12 @@ export default function AdminPortal({ walletAddress }) {
                 )}
 
                 {isPendingAdmin && (
-                  <div className="pt-4 border-t border-slate-700">
-                    <p className="text-yellow-400 text-sm mb-3">You have been proposed as the new admin!</p>
+                  <div className="pt-4 border-t border-slate-200">
+                    <p className="text-yellow-600 text-sm mb-3">You have been proposed as the new admin!</p>
                     <button
                       onClick={handleAcceptAdmin}
                       disabled={actionLoading}
-                      className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                     >
                       {actionLoading ? 'Processing...' : 'Accept Admin Role'}
                     </button>
@@ -912,7 +912,7 @@ export default function AdminPortal({ walletAddress }) {
             </div>
 
             {/* Doctor Management */}
-            <div className="h-full" style={{ border: '1px solid rgba(20, 184, 166, 0.3)', borderRadius: '16px', padding: '24px', background: 'rgba(15, 23, 42, 0.6)', display: 'flex', flexDirection: 'column' }}>
+            <div className="h-full" style={{ border: '1px solid #E2E8F0', borderRadius: '16px', padding: '24px', background: '#FFFFFF', display: 'flex', flexDirection: 'column' }}>
               {isAdmin ? (
                 <>
                   <SectionHeader
@@ -922,35 +922,35 @@ export default function AdminPortal({ walletAddress }) {
                   />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="text-slate-300 text-sm mb-2 block">Add Verified Doctor</label>
+                      <label className="text-slate-600 text-sm mb-2 block">Add Verified Doctor</label>
                       <input
                         type="text"
                         placeholder="0x..."
                         value={newDoctorAddress}
                         onChange={(e) => setNewDoctorAddress(e.target.value)}
-                        className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-500 mb-3 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                        className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2 text-slate-800 placeholder-slate-400 mb-3 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       />
                       <button
                         onClick={handleAddDoctor}
                         disabled={actionLoading}
-                        className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                       >
                         {actionLoading ? 'Processing...' : 'Verify Doctor'}
                       </button>
                     </div>
                     <div>
-                      <label className="text-slate-300 text-sm mb-2 block">Remove Verified Doctor</label>
+                      <label className="text-slate-600 text-sm mb-2 block">Remove Verified Doctor</label>
                       <input
                         type="text"
                         placeholder="0x..."
                         value={removeDoctorAddress}
                         onChange={(e) => setRemoveDoctorAddress(e.target.value)}
-                        className="w-full bg-slate-700/50 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-500 mb-3 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                        className="w-full bg-white border border-slate-200 rounded-lg px-4 py-2 text-slate-800 placeholder-slate-400 mb-3 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                       />
                       <button
                         onClick={handleRemoveDoctor}
                         disabled={actionLoading}
-                        className="w-full bg-red-600 hover:bg-red-700 disabled:bg-slate-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                        className="w-full bg-red-600 hover:bg-red-700 disabled:bg-slate-300 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                       >
                         {actionLoading ? 'Processing...' : 'Remove Doctor'}
                       </button>
@@ -959,14 +959,14 @@ export default function AdminPortal({ walletAddress }) {
                 </>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', flex: 1, minHeight: '200px' }}>
-                  <div className="w-16 h-16 bg-slate-700/50 rounded-full flex items-center justify-center mb-4">
-                    <svg className="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                    <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-bold text-white mb-2">Doctor Management</h3>
-                  <p className="text-slate-500 text-sm mb-1">Admin access required</p>
-                  <p className="text-slate-400">Only the admin can manage doctors</p>
+                  <h3 className="text-lg font-bold text-slate-800 mb-2">Doctor Management</h3>
+                  <p className="text-slate-400 text-sm mb-1">Admin access required</p>
+                  <p className="text-slate-500">Only the admin can manage doctors</p>
                 </div>
               )}
             </div>
@@ -976,51 +976,51 @@ export default function AdminPortal({ walletAddress }) {
         {/* ==================== ROW 6: HOSPITAL BALANCES ==================== */}
         <div style={{ marginBottom: '32px' }}>
           <SectionLabel>Account Details</SectionLabel>
-          <div style={{ border: '1px solid rgba(20, 184, 166, 0.3)', borderRadius: '16px', background: 'rgba(15, 23, 42, 0.6)' }}>
-            <div className="px-6 py-4 border-b" style={{ borderColor: 'rgba(20, 184, 166, 0.3)' }}>
-              <h3 className="text-lg font-bold text-white">Hospital Balances</h3>
-              <p className="text-slate-400 text-sm">Detailed breakdown by hospital/doctor</p>
+          <div style={{ border: '1px solid #E2E8F0', borderRadius: '16px', background: '#FFFFFF' }}>
+            <div className="px-6 py-4 border-b border-slate-200">
+              <h3 className="text-lg font-bold text-slate-800">Hospital Balances</h3>
+              <p className="text-slate-500 text-sm">Detailed breakdown by hospital/doctor</p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-slate-700/30">
-                    <th className="text-left px-6 py-4 text-slate-300 font-medium text-sm">Hospital Address</th>
-                    <th className="text-right px-6 py-4 text-slate-300 font-medium text-sm">Balance</th>
-                    <th className="text-right px-6 py-4 text-slate-300 font-medium text-sm">Status</th>
+                  <tr className="bg-slate-50">
+                    <th className="text-left px-6 py-4 text-slate-600 font-medium text-sm">Hospital Address</th>
+                    <th className="text-right px-6 py-4 text-slate-600 font-medium text-sm">Balance</th>
+                    <th className="text-right px-6 py-4 text-slate-600 font-medium text-sm">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
                     <tr>
-                      <td colSpan={3} className="px-6 py-8 text-center text-slate-400">Loading...</td>
+                      <td colSpan={3} className="px-6 py-8 text-center text-slate-500">Loading...</td>
                     </tr>
                   ) : hospitalBalances.length === 0 ? (
                     <tr>
-                      <td colSpan={3} className="px-6 py-8 text-center text-slate-400">No hospitals registered yet</td>
+                      <td colSpan={3} className="px-6 py-8 text-center text-slate-500">No hospitals registered yet</td>
                     </tr>
                   ) : (
                     hospitalBalances.map((item, index) => (
-                      <tr key={index} className="border-t hover:bg-slate-700/20 transition-colors" style={{ borderColor: 'rgba(20, 184, 166, 0.3)' }}>
+                      <tr key={index} className="border-t border-slate-200 hover:bg-slate-50 transition-colors">
                         <td className="px-6 py-4">
-                          <code className="text-slate-200 bg-slate-700/50 px-2 py-1 rounded text-sm">
+                          <code className="text-slate-700 bg-slate-100 px-2 py-1 rounded text-sm">
                             {formatAddress(item.hospital)}
                           </code>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <span className={`text-lg font-semibold ${item.balance >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                          <span className={`text-lg font-semibold ${item.balance >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                             {item.balance >= 0 ? '+' : ''}{item.balance}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-right">
                           {item.balance >= 0 ? (
-                            <span className="inline-flex items-center gap-1 text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full text-sm font-medium">
-                              <span className="w-2 h-2 bg-emerald-400 rounded-full"></span>
+                            <span className="inline-flex items-center gap-1 text-emerald-600 bg-emerald-500/10 px-3 py-1 rounded-full text-sm font-medium">
+                              <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
                               Good Standing
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-red-400 bg-red-500/10 px-3 py-1 rounded-full text-sm font-medium">
-                              <span className="w-2 h-2 bg-red-400 rounded-full"></span>
+                            <span className="inline-flex items-center gap-1 text-red-500 bg-red-500/10 px-3 py-1 rounded-full text-sm font-medium">
+                              <span className="w-2 h-2 bg-red-500 rounded-full"></span>
                               Payment Due
                             </span>
                           )}
@@ -1035,8 +1035,8 @@ export default function AdminPortal({ walletAddress }) {
         </div>
 
         {/* ==================== FOOTER ==================== */}
-        <div className="pt-6 border-t border-slate-800 flex items-center justify-between">
-          <p className="text-slate-500 text-sm">Sarawak MedChain Enterprise Portal</p>
+        <div className="pt-6 border-t border-slate-200 flex items-center justify-between">
+          <p className="text-slate-400 text-sm">Sarawak MedChain Enterprise Portal</p>
           <div className="flex items-center gap-2 text-emerald-500">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -1190,54 +1190,54 @@ export default function AdminPortal({ walletAddress }) {
         {showPaymentOverlay && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center">
             <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" />
-            <div className="relative bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 rounded-3xl shadow-2xl border border-slate-700/50 p-10 max-w-lg w-full mx-4">
+            <div className="relative bg-white rounded-3xl shadow-2xl border border-slate-200 p-10 max-w-lg w-full mx-4">
               <div className="text-center">
                 {paymentStage !== 'success' ? (
                   <>
                     <div className="mb-8 flex justify-center">
-                      <div className="w-24 h-24 rounded-full flex items-center justify-center animate-spin" style={{ background: 'linear-gradient(135deg, #14B8A6 0%, #0EA5E9 50%, #8B5CF6 100%)', boxShadow: '0 0 40px rgba(20, 184, 166, 0.5)' }}>
-                        <div className="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center">
-                          <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="w-24 h-24 rounded-full flex items-center justify-center animate-spin" style={{ background: 'linear-gradient(135deg, #14B8A6 0%, #0EA5E9 50%, #8B5CF6 100%)', boxShadow: '0 0 40px rgba(20, 184, 166, 0.3)' }}>
+                        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center">
+                          <svg className="w-10 h-10 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
                           </svg>
                         </div>
                       </div>
                     </div>
-                    <h2 className="text-2xl font-bold text-white mb-2">
+                    <h2 className="text-2xl font-bold text-slate-800 mb-2">
                       {paymentStage === 'broadcasting' ? 'Broadcasting Transaction...' : 'Verifying Payment...'}
                     </h2>
-                    <p className="text-slate-400 mb-6">
+                    <p className="text-slate-500 mb-6">
                       {paymentStage === 'broadcasting' ? 'Sending to Sarawak MedChain...' : `Confirming RM ${paymentAmount.toLocaleString()}...`}
                     </p>
                     <div className="flex justify-center gap-2 mb-6">
                       <div className={`w-3 h-3 rounded-full ${paymentStage === 'broadcasting' ? 'bg-teal-500 animate-pulse' : 'bg-emerald-500'}`}></div>
-                      <div className={`w-3 h-3 rounded-full ${paymentStage === 'verifying' ? 'bg-teal-500 animate-pulse' : 'bg-slate-600'}`}></div>
-                      <div className="w-3 h-3 rounded-full bg-slate-600"></div>
+                      <div className={`w-3 h-3 rounded-full ${paymentStage === 'verifying' ? 'bg-teal-500 animate-pulse' : 'bg-slate-200'}`}></div>
+                      <div className="w-3 h-3 rounded-full bg-slate-200"></div>
                     </div>
-                    <div className="bg-slate-800/50 rounded-2xl p-5 border border-slate-700/50">
-                      <p className="text-slate-400 text-sm mb-1">Amount</p>
-                      <p className="text-4xl font-black text-white">RM {paymentAmount.toLocaleString()}</p>
+                    <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200">
+                      <p className="text-slate-500 text-sm mb-1">Amount</p>
+                      <p className="text-4xl font-black text-slate-800">RM {paymentAmount.toLocaleString()}</p>
                     </div>
                   </>
                 ) : (
                   <>
                     <div className="mb-8 flex justify-center">
-                      <div className="w-28 h-28 rounded-full flex items-center justify-center bg-gradient-to-br from-emerald-500 to-emerald-600" style={{ boxShadow: '0 0 60px rgba(16, 185, 129, 0.5)' }}>
+                      <div className="w-28 h-28 rounded-full flex items-center justify-center bg-gradient-to-br from-emerald-500 to-emerald-600" style={{ boxShadow: '0 0 60px rgba(16, 185, 129, 0.3)' }}>
                         <svg className="w-14 h-14 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
                       </div>
                     </div>
-                    <h2 className="text-3xl font-bold text-emerald-400 mb-2">Payment Successful!</h2>
-                    <p className="text-slate-400 mb-6">Transaction confirmed on blockchain</p>
-                    <div className="bg-slate-800/50 rounded-2xl p-5 border border-emerald-500/30 mb-6">
-                      <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-700">
-                        <span className="text-slate-400">Amount Paid</span>
-                        <span className="text-2xl font-bold text-emerald-400">RM {paymentAmount.toLocaleString()}</span>
+                    <h2 className="text-3xl font-bold text-emerald-600 mb-2">Payment Successful!</h2>
+                    <p className="text-slate-500 mb-6">Transaction confirmed on blockchain</p>
+                    <div className="bg-slate-50 rounded-2xl p-5 border border-emerald-200 mb-6">
+                      <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-200">
+                        <span className="text-slate-500">Amount Paid</span>
+                        <span className="text-2xl font-bold text-emerald-600">RM {paymentAmount.toLocaleString()}</span>
                       </div>
                       <div className="text-left">
-                        <p className="text-slate-400 text-sm mb-2">Transaction Hash</p>
-                        <code className="block bg-slate-900/50 px-4 py-3 rounded-xl text-xs font-mono text-emerald-400 break-all border border-slate-700">
+                        <p className="text-slate-500 text-sm mb-2">Transaction Hash</p>
+                        <code className="block bg-slate-100 px-4 py-3 rounded-xl text-xs font-mono text-emerald-600 break-all border border-slate-200">
                           {(transactionHash || '').slice(0, 10)}...{(transactionHash || '').slice(-8)}
                         </code>
                       </div>

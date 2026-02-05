@@ -218,7 +218,7 @@ const AnimatedButton = ({ children, onClick, variant = 'primary', disabled = fal
   const variants = {
     primary: {
       bg: '#00d4aa',
-      color: '#0a0e14',
+      color: '#1E293B',
       hoverShadow: '0 4px 20px rgba(0, 212, 170, 0.4)',
     },
     secondary: {
@@ -227,8 +227,8 @@ const AnimatedButton = ({ children, onClick, variant = 'primary', disabled = fal
       hoverShadow: '0 4px 20px rgba(124, 92, 255, 0.4)',
     },
     ghost: {
-      bg: 'rgba(255, 255, 255, 0.05)',
-      color: '#94a3b8',
+      bg: '#F8FAFC',
+      color: '#64748B',
       hoverShadow: 'none',
     },
     danger: {
@@ -257,7 +257,7 @@ const AnimatedButton = ({ children, onClick, variant = 'primary', disabled = fal
         borderRadius: '10px',
         fontSize: '13px',
         fontWeight: 600,
-        border: variant === 'ghost' ? '1px solid rgba(255,255,255,0.1)' : 'none',
+        border: variant === 'ghost' ? '1px solid #E2E8F0' : 'none',
         cursor: disabled ? 'not-allowed' : 'pointer',
         background: disabled ? '#374151' : v.bg,
         color: disabled ? '#6b7280' : v.color,
@@ -276,22 +276,22 @@ const AnimatedButton = ({ children, onClick, variant = 'primary', disabled = fal
 // ═══════════════════════════════════════════════════════════════════════════
 const theme = {
   // Background colors
-  bg: '#0a0e14',                                    // Deep navy black
-  bgCard: '#0d1117',                                // Card background
-  bgCardGradient: 'linear-gradient(135deg, rgba(13,17,23,0.95) 0%, rgba(13,17,23,0.8) 100%)',
-  bgElevated: 'rgba(13, 17, 23, 0.98)',
+  bg: '#FFFFFF',                                     // Light page background
+  bgCard: '#FFFFFF',                                 // Card background
+  bgCardGradient: '#FFFFFF',
+  bgElevated: '#FFFFFF',
   bgHover: 'rgba(0, 212, 170, 0.05)',
 
   // Border colors
-  border: 'rgba(255, 255, 255, 0.08)',              // Subtle white border
-  borderHover: 'rgba(255, 255, 255, 0.15)',
+  border: '#E2E8F0',                                 // Light border
+  borderHover: '#CBD5E1',
   borderAccent: 'rgba(0, 212, 170, 0.25)',
   borderPurple: 'rgba(124, 92, 255, 0.25)',
 
   // Text colors
-  textPrimary: '#e2e8f0',                           // Primary text
-  textSecondary: '#94a3b8',                         // Secondary text
-  textMuted: '#64748b',                             // Muted/label text
+  textPrimary: '#1E293B',                            // Primary text
+  textSecondary: '#64748B',                          // Secondary text
+  textMuted: '#94A3B8',                              // Muted/label text
   textWhite: '#ffffff',
 
   // Accent colors - Enterprise palette
@@ -309,10 +309,10 @@ const theme = {
   // Card styling constants
   cardRadius: '16px',
   cardPadding: '24px',
-  cardShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-  cardShadowHover: '0 12px 40px rgba(0, 0, 0, 0.4), 0 0 30px rgba(0, 212, 170, 0.1)',
+  cardShadow: '0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06)',
+  cardShadowHover: '0 4px 12px rgba(0, 0, 0, 0.1), 0 0 20px rgba(0, 212, 170, 0.06)',
   cardBlur: 'blur(20px)',
-  cardGlow: '0 0 40px rgba(0, 212, 170, 0.15)',
+  cardGlow: '0 0 20px rgba(0, 212, 170, 0.08)',
 
   // Transitions
   transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -443,24 +443,24 @@ const SectionLabel = ({ icon, text, subtitle }) => (
 const CardWrapper = ({ children, className = '', style = {}, glow = false, hover = true, delay = 0, variant = 'default' }) => {
   const variants = {
     default: {
-      background: theme.bgCardGradient,
+      background: '#FFFFFF',
       border: `1px solid ${theme.border}`,
       boxShadow: theme.cardShadow,
     },
     elevated: {
-      background: 'linear-gradient(135deg, rgba(13, 17, 23, 0.98) 0%, rgba(13, 17, 23, 0.9) 100%)',
+      background: '#FFFFFF',
       border: `1px solid ${theme.borderAccent}`,
-      boxShadow: `${theme.cardShadow}, 0 0 30px rgba(0, 212, 170, 0.08)`,
+      boxShadow: `${theme.cardShadow}, 0 0 20px rgba(0, 212, 170, 0.05)`,
     },
     highlight: {
-      background: 'linear-gradient(135deg, rgba(0, 212, 170, 0.1) 0%, rgba(13, 17, 23, 0.95) 100%)',
+      background: 'linear-gradient(135deg, rgba(0, 212, 170, 0.05) 0%, #FFFFFF 100%)',
       border: '1px solid rgba(0, 212, 170, 0.3)',
       boxShadow: `${theme.cardShadow}, ${theme.cardGlow}`,
     },
     purple: {
-      background: 'linear-gradient(135deg, rgba(124, 92, 255, 0.08) 0%, rgba(13, 17, 23, 0.95) 100%)',
+      background: 'linear-gradient(135deg, rgba(124, 92, 255, 0.05) 0%, #FFFFFF 100%)',
       border: `1px solid ${theme.borderPurple}`,
-      boxShadow: `${theme.cardShadow}, 0 0 30px rgba(124, 92, 255, 0.1)`,
+      boxShadow: `${theme.cardShadow}, 0 0 20px rgba(124, 92, 255, 0.05)`,
     }
   };
 
@@ -474,7 +474,7 @@ const CardWrapper = ({ children, className = '', style = {}, glow = false, hover
       whileHover={hover ? {
         y: -2,
         boxShadow: theme.cardShadowHover,
-        borderColor: 'rgba(255, 255, 255, 0.15)',
+        borderColor: '#CBD5E1',
       } : {}}
       className={`card-hover ${className}`}
       style={{
@@ -2808,11 +2808,10 @@ export default function FounderAdmin() {
   return (
     <div
       className="min-h-screen founder-admin-dashboard founder-command"
-      style={{ backgroundColor: '#0a0e14' }}
+      style={{ backgroundColor: '#FFFFFF' }}
     >
-      {/* Global background override */}
+      {/* Global font import */}
       <style>{`
-        html, body, #root { background-color: #0a0e14 !important; }
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         .founder-admin-dashboard { font-family: 'Inter', system-ui, sans-serif; }
       `}</style>
@@ -2823,10 +2822,10 @@ export default function FounderAdmin() {
       <header
         className="sticky top-0 z-50 px-6 py-3"
         style={{
-          backgroundColor: 'rgba(10, 14, 20, 0.95)',
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+          borderBottom: '1px solid #E2E8F0',
         }}
       >
         <div className="flex items-center justify-between" style={{ maxWidth: '1600px', margin: '0 auto' }}>
@@ -2841,10 +2840,10 @@ export default function FounderAdmin() {
               </svg>
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight" style={{ color: '#ffffff' }}>
+              <h1 className="text-lg font-bold tracking-tight" style={{ color: '#1E293B' }}>
                 Sarawak MedChain
               </h1>
-              <p className="text-xs" style={{ color: '#64748b' }}>Founder Command</p>
+              <p className="text-xs" style={{ color: '#94A3B8' }}>Founder Command</p>
             </div>
           </div>
 

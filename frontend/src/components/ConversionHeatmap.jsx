@@ -49,7 +49,7 @@ export default function ConversionHeatmap() {
     .sort(([, a], [, b]) => b.percentage - a.percentage);
 
   return (
-    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-slate-700/50 p-6">
+    <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -60,8 +60,8 @@ export default function ConversionHeatmap() {
             </svg>
           </div>
           <div>
-            <h3 className="text-white font-bold">Conversion Heatmap</h3>
-            <p className="text-slate-400 text-sm">Time spent per section by leads</p>
+            <h3 className="text-slate-800 font-bold">Conversion Heatmap</h3>
+            <p className="text-slate-500 text-sm">Time spent per section by leads</p>
           </div>
         </div>
 
@@ -69,7 +69,7 @@ export default function ConversionHeatmap() {
         <select
           value={selectedTimeframe}
           onChange={(e) => setSelectedTimeframe(e.target.value)}
-          className="bg-slate-800 border border-slate-600 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+          className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-500"
         >
           <option value="all">All Time</option>
           <option value="today">Today</option>
@@ -111,7 +111,7 @@ export default function ConversionHeatmap() {
               </div>
 
               {/* Progress bar with heat color */}
-              <div className="relative h-8 bg-slate-800 rounded-lg overflow-hidden">
+              <div className="relative h-8 bg-slate-200 rounded-lg overflow-hidden">
                 <div
                   className={`absolute inset-y-0 left-0 ${colors.bg} transition-all duration-500 rounded-lg`}
                   style={{ width: `${data.percentage}%`, opacity: 0.7 + (data.percentage / 400) }}
@@ -139,30 +139,30 @@ export default function ConversionHeatmap() {
       </div>
 
       {/* Insights Section */}
-      <div className="mt-6 pt-6 border-t border-slate-700/50">
-        <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+      <div className="mt-6 pt-6 border-t border-slate-200">
+        <h4 className="text-slate-800 font-semibold mb-3 flex items-center gap-2">
           <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
           </svg>
           Key Insights
         </h4>
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-slate-800/50 rounded-xl p-3">
+          <div className="bg-slate-50 rounded-xl p-3">
             <p className="text-slate-500 text-xs mb-1">Most Engaging</p>
             <p className="text-red-400 font-bold">Pricing Section</p>
             <p className="text-slate-400 text-xs mt-1">33s average dwell time</p>
           </div>
-          <div className="bg-slate-800/50 rounded-xl p-3">
+          <div className="bg-slate-50 rounded-xl p-3">
             <p className="text-slate-500 text-xs mb-1">Conversion Trigger</p>
             <p className="text-orange-400 font-bold">ROI Calculator</p>
             <p className="text-slate-400 text-xs mt-1">80% of converters used it</p>
           </div>
-          <div className="bg-slate-800/50 rounded-xl p-3">
+          <div className="bg-slate-50 rounded-xl p-3">
             <p className="text-slate-500 text-xs mb-1">Fear Factor</p>
             <p className="text-amber-400 font-bold">Fraud Alert</p>
             <p className="text-slate-400 text-xs mt-1">Creates urgency</p>
           </div>
-          <div className="bg-slate-800/50 rounded-xl p-3">
+          <div className="bg-slate-50 rounded-xl p-3">
             <p className="text-slate-500 text-xs mb-1">Social Proof</p>
             <p className="text-emerald-400 font-bold">Founding Circle</p>
             <p className="text-slate-400 text-xs mt-1">67% engagement rate</p>
@@ -198,7 +198,7 @@ export function MiniHeatmap() {
       {sections.map((section) => (
         <div key={section.name} className="flex items-center gap-2">
           <span className="text-xs text-slate-400 w-16">{section.name}</span>
-          <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+          <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
             <div
               className={`h-full ${section.color} transition-all`}
               style={{ width: `${section.percentage}%` }}
@@ -237,7 +237,7 @@ export function LeadFunnel() {
   ];
 
   return (
-    <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-slate-700/50 p-6">
+    <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -247,8 +247,8 @@ export function LeadFunnel() {
             </svg>
           </div>
           <div>
-            <h3 className="text-white font-bold">Lead Funnel</h3>
-            <p className="text-slate-400 text-sm">Founding Partner pipeline</p>
+            <h3 className="text-slate-800 font-bold">Lead Funnel</h3>
+            <p className="text-slate-500 text-sm">Founding Partner pipeline</p>
           </div>
         </div>
 
@@ -281,12 +281,12 @@ export function LeadFunnel() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-3 mt-6 pt-6 border-t border-slate-700/50">
-        <div className="bg-slate-800/50 rounded-xl p-3 text-center">
+      <div className="grid grid-cols-2 gap-3 mt-6 pt-6 border-t border-slate-200">
+        <div className="bg-slate-50 rounded-xl p-3 text-center">
           <p className="text-2xl font-black text-cyan-400">{funnelData.openRate}%</p>
           <p className="text-xs text-slate-500">Email Open Rate</p>
         </div>
-        <div className="bg-slate-800/50 rounded-xl p-3 text-center">
+        <div className="bg-slate-50 rounded-xl p-3 text-center">
           <p className="text-2xl font-black text-amber-400">{10 - funnelData.converted}</p>
           <p className="text-xs text-slate-500">Slots Remaining</p>
         </div>

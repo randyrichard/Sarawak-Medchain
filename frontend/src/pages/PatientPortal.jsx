@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { getMyRecords, grantAccess, revokeAccess, hasAccess, formatTimestamp } from '../utils/contract';
 import { retrieveMedicalRecord, openPDFInNewTab } from '../utils/api';
 import { useDemo, DEMO_MCS } from '../context/DemoContext';
+import { CheckCircle, XCircle, ShieldCheck, Key, FileText, RefreshCw, HelpCircle } from 'lucide-react';
 
 // Format date for display - handles both Unix timestamps and ISO strings
 const formatRecordDate = (timestamp, dateIssued) => {
@@ -159,16 +160,16 @@ export default function PatientPortal({ walletAddress }) {
 
   const isButtonDisabled = loading || !doctorAddress;
 
-  // Card styles - polished
+  // Card styles - light theme
   const cardStyle = {
-    border: '1px solid rgba(20, 184, 166, 0.2)',
+    border: '1px solid #E2E8F0',
     borderRadius: '16px',
-    backgroundColor: 'rgba(20, 184, 166, 0.02)',
+    backgroundColor: '#FFFFFF',
     padding: '24px',
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)'
+    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)'
   };
 
   // Button styles with hover transitions
@@ -177,10 +178,10 @@ export default function PatientPortal({ walletAddress }) {
     padding: '12px 18px',
     borderRadius: '10px',
     background: isButtonDisabled
-      ? '#1e293b'
+      ? '#E2E8F0'
       : 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
     border: 'none',
-    color: isButtonDisabled ? '#475569' : '#fff',
+    color: isButtonDisabled ? '#94A3B8' : '#fff',
     fontSize: '0.85rem',
     fontWeight: '600',
     cursor: isButtonDisabled ? 'not-allowed' : 'pointer',
@@ -195,9 +196,9 @@ export default function PatientPortal({ walletAddress }) {
     width: '100%',
     padding: '12px 18px',
     borderRadius: '10px',
-    background: 'rgba(30, 41, 59, 0.6)',
-    border: '1px solid rgba(148, 163, 184, 0.15)',
-    color: isButtonDisabled ? '#475569' : '#e2e8f0',
+    background: '#F8FAFC',
+    border: '1px solid #E2E8F0',
+    color: isButtonDisabled ? '#94A3B8' : '#1E293B',
     fontSize: '0.85rem',
     fontWeight: '500',
     cursor: isButtonDisabled ? 'not-allowed' : 'pointer',
@@ -210,7 +211,7 @@ export default function PatientPortal({ walletAddress }) {
 
   return (
     <div className="patient-portal" style={{
-      backgroundColor: '#0a0e14',
+      backgroundColor: '#FFFFFF',
       minHeight: '100vh',
       display: 'flex',
       flexDirection: 'column',
@@ -220,12 +221,11 @@ export default function PatientPortal({ walletAddress }) {
     }}>
       {/* Premium Header */}
       <header className="patient-header" style={{
-        background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.8) 100%)',
-        borderBottom: '1px solid rgba(20, 184, 166, 0.1)',
+        background: '#FFFFFF',
+        borderBottom: '1px solid #E2E8F0',
         padding: '20px 24px',
         width: '100%',
-        boxSizing: 'border-box',
-        backdropFilter: 'blur(10px)'
+        boxSizing: 'border-box'
       }}>
         <div className="header-content" style={{
           display: 'flex',
@@ -255,7 +255,7 @@ export default function PatientPortal({ walletAddress }) {
               </svg>
             </div>
             <div>
-              <h1 className="portal-title" style={{ color: '#fff', fontSize: '1.3rem', fontWeight: '700', margin: 0, letterSpacing: '-0.02em' }}>Patient Portal</h1>
+              <h1 className="portal-title" style={{ color: '#1E293B', fontSize: '1.3rem', fontWeight: '700', margin: 0, letterSpacing: '-0.02em' }}>Patient Portal</h1>
               <span style={{
                 fontSize: '0.65rem',
                 fontWeight: '600',
@@ -271,14 +271,14 @@ export default function PatientPortal({ walletAddress }) {
             <div className="wallet-badge" style={{
               padding: '8px 12px',
               borderRadius: '10px',
-              background: 'rgba(20, 184, 166, 0.08)',
-              border: '1px solid rgba(20, 184, 166, 0.15)',
+              background: 'rgba(20, 184, 166, 0.06)',
+              border: '1px solid #E2E8F0',
               display: 'flex',
               alignItems: 'center',
               gap: '8px'
             }}>
               <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', boxShadow: '0 0 8px #10b981', flexShrink: 0 }}></div>
-              <code className="wallet-address" style={{ color: '#94a3b8', fontSize: '0.75rem', fontFamily: 'monospace' }}>
+              <code className="wallet-address" style={{ color: '#64748B', fontSize: '0.75rem', fontFamily: 'monospace' }}>
                 {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
               </code>
             </div>
@@ -289,8 +289,8 @@ export default function PatientPortal({ walletAddress }) {
               style={{
                 padding: '8px 14px',
                 borderRadius: '10px',
-                background: 'linear-gradient(135deg, rgba(20, 184, 166, 0.15) 0%, rgba(20, 184, 166, 0.05) 100%)',
-                border: '1px solid rgba(20, 184, 166, 0.2)',
+                background: 'rgba(20, 184, 166, 0.08)',
+                border: '1px solid #E2E8F0',
                 color: '#14b8a6',
                 fontSize: '0.8rem',
                 fontWeight: '600',
@@ -301,9 +301,7 @@ export default function PatientPortal({ walletAddress }) {
                 transition: 'all 0.2s ease'
               }}
             >
-              <svg style={{ width: '16px', height: '16px', flexShrink: 0 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
+              <RefreshCw size={16} />
               <span className="refresh-text">Refresh</span>
             </button>
           </div>
@@ -324,23 +322,21 @@ export default function PatientPortal({ walletAddress }) {
             padding: '16px 20px',
             borderRadius: '12px',
             background: message.includes('Error')
-              ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%)'
-              : 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)',
+              ? 'rgba(239, 68, 68, 0.06)'
+              : 'rgba(16, 185, 129, 0.06)',
             border: message.includes('Error') ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(16, 185, 129, 0.2)',
-            color: message.includes('Error') ? '#f87171' : '#10b981',
+            color: message.includes('Error') ? '#dc2626' : '#059669',
             fontSize: '0.9rem',
             fontWeight: '500',
             display: 'flex',
             alignItems: 'center',
             gap: '12px'
           }}>
-            <svg style={{ width: '20px', height: '20px', flexShrink: 0 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {message.includes('Error') ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              )}
-            </svg>
+            {message.includes('Error') ? (
+              <XCircle size={20} style={{ flexShrink: 0 }} />
+            ) : (
+              <CheckCircle size={20} style={{ flexShrink: 0 }} />
+            )}
             {message}
           </div>
         )}
@@ -368,13 +364,11 @@ export default function PatientPortal({ walletAddress }) {
                 justifyContent: 'center',
                 flexShrink: 0
               }}>
-                <svg style={{ width: '20px', height: '20px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                </svg>
+                <Key size={20} color="white" />
               </div>
               <div style={{ flex: 1 }}>
-                <h2 style={{ color: '#fff', fontSize: '1.1rem', fontWeight: '600', margin: 0 }}>Access Control</h2>
-                <span style={{ color: '#64748b', fontSize: '0.75rem' }}>Manage doctor permissions</span>
+                <h2 style={{ color: '#1E293B', fontSize: '1.1rem', fontWeight: '600', margin: 0 }}>Access Control</h2>
+                <span style={{ color: '#94A3B8', fontSize: '0.75rem' }}>Manage doctor permissions</span>
               </div>
             </div>
 
@@ -384,7 +378,7 @@ export default function PatientPortal({ walletAddress }) {
                 display: 'block',
                 fontSize: '0.7rem',
                 fontWeight: '700',
-                color: '#64748b',
+                color: '#94A3B8',
                 textTransform: 'uppercase',
                 letterSpacing: '1.2px',
                 marginBottom: '10px'
@@ -399,9 +393,9 @@ export default function PatientPortal({ walletAddress }) {
                   width: '100%',
                   padding: '16px 18px',
                   borderRadius: '12px',
-                  backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                  border: '1px solid rgba(148, 163, 184, 0.15)',
-                  color: '#fff',
+                  backgroundColor: '#F8FAFC',
+                  border: '1px solid #E2E8F0',
+                  color: '#1E293B',
                   fontSize: '0.95rem',
                   outline: 'none',
                   boxSizing: 'border-box',
@@ -419,9 +413,7 @@ export default function PatientPortal({ walletAddress }) {
                 className="btn-primary"
                 style={primaryButtonStyle}
               >
-                <svg style={{ width: '18px', height: '18px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <CheckCircle size={18} />
                 Grant Access
               </button>
 
@@ -431,9 +423,7 @@ export default function PatientPortal({ walletAddress }) {
                 className="btn-secondary"
                 style={secondaryButtonStyle}
               >
-                <svg style={{ width: '18px', height: '18px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                </svg>
+                <XCircle size={18} />
                 Revoke Access
               </button>
 
@@ -443,9 +433,7 @@ export default function PatientPortal({ walletAddress }) {
                 className="btn-secondary"
                 style={secondaryButtonStyle}
               >
-                <svg style={{ width: '18px', height: '18px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <HelpCircle size={18} />
                 Check Access
               </button>
             </div>
@@ -465,19 +453,17 @@ export default function PatientPortal({ walletAddress }) {
                 justifyContent: 'center',
                 flexShrink: 0
               }}>
-                <svg style={{ width: '20px', height: '20px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
+                <FileText size={20} color="white" />
               </div>
               <div style={{ flex: 1 }}>
-                <h2 style={{ color: '#fff', fontSize: '1.1rem', fontWeight: '600', margin: 0 }}>My Medical Records</h2>
-                <span style={{ color: '#64748b', fontSize: '0.75rem' }}>Blockchain-secured documents</span>
+                <h2 style={{ color: '#1E293B', fontSize: '1.1rem', fontWeight: '600', margin: 0 }}>My Medical Records</h2>
+                <span style={{ color: '#94A3B8', fontSize: '0.75rem' }}>Blockchain-secured documents</span>
               </div>
               <span style={{
                 padding: '3px 10px',
                 borderRadius: '10px',
-                backgroundColor: 'rgba(20, 184, 166, 0.1)',
-                color: 'rgba(20, 184, 166, 0.8)',
+                backgroundColor: 'rgba(20, 184, 166, 0.08)',
+                color: '#0d9488',
                 fontSize: '0.7rem',
                 fontWeight: '500',
                 flexShrink: 0
@@ -498,18 +484,16 @@ export default function PatientPortal({ walletAddress }) {
                   width: '80px',
                   height: '80px',
                   borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(20, 184, 166, 0.15) 0%, rgba(20, 184, 166, 0.05) 60%, transparent 80%)',
-                  border: '1px solid rgba(20, 184, 166, 0.3)',
+                  background: 'radial-gradient(circle, rgba(20, 184, 166, 0.1) 0%, rgba(20, 184, 166, 0.03) 60%, transparent 80%)',
+                  border: '1px solid rgba(20, 184, 166, 0.2)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginBottom: '16px'
                 }}>
-                  <svg style={{ width: '40px', height: '40px', color: '#14b8a6' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
+                  <ShieldCheck size={40} color="#14b8a6" strokeWidth={1.5} />
                 </div>
-                <p style={{ color: '#fff', fontSize: '0.95rem', fontWeight: '600', margin: '0 0 4px 0' }}>
+                <p style={{ color: '#1E293B', fontSize: '0.95rem', fontWeight: '600', margin: '0 0 4px 0' }}>
                   Your medical history is secured
                 </p>
                 <p style={{ color: '#14b8a6', fontSize: '0.85rem', fontWeight: '500', margin: 0 }}>
@@ -523,8 +507,8 @@ export default function PatientPortal({ walletAddress }) {
                     key={index}
                     className="record-item"
                     style={{
-                      background: 'linear-gradient(135deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.2) 100%)',
-                      border: '1px solid rgba(255, 255, 255, 0.05)',
+                      background: '#F8FAFC',
+                      border: '1px solid #E2E8F0',
                       borderRadius: '14px',
                       padding: '18px',
                       marginBottom: '12px',
@@ -533,12 +517,12 @@ export default function PatientPortal({ walletAddress }) {
                   >
                     <div style={{ display: 'flex', gap: '20px', marginBottom: '14px' }}>
                       <div>
-                        <span style={{ color: '#64748b', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>Date</span>
-                        <p style={{ color: '#fff', margin: '4px 0 0 0', fontWeight: '500' }}>{formatRecordDate(record.timestamp, record.dateIssued)}</p>
+                        <span style={{ color: '#94A3B8', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>Date</span>
+                        <p style={{ color: '#1E293B', margin: '4px 0 0 0', fontWeight: '500' }}>{formatRecordDate(record.timestamp, record.dateIssued)}</p>
                       </div>
                       <div>
-                        <span style={{ color: '#64748b', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>Doctor</span>
-                        <p style={{ color: '#94a3b8', margin: '4px 0 0 0', fontFamily: 'monospace', fontSize: '0.85rem' }}>{(record.doctorAddress || '0xDemoDoctor').slice(0, 10)}...</p>
+                        <span style={{ color: '#94A3B8', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>Doctor</span>
+                        <p style={{ color: '#64748B', margin: '4px 0 0 0', fontFamily: 'monospace', fontSize: '0.85rem' }}>{(record.doctorAddress || '0xDemoDoctor').slice(0, 10)}...</p>
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '10px' }}>
@@ -552,9 +536,9 @@ export default function PatientPortal({ walletAddress }) {
                           flex: 1,
                           padding: '12px 14px',
                           borderRadius: '10px',
-                          backgroundColor: 'rgba(0, 0, 0, 0.4)',
-                          border: '1px solid rgba(148, 163, 184, 0.15)',
-                          color: '#fff',
+                          backgroundColor: '#FFFFFF',
+                          border: '1px solid #E2E8F0',
+                          color: '#1E293B',
                           fontSize: '0.85rem',
                           outline: 'none',
                           transition: 'all 0.2s ease'
@@ -594,7 +578,7 @@ export default function PatientPortal({ walletAddress }) {
         /* Premium hover effects */
         .btn-primary:hover:not(:disabled) {
           transform: translateY(-2px);
-          box-shadow: 0 8px 25px rgba(20, 184, 166, 0.4) !important;
+          box-shadow: 0 8px 25px rgba(20, 184, 166, 0.3) !important;
           filter: brightness(1.1);
         }
         .btn-primary:active:not(:disabled) {
@@ -602,18 +586,18 @@ export default function PatientPortal({ walletAddress }) {
         }
 
         .btn-secondary:hover:not(:disabled) {
-          background: linear-gradient(135deg, rgba(51, 65, 85, 0.9) 0%, rgba(51, 65, 85, 0.7) 100%) !important;
-          border-color: rgba(148, 163, 184, 0.4) !important;
+          background: #F1F5F9 !important;
+          border-color: #CBD5E1 !important;
           transform: translateY(-2px);
-          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
         }
         .btn-secondary:active:not(:disabled) {
           transform: translateY(0);
         }
 
         .refresh-btn:hover {
-          background: linear-gradient(135deg, rgba(20, 184, 166, 0.25) 0%, rgba(20, 184, 166, 0.1) 100%) !important;
-          border-color: rgba(20, 184, 166, 0.4) !important;
+          background: rgba(20, 184, 166, 0.12) !important;
+          border-color: rgba(20, 184, 166, 0.3) !important;
           transform: translateY(-1px);
         }
 
@@ -623,29 +607,19 @@ export default function PatientPortal({ walletAddress }) {
         }
 
         .premium-input::placeholder {
-          color: #475569;
+          color: #94A3B8;
         }
 
         .patient-portal-card {
-          border: 1px solid rgba(20, 184, 166, 0.2) !important;
+          border: 1px solid #E2E8F0 !important;
           border-radius: 16px !important;
-          background-color: rgba(20, 184, 166, 0.02) !important;
+          background-color: #FFFFFF !important;
           transition: all 0.2s ease;
         }
 
         .patient-portal-card:hover {
-          border-color: rgba(20, 184, 166, 0.3) !important;
-          box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
-        }
-
-        .btn-primary:hover:not(:disabled) {
-          filter: brightness(1.1);
-          box-shadow: 0 4px 12px rgba(20, 184, 166, 0.3);
-        }
-
-        .btn-secondary:hover:not(:disabled) {
-          background: rgba(51, 65, 85, 0.7) !important;
-          border-color: rgba(148, 163, 184, 0.25) !important;
+          border-color: #CBD5E1 !important;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
         }
 
         .shield-glow {
@@ -654,37 +628,21 @@ export default function PatientPortal({ walletAddress }) {
 
         @keyframes shieldPulse {
           0%, 100% {
-            box-shadow: 0 0 40px rgba(20, 184, 166, 0.15), 0 0 80px rgba(20, 184, 166, 0.08);
+            box-shadow: 0 0 30px rgba(20, 184, 166, 0.08), 0 0 60px rgba(20, 184, 166, 0.04);
           }
           50% {
-            box-shadow: 0 0 50px rgba(20, 184, 166, 0.25), 0 0 100px rgba(20, 184, 166, 0.12);
+            box-shadow: 0 0 40px rgba(20, 184, 166, 0.12), 0 0 80px rgba(20, 184, 166, 0.06);
           }
         }
 
         .record-item:hover {
-          background: linear-gradient(135deg, rgba(20, 184, 166, 0.05) 0%, rgba(0, 0, 0, 0.25) 100%) !important;
-          border-color: rgba(20, 184, 166, 0.15) !important;
+          background: #F1F5F9 !important;
+          border-color: #CBD5E1 !important;
         }
 
         .view-btn:hover:not(:disabled) {
           transform: translateY(-1px);
           box-shadow: 0 4px 15px rgba(20, 184, 166, 0.35);
-        }
-
-        /* Scrollbar styling */
-        ::-webkit-scrollbar {
-          width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-          background: rgba(0, 0, 0, 0.2);
-          border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb {
-          background: rgba(20, 184, 166, 0.3);
-          border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-          background: rgba(20, 184, 166, 0.5);
         }
 
         /* ============ MOBILE RESPONSIVE STYLES ============ */

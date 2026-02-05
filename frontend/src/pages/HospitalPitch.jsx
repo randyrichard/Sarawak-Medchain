@@ -56,7 +56,7 @@ export default function HospitalPitch() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen bg-white">
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         {/* Background Grid Effect */}
@@ -85,16 +85,16 @@ export default function HospitalPitch() {
           </div>
 
           {/* Main Headline */}
-          <h1 className="text-5xl md:text-7xl font-black text-center text-white mb-6 leading-tight">
+          <h1 className="text-5xl md:text-7xl font-black text-center text-slate-800 mb-6 leading-tight">
             Securing Sarawak's
             <br />
             <span style={{ color: MEDCHAIN_BLUE }}>Medical Future</span>
           </h1>
 
-          <p className="text-xl md:text-2xl text-center text-slate-400 max-w-3xl mx-auto mb-8">
+          <p className="text-xl md:text-2xl text-center text-slate-500 max-w-3xl mx-auto mb-8">
             The New Standard for Digital Medical Certificates.
             <br />
-            <span className="text-white font-semibold">Blockchain-verified. Tamper-proof. Instant.</span>
+            <span className="text-slate-800 font-semibold">Blockchain-verified. Tamper-proof. Instant.</span>
           </p>
 
           {/* CTA Buttons */}
@@ -111,14 +111,14 @@ export default function HospitalPitch() {
             </button>
             <a
               href="#pricing"
-              className="px-8 py-4 rounded-xl font-bold text-slate-300 text-lg border border-slate-700 hover:border-slate-500 hover:bg-slate-800/50 transition-all"
+              className="px-8 py-4 rounded-xl font-bold text-slate-600 text-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all"
             >
               View Pricing
             </a>
           </div>
 
           {/* Trust Badges */}
-          <div className="flex flex-wrap items-center justify-center gap-8 text-slate-500 text-sm">
+          <div className="flex flex-wrap items-center justify-center gap-8 text-slate-400 text-sm">
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -147,7 +147,7 @@ export default function HospitalPitch() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             {/* Fraud Alert Graphic */}
             <div className="relative">
-              <div className="bg-gradient-to-br from-red-950/50 to-slate-900 rounded-3xl p-8 border border-red-500/30 relative overflow-hidden">
+              <div className="bg-white rounded-3xl p-8 border border-red-200 relative overflow-hidden">
                 {/* Warning Pulse */}
                 <div className="absolute top-4 right-4">
                   <span className="flex h-4 w-4">
@@ -169,13 +169,13 @@ export default function HospitalPitch() {
                 </div>
 
                 {/* Fake MC Example */}
-                <div className="bg-white/5 rounded-xl p-6 mb-6 border border-red-500/20">
+                <div className="bg-red-50/50 rounded-xl p-6 mb-6 border border-red-500/20">
                   <div className="flex items-start gap-4">
-                    <div className="w-16 h-20 bg-slate-700 rounded flex items-center justify-center text-slate-500 text-xs">
+                    <div className="w-16 h-20 bg-slate-200 rounded flex items-center justify-center text-slate-400 text-xs">
                       [Fake MC]
                     </div>
                     <div className="flex-1">
-                      <p className="text-slate-400 text-sm mb-2">Paper MCs can be:</p>
+                      <p className="text-slate-500 text-sm mb-2">Paper MCs can be:</p>
                       <ul className="space-y-1 text-sm">
                         <li className="flex items-center gap-2 text-red-400">
                           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -225,10 +225,10 @@ export default function HospitalPitch() {
               <span className="inline-block px-3 py-1 rounded-full text-xs font-bold text-red-400 bg-red-500/20 mb-4">
                 THE PROBLEM
               </span>
-              <h2 className="text-4xl font-black text-white mb-6">
+              <h2 className="text-4xl font-black text-slate-800 mb-6">
                 Paper MCs Are <span className="text-red-400">Broken</span>
               </h2>
-              <p className="text-lg text-slate-400 mb-6">
+              <p className="text-lg text-slate-500 mb-6">
                 Every year, Malaysian businesses lose billions to fraudulent medical certificates.
                 Paper-based systems offer zero protection against forgery, duplication, or tampering.
               </p>
@@ -238,8 +238,8 @@ export default function HospitalPitch() {
                     <span className="text-red-400 font-bold">1</span>
                   </div>
                   <div>
-                    <h4 className="font-bold text-white mb-1">Zero Verification</h4>
-                    <p className="text-slate-400 text-sm">Employers have no way to verify if an MC is genuine without calling the clinic directly.</p>
+                    <h4 className="font-bold text-slate-800 mb-1">Zero Verification</h4>
+                    <p className="text-slate-500 text-sm">Employers have no way to verify if an MC is genuine without calling the clinic directly.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
@@ -247,8 +247,8 @@ export default function HospitalPitch() {
                     <span className="text-red-400 font-bold">2</span>
                   </div>
                   <div>
-                    <h4 className="font-bold text-white mb-1">Easy Manipulation</h4>
-                    <p className="text-slate-400 text-sm">Dates, names, and diagnoses can be altered with basic photo editing software.</p>
+                    <h4 className="font-bold text-slate-800 mb-1">Easy Manipulation</h4>
+                    <p className="text-slate-500 text-sm">Dates, names, and diagnoses can be altered with basic photo editing software.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
@@ -256,8 +256,8 @@ export default function HospitalPitch() {
                     <span className="text-red-400 font-bold">3</span>
                   </div>
                   <div>
-                    <h4 className="font-bold text-white mb-1">No Audit Trail</h4>
-                    <p className="text-slate-400 text-sm">Once issued, there's no record of how many copies exist or if it's been tampered with.</p>
+                    <h4 className="font-bold text-slate-800 mb-1">No Audit Trail</h4>
+                    <p className="text-slate-500 text-sm">Once issued, there's no record of how many copies exist or if it's been tampered with.</p>
                   </div>
                 </div>
               </div>
@@ -276,10 +276,10 @@ export default function HospitalPitch() {
             <span className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-4" style={{ color: MEDCHAIN_BLUE, backgroundColor: `${MEDCHAIN_BLUE}20` }}>
               THE SOLUTION
             </span>
-            <h2 className="text-4xl md:text-5xl font-black text-white mb-6">
+            <h2 className="text-4xl md:text-5xl font-black text-slate-800 mb-6">
               Blockchain-Verified <span style={{ color: MEDCHAIN_BLUE }}>Medical Certificates</span>
             </h2>
-            <p className="text-xl text-slate-400 max-w-2xl mx-auto">
+            <p className="text-xl text-slate-500 max-w-2xl mx-auto">
               Every MC is cryptographically signed, timestamped on the blockchain, and instantly verifiable with a simple QR scan.
             </p>
           </div>
@@ -287,44 +287,44 @@ export default function HospitalPitch() {
           {/* Solution Features Grid */}
           <div className="grid md:grid-cols-3 gap-8 mb-16">
             {/* Doctor Terminal */}
-            <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-2xl p-6 border border-slate-700/50 hover:border-blue-500/30 transition-all group">
+            <div className="bg-white rounded-2xl p-6 border border-slate-200 hover:border-blue-500/30 transition-all group">
               <div className="w-14 h-14 rounded-2xl mb-6 flex items-center justify-center" style={{ backgroundColor: `${MEDCHAIN_BLUE}20` }}>
                 <svg className="w-7 h-7" style={{ color: MEDCHAIN_BLUE }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">Doctor's Terminal</h3>
-              <p className="text-slate-400 mb-4">
+              <h3 className="text-xl font-bold text-slate-800 mb-3">Doctor's Terminal</h3>
+              <p className="text-slate-500 mb-4">
                 A sleek, medical-grade interface for doctors to issue MCs in seconds. Digital signatures ensure authenticity.
               </p>
               {/* Mini Preview */}
-              <div className="bg-slate-900 rounded-xl p-4 border border-slate-700">
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-2 h-2 rounded-full bg-red-500" />
                   <div className="w-2 h-2 rounded-full bg-yellow-500" />
                   <div className="w-2 h-2 rounded-full bg-green-500" />
                 </div>
                 <div className="space-y-2">
-                  <div className="h-3 bg-slate-700 rounded w-3/4" />
-                  <div className="h-3 bg-slate-700 rounded w-1/2" />
+                  <div className="h-3 bg-slate-200 rounded w-3/4" />
+                  <div className="h-3 bg-slate-200 rounded w-1/2" />
                   <div className="h-8 rounded mt-3" style={{ backgroundColor: `${MEDCHAIN_BLUE}30` }} />
                 </div>
               </div>
             </div>
 
             {/* QR Verification */}
-            <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-2xl p-6 border border-slate-700/50 hover:border-emerald-500/30 transition-all group">
+            <div className="bg-white rounded-2xl p-6 border border-slate-200 hover:border-emerald-500/30 transition-all group">
               <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 mb-6 flex items-center justify-center">
                 <svg className="w-7 h-7 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">QR Verification</h3>
-              <p className="text-slate-400 mb-4">
+              <h3 className="text-xl font-bold text-slate-800 mb-3">QR Verification</h3>
+              <p className="text-slate-500 mb-4">
                 Employers scan a QR code to instantly verify any MC against the blockchain. Forgery becomes impossible.
               </p>
               {/* QR Preview */}
-              <div className="bg-slate-900 rounded-xl p-4 border border-slate-700 flex items-center justify-center">
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 flex items-center justify-center">
                 <div className="w-24 h-24 bg-white rounded-lg p-2 relative">
                   <div className="grid grid-cols-5 gap-0.5 w-full h-full">
                     {[1,0,1,1,0, 0,1,0,1,1, 1,1,0,0,1, 0,1,1,0,0, 1,0,1,0,1].map((filled, i) => (
@@ -339,18 +339,18 @@ export default function HospitalPitch() {
             </div>
 
             {/* Immutable Records */}
-            <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-2xl p-6 border border-slate-700/50 hover:border-cyan-500/30 transition-all group">
+            <div className="bg-white rounded-2xl p-6 border border-slate-200 hover:border-cyan-500/30 transition-all group">
               <div className="w-14 h-14 rounded-2xl bg-cyan-500/20 mb-6 flex items-center justify-center">
                 <svg className="w-7 h-7 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">Immutable Records</h3>
-              <p className="text-slate-400 mb-4">
+              <h3 className="text-xl font-bold text-slate-800 mb-3">Immutable Records</h3>
+              <p className="text-slate-500 mb-4">
                 Every MC is permanently recorded on the blockchain. Once issued, it cannot be altered, deleted, or duplicated.
               </p>
               {/* Chain Preview */}
-              <div className="bg-slate-900 rounded-xl p-4 border border-slate-700">
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
                 <div className="flex items-center justify-between">
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="flex items-center">
@@ -368,8 +368,8 @@ export default function HospitalPitch() {
           </div>
 
           {/* How It Works */}
-          <div className="bg-gradient-to-r from-slate-800/30 to-slate-900/30 rounded-3xl p-8 border border-slate-700/50">
-            <h3 className="text-2xl font-bold text-white text-center mb-8">How It Works</h3>
+          <div className="bg-slate-50 rounded-3xl p-8 border border-slate-200">
+            <h3 className="text-2xl font-bold text-slate-800 text-center mb-8">How It Works</h3>
             <div className="grid md:grid-cols-4 gap-6">
               {[
                 { step: '01', title: 'Doctor Issues MC', desc: 'Through the secure terminal', icon: '🏥' },
@@ -380,8 +380,8 @@ export default function HospitalPitch() {
                 <div key={idx} className="text-center">
                   <div className="text-4xl mb-4">{item.icon}</div>
                   <div className="text-xs font-bold mb-2" style={{ color: MEDCHAIN_BLUE }}>STEP {item.step}</div>
-                  <h4 className="font-bold text-white mb-1">{item.title}</h4>
-                  <p className="text-sm text-slate-400">{item.desc}</p>
+                  <h4 className="font-bold text-slate-800 mb-1">{item.title}</h4>
+                  <p className="text-sm text-slate-500">{item.desc}</p>
                 </div>
               ))}
             </div>
@@ -396,51 +396,51 @@ export default function HospitalPitch() {
             <span className="inline-block px-3 py-1 rounded-full text-xs font-bold text-emerald-400 bg-emerald-500/20 mb-4">
               LIVE PROOF
             </span>
-            <h2 className="text-4xl font-black text-white mb-4">
+            <h2 className="text-4xl font-black text-slate-800 mb-4">
               Already Trusted Across <span className="text-emerald-400">Sarawak</span>
             </h2>
-            <p className="text-slate-400">Real-time network statistics from the blockchain</p>
+            <p className="text-slate-500">Real-time network statistics from the blockchain</p>
           </div>
 
           <div className="grid md:grid-cols-4 gap-6">
             {/* Hospitals */}
-            <div className="bg-gradient-to-br from-blue-950/50 to-slate-900 rounded-2xl p-6 border border-blue-500/30 text-center relative overflow-hidden group hover:border-blue-400/50 transition-all">
+            <div className="bg-white rounded-2xl p-6 border border-blue-200 text-center relative overflow-hidden group hover:border-blue-400/50 transition-all">
               <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: MEDCHAIN_BLUE }} />
               <div className="text-6xl font-black mb-2" style={{ color: MEDCHAIN_BLUE }}>
                 {networkStats.hospitals}
               </div>
-              <p className="text-slate-400 font-medium">Major Hospitals</p>
-              <p className="text-xs text-slate-500 mt-2">Premium Enterprise Tier</p>
+              <p className="text-slate-500 font-medium">Major Hospitals</p>
+              <p className="text-xs text-slate-400 mt-2">Premium Enterprise Tier</p>
             </div>
 
             {/* Clinics */}
-            <div className="bg-gradient-to-br from-cyan-950/50 to-slate-900 rounded-2xl p-6 border border-cyan-500/30 text-center relative overflow-hidden group hover:border-cyan-400/50 transition-all">
+            <div className="bg-white rounded-2xl p-6 border border-cyan-200 text-center relative overflow-hidden group hover:border-cyan-400/50 transition-all">
               <div className="absolute top-0 left-0 w-full h-1 bg-cyan-500" />
               <div className="text-6xl font-black text-cyan-400 mb-2">
                 {networkStats.clinics}
               </div>
-              <p className="text-slate-400 font-medium">Private Clinics</p>
-              <p className="text-xs text-slate-500 mt-2">Standard Tier</p>
+              <p className="text-slate-500 font-medium">Private Clinics</p>
+              <p className="text-xs text-slate-400 mt-2">Standard Tier</p>
             </div>
 
             {/* MCs Issued */}
-            <div className="bg-gradient-to-br from-emerald-950/50 to-slate-900 rounded-2xl p-6 border border-emerald-500/30 text-center relative overflow-hidden group hover:border-emerald-400/50 transition-all">
+            <div className="bg-white rounded-2xl p-6 border border-emerald-200 text-center relative overflow-hidden group hover:border-emerald-400/50 transition-all">
               <div className="absolute top-0 left-0 w-full h-1 bg-emerald-500" />
               <div className="text-6xl font-black text-emerald-400 mb-2">
                 {networkStats.mcsIssued.toLocaleString()}
               </div>
-              <p className="text-slate-400 font-medium">MCs Issued</p>
-              <p className="text-xs text-slate-500 mt-2">And counting...</p>
+              <p className="text-slate-500 font-medium">MCs Issued</p>
+              <p className="text-xs text-slate-400 mt-2">And counting...</p>
             </div>
 
             {/* Verified Doctors */}
-            <div className="bg-gradient-to-br from-amber-950/50 to-slate-900 rounded-2xl p-6 border border-amber-500/30 text-center relative overflow-hidden group hover:border-amber-400/50 transition-all">
+            <div className="bg-white rounded-2xl p-6 border border-amber-200 text-center relative overflow-hidden group hover:border-amber-400/50 transition-all">
               <div className="absolute top-0 left-0 w-full h-1 bg-amber-500" />
               <div className="text-6xl font-black text-amber-400 mb-2">
                 {networkStats.doctorsVerified}
               </div>
-              <p className="text-slate-400 font-medium">Verified Doctors</p>
-              <p className="text-xs text-slate-500 mt-2">SMC Registered</p>
+              <p className="text-slate-500 font-medium">Verified Doctors</p>
+              <p className="text-xs text-slate-400 mt-2">SMC Registered</p>
             </div>
           </div>
 
@@ -456,25 +456,25 @@ export default function HospitalPitch() {
       </section>
 
       {/* Demo Video Section - Security Showcase */}
-      <section className="py-20 px-6 bg-gradient-to-b from-slate-950 to-slate-900">
+      <section className="py-20 px-6 bg-slate-50">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <span className="inline-block px-3 py-1 rounded-full text-xs font-bold text-purple-400 bg-purple-500/20 mb-4">
               SEE IT IN ACTION
             </span>
-            <h2 className="text-4xl font-black text-white mb-4">
+            <h2 className="text-4xl font-black text-slate-800 mb-4">
               Blockchain-Grade <span className="text-purple-400">Security</span>
             </h2>
-            <p className="text-slate-400 max-w-2xl mx-auto">
+            <p className="text-slate-500 max-w-2xl mx-auto">
               Watch how MetaMask wallet authentication ensures only verified doctors can access the system.
               No passwords to steal. No credentials to breach.
             </p>
           </div>
 
           {/* Video Demo Card */}
-          <div className="bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-3xl border border-slate-700/50 overflow-hidden">
+          <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden">
             {/* Video Player Area */}
-            <div className="aspect-video bg-slate-950 relative group cursor-pointer">
+            <div className="aspect-video bg-slate-100 relative group cursor-pointer">
               {/* Placeholder for demo video */}
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 {/* Animated wallet connection demo */}
@@ -510,18 +510,18 @@ export default function HospitalPitch() {
                   </svg>
                   Interactive Preview (No Wallet Needed)
                 </Link>
-                <p className="text-slate-500 text-sm mt-4">Try the Doctor Portal with simulated blockchain</p>
+                <p className="text-slate-400 text-sm mt-4">Try the Doctor Portal with simulated blockchain</p>
               </div>
 
               {/* Corner Badges */}
               <div className="absolute top-4 left-4 flex gap-2">
                 <span className="px-2 py-1 rounded bg-red-500/80 text-white text-xs font-bold">LIVE</span>
-                <span className="px-2 py-1 rounded bg-slate-700/80 text-slate-300 text-xs">HD</span>
+                <span className="px-2 py-1 rounded bg-slate-200/80 text-slate-600 text-xs">HD</span>
               </div>
             </div>
 
             {/* Video Description */}
-            <div className="p-6 bg-slate-800/30">
+            <div className="p-6 bg-slate-50">
               <div className="flex items-start gap-6">
                 {/* Security Points */}
                 <div className="flex-1 grid md:grid-cols-3 gap-4">
@@ -532,8 +532,8 @@ export default function HospitalPitch() {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-white font-semibold text-sm">Zero Passwords</p>
-                      <p className="text-slate-400 text-xs">Cryptographic keys only</p>
+                      <p className="text-slate-800 font-semibold text-sm">Zero Passwords</p>
+                      <p className="text-slate-500 text-xs">Cryptographic keys only</p>
                     </div>
                   </div>
 
@@ -544,8 +544,8 @@ export default function HospitalPitch() {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-white font-semibold text-sm">SMC Verified</p>
-                      <p className="text-slate-400 text-xs">Doctor identity confirmed</p>
+                      <p className="text-slate-800 font-semibold text-sm">SMC Verified</p>
+                      <p className="text-slate-500 text-xs">Doctor identity confirmed</p>
                     </div>
                   </div>
 
@@ -556,8 +556,8 @@ export default function HospitalPitch() {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-white font-semibold text-sm">Unhackable</p>
-                      <p className="text-slate-400 text-xs">No central database</p>
+                      <p className="text-slate-800 font-semibold text-sm">Unhackable</p>
+                      <p className="text-slate-500 text-xs">No central database</p>
                     </div>
                   </div>
                 </div>
@@ -567,11 +567,11 @@ export default function HospitalPitch() {
 
           {/* CEO Quote */}
           <div className="mt-12 text-center">
-            <blockquote className="text-xl text-slate-300 italic max-w-2xl mx-auto">
+            <blockquote className="text-xl text-slate-600 italic max-w-2xl mx-auto">
               "The moment I saw the MetaMask login, I knew this wasn't just another software vendor.
               This is military-grade security for healthcare."
             </blockquote>
-            <p className="text-slate-500 mt-4">- Hospital CEO during pilot demo</p>
+            <p className="text-slate-400 mt-4">- Hospital CEO during pilot demo</p>
           </div>
         </div>
       </section>
@@ -579,7 +579,7 @@ export default function HospitalPitch() {
       {/* Founding Circle Section */}
       <section className="py-20 px-6 relative overflow-hidden">
         {/* Gold gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-amber-950/20 to-slate-900" />
+        <div className="absolute inset-0 bg-gradient-to-b from-amber-50/50 via-white to-white" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full opacity-10 blur-3xl bg-amber-500" />
 
         <div className="relative max-w-7xl mx-auto">
@@ -591,10 +591,10 @@ export default function HospitalPitch() {
               </svg>
               <span className="text-amber-400 font-bold text-sm">LIMITED TO 10 HOSPITALS</span>
             </div>
-            <h2 className="text-4xl md:text-5xl font-black text-white mb-4">
+            <h2 className="text-4xl md:text-5xl font-black text-slate-800 mb-4">
               The <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400">Founding Circle</span>
             </h2>
-            <p className="text-xl text-slate-400 max-w-2xl mx-auto">
+            <p className="text-xl text-slate-500 max-w-2xl mx-auto">
               Be among the first 10 hospitals to secure Sarawak's medical records and earn your place in history.
             </p>
           </div>
@@ -602,55 +602,55 @@ export default function HospitalPitch() {
           {/* Benefits Grid */}
           <div className="grid md:grid-cols-3 gap-6 mb-16">
             {/* Benefit 1: Gold Badge */}
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl p-6 border border-amber-500/30 relative overflow-hidden">
+            <div className="bg-white rounded-2xl p-6 border border-amber-200 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-amber-500/20 to-transparent rounded-bl-full" />
               <div className="w-14 h-14 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-xl flex items-center justify-center mb-4">
                 <svg className="w-7 h-7 text-amber-900" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Gold Founding Badge</h3>
-              <p className="text-slate-400">
+              <h3 className="text-xl font-bold text-slate-800 mb-2">Gold Founding Badge</h3>
+              <p className="text-slate-500">
                 Exclusive "Founding Partner #001-010" badge displayed on your profile and every MC issued.
               </p>
             </div>
 
             {/* Benefit 2: Legacy Rate */}
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl p-6 border border-amber-500/30 relative overflow-hidden">
+            <div className="bg-white rounded-2xl p-6 border border-amber-200 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-amber-500/20 to-transparent rounded-bl-full" />
               <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center mb-4">
                 <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Legacy Rate - Forever</h3>
-              <p className="text-slate-400">
+              <h3 className="text-xl font-bold text-slate-800 mb-2">Legacy Rate - Forever</h3>
+              <p className="text-slate-500">
                 Lock in RM 10,000/month rate for life. Even when rates increase, your price stays the same.
               </p>
               <p className="text-emerald-400 text-sm font-semibold mt-3">Never pay more than founding rate</p>
             </div>
 
             {/* Benefit 3: Verification Seal */}
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl p-6 border border-amber-500/30 relative overflow-hidden">
+            <div className="bg-white rounded-2xl p-6 border border-amber-200 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-amber-500/20 to-transparent rounded-bl-full" />
               <div className="w-14 h-14 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-xl flex items-center justify-center mb-4">
                 <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">First to Secure Sarawak</h3>
-              <p className="text-slate-400">
+              <h3 className="text-xl font-bold text-slate-800 mb-2">First to Secure Sarawak</h3>
+              <p className="text-slate-500">
                 Every QR receipt shows "Issued by Founding Partner" - a trust mark for employers and patients.
               </p>
             </div>
           </div>
 
           {/* Founding Members Showcase */}
-          <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 rounded-3xl border border-amber-500/20 p-8">
+          <div className="bg-white rounded-3xl border border-amber-200 p-8">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h3 className="text-2xl font-bold text-white">Current Founding Partners</h3>
-                <p className="text-slate-400 mt-1">5 of 10 slots claimed</p>
+                <h3 className="text-2xl font-bold text-slate-800">Current Founding Partners</h3>
+                <p className="text-slate-500 mt-1">5 of 10 slots claimed</p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="px-3 py-1 bg-red-500/20 border border-red-500/30 rounded-full text-red-400 text-sm font-bold animate-pulse">
@@ -669,7 +669,7 @@ export default function HospitalPitch() {
                   </div>
                   <span className="text-amber-400 text-xs font-bold">FOUNDING</span>
                 </div>
-                <p className="text-white font-semibold text-sm">Timberland Medical Centre</p>
+                <p className="text-slate-800 font-semibold text-sm">Timberland Medical Centre</p>
                 <p className="text-slate-500 text-xs">Kuching</p>
               </div>
 
@@ -681,7 +681,7 @@ export default function HospitalPitch() {
                   </div>
                   <span className="text-amber-400 text-xs font-bold">FOUNDING</span>
                 </div>
-                <p className="text-white font-semibold text-sm">KPJ Kuching Specialist</p>
+                <p className="text-slate-800 font-semibold text-sm">KPJ Kuching Specialist</p>
                 <p className="text-slate-500 text-xs">Kuching</p>
               </div>
 
@@ -693,7 +693,7 @@ export default function HospitalPitch() {
                   </div>
                   <span className="text-amber-400 text-xs font-bold">FOUNDING</span>
                 </div>
-                <p className="text-white font-semibold text-sm">Normah Medical Specialist</p>
+                <p className="text-slate-800 font-semibold text-sm">Normah Medical Specialist</p>
                 <p className="text-slate-500 text-xs">Kuching</p>
               </div>
 
@@ -705,7 +705,7 @@ export default function HospitalPitch() {
                   </div>
                   <span className="text-amber-400 text-xs font-bold">FOUNDING</span>
                 </div>
-                <p className="text-white font-semibold text-sm">Rejang Medical Centre</p>
+                <p className="text-slate-800 font-semibold text-sm">Rejang Medical Centre</p>
                 <p className="text-slate-500 text-xs">Sibu</p>
               </div>
 
@@ -717,7 +717,7 @@ export default function HospitalPitch() {
                   </div>
                   <span className="text-amber-400 text-xs font-bold">FOUNDING</span>
                 </div>
-                <p className="text-white font-semibold text-sm">Bintulu Medical Centre</p>
+                <p className="text-slate-800 font-semibold text-sm">Bintulu Medical Centre</p>
                 <p className="text-slate-500 text-xs">Bintulu</p>
               </div>
             </div>
@@ -725,11 +725,11 @@ export default function HospitalPitch() {
             {/* Empty Slots */}
             <div className="grid md:grid-cols-5 gap-4">
               {[6, 7, 8, 9, 10].map((num) => (
-                <div key={num} className="bg-slate-800/50 rounded-xl p-4 border border-dashed border-slate-600 flex flex-col items-center justify-center min-h-[100px]">
-                  <div className="w-8 h-8 bg-slate-700 rounded-lg flex items-center justify-center text-slate-500 font-bold text-sm mb-2">
+                <div key={num} className="bg-slate-50 rounded-xl p-4 border border-dashed border-slate-300 flex flex-col items-center justify-center min-h-[100px]">
+                  <div className="w-8 h-8 bg-slate-200 rounded-lg flex items-center justify-center text-slate-400 font-bold text-sm mb-2">
                     #{num}
                   </div>
-                  <p className="text-slate-500 text-xs font-semibold">AVAILABLE</p>
+                  <p className="text-slate-400 text-xs font-semibold">AVAILABLE</p>
                 </div>
               ))}
             </div>
@@ -751,7 +751,7 @@ export default function HospitalPitch() {
                   Claim Your Founding Partner Spot
                 </span>
               </button>
-              <p className="text-slate-500 text-sm mt-3">Limited to first 10 hospitals only</p>
+              <p className="text-slate-400 text-sm mt-3">Limited to first 10 hospitals only</p>
             </div>
           </div>
         </div>
@@ -766,47 +766,47 @@ export default function HospitalPitch() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-20 px-6 bg-gradient-to-b from-slate-900 to-slate-950">
+      <section id="pricing" className="py-20 px-6 bg-slate-50">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <span className="inline-block px-3 py-1 rounded-full text-xs font-bold mb-4" style={{ color: MEDCHAIN_BLUE, backgroundColor: `${MEDCHAIN_BLUE}20` }}>
               TRANSPARENT PRICING
             </span>
-            <h2 className="text-4xl font-black text-white mb-4">
+            <h2 className="text-4xl font-black text-slate-800 mb-4">
               Simple, Predictable <span style={{ color: MEDCHAIN_BLUE }}>Pricing</span>
             </h2>
-            <p className="text-slate-400">No hidden fees. No long-term contracts. Cancel anytime.</p>
+            <p className="text-slate-500">No hidden fees. No long-term contracts. Cancel anytime.</p>
           </div>
 
           {/* Pricing Card */}
-          <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-3xl border border-slate-700/50 overflow-hidden max-w-2xl mx-auto">
+          <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden max-w-2xl mx-auto">
             {/* Header */}
             <div className="p-8 text-center" style={{ background: `linear-gradient(135deg, ${MEDCHAIN_BLUE}20, ${MEDCHAIN_DARK}10)` }}>
-              <h3 className="text-2xl font-bold text-white mb-2">Hospital Enterprise Plan</h3>
-              <p className="text-slate-400">Everything you need to go digital</p>
+              <h3 className="text-2xl font-bold text-slate-800 mb-2">Hospital Enterprise Plan</h3>
+              <p className="text-slate-500">Everything you need to go digital</p>
             </div>
 
             {/* Price */}
-            <div className="p-8 text-center border-b border-slate-700/50">
+            <div className="p-8 text-center border-b border-slate-200">
               <div className="flex items-baseline justify-center gap-2">
-                <span className="text-5xl font-black text-white">RM 10,000</span>
-                <span className="text-slate-400">/month</span>
+                <span className="text-5xl font-black text-slate-800">RM 10,000</span>
+                <span className="text-slate-500">/month</span>
               </div>
-              <p className="text-slate-500 mt-2">Base subscription</p>
+              <p className="text-slate-400 mt-2">Base subscription</p>
 
-              <div className="mt-6 p-4 rounded-xl bg-slate-800/50 border border-slate-700/50">
+              <div className="mt-6 p-4 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="flex items-center justify-center gap-2 text-lg">
-                  <span className="text-white font-bold">+</span>
+                  <span className="text-slate-800 font-bold">+</span>
                   <span className="text-2xl font-bold" style={{ color: MEDCHAIN_BLUE }}>RM 1.00</span>
-                  <span className="text-slate-400">per MC issued</span>
+                  <span className="text-slate-500">per MC issued</span>
                 </div>
-                <p className="text-xs text-slate-500 mt-2">Pay only for what you use</p>
+                <p className="text-xs text-slate-400 mt-2">Pay only for what you use</p>
               </div>
             </div>
 
             {/* Features */}
             <div className="p-8">
-              <h4 className="font-bold text-white mb-4">Everything included:</h4>
+              <h4 className="font-bold text-slate-800 mb-4">Everything included:</h4>
               <div className="grid md:grid-cols-2 gap-3">
                 {[
                   'Unlimited doctors',
@@ -824,7 +824,7 @@ export default function HospitalPitch() {
                     <svg className="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    <span className="text-slate-300 text-sm">{feature}</span>
+                    <span className="text-slate-600 text-sm">{feature}</span>
                   </div>
                 ))}
               </div>
@@ -845,7 +845,7 @@ export default function HospitalPitch() {
                 </svg>
                 Get Started - Sign Agreement
               </button>
-              <p className="text-center text-slate-500 text-sm mt-4">
+              <p className="text-center text-slate-400 text-sm mt-4">
                 30-day money-back guarantee
               </p>
             </div>
@@ -853,7 +853,7 @@ export default function HospitalPitch() {
 
           {/* Clinic Tier Note */}
           <div className="mt-8 text-center">
-            <p className="text-slate-400">
+            <p className="text-slate-500">
               Running a smaller clinic? Ask about our <span className="text-cyan-400 font-semibold">Clinic Tier at RM 2,000/month</span>
             </p>
           </div>
@@ -864,17 +864,17 @@ export default function HospitalPitch() {
               <span className="inline-block px-3 py-1 rounded-full text-xs font-bold text-emerald-400 bg-emerald-500/20 mb-4">
                 ROI CALCULATOR
               </span>
-              <h3 className="text-3xl font-black text-white mb-2">
+              <h3 className="text-3xl font-black text-slate-800 mb-2">
                 Calculate Your <span className="text-emerald-400">Savings</span>
               </h3>
-              <p className="text-slate-400">See how MedChain pays for itself</p>
+              <p className="text-slate-500">See how MedChain pays for itself</p>
             </div>
 
-            <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 rounded-3xl border border-slate-700/50 p-8">
+            <div className="bg-white rounded-3xl border border-slate-200 p-8">
               {/* Input Fields */}
               <div className="grid md:grid-cols-2 gap-6 mb-8">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-slate-600 mb-2">
                     Number of Doctors
                   </label>
                   <input
@@ -883,12 +883,12 @@ export default function HospitalPitch() {
                     max="500"
                     value={roiInputs.numberOfDoctors}
                     onChange={(e) => setRoiInputs({ ...roiInputs, numberOfDoctors: Math.max(1, parseInt(e.target.value) || 1) })}
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-lg font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 text-lg font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  <p className="text-xs text-slate-500 mt-2">Active doctors in your facility</p>
+                  <p className="text-xs text-slate-400 mt-2">Active doctors in your facility</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-slate-600 mb-2">
                     Monthly MCs Issued
                   </label>
                   <input
@@ -897,9 +897,9 @@ export default function HospitalPitch() {
                     max="10000"
                     value={roiInputs.monthlyMCs}
                     onChange={(e) => setRoiInputs({ ...roiInputs, monthlyMCs: Math.max(10, parseInt(e.target.value) || 10) })}
-                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-lg font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 text-lg font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  <p className="text-xs text-slate-500 mt-2">Average certificates per month</p>
+                  <p className="text-xs text-slate-400 mt-2">Average certificates per month</p>
                 </div>
               </div>
 
@@ -947,8 +947,8 @@ export default function HospitalPitch() {
                           </svg>
                           <span className="text-red-400 font-semibold text-sm">Admin Hours Wasted</span>
                         </div>
-                        <p className="text-2xl font-bold text-white">{adminHoursWasted.toFixed(0)} hrs/month</p>
-                        <p className="text-xs text-slate-400 mt-1">= RM {adminCostWasted.toLocaleString()} in staff costs</p>
+                        <p className="text-2xl font-bold text-slate-800">{adminHoursWasted.toFixed(0)} hrs/month</p>
+                        <p className="text-xs text-slate-500 mt-1">= RM {adminCostWasted.toLocaleString()} in staff costs</p>
                       </div>
                       <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
                         <div className="flex items-center gap-2 mb-2">
@@ -957,36 +957,36 @@ export default function HospitalPitch() {
                           </svg>
                           <span className="text-amber-400 font-semibold text-sm">Potential Fraud Exposure</span>
                         </div>
-                        <p className="text-2xl font-bold text-white">~{potentialFraudMCs} fake MCs/month</p>
-                        <p className="text-xs text-slate-400 mt-1">= RM {potentialFraudCost.toLocaleString()} in fraud risk</p>
+                        <p className="text-2xl font-bold text-slate-800">~{potentialFraudMCs} fake MCs/month</p>
+                        <p className="text-xs text-slate-500 mt-1">= RM {potentialFraudCost.toLocaleString()} in fraud risk</p>
                       </div>
                     </div>
 
                     {/* Big Comparison */}
                     <div className="grid md:grid-cols-3 gap-4 items-center mb-8">
                       {/* Current Loss */}
-                      <div className="bg-red-950/50 border border-red-500/30 rounded-2xl p-6 text-center">
+                      <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
                         <p className="text-red-400 text-sm font-semibold mb-2">CURRENT HIDDEN LOSS</p>
                         <p className="text-4xl font-black text-red-400">
                           RM {currentMonthlyLoss.toLocaleString()}
                         </p>
-                        <p className="text-slate-400 text-sm mt-1">/month</p>
+                        <p className="text-slate-500 text-sm mt-1">/month</p>
                       </div>
 
                       {/* VS */}
                       <div className="flex items-center justify-center">
-                        <div className="w-16 h-16 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center">
+                        <div className="w-16 h-16 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center">
                           <span className="text-2xl font-black text-slate-400">VS</span>
                         </div>
                       </div>
 
                       {/* MedChain Cost */}
-                      <div className="bg-emerald-950/50 border border-emerald-500/30 rounded-2xl p-6 text-center">
+                      <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center">
                         <p className="text-emerald-400 text-sm font-semibold mb-2">MEDCHAIN COST</p>
                         <p className="text-4xl font-black text-emerald-400">
                           RM {medchainTotalCost.toLocaleString()}
                         </p>
-                        <p className="text-slate-400 text-sm mt-1">/month</p>
+                        <p className="text-slate-500 text-sm mt-1">/month</p>
                       </div>
                     </div>
 
@@ -994,10 +994,10 @@ export default function HospitalPitch() {
                     {savingsPositive && (
                       <div className="bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30 rounded-2xl p-6 text-center mb-6">
                         <p className="text-emerald-400 text-sm font-semibold mb-2">YOUR MONTHLY SAVINGS</p>
-                        <p className="text-5xl font-black text-white mb-2">
+                        <p className="text-5xl font-black text-slate-800 mb-2">
                           RM {monthlySavings.toLocaleString()}
                         </p>
-                        <p className="text-slate-300">
+                        <p className="text-slate-600">
                           That's <span className="text-emerald-400 font-bold">RM {(monthlySavings * 12).toLocaleString()}</span> saved per year
                         </p>
                       </div>
@@ -1011,11 +1011,11 @@ export default function HospitalPitch() {
                         </svg>
                         <span className="text-blue-400 font-bold">THE BOTTOM LINE</span>
                       </div>
-                      <p className="text-2xl md:text-3xl font-bold text-white">
+                      <p className="text-2xl md:text-3xl font-bold text-slate-800">
                         Your facility pays for itself by preventing just{' '}
                         <span className="text-amber-400">{breakEvenFakeMCs} fake MCs</span> per month
                       </p>
-                      <p className="text-slate-400 mt-3 text-sm">
+                      <p className="text-slate-500 mt-3 text-sm">
                         Based on RM 2.3 billion annual MC fraud cost in Malaysia (Source: MTUC 2023)
                       </p>
                     </div>
@@ -1030,10 +1030,10 @@ export default function HospitalPitch() {
       {/* Final CTA */}
       <section className="py-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-black text-white mb-6">
+          <h2 className="text-4xl md:text-5xl font-black text-slate-800 mb-6">
             Ready to Secure Your Hospital's Future?
           </h2>
-          <p className="text-xl text-slate-400 mb-8">
+          <p className="text-xl text-slate-500 mb-8">
             Join the growing network of healthcare providers who trust Sarawak MedChain.
           </p>
           <button
@@ -1050,7 +1050,7 @@ export default function HospitalPitch() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-6 border-t border-slate-800">
+      <footer className="py-12 px-6 border-t border-slate-200">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: MEDCHAIN_BLUE }}>
@@ -1058,9 +1058,9 @@ export default function HospitalPitch() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
             </div>
-            <span className="font-bold text-white">Sarawak MedChain</span>
+            <span className="font-bold text-slate-800">Sarawak MedChain</span>
           </div>
-          <p className="text-slate-500 text-sm">
+          <p className="text-slate-400 text-sm">
             © 2026 Sarawak MedChain Sdn Bhd. All rights reserved.
           </p>
         </div>
@@ -1076,7 +1076,7 @@ export default function HospitalPitch() {
           />
 
           {/* Modal */}
-          <div className="relative bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="relative bg-white border border-slate-200 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             {submitted ? (
               /* Success State */
               <div className="p-8 text-center">
@@ -1085,8 +1085,8 @@ export default function HospitalPitch() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-2">Request Submitted!</h3>
-                <p className="text-slate-400 mb-6">
+                <h3 className="text-2xl font-bold text-slate-800 mb-2">Request Submitted!</h3>
+                <p className="text-slate-500 mb-6">
                   Thank you for your interest in Sarawak MedChain. Our team will contact you within 24 hours to schedule a demo.
                 </p>
                 <button
@@ -1104,15 +1104,15 @@ export default function HospitalPitch() {
             ) : (
               /* Form */
               <>
-                <div className="p-6 border-b border-slate-700">
+                <div className="p-6 border-b border-slate-200">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-xl font-bold text-white">Request Hospital Access</h3>
-                      <p className="text-sm text-slate-400">Fill in your details and we'll get back to you</p>
+                      <h3 className="text-xl font-bold text-slate-800">Request Hospital Access</h3>
+                      <p className="text-sm text-slate-500">Fill in your details and we'll get back to you</p>
                     </div>
                     <button
                       onClick={() => setShowRequestModal(false)}
-                      className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
+                      className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
                     >
                       <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1123,73 +1123,73 @@ export default function HospitalPitch() {
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">Hospital/Clinic Name *</label>
+                    <label className="block text-sm font-medium text-slate-600 mb-2">Hospital/Clinic Name *</label>
                     <input
                       type="text"
                       required
                       value={formData.hospitalName}
                       onChange={(e) => setFormData({ ...formData, hospitalName: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                      className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500"
                       placeholder="e.g., Timberland Medical Centre"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-2">Contact Person *</label>
+                      <label className="block text-sm font-medium text-slate-600 mb-2">Contact Person *</label>
                       <input
                         type="text"
                         required
                         value={formData.contactPerson}
                         onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                        className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500"
                         placeholder="Full name"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-2">Position *</label>
+                      <label className="block text-sm font-medium text-slate-600 mb-2">Position *</label>
                       <input
                         type="text"
                         required
                         value={formData.position}
                         onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                        className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500"
                         placeholder="e.g., IT Director"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">Email Address *</label>
+                    <label className="block text-sm font-medium text-slate-600 mb-2">Email Address *</label>
                     <input
                       type="email"
                       required
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                      className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500"
                       placeholder="your@hospital.com"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">Phone Number *</label>
+                    <label className="block text-sm font-medium text-slate-600 mb-2">Phone Number *</label>
                     <input
                       type="tel"
                       required
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                      className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500"
                       placeholder="+60 12-345 6789"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">Message (Optional)</label>
+                    <label className="block text-sm font-medium text-slate-600 mb-2">Message (Optional)</label>
                     <textarea
                       value={formData.message}
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                       rows={3}
-                      className="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 resize-none"
+                      className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 resize-none"
                       placeholder="Tell us about your requirements..."
                     />
                   </div>

@@ -11,22 +11,6 @@ import BroadcastNotification from '../components/BroadcastNotification';
 import MaintenanceBanner from '../components/MaintenanceBanner';
 import FoundingPartnerBadge from '../components/FoundingPartnerBadge';
 
-// Terminal Theme Colors - Master: #0a0e14
-const terminalTheme = {
-  bg: '#0a0e14',
-  bgCard: '#0a0e14',
-  bgCardHover: '#141d33',
-  border: '#1e3a5f',
-  textPrimary: '#ffffff',
-  textSecondary: '#94a3b8',
-  textMuted: '#64748b',
-  accent: '#3b82f6',
-  success: '#10b981',
-  warning: '#f59e0b',
-  danger: '#ef4444',
-  medical: '#06b6d4',
-};
-
 export default function DoctorPortal({ walletAddress }) {
   // Navigation hook - must be at top before any conditionals
   const navigate = useNavigate();
@@ -558,10 +542,10 @@ export default function DoctorPortal({ walletAddress }) {
   // Show loading while checking suspension
   if (checkingSuspension) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: terminalTheme.bg }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#FFFFFF' }}>
         <div className="text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full border-4 border-cyan-500/30 border-t-cyan-500 animate-spin"></div>
-          <p style={{ color: terminalTheme.textSecondary }}>Verifying node status...</p>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full border-4 border-teal-500/30 border-t-teal-500 animate-spin"></div>
+          <p style={{ color: '#64748B' }}>Verifying node status...</p>
         </div>
       </div>
     );
@@ -570,10 +554,10 @@ export default function DoctorPortal({ walletAddress }) {
   // Show suspension screen if hospital is paused
   if (isHospitalSuspended) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-8" style={{ backgroundColor: terminalTheme.bg }}>
+      <div className="min-h-screen flex items-center justify-center p-8" style={{ backgroundColor: '#FFFFFF' }}>
         <div className="max-w-lg w-full">
           {/* Suspension Card */}
-          <div className="rounded-3xl overflow-hidden border" style={{ backgroundColor: terminalTheme.bgCard, borderColor: '#ef444450' }}>
+          <div className="rounded-3xl overflow-hidden border" style={{ backgroundColor: '#FFFFFF', borderColor: '#ef444450' }}>
             {/* Header */}
             <div className="px-8 py-6 text-center" style={{ backgroundColor: '#ef444420' }}>
               <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: '#ef444430' }}>
@@ -582,75 +566,75 @@ export default function DoctorPortal({ walletAddress }) {
                 </svg>
               </div>
               <h1 className="text-2xl font-bold text-red-400 mb-2">Account Suspended</h1>
-              <p style={{ color: terminalTheme.textMuted }}>Medical Certificate Issuance Disabled</p>
+              <p style={{ color: '#94A3B8' }}>Medical Certificate Issuance Disabled</p>
             </div>
 
             {/* Body */}
             <div className="px-8 py-6 space-y-6">
               {/* Professional Message */}
-              <div className="p-5 rounded-xl text-center" style={{ backgroundColor: terminalTheme.bg }}>
-                <p className="text-lg mb-4" style={{ color: terminalTheme.textPrimary }}>
+              <div className="p-5 rounded-xl text-center" style={{ backgroundColor: '#F8FAFC' }}>
+                <p className="text-lg mb-4" style={{ color: '#1E293B' }}>
                   Your hospital node has been temporarily suspended.
                 </p>
-                <p style={{ color: terminalTheme.textSecondary }}>
-                  Please contact your <strong className="text-cyan-400">MedChain Administrator</strong> to settle outstanding subscription fees.
+                <p style={{ color: '#64748B' }}>
+                  Please contact your <strong className="text-teal-600">MedChain Administrator</strong> to settle outstanding subscription fees.
                 </p>
               </div>
 
               {/* Outstanding Balance */}
               <div className="p-5 rounded-xl border" style={{ backgroundColor: 'rgba(239, 68, 68, 0.05)', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
                 <div className="flex items-center justify-between mb-3">
-                  <span style={{ color: terminalTheme.textMuted }}>Outstanding Balance</span>
+                  <span style={{ color: '#94A3B8' }}>Outstanding Balance</span>
                   <span className="text-2xl font-bold text-red-400">RM 10,000.00</span>
                 </div>
-                <p className="text-xs" style={{ color: terminalTheme.textMuted }}>
+                <p className="text-xs" style={{ color: '#94A3B8' }}>
                   Monthly subscription fee for blockchain network access
                 </p>
               </div>
 
               {/* Contact Info */}
-              <div className="p-5 rounded-xl" style={{ backgroundColor: terminalTheme.bg }}>
-                <h3 className="font-semibold mb-3" style={{ color: terminalTheme.textPrimary }}>How to Restore Access:</h3>
-                <ol className="space-y-2 text-sm" style={{ color: terminalTheme.textSecondary }}>
+              <div className="p-5 rounded-xl" style={{ backgroundColor: '#F8FAFC' }}>
+                <h3 className="font-semibold mb-3" style={{ color: '#1E293B' }}>How to Restore Access:</h3>
+                <ol className="space-y-2 text-sm" style={{ color: '#64748B' }}>
                   <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">1</span>
+                    <span className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-600 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">1</span>
                     <span>Contact your hospital's accounts department</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">2</span>
+                    <span className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-600 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">2</span>
                     <span>Process the RM 10,000 subscription payment</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">3</span>
+                    <span className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-600 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">3</span>
                     <span>Send payment confirmation to admin@medchain.sarawak.gov.my</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">4</span>
+                    <span className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-600 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">4</span>
                     <span>Your node will be reactivated within 24 hours</span>
                   </li>
                 </ol>
               </div>
 
               {/* Support Contact */}
-              <div className="flex items-center justify-center gap-3 pt-4 border-t" style={{ borderColor: terminalTheme.border }}>
-                <svg className="w-5 h-5" style={{ color: terminalTheme.textMuted }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center justify-center gap-3 pt-4 border-t" style={{ borderColor: '#E2E8F0' }}>
+                <svg className="w-5 h-5" style={{ color: '#94A3B8' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
-                <span style={{ color: terminalTheme.textMuted }}>support@medchain.sarawak.gov.my</span>
+                <span style={{ color: '#94A3B8' }}>support@medchain.sarawak.gov.my</span>
               </div>
             </div>
 
             {/* Footer */}
-            <div className="px-8 py-4 text-center" style={{ backgroundColor: terminalTheme.bg }}>
-              <p className="text-xs" style={{ color: terminalTheme.textMuted }}>
-                Secured by <span className="text-cyan-400 font-semibold">Sarawak MedChain</span> • Blockchain Verified Healthcare
+            <div className="px-8 py-4 text-center" style={{ backgroundColor: '#F8FAFC' }}>
+              <p className="text-xs" style={{ color: '#94A3B8' }}>
+                Secured by <span className="text-teal-600 font-semibold">Sarawak MedChain</span> • Blockchain Verified Healthcare
               </p>
             </div>
           </div>
 
           {/* Wallet Info */}
           <div className="mt-6 text-center">
-            <code className="text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: terminalTheme.bgCard, color: terminalTheme.textMuted }}>
+            <code className="text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: '#F8FAFC', color: '#94A3B8', border: '1px solid #E2E8F0' }}>
               Connected: {walletAddress?.slice(0, 10)}...{walletAddress?.slice(-8)}
             </code>
           </div>
@@ -665,7 +649,7 @@ export default function DoctorPortal({ walletAddress }) {
   };
 
   return (
-    <div className="min-h-screen font-sans doctor-portal" style={{ backgroundColor: '#0a0e14', overflowX: 'hidden' }}>
+    <div className="min-h-screen font-sans doctor-portal" style={{ backgroundColor: '#FFFFFF', overflowX: 'hidden' }}>
       {/* Success Celebration */}
       {showConfetti && (
         <div className="fixed inset-0 z-[100] pointer-events-none overflow-hidden">
@@ -694,29 +678,29 @@ export default function DoctorPortal({ walletAddress }) {
           <div
             className="rounded-2xl max-w-md w-full overflow-hidden"
             style={{
-              backgroundColor: '#111827',
-              border: '1px solid rgba(20, 184, 166, 0.3)'
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #E2E8F0'
             }}
           >
-            <div className="px-6 py-5 text-center" style={{ borderBottom: '1px solid rgba(20, 184, 166, 0.15)' }}>
+            <div className="px-6 py-5 text-center" style={{ borderBottom: '1px solid #E2E8F0' }}>
               <div className="w-14 h-14 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)' }}>
                 <svg className="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h2 className="text-xl font-bold text-white mb-1">Transaction Successful</h2>
+              <h2 className="text-xl font-bold text-slate-800 mb-1">Transaction Successful</h2>
               <p className="text-slate-500 text-sm">Medical Certificate secured on blockchain</p>
             </div>
             <div className="px-6 py-5 space-y-3">
-              <div className="flex justify-between py-2 border-b border-white/5">
+              <div className="flex justify-between py-2 border-b border-slate-200">
                 <span className="text-slate-500 text-sm">Cost</span>
-                <span className="text-lg font-bold text-white">RM 1.00</span>
+                <span className="text-lg font-bold text-slate-800">RM 1.00</span>
               </div>
-              <div className="flex justify-between py-2 border-b border-white/5">
+              <div className="flex justify-between py-2 border-b border-slate-200">
                 <span className="text-slate-500 text-sm">Patient</span>
-                <span className="text-white font-medium">{receiptData.patientName}</span>
+                <span className="text-slate-800 font-medium">{receiptData.patientName}</span>
               </div>
-              <div className="py-2 border-b border-white/5">
+              <div className="py-2 border-b border-slate-200">
                 <p className="text-xs text-slate-500 mb-1">Blockchain Hash</p>
                 <code className="text-xs font-mono text-teal-400 break-all">{receiptData.txHash}</code>
               </div>
@@ -774,7 +758,7 @@ export default function DoctorPortal({ walletAddress }) {
       )}
 
       {/* Premium Enterprise Header */}
-      <header style={{ backgroundColor: '#0a0e14', borderBottom: '1px solid rgba(20, 184, 166, 0.08)' }}>
+      <header style={{ backgroundColor: '#FFFFFF', borderBottom: '1px solid #E2E8F0' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '16px 40px' }} className="flex items-center justify-between">
           {/* Hospital Name & Title */}
           <div className="flex items-center gap-4">
@@ -784,7 +768,7 @@ export default function DoctorPortal({ walletAddress }) {
               </svg>
             </div>
             <div>
-              <h1 className="text-base font-semibold text-white tracking-tight">{hospitalName}</h1>
+              <h1 className="text-base font-semibold text-slate-800 tracking-tight">{hospitalName}</h1>
               <p className="text-xs text-slate-500">Medical Certificate Terminal</p>
             </div>
           </div>
@@ -801,9 +785,9 @@ export default function DoctorPortal({ walletAddress }) {
             </div>
 
             {/* Credits */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(20, 184, 166, 0.04)', border: '1px solid rgba(20, 184, 166, 0.08)' }}>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
               <span className="text-[11px] text-slate-500">Balance</span>
-              <span className="text-sm font-bold text-white">RM {creditBalance !== null ? creditBalance : '10'}</span>
+              <span className="text-sm font-bold text-slate-800">RM {creditBalance !== null ? creditBalance : '10'}</span>
               <button onClick={handleTopUp} className="ml-1 px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all hover:opacity-90" style={{ background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)', color: '#fff' }}>
                 Top Up
               </button>
@@ -821,7 +805,7 @@ export default function DoctorPortal({ walletAddress }) {
       </header>
 
       {/* Main Content */}
-      <div className="doctor-main-content" style={{ backgroundColor: '#0a0e14', minHeight: 'calc(100vh - 64px)', padding: '32px' }}>
+      <div className="doctor-main-content" style={{ backgroundColor: '#FFFFFF', minHeight: 'calc(100vh - 64px)', padding: '32px' }}>
         <div className="doctor-content-inner" style={{ maxWidth: '1200px', margin: '0 auto' }}>
 
           {/* Verification Badge - Centered */}
@@ -915,11 +899,11 @@ export default function DoctorPortal({ walletAddress }) {
 
             {/* ========== LEFT COLUMN: FORM CARD ========== */}
             <div className="issue-mc-card" style={{
-              backgroundColor: 'rgba(15, 23, 42, 0.6)',
-              border: '1px solid rgba(20, 184, 166, 0.2)',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #E2E8F0',
               borderRadius: '16px',
               padding: '24px',
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
               display: 'flex',
               flexDirection: 'column'
             }}>
@@ -930,7 +914,7 @@ export default function DoctorPortal({ walletAddress }) {
                 gap: '16px',
                 paddingBottom: '20px',
                 marginBottom: '20px',
-                borderBottom: '1px solid rgba(20, 184, 166, 0.1)'
+                borderBottom: '1px solid #E2E8F0'
               }}>
                 <div style={{
                   width: '48px',
@@ -947,8 +931,8 @@ export default function DoctorPortal({ walletAddress }) {
                   </svg>
                 </div>
                 <div>
-                  <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff', margin: 0 }}>Issue Medical Certificate</h2>
-                  <p style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>Blockchain-secured • Tamper-proof</p>
+                  <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#1E293B', margin: 0 }}>Issue Medical Certificate</h2>
+                  <p style={{ fontSize: '13px', color: '#94A3B8', margin: '4px 0 0 0' }}>Blockchain-secured • Tamper-proof</p>
                 </div>
               </div>
 
@@ -957,7 +941,7 @@ export default function DoctorPortal({ walletAddress }) {
                 {/* Row 1: Patient IC & Name */}
                 <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       Patient IC Number *
                     </label>
                     <input
@@ -970,9 +954,9 @@ export default function DoctorPortal({ walletAddress }) {
                         width: '100%',
                         padding: '12px 16px',
                         borderRadius: '8px',
-                        border: '1px solid rgba(20, 184, 166, 0.15)',
-                        backgroundColor: '#0f172a',
-                        color: '#ffffff',
+                        border: '1px solid #E2E8F0',
+                        backgroundColor: '#F8FAFC',
+                        color: '#1E293B',
                         fontSize: '14px',
                         outline: 'none',
                         boxSizing: 'border-box'
@@ -980,7 +964,7 @@ export default function DoctorPortal({ walletAddress }) {
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       Patient Name *
                     </label>
                     <input
@@ -993,9 +977,9 @@ export default function DoctorPortal({ walletAddress }) {
                         width: '100%',
                         padding: '12px 16px',
                         borderRadius: '8px',
-                        border: '1px solid rgba(20, 184, 166, 0.15)',
-                        backgroundColor: '#0f172a',
-                        color: '#ffffff',
+                        border: '1px solid #E2E8F0',
+                        backgroundColor: '#F8FAFC',
+                        color: '#1E293B',
                         fontSize: '14px',
                         outline: 'none',
                         boxSizing: 'border-box'
@@ -1007,7 +991,7 @@ export default function DoctorPortal({ walletAddress }) {
                 {/* Row 2: Diagnosis & Duration */}
                 <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       Diagnosis *
                     </label>
                     <input
@@ -1020,9 +1004,9 @@ export default function DoctorPortal({ walletAddress }) {
                         width: '100%',
                         padding: '12px 16px',
                         borderRadius: '8px',
-                        border: '1px solid rgba(20, 184, 166, 0.15)',
-                        backgroundColor: '#0f172a',
-                        color: '#ffffff',
+                        border: '1px solid #E2E8F0',
+                        backgroundColor: '#F8FAFC',
+                        color: '#1E293B',
                         fontSize: '14px',
                         outline: 'none',
                         boxSizing: 'border-box'
@@ -1030,7 +1014,7 @@ export default function DoctorPortal({ walletAddress }) {
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       Duration
                     </label>
                     <select
@@ -1041,9 +1025,9 @@ export default function DoctorPortal({ walletAddress }) {
                         width: '100%',
                         padding: '12px 16px',
                         borderRadius: '8px',
-                        border: '1px solid rgba(20, 184, 166, 0.15)',
-                        backgroundColor: '#0f172a',
-                        color: '#ffffff',
+                        border: '1px solid #E2E8F0',
+                        backgroundColor: '#F8FAFC',
+                        color: '#1E293B',
                         fontSize: '14px',
                         outline: 'none',
                         cursor: 'pointer',
@@ -1059,7 +1043,7 @@ export default function DoctorPortal({ walletAddress }) {
 
                 {/* Row 3: Remarks */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#64748B', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                     Additional Remarks
                   </label>
                   <textarea
@@ -1072,9 +1056,9 @@ export default function DoctorPortal({ walletAddress }) {
                       width: '100%',
                       padding: '12px 16px',
                       borderRadius: '8px',
-                      border: '1px solid rgba(20, 184, 166, 0.15)',
-                      backgroundColor: '#0f172a',
-                      color: '#ffffff',
+                      border: '1px solid #E2E8F0',
+                      backgroundColor: '#F8FAFC',
+                      color: '#1E293B',
                       fontSize: '14px',
                       outline: 'none',
                       resize: 'none',
@@ -1086,7 +1070,7 @@ export default function DoctorPortal({ walletAddress }) {
                 {/* Row 4: Digital Signature */}
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       Physician Digital Signature *
                     </label>
                     <button
@@ -1097,12 +1081,12 @@ export default function DoctorPortal({ walletAddress }) {
                         borderRadius: '4px',
                         border: 'none',
                         backgroundColor: 'transparent',
-                        color: '#64748b',
+                        color: '#64748B',
                         cursor: 'pointer',
                         transition: 'color 0.2s'
                       }}
                       onMouseOver={(e) => e.target.style.color = '#14b8a6'}
-                      onMouseOut={(e) => e.target.style.color = '#64748b'}
+                      onMouseOut={(e) => e.target.style.color = '#64748B'}
                     >
                       Clear
                     </button>
@@ -1112,14 +1096,14 @@ export default function DoctorPortal({ walletAddress }) {
                     style={{
                       borderRadius: '8px',
                       overflow: 'hidden',
-                      border: '1px solid rgba(20, 184, 166, 0.1)',
-                      backgroundColor: '#0f172a'
+                      border: '1px solid #E2E8F0',
+                      backgroundColor: '#F1F5F9'
                     }}
                   >
                     <SignatureCanvas
                       ref={signaturePadRef}
-                      penColor="#14b8a6"
-                      backgroundColor="#0f172a"
+                      penColor="#1E293B"
+                      backgroundColor="#F1F5F9"
                       canvasProps={{
                         style: {
                           width: '100%',
@@ -1130,7 +1114,7 @@ export default function DoctorPortal({ walletAddress }) {
                       onBegin={() => setIsSigning(true)}
                     />
                   </div>
-                  <p style={{ fontSize: '11px', color: '#475569', marginTop: '8px' }}>
+                  <p style={{ fontSize: '11px', color: '#94A3B8', marginTop: '8px' }}>
                     Sign above • Cryptographically secured on blockchain
                   </p>
                 </div>
@@ -1157,8 +1141,8 @@ export default function DoctorPortal({ walletAddress }) {
                     padding: '16px',
                     borderRadius: '12px',
                     border: 'none',
-                    background: (isMinting || !isVerified) ? '#1e293b' : 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
-                    color: '#ffffff',
+                    background: (isMinting || !isVerified) ? '#E2E8F0' : 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
+                    color: (isMinting || !isVerified) ? '#94A3B8' : '#ffffff',
                     fontSize: '14px',
                     fontWeight: 700,
                     cursor: (isMinting || !isVerified) ? 'not-allowed' : 'pointer',
@@ -1193,11 +1177,11 @@ export default function DoctorPortal({ walletAddress }) {
 
             {/* ========== RIGHT COLUMN: LIVE FEED CARD ========== */}
             <div className="live-feed-card" style={{
-              backgroundColor: 'rgba(15, 23, 42, 0.6)',
-              border: '1px solid rgba(20, 184, 166, 0.2)',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #E2E8F0',
               borderRadius: '16px',
               padding: '24px',
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
               display: 'flex',
               flexDirection: 'column'
             }}>
@@ -1208,7 +1192,7 @@ export default function DoctorPortal({ walletAddress }) {
                 gap: '12px',
                 paddingBottom: '16px',
                 marginBottom: '16px',
-                borderBottom: '1px solid rgba(20, 184, 166, 0.1)'
+                borderBottom: '1px solid #E2E8F0'
               }}>
                 <div style={{
                   width: '40px',
@@ -1225,8 +1209,8 @@ export default function DoctorPortal({ walletAddress }) {
                   </svg>
                 </div>
                 <div>
-                  <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff', margin: 0 }}>Live Feed</h2>
-                  <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0 0 0' }}>Real-time activity</p>
+                  <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#1E293B', margin: 0 }}>Live Feed</h2>
+                  <p style={{ fontSize: '12px', color: '#94A3B8', margin: '2px 0 0 0' }}>Real-time activity</p>
                 </div>
               </div>
 
@@ -1238,11 +1222,11 @@ export default function DoctorPortal({ walletAddress }) {
                     style={{
                       padding: '12px',
                       borderRadius: '8px',
-                      backgroundColor: '#0f172a'
+                      backgroundColor: '#F8FAFC'
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                      <p style={{ fontSize: '13px', fontWeight: 600, color: '#ffffff', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
+                      <p style={{ fontSize: '13px', fontWeight: 600, color: '#1E293B', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
                         {item.patientName}
                       </p>
                       <span style={{
@@ -1256,12 +1240,12 @@ export default function DoctorPortal({ walletAddress }) {
                         {item.status === 'confirming' ? 'PENDING' : 'CONFIRMED'}
                       </span>
                     </div>
-                    <p style={{ fontSize: '11px', color: '#64748b', margin: '0 0 6px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <p style={{ fontSize: '11px', color: '#94A3B8', margin: '0 0 6px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {item.diagnosis} • {item.duration}d
                     </p>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <code style={{ fontSize: '10px', color: '#14b8a6' }}>{item.txHash}</code>
-                      <span style={{ fontSize: '10px', color: '#475569' }}>{item.time}</span>
+                      <span style={{ fontSize: '10px', color: '#94A3B8' }}>{item.time}</span>
                     </div>
                   </div>
                 ))}
@@ -1271,9 +1255,9 @@ export default function DoctorPortal({ walletAddress }) {
               <div style={{
                 paddingTop: '16px',
                 marginTop: '16px',
-                borderTop: '1px solid rgba(20, 184, 166, 0.1)'
+                borderTop: '1px solid #E2E8F0'
               }}>
-                <p style={{ fontSize: '10px', fontWeight: 600, color: '#64748b', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <p style={{ fontSize: '10px', fontWeight: 600, color: '#64748B', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   TODAY'S PERFORMANCE
                 </p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -1285,7 +1269,7 @@ export default function DoctorPortal({ walletAddress }) {
                     border: '1px solid rgba(20, 184, 166, 0.1)'
                   }}>
                     <p style={{ fontSize: '24px', fontWeight: 700, color: '#14b8a6', margin: 0 }}>{liveFeed.length}</p>
-                    <p style={{ fontSize: '10px', color: '#64748b', margin: '4px 0 0 0' }}>MCs Issued</p>
+                    <p style={{ fontSize: '10px', color: '#64748B', margin: '4px 0 0 0' }}>MCs Issued</p>
                   </div>
                   <div style={{
                     textAlign: 'center',
@@ -1295,7 +1279,7 @@ export default function DoctorPortal({ walletAddress }) {
                     border: '1px solid rgba(34, 197, 94, 0.1)'
                   }}>
                     <p style={{ fontSize: '24px', fontWeight: 700, color: '#22c55e', margin: 0 }}>100%</p>
-                    <p style={{ fontSize: '10px', color: '#64748b', margin: '4px 0 0 0' }}>Success</p>
+                    <p style={{ fontSize: '10px', color: '#64748B', margin: '4px 0 0 0' }}>Success</p>
                   </div>
                 </div>
               </div>

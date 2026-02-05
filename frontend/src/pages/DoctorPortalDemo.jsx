@@ -10,13 +10,13 @@ import { usePWA, PWA_CONFIGS } from '../hooks/usePWA';
 
 // Terminal Theme Colors
 const terminalTheme = {
-  bg: '#0a0f1a',
-  bgCard: '#0f1629',
-  bgCardHover: '#141d33',
-  border: '#1e3a5f',
-  textPrimary: '#ffffff',
-  textSecondary: '#94a3b8',
-  textMuted: '#64748b',
+  bg: '#FFFFFF',
+  bgCard: '#FFFFFF',
+  bgCardHover: '#F8FAFC',
+  border: '#E2E8F0',
+  textPrimary: '#1E293B',
+  textSecondary: '#64748B',
+  textMuted: '#94A3B8',
   accent: '#3b82f6',
   success: '#10b981',
   warning: '#f59e0b',
@@ -136,7 +136,7 @@ export default function DoctorPortalDemo() {
                 </svg>
               </div>
               <div>
-                <h1 className="text-lg font-bold text-white">Sarawak</h1>
+                <h1 className="text-lg font-bold" style={{ color: terminalTheme.textPrimary }}>Sarawak</h1>
                 <p className="text-xs text-amber-400 font-semibold">MedChain</p>
               </div>
             </div>
@@ -149,7 +149,7 @@ export default function DoctorPortalDemo() {
                 <span className="text-white font-bold text-lg">DR</span>
               </div>
               <div>
-                <p className="font-semibold text-white">Dr. Ahmad Razak</p>
+                <p className="font-semibold" style={{ color: terminalTheme.textPrimary }}>Dr. Ahmad Razak</p>
                 <p className="text-xs" style={{ color: terminalTheme.textMuted }}>General Practitioner</p>
               </div>
             </div>
@@ -162,7 +162,7 @@ export default function DoctorPortalDemo() {
           {/* Demo Hospital */}
           <div className="p-6 border-b" style={{ borderColor: terminalTheme.border }}>
             <p className="text-xs uppercase tracking-wider mb-2" style={{ color: terminalTheme.textMuted }}>Hospital</p>
-            <p className="font-semibold text-white">KPJ Kuching Specialist</p>
+            <p className="font-semibold" style={{ color: terminalTheme.textPrimary }}>KPJ Kuching Specialist</p>
             <p className="text-xs mt-1" style={{ color: terminalTheme.textMuted }}>Enterprise Tier</p>
           </div>
 
@@ -189,15 +189,15 @@ export default function DoctorPortalDemo() {
                   </svg>
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-white">Medical Certificate Terminal</h1>
+                  <h1 className="text-2xl font-bold" style={{ color: terminalTheme.textPrimary }}>Medical Certificate Terminal</h1>
                   <p style={{ color: terminalTheme.textMuted }}>Issue blockchain-verified medical certificates</p>
                 </div>
               </div>
             </div>
 
             {/* MC Form */}
-            <div className="rounded-2xl p-6 mb-6" style={{ backgroundColor: terminalTheme.bgCard, border: `1px solid ${terminalTheme.border}` }}>
-              <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+            <div className="rounded-2xl p-6 mb-6" style={{ backgroundColor: terminalTheme.bgCard, border: `1px solid ${terminalTheme.border}`, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)' }}>
+              <h3 className="text-lg font-bold mb-6 flex items-center gap-2" style={{ color: terminalTheme.textPrimary }}>
                 <svg className="w-5 h-5" style={{ color: terminalTheme.accent }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
@@ -215,9 +215,9 @@ export default function DoctorPortalDemo() {
                     value={mcFormData.patientIC}
                     onChange={(e) => setMcFormData({ ...mcFormData, patientIC: e.target.value })}
                     placeholder="e.g., 901201-13-5678"
-                    className="w-full px-4 py-3 rounded-lg text-white focus:outline-none focus:ring-2"
+                    className="w-full px-4 py-3 rounded-lg text-slate-800 focus:outline-none focus:ring-2"
                     style={{
-                      backgroundColor: terminalTheme.bg,
+                      backgroundColor: '#F8FAFC',
                       border: `1px solid ${terminalTheme.border}`,
                       focusRing: terminalTheme.accent
                     }}
@@ -234,9 +234,9 @@ export default function DoctorPortalDemo() {
                     value={mcFormData.patientName}
                     onChange={(e) => setMcFormData({ ...mcFormData, patientName: e.target.value })}
                     placeholder="Full name as per IC"
-                    className="w-full px-4 py-3 rounded-lg text-white focus:outline-none focus:ring-2"
+                    className="w-full px-4 py-3 rounded-lg text-slate-800 focus:outline-none focus:ring-2"
                     style={{
-                      backgroundColor: terminalTheme.bg,
+                      backgroundColor: '#F8FAFC',
                       border: `1px solid ${terminalTheme.border}`
                     }}
                   />
@@ -252,9 +252,9 @@ export default function DoctorPortalDemo() {
                     value={mcFormData.diagnosis}
                     onChange={(e) => setMcFormData({ ...mcFormData, diagnosis: e.target.value })}
                     placeholder="Medical diagnosis"
-                    className="w-full px-4 py-3 rounded-lg text-white focus:outline-none focus:ring-2"
+                    className="w-full px-4 py-3 rounded-lg text-slate-800 focus:outline-none focus:ring-2"
                     style={{
-                      backgroundColor: terminalTheme.bg,
+                      backgroundColor: '#F8FAFC',
                       border: `1px solid ${terminalTheme.border}`
                     }}
                   />
@@ -268,9 +268,9 @@ export default function DoctorPortalDemo() {
                   <select
                     value={mcFormData.duration}
                     onChange={(e) => setMcFormData({ ...mcFormData, duration: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg text-white focus:outline-none focus:ring-2"
+                    className="w-full px-4 py-3 rounded-lg text-slate-800 focus:outline-none focus:ring-2"
                     style={{
-                      backgroundColor: terminalTheme.bg,
+                      backgroundColor: '#F8FAFC',
                       border: `1px solid ${terminalTheme.border}`
                     }}
                   >
@@ -290,9 +290,9 @@ export default function DoctorPortalDemo() {
                     value={mcFormData.remarks}
                     onChange={(e) => setMcFormData({ ...mcFormData, remarks: e.target.value })}
                     placeholder="Additional notes"
-                    className="w-full px-4 py-3 rounded-lg text-white focus:outline-none focus:ring-2"
+                    className="w-full px-4 py-3 rounded-lg text-slate-800 focus:outline-none focus:ring-2"
                     style={{
-                      backgroundColor: terminalTheme.bg,
+                      backgroundColor: '#F8FAFC',
                       border: `1px solid ${terminalTheme.border}`
                     }}
                   />
@@ -307,7 +307,7 @@ export default function DoctorPortalDemo() {
                 <div
                   className="h-32 rounded-lg flex items-center justify-center cursor-pointer transition-colors relative overflow-hidden"
                   style={{
-                    backgroundColor: terminalTheme.bg,
+                    backgroundColor: '#F8FAFC',
                     border: `2px dashed ${hasSignature ? terminalTheme.success : terminalTheme.border}`
                   }}
                   onClick={() => setHasSignature(true)}
@@ -369,7 +369,7 @@ export default function DoctorPortalDemo() {
                 <div
                   key={item.id}
                   className="p-4 rounded-xl transition-all"
-                  style={{ backgroundColor: terminalTheme.bg, border: `1px solid ${terminalTheme.border}` }}
+                  style={{ backgroundColor: '#F8FAFC', border: `1px solid ${terminalTheme.border}` }}
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div>
@@ -403,7 +403,7 @@ export default function DoctorPortalDemo() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
           <div
             className="w-full max-w-lg rounded-3xl p-8 relative overflow-hidden"
-            style={{ backgroundColor: terminalTheme.bgCard, border: `1px solid ${terminalTheme.border}` }}
+            style={{ backgroundColor: terminalTheme.bgCard, border: `1px solid ${terminalTheme.border}`, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)' }}
           >
             {/* Animated Background */}
             <div className="absolute inset-0 opacity-20">
@@ -425,7 +425,7 @@ export default function DoctorPortalDemo() {
                     </svg>
                   )}
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-2">
+                <h2 className="text-2xl font-bold mb-2" style={{ color: terminalTheme.textPrimary }}>
                   {simulationStep < simulationSteps.length
                     ? 'Blockchain Transaction in Progress'
                     : 'Transaction Simulated!'
@@ -479,8 +479,8 @@ export default function DoctorPortalDemo() {
                       </svg>
                     </div>
                     <div>
-                      <h3 className="font-bold text-white mb-1">Blockchain Transaction Simulated</h3>
-                      <p className="text-sm text-slate-300 mb-3">
+                      <h3 className="font-bold mb-1" style={{ color: terminalTheme.textPrimary }}>Blockchain Transaction Simulated</h3>
+                      <p className="text-sm text-slate-600 mb-3">
                         Upgrade to a <span className="text-amber-400 font-semibold">KPJ Enterprise Node</span> to issue real,
                         tamper-proof medical certificates on the blockchain.
                       </p>
@@ -493,13 +493,13 @@ export default function DoctorPortalDemo() {
                         </Link>
                         <Link
                           to="/pitch#pricing"
-                          className="px-4 py-2 bg-slate-700 text-white rounded-lg text-sm hover:bg-slate-600 transition-colors"
+                          className="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg text-sm hover:bg-slate-300 transition-colors"
                         >
                           View Pricing
                         </Link>
                         <button
                           onClick={closeSimulation}
-                          className="px-4 py-2 bg-slate-600 text-slate-300 rounded-lg text-sm hover:bg-slate-500 transition-colors"
+                          className="px-4 py-2 bg-slate-100 text-slate-500 rounded-lg text-sm hover:bg-slate-200 transition-colors"
                         >
                           Try Again
                         </button>

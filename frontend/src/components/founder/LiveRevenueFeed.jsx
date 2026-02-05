@@ -9,10 +9,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 const theme = {
   success: '#10b981',
   teal: '#14b8a6',
-  textPrimary: '#ffffff',
-  textSecondary: '#94a3b8',
-  textMuted: '#64748b',
-  border: 'rgba(30, 58, 95, 0.5)',
+  textPrimary: '#1E293B',
+  textSecondary: '#64748B',
+  textMuted: '#94A3B8',
+  border: '#E2E8F0',
 };
 
 // Mock MC feed generator
@@ -127,7 +127,7 @@ export default function LiveRevenueFeed({
           </span>
           <button
             onClick={() => setIsPaused(!isPaused)}
-            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-slate-700"
+            className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-slate-100"
             style={{
               backgroundColor: isPaused ? `${theme.teal}20` : 'transparent',
             }}
@@ -172,11 +172,11 @@ export default function LiveRevenueFeed({
                 className="p-3 rounded-xl"
                 style={{
                   background: index === 0
-                    ? `linear-gradient(90deg, ${theme.success}10, transparent)`
-                    : 'rgba(30, 41, 59, 0.3)',
+                    ? `linear-gradient(90deg, ${theme.success}08, transparent)`
+                    : '#F8FAFC',
                   border: index === 0
                     ? `1px solid ${theme.success}30`
-                    : '1px solid rgba(51, 65, 85, 0.3)',
+                    : '1px solid #E2E8F0',
                 }}
               >
                 <div className="flex items-center justify-between">
