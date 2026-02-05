@@ -1,16 +1,15 @@
 import React from 'react';
 
-// Consistent Card Component
+// Consistent Card Component - Light theme
 export const Card = ({ children, className = '', glow = false, hover = true, style = {} }) => (
   <div
     className={`${className} ${hover ? 'card-hover' : ''}`}
     style={{
-      background: 'rgba(15, 23, 42, 0.8)',
-      backdropFilter: 'blur(10px)',
-      border: '1px solid rgba(20, 184, 166, 0.3)',
+      background: '#FFFFFF',
+      border: '1px solid #E2E8F0',
       borderRadius: '16px',
       padding: '24px',
-      boxShadow: glow ? '0 0 30px rgba(20, 184, 166, 0.15)' : '0 4px 20px rgba(0, 0, 0, 0.3)',
+      boxShadow: glow ? '0 0 30px rgba(20, 184, 166, 0.1)' : '0 1px 3px rgba(0, 0, 0, 0.08)',
       transition: 'all 0.3s ease',
       ...style,
     }}
@@ -25,7 +24,7 @@ export const GoldButton = ({ children, onClick, fullWidth = false, size = 'md', 
     onClick={onClick}
     disabled={disabled}
     style={{
-      background: disabled ? '#6b7280' : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+      background: disabled ? '#d1d5db' : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
       border: 'none',
       borderRadius: '8px',
       padding: size === 'sm' ? '8px 16px' : size === 'lg' ? '16px 32px' : '12px 24px',
@@ -35,20 +34,20 @@ export const GoldButton = ({ children, onClick, fullWidth = false, size = 'md', 
       cursor: disabled ? 'not-allowed' : 'pointer',
       transition: 'all 0.3s ease',
       width: fullWidth ? '100%' : 'auto',
-      boxShadow: disabled ? 'none' : '0 4px 15px rgba(245, 158, 11, 0.3)',
+      boxShadow: disabled ? 'none' : '0 2px 8px rgba(245, 158, 11, 0.2)',
       opacity: disabled ? 0.6 : 1,
       ...style,
     }}
     onMouseEnter={(e) => {
       if (!disabled) {
         e.target.style.transform = 'translateY(-2px)';
-        e.target.style.boxShadow = '0 6px 20px rgba(245, 158, 11, 0.5)';
+        e.target.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.3)';
       }
     }}
     onMouseLeave={(e) => {
       if (!disabled) {
         e.target.style.transform = 'translateY(0)';
-        e.target.style.boxShadow = '0 4px 15px rgba(245, 158, 11, 0.3)';
+        e.target.style.boxShadow = '0 2px 8px rgba(245, 158, 11, 0.2)';
       }
     }}
   >
@@ -91,14 +90,14 @@ export const TealButton = ({ children, onClick, fullWidth = false, disabled = fa
   </button>
 );
 
-// Section Title
+// Section Title - Light theme
 export const SectionTitle = ({ icon, title, subtitle, action }) => (
   <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
         {icon && <span style={{ color: '#14b8a6', fontSize: '20px' }}>{icon}</span>}
         <h2 style={{
-          color: '#fff',
+          color: '#1E293B',
           fontSize: '20px',
           fontWeight: '700',
           margin: 0,
@@ -108,7 +107,7 @@ export const SectionTitle = ({ icon, title, subtitle, action }) => (
         </h2>
       </div>
       {subtitle && (
-        <p style={{ color: '#64748b', fontSize: '14px', margin: 0, marginLeft: icon ? '32px' : 0 }}>
+        <p style={{ color: '#64748B', fontSize: '14px', margin: 0, marginLeft: icon ? '32px' : 0 }}>
           {subtitle}
         </p>
       )}
@@ -117,34 +116,34 @@ export const SectionTitle = ({ icon, title, subtitle, action }) => (
   </div>
 );
 
-// Stat Display
+// Stat Display - Light theme
 export const StatCard = ({ label, value, subValue, color = '#14b8a6', icon }) => (
   <div style={{ textAlign: 'center' }}>
     {icon && <div style={{ marginBottom: '8px' }}>{icon}</div>}
-    <p style={{ color: '#64748b', fontSize: '12px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+    <p style={{ color: '#64748B', fontSize: '12px', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
       {label}
     </p>
     <p style={{ color: color, fontSize: '32px', fontWeight: '700', margin: 0, lineHeight: 1 }}>
       {value}
     </p>
     {subValue && (
-      <p style={{ color: '#94a3b8', fontSize: '13px', marginTop: '4px' }}>{subValue}</p>
+      <p style={{ color: '#94A3B8', fontSize: '13px', marginTop: '4px' }}>{subValue}</p>
     )}
   </div>
 );
 
-// Status Badge
+// Status Badge - Light theme with lighter backgrounds
 export const Badge = ({ status, pulse = false, color }) => {
   const colors = {
-    active: { bg: 'rgba(16, 185, 129, 0.2)', text: '#10b981', border: '#10b981' },
-    live: { bg: 'rgba(239, 68, 68, 0.2)', text: '#ef4444', border: '#ef4444' },
-    standby: { bg: 'rgba(245, 158, 11, 0.2)', text: '#f59e0b', border: '#f59e0b' },
-    healthy: { bg: 'rgba(16, 185, 129, 0.2)', text: '#10b981', border: '#10b981' },
-    online: { bg: 'rgba(16, 185, 129, 0.2)', text: '#10b981', border: '#10b981' },
-    warning: { bg: 'rgba(245, 158, 11, 0.2)', text: '#f59e0b', border: '#f59e0b' },
-    error: { bg: 'rgba(239, 68, 68, 0.2)', text: '#ef4444', border: '#ef4444' },
-    teal: { bg: 'rgba(20, 184, 166, 0.2)', text: '#14b8a6', border: '#14b8a6' },
-    purple: { bg: 'rgba(139, 92, 246, 0.2)', text: '#8b5cf6', border: '#8b5cf6' },
+    active: { bg: 'rgba(16, 185, 129, 0.1)', text: '#059669', border: 'rgba(16, 185, 129, 0.3)' },
+    live: { bg: 'rgba(239, 68, 68, 0.1)', text: '#dc2626', border: 'rgba(239, 68, 68, 0.3)' },
+    standby: { bg: 'rgba(245, 158, 11, 0.1)', text: '#d97706', border: 'rgba(245, 158, 11, 0.3)' },
+    healthy: { bg: 'rgba(16, 185, 129, 0.1)', text: '#059669', border: 'rgba(16, 185, 129, 0.3)' },
+    online: { bg: 'rgba(16, 185, 129, 0.1)', text: '#059669', border: 'rgba(16, 185, 129, 0.3)' },
+    warning: { bg: 'rgba(245, 158, 11, 0.1)', text: '#d97706', border: 'rgba(245, 158, 11, 0.3)' },
+    error: { bg: 'rgba(239, 68, 68, 0.1)', text: '#dc2626', border: 'rgba(239, 68, 68, 0.3)' },
+    teal: { bg: 'rgba(20, 184, 166, 0.1)', text: '#0d9488', border: 'rgba(20, 184, 166, 0.3)' },
+    purple: { bg: 'rgba(139, 92, 246, 0.1)', text: '#7c3aed', border: 'rgba(139, 92, 246, 0.3)' },
   };
 
   const style = colors[status?.toLowerCase()] || colors[color] || colors.active;
@@ -188,7 +187,7 @@ export const LiveDot = ({ color = '#ef4444', size = 8 }) => (
   />
 );
 
-// Progress Bar
+// Progress Bar - Light theme
 export const ProgressBar = ({ value, max = 100, color = '#14b8a6', height = 8, showLabel = false }) => {
   const percentage = Math.min((value / max) * 100, 100);
 
@@ -197,7 +196,7 @@ export const ProgressBar = ({ value, max = 100, color = '#14b8a6', height = 8, s
       <div
         style={{
           height: `${height}px`,
-          background: 'rgba(255, 255, 255, 0.1)',
+          background: '#E2E8F0',
           borderRadius: '4px',
           overflow: 'hidden',
         }}
@@ -215,24 +214,24 @@ export const ProgressBar = ({ value, max = 100, color = '#14b8a6', height = 8, s
       </div>
       {showLabel && (
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
-          <span style={{ fontSize: '12px', color: '#64748b' }}>{value}</span>
-          <span style={{ fontSize: '12px', color: '#64748b' }}>{max}</span>
+          <span style={{ fontSize: '12px', color: '#64748B' }}>{value}</span>
+          <span style={{ fontSize: '12px', color: '#64748B' }}>{max}</span>
         </div>
       )}
     </div>
   );
 };
 
-// Divider
+// Divider - Light theme
 export const Divider = ({ label }) => (
   <div style={{ display: 'flex', alignItems: 'center', gap: '16px', margin: '24px 0' }}>
-    <div style={{ flex: 1, height: '1px', background: 'rgba(20, 184, 166, 0.2)' }} />
+    <div style={{ flex: 1, height: '1px', background: '#E2E8F0' }} />
     {label && (
-      <span style={{ color: '#64748b', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+      <span style={{ color: '#64748B', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
         {label}
       </span>
     )}
-    <div style={{ flex: 1, height: '1px', background: 'rgba(20, 184, 166, 0.2)' }} />
+    <div style={{ flex: 1, height: '1px', background: '#E2E8F0' }} />
   </div>
 );
 
@@ -255,7 +254,7 @@ export const IconBox = ({ icon, color = '#14b8a6', size = 40 }) => (
   </div>
 );
 
-// Export theme constants
+// Export theme constants - Light theme
 export const theme = {
   colors: {
     teal: '#14b8a6',
@@ -267,18 +266,18 @@ export const theme = {
     blue: '#3b82f6',
   },
   bg: {
-    primary: '#0a0e14',
-    card: 'rgba(15, 23, 42, 0.8)',
-    elevated: 'rgba(15, 31, 56, 0.8)',
+    primary: '#FFFFFF',
+    card: '#FFFFFF',
+    elevated: '#F8FAFC',
   },
   text: {
-    primary: '#ffffff',
-    secondary: '#94a3b8',
-    muted: '#64748b',
+    primary: '#1E293B',
+    secondary: '#64748B',
+    muted: '#94A3B8',
   },
   border: {
     teal: 'rgba(20, 184, 166, 0.3)',
-    subtle: 'rgba(255, 255, 255, 0.1)',
+    subtle: '#E2E8F0',
   },
 };
 

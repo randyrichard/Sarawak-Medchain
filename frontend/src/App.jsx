@@ -33,6 +33,7 @@ import SystemStatus from './pages/SystemStatus';
 import CouncilorView from './pages/CouncilorView';
 import DemoApp from './pages/DemoApp';
 import { ServiceRestoredToast } from './components/ServiceNotifications';
+import { Shield, DollarSign, X, AlertTriangle, User, Stethoscope, Settings, BarChart3, Lock, CreditCard, Menu, Wallet, ChevronRight } from 'lucide-react';
 import './App.css';
 
 // Top-Up Modal Component
@@ -62,54 +63,51 @@ function TopUpModal({ isOpen, onClose, currentBalance }) {
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       />
 
       {/* Modal - Centered with max-width matching Service Agreement */}
       <div
-        className="relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl overflow-hidden w-full mx-4"
+        className="relative bg-white rounded-3xl overflow-hidden w-full mx-4"
         style={{
           maxWidth: '500px',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05)'
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05)'
         }}
       >
         {/* Header */}
-        <div className="p-6 border-b border-slate-700/50 bg-gradient-to-r from-blue-600/10 to-cyan-600/10">
+        <div className="p-6 border-b border-slate-200" style={{ background: 'linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%)' }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <DollarSign className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">Top Up Credits</h2>
-                <p className="text-slate-400 text-sm">Instant FPX payment</p>
+                <h2 className="text-xl font-bold" style={{ color: '#1E293B' }}>Top Up Credits</h2>
+                <p className="text-slate-500 text-sm">Instant FPX payment</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition-colors"
+              className="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
             >
-              <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <X className="w-5 h-5 text-slate-500" />
             </button>
           </div>
         </div>
 
         {/* Current Balance */}
-        <div className="p-6 border-b border-slate-700/50">
+        <div className="p-6 border-b border-slate-200">
           <div className="flex items-center justify-between">
-            <span className="text-slate-400">Current Balance</span>
-            <span className="text-2xl font-bold text-white">RM {currentBalance?.toLocaleString() || 0}</span>
+            <span className="text-slate-500">Current Balance</span>
+            <span className="text-2xl font-bold" style={{ color: '#1E293B' }}>RM {currentBalance?.toLocaleString() || 0}</span>
           </div>
         </div>
 
         {/* Amount Selection */}
         <div className="p-6">
-          <p className="text-sm text-slate-400 mb-4">Select top-up amount</p>
+          <p className="text-sm text-slate-500 mb-4">Select top-up amount</p>
           <div className="grid grid-cols-2 gap-3">
             {topUpOptions.map((option) => (
               <button
@@ -117,8 +115,8 @@ function TopUpModal({ isOpen, onClose, currentBalance }) {
                 onClick={() => setSelectedAmount(option.amount)}
                 className={`relative p-4 rounded-xl border-2 transition-all ${
                   selectedAmount === option.amount
-                    ? 'border-blue-500 bg-blue-500/10'
-                    : 'border-slate-700 hover:border-slate-600 hover:bg-slate-800/50'
+                    ? 'border-teal-500 bg-teal-50'
+                    : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                 }`}
               >
                 {option.popular && (
@@ -126,20 +124,20 @@ function TopUpModal({ isOpen, onClose, currentBalance }) {
                     POPULAR
                   </span>
                 )}
-                <p className={`text-lg font-bold ${selectedAmount === option.amount ? 'text-blue-400' : 'text-white'}`}>
+                <p className={`text-lg font-bold ${selectedAmount === option.amount ? 'text-teal-600' : 'text-slate-800'}`}>
                   {option.label}
                 </p>
-                <p className="text-xs text-slate-500 mt-1">{option.amount} MC credits</p>
+                <p className="text-xs text-slate-400 mt-1">{option.amount} MC credits</p>
               </button>
             ))}
           </div>
         </div>
 
         {/* Summary & Action */}
-        <div className="p-6 bg-slate-800/50">
+        <div className="p-6 bg-slate-50">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-slate-400">New Balance</span>
-            <span className="text-xl font-bold text-emerald-400">
+            <span className="text-slate-500">New Balance</span>
+            <span className="text-xl font-bold text-emerald-600">
               RM {((currentBalance || 0) + selectedAmount).toLocaleString()}
             </span>
           </div>
@@ -162,9 +160,7 @@ function TopUpModal({ isOpen, onClose, currentBalance }) {
               </>
             ) : (
               <>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
+                <CreditCard className="w-5 h-5" />
                 Pay RM {selectedAmount.toLocaleString()} via FPX
               </>
             )}
@@ -245,29 +241,29 @@ function StickyBalanceHeader({ walletAddress }) {
   const getStatusStyles = () => {
     if (isCriticalBalance) {
       return {
-        banner: '', // Use inline style for dark background
-        badge: 'border-red-500/30',
-        text: 'text-white',
-        subtext: 'text-slate-300',
-        icon: 'text-red-400',
-        button: '' // Use inline style for white button
+        banner: '',
+        badge: 'border-red-300',
+        text: 'text-slate-800',
+        subtext: 'text-slate-500',
+        icon: 'text-red-500',
+        button: ''
       };
     }
     if (isWarningBalance) {
       return {
-        banner: '', // Use inline style for dark background
-        badge: 'border-yellow-500/30',
-        text: 'text-white',
-        subtext: 'text-slate-300',
-        icon: 'text-yellow-400',
-        button: '' // Use inline style for white button
+        banner: '',
+        badge: 'border-amber-300',
+        text: 'text-slate-800',
+        subtext: 'text-slate-500',
+        icon: 'text-amber-500',
+        button: ''
       };
     }
     return {
       banner: '',
       badge: 'bg-emerald-50 border-emerald-200',
-      text: 'text-slate-300',
-      subtext: 'text-slate-400',
+      text: 'text-slate-600',
+      subtext: 'text-slate-500',
       icon: 'text-emerald-500',
       button: 'bg-emerald-600 text-white hover:bg-emerald-700'
     };
@@ -275,7 +271,7 @@ function StickyBalanceHeader({ walletAddress }) {
 
   const styles = getStatusStyles();
 
-  // Show warning banner for low credit - DARK THEME with teal accents
+  // Show warning banner for low credit - LIGHT THEME with teal accents
   if (needsAttention) {
     return (
       <>
@@ -283,37 +279,35 @@ function StickyBalanceHeader({ walletAddress }) {
         className="sticky top-0 z-50"
         style={{
           width: '100%',
-          backgroundColor: '#0a0e14',
-          borderBottom: '1px solid rgba(20, 184, 166, 0.2)',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)'
+          backgroundColor: isCriticalBalance ? '#FEF2F2' : '#FFFBEB',
+          borderBottom: isCriticalBalance ? '1px solid #FECACA' : '1px solid #FDE68A',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)'
         }}
       >
         <div style={{ maxWidth: '1200px', margin: '0 auto' }} className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            {/* Warning Icon - Teal */}
+            {/* Warning Icon */}
             <div
               className="w-12 h-12 rounded-full flex items-center justify-center"
               style={{
-                backgroundColor: 'rgba(20, 184, 166, 0.15)',
-                border: '1px solid rgba(20, 184, 166, 0.3)'
+                backgroundColor: isCriticalBalance ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                border: isCriticalBalance ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(245, 158, 11, 0.2)'
               }}
             >
-              <svg className="w-6 h-6" style={{ color: '#14b8a6' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
+              <AlertTriangle className="w-6 h-6" style={{ color: isCriticalBalance ? '#EF4444' : '#F59E0B' }} />
             </div>
 
             {/* Alert Message */}
             <div>
               <div className="flex items-center gap-3">
-                <h3 className="text-lg font-bold" style={{ color: '#ffffff' }}>
+                <h3 className="text-lg font-bold" style={{ color: '#1E293B' }}>
                   {isCriticalBalance ? 'Low Credit Balance' : 'Credit Warning'}
                 </h3>
-                <span className="text-sm font-semibold" style={{ color: '#14b8a6' }}>
+                <span className="text-sm font-semibold" style={{ color: '#0D9488' }}>
                   RM {loading ? '...' : creditBalance?.toLocaleString() || 0}
                 </span>
               </div>
-              <p className="text-sm mt-1" style={{ color: '#94a3b8' }}>
+              <p className="text-sm mt-1" style={{ color: '#64748B' }}>
                 {isCriticalBalance
                   ? 'Top-up required to continue issuing MCs.'
                   : 'Consider topping up soon.'}
@@ -354,16 +348,14 @@ function StickyBalanceHeader({ walletAddress }) {
 
   // Normal state - compact header
   return (
-    <div className="sticky top-0 z-50" style={{ backgroundColor: '#0a0e14', border: 'none', boxShadow: 'none' }}>
+    <div className="sticky top-0 z-50" style={{ backgroundColor: '#FFFFFF', borderBottom: '1px solid #E2E8F0', boxShadow: 'none' }}>
       <div className="px-6 py-3 flex items-center justify-between" style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <div className="flex items-center gap-4">
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800/50 border border-slate-700`}>
-            <svg className={`w-5 h-5 ${styles.icon}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+          <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-50 border border-slate-200">
+            <DollarSign className={`w-5 h-5 ${styles.icon}`} />
             <div className="flex items-baseline gap-2">
-              <span className="text-sm font-medium text-slate-400">Credit Balance:</span>
-              <span className="text-xl font-bold text-emerald-400">
+              <span className="text-sm font-medium text-slate-500">Credit Balance:</span>
+              <span className="text-xl font-bold text-teal-600">
                 {loading ? '...' : creditBalance !== null ? `RM ${creditBalance.toLocaleString()}` : '--'}
               </span>
             </div>
@@ -443,9 +435,7 @@ function TopUpRequiredBadge({ walletAddress }) {
 
         <div className="relative flex items-center gap-3">
           <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center animate-pulse">
-            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
+            <AlertTriangle className="w-5 h-5 text-white" />
           </div>
           <div className="text-left">
             <p className="text-white font-bold text-sm">Top Up Required</p>
@@ -495,38 +485,34 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
   }, [location.pathname]);
 
   return (
-    <div className={`flex flex-col h-screen w-full overflow-hidden ${isDemo ? 'demo-mode' : ''}`} style={{ backgroundColor: '#0a0e14' }}>
+    <div className={`flex flex-col h-screen w-full overflow-hidden ${isDemo ? 'demo-mode' : ''}`} style={{ backgroundColor: '#F8FAFC' }}>
       {/* Demo Mode Banner */}
       {isDemo && <DemoBanner />}
 
       {/* Mobile Header */}
-      <div className="md:hidden flex items-center justify-between p-4 border-b border-slate-800" style={{ backgroundColor: '#0a0e14' }}>
+      <div className="md:hidden flex items-center justify-between p-4" style={{ backgroundColor: '#FFFFFF', borderBottom: '1px solid #E2E8F0' }}>
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)' }}>
-            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
+            <Shield className="w-5 h-5 text-white" />
           </div>
-          <span className="text-white font-bold">MedChain</span>
+          <span style={{ color: '#1E293B' }} className="font-bold">MedChain</span>
         </div>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
+          className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
         >
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {mobileMenuOpen ? (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            )}
-          </svg>
+          {mobileMenuOpen ? (
+            <X className="w-6 h-6 text-slate-600" />
+          ) : (
+            <Menu className="w-6 h-6 text-slate-600" />
+          )}
         </button>
       </div>
 
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
         <div
-          className="md:hidden fixed inset-0 bg-black/50 z-40"
+          className="md:hidden fixed inset-0 bg-black/30 z-40"
           onClick={() => setMobileMenuOpen(false)}
           style={{ top: isDemo ? '96px' : '56px' }}
         />
@@ -537,8 +523,8 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
       <ServiceRestoredToast />
       {/* Sidebar - hidden on mobile unless menu open, ALWAYS visible on desktop */}
       <aside
-        className={`sidebar-nav ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} fixed md:relative z-50 w-72 text-white flex flex-col flex-shrink-0 transition-transform duration-300`}
-        style={{ backgroundColor: '#0a0e14', borderRight: '1px solid rgba(20, 184, 166, 0.1)', boxShadow: mobileMenuOpen ? '4px 0 20px rgba(0,0,0,0.5)' : 'none', height: '100%', minHeight: '100vh' }}
+        className={`sidebar-nav ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} fixed md:relative z-50 w-72 flex flex-col flex-shrink-0 transition-transform duration-300`}
+        style={{ backgroundColor: '#FFFFFF', borderRight: '1px solid #E2E8F0', boxShadow: mobileMenuOpen ? '4px 0 20px rgba(0,0,0,0.1)' : 'none', height: '100%', minHeight: '100vh' }}
       >
         {/* Logo & Title - Hidden on mobile (mobile has close header instead) */}
         <div className="hidden md:block p-6" style={{ borderBottom: 'none' }}>
@@ -547,27 +533,23 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
               className="w-10 h-10 rounded-lg flex items-center justify-center"
               style={{ background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)' }}
             >
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
+              <Shield className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-white">Sarawak</h1>
+              <h1 className="text-lg font-bold" style={{ color: '#1E293B' }}>Sarawak</h1>
               <p className="text-xs font-semibold" style={{ color: '#14b8a6' }}>MedChain</p>
             </div>
           </div>
         </div>
 
         {/* Mobile Close Button - Only show on mobile when menu is open */}
-        <div className="md:hidden flex items-center justify-between p-4 border-b border-slate-800">
-          <span className="text-white font-bold">Menu</span>
+        <div className="md:hidden flex items-center justify-between p-4" style={{ borderBottom: '1px solid #E2E8F0' }}>
+          <span style={{ color: '#1E293B' }} className="font-bold">Menu</span>
           <button
             onClick={() => setMobileMenuOpen(false)}
-            className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
           >
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <X className="w-6 h-6 text-slate-500" />
           </button>
         </div>
 
@@ -580,14 +562,12 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
                 onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
                   currentPath === '/patient'
-                    ? 'bg-gradient-to-r from-teal-500/20 to-teal-500/5 border-l-2 border-teal-400'
-                    : 'hover:bg-slate-800/50'
+                    ? 'bg-teal-50 border-l-2 border-teal-600'
+                    : 'hover:bg-slate-50'
                 }`}
               >
-                <svg className={`w-5 h-5 ${currentPath === '/patient' ? 'text-teal-400' : 'text-slate-400 group-hover:text-white'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                <span className={`${currentPath === '/patient' ? 'text-white font-semibold' : 'text-slate-300 group-hover:text-white'}`}>Patient Portal</span>
+                <User className={`w-5 h-5 ${currentPath === '/patient' ? 'text-teal-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                <span className={`${currentPath === '/patient' ? 'text-teal-700 font-semibold' : 'text-slate-600 group-hover:text-slate-900'}`}>Patient Portal</span>
               </Link>
             </li>
             <li>
@@ -596,14 +576,12 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
                 onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
                   currentPath === '/doctor'
-                    ? 'bg-gradient-to-r from-teal-500/20 to-teal-500/5 border-l-2 border-teal-400'
-                    : 'hover:bg-slate-800/50'
+                    ? 'bg-teal-50 border-l-2 border-teal-600'
+                    : 'hover:bg-slate-50'
                 }`}
               >
-                <svg className={`w-5 h-5 ${currentPath === '/doctor' ? 'text-teal-400' : 'text-slate-400 group-hover:text-white'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className={`${currentPath === '/doctor' ? 'text-white font-semibold' : 'text-slate-300 group-hover:text-white'}`}>Doctor Portal</span>
+                <Stethoscope className={`w-5 h-5 ${currentPath === '/doctor' ? 'text-teal-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                <span className={`${currentPath === '/doctor' ? 'text-teal-700 font-semibold' : 'text-slate-600 group-hover:text-slate-900'}`}>Doctor Portal</span>
               </Link>
             </li>
             <li>
@@ -612,15 +590,12 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
                 onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
                   currentPath === '/admin'
-                    ? 'bg-gradient-to-r from-teal-500/20 to-teal-500/5 border-l-2 border-teal-400'
-                    : 'hover:bg-slate-800/50'
+                    ? 'bg-teal-50 border-l-2 border-teal-600'
+                    : 'hover:bg-slate-50'
                 }`}
               >
-                <svg className={`w-5 h-5 ${currentPath === '/admin' ? 'text-teal-400' : 'text-slate-400 group-hover:text-white'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span className={`${currentPath === '/admin' ? 'text-white font-semibold' : 'text-slate-300 group-hover:text-white'}`}>Admin Portal</span>
+                <Settings className={`w-5 h-5 ${currentPath === '/admin' ? 'text-teal-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                <span className={`${currentPath === '/admin' ? 'text-teal-700 font-semibold' : 'text-slate-600 group-hover:text-slate-900'}`}>Admin Portal</span>
               </Link>
             </li>
             <li>
@@ -629,14 +604,12 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
                 onClick={() => setMobileMenuOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
                   currentPath === '/ceo-dashboard'
-                    ? 'bg-gradient-to-r from-teal-500/20 to-teal-500/5 border-l-2 border-teal-400'
-                    : 'hover:bg-slate-800/50'
+                    ? 'bg-teal-50 border-l-2 border-teal-600'
+                    : 'hover:bg-slate-50'
                 }`}
               >
-                <svg className={`w-5 h-5 ${currentPath === '/ceo-dashboard' ? 'text-teal-400' : 'text-slate-400 group-hover:text-white'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                <span className={`${currentPath === '/ceo-dashboard' ? 'text-white font-semibold' : 'text-slate-300 group-hover:text-white'}`}>CEO Dashboard</span>
+                <BarChart3 className={`w-5 h-5 ${currentPath === '/ceo-dashboard' ? 'text-teal-600' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                <span className={`${currentPath === '/ceo-dashboard' ? 'text-teal-700 font-semibold' : 'text-slate-600 group-hover:text-slate-900'}`}>CEO Dashboard</span>
               </Link>
             </li>
             {/* Founder Dashboard - Only shows for founder wallet AND not in demo mode */}
@@ -645,12 +618,10 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
                 <Link
                   to="/founder-admin-secret-99"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-amber-500/20 transition-colors group border border-amber-500/30 bg-amber-500/10"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-amber-50 transition-colors group border border-amber-300 bg-amber-50"
                 >
-                  <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                  <span className="text-amber-400 font-semibold">Founder Command</span>
+                  <Lock className="w-5 h-5 text-amber-500" />
+                  <span className="text-amber-600 font-semibold">Founder Command</span>
                 </Link>
               </li>
             )}
@@ -664,23 +635,21 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
         <CreditBalanceSidebar walletAddress={walletAddress} />
 
         {/* Professional Footer */}
-        <div className="mt-auto" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
-          <div className="px-5 py-4">
+        <div className="mt-auto" style={{ borderTop: '1px solid #E2E8F0' }}>
+          <div className="px-5 py-4" style={{ backgroundColor: '#FFFFFF' }}>
             <div className="flex items-center gap-2.5 mb-1.5">
               <div
                 className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
                 style={{ background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)' }}
               >
-                <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
+                <Shield className="w-3.5 h-3.5 text-white" />
               </div>
-              <span className="text-sm font-semibold text-white">Sarawak MedChain</span>
+              <span className="text-sm font-semibold" style={{ color: '#1E293B' }}>Sarawak MedChain</span>
             </div>
-            <p className="text-xs text-slate-500 mb-3 pl-0.5">Blockchain-secured medical records</p>
+            <p className="text-xs text-slate-400 mb-3 pl-0.5">Blockchain-secured medical records</p>
             <button
               onClick={handleDisconnect}
-              className="text-xs text-slate-500 hover:text-slate-300 transition-colors pl-0.5"
+              className="text-xs text-slate-500 hover:text-slate-700 transition-colors pl-0.5"
               style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
             >
               Disconnect wallet
@@ -690,7 +659,7 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
       </aside>
 
       {/* Main Content - Fluid, Scrolls Independently, Edge-to-Edge */}
-      <main className="flex-1 flex flex-col w-full overflow-y-auto" style={{ backgroundColor: '#0a0e14', minHeight: '100vh' }}>
+      <main className="flex-1 flex flex-col w-full overflow-y-auto" style={{ backgroundColor: '#F8FAFC', minHeight: '100vh' }}>
         {/* Sticky Credit Balance Header */}
         <StickyBalanceHeader walletAddress={walletAddress} />
 
@@ -747,29 +716,31 @@ function ConnectScreen({ onConnect, loading, error }) {
         alignItems: 'center',
         justifyContent: 'center',
         padding: '40px',
-        background: '#0a0e14'
+        background: '#F8FAFC'
       }}>
         <div style={{
           maxWidth: '500px',
           width: '100%',
-          background: 'rgba(255,255,255,0.05)',
-          border: '1px solid rgba(255,255,255,0.15)',
+          background: '#FFFFFF',
+          border: '1px solid #E2E8F0',
           borderRadius: '24px',
           padding: '48px',
-          textAlign: 'center'
+          textAlign: 'center',
+          boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06)'
         }}>
           {/* Pending badge */}
           <div style={{
             display: 'inline-block',
-            background: 'rgba(234,179,8,0.2)',
-            color: '#facc15',
+            background: 'rgba(245, 158, 11, 0.1)',
+            color: '#D97706',
             padding: '8px 20px',
             borderRadius: '50px',
             fontSize: '14px',
             fontWeight: '600',
-            marginBottom: '32px'
+            marginBottom: '32px',
+            border: '1px solid rgba(245, 158, 11, 0.2)'
           }}>
-            ⏳ Pending Admin Verification
+            Pending Admin Verification
           </div>
 
           {/* Icon */}
@@ -782,7 +753,7 @@ function ConnectScreen({ onConnect, loading, error }) {
             alignItems: 'center',
             justifyContent: 'center',
             margin: '0 auto 24px',
-            boxShadow: '0 0 30px rgba(20,184,166,0.3)'
+            boxShadow: '0 0 30px rgba(20,184,166,0.2)'
           }}>
             <svg width="40" height="40" fill="none" stroke="white" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -790,12 +761,12 @@ function ConnectScreen({ onConnect, loading, error }) {
           </div>
 
           {/* Title */}
-          <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: 'white', marginBottom: '8px' }}>
+          <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: '#1E293B', marginBottom: '8px' }}>
             Welcome, {pendingAdmin.facilityName}
           </h1>
 
           {/* Subtitle */}
-          <p style={{ color: '#9ca3af', marginBottom: '32px' }}>
+          <p style={{ color: '#64748B', marginBottom: '32px' }}>
             Your application is being reviewed by our team
           </p>
 
@@ -807,43 +778,43 @@ function ConnectScreen({ onConnect, loading, error }) {
             textAlign: 'left',
             marginBottom: '32px',
             padding: '24px',
-            background: 'rgba(15, 23, 42, 0.6)',
+            background: '#F8FAFC',
             borderRadius: '16px',
-            border: '1px solid rgba(255, 255, 255, 0.08)'
+            border: '1px solid #E2E8F0'
           }}>
             {/* Facility Type */}
             <div>
-              <p style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+              <p style={{ fontSize: '11px', fontWeight: '600', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
                 Facility Type
               </p>
-              <p style={{ fontSize: '14px', fontWeight: '600', color: '#ffffff', margin: 0 }}>
+              <p style={{ fontSize: '14px', fontWeight: '600', color: '#1E293B', margin: 0 }}>
                 {pendingAdmin.facilityType}
               </p>
             </div>
             {/* Your Role */}
             <div>
-              <p style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+              <p style={{ fontSize: '11px', fontWeight: '600', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
                 Your Role
               </p>
-              <p style={{ fontSize: '14px', fontWeight: '600', color: '#ffffff', margin: 0 }}>
+              <p style={{ fontSize: '14px', fontWeight: '600', color: '#1E293B', margin: 0 }}>
                 {pendingAdmin.decisionMakerRole}
               </p>
             </div>
             {/* Blockchain Ref */}
             <div>
-              <p style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+              <p style={{ fontSize: '11px', fontWeight: '600', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
                 Blockchain Ref
               </p>
-              <p style={{ fontSize: '13px', fontWeight: '500', color: '#22d3ee', fontFamily: 'monospace', margin: 0 }}>
+              <p style={{ fontSize: '13px', fontWeight: '500', color: '#0D9488', fontFamily: 'monospace', margin: 0 }}>
                 {pendingAdmin.blockchainRef}
               </p>
             </div>
             {/* Submitted */}
             <div>
-              <p style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+              <p style={{ fontSize: '11px', fontWeight: '600', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
                 Submitted
               </p>
-              <p style={{ fontSize: '14px', fontWeight: '600', color: '#ffffff', margin: 0 }}>
+              <p style={{ fontSize: '14px', fontWeight: '600', color: '#1E293B', margin: 0 }}>
                 {new Date(pendingAdmin.submittedAt).toLocaleDateString('en-GB', {
                   day: '2-digit',
                   month: '2-digit',
@@ -858,14 +829,14 @@ function ConnectScreen({ onConnect, loading, error }) {
             textAlign: 'left',
             marginBottom: '24px',
             padding: '16px 20px',
-            background: 'rgba(20, 184, 166, 0.1)',
+            background: 'rgba(20, 184, 166, 0.05)',
             borderRadius: '12px',
-            border: '1px solid rgba(20, 184, 166, 0.2)'
+            border: '1px solid rgba(20, 184, 166, 0.15)'
           }}>
-            <p style={{ fontSize: '14px', fontWeight: '600', color: '#14b8a6', marginBottom: '4px' }}>
+            <p style={{ fontSize: '14px', fontWeight: '600', color: '#0D9488', marginBottom: '4px' }}>
               Next Step: Connect Your Wallet
             </p>
-            <p style={{ fontSize: '13px', color: '#94a3b8', lineHeight: '1.5', margin: 0 }}>
+            <p style={{ fontSize: '13px', color: '#64748B', lineHeight: '1.5', margin: 0 }}>
               Connect your MetaMask wallet to complete the onboarding process.
             </p>
           </div>
@@ -877,9 +848,9 @@ function ConnectScreen({ onConnect, loading, error }) {
               borderRadius: '12px',
               marginBottom: '24px',
               fontSize: '14px',
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#f87171',
+              background: 'rgba(239, 68, 68, 0.05)',
+              border: '1px solid rgba(239, 68, 68, 0.2)',
+              color: '#EF4444',
               textAlign: 'left'
             }}>
               {error}
@@ -905,14 +876,14 @@ function ConnectScreen({ onConnect, loading, error }) {
               justifyContent: 'center',
               gap: '12px',
               opacity: loading ? 0.7 : 1,
-              boxShadow: '0 8px 32px rgba(246, 133, 27, 0.4)'
+              boxShadow: '0 8px 32px rgba(246, 133, 27, 0.3)'
             }}
           >
             {loading ? (
               'Connecting...'
             ) : (
               <>
-                🦊 Connect MetaMask Wallet
+                Connect MetaMask Wallet
               </>
             )}
           </button>
@@ -924,7 +895,7 @@ function ConnectScreen({ onConnect, loading, error }) {
               setPendingAdmin(null);
             }}
             style={{
-              color: '#6b7280',
+              color: '#94A3B8',
               marginTop: '24px',
               fontSize: '14px',
               cursor: 'pointer'
@@ -1067,9 +1038,9 @@ function AppRoutes() {
   // Show loading while checking wallet (skip if in demo mode)
   if (checkingWallet && isProtectedRoute && !isDemoMode) {
     return (
-      <div className="min-h-screen bg-[#0a0e14] flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F8FAFC' }}>
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-slate-400">Checking wallet connection...</p>
         </div>
       </div>
@@ -1129,9 +1100,9 @@ function AppRoutes() {
     } catch (err) {
       console.error('[AppRoutes] Error rendering ProtectedApp:', err);
       return (
-        <div style={{ minHeight: '100vh', background: '#0a0e14', color: 'white', padding: '40px', textAlign: 'center' }}>
+        <div style={{ minHeight: '100vh', background: '#FFFFFF', color: '#1E293B', padding: '40px', textAlign: 'center' }}>
           <h1>Error Loading App</h1>
-          <p style={{ color: '#f87171' }}>{err.message}</p>
+          <p style={{ color: '#EF4444' }}>{err.message}</p>
           <button onClick={handleDisconnect} style={{ marginTop: '20px', padding: '10px 20px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
             Disconnect Wallet
           </button>
@@ -1163,9 +1134,9 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ minHeight: '100vh', background: '#0a0e14', color: 'white', padding: '40px', textAlign: 'center' }}>
-          <h1 style={{ color: '#f87171', marginBottom: '20px' }}>Something went wrong</h1>
-          <p style={{ color: '#94a3b8', marginBottom: '20px' }}>{this.state.error?.message || 'Unknown error'}</p>
+        <div style={{ minHeight: '100vh', background: '#FFFFFF', color: '#1E293B', padding: '40px', textAlign: 'center' }}>
+          <h1 style={{ color: '#EF4444', marginBottom: '20px' }}>Something went wrong</h1>
+          <p style={{ color: '#64748B', marginBottom: '20px' }}>{this.state.error?.message || 'Unknown error'}</p>
           <button
             onClick={() => {
               this.setState({ hasError: false, error: null });

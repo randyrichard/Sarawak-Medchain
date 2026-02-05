@@ -4,15 +4,13 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
-    <meta name="theme-color" content="#030712" />
+    <meta name="theme-color" content="#FFFFFF" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="MedChain" />
     <meta name="description" content="Sarawak MedChain - Blockchain Healthcare Platform for Government Demo" />
 
     <!-- NO GLOBAL MANIFEST - Each page injects its own manifest dynamically -->
-    <!-- This prevents iOS Safari from caching the wrong manifest -->
-
     <!-- NO GLOBAL APPLE TOUCH ICON - Each PWA sets its own icon -->
 
     <!-- Splash Screens for iOS -->
@@ -20,6 +18,10 @@
 
     <!-- Preconnect for performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Google Fonts: Plus Jakarta Sans, DM Sans, JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 
     <title>Sarawak MedChain</title>
 
@@ -28,9 +30,9 @@
       html, body {
         margin: 0;
         padding: 0;
-        background-color: #030712;
-        color: white;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        background-color: #FFFFFF;
+        color: #1E293B;
+        font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         /* Safe area insets for iPhone X+ notch */
@@ -55,12 +57,12 @@
     <script>
       (function() {
         // PWA SWITCH LOGIC: Determine which app context we're in
-        const path = window.location.pathname;
-        const isLandingPage = path === '/' || path === '';
-        const isGovDashboard = path.includes('/admin/gov-dashboard');
-        const isVerifyPWA = path.includes('/pwa/verify');
-        const isIssuePWA = path.includes('/pwa/issue');
-        const isPWARoute = isGovDashboard || isVerifyPWA || isIssuePWA;
+        var path = window.location.pathname;
+        var isLandingPage = path === '/' || path === '';
+        var isGovDashboard = path.includes('/admin/gov-dashboard');
+        var isVerifyPWA = path.includes('/pwa/verify');
+        var isIssuePWA = path.includes('/pwa/issue');
+        var isPWARoute = isGovDashboard || isVerifyPWA || isIssuePWA;
 
         // LANDING PAGE: Clear all PWA state and DO NOT register service worker
         if (isLandingPage) {

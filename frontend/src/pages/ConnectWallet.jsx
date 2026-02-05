@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { Shield, Lock, FileCheck, ChevronLeft } from 'lucide-react';
 
 const MEDCHAIN_BLUE = '#0066CC';
 
@@ -39,7 +40,7 @@ function SecurityVerifiedAnimation({ onComplete }) {
       right: 0,
       bottom: 0,
       zIndex: 100,
-      background: '#030712',
+      background: '#FFFFFF',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -48,14 +49,14 @@ function SecurityVerifiedAnimation({ onComplete }) {
     }}>
       {/* Card container */}
       <div style={{
-        background: 'rgba(15, 23, 42, 0.95)',
+        background: '#FFFFFF',
         borderRadius: '20px',
         border: isVerified
           ? '1px solid rgba(16, 185, 129, 0.5)'
-          : '1px solid rgba(100, 116, 139, 0.3)',
+          : '1px solid #E2E8F0',
         boxShadow: isVerified
-          ? '0 0 40px rgba(16, 185, 129, 0.3), 0 0 80px rgba(16, 185, 129, 0.1)'
-          : '0 0 40px rgba(0, 0, 0, 0.5)',
+          ? '0 0 30px rgba(16, 185, 129, 0.15), 0 0 60px rgba(16, 185, 129, 0.05)'
+          : '0 4px 24px rgba(0, 0, 0, 0.08)',
         padding: '48px',
         textAlign: 'center',
         minWidth: '380px',
@@ -88,14 +89,14 @@ function SecurityVerifiedAnimation({ onComplete }) {
             height: '100%',
             borderRadius: '50%',
             background: isVerified
-              ? 'radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(16, 185, 129, 0.1) 70%)'
-              : 'rgba(30, 41, 59, 0.6)',
+              ? 'radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 70%)'
+              : '#F1F5F9',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             transition: 'all 0.5s ease',
             boxShadow: isVerified
-              ? '0 0 40px rgba(16, 185, 129, 0.4), inset 0 0 20px rgba(16, 185, 129, 0.1)'
+              ? '0 0 30px rgba(16, 185, 129, 0.2), inset 0 0 15px rgba(16, 185, 129, 0.05)'
               : 'none',
             animation: isVerified ? 'shield-glow 2s ease-in-out infinite' : 'none',
           }}>
@@ -104,9 +105,9 @@ function SecurityVerifiedAnimation({ onComplete }) {
               style={{
                 width: '64px',
                 height: '64px',
-                color: isVerified ? '#34d399' : '#64748b',
+                color: isVerified ? '#059669' : '#94A3B8',
                 transition: 'all 0.5s ease',
-                filter: isVerified ? 'drop-shadow(0 0 12px rgba(52, 211, 153, 0.6))' : 'none',
+                filter: isVerified ? 'drop-shadow(0 0 8px rgba(5, 150, 105, 0.4))' : 'none',
               }}
               fill="none"
               stroke="currentColor"
@@ -126,7 +127,7 @@ function SecurityVerifiedAnimation({ onComplete }) {
         <h2 style={{
           fontSize: '26px',
           fontWeight: '700',
-          color: isVerified ? '#34d399' : '#ffffff',
+          color: isVerified ? '#059669' : '#1E293B',
           margin: '0 0 8px 0',
           letterSpacing: '0.3px',
           transition: 'color 0.5s ease',
@@ -137,7 +138,7 @@ function SecurityVerifiedAnimation({ onComplete }) {
         {/* Subtitle */}
         <p style={{
           fontSize: '14px',
-          color: '#94a3b8',
+          color: '#64748B',
           margin: '0 0 24px 0',
         }}>
           {isVerified ? 'Military-grade encryption active' : 'Cryptographic signature check in progress'}
@@ -153,20 +154,20 @@ function SecurityVerifiedAnimation({ onComplete }) {
           }}>
             <span style={{
               padding: '8px 16px',
-              background: 'rgba(16, 185, 129, 0.15)',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
+              background: 'rgba(16, 185, 129, 0.08)',
+              border: '1px solid rgba(16, 185, 129, 0.2)',
               borderRadius: '20px',
-              color: '#34d399',
+              color: '#059669',
               fontSize: '11px',
               fontWeight: '600',
               letterSpacing: '0.5px',
             }}>AES-256-GCM</span>
             <span style={{
               padding: '8px 16px',
-              background: 'rgba(59, 130, 246, 0.15)',
-              border: '1px solid rgba(59, 130, 246, 0.3)',
+              background: 'rgba(59, 130, 246, 0.08)',
+              border: '1px solid rgba(59, 130, 246, 0.2)',
               borderRadius: '20px',
-              color: '#60a5fa',
+              color: '#2563EB',
               fontSize: '11px',
               fontWeight: '600',
               letterSpacing: '0.5px',
@@ -187,7 +188,7 @@ function SecurityVerifiedAnimation({ onComplete }) {
                 width: '8px',
                 height: '8px',
                 borderRadius: '50%',
-                background: '#64748b',
+                background: '#94A3B8',
                 animation: 'loading-dot 1.4s ease-in-out infinite',
                 animationDelay: `${delay}s`,
               }} />
@@ -206,15 +207,15 @@ function SecurityVerifiedAnimation({ onComplete }) {
             <div style={{
               width: '14px',
               height: '14px',
-              border: '2px solid rgba(52, 211, 153, 0.3)',
-              borderTopColor: '#34d399',
+              border: '2px solid rgba(5, 150, 105, 0.2)',
+              borderTopColor: '#059669',
               borderRadius: '50%',
               animation: 'spinner 0.8s linear infinite',
             }} />
           )}
           <p style={{
             fontSize: '13px',
-            color: '#64748b',
+            color: '#94A3B8',
             margin: 0,
           }}>
             {isVerified ? 'Redirecting to dashboard...' : 'Please wait while we verify your credentials'}
@@ -233,8 +234,8 @@ function SecurityVerifiedAnimation({ onComplete }) {
           40% { transform: scale(1); opacity: 1; }
         }
         @keyframes shield-glow {
-          0%, 100% { box-shadow: 0 0 40px rgba(16, 185, 129, 0.4), inset 0 0 20px rgba(16, 185, 129, 0.1); }
-          50% { box-shadow: 0 0 60px rgba(16, 185, 129, 0.5), inset 0 0 30px rgba(16, 185, 129, 0.15); }
+          0%, 100% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.2), inset 0 0 15px rgba(16, 185, 129, 0.05); }
+          50% { box-shadow: 0 0 40px rgba(16, 185, 129, 0.25), inset 0 0 20px rgba(16, 185, 129, 0.08); }
         }
         @keyframes spinner {
           to { transform: rotate(360deg); }
@@ -264,6 +265,11 @@ export default function ConnectWallet({ onConnect, loading, error }) {
 
   // Check if MetaMask is installed
   const isMetaMaskInstalled = typeof window !== 'undefined' && Boolean(window.ethereum);
+
+  // Check if we're on production (not localhost)
+  const isProduction = typeof window !== 'undefined' &&
+    !window.location.hostname.includes('localhost') &&
+    !window.location.hostname.includes('127.0.0.1');
 
   // WEALTH 2026 DEMO: Wrap onConnect to show security animation first
   const handleSecureConnect = async () => {
@@ -334,7 +340,7 @@ export default function ConnectWallet({ onConnect, loading, error }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#0a0e14'
+        background: '#FFFFFF'
       }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{
@@ -347,8 +353,8 @@ export default function ConnectWallet({ onConnect, loading, error }) {
             animation: 'spin 1s linear infinite'
           }} />
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-          <h2 style={{ color: 'white', fontSize: '20px', marginBottom: '8px' }}>Connecting to MetaMask...</h2>
-          <p style={{ color: '#9ca3af', fontSize: '14px' }}>Please confirm the connection in your wallet</p>
+          <h2 style={{ color: '#1E293B', fontSize: '20px', marginBottom: '8px' }}>Connecting to MetaMask...</h2>
+          <p style={{ color: '#64748B', fontSize: '14px' }}>Please confirm the connection in your wallet</p>
         </div>
       </div>
     );
@@ -363,29 +369,30 @@ export default function ConnectWallet({ onConnect, loading, error }) {
         alignItems: 'center',
         justifyContent: 'center',
         padding: '40px',
-        background: '#0a0e14'
+        background: '#FFFFFF'
       }}>
         <div style={{
           maxWidth: '500px',
           width: '100%',
-          background: 'rgba(255,255,255,0.05)',
-          border: '1px solid rgba(255,255,255,0.15)',
+          background: '#FFFFFF',
+          border: '1px solid #E2E8F0',
           borderRadius: '24px',
           padding: '48px',
-          textAlign: 'center'
+          textAlign: 'center',
+          boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06)'
         }}>
           {/* Pending badge */}
           <div style={{
             display: 'inline-block',
-            background: 'rgba(234,179,8,0.2)',
-            color: '#facc15',
+            background: '#FFFBEB',
+            color: '#B45309',
             padding: '8px 20px',
             borderRadius: '50px',
             fontSize: '14px',
             fontWeight: '600',
             marginBottom: '32px'
           }}>
-            ⏳ Pending Admin Verification
+            Pending Admin Verification
           </div>
 
           {/* Icon */}
@@ -406,12 +413,12 @@ export default function ConnectWallet({ onConnect, loading, error }) {
           </div>
 
           {/* Title */}
-          <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: 'white', marginBottom: '8px' }}>
+          <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: '#1E293B', marginBottom: '8px' }}>
             Welcome, {pendingAdmin.facilityName}
           </h1>
 
           {/* Subtitle */}
-          <p style={{ color: '#9ca3af', marginBottom: '32px' }}>
+          <p style={{ color: '#64748B', marginBottom: '32px' }}>
             Your application is being reviewed by our team
           </p>
 
@@ -423,43 +430,43 @@ export default function ConnectWallet({ onConnect, loading, error }) {
             textAlign: 'left',
             marginBottom: '32px',
             padding: '24px',
-            background: 'rgba(15, 23, 42, 0.6)',
+            background: '#F8FAFC',
             borderRadius: '16px',
-            border: '1px solid rgba(255, 255, 255, 0.08)'
+            border: '1px solid #E2E8F0'
           }}>
             {/* Facility Type */}
             <div>
-              <p style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+              <p style={{ fontSize: '11px', fontWeight: '600', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
                 Facility Type
               </p>
-              <p style={{ fontSize: '14px', fontWeight: '600', color: '#ffffff', margin: 0 }}>
+              <p style={{ fontSize: '14px', fontWeight: '600', color: '#1E293B', margin: 0 }}>
                 {pendingAdmin.facilityType}
               </p>
             </div>
             {/* Your Role */}
             <div>
-              <p style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+              <p style={{ fontSize: '11px', fontWeight: '600', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
                 Your Role
               </p>
-              <p style={{ fontSize: '14px', fontWeight: '600', color: '#ffffff', margin: 0 }}>
+              <p style={{ fontSize: '14px', fontWeight: '600', color: '#1E293B', margin: 0 }}>
                 {pendingAdmin.decisionMakerRole}
               </p>
             </div>
             {/* Blockchain Ref */}
             <div>
-              <p style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+              <p style={{ fontSize: '11px', fontWeight: '600', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
                 Blockchain Ref
               </p>
-              <p style={{ fontSize: '13px', fontWeight: '500', color: '#22d3ee', fontFamily: 'monospace', margin: 0 }}>
+              <p style={{ fontSize: '13px', fontWeight: '500', color: '#0F766E', fontFamily: 'monospace', margin: 0 }}>
                 {pendingAdmin.blockchainRef}
               </p>
             </div>
             {/* Submitted */}
             <div>
-              <p style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+              <p style={{ fontSize: '11px', fontWeight: '600', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
                 Submitted
               </p>
-              <p style={{ fontSize: '14px', fontWeight: '600', color: '#ffffff', margin: 0 }}>
+              <p style={{ fontSize: '14px', fontWeight: '600', color: '#1E293B', margin: 0 }}>
                 {new Date(pendingAdmin.submittedAt).toLocaleDateString('en-GB', {
                   day: '2-digit',
                   month: '2-digit',
@@ -474,9 +481,9 @@ export default function ConnectWallet({ onConnect, loading, error }) {
             textAlign: 'left',
             marginBottom: '24px',
             padding: '16px 20px',
-            background: 'rgba(20, 184, 166, 0.1)',
+            background: '#F0FDFA',
             borderRadius: '12px',
-            border: '1px solid rgba(20, 184, 166, 0.2)'
+            border: '1px solid #CCFBF1'
           }}>
             <p style={{ fontSize: '14px', fontWeight: '600', color: '#14b8a6', marginBottom: '4px' }}>
               Next Step: Connect Your Wallet
@@ -493,13 +500,13 @@ export default function ConnectWallet({ onConnect, loading, error }) {
               borderRadius: '12px',
               marginBottom: '24px',
               fontSize: '14px',
-              background: 'rgba(251, 191, 36, 0.1)',
-              border: '1px solid rgba(251, 191, 36, 0.3)',
-              color: '#fbbf24',
+              background: '#FFFBEB',
+              border: '1px solid #FDE68A',
+              color: '#B45309',
               textAlign: 'left'
             }}>
               <p style={{ fontWeight: '600', marginBottom: '8px' }}>MetaMask Required</p>
-              <p style={{ margin: 0, color: '#94a3b8' }}>
+              <p style={{ margin: 0, color: '#64748B' }}>
                 Please install the MetaMask browser extension to connect your wallet.{' '}
                 <a
                   href="https://metamask.io/download/"
@@ -520,9 +527,9 @@ export default function ConnectWallet({ onConnect, loading, error }) {
               borderRadius: '12px',
               marginBottom: '24px',
               fontSize: '14px',
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              color: '#f87171',
+              background: '#FEF2F2',
+              border: '1px solid #FECACA',
+              color: '#DC2626',
               textAlign: 'left'
             }}>
               {displayError}
@@ -587,10 +594,10 @@ export default function ConnectWallet({ onConnect, loading, error }) {
                 Connecting...
               </>
             ) : !isMetaMaskInstalled ? (
-              '🦊 MetaMask Not Installed'
+              'MetaMask Not Installed'
             ) : (
               <>
-                🦊 Connect MetaMask Wallet
+                Connect MetaMask Wallet
               </>
             )}
           </button>
@@ -602,7 +609,7 @@ export default function ConnectWallet({ onConnect, loading, error }) {
               setPendingAdmin(null);
             }}
             style={{
-              color: '#6b7280',
+              color: '#94A3B8',
               marginTop: '24px',
               fontSize: '14px',
               cursor: 'pointer'
@@ -617,23 +624,22 @@ export default function ConnectWallet({ onConnect, loading, error }) {
 
   // Main Connect Wallet UI
   return (
-    <div className="min-h-screen bg-[#030712] flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
-      <header className="border-b border-slate-800/50 bg-slate-900/50 backdrop-blur-sm">
+      <header style={{ borderBottom: '1px solid #E2E8F0', background: '#FFFFFF' }}>
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: MEDCHAIN_BLUE }}>
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#0F766E' }}>
+              <Shield className="w-6 h-6 text-white" />
             </div>
             <div>
-              <span className="text-xl font-bold text-white">Sarawak</span>
-              <span className="text-xl font-bold text-amber-400 ml-1">MedChain</span>
+              <span className="text-xl font-bold" style={{ color: '#1E293B' }}>Sarawak</span>
+              <span className="text-xl font-bold ml-1" style={{ color: '#0F766E' }}>MedChain</span>
             </div>
           </Link>
-          <Link to="/" className="text-slate-400 hover:text-white text-sm transition-colors">
-            ← Back to Home
+          <Link to="/" className="flex items-center gap-1 text-sm transition-colors hover:opacity-80" style={{ color: '#64748B' }}>
+            <ChevronLeft className="w-4 h-4" />
+            Back to Home
           </Link>
         </div>
       </header>
@@ -642,55 +648,52 @@ export default function ConnectWallet({ onConnect, loading, error }) {
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="max-w-md w-full">
           {/* Connection Card */}
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700/50 rounded-3xl p-8 shadow-2xl">
+          <div className="rounded-3xl p-8" style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06)' }}>
             {/* Icon */}
             <div className="w-20 h-20 mx-auto mb-6 relative">
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 opacity-20 blur-xl"></div>
-              <div className="relative w-full h-full rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30 flex items-center justify-center">
-                <svg className="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
+              <div className="absolute inset-0 rounded-2xl opacity-20 blur-xl" style={{ background: 'linear-gradient(135deg, #0F766E, #14B8A6)' }}></div>
+              <div className="relative w-full h-full rounded-2xl flex items-center justify-center" style={{ background: 'rgba(15, 118, 110, 0.08)', border: '1px solid rgba(15, 118, 110, 0.2)' }}>
+                <Lock className="w-10 h-10" style={{ color: '#0F766E' }} />
               </div>
             </div>
 
             {/* Title */}
-            <h1 className="text-2xl font-bold text-white text-center mb-2">
+            <h1 className="text-2xl font-bold text-center mb-2" style={{ color: '#1E293B' }}>
               {isFromDoctorPortal ? 'Doctor Portal Access' : 'Connect to MedChain'}
             </h1>
-            <p className="text-slate-400 text-center mb-8">
+            <p className="text-center mb-8" style={{ color: '#64748B' }}>
               {isFromDoctorPortal
                 ? 'Verify your identity to access the doctor terminal'
                 : 'Connect your wallet to access the secure medical records system'}
             </p>
 
             {/* Security Badge */}
-            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mb-6">
+            <div className="rounded-xl p-4 mb-6" style={{ background: '#ECFDF5', border: '1px solid #A7F3D0' }}>
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(16, 185, 129, 0.15)' }}>
+                  <Shield className="w-4 h-4" style={{ color: '#059669' }} />
                 </div>
                 <div>
-                  <p className="text-emerald-400 font-semibold text-sm">Blockchain-Secured</p>
-                  <p className="text-slate-400 text-xs mt-1">
+                  <p className="font-semibold text-sm" style={{ color: '#059669' }}>Blockchain-Secured</p>
+                  <p className="text-xs mt-1" style={{ color: '#64748B' }}>
                     Your wallet acts as your cryptographic identity. No passwords, no breaches.
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* MetaMask Not Installed Warning */}
-            {!isMetaMaskInstalled && (
-              <div className="bg-amber-500/10 border border-amber-500/30 text-amber-400 p-4 rounded-xl mb-6 text-sm">
+            {/* MetaMask Not Installed Warning - Only on localhost */}
+            {!isProduction && !isMetaMaskInstalled && (
+              <div className="p-4 rounded-xl mb-6 text-sm" style={{ background: '#FFFBEB', border: '1px solid #FDE68A', color: '#B45309' }}>
                 <p className="font-semibold mb-2">MetaMask Required</p>
-                <p className="text-slate-400">
+                <p style={{ color: '#64748B' }}>
                   Please install the MetaMask browser extension to connect your wallet.{' '}
                   <a
                     href="https://metamask.io/download/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-400 hover:underline"
+                    className="hover:underline"
+                    style={{ color: '#0F766E' }}
                   >
                     Download MetaMask
                   </a>
@@ -698,9 +701,37 @@ export default function ConnectWallet({ onConnect, loading, error }) {
               </div>
             )}
 
+            {/* Production Warning - Show on deployed site */}
+            {isProduction && (
+              <div className="p-6 rounded-xl mb-6" style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#1E40AF' }}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(59, 130, 246, 0.1)' }}>
+                    <svg className="w-5 h-5" style={{ color: '#2563EB' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <p className="font-bold text-lg" style={{ color: '#1E40AF' }}>Demo Deployment</p>
+                </div>
+                <p className="mb-4 leading-relaxed" style={{ color: '#334155' }}>
+                  This is a live demo site without a blockchain backend. MetaMask connection is not available here.
+                </p>
+                <p className="text-sm mb-4" style={{ color: '#64748B' }}>
+                  To explore the full application with simulated blockchain features, use our interactive demo mode.
+                </p>
+                <Link
+                  to="/"
+                  className="inline-flex items-center gap-2 text-white px-6 py-3 rounded-xl font-bold transition-all"
+                  style={{ background: 'linear-gradient(135deg, #0F766E, #14B8A6)', boxShadow: '0 4px 16px rgba(15, 118, 110, 0.25)' }}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                  Go to Landing Page & Try Demo
+                </Link>
+              </div>
+            )}
+
             {/* Error Message */}
             {displayError && (
-              <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-xl mb-6 text-sm flex items-start gap-3">
+              <div className="p-4 rounded-xl mb-6 text-sm flex items-start gap-3" style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626' }}>
                 <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -708,81 +739,86 @@ export default function ConnectWallet({ onConnect, loading, error }) {
               </div>
             )}
 
-            {/* Connect Button */}
-            <button
-              onClick={handleSecureConnect}
-              disabled={isLoading || !isMetaMaskInstalled}
-              className={`w-full py-4 text-white font-bold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-3 shadow-lg ${
-                !isMetaMaskInstalled
-                  ? 'bg-gradient-to-r from-gray-600 to-gray-700 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 shadow-blue-500/20'
-              }`}
-            >
-              {isLoading ? (
-                <>
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Connecting to MetaMask...
-                </>
-              ) : !isMetaMaskInstalled ? (
-                <>
-                  <span>🦊</span>
-                  MetaMask Not Installed
-                </>
-              ) : (
-                <>
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" className="w-6 h-6" />
-                  Connect MetaMask Wallet
-                </>
-              )}
-            </button>
+            {/* Connect Button - Hidden on production */}
+            {!isProduction && (
+              <button
+                onClick={handleSecureConnect}
+                disabled={isLoading || !isMetaMaskInstalled}
+                className={`w-full py-4 text-white font-bold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-3 ${
+                  !isMetaMaskInstalled
+                    ? 'cursor-not-allowed'
+                    : ''
+                }`}
+                style={{
+                  background: !isMetaMaskInstalled
+                    ? 'linear-gradient(135deg, #94A3B8, #64748B)'
+                    : 'linear-gradient(135deg, #0F766E, #14B8A6)',
+                  boxShadow: !isMetaMaskInstalled
+                    ? 'none'
+                    : '0 8px 24px rgba(15, 118, 110, 0.3)',
+                }}
+              >
+                {isLoading ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Connecting to MetaMask...
+                  </>
+                ) : !isMetaMaskInstalled ? (
+                  <>
+                    <span>MetaMask Not Installed</span>
+                  </>
+                ) : (
+                  <>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" className="w-6 h-6" />
+                    Connect MetaMask Wallet
+                  </>
+                )}
+              </button>
+            )}
 
-            {/* Info Text */}
-            <p className="text-slate-500 text-xs text-center mt-4">
-              Don't have MetaMask?{' '}
-              <a href="https://metamask.io/download/" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
-                Download here
-              </a>
-            </p>
+            {/* Info Text - Only show on localhost */}
+            {!isProduction && (
+              <p className="text-xs text-center mt-4" style={{ color: '#94A3B8' }}>
+                Don't have MetaMask?{' '}
+                <a href="https://metamask.io/download/" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: '#0F766E' }}>
+                  Download here
+                </a>
+              </p>
+            )}
           </div>
 
           {/* Features */}
           <div className="mt-8 grid grid-cols-3 gap-4">
             <div className="text-center">
-              <div className="w-10 h-10 mx-auto mb-2 rounded-lg bg-slate-800 flex items-center justify-center">
-                <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
+              <div className="w-10 h-10 mx-auto mb-2 rounded-lg flex items-center justify-center" style={{ background: '#F1F5F9' }}>
+                <Lock className="w-5 h-5" style={{ color: '#64748B' }} />
               </div>
-              <p className="text-slate-400 text-xs">Zero Passwords</p>
+              <p className="text-xs" style={{ color: '#1E293B' }}>Zero Passwords</p>
             </div>
             <div className="text-center">
-              <div className="w-10 h-10 mx-auto mb-2 rounded-lg bg-slate-800 flex items-center justify-center">
-                <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
+              <div className="w-10 h-10 mx-auto mb-2 rounded-lg flex items-center justify-center" style={{ background: '#F1F5F9' }}>
+                <Shield className="w-5 h-5" style={{ color: '#64748B' }} />
               </div>
-              <p className="text-slate-400 text-xs">Audit Trail</p>
+              <p className="text-xs" style={{ color: '#1E293B' }}>Audit Trail</p>
             </div>
             <div className="text-center">
-              <div className="w-10 h-10 mx-auto mb-2 rounded-lg bg-slate-800 flex items-center justify-center">
-                <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
+              <div className="w-10 h-10 mx-auto mb-2 rounded-lg flex items-center justify-center" style={{ background: '#F1F5F9' }}>
+                <FileCheck className="w-5 h-5" style={{ color: '#64748B' }} />
               </div>
-              <p className="text-slate-400 text-xs">Instant Verify</p>
+              <p className="text-xs" style={{ color: '#1E293B' }}>Instant Verify</p>
             </div>
           </div>
 
           {/* Back Links */}
           <div className="mt-8 text-center space-x-4">
-            <Link to="/pitch" className="text-slate-500 hover:text-blue-400 text-sm transition-colors">
+            <Link to="/pitch" className="text-sm transition-colors hover:opacity-70" style={{ color: '#94A3B8' }}>
               View Pitch Deck
             </Link>
-            <span className="text-slate-700">|</span>
-            <Link to="/" className="text-slate-500 hover:text-blue-400 text-sm transition-colors">
+            <span style={{ color: '#CBD5E1' }}>|</span>
+            <Link to="/" className="text-sm transition-colors hover:opacity-70" style={{ color: '#94A3B8' }}>
               Return Home
             </Link>
           </div>

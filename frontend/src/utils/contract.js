@@ -51,8 +51,14 @@ export async function connectWallet() {
     const chainId = Number(network.chainId);
     console.log('Connected to network:', chainId);
 
+    // Check if we're on production (not localhost)
+    const isProduction = !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1');
+
     // Accept both Hardhat default chainIds
     if (chainId !== 31337 && chainId !== 1337) {
+      if (isProduction) {
+        throw new Error('Live blockchain not available on demo site. Please use "Try Demo" button on the landing page to explore the app.');
+      }
       throw new Error(`Wrong network. Please connect MetaMask to Localhost 8545 (Hardhat). Current chainId: ${chainId}`);
     }
 

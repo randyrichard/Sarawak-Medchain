@@ -115,11 +115,11 @@ function RequestAccessModal({ isOpen, onClose, onSubmitSuccess }) {
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg mx-4 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative w-full max-w-lg mx-4 bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden">
         {/* Progress Bar */}
-        <div className="h-1 bg-slate-800">
+        <div className="h-1 bg-slate-100">
           <div
-            className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-500"
+            className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all duration-500"
             style={{ width: `${calculateProgress()}%` }}
           />
         </div>
@@ -127,7 +127,7 @@ function RequestAccessModal({ isOpen, onClose, onSubmitSuccess }) {
         {/* Close Button */}
         <button
           onClick={handleClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors z-10"
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors z-10"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -138,20 +138,20 @@ function RequestAccessModal({ isOpen, onClose, onSubmitSuccess }) {
         <form onSubmit={handleSubmit} className="p-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-16 h-16 bg-teal-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-white">Request Hospital Access</h2>
-            <p className="text-slate-400 mt-2">Join Sarawak's blockchain healthcare network</p>
+            <h2 className="text-2xl font-bold text-slate-900">Request Hospital Access</h2>
+            <p className="text-slate-500 mt-2">Join Sarawak's blockchain healthcare network</p>
           </div>
 
           {/* Form Fields */}
           <div className="space-y-5">
             {/* Facility Name */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-slate-600 mb-2">
                 Facility Name
               </label>
               <input
@@ -160,21 +160,21 @@ function RequestAccessModal({ isOpen, onClose, onSubmitSuccess }) {
                 value={formData.facilityName}
                 onChange={handleInputChange}
                 placeholder="e.g., KPJ Kuching, Rejang Medical"
-                className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors"
                 required
               />
             </div>
 
             {/* Facility Type */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-slate-600 mb-2">
                 Facility Type
               </label>
               <select
                 name="facilityType"
                 value={formData.facilityType}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-colors appearance-none cursor-pointer"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors appearance-none cursor-pointer"
                 required
               >
                 <option value="" className="text-slate-500">Select facility type</option>
@@ -186,7 +186,7 @@ function RequestAccessModal({ isOpen, onClose, onSubmitSuccess }) {
 
             {/* Estimated Monthly MCs */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-slate-600 mb-2">
                 Estimated Monthly MCs
               </label>
               <input
@@ -196,11 +196,11 @@ function RequestAccessModal({ isOpen, onClose, onSubmitSuccess }) {
                 onChange={handleInputChange}
                 placeholder="e.g., 500"
                 min="1"
-                className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors"
                 required
               />
               {formData.estimatedMCs && (
-                <p className="text-xs text-emerald-400 mt-2">
+                <p className="text-xs text-emerald-600 mt-2">
                   Estimated variable fee: RM{Number(formData.estimatedMCs).toLocaleString()}/month
                 </p>
               )}
@@ -208,14 +208,14 @@ function RequestAccessModal({ isOpen, onClose, onSubmitSuccess }) {
 
             {/* Decision Maker Role */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-slate-600 mb-2">
                 Your Role
               </label>
               <select
                 name="decisionMakerRole"
                 value={formData.decisionMakerRole}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-colors appearance-none cursor-pointer"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors appearance-none cursor-pointer"
                 required
               >
                 <option value="" className="text-slate-500">Select your role</option>
@@ -228,7 +228,7 @@ function RequestAccessModal({ isOpen, onClose, onSubmitSuccess }) {
             {/* Contact Info Row */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-600 mb-2">
                   Email
                 </label>
                 <input
@@ -237,12 +237,12 @@ function RequestAccessModal({ isOpen, onClose, onSubmitSuccess }) {
                   value={formData.email}
                   onChange={handleInputChange}
                   placeholder="you@hospital.com"
-                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-600 mb-2">
                   Phone
                 </label>
                 <input
@@ -251,7 +251,7 @@ function RequestAccessModal({ isOpen, onClose, onSubmitSuccess }) {
                   value={formData.phone}
                   onChange={handleInputChange}
                   placeholder="+60 12-345 6789"
-                  className="w-full px-4 py-3 bg-slate-800 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-colors"
                   required
                 />
               </div>
@@ -262,7 +262,7 @@ function RequestAccessModal({ isOpen, onClose, onSubmitSuccess }) {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full mt-8 py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2"
+            className="w-full mt-8 py-4 bg-teal-600 hover:bg-teal-700 disabled:bg-teal-600/50 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <>
@@ -498,7 +498,7 @@ function ProvisioningOverlay({ isVisible, facilityName, blockchainRef, onComplet
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-[#030712] flex items-center justify-center">
+    <div className="fixed inset-0 z-[100] bg-white flex items-center justify-center">
       {/* Animated grid background */}
       <div className="absolute inset-0 overflow-hidden">
         <div
@@ -516,7 +516,7 @@ function ProvisioningOverlay({ isVisible, facilityName, blockchainRef, onComplet
         <div
           className="absolute inset-0"
           style={{
-            background: 'radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 50%)',
+            background: 'radial-gradient(circle at 50% 50%, rgba(15, 118, 110, 0.08) 0%, transparent 50%)',
           }}
         />
       </div>
@@ -549,21 +549,21 @@ function ProvisioningOverlay({ isVisible, facilityName, blockchainRef, onComplet
         </div>
 
         {/* Main message */}
-        <h1 className="text-3xl font-bold text-white mb-3">Application Received</h1>
-        <p className="text-xl text-emerald-400 font-semibold mb-8">
+        <h1 className="text-3xl font-bold text-slate-900 mb-3">Application Received</h1>
+        <p className="text-xl text-emerald-600 font-semibold mb-8">
           Your unique Hospital Blockchain Node is being provisioned...
         </p>
 
         {/* Facility name */}
-        <div className="bg-slate-800/50 border border-white/10 rounded-xl p-4 mb-6">
-          <p className="text-slate-400 text-sm">Provisioning node for</p>
-          <p className="text-white text-xl font-bold">{facilityName}</p>
-          <p className="text-emerald-400 font-mono text-xs mt-2">{blockchainRef}</p>
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6">
+          <p className="text-slate-500 text-sm">Provisioning node for</p>
+          <p className="text-slate-900 text-xl font-bold">{facilityName}</p>
+          <p className="text-emerald-600 font-mono text-xs mt-2">{blockchainRef}</p>
         </div>
 
         {/* Progress bar */}
         <div className="mb-4">
-          <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+          <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
             <div
               className="h-full rounded-full transition-all duration-100"
               style={{
@@ -575,8 +575,8 @@ function ProvisioningOverlay({ isVisible, facilityName, blockchainRef, onComplet
         </div>
 
         {/* Current step */}
-        <div className="flex items-center justify-center gap-2 text-slate-400 text-sm">
-          <svg className="w-4 h-4 animate-spin text-blue-400" fill="none" viewBox="0 0 24 24">
+        <div className="flex items-center justify-center gap-2 text-slate-500 text-sm">
+          <svg className="w-4 h-4 animate-spin text-teal-600" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
           </svg>
@@ -784,22 +784,9 @@ export default function LandingPage() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-        /* LANDING PAGE OVERRIDES - Reset global dark theme */
-        .landing-page,
-        .landing-page *:not(.bg-gradient-to-b):not(.bg-gradient-to-br):not([class*="from-slate-9"]) {
-          background-color: transparent;
-        }
+        /* Landing page base */
         .landing-page {
-          background-color: #f8fafc !important;
-        }
-        .landing-page header {
-          background-color: rgba(255, 255, 255, 0.8) !important;
-        }
-        .landing-page .bg-white {
-          background-color: #ffffff !important;
-        }
-        .landing-page .bg-slate-50 {
-          background-color: #f8fafc !important;
+          background-color: #f8fafc;
         }
 
         /* Premium Typography */
@@ -838,8 +825,8 @@ export default function LandingPage() {
         .hover-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
         .hover-lift:hover { transform: translateY(-2px); }
 
-        /* Red glow for fraud stat */
-        .red-glow { text-shadow: 0 0 40px rgba(239, 68, 68, 0.5); }
+        /* Red accent for fraud stat */
+        .red-glow { text-shadow: none; }
 
         /* ========== STATS ROW - Desktop ========== */
         .stats-row {
@@ -1158,7 +1145,7 @@ export default function LandingPage() {
             className="group"
             style={{
               padding: '14px 28px',
-              backgroundColor: '#2563eb',
+              backgroundColor: '#0F766E',
               color: 'white',
               fontSize: '15px',
               fontWeight: 600,
@@ -1166,16 +1153,16 @@ export default function LandingPage() {
               border: 'none',
               cursor: 'pointer',
               transition: 'all 0.3s ease',
-              boxShadow: '0 0 0 1px rgba(37, 99, 235, 0.5), 0 4px 6px rgba(37, 99, 235, 0.15), 0 10px 20px rgba(37, 99, 235, 0.2), 0 0 40px rgba(37, 99, 235, 0.15)'
+              boxShadow: '0 4px 12px rgba(15, 118, 110, 0.2), 0 8px 24px rgba(15, 118, 110, 0.15)'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#1d4ed8';
-              e.currentTarget.style.boxShadow = '0 0 0 1px rgba(37, 99, 235, 0.6), 0 6px 12px rgba(37, 99, 235, 0.25), 0 15px 30px rgba(37, 99, 235, 0.3), 0 0 60px rgba(37, 99, 235, 0.25)';
+              e.currentTarget.style.backgroundColor = '#0D9488';
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(15, 118, 110, 0.3), 0 12px 32px rgba(15, 118, 110, 0.2)';
               e.currentTarget.style.transform = 'translateY(-2px)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#2563eb';
-              e.currentTarget.style.boxShadow = '0 0 0 1px rgba(37, 99, 235, 0.5), 0 4px 6px rgba(37, 99, 235, 0.15), 0 10px 20px rgba(37, 99, 235, 0.2), 0 0 40px rgba(37, 99, 235, 0.15)';
+              e.currentTarget.style.backgroundColor = '#0F766E';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(15, 118, 110, 0.2), 0 8px 24px rgba(15, 118, 110, 0.15)';
               e.currentTarget.style.transform = 'translateY(0)';
             }}
           >
@@ -1204,7 +1191,7 @@ export default function LandingPage() {
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = '#f59e0b';
-              e.currentTarget.style.color = '#0a0e14';
+              e.currentTarget.style.color = '#1E293B';
               e.currentTarget.style.transform = 'translateY(-2px)';
               e.currentTarget.style.boxShadow = '0 0 30px rgba(245, 158, 11, 0.4)';
             }}
@@ -1246,22 +1233,22 @@ export default function LandingPage() {
 
       {/* ========== THE PROBLEM SECTION - Premium ========== */}
       <section className="problem-section" style={{ padding: '96px 0' }}>
-        <div className="problem-card" style={{ position: 'relative', background: 'linear-gradient(to bottom, #0f172a, #020617)', color: 'white', borderRadius: '20px', padding: '64px', overflow: 'hidden' }}>
+        <div className="problem-card" style={{ position: 'relative', background: '#FFFFFF', color: '#1E293B', borderRadius: '20px', padding: '64px', overflow: 'hidden', border: '1px solid #E2E8F0', boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
           {/* Subtle gradient orb */}
-          <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translate(-50%, -50%)', width: '600px', height: '600px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '50%', filter: 'blur(120px)' }}></div>
+          <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translate(-50%, -50%)', width: '600px', height: '600px', background: 'rgba(239, 68, 68, 0.06)', borderRadius: '50%', filter: 'blur(120px)' }}></div>
 
           <div style={{ position: 'relative', zIndex: 10, maxWidth: '700px', margin: '0 auto', textAlign: 'center' }}>
             {/* Section Label */}
             <p className="font-heading" style={{ fontSize: '11px', fontWeight: 600, color: '#64748b', marginBottom: '32px', textTransform: 'uppercase', letterSpacing: '0.2em' }}>The Problem</p>
 
             {/* Main Stat with red glow */}
-            <h2 className="font-heading red-glow problem-headline" style={{ fontSize: 'clamp(56px, 8vw, 72px)', fontWeight: 800, color: 'white', marginBottom: '16px', lineHeight: 1 }}>
+            <h2 className="font-heading problem-headline" style={{ fontSize: 'clamp(56px, 8vw, 72px)', fontWeight: 800, color: '#DC2626', marginBottom: '16px', lineHeight: 1 }}>
               RM 2.3 Billion
             </h2>
             <p className="font-heading problem-subhead" style={{ fontSize: 'clamp(20px, 3vw, 24px)', fontWeight: 600, color: '#f87171', marginBottom: '40px' }}>Lost to MC Fraud Annually</p>
 
             {/* Description */}
-            <p className="font-body problem-description" style={{ fontSize: '18px', color: '#94a3b8', lineHeight: 1.7, marginBottom: '48px', maxWidth: '540px', marginLeft: 'auto', marginRight: 'auto' }}>
+            <p className="font-body problem-description" style={{ fontSize: '18px', color: '#64748B', lineHeight: 1.7, marginBottom: '48px', maxWidth: '540px', marginLeft: 'auto', marginRight: 'auto' }}>
               Malaysian employers lose billions annually to fraudulent medical certificates. Paper-based systems are easily forged, impossible to verify, and create zero accountability.
             </p>
 
@@ -1272,14 +1259,14 @@ export default function LandingPage() {
                   <svg style={{ width: '14px', height: '14px', color: '#f87171' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                   </svg>
-                  <span style={{ fontSize: '13px', color: 'white', fontWeight: 500 }}>{problem}</span>
+                  <span style={{ fontSize: '13px', color: '#991B1B', fontWeight: 500 }}>{problem}</span>
                 </div>
               ))}
             </div>
 
             {/* Solution cards - glassmorphism */}
             <div className="solution-cards" style={{ display: 'flex', justifyContent: 'center', gap: '16px', flexWrap: 'wrap' }}>
-              <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 backdrop-blur-sm hover-lift">
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 hover-lift">
                 <div className="w-11 h-11 bg-emerald-500/15 rounded-xl flex items-center justify-center mx-auto mb-4">
                   <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -1288,7 +1275,7 @@ export default function LandingPage() {
                 <p className="text-emerald-400 text-[32px] font-bold mb-1">100%</p>
                 <p className="text-slate-500 text-[13px] font-medium">Tamper-Proof</p>
               </div>
-              <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 backdrop-blur-sm hover-lift">
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 hover-lift">
                 <div className="w-11 h-11 bg-blue-500/15 rounded-xl flex items-center justify-center mx-auto mb-4">
                   <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -1297,7 +1284,7 @@ export default function LandingPage() {
                 <p className="text-blue-400 text-[32px] font-bold mb-1">&lt;3 sec</p>
                 <p className="text-slate-500 text-[13px] font-medium">Instant Verify</p>
               </div>
-              <div className="bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 backdrop-blur-sm hover-lift">
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 hover-lift">
                 <div className="w-11 h-11 bg-amber-500/15 rounded-xl flex items-center justify-center mx-auto mb-4">
                   <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
@@ -1560,25 +1547,22 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ========== PRICING SECTION - Premium Dark ========== */}
+      {/* ========== PRICING SECTION - Light ========== */}
       <section id="pricing" className="pricing-section" style={{
         padding: '96px 0',
-        background: 'linear-gradient(to bottom, #0f172a, #1e293b)',
+        background: '#FFFFFF',
         borderRadius: '32px',
         margin: '0 -32px',
         position: 'relative',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        border: '1px solid #E2E8F0'
       }}>
-        {/* Background gradient orbs */}
-        <div style={{ position: 'absolute', top: '-200px', left: '-100px', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%)', borderRadius: '50%' }}></div>
-        <div style={{ position: 'absolute', bottom: '-150px', right: '-50px', width: '350px', height: '350px', background: 'radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%)', borderRadius: '50%' }}></div>
-
         <div style={{ position: 'relative', zIndex: 10, padding: '0 32px' }}>
           {/* Pricing Header */}
           <div style={{ textAlign: 'center', marginBottom: '64px' }}>
-            <p className="font-heading" style={{ fontSize: '12px', fontWeight: 600, color: '#60a5fa', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.2em' }}>Pricing</p>
-            <h2 className="font-heading" style={{ fontSize: 'clamp(36px, 5vw, 48px)', fontWeight: 800, color: 'white', marginBottom: '16px', letterSpacing: '-0.02em' }}>Simple, Transparent Pricing</h2>
-            <p className="font-body" style={{ fontSize: '18px', color: '#94a3b8', maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>No hidden fees. Cancel anytime.</p>
+            <p className="font-heading" style={{ fontSize: '12px', fontWeight: 600, color: '#0F766E', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.2em' }}>Pricing</p>
+            <h2 className="font-heading" style={{ fontSize: 'clamp(36px, 5vw, 48px)', fontWeight: 800, color: '#0f172a', marginBottom: '16px', letterSpacing: '-0.02em' }}>Simple, Transparent Pricing</h2>
+            <p className="font-body" style={{ fontSize: '18px', color: '#64748B', maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>No hidden fees. Cancel anytime.</p>
           </div>
 
           {/* Pricing Grid - Premium cards */}
@@ -1596,9 +1580,9 @@ export default function LandingPage() {
             <div
               style={{
                 width: '320px',
-                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                backgroundColor: '#FFFFFF',
                 borderRadius: '20px',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                border: '1px solid #E2E8F0',
                 padding: '40px 32px',
                 display: 'flex',
                 flexDirection: 'column',
@@ -1606,14 +1590,14 @@ export default function LandingPage() {
                 cursor: 'pointer'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                e.currentTarget.style.borderColor = '#CBD5E1';
                 e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.08)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.borderColor = '#E2E8F0';
                 e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
               }}
             >
               <div style={{ textAlign: 'center', marginBottom: '32px' }}>
@@ -1621,25 +1605,25 @@ export default function LandingPage() {
                 <div style={{
                   width: '56px',
                   height: '56px',
-                  background: 'linear-gradient(135deg, rgba(148, 163, 184, 0.2) 0%, rgba(148, 163, 184, 0.1) 100%)',
+                  background: '#F1F5F9',
                   borderRadius: '16px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   margin: '0 auto 24px auto',
-                  border: '1px solid rgba(255, 255, 255, 0.1)'
+                  border: '1px solid #E2E8F0'
                 }}>
-                  <svg style={{ width: '28px', height: '28px', color: '#94a3b8' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg style={{ width: '28px', height: '28px', color: '#64748B' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
                 </div>
                 {/* Plan Name */}
-                <p className="font-heading" style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '16px' }}>Clinic</p>
+                <p className="font-heading" style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '16px' }}>Clinic</p>
                 {/* Price */}
-                <p className="font-heading" style={{ fontSize: '48px', fontWeight: 800, color: 'white', lineHeight: 1, marginBottom: '4px' }}>
-                  RM2,000<span style={{ fontSize: '16px', fontWeight: 500, color: '#64748b' }}>/mo</span>
+                <p className="font-heading" style={{ fontSize: '48px', fontWeight: 800, color: '#0f172a', lineHeight: 1, marginBottom: '4px' }}>
+                  RM2,000<span style={{ fontSize: '16px', fontWeight: 500, color: '#94A3B8' }}>/mo</span>
                 </p>
-                <p style={{ color: '#64748b', fontSize: '14px', marginTop: '8px' }}>+ RM1 per MC issued</p>
+                <p style={{ color: '#94A3B8', fontSize: '14px', marginTop: '8px' }}>+ RM1 per MC issued</p>
               </div>
 
               {/* Features */}
@@ -1660,7 +1644,7 @@ export default function LandingPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
-                    <span style={{ color: '#cbd5e1', fontSize: '15px' }}>{feature}</span>
+                    <span style={{ color: '#475569', fontSize: '15px' }}>{feature}</span>
                   </div>
                 ))}
               </div>
@@ -1673,21 +1657,21 @@ export default function LandingPage() {
                   width: '100%',
                   padding: '14px 24px',
                   backgroundColor: 'transparent',
-                  color: 'white',
+                  color: '#0F766E',
                   fontSize: '15px',
                   fontWeight: 600,
                   borderRadius: '12px',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  border: '1px solid #0F766E',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                  e.currentTarget.style.backgroundColor = '#F0FDFA';
+                  e.currentTarget.style.borderColor = '#0D9488';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                  e.currentTarget.style.borderColor = '#0F766E';
                 }}
               >
                 {securityLoading === 'clinic' ? 'Verifying...' : 'Get Started'}
@@ -1698,14 +1682,14 @@ export default function LandingPage() {
             <div
               style={{
                 width: '340px',
-                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%)',
+                background: '#FFFFFF',
                 borderRadius: '20px',
-                border: '2px solid rgba(59, 130, 246, 0.5)',
+                border: '2px solid #0F766E',
                 padding: '40px 32px',
                 display: 'flex',
                 flexDirection: 'column',
                 position: 'relative',
-                boxShadow: '0 0 60px rgba(59, 130, 246, 0.2), 0 25px 50px rgba(0, 0, 0, 0.3)',
+                boxShadow: '0 4px 24px rgba(15, 118, 110, 0.12), 0 12px 40px rgba(0, 0, 0, 0.06)',
                 transform: 'scale(1.02)',
                 zIndex: 10
               }}
@@ -1723,14 +1707,14 @@ export default function LandingPage() {
                   alignItems: 'center',
                   gap: '6px',
                   padding: '8px 16px',
-                  background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                  background: 'linear-gradient(135deg, #0F766E 0%, #0D9488 100%)',
                   color: 'white',
                   fontSize: '11px',
                   fontWeight: 700,
                   textTransform: 'uppercase',
                   letterSpacing: '0.1em',
                   borderRadius: '9999px',
-                  boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)'
+                  boxShadow: '0 4px 20px rgba(15, 118, 110, 0.3)'
                 }}>
                   <svg style={{ width: '12px', height: '12px' }} fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clipRule="evenodd" />
@@ -1744,25 +1728,25 @@ export default function LandingPage() {
                 <div style={{
                   width: '56px',
                   height: '56px',
-                  background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                  background: 'linear-gradient(135deg, #0F766E 0%, #0D9488 100%)',
                   borderRadius: '16px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   margin: '0 auto 24px auto',
-                  boxShadow: '0 8px 24px rgba(59, 130, 246, 0.4)'
+                  boxShadow: '0 8px 24px rgba(15, 118, 110, 0.3)'
                 }}>
                   <svg style={{ width: '28px', height: '28px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
                   </svg>
                 </div>
                 {/* Plan Name */}
-                <p className="font-heading" style={{ fontSize: '12px', fontWeight: 600, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '16px' }}>Hospital</p>
+                <p className="font-heading" style={{ fontSize: '12px', fontWeight: 600, color: '#0F766E', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '16px' }}>Hospital</p>
                 {/* Price */}
-                <p className="font-heading" style={{ fontSize: '48px', fontWeight: 800, color: 'white', lineHeight: 1, marginBottom: '4px' }}>
-                  RM10,000<span style={{ fontSize: '16px', fontWeight: 500, color: '#64748b' }}>/mo</span>
+                <p className="font-heading" style={{ fontSize: '48px', fontWeight: 800, color: '#0f172a', lineHeight: 1, marginBottom: '4px' }}>
+                  RM10,000<span style={{ fontSize: '16px', fontWeight: 500, color: '#94A3B8' }}>/mo</span>
                 </p>
-                <p style={{ color: '#60a5fa', fontSize: '14px', fontWeight: 500, marginTop: '8px' }}>+ RM1 per MC issued</p>
+                <p style={{ color: '#0F766E', fontSize: '14px', fontWeight: 500, marginTop: '8px' }}>+ RM1 per MC issued</p>
               </div>
 
               {/* Features */}
@@ -1783,7 +1767,7 @@ export default function LandingPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
-                    <span style={{ color: 'white', fontSize: '15px', fontWeight: 500 }}>{feature}</span>
+                    <span style={{ color: '#1E293B', fontSize: '15px', fontWeight: 500 }}>{feature}</span>
                   </div>
                 ))}
               </div>
@@ -1795,7 +1779,7 @@ export default function LandingPage() {
                 style={{
                   width: '100%',
                   padding: '16px 24px',
-                  background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                  background: 'linear-gradient(135deg, #0F766E 0%, #0D9488 100%)',
                   color: 'white',
                   fontSize: '15px',
                   fontWeight: 600,
@@ -1803,7 +1787,7 @@ export default function LandingPage() {
                   border: 'none',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
-                  boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)',
+                  boxShadow: '0 4px 20px rgba(15, 118, 110, 0.3)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1811,11 +1795,11 @@ export default function LandingPage() {
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 8px 30px rgba(59, 130, 246, 0.5)';
+                  e.currentTarget.style.boxShadow = '0 8px 30px rgba(15, 118, 110, 0.4)';
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 20px rgba(59, 130, 246, 0.4)';
+                  e.currentTarget.style.boxShadow = '0 4px 20px rgba(15, 118, 110, 0.3)';
                 }}
               >
                 {securityLoading === 'hospital' ? 'Verifying...' : (
@@ -1833,9 +1817,9 @@ export default function LandingPage() {
             <div
               style={{
                 width: '320px',
-                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                backgroundColor: '#FFFFFF',
                 borderRadius: '20px',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                border: '1px solid #E2E8F0',
                 padding: '40px 32px',
                 display: 'flex',
                 flexDirection: 'column',
@@ -1843,14 +1827,14 @@ export default function LandingPage() {
                 cursor: 'pointer'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                e.currentTarget.style.borderColor = '#CBD5E1';
                 e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.08)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                e.currentTarget.style.borderColor = '#E2E8F0';
                 e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
               }}
             >
               <div style={{ textAlign: 'center', marginBottom: '32px' }}>
@@ -1858,25 +1842,25 @@ export default function LandingPage() {
                 <div style={{
                   width: '56px',
                   height: '56px',
-                  background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(139, 92, 246, 0.1) 100%)',
+                  background: '#F5F3FF',
                   borderRadius: '16px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   margin: '0 auto 24px auto',
-                  border: '1px solid rgba(139, 92, 246, 0.3)'
+                  border: '1px solid #DDD6FE'
                 }}>
-                  <svg style={{ width: '28px', height: '28px', color: '#a78bfa' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg style={{ width: '28px', height: '28px', color: '#7C3AED' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
                   </svg>
                 </div>
                 {/* Plan Name */}
-                <p className="font-heading" style={{ fontSize: '12px', fontWeight: 600, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '16px' }}>Government</p>
+                <p className="font-heading" style={{ fontSize: '12px', fontWeight: 600, color: '#7C3AED', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '16px' }}>Government</p>
                 {/* Price */}
-                <p className="font-heading" style={{ fontSize: '48px', fontWeight: 800, color: 'white', lineHeight: 1, marginBottom: '4px' }}>
+                <p className="font-heading" style={{ fontSize: '48px', fontWeight: 800, color: '#0f172a', lineHeight: 1, marginBottom: '4px' }}>
                   Custom
                 </p>
-                <p style={{ color: '#a78bfa', fontSize: '14px', fontWeight: 500, marginTop: '8px' }}>State-wide oversight</p>
+                <p style={{ color: '#7C3AED', fontSize: '14px', fontWeight: 500, marginTop: '8px' }}>State-wide oversight</p>
               </div>
 
               {/* Features */}
@@ -1897,7 +1881,7 @@ export default function LandingPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
-                    <span style={{ color: '#cbd5e1', fontSize: '15px' }}>{feature}</span>
+                    <span style={{ color: '#475569', fontSize: '15px' }}>{feature}</span>
                   </div>
                 ))}
               </div>
@@ -1908,22 +1892,22 @@ export default function LandingPage() {
                 style={{
                   width: '100%',
                   padding: '14px 24px',
-                  backgroundColor: 'rgba(139, 92, 246, 0.15)',
-                  color: '#a78bfa',
+                  backgroundColor: '#F5F3FF',
+                  color: '#7C3AED',
                   fontSize: '15px',
                   fontWeight: 600,
                   borderRadius: '12px',
-                  border: '1px solid rgba(139, 92, 246, 0.3)',
+                  border: '1px solid #DDD6FE',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(139, 92, 246, 0.25)';
-                  e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.5)';
+                  e.currentTarget.style.backgroundColor = '#EDE9FE';
+                  e.currentTarget.style.borderColor = '#C4B5FD';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(139, 92, 246, 0.15)';
-                  e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)';
+                  e.currentTarget.style.backgroundColor = '#F5F3FF';
+                  e.currentTarget.style.borderColor = '#DDD6FE';
                 }}
               >
                 Contact Sales
@@ -1934,8 +1918,8 @@ export default function LandingPage() {
 
           {/* Footer Text */}
           <div style={{ textAlign: 'center', marginTop: '56px' }}>
-            <p className="font-body" style={{ color: '#94a3b8', fontSize: '16px' }}>
-              Ready to get started? <span style={{ color: '#60a5fa', fontWeight: 600 }}>Join 24 hospitals</span> already using MedChain.
+            <p className="font-body" style={{ color: '#64748B', fontSize: '16px' }}>
+              Ready to get started? <span style={{ color: '#0F766E', fontWeight: 600 }}>Join 24 hospitals</span> already using MedChain.
             </p>
           </div>
         </div>
@@ -1945,19 +1929,19 @@ export default function LandingPage() {
       <section style={{ padding: '96px 0' }}>
         <div style={{
           position: 'relative',
-          background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #3730a3 100%)',
+          background: 'linear-gradient(135deg, #0F766E 0%, #0D9488 50%, #059669 100%)',
           borderRadius: '24px',
           padding: '80px 48px',
           textAlign: 'center',
           overflow: 'hidden',
-          border: '1px solid rgba(147, 197, 253, 0.2)',
-          boxShadow: '0 0 80px rgba(59, 130, 246, 0.15), 0 25px 50px rgba(0, 0, 0, 0.25)'
+          border: '1px solid rgba(16, 185, 129, 0.2)',
+          boxShadow: '0 4px 40px rgba(15, 118, 110, 0.15), 0 12px 40px rgba(0, 0, 0, 0.1)'
         }}>
           {/* Mesh gradient overlay */}
           <div style={{
             position: 'absolute',
             inset: 0,
-            background: 'radial-gradient(ellipse at 20% 20%, rgba(96, 165, 250, 0.15) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 70%)',
+            background: 'radial-gradient(ellipse at 20% 20%, rgba(16, 185, 129, 0.2) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(20, 184, 166, 0.15) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(15, 118, 110, 0.1) 0%, transparent 70%)',
             pointerEvents: 'none'
           }}></div>
 
@@ -2003,7 +1987,7 @@ export default function LandingPage() {
                 gap: '10px',
                 padding: '16px 32px',
                 backgroundColor: 'white',
-                color: '#1e40af',
+                color: '#0F766E',
                 fontSize: '16px',
                 fontWeight: 600,
                 borderRadius: '12px',
@@ -2038,7 +2022,7 @@ export default function LandingPage() {
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', textAlign: 'center' }}>
             {/* Logo */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ width: '32px', height: '32px', background: 'linear-gradient(135deg, #2563eb, #7c3aed)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '32px', height: '32px', background: 'linear-gradient(135deg, #0F766E, #0D9488)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg style={{ width: '16px', height: '16px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>

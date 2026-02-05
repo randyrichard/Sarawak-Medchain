@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getTotalRecordStats, getContractAddress, formatTimestamp } from '../utils/contract';
+import { Shield, ExternalLink, ChevronRight, Zap } from 'lucide-react';
 
 // Average fraud cost per fake MC in Malaysia (RM)
 const AVERAGE_FRAUD_COST_RM = 850;
@@ -19,7 +20,6 @@ export default function PublicImpactCounter() {
   // Load stats on mount and set up polling
   useEffect(() => {
     loadStats();
-    // Poll every 30 seconds for new records
     const interval = setInterval(loadStats, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -39,7 +39,6 @@ export default function PublicImpactCounter() {
     const tick = () => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      // Easing function for smooth animation
       const easeOut = 1 - Math.pow(1 - progress, 3);
       const current = Math.floor(startValue + (target - startValue) * easeOut);
       setter(current);
@@ -65,13 +64,9 @@ export default function PublicImpactCounter() {
     }
   };
 
-  // Generate block explorer URL (supports local hardhat and testnets)
   const getBlockExplorerUrl = () => {
     const contractAddress = getContractAddress();
-    // For local development, link to etherscan with the tx hash
-    // In production, this would point to the actual network's explorer
     if (stats.latestTxHash) {
-      // Local development - show transaction details
       return `https://etherscan.io/tx/${stats.latestTxHash}`;
     }
     return `https://etherscan.io/address/${contractAddress}`;
@@ -91,85 +86,100 @@ export default function PublicImpactCounter() {
   };
 
   return (
-    <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-8 shadow-2xl border border-slate-700/50 relative overflow-hidden">
-      {/* Animated background pattern */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310b981' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
-      </div>
+    <div style={{
+      background: '#FFFFFF',
+      borderRadius: '24px',
+      padding: '48px',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.08), 0 20px 25px -5px rgba(0,0,0,0.05)',
+      border: '1px solid #E2E8F0',
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
+      {/* Decorative background */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        width: '200px',
+        height: '200px',
+        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, transparent 70%)',
+        borderRadius: '0 0 0 100%',
+      }} />
 
       {/* Live indicator header */}
-      <div className="flex items-center justify-between mb-8 relative">
-        <div className="flex items-center gap-3">
-          {/* Pulsing green dot */}
-          <div className="relative">
-            <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse" />
-            <div className="absolute inset-0 w-3 h-3 bg-emerald-400 rounded-full animate-ping opacity-75" />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', position: 'relative' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ position: 'relative' }}>
+            <div style={{ width: '10px', height: '10px', background: '#10B981', borderRadius: '50%' }} />
+            <div className="animate-ping" style={{ position: 'absolute', inset: 0, width: '10px', height: '10px', background: '#10B981', borderRadius: '50%', opacity: 0.75 }} />
           </div>
-          <span className="text-emerald-400 font-semibold text-sm uppercase tracking-wider">
+          <span style={{ color: '#059669', fontWeight: 600, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Now Live Across Sarawak
           </span>
         </div>
 
-        {/* Blockchain badge */}
-        <div className="flex items-center gap-2 bg-slate-800/50 px-3 py-1.5 rounded-full border border-slate-600/50">
-          <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-          </svg>
-          <span className="text-slate-300 text-xs font-medium">Blockchain Secured</span>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          background: '#F0FDF4',
+          padding: '6px 14px',
+          borderRadius: '9999px',
+          border: '1px solid #BBF7D0',
+        }}>
+          <Shield size={14} style={{ color: '#16A34A' }} />
+          <span style={{ color: '#15803D', fontSize: '12px', fontWeight: 600 }}>Blockchain Secured</span>
         </div>
       </div>
 
       {/* Main content */}
-      <div className="relative">
+      <div style={{ position: 'relative' }}>
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 0' }}>
+            <div style={{ width: '32px', height: '32px', border: '2px solid #10B981', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           </div>
         ) : error ? (
-          <div className="text-center py-8">
-            <p className="text-red-400 mb-2">{error}</p>
+          <div style={{ textAlign: 'center', padding: '32px 0' }}>
+            <p style={{ color: '#EF4444', marginBottom: '8px' }}>{error}</p>
             <button
               onClick={loadStats}
-              className="text-emerald-400 hover:text-emerald-300 text-sm underline"
+              style={{ color: '#10B981', fontSize: '14px', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer' }}
             >
               Retry
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '48px' }}>
             {/* Total Medical Certificates Counter */}
-            <div className="text-center lg:text-left">
-              <h3 className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-2">
+            <div>
+              <h3 style={{ color: '#64748B', fontSize: '13px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
                 Total Secured Medical Certificates Issued in Sarawak
               </h3>
-              <div className="flex items-baseline gap-2 justify-center lg:justify-start">
-                <span className="text-5xl lg:text-6xl font-bold text-white tabular-nums">
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                <span style={{ fontSize: '48px', fontWeight: 800, color: '#0F172A', fontVariantNumeric: 'tabular-nums' }}>
                   {formatNumber(animatedCount)}
                 </span>
-                <span className="text-emerald-400 text-lg font-medium">MCs</span>
+                <span style={{ color: '#0F766E', fontSize: '18px', fontWeight: 600 }}>MCs</span>
               </div>
-
-              {/* Live update indicator */}
               {stats.latestTimestamp && (
-                <p className="text-slate-500 text-xs mt-2">
+                <p style={{ color: '#94A3B8', fontSize: '12px', marginTop: '8px' }}>
                   Last issued: {formatTimestamp(stats.latestTimestamp)}
                 </p>
               )}
             </div>
 
             {/* Fraud Prevention Counter */}
-            <div className="text-center lg:text-right">
-              <h3 className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-2">
+            <div style={{ textAlign: 'right' }}>
+              <h3 style={{ color: '#64748B', fontSize: '13px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
                 Estimated Employer Fraud Prevented
               </h3>
-              <div className="flex items-baseline gap-2 justify-center lg:justify-end">
-                <span className="text-5xl lg:text-6xl font-bold text-emerald-400 tabular-nums">
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', justifyContent: 'flex-end' }}>
+                <span style={{ fontSize: '48px', fontWeight: 800, color: '#0F766E', fontVariantNumeric: 'tabular-nums' }}>
                   {formatCurrency(animatedSavings)}
                 </span>
               </div>
-              <p className="text-slate-500 text-xs mt-2">
+              <p style={{ color: '#94A3B8', fontSize: '12px', marginTop: '8px' }}>
                 Based on avg. {formatCurrency(AVERAGE_FRAUD_COST_RM)} fraud cost per fake MC
               </p>
             </div>
@@ -178,11 +188,16 @@ export default function PublicImpactCounter() {
       </div>
 
       {/* Footer with verification link */}
-      <div className="mt-8 pt-6 border-t border-slate-700/50 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-slate-500 text-sm">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
+      <div style={{
+        marginTop: '32px',
+        paddingTop: '24px',
+        borderTop: '1px solid #E2E8F0',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94A3B8', fontSize: '13px' }}>
+          <Zap size={14} />
           <span>Powered by Ethereum Blockchain</span>
         </div>
 
@@ -190,21 +205,22 @@ export default function PublicImpactCounter() {
           href={getBlockExplorerUrl()}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 text-emerald-400 hover:text-emerald-300 transition-colors text-sm font-medium group"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            color: '#0F766E',
+            fontSize: '13px',
+            fontWeight: 600,
+            textDecoration: 'none',
+            transition: 'color 0.2s',
+          }}
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-          </svg>
+          <ExternalLink size={14} />
           Verify on Blockchain
-          <svg className="w-3 h-3 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
+          <ChevronRight size={12} />
         </a>
       </div>
-
-      {/* Decorative corner elements */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-emerald-500/10 to-transparent rounded-bl-full" />
-      <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-emerald-500/5 to-transparent rounded-tr-full" />
     </div>
   );
 }

@@ -1,36 +1,38 @@
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   GLOBAL DARK THEME ENFORCEMENT - No White Leaks
+   SARAWAK MEDCHAIN - Light Theme Foundation
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-html {
-  background-color: #0a0e14 !important;
-  min-height: 100vh;
-}
-
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'DM Sans', system-ui, -apple-system, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #0a0e14 !important;
-
+  color-scheme: light;
+  color: #475569;
+  background-color: #FFFFFF;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+/* Font utility classes */
+.font-heading {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
 }
-a:hover {
-  color: #535bf2;
+
+.font-body {
+  font-family: 'DM Sans', system-ui, sans-serif;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+html {
+  background-color: #FFFFFF;
+  min-height: 100vh;
 }
 
 body {
@@ -38,150 +40,49 @@ body {
   min-width: 320px;
   min-height: 100vh;
   width: 100%;
-  background-color: #0a0e14 !important;
+  background-color: #FFFFFF;
+  color: #475569;
 }
 
 #root {
   width: 100%;
   min-height: 100vh;
-  background-color: #0a0e14 !important;
 }
 
-/* Catch-all for any wrapper divs */
-#root > div,
-.app,
-.container,
-main,
-aside {
-  background-color: #0a0e14 !important;
-  min-height: 100vh;
+a {
+  font-weight: 500;
+  color: #0F766E;
+  text-decoration: inherit;
 }
 
-/* Remove all horizon lines - sidebar/header borders */
-aside,
-aside > div {
-  border: none !important;
-  box-shadow: none !important;
+a:hover {
+  color: #0D9488;
 }
 
-/* Force slate-900 to match master */
-.bg-slate-900 {
-  background-color: #0a0e14 !important;
+h1, h2, h3, h4, h5, h6 {
+  color: #1E293B;
 }
 
 h1 {
-  font-size: 3.2em;
+  font-size: 2.5em;
   line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-/* Force dark mode - no light scheme */
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   WEALTH 2026 DEMO - iPhone 8 Plus Optimization (414x736 CSS, 5.5" Retina 3x)
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-/* iPhone 8 Plus specific viewport optimizations */
-@media screen and (min-width: 375px) and (max-width: 428px) and (min-height: 667px) {
-  /* Ensure hero badges are first visible on load */
-  .hero-badge-priority {
-    position: relative;
-    z-index: 100;
-    margin-top: 0 !important;
-    padding-top: env(safe-area-inset-top, 20px);
-  }
-
-  /* 100% Pass Rate badge prominence */
-  .pass-rate-badge {
-    font-size: 1.25rem !important;
-    padding: 1rem 1.5rem !important;
-    box-shadow: 0 0 30px rgba(16, 185, 129, 0.4), 0 0 60px rgba(16, 185, 129, 0.2) !important;
-    animation: badge-glow 2s ease-in-out infinite !important;
-  }
-
-  /* Optimize touch targets for 4G demo */
-  button, a, [role="button"] {
-    min-height: 48px;
-    min-width: 48px;
-  }
-
-  /* Reduce content shifting on scroll */
-  .scroll-stable {
-    overflow-anchor: auto;
-    overscroll-behavior: contain;
-  }
-}
-
-/* Badge glow animation for 100% Pass Rate */
-@keyframes badge-glow {
-  0%, 100% {
-    box-shadow: 0 0 20px rgba(16, 185, 129, 0.4), 0 0 40px rgba(16, 185, 129, 0.2);
-  }
-  50% {
-    box-shadow: 0 0 30px rgba(16, 185, 129, 0.6), 0 0 60px rgba(16, 185, 129, 0.3);
-  }
 }
 
 /* Security Verified biometric animation */
 @keyframes security-scan {
-  0% {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-  50% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-100%);
-    opacity: 0;
-  }
+  0% { transform: translateY(100%); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateY(-100%); opacity: 0; }
 }
 
 @keyframes security-pulse {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-  }
-  50% {
-    transform: scale(1.05);
-    box-shadow: 0 0 0 20px rgba(16, 185, 129, 0);
-  }
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  50% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(16, 185, 129, 0); }
 }
 
 @keyframes checkmark-draw {
-  0% {
-    stroke-dashoffset: 50;
-  }
-  100% {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes shield-fill {
-  0% {
-    fill-opacity: 0;
-  }
-  100% {
-    fill-opacity: 0.2;
-  }
+  0% { stroke-dashoffset: 50; }
+  100% { stroke-dashoffset: 0; }
 }
 
 .security-verified-animation {
@@ -198,7 +99,7 @@ button:focus-visible {
   animation: checkmark-draw 0.5s ease-out 0.3s forwards;
 }
 
-/* Instant feedback for touch interactions */
+/* Touch feedback */
 .instant-touch {
   transition: transform 0.1s ease-out, opacity 0.1s ease-out !important;
 }
@@ -209,281 +110,43 @@ button:focus-visible {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   PRINT STYLES - Clean White Background for PDF Export
+   PRINT STYLES
    ═══════════════════════════════════════════════════════════════════════════════ */
 @media print {
-  /* Reset to white background for printing */
   html, body, #root, #root > div, .min-h-screen {
     background-color: white !important;
     background: white !important;
     color: black !important;
   }
 
-  /* Hide non-essential elements */
-  header,
-  .sticky,
-  button,
-  .qr-section-print-hide,
-  nav,
-  aside {
+  header, .sticky, button, .qr-section-print-hide, nav, aside {
     display: none !important;
   }
 
-  /* Show the agreement content with proper styling */
-  .bg-gradient-to-br,
-  .from-slate-900,
-  .to-slate-800 {
-    background: white !important;
-    border: 1px solid #e5e7eb !important;
-    box-shadow: none !important;
-  }
-
-  /* Make text black for readability */
-  .text-white,
-  .text-slate-300,
-  .text-slate-400,
-  .text-blue-400,
-  .text-emerald-400 {
+  .text-white, .text-slate-300, .text-slate-400 {
     color: #1f2937 !important;
   }
 
-  /* Input fields visible */
   input {
     border: 1px solid #d1d5db !important;
     background: white !important;
     color: black !important;
   }
 
-  /* Page setup */
   @page {
     margin: 1in;
     size: A4;
   }
 
-  /* Keep signature pad visible */
   .signature-canvas {
     border: 1px solid #d1d5db !important;
   }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
-   MIRI DEMO - Full Screen Color Unity
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-/* Force gray-900 variants to master color */
-.bg-gray-900 {
-  background-color: #0a0e14 !important;
-}
-
-/* Ensure min-h-screen uses master background */
-.min-h-screen {
-  background-color: #0a0e14;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   PERFECT DARK THEME - Master: #0a0e14, Cards: #111827
-   ZERO WHITE ELEMENTS - ABSOLUTE ENFORCEMENT
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-/* NUCLEAR LEVEL 1: Core layout - TOTAL COVERAGE */
-html, body, #root,
-#root > *, #root > * > *, #root > * > * > *,
-#root > * > * > * > *, #root > * > * > * > * > * {
-  background-color: #0a0e14 !important;
-}
-
-/* NUCLEAR LEVEL 2: Every div by default */
-div:not(.qr-section):not([class*="qr"]):not(.signature-container) {
-  background-color: transparent;
-}
-
-/* NUCLEAR LEVEL 3: Header - force #0a0e14, kill ALL seams */
-header, .header, [class*="header"],
-header *, .header *, [class*="header"] * {
-  background-color: #0a0e14 !important;
-  border: none !important;
-  border-bottom: none !important;
-  box-shadow: none !important;
-}
-
-/* NUCLEAR LEVEL 4: Sidebar - force #0a0e14, kill ALL seams */
-aside, .sidebar, nav:not(.nav-links),
-aside *, .sidebar *, nav:not(.nav-links) * {
-  background-color: #0a0e14 !important;
-  border: none !important;
-  border-right: none !important;
-  box-shadow: none !important;
-}
-
-/* NUCLEAR LEVEL 5: Main content - force #0a0e14 */
-main, .main, .main-content,
-main > div:first-child,
-.flex-1, .flex-grow {
-  background-color: #0a0e14 !important;
-  border: none !important;
-  border-left: none !important;
-  border-top: none !important;
-}
-
-/* Main layout structure */
-.flex.h-screen,
-.flex.h-screen > aside,
-.flex.h-screen > main,
-.flex.h-screen > .flex-1,
-.flex.h-screen > div {
-  background-color: #0a0e14 !important;
-}
-
-/* Sticky balance header - eliminate seam line */
-.sticky.top-0.z-50,
-.sticky.top-0,
-[class*="sticky"]:not(.sticky-card) {
-  background-color: #0a0e14 !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-/* Kill the light seam between header and body */
-.flex.h-screen > aside + main,
-.flex.h-screen > aside + .flex-1,
-aside + main,
-header + main,
-aside + div,
-header + div {
-  border: none !important;
-  margin: 0 !important;
-  padding-top: 0 !important;
-  box-shadow: none !important;
-}
-
-/* Kill ANY horizontal line that might appear */
-hr, [class*="border-t"], [class*="border-b"] {
-  border-color: transparent !important;
-}
-
-/* Force overflow areas to dark */
-.overflow-y-auto, .overflow-x-auto, .overflow-auto {
-  background-color: #0a0e14 !important;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   DEEP CHARCOAL CARDS - #111827 with #1f2937 border
-   CONVERT ALL LIGHT BACKGROUNDS TO DARK
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-/* Convert ALL white backgrounds to Deep Charcoal */
-.bg-white:not(.qr-section):not([class*="qr"]):not(.signature-canvas),
-[class*="bg-white"]:not(.qr-section):not([class*="qr"]) {
-  background-color: #111827 !important;
-  border: 1px solid #1f2937 !important;
-}
-
-/* Cards with light backgrounds - convert to charcoal */
-.bg-slate-100, .bg-slate-50, .bg-slate-200,
-.bg-gray-100, .bg-gray-50, .bg-gray-200,
-.bg-zinc-100, .bg-zinc-50,
-.bg-neutral-100, .bg-neutral-50 {
-  background-color: #111827 !important;
-  border: 1px solid #1f2937 !important;
-}
-
-/* Preserve white for QR codes ONLY - NOT signature pads */
-.qr-section,
-.qr-code-container,
-[class*="qr-"]:not(.signature-canvas),
-.qr-section *,
-.qr-code-container * {
-  background-color: white !important;
-  border: none !important;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   MASTER COMMAND CENTER - SUBSCRIPTION/MONTHLY DUES/SERVICE AGREEMENT CARDS
-   ALL CARDS → DEEP CHARCOAL #111827
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-/* NUCLEAR: Force ALL card-like elements to Deep Charcoal */
-.subscription-card,
-.monthly-dues-card,
-.service-agreement-card,
-[class*="subscription"],
-[class*="monthly-dues"],
-[class*="billing-card"],
-[class*="payment-card"],
-[class*="Subscription"],
-[class*="MonthlyDues"],
-[class*="ServiceAgreement"] {
-  background-color: #111827 !important;
-  border-color: #1f2937 !important;
-}
-
-/* Force ALL white backgrounds in billing/payment flows to charcoal */
-.billing-section .bg-white,
-.payment-section .bg-white,
-[class*="billing"] .bg-white,
-[class*="payment"] .bg-white:not(.qr-section):not([class*="qr"]) {
-  background-color: #111827 !important;
-  border: 1px solid #1f2937 !important;
-}
-
-/* Kill ANY remaining white cards */
-.rounded-xl.bg-white:not(.qr-section):not([class*="qr"]),
-.rounded-2xl.bg-white:not(.qr-section):not([class*="qr"]),
-.rounded-3xl.bg-white:not(.qr-section):not([class*="qr"]),
-div[class*="card"].bg-white:not(.qr-section) {
-  background-color: #111827 !important;
-  border: 1px solid #1f2937 !important;
-}
-
-/* Shadow cards become charcoal */
-.shadow-lg:not(.qr-section):not([class*="qr"]),
-.shadow-xl:not(.qr-section):not([class*="qr"]),
-.shadow-2xl:not(.qr-section):not([class*="qr"]) {
-  background-color: #111827 !important;
-}
-
-/* Rounded cards with shadows */
-.rounded-xl.shadow-lg,
-.rounded-2xl.shadow-lg,
-.rounded-lg.shadow-lg {
-  background-color: #111827 !important;
-  border: 1px solid #1f2937 !important;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   TEXT INVERSION - White and MedChain Gold on dark backgrounds
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-/* MedChain Gold color */
-:root {
-  --medchain-gold: #d4af37;
-}
-
-/* Invert dark text to white */
-.text-slate-600,
-.text-slate-700,
-.text-slate-800,
-.text-slate-900,
-.text-gray-600,
-.text-gray-700,
-.text-gray-800,
-.text-gray-900 {
-  color: rgba(255, 255, 255, 0.9) !important;
-}
-
-/* Lighter grays stay visible */
-.text-slate-400,
-.text-slate-500,
-.text-gray-400,
-.text-gray-500 {
-  color: rgba(255, 255, 255, 0.7) !important;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
    CENTERING - Dashboard, Verify MC, and Payment Screens
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-/* Centered content wrapper */
 .centered-content {
   max-width: 1400px;
   margin: 0 auto;
@@ -491,7 +154,6 @@ div[class*="card"].bg-white:not(.qr-section) {
   padding: 0 24px;
 }
 
-/* Center all portal content */
 .admin-portal > div,
 .ceo-dashboard > div,
 .doctor-portal > div,
@@ -504,7 +166,6 @@ div[class*="card"].bg-white:not(.qr-section) {
   margin-right: auto;
 }
 
-/* Center the main analytics grid */
 .ceo-dashboard .grid,
 .admin-portal .grid,
 .founder-admin-dashboard .grid {
@@ -513,777 +174,12 @@ div[class*="card"].bg-white:not(.qr-section) {
   margin-right: auto;
 }
 
-/* Center Verify MC viewer */
-.verify-mc,
-[class*="verify-mc"],
-[class*="VerifyMC"] {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-}
-
-.verify-mc > *,
-[class*="verify-mc"] > *,
-[class*="VerifyMC"] > * {
-  max-width: 1200px;
-  width: 100%;
-}
-
-/* Center Complete Your Payment screen */
-.fpx-payment,
-[class*="fpx-payment"],
-[class*="FPXPayment"],
-[class*="payment-container"] {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  padding: 24px;
-}
-
-.fpx-payment > div,
-[class*="payment"] > div {
-  max-width: 1200px;
-  width: 100%;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   GOLD INK SIGNATURE - Transparent Black with MedChain Gold Border
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-/* Signature canvas styling - DEEP VOID #0a0e14 with Gold Border */
-.signature-canvas,
-canvas[class*="signature"] {
-  border-radius: 8px;
-  cursor: crosshair;
-  background-color: #0a0e14 !important;
-  background: #0a0e14 !important;
-}
-
-/* Signature container - #0a0e14 background with 1px MedChain Gold border */
-.signature-container {
-  background-color: #0a0e14 !important;
-  background: #0a0e14 !important;
-  border: 1px solid #daa520 !important;
-  box-shadow: 0 0 15px rgba(218, 165, 32, 0.2) !important;
-}
-
-/* Doctor Portal signature - FORCE #0a0e14 background with gold ink */
-.doctor-portal .signature-canvas,
-.doctor-portal canvas[class*="signature"],
-.doctor-portal .signature-container canvas {
-  background-color: #0a0e14 !important;
-  background: #0a0e14 !important;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   DOCTOR PORTAL CENTERING - Dead Center Terminal
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-.doctor-portal {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  background-color: #0a0e14 !important;
-  min-height: 100vh !important;
-}
-
-/* Center the main content area */
-.doctor-portal > div:not(.fixed):not([class*="modal"]) {
-  width: 100% !important;
-  display: flex !important;
-  justify-content: center !important;
-  background-color: #0a0e14 !important;
-}
-
-/* Header spans full width but content is centered */
-.doctor-portal header {
-  width: 100% !important;
-  background-color: #0a0e14 !important;
-}
-
-/* Main content wrapper */
-.doctor-portal .flex.justify-center {
-  width: 100% !important;
-  display: flex !important;
-  justify-content: center !important;
-  background-color: #0a0e14 !important;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   STATE ISOLATION - ABSOLUTE VIEW PURGE
-   When in Founder Command, Doctor Portal, or Admin views - HIDE ALL OVERLAPPING
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-/* THERMONUCLEAR PURGE: Hide ALL white cards and overlapping elements */
-body:has(.founder-command) .hospital-admin-card,
-body:has(.founder-command) .subscription-card,
-body:has(.founder-command) .monthly-dues,
-body:has(.founder-command) [class*="Subscription"],
-body:has(.founder-command) [class*="subscription"],
-body:has(.founder-command) [class*="Premium"][class*="Tier"],
-body:has(.founder-command) [class*="premium"][class*="tier"],
-body:has(.founder-command) [class*="Enterprise"][class*="Tier"],
-body:has(.founder-command) [class*="hospital-balance"],
-body:has(.founder-command) [class*="HospitalBalance"],
-body:has(.founder-command) .bg-white:not(.qr-section):not([class*="qr"]),
-body:has(.doctor-portal) .hospital-admin-card,
-body:has(.doctor-portal) .subscription-card,
-body:has(.doctor-portal) .monthly-dues,
-body:has(.doctor-portal) [class*="Subscription"]:not(.doctor-portal *),
-body:has(.doctor-portal) [class*="subscription"]:not(.doctor-portal *),
-body:has(.doctor-portal) [class*="Premium"][class*="Tier"]:not(.doctor-portal *),
-body:has(.doctor-portal) [class*="hospital-balance"],
-body:has(.doctor-portal) [class*="HospitalBalance"],
-body:has(.founder-admin-dashboard) .hospital-admin-card,
-body:has(.founder-admin-dashboard) .subscription-card,
-body:has(.founder-admin-dashboard) .monthly-dues,
-body:has(.founder-admin-dashboard) [class*="Subscription"],
-body:has(.founder-admin-dashboard) [class*="Premium"][class*="Tier"],
-body:has(.founder-admin-dashboard) [class*="hospital-balance"],
-body:has(.ceo-dashboard) .hospital-admin-card,
-body:has(.ceo-dashboard) .subscription-card:not(.ceo-dashboard *),
-body:has(.ceo-dashboard) [class*="Subscription"]:not(.ceo-dashboard *) {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  height: 0 !important;
-  width: 0 !important;
-  overflow: hidden !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  position: absolute !important;
-  left: -99999px !important;
-  top: -99999px !important;
-  z-index: -9999 !important;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   CENTER CORE ANALYTICS - Lead Analytics, Heatmap, Revenue Forecast
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-.founder-command .analytics-container,
-.founder-command .lead-analytics,
-.founder-command .conversion-heatmap,
-.founder-command .revenue-forecast,
-.founder-command > div > div,
-.ceo-dashboard .analytics-container,
-.ceo-dashboard > div > div,
-[class*="analytics"],
-[class*="heatmap"],
-[class*="forecast"] {
-  max-width: 1400px !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
-  width: 100% !important;
-}
-
-/* Center founder command content */
-.founder-command,
-.founder-command > div {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  width: 100% !important;
-  background-color: #0a0e14 !important;
-}
-
-.founder-command > div > div {
-  max-width: 1400px !important;
-  width: 100% !important;
-  margin: 0 auto !important;
-}
-
-/* Founder Command and Doctor Portal get absolute z-index priority */
-.founder-command,
-.founder-admin-dashboard,
-.doctor-portal,
-[class*="founder-command"],
-[class*="FounderCommand"] {
-  position: relative !important;
-  z-index: 200 !important;
-  isolation: isolate !important;
-  background-color: #0a0e14 !important;
-}
-
-/* Doctor Portal specific - ensure full dark background */
-.doctor-portal,
-.doctor-portal * {
-  --portal-bg: #0a0e14;
-}
-
-.doctor-portal {
-  background-color: #0a0e14 !important;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   DOCTOR PORTAL - HIGH CONTRAST BUTTON & CLEAN BACKGROUNDS
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-/* Force white button visibility */
-.doctor-portal button[style*="ffffff"] {
-  background-color: #ffffff !important;
-  color: #000000 !important;
-}
-
-/* Remove any light horizontal lines */
-.doctor-portal hr,
-.doctor-portal [class*="border-white"],
-.doctor-portal [class*="border-slate"],
-.doctor-portal [class*="border-gray"] {
-  border-color: rgba(218, 165, 32, 0.2) !important;
-}
-
-/* Ensure all dividers are dark gold, not white */
-.doctor-portal .border-b {
-  border-bottom-color: rgba(218, 165, 32, 0.15) !important;
-}
-
-/* Force all card backgrounds to stay dark */
-.doctor-portal [class*="bg-white"],
-.doctor-portal [class*="bg-slate-100"],
-.doctor-portal [class*="bg-gray-100"] {
-  background-color: #111827 !important;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   HIGH-CONTRAST BUTTON HOVER EFFECTS - CLIENT TACTILE FEEDBACK
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-/* Top Up Button - White with Gold Border, Gold Hover */
-.topup-btn {
-  background-color: #ffffff !important;
-  color: #000000 !important;
-  border: 1px solid #daa520 !important;
-  transition: all 0.2s ease-in-out !important;
-}
-
-.topup-btn:hover {
-  background-color: #daa520 !important;
-  color: #ffffff !important;
-  border-color: #daa520 !important;
-  box-shadow: 0 0 15px rgba(218, 165, 32, 0.6) !important;
-}
-
-/* Secure on Blockchain Button - Teal gradient */
-.secure-btn {
-  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%) !important;
-  color: #ffffff !important;
-  transition: all 0.2s ease-in-out !important;
+/* Preserve white for QR codes */
+.qr-section,
+.qr-code-container,
+[class*="qr-"]:not(.signature-canvas),
+.qr-section *,
+.qr-code-container * {
+  background-color: white !important;
   border: none !important;
-}
-
-.secure-btn:hover:not(:disabled) {
-  opacity: 0.9 !important;
-  box-shadow: 0 4px 20px rgba(20, 184, 166, 0.4) !important;
-}
-
-.secure-btn:hover:not(:disabled) span {
-  color: #ffffff !important;
-}
-
-.secure-btn:hover:not(:disabled) svg {
-  stroke: #ffffff !important;
-}
-
-/* Disabled state maintains gray styling */
-.secure-btn:disabled {
-  background: #374151 !important;
-  color: #9ca3af !important;
-  opacity: 0.6 !important;
-}
-
-/* Credit Warning Top Up Button - Teal theme */
-.credit-topup-btn {
-  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%) !important;
-  color: #ffffff !important;
-  border: none !important;
-  transition: all 0.3s ease-in-out !important;
-}
-
-.credit-topup-btn:hover {
-  opacity: 0.9 !important;
-  box-shadow: 0 4px 20px rgba(20, 184, 166, 0.4) !important;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   PATIENT PORTAL - PREMIUM BUTTON HOVER EFFECTS
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-/* Patient Action Buttons - White with Gold Hover */
-.patient-action-btn {
-  transition: all 0.3s ease-in-out !important;
-}
-
-.patient-action-btn:not(:disabled):hover {
-  background-color: #daa520 !important;
-  color: #ffffff !important;
-  box-shadow: 0 0 20px rgba(218, 165, 32, 0.7), 0 0 40px rgba(218, 165, 32, 0.4) !important;
-  transform: scale(1.02);
-}
-
-.patient-action-btn:not(:disabled):hover svg {
-  stroke: #ffffff !important;
-}
-
-/* Patient Refresh Button - Gold Hover */
-.patient-refresh-btn {
-  transition: all 0.3s ease-in-out !important;
-}
-
-.patient-refresh-btn:hover {
-  background-color: #daa520 !important;
-  color: #ffffff !important;
-  box-shadow: 0 0 15px rgba(218, 165, 32, 0.6) !important;
-}
-
-.patient-refresh-btn:hover svg {
-  stroke: #ffffff !important;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   LUXURY BREATHING GOLD ANIMATION
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-@keyframes breathingGold {
-  0%, 100% {
-    box-shadow: 0 0 30px rgba(218, 165, 32, 0.1), 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    border-color: rgba(218, 165, 32, 0.8);
-  }
-  50% {
-    box-shadow: 0 0 50px rgba(218, 165, 32, 0.25), 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    border-color: rgba(218, 165, 32, 1);
-  }
-}
-
-.luxury-card-breathing {
-  animation: breathingGold 4s ease-in-out infinite;
-}
-
-/* SUCCESS GLOW - High intensity pulse */
-@keyframes successGlowPulse {
-  0% {
-    box-shadow: 0 0 30px rgba(218, 165, 32, 0.3), 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    border-color: #daa520;
-  }
-  50% {
-    box-shadow: 0 0 80px rgba(218, 165, 32, 1.0), 0 0 120px rgba(218, 165, 32, 0.6), 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    border-color: #ffd700;
-  }
-  100% {
-    box-shadow: 0 0 30px rgba(218, 165, 32, 0.3), 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    border-color: #daa520;
-  }
-}
-
-.success-glow-active {
-  animation: successGlowPulse 2s ease-in-out !important;
-}
-
-/* SUCCESS BADGE - Green flash */
-.success-badge-green {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.3) 0%, rgba(16, 185, 129, 0.15) 100%) !important;
-  border-color: #10b981 !important;
-  color: #10b981 !important;
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.5) !important;
-  transition: all 0.5s ease-in-out;
-}
-
-.success-badge-gold {
-  transition: all 0.5s ease-in-out;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   HERO SHIELD PULSING ANIMATION - Empty State
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-@keyframes heroShieldPulse {
-  0%, 100% {
-    filter: drop-shadow(0 0 25px rgba(218, 165, 32, 0.5));
-    transform: scale(1);
-  }
-  50% {
-    filter: drop-shadow(0 0 50px rgba(218, 165, 32, 1.0));
-    transform: scale(1.05);
-  }
-}
-
-@keyframes heroShieldGlow {
-  0%, 100% {
-    box-shadow: inset 0 0 40px rgba(218, 165, 32, 0.15), 0 0 50px rgba(218, 165, 32, 0.3);
-    border-color: rgba(218, 165, 32, 0.6);
-  }
-  50% {
-    box-shadow: inset 0 0 60px rgba(218, 165, 32, 0.3), 0 0 80px rgba(218, 165, 32, 0.6);
-    border-color: rgba(218, 165, 32, 1);
-  }
-}
-
-.hero-shield-icon {
-  animation: heroShieldPulse 3s ease-in-out infinite;
-}
-
-.hero-shield-pulse {
-  animation: heroShieldGlow 3s ease-in-out infinite;
-}
-
-.hero-shield-glow {
-  background: radial-gradient(circle, rgba(218, 165, 32, 0.15) 0%, transparent 70%);
-  animation: heroShieldGlow 3s ease-in-out infinite;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   5-SECOND NETWORK SYNC PULSE - Both Cards Glow Together
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-@keyframes networkSyncPulse {
-  0%, 85%, 100% {
-    box-shadow: 0 0 30px rgba(218, 165, 32, 0.1), 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    border-color: rgba(218, 165, 32, 0.8);
-  }
-  92.5% {
-    box-shadow: 0 0 70px rgba(218, 165, 32, 0.5), 0 0 100px rgba(218, 165, 32, 0.3), 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    border-color: rgba(218, 165, 32, 1);
-  }
-}
-
-.luxury-card-sync {
-  animation: networkSyncPulse 5s ease-in-out infinite;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   GOLD CONFETTI CELEBRATION ANIMATION
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-@keyframes confetti-fall {
-  0% {
-    transform: translateY(0) rotate(0deg) scale(1);
-    opacity: 1;
-  }
-  25% {
-    transform: translateY(25vh) rotate(180deg) scale(1.1);
-    opacity: 1;
-  }
-  50% {
-    transform: translateY(50vh) rotate(360deg) scale(0.9);
-    opacity: 0.9;
-  }
-  75% {
-    transform: translateY(75vh) rotate(540deg) scale(1);
-    opacity: 0.7;
-  }
-  100% {
-    transform: translateY(100vh) rotate(720deg) scale(0.8);
-    opacity: 0;
-  }
-}
-
-.animate-confetti {
-  animation: confetti-fall 3s ease-out forwards;
-}
-
-/* Hospital Admin cards get lower z-index when visible */
-.hospital-admin-card,
-.subscription-card,
-.monthly-dues {
-  z-index: 50 !important;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   KILL ALL WHITE SEAMS - Nuclear Level Enforcement
-   FORCE #0a0e14 on EVERY POSSIBLE ELEMENT
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-/* Absolute force on all layout elements */
-html, body, #root,
-#root > *, #root > * > *, #root > * > * > *,
-#root > * > * > * > *, #root > * > * > * > * > *,
-#root > * > * > * > * > * > *,
-.flex.h-screen,
-.flex.h-screen > *,
-.flex.h-screen > * > *,
-main, aside, header, nav, section, article, footer {
-  background-color: #0a0e14 !important;
-  border-color: transparent !important;
-}
-
-/* Kill ALL potential seam lines */
-[class*="border-t"]:not(table *):not(.gold-btn):not([class*="qr"]),
-[class*="border-b"]:not(table *):not(.gold-btn):not([class*="qr"]),
-[class*="border-l"]:not(.gold-btn):not([class*="qr"]),
-[class*="border-r"]:not(.gold-btn):not([class*="qr"]) {
-  border-color: transparent !important;
-}
-
-/* Sidebar-Main junction - zero visible seam */
-aside + main,
-aside + div,
-aside + .flex-1,
-header + main,
-header + div {
-  border: none !important;
-  box-shadow: none !important;
-  margin: 0 !important;
-}
-
-/* Force overflow/scroll containers dark */
-[class*="overflow-"],
-[class*="scroll"] {
-  background-color: #0a0e14 !important;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   CENTER-ALIGN FINANCIALS - Service Agreement & Payment Success
-   FLEX CONTAINER WITH JUSTIFY-CENTER
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-/* Service Agreement page centering */
-.service-agreement,
-[class*="service-agreement"],
-[class*="ServiceAgreement"],
-.agreement-container {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
-  width: 100% !important;
-  min-height: 100vh !important;
-  background-color: #0a0e14 !important;
-}
-
-.service-agreement > div,
-[class*="service-agreement"] > div,
-[class*="ServiceAgreement"] > div,
-.agreement-container > div {
-  max-width: 1200px !important;
-  width: 100% !important;
-  margin: 0 auto !important;
-}
-
-/* Payment Success centering */
-.payment-success,
-[class*="payment-success"],
-[class*="PaymentSuccess"],
-.success-container {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 100% !important;
-  min-height: 100vh !important;
-  background-color: #0a0e14 !important;
-}
-
-.payment-success > div,
-[class*="payment-success"] > div,
-[class*="PaymentSuccess"] > div {
-  max-width: 800px !important;
-  width: 100% !important;
-  margin: 0 auto !important;
-}
-
-/* FPX Payment centering (both payment and success views) */
-.fpx-payment,
-[class*="fpx-payment"],
-[class*="FPXPayment"] {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
-  width: 100% !important;
-  min-height: 100vh !important;
-  background-color: #0a0e14 !important;
-  padding: 24px !important;
-}
-
-.fpx-payment > div,
-[class*="fpx-payment"] > div,
-[class*="FPXPayment"] > div {
-  max-width: 1200px !important;
-  width: 100% !important;
-  margin: 0 auto !important;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   NOTIFICATION STACK CONTROL - Reduce Clutter
-   Auto-hide after animation, limit stack height
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-/* Limit notification stack height */
-.fixed.top-4.right-4,
-.fixed.top-4.left-4,
-[class*="toast-container"],
-[class*="notification-stack"] {
-  max-height: 300px !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-}
-
-/* Auto-fade notifications after appearing */
-.fixed [class*="animate-slide"] {
-  animation-fill-mode: forwards !important;
-}
-
-/* Clear Notifications CSS class - apply to hide all notifications */
-.notifications-cleared .fixed.top-4,
-.notifications-cleared .fixed.bottom-4,
-.notifications-cleared [class*="toast"],
-.notifications-cleared [class*="alert-toast"] {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-}
-
-/* Reduce visual noise from stacked notifications */
-.fixed.top-4 > div:nth-child(n+3),
-.fixed.right-4 > div:nth-child(n+3) {
-  opacity: 0.5 !important;
-  transform: scale(0.95) !important;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   UNIFIED VOID - ABSOLUTE #0a0e14 ENFORCEMENT
-   MASTER COMMAND CENTER AESTHETIC - NO WHITE ANYWHERE
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-/* THERMONUCLEAR: Force #0a0e14 on EVERYTHING not explicitly excluded */
-*:not(.qr-section):not([class*="qr"]):not(.bg-white.qr-section):not(.qr-code-container):not(.qr-code-container *) {
-  --tw-bg-opacity: 1;
-}
-
-/* Kill white gaps between elements */
-.gap-1, .gap-2, .gap-3, .gap-4, .gap-5, .gap-6, .gap-8,
-.space-y-1 > *, .space-y-2 > *, .space-y-3 > *, .space-y-4 > *,
-.space-x-1 > *, .space-x-2 > *, .space-x-3 > *, .space-x-4 > * {
-  background-color: transparent;
-}
-
-/* Force deep charcoal on gradient cards */
-.bg-gradient-to-br:not(.qr-section):not([class*="qr"]),
-.bg-gradient-to-r:not(.qr-section):not([class*="qr"]),
-.bg-gradient-to-l:not(.qr-section):not([class*="qr"]),
-.bg-gradient-to-t:not(.qr-section):not([class*="qr"]),
-.bg-gradient-to-b:not(.qr-section):not([class*="qr"]) {
-  background-color: #111827 !important;
-}
-
-/* Force modal/popup backgrounds dark */
-.fixed.inset-0:not(.qr-section):not([class*="qr"]),
-.absolute.inset-0:not(.qr-section):not([class*="qr"]),
-[class*="modal"]:not(.qr-section),
-[class*="popup"]:not(.qr-section),
-[class*="dialog"]:not(.qr-section) {
-  background-color: rgba(10, 14, 20, 0.95) !important;
-}
-
-/* Force input backgrounds dark */
-input:not([type="checkbox"]):not([type="radio"]),
-textarea,
-select {
-  background-color: #0a0e14 !important;
-  border-color: #1e3a5f !important;
-  color: #ffffff !important;
-}
-
-/* Dropdown/select options dark */
-option {
-  background-color: #111827 !important;
-  color: #ffffff !important;
-}
-
-/* FINAL: Catch-all for any sneaky white backgrounds */
-[style*="background: white"],
-[style*="background-color: white"],
-[style*="background: #fff"],
-[style*="background-color: #fff"],
-[style*="background: rgb(255"],
-[style*="background-color: rgb(255"] {
-  background-color: #111827 !important;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   PATIENT PORTAL CARDS - Override nuclear rules for visible teal borders
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-.patient-portal-card {
-  border: 1px solid rgba(20, 184, 166, 0.2) !important;
-  border-radius: 16px !important;
-  background-color: rgba(20, 184, 166, 0.02) !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
-}
-
-/* Extra specificity to override ALL nuclear rules */
-main .patient-portal-card,
-div .patient-portal-card,
-#root .patient-portal-card,
-body .patient-portal-card,
-#root main .patient-portal-card,
-body #root main .patient-portal-card,
-html body #root main .patient-portal-card {
-  border: 1px solid rgba(20, 184, 166, 0.2) !important;
-  border-radius: 16px !important;
-  background-color: rgba(20, 184, 166, 0.02) !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   SIDEBAR CLEANUP - Remove any gray rectangles
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-/* Ensure sidebar wrapper divs have transparent backgrounds */
-aside > div.p-4,
-aside div.p-4,
-aside .p-4 {
-  background-color: transparent !important;
-  background: transparent !important;
-}
-
-/* Ensure TopUpRequiredBadge wrapper is transparent */
-aside div:has(> button[class*="from-orange"]),
-aside div:has(> button[class*="from-amber"]) {
-  background-color: transparent !important;
-  background: transparent !important;
-}
-
-/* Remove any default gray backgrounds from sidebar buttons */
-aside button:not([class*="gradient"]):not([class*="bg-"]) {
-  background-color: transparent !important;
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════════
-   PATIENT PORTAL CLEANUP - Prevent content leaks
-   ═══════════════════════════════════════════════════════════════════════════════ */
-
-/* Patient Portal container - strict overflow control */
-.patient-portal {
-  overflow: hidden !important;
-  position: relative !important;
-}
-
-/* Force all sidebar .p-4 wrappers to be minimal when empty */
-aside .p-4:empty {
-  display: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
-}
-
-/* Hide any buttons in sidebar that have default gray background */
-aside button {
-  background-color: transparent !important;
-  border: none !important;
-  padding: 0 !important;
-}
-
-/* But restore styled buttons */
-aside button[class*="from-orange"],
-aside button[class*="from-amber"],
-aside button[class*="from-emerald"],
-aside button[class*="bg-white"],
-aside button[class*="rounded-xl"],
-aside button[class*="rounded-lg"] {
-  background-color: unset !important;
-  border: unset !important;
-  padding: unset !important;
 }
