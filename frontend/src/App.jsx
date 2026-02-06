@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { connectWallet, getMyBalance } from './utils/contract';
 import { BillingProvider } from './context/BillingContext';
 import { MaintenanceProvider } from './context/MaintenanceContext';
@@ -936,7 +936,7 @@ function ConnectScreen({ onConnect, loading, error }) {
   );
 }
 
-// App Routes Handler - needs to be inside BrowserRouter
+// App Routes Handler - needs to be inside HashRouter
 function AppRoutes() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -1167,9 +1167,9 @@ function App() {
               <RevenueAlertProvider>
                 <DisasterRecoveryProvider>
                   <BillingProvider>
-                    <BrowserRouter>
+                    <HashRouter>
                       <AppRoutes />
-                    </BrowserRouter>
+                    </HashRouter>
                   </BillingProvider>
                 </DisasterRecoveryProvider>
               </RevenueAlertProvider>

@@ -121,7 +121,7 @@ function DemoDoctorPortal({ onIssueMC }) {
             {/* Buttons */}
             <div style={{ display: 'flex', gap: '12px' }}>
               <button
-                onClick={() => window.open(`/verify/${lastMC.txHash}`, '_blank')}
+                onClick={() => window.open(`/#/verify/${lastMC.txHash}`, '_blank')}
                 style={{
                   flex: 1,
                   padding: '12px',
@@ -411,7 +411,7 @@ function DemoPatientPortal() {
             </div>
 
             <button
-              onClick={() => window.open(`/verify/${mc.txHash}`, '_blank')}
+              onClick={() => window.open(`/#/verify/${mc.txHash}`, '_blank')}
               style={{
                 width: '100%',
                 padding: '12px',

@@ -284,7 +284,7 @@ export default function DoctorPortal({ walletAddress }) {
           month: 'long',
           year: 'numeric'
         }),
-        verificationUrl: `${window.location.origin}/verify/${mockTxHash}`,
+        verificationUrl: `${window.location.origin}/#/verify/${mockTxHash}`,
       };
 
       // Update all states at once - React 18 batches these automatically
@@ -643,7 +643,7 @@ export default function DoctorPortal({ walletAddress }) {
               <div className="inline-block p-3 rounded-xl" style={{ backgroundColor: '#ffffff' }}>
                 {receiptData?.txHash && (
                   <QRCodeSVG
-                    value={`https://sarawak-medchain.pages.dev/verify/${receiptData.txHash}`}
+                    value={`https://sarawak-medchain.pages.dev/#/verify/${receiptData.txHash}`}
                     size={140}
                     bgColor="#ffffff"
                     fgColor="#0f172a"
