@@ -56,15 +56,6 @@ export default function DoctorPortal({ walletAddress }) {
   const [mcSuccess, setMcSuccess] = useState(null);
   const qrRef = useRef(null);
 
-  // Confetti Celebration state
-  const [showConfetti, setShowConfetti] = useState(false);
-
-  // Trigger confetti celebration
-  const triggerConfetti = () => {
-    setShowConfetti(true);
-    setTimeout(() => setShowConfetti(false), 3000);
-  };
-
   // Read records state
   const [readPatientAddress, setReadPatientAddress] = useState('');
   const [patientRecords, setPatientRecords] = useState([]);
@@ -91,7 +82,6 @@ export default function DoctorPortal({ walletAddress }) {
   const [isSigning, setIsSigning] = useState(false);
   const [transactionHash, setTransactionHash] = useState(null);
   const [isMinting, setIsMinting] = useState(false);
-  const [showReceipt, setShowReceipt] = useState(false);
   const [receiptData, setReceiptData] = useState(null);
 
   // Profile dropdown state
@@ -112,14 +102,14 @@ export default function DoctorPortal({ walletAddress }) {
   const pendingAdmin = JSON.parse(localStorage.getItem('medchain_pending_admin') || '{}');
   const hospitalName = pendingAdmin.facilityName || 'Sarawak General Hospital';
 
-  // Hospital suspension state
+  // Hospital suspension state - default to false to prevent loading flash
   const [isHospitalSuspended, setIsHospitalSuspended] = useState(false);
-  const [checkingSuspension, setCheckingSuspension] = useState(true);
+  const [checkingSuspension, setCheckingSuspension] = useState(false);
+  const [pageReady, setPageReady] = useState(false);
 
-  // Check if hospital is suspended
+  // Check if hospital is suspended - runs silently in background
   useEffect(() => {
     const checkSuspension = async () => {
-      setCheckingSuspension(true);
       try {
         // First check localStorage (for demo mode)
         const savedStatuses = localStorage.getItem('medchain_node_statuses');
@@ -127,7 +117,6 @@ export default function DoctorPortal({ walletAddress }) {
           const statuses = JSON.parse(savedStatuses);
           if (walletAddress && statuses[walletAddress]) {
             setIsHospitalSuspended(true);
-            setCheckingSuspension(false);
             return;
           }
         }
@@ -143,12 +132,13 @@ export default function DoctorPortal({ walletAddress }) {
         }
       } catch (error) {
         console.error('Error checking suspension:', error);
-      } finally {
-        setCheckingSuspension(false);
       }
     };
 
     checkSuspension();
+
+    // Mark page as ready after initial check
+    setPageReady(true);
 
     // Also listen for storage changes (in case admin pauses from another tab)
     const handleStorageChange = (e) => {
@@ -271,9 +261,7 @@ export default function DoctorPortal({ walletAddress }) {
         '0123456789abcdef'[Math.floor(Math.random() * 16)]
       ).join('');
 
-      setTransactionHash(mockTxHash);
-
-      // Add to live feed
+      // Prepare all data first before any state updates
       const newEntry = {
         id: Date.now(),
         time: 'Just now',
@@ -283,22 +271,8 @@ export default function DoctorPortal({ walletAddress }) {
         txHash: mockTxHash.slice(0, 6) + '...' + mockTxHash.slice(-4),
         status: 'confirming'
       };
-      setLiveFeed(prev => [newEntry, ...prev.slice(0, 9)]);
 
-      // Simulate confirmation after 3 seconds
-      setTimeout(() => {
-        setLiveFeed(prev => prev.map(item =>
-          item.id === newEntry.id ? { ...item, status: 'confirmed', time: '1 min ago' } : item
-        ));
-      }, 3000);
-
-      setMessage('✓ Medical Certificate secured on blockchain!');
-
-      // Trigger confetti celebration
-      triggerConfetti();
-
-      // Show receipt modal with QR code
-      setReceiptData({
+      const receiptInfo = {
         txHash: mockTxHash,
         patientName: mcFormData.patientName,
         patientIC: mcFormData.patientIC,
@@ -311,22 +285,36 @@ export default function DoctorPortal({ walletAddress }) {
           year: 'numeric'
         }),
         verificationUrl: `${window.location.origin}/verify/${mockTxHash}`,
-      });
-      setShowReceipt(true);
+      };
 
-      // Reset form after showing receipt
-      setMcFormData({
-        patientIC: '',
-        patientName: '',
-        diagnosis: '',
-        duration: '1',
-        remarks: '',
-      });
-      clearSignature();
+      // Update all states at once - React 18 batches these automatically
+      setIsMinting(false);
+      setReceiptData(receiptInfo);
+      setTransactionHash(mockTxHash);
+      setLiveFeed(prev => [newEntry, ...prev.slice(0, 9)]);
+      setMessage('✓ Medical Certificate secured on blockchain!');
+
+      // Reset form after a brief delay (doesn't affect modal)
+      setTimeout(() => {
+        setMcFormData({
+          patientIC: '',
+          patientName: '',
+          diagnosis: '',
+          duration: '1',
+          remarks: '',
+        });
+        clearSignature();
+      }, 50);
+
+      // Simulate confirmation after 3 seconds
+      setTimeout(() => {
+        setLiveFeed(prev => prev.map(item =>
+          item.id === newEntry.id ? { ...item, status: 'confirmed', time: '1 min ago' } : item
+        ));
+      }, 3000);
 
     } catch (error) {
       setMessage(`Error: ${error.message}`);
-    } finally {
       setIsMinting(false);
     }
   };
@@ -555,116 +543,12 @@ export default function DoctorPortal({ walletAddress }) {
 
   // Close receipt modal
   const closeReceipt = () => {
-    // Deduct RM 1.00 from MC Credits balance
     setCreditBalance(prev => prev !== null ? Math.max(0, prev - 1) : 9);
-    setShowReceipt(false);
     setReceiptData(null);
     setTransactionHash(null);
   };
 
-  // Show loading while checking suspension
-  if (checkingSuspension) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#FFFFFF' }}>
-        <div className="text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full border-4 border-teal-500/30 border-t-teal-500 animate-spin"></div>
-          <p style={{ color: '#64748B' }}>Verifying node status...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show suspension screen if hospital is paused
-  if (isHospitalSuspended) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-8" style={{ backgroundColor: '#FFFFFF' }}>
-        <div className="max-w-lg w-full">
-          {/* Suspension Card */}
-          <div className="rounded-3xl overflow-hidden border" style={{ backgroundColor: '#FFFFFF', borderColor: '#ef444450' }}>
-            {/* Header */}
-            <div className="px-8 py-6 text-center" style={{ backgroundColor: '#ef444420' }}>
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: '#ef444430' }}>
-                <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                </svg>
-              </div>
-              <h1 className="text-2xl font-bold text-red-400 mb-2">Account Suspended</h1>
-              <p style={{ color: '#94A3B8' }}>Medical Certificate Issuance Disabled</p>
-            </div>
-
-            {/* Body */}
-            <div className="px-8 py-6 space-y-6">
-              {/* Professional Message */}
-              <div className="p-5 rounded-xl text-center" style={{ backgroundColor: '#F8FAFC' }}>
-                <p className="text-lg mb-4" style={{ color: '#1E293B' }}>
-                  Your hospital node has been temporarily suspended.
-                </p>
-                <p style={{ color: '#64748B' }}>
-                  Please contact your <strong className="text-teal-600">MedChain Administrator</strong> to settle outstanding subscription fees.
-                </p>
-              </div>
-
-              {/* Outstanding Balance */}
-              <div className="p-5 rounded-xl border" style={{ backgroundColor: 'rgba(239, 68, 68, 0.05)', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
-                <div className="flex items-center justify-between mb-3">
-                  <span style={{ color: '#94A3B8' }}>Outstanding Balance</span>
-                  <span className="text-2xl font-bold text-red-400">RM 10,000.00</span>
-                </div>
-                <p className="text-xs" style={{ color: '#94A3B8' }}>
-                  Monthly subscription fee for blockchain network access
-                </p>
-              </div>
-
-              {/* Contact Info */}
-              <div className="p-5 rounded-xl" style={{ backgroundColor: '#F8FAFC' }}>
-                <h3 className="font-semibold mb-3" style={{ color: '#1E293B' }}>How to Restore Access:</h3>
-                <ol className="space-y-2 text-sm" style={{ color: '#64748B' }}>
-                  <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-600 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">1</span>
-                    <span>Contact your hospital's accounts department</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-600 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">2</span>
-                    <span>Process the RM 10,000 subscription payment</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-600 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">3</span>
-                    <span>Send payment confirmation to admin@medchain.sarawak.gov.my</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-600 flex items-center justify-center text-xs flex-shrink-0 mt-0.5">4</span>
-                    <span>Your node will be reactivated within 24 hours</span>
-                  </li>
-                </ol>
-              </div>
-
-              {/* Support Contact */}
-              <div className="flex items-center justify-center gap-3 pt-4 border-t" style={{ borderColor: '#E2E8F0' }}>
-                <svg className="w-5 h-5" style={{ color: '#94A3B8' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-                <span style={{ color: '#94A3B8' }}>support@medchain.sarawak.gov.my</span>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="px-8 py-4 text-center" style={{ backgroundColor: '#F8FAFC' }}>
-              <p className="text-xs" style={{ color: '#94A3B8' }}>
-                Secured by <span className="text-teal-600 font-semibold">Sarawak MedChain</span> • Blockchain Verified Healthcare
-              </p>
-            </div>
-          </div>
-
-          {/* Wallet Info */}
-          <div className="mt-6 text-center">
-            <code className="text-xs px-3 py-2 rounded-lg" style={{ backgroundColor: '#F8FAFC', color: '#94A3B8', border: '1px solid #E2E8F0' }}>
-              Connected: {walletAddress?.slice(0, 10)}...{walletAddress?.slice(-8)}
-            </code>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // NOTE: Removed early returns - suspension overlay is now rendered inside the main component
 
   // Handle Top Up click
   const handleTopUp = () => {
@@ -708,65 +592,54 @@ export default function DoctorPortal({ walletAddress }) {
 
   return (
     <div className="min-h-screen font-sans doctor-portal" style={{ backgroundColor: '#FFFFFF', overflowX: 'hidden' }}>
-      {/* Success Celebration */}
-      {showConfetti && (
-        <div className="fixed inset-0 z-[100] pointer-events-none overflow-hidden">
-          {[...Array(30)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute animate-confetti"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: '-20px',
-                width: `${6 + Math.random() * 8}px`,
-                height: `${6 + Math.random() * 8}px`,
-                background: `linear-gradient(135deg, #14b8a6 0%, #10b981 100%)`,
-                borderRadius: '2px',
-                animationDelay: `${Math.random() * 0.5}s`,
-                animationDuration: `${2 + Math.random() * 2}s`,
-              }}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Receipt Modal */}
-      {showReceipt && receiptData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div
-            className="rounded-2xl max-w-md w-full overflow-hidden"
-            style={{
-              backgroundColor: '#FFFFFF',
-              border: '1px solid #E2E8F0'
-            }}
-          >
-            <div className="px-6 py-5 text-center" style={{ borderBottom: '1px solid #E2E8F0' }}>
-              <div className="w-14 h-14 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)' }}>
-                <svg className="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h2 className="text-xl font-bold text-slate-800 mb-1">Transaction Successful</h2>
-              <p className="text-slate-500 text-sm">Medical Certificate secured on blockchain</p>
+      {/* Receipt Modal - ALWAYS in DOM, smooth fade transitions */}
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 transition-opacity duration-200"
+        style={{
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          opacity: receiptData ? 1 : 0,
+          visibility: receiptData ? 'visible' : 'hidden',
+          pointerEvents: receiptData ? 'auto' : 'none'
+        }}
+      >
+        <div
+          className="rounded-2xl max-w-md w-full overflow-hidden transition-all duration-200"
+          style={{
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #E2E8F0',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            transform: receiptData ? 'scale(1)' : 'scale(0.95)',
+            opacity: receiptData ? 1 : 0
+          }}
+        >
+          <div className="px-6 py-5 text-center" style={{ borderBottom: '1px solid #E2E8F0' }}>
+            <div className="w-14 h-14 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)' }}>
+              <svg className="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
             </div>
-            <div className="px-6 py-5 space-y-3">
-              <div className="flex justify-between py-2 border-b border-slate-200">
-                <span className="text-slate-500 text-sm">Cost</span>
-                <span className="text-lg font-bold text-slate-800">RM 1.00</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-slate-200">
-                <span className="text-slate-500 text-sm">Patient</span>
-                <span className="text-slate-800 font-medium">{receiptData.patientName}</span>
-              </div>
-              <div className="py-2 border-b border-slate-200">
-                <p className="text-xs text-slate-500 mb-1">Blockchain Hash</p>
-                <code className="text-xs font-mono text-teal-400 break-all">{receiptData.txHash}</code>
-              </div>
+            <h2 className="text-xl font-bold text-slate-800 mb-1">Transaction Successful</h2>
+            <p className="text-slate-500 text-sm">Medical Certificate secured on blockchain</p>
+          </div>
+          <div className="px-6 py-5 space-y-3">
+            <div className="flex justify-between py-2 border-b border-slate-200">
+              <span className="text-slate-500 text-sm">Cost</span>
+              <span className="text-lg font-bold text-slate-800">RM 1.00</span>
+            </div>
+            <div className="flex justify-between py-2 border-b border-slate-200">
+              <span className="text-slate-500 text-sm">Patient</span>
+              <span className="text-slate-800 font-medium">{receiptData?.patientName || ''}</span>
+            </div>
+            <div className="py-2 border-b border-slate-200">
+              <p className="text-xs text-slate-500 mb-1">Blockchain Hash</p>
+              <code className="text-xs font-mono text-teal-400 break-all">{receiptData?.txHash || ''}</code>
+            </div>
 
-              {/* QR Code for Verification */}
-              <div ref={qrRef} className="py-4 text-center">
-                <p className="text-xs text-slate-400 mb-3">Scan to Verify MC</p>
-                <div className="inline-block p-3 rounded-xl" style={{ backgroundColor: '#ffffff' }}>
+            {/* QR Code for Verification */}
+            <div ref={qrRef} className="py-4 text-center">
+              <p className="text-xs text-slate-400 mb-3">Scan to Verify MC</p>
+              <div className="inline-block p-3 rounded-xl" style={{ backgroundColor: '#ffffff' }}>
+                {receiptData?.txHash && (
                   <QRCodeSVG
                     value={`https://sarawak-medchain.pages.dev/verify/${receiptData.txHash}`}
                     size={140}
@@ -774,46 +647,46 @@ export default function DoctorPortal({ walletAddress }) {
                     fgColor="#0f172a"
                     level="M"
                   />
-                </div>
-                <p className="text-[10px] text-slate-500 mt-2 font-mono">{(receiptData?.txHash || '').slice(0, 20)}...</p>
+                )}
               </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="px-6 pb-6 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={downloadQRCode}
-                  className="py-3 rounded-lg font-semibold transition-all hover:opacity-90 flex items-center justify-center gap-2"
-                  style={{ backgroundColor: 'rgba(20, 184, 166, 0.1)', border: '1px solid rgba(20, 184, 166, 0.3)', color: '#14b8a6' }}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  Download QR
-                </button>
-                <button
-                  onClick={() => window.print()}
-                  className="py-3 rounded-lg font-semibold transition-all hover:opacity-90 flex items-center justify-center gap-2"
-                  style={{ backgroundColor: 'rgba(20, 184, 166, 0.1)', border: '1px solid rgba(20, 184, 166, 0.3)', color: '#14b8a6' }}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                  </svg>
-                  Print MC
-                </button>
-              </div>
-              <button
-                onClick={closeReceipt}
-                className="w-full py-3 rounded-lg font-semibold transition-all hover:opacity-90"
-                style={{ background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)', color: '#fff' }}
-              >
-                Done
-              </button>
+              <p className="text-[10px] text-slate-500 mt-2 font-mono">{(receiptData?.txHash || '').slice(0, 20)}...</p>
             </div>
           </div>
+
+          {/* Action Buttons */}
+          <div className="px-6 pb-6 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={downloadQRCode}
+                className="py-3 rounded-lg font-semibold transition-all hover:opacity-90 flex items-center justify-center gap-2"
+                style={{ backgroundColor: 'rgba(20, 184, 166, 0.1)', border: '1px solid rgba(20, 184, 166, 0.3)', color: '#14b8a6' }}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download QR
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="py-3 rounded-lg font-semibold transition-all hover:opacity-90 flex items-center justify-center gap-2"
+                style={{ backgroundColor: 'rgba(20, 184, 166, 0.1)', border: '1px solid rgba(20, 184, 166, 0.3)', color: '#14b8a6' }}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                Print MC
+              </button>
+              </div>
+            <button
+              onClick={closeReceipt}
+              className="w-full py-3 rounded-lg font-semibold transition-all hover:opacity-90"
+              style={{ background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)', color: '#fff' }}
+            >
+              Done
+            </button>
+          </div>
         </div>
-      )}
+      </div>
 
       {/* Premium Enterprise Header - Two Row Layout */}
       <header style={{ backgroundColor: '#FFFFFF' }}>
@@ -1470,27 +1343,63 @@ export default function DoctorPortal({ walletAddress }) {
         </div>
       </div>
 
+      {/* Suspension Overlay - shown over content instead of replacing it */}
+      <div
+        className="fixed inset-0 z-[60] flex items-center justify-center p-8"
+        style={{
+          backgroundColor: 'rgba(255, 255, 255, 0.98)',
+          display: isHospitalSuspended ? 'flex' : 'none'
+        }}
+      >
+        <div className="max-w-lg w-full">
+          <div className="rounded-3xl overflow-hidden border" style={{ backgroundColor: '#FFFFFF', borderColor: '#ef444450' }}>
+            <div className="px-8 py-6 text-center" style={{ backgroundColor: '#ef444420' }}>
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: '#ef444430' }}>
+                <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                </svg>
+              </div>
+              <h1 className="text-2xl font-bold text-red-400 mb-2">Account Suspended</h1>
+              <p style={{ color: '#94A3B8' }}>Medical Certificate Issuance Disabled</p>
+            </div>
+            <div className="px-8 py-6 space-y-6">
+              <div className="p-5 rounded-xl text-center" style={{ backgroundColor: '#F8FAFC' }}>
+                <p className="text-lg mb-4" style={{ color: '#1E293B' }}>Your hospital node has been temporarily suspended.</p>
+                <p style={{ color: '#64748B' }}>Please contact your <strong className="text-teal-600">MedChain Administrator</strong> to settle outstanding subscription fees.</p>
+              </div>
+              <div className="p-5 rounded-xl border" style={{ backgroundColor: 'rgba(239, 68, 68, 0.05)', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
+                <div className="flex items-center justify-between mb-3">
+                  <span style={{ color: '#94A3B8' }}>Outstanding Balance</span>
+                  <span className="text-2xl font-bold text-red-400">RM 10,000.00</span>
+                </div>
+              </div>
+            </div>
+            <div className="px-8 py-4 text-center" style={{ backgroundColor: '#F8FAFC' }}>
+              <p className="text-xs" style={{ color: '#94A3B8' }}>Secured by <span className="text-teal-600 font-semibold">Sarawak MedChain</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Mobile Responsive CSS */}
       <style>{`
+        /* Prevent layout shift and flicker */
+        .doctor-portal {
+          will-change: auto;
+          contain: layout style;
+        }
+
         /* Spin animation for loading */
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
 
-        /* Confetti animation */
-        @keyframes confetti {
-          0% {
-            transform: translateY(0) rotateZ(0deg);
-            opacity: 1;
-          }
-          100% {
-            transform: translateY(100vh) rotateZ(720deg);
-            opacity: 0;
-          }
-        }
-        .animate-confetti {
-          animation: confetti 3s ease-out forwards;
+        /* GPU acceleration for modals */
+        .doctor-portal > .fixed {
+          will-change: opacity, transform;
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
         }
 
         /* ============ MOBILE RESPONSIVE STYLES ============ */
