@@ -13,6 +13,14 @@ export default function VerifyMC() {
 
   useEffect(() => {
     console.log('[VerifyMC] useEffect triggered - hash:', hash);
+
+    // Guard: require hash to proceed
+    if (!hash) {
+      setError('No MC hash provided');
+      setLoading(false);
+      return;
+    }
+
     // Simulate blockchain verification
     const verifyOnChain = async () => {
       try {
@@ -36,9 +44,12 @@ export default function VerifyMC() {
         diagnosis: 'Medical Leave - Certified Unfit for Work',
         blockchainHash: hash || '0x7a3f8c2d9e4b1a6f3c8d2e5a9b7f4c1d8e3a6b9c',
         blockNumber: 8234567,
-        verifiedAt: new Date().toLocaleString('en-MY', {
-          dateStyle: 'medium',
-          timeStyle: 'short'
+        verifiedAt: new Date().toLocaleString('en-GB', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
         }),
         networkName: 'Sarawak MedChain Network'
       };
