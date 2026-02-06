@@ -133,7 +133,7 @@ export default function VerifyMC() {
       <header style={styles.header}>
         <div style={styles.logoContainer}>
           <div style={styles.logo}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#14b8a6" strokeWidth="2">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2">
               <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
           </div>
@@ -148,21 +148,26 @@ export default function VerifyMC() {
       <main style={styles.main}>
         {/* Verification Status */}
         <div style={styles.statusCard}>
-          {/* Big Green Checkmark */}
-          <div style={styles.checkmarkContainer}>
+          {/* Stacked layout: checkmark -> badge -> subtitle */}
+          <div style={styles.verificationStack}>
+            {/* Large checkmark circle */}
             <div style={styles.checkmarkCircle}>
-              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="3">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0d9488" strokeWidth="3">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <div style={styles.pulseRing}></div>
-          </div>
 
-          {/* VERIFIED Badge */}
-          <div style={styles.verifiedBadge}>
-            <span style={styles.verifiedText}>✓ VERIFIED</span>
+            {/* VERIFIED Badge */}
+            <div style={styles.verifiedBadge}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3" style={{marginRight: '8px'}}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              <span style={styles.verifiedText}>VERIFIED</span>
+            </div>
+
+            {/* Subtitle */}
+            <p style={styles.verifiedSubtext}>This Medical Certificate is authentic</p>
           </div>
-          <p style={styles.verifiedSubtext}>This Medical Certificate is authentic</p>
         </div>
 
         {/* MC Details Card */}
@@ -326,9 +331,8 @@ const styles = {
 
   // Header styles
   header: {
-    padding: '20px',
-    borderBottom: '1px solid #E2E8F0',
-    background: 'linear-gradient(180deg, rgba(20, 184, 166, 0.06) 0%, transparent 100%)',
+    padding: '16px 20px',
+    backgroundColor: '#1e293b',
     width: '100%',
   },
   logoContainer: {
@@ -340,23 +344,24 @@ const styles = {
     margin: '0 auto',
   },
   logo: {
-    width: '48px',
-    height: '48px',
-    borderRadius: '12px',
-    background: 'rgba(20, 184, 166, 0.2)',
+    width: '40px',
+    height: '40px',
+    borderRadius: '50%',
+    backgroundColor: '#14b8a6',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   headerTitle: {
-    fontSize: '20px',
-    fontWeight: '700',
+    fontSize: '18px',
+    fontWeight: '600',
     margin: 0,
-    color: '#1E293B',
+    color: '#FFFFFF',
   },
   headerSubtitle: {
-    fontSize: '14px',
-    color: '#94A3B8',
+    fontSize: '13px',
+    color: '#94a3b8',
     margin: 0,
   },
 
@@ -374,47 +379,40 @@ const styles = {
     padding: '32px 20px',
     marginBottom: '20px',
   },
-  checkmarkContainer: {
-    position: 'relative',
-    display: 'inline-block',
-    marginBottom: '20px',
+  verificationStack: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '16px',
   },
   checkmarkCircle: {
-    width: '100px',
-    height: '100px',
+    width: '80px',
+    height: '80px',
     borderRadius: '50%',
-    background: 'rgba(16, 185, 129, 0.2)',
+    backgroundColor: '#ccfbf1',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    border: '3px solid #10b981',
-  },
-  pulseRing: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: '50%',
-    border: '3px solid #10b981',
-    animation: 'pulse-ring 2s ease-out infinite',
+    border: '4px solid #14b8a6',
   },
   verifiedBadge: {
-    display: 'inline-block',
-    padding: '12px 32px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '10px 24px',
     borderRadius: '50px',
-    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-    marginBottom: '12px',
+    backgroundColor: '#0d9488',
   },
   verifiedText: {
-    fontSize: '24px',
-    fontWeight: '800',
-    color: '#fff',
-    letterSpacing: '2px',
+    fontSize: '18px',
+    fontWeight: '600',
+    color: '#FFFFFF',
+    letterSpacing: '1px',
   },
   verifiedSubtext: {
-    fontSize: '16px',
+    fontSize: '15px',
     color: '#64748B',
+    margin: 0,
   },
 
   // Details card
