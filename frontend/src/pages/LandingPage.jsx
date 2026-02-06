@@ -745,7 +745,8 @@ export default function LandingPage() {
 
     // Use window.location.href to bypass PWA scope restrictions on iOS
     // This forces a full page navigation outside the current manifest scope
-    window.location.href = '/agreement?plan=' + planType;
+    // Note: Using /#/ for HashRouter compatibility
+    window.location.href = '/#/agreement?plan=' + planType;
   };
 
   // Handle contact sales for government plan

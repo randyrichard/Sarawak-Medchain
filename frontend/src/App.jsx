@@ -1144,7 +1144,7 @@ class ErrorBoundary extends React.Component {
           <button
             onClick={() => {
               this.setState({ hasError: false, error: null });
-              window.location.href = '/';
+              window.location.href = '/#/';
             }}
             style={{ padding: '12px 24px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
           >

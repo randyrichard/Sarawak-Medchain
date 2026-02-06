@@ -114,7 +114,7 @@ export default function DoctorPortalDemo() {
             </Link>
             <a
               href="#pricing"
-              onClick={(e) => { e.preventDefault(); window.location.href = '/pitch#pricing'; }}
+              onClick={(e) => { e.preventDefault(); window.location.href = '/#/pitch#pricing'; }}
               className="px-4 py-2 bg-white text-amber-600 rounded-lg font-bold text-sm hover:bg-amber-50 transition-colors"
             >
               Get Started
