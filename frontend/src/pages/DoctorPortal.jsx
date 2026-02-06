@@ -612,14 +612,16 @@ export default function DoctorPortal({ walletAddress }) {
             opacity: receiptData ? 1 : 0
           }}
         >
-          <div className="px-6 py-5 text-center" style={{ borderBottom: '1px solid #E2E8F0' }}>
-            <div className="w-14 h-14 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)' }}>
-              <svg className="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+          <div className="px-6 py-5" style={{ borderBottom: '1px solid #E2E8F0' }}>
+            <div className="flex justify-center mb-3">
+              <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)' }}>
+                <svg className="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
             </div>
-            <h2 className="text-xl font-bold text-slate-800 mb-1">Transaction Successful</h2>
-            <p className="text-slate-500 text-sm">Medical Certificate secured on blockchain</p>
+            <h2 className="text-xl font-bold text-slate-800 mb-1 text-center">Transaction Successful</h2>
+            <p className="text-slate-500 text-sm text-center">Medical Certificate secured on blockchain</p>
           </div>
           <div className="px-6 py-5 space-y-3">
             <div className="flex justify-between py-2 border-b border-slate-200">
