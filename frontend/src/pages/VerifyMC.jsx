@@ -6,13 +6,20 @@ export default function VerifyMC() {
   const [loading, setLoading] = useState(true);
   const [verified, setVerified] = useState(false);
   const [mcData, setMcData] = useState(null);
+  const [error, setError] = useState(null);
+
+  // Debug logging
+  console.log('[VerifyMC] Rendering - hash:', hash, 'loading:', loading, 'error:', error);
 
   useEffect(() => {
+    console.log('[VerifyMC] useEffect triggered - hash:', hash);
     // Simulate blockchain verification
     const verifyOnChain = async () => {
-      setLoading(true);
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      try {
+        setLoading(true);
+        setError(null);
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
       // Mock MC data (in production, fetch from blockchain)
       const mockData = {
@@ -39,15 +46,67 @@ export default function VerifyMC() {
       setMcData(mockData);
       setVerified(true);
       setLoading(false);
+      } catch (err) {
+        console.error('Verification error:', err);
+        setError(err.message || 'Failed to verify MC');
+        setLoading(false);
+      }
     };
 
     verifyOnChain();
   }, [hash]);
 
+  // Global mobile-safe styles (defined once, used in all returns)
+  const mobileResetStyles = `
+    html, body, #root {
+      background-color: #FFFFFF !important;
+      min-height: 100vh;
+      min-height: 100dvh;
+      margin: 0;
+      padding: 0;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(1); opacity: 0.8; }
+      100% { transform: scale(1.5); opacity: 0; }
+    }
+  `;
+
+  // Error state
+  if (error) {
+    return (
+      <div style={styles.container}>
+        <style>{mobileResetStyles}</style>
+        <div style={styles.loadingWrapper}>
+          <div style={{...styles.checkmarkCircle, backgroundColor: 'rgba(239, 68, 68, 0.2)', borderColor: '#ef4444'}}>
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </div>
+          <h2 style={{...styles.loadingTitle, marginTop: '20px'}}>Verification Failed</h2>
+          <p style={styles.loadingSubtitle}>{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            style={{marginTop: '20px', padding: '12px 24px', backgroundColor: '#14b8a6', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '600', cursor: 'pointer'}}
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Loading state
   if (loading) {
     return (
       <div style={styles.container}>
+        <style>{mobileResetStyles}</style>
         <div style={styles.loadingWrapper}>
           {/* Animated spinner */}
           <div style={styles.spinnerOuter}>
@@ -63,22 +122,13 @@ export default function VerifyMC() {
             <span style={{...styles.dot, animationDelay: '0.4s'}}>●</span>
           </div>
         </div>
-
-        <style>{`
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
-          @keyframes pulse {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 1; }
-          }
-        `}</style>
       </div>
     );
   }
 
   return (
     <div style={styles.container}>
+      <style>{mobileResetStyles}</style>
       {/* Header */}
       <header style={styles.header}>
         <div style={styles.logoContainer}>
@@ -192,14 +242,6 @@ export default function VerifyMC() {
         <p style={styles.footerText}>Powered by <strong>Sarawak MedChain</strong></p>
         <p style={styles.footerSubtext}>Blockchain-secured medical records for Sarawak</p>
       </footer>
-
-      {/* Animations */}
-      <style>{`
-        @keyframes pulse-ring {
-          0% { transform: scale(1); opacity: 0.8; }
-          100% { transform: scale(1.5); opacity: 0; }
-        }
-      `}</style>
     </div>
   );
 }
@@ -217,16 +259,23 @@ function DetailRow({ label, value, highlight }) {
   );
 }
 
-// Styles
+// Styles - Mobile-safe values
 const styles = {
   container: {
     minHeight: '100vh',
+    minHeight: '100dvh', // Dynamic viewport height for mobile
     backgroundColor: '#FFFFFF',
     color: '#1E293B',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
+    width: '100%',
+    margin: 0,
+    padding: 0,
+    boxSizing: 'border-box',
+    WebkitOverflowScrolling: 'touch', // Smooth scrolling on iOS
+    overflowX: 'hidden',
   },
 
   // Loading styles
@@ -236,8 +285,10 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: '100vh',
+    minHeight: '100dvh',
     padding: '20px',
     width: '100%',
+    boxSizing: 'border-box',
   },
   spinnerOuter: {
     width: '80px',

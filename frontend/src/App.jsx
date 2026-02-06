@@ -1009,8 +1009,9 @@ function AppRoutes() {
 
   // Public routes that don't need wallet - NO MetaMask trigger
   const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch', '/pricing', '/connect', '/demo', '/demo-app', '/ceo-dashboard', '/agreement', '/payment', '/ceo/quarterly', '/status', '/gov-preview', '/portal/gov-preview', '/admin/gov-dashboard', '/pwa/verify', '/pwa/issue', '/verify-agreement'];
-  const isPublicRoute = publicPaths.includes(location.pathname);
   const isVerificationRoute = location.pathname.startsWith('/verify/');
+  // Verification routes are also public (for employers to scan QR codes)
+  const isPublicRoute = publicPaths.includes(location.pathname) || isVerificationRoute;
 
   // Protected routes that require wallet connection
   const protectedPaths = ['/mvp', '/patient', '/doctor', '/admin', '/ceo', '/ceo-dashboard'];
@@ -1074,12 +1075,15 @@ function AppRoutes() {
         <Route path="/pwa/verify" element={<VerificationPage />} />
         <Route path="/pwa/issue" element={<DoctorPortalDemo />} />
         <Route path="/verify-agreement" element={<VerifyAgreement />} />
+        {/* MC Verification route - also added here as fallback */}
+        <Route path="/verify/:hash" element={<VerifyMC />} />
       </Routes>
     );
   }
 
   // Verification page is public (for employers to verify MCs)
   if (isVerificationRoute) {
+    console.log('[AppRoutes] isVerificationRoute matched - rendering VerifyMC');
     return (
       <Routes>
         <Route path="/verify/:hash" element={<VerifyMC />} />
