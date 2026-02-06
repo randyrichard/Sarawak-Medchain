@@ -17,8 +17,8 @@ const PRECACHE_ASSETS = [
 
 // Cache strategies
 const CACHE_STRATEGIES = {
-  // Network-first for API calls
-  networkFirst: ['/api/'],
+  // Network-first for API calls and verification pages (always fresh)
+  networkFirst: ['/api/', '/verify/'],
   // Cache-first for static assets
   cacheFirst: ['.js', '.css', '.png', '.jpg', '.svg', '.woff', '.woff2'],
   // Stale-while-revalidate for HTML
