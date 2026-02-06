@@ -94,6 +94,12 @@ export default function DoctorPortal({ walletAddress }) {
   const [showReceipt, setShowReceipt] = useState(false);
   const [receiptData, setReceiptData] = useState(null);
 
+  // Profile dropdown state
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const profileDropdownRef = useRef(null);
+  const [copySuccess, setCopySuccess] = useState(false);
+
+
   // Live feed for recently issued certificates
   const [liveFeed, setLiveFeed] = useState([
     { id: 1, time: '2 min ago', patientName: 'Ahmad bin Hassan', diagnosis: 'Upper Respiratory Infection', duration: 2, txHash: '0x7a3f...8c2d', status: 'confirmed' },
@@ -204,6 +210,23 @@ export default function DoctorPortal({ walletAddress }) {
       window.removeEventListener('resize', resizeCanvas);
     };
   }, []);
+
+  // Click outside handler for profile dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target)) {
+        setShowProfileDropdown(false);
+      }
+    };
+
+    if (showProfileDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showProfileDropdown]);
 
   // Clear signature
   const clearSignature = () => {
@@ -648,6 +671,41 @@ export default function DoctorPortal({ walletAddress }) {
     navigate('/payment', { state: { topUpAmount: 1000, isTopUp: true } });
   };
 
+  // Handle disconnect wallet
+  const handleDisconnectWallet = () => {
+    // Clear any local storage related to wallet
+    localStorage.removeItem('medchain_pending_admin');
+    localStorage.removeItem('medchain_wallet_connected');
+
+    // Close dropdown
+    setShowProfileDropdown(false);
+
+    // Navigate to connect page
+    navigate('/connect');
+
+    // Reload to clear wallet state (MetaMask will need to reconnect)
+    window.location.reload();
+  };
+
+  // Copy wallet address to clipboard
+  const copyWalletAddress = async () => {
+    if (walletAddress) {
+      try {
+        await navigator.clipboard.writeText(walletAddress);
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    }
+  };
+
+  // Truncate wallet address for display
+  const truncateAddress = (address) => {
+    if (!address) return '';
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
+
   return (
     <div className="min-h-screen font-sans doctor-portal" style={{ backgroundColor: '#FFFFFF', overflowX: 'hidden' }}>
       {/* Success Celebration */}
@@ -757,48 +815,169 @@ export default function DoctorPortal({ walletAddress }) {
         </div>
       )}
 
-      {/* Premium Enterprise Header */}
-      <header style={{ backgroundColor: '#FFFFFF', borderBottom: '1px solid #E2E8F0' }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '16px 40px' }} className="flex items-center justify-between">
-          {/* Hospital Name & Title */}
-          <div className="flex items-center gap-4">
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)', boxShadow: '0 4px 12px rgba(20, 184, 166, 0.25)' }}>
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-base font-semibold text-slate-800 tracking-tight">{hospitalName}</h1>
-              <p className="text-xs text-slate-500">Medical Certificate Terminal</p>
-            </div>
-          </div>
-
-          {/* Right: Status Items */}
-          <div className="flex items-center gap-3">
-            {/* Blockchain Status */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.1)' }}>
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              <span className="text-[11px] font-semibold text-emerald-400 tracking-wide">LIVE</span>
-            </div>
-
-            {/* Credits */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-              <span className="text-[11px] text-slate-500">Balance</span>
-              <span className="text-sm font-bold text-slate-800">RM {creditBalance !== null ? creditBalance : '10'}</span>
-              <button onClick={handleTopUp} className="ml-1 px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all hover:opacity-90" style={{ background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)', color: '#fff' }}>
+      {/* Premium Enterprise Header - Two Row Layout */}
+      <header style={{ backgroundColor: '#FFFFFF' }}>
+        {/* Utility Bar (Top Row) - Slim */}
+        <div className="header-utility-bar" style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+          <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '8px 40px' }} className="flex items-center justify-end gap-4">
+            {/* Balance & Top Up */}
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-slate-600">Balance: <strong className="text-slate-800">RM {creditBalance !== null ? creditBalance : '10'}</strong></span>
+              <button
+                onClick={handleTopUp}
+                className="px-4 py-1.5 rounded-lg text-sm font-medium transition-all hover:opacity-90"
+                style={{ background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)', color: '#fff' }}
+              >
                 Top Up
               </button>
             </div>
 
-            {/* Verified Badge */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg" style={{ backgroundColor: isVerified ? 'rgba(16, 185, 129, 0.06)' : 'rgba(239, 68, 68, 0.06)', border: `1px solid ${isVerified ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)'}` }}>
-              <svg className="w-3.5 h-3.5" style={{ color: isVerified ? '#22c55e' : '#ef4444' }} fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            {/* Notification Bell */}
+            <button className="p-2 rounded-lg hover:bg-slate-200 transition-colors" style={{ color: '#64748B' }}>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
-              <span className="text-[11px] font-semibold" style={{ color: isVerified ? '#22c55e' : '#ef4444' }}>{isVerified ? 'Verified' : 'Unverified'}</span>
+            </button>
+
+            {/* Profile Dropdown */}
+            <div className="relative" ref={profileDropdownRef}>
+              <button
+                onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-200 transition-colors"
+              >
+                <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#E2E8F0' }}>
+                  <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <svg className={`w-4 h-4 text-slate-400 transition-transform ${showProfileDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {/* Dropdown Menu */}
+              {showProfileDropdown && (
+                <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50" style={{ boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)' }}>
+                  {/* Wallet Info */}
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <p className="text-xs text-gray-500 mb-1">Connected Wallet</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-mono text-gray-900 bg-gray-100 px-2 py-1 rounded">
+                        {truncateAddress(walletAddress)}
+                      </span>
+                      <button
+                        onClick={copyWalletAddress}
+                        className="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+                        title="Copy address"
+                      >
+                        {copySuccess ? (
+                          <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          <svg className="w-4 h-4 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                    {copySuccess && (
+                      <p className="text-xs text-green-500 mt-1">Copied to clipboard!</p>
+                    )}
+                  </div>
+
+                  {/* Menu Items */}
+                  <div className="py-1">
+                    <button
+                      onClick={() => {
+                        setShowProfileDropdown(false);
+                        navigate('/settings');
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                    >
+                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Profile Settings
+                    </button>
+                    <a
+                      href={`https://etherscan.io/address/${walletAddress}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setShowProfileDropdown(false)}
+                      className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                    >
+                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                      View on Explorer
+                    </a>
+                  </div>
+
+                  {/* Disconnect - Red, at bottom */}
+                  <div className="border-t border-gray-100 pt-1 mt-1">
+                    <button
+                      onClick={handleDisconnectWallet}
+                      className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      Disconnect Wallet
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Main Header (Bottom Row) - Brand Bar */}
+        <div className="header-main-bar" style={{ borderBottom: '1px solid #E2E8F0', backgroundColor: '#FFFFFF' }}>
+          <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '20px 40px' }} className="flex items-center justify-between">
+            {/* Left: Hospital Branding */}
+            <div className="flex items-center gap-4">
+              {/* Hospital Logo */}
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)', boxShadow: '0 4px 12px rgba(20, 184, 166, 0.25)' }}>
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+
+              {/* Hospital Name, Subtitle & Badges */}
+              <div>
+                <h1 className="text-xl font-semibold text-slate-900 tracking-tight">{hospitalName}</h1>
+                <p className="text-sm text-slate-500 mt-0.5">Medical Certificate Terminal</p>
+
+                {/* Badges Row */}
+                <div className="flex items-center gap-3 mt-2">
+                  {/* LIVE Badge */}
+                  <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#059669' }}>
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    LIVE
+                  </span>
+
+                  {/* Verified Badge */}
+                  <span
+                    className="inline-flex items-center gap-1 text-xs font-medium"
+                    style={{ color: isVerified ? '#0d9488' : '#ef4444' }}
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    {isVerified ? 'Verified' : 'Unverified'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Empty space or optional search (can add later) */}
+            <div className="header-right-placeholder hidden md:block">
+              {/* Reserved for future: search bar, quick actions, etc. */}
             </div>
           </div>
         </div>
@@ -1315,23 +1494,34 @@ export default function DoctorPortal({ walletAddress }) {
         }
 
         /* ============ MOBILE RESPONSIVE STYLES ============ */
-        @media (max-width: 768px) {
+        @media (max-width: 1023px) {
           .doctor-portal {
             overflow-x: hidden !important;
           }
 
-          /* Header adjustments */
-          .doctor-portal header > div {
-            flex-direction: column !important;
-            gap: 16px !important;
-            padding: 16px !important;
-            align-items: flex-start !important;
+          /* Utility Bar - Mobile */
+          .header-utility-bar > div {
+            padding: 8px 16px !important;
+            gap: 12px !important;
+            flex-wrap: wrap !important;
           }
 
-          .doctor-portal header > div > div:last-child {
+          /* Main Header Bar - Mobile */
+          .header-main-bar > div {
+            padding: 16px !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 12px !important;
+          }
+
+          /* Hospital branding - keep horizontal on mobile */
+          .header-main-bar > div > div:first-child {
             width: 100% !important;
-            flex-wrap: wrap !important;
-            gap: 8px !important;
+          }
+
+          /* Hide placeholder on mobile */
+          .header-right-placeholder {
+            display: none !important;
           }
 
           /* Main content padding */
@@ -1401,8 +1591,31 @@ export default function DoctorPortal({ walletAddress }) {
             border-radius: 12px !important;
           }
 
-          .doctor-portal header > div {
+          /* Utility bar - stack on very small screens */
+          .header-utility-bar > div {
+            padding: 8px 12px !important;
+            gap: 8px !important;
+          }
+
+          .header-utility-bar > div > div:first-child {
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 8px !important;
+            width: 100% !important;
+          }
+
+          /* Main header bar - compact */
+          .header-main-bar > div {
             padding: 12px !important;
+          }
+
+          /* Smaller hospital name on mobile */
+          .header-main-bar h1 {
+            font-size: 18px !important;
+          }
+
+          .header-main-bar p {
+            font-size: 12px !important;
           }
 
           /* Smaller text on mobile */

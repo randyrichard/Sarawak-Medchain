@@ -33,7 +33,7 @@ import SystemStatus from './pages/SystemStatus';
 import CouncilorView from './pages/CouncilorView';
 import DemoApp from './pages/DemoApp';
 import { ServiceRestoredToast } from './components/ServiceNotifications';
-import { Shield, DollarSign, X, AlertTriangle, User, Stethoscope, Settings, BarChart3, Lock, CreditCard, Menu, Wallet, ChevronRight } from 'lucide-react';
+import { Shield, DollarSign, X, AlertTriangle, User, Stethoscope, Settings, BarChart3, Lock, CreditCard, Menu, Wallet, ChevronRight, LogOut } from 'lucide-react';
 import './App.css';
 
 // Top-Up Modal Component
@@ -649,10 +649,10 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
             <p className="text-xs text-slate-400 mb-3 pl-0.5">Blockchain-secured medical records</p>
             <button
               onClick={handleDisconnect}
-              className="text-xs text-slate-500 hover:text-slate-700 transition-colors pl-0.5"
-              style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
+              className="flex items-center gap-2.5 w-full px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             >
-              Disconnect wallet
+              <LogOut className="w-4 h-4" />
+              <span>Disconnect Wallet</span>
             </button>
           </div>
         </div>
