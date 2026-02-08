@@ -4,6 +4,7 @@ import PublicImpactCounter from '../components/PublicImpactCounter';
 import SarawakReadinessMap from '../components/SarawakReadinessMap';
 import { usePWA, PWA_CONFIGS } from '../hooks/usePWA';
 import { useDemo } from '../context/DemoContext';
+import { Shield, Headphones, Lock } from 'lucide-react';
 
 // Facility types for dropdown
 const FACILITY_TYPES = [
@@ -1232,6 +1233,80 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ========== TRUST BADGES SECTION ========== */}
+      <section style={{ background: '#F8FAFC', padding: '48px 0' }}>
+        <div style={{
+          maxWidth: '1100px',
+          margin: '0 auto',
+          padding: '0 24px',
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          gap: '32px',
+        }}>
+          {/* 99.9% Uptime */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: '200px' }}>
+            <div style={{
+              width: '48px', height: '48px', borderRadius: '50%',
+              background: 'rgba(34, 197, 94, 0.12)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              <Shield size={22} color="#16A34A" strokeWidth={2.2} />
+            </div>
+            <div>
+              <p className="font-heading" style={{ fontSize: '14px', fontWeight: 700, color: '#1E293B', margin: 0, lineHeight: 1.3 }}>99.9% Uptime</p>
+              <p className="font-body" style={{ fontSize: '12px', color: '#64748B', margin: 0, lineHeight: 1.4 }}>SLA Guaranteed</p>
+            </div>
+          </div>
+
+          {/* Data Hosted in Malaysia */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: '200px' }}>
+            <div style={{
+              width: '48px', height: '48px', borderRadius: '50%',
+              background: 'rgba(59, 130, 246, 0.12)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              fontSize: '22px',
+            }}>
+              🇲🇾
+            </div>
+            <div>
+              <p className="font-heading" style={{ fontSize: '14px', fontWeight: 700, color: '#1E293B', margin: 0, lineHeight: 1.3 }}>Data Hosted in Malaysia</p>
+              <p className="font-body" style={{ fontSize: '12px', color: '#64748B', margin: 0, lineHeight: 1.4 }}>PDPA Compliant</p>
+            </div>
+          </div>
+
+          {/* 24/7 Support */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: '200px' }}>
+            <div style={{
+              width: '48px', height: '48px', borderRadius: '50%',
+              background: 'rgba(20, 184, 166, 0.12)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              <Headphones size={22} color="#0D9488" strokeWidth={2.2} />
+            </div>
+            <div>
+              <p className="font-heading" style={{ fontSize: '14px', fontWeight: 700, color: '#1E293B', margin: 0, lineHeight: 1.3 }}>24/7 Support</p>
+              <p className="font-body" style={{ fontSize: '12px', color: '#64748B', margin: 0, lineHeight: 1.4 }}>Critical Issues</p>
+            </div>
+          </div>
+
+          {/* Blockchain Secured */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: '200px' }}>
+            <div style={{
+              width: '48px', height: '48px', borderRadius: '50%',
+              background: 'rgba(139, 92, 246, 0.12)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}>
+              <Lock size={22} color="#7C3AED" strokeWidth={2.2} />
+            </div>
+            <div>
+              <p className="font-heading" style={{ fontSize: '14px', fontWeight: 700, color: '#1E293B', margin: 0, lineHeight: 1.3 }}>Blockchain Secured</p>
+              <p className="font-body" style={{ fontSize: '12px', color: '#64748B', margin: 0, lineHeight: 1.4 }}>Tamper-Proof</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ========== THE PROBLEM SECTION - Premium ========== */}
       <section className="problem-section" style={{ padding: '96px 0' }}>
         <div className="problem-card" style={{ position: 'relative', background: '#FFFFFF', color: '#1E293B', borderRadius: '20px', padding: '64px', overflow: 'hidden', border: '1px solid #E2E8F0', boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
@@ -1629,7 +1704,7 @@ export default function LandingPage() {
 
               {/* Features */}
               <div style={{ flex: 1, marginBottom: '32px' }}>
-                {['Digital Records', 'Basic Dashboard', '5 Doctor Accounts', 'Email Support'].map((feature, i) => (
+                {['Digital Records', 'Basic Dashboard', '5 Doctor Accounts', 'Email Support', 'Business Hours Support', '99.9% Uptime SLA'].map((feature, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
                     <div style={{
                       width: '20px',
@@ -1752,7 +1827,7 @@ export default function LandingPage() {
 
               {/* Features */}
               <div style={{ flex: 1, marginBottom: '32px' }}>
-                {['Full ERP Integration', 'Executive Dashboard', 'Unlimited Doctors', '24/7 Priority Support', 'Custom API Access'].map((feature, i) => (
+                {['Full ERP Integration', 'Executive Dashboard', 'Unlimited Doctors', '24/7 Priority Support', 'Custom API Access', '99.9% Uptime SLA', 'Dedicated Account Manager'].map((feature, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
                     <div style={{
                       width: '20px',
@@ -2035,6 +2110,7 @@ export default function LandingPage() {
             <div className="footer-links" style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
               <a href="#features" style={{ fontSize: '14px', color: '#64748b', fontWeight: 500, textDecoration: 'none' }}>Features</a>
               <a href="#pricing" style={{ fontSize: '14px', color: '#64748b', fontWeight: 500, textDecoration: 'none' }}>Pricing</a>
+              <a href="#/sla" style={{ fontSize: '14px', color: '#64748b', fontWeight: 500, textDecoration: 'none' }}>SLA</a>
               <a href="mailto:enterprise@medchain.sarawak.gov.my" style={{ fontSize: '14px', color: '#64748b', fontWeight: 500, textDecoration: 'none' }}>Contact</a>
             </div>
 

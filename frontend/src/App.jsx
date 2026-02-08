@@ -26,6 +26,7 @@ import FounderAdmin from './pages/FounderAdmin';
 import HospitalCEODashboard from './pages/HospitalCEODashboard';
 import BusinessOverview from './pages/BusinessOverview';
 import LandingPage from './pages/LandingPage';
+import SLAPage from './pages/SLAPage';
 import VerificationPage from './pages/VerificationPage';
 import VerifyMC from './pages/VerifyMC';
 import VerifyAgreement from './pages/VerifyAgreement';
@@ -1008,7 +1009,7 @@ function AppRoutes() {
   }, []);
 
   // Public routes that don't need wallet - NO MetaMask trigger
-  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch', '/pricing', '/connect', '/demo', '/demo-app', '/ceo-dashboard', '/agreement', '/payment', '/ceo/quarterly', '/status', '/gov-preview', '/portal/gov-preview', '/admin/gov-dashboard', '/pwa/verify', '/pwa/issue', '/verify-agreement'];
+  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch', '/pricing', '/connect', '/demo', '/demo-app', '/ceo-dashboard', '/agreement', '/payment', '/ceo/quarterly', '/status', '/gov-preview', '/portal/gov-preview', '/admin/gov-dashboard', '/pwa/verify', '/pwa/issue', '/verify-agreement', '/sla'];
   const isVerificationRoute = location.pathname.startsWith('/verify/');
   // Verification routes are also public (for employers to scan QR codes)
   const isPublicRoute = publicPaths.includes(location.pathname) || isVerificationRoute;
@@ -1075,6 +1076,7 @@ function AppRoutes() {
         <Route path="/pwa/verify" element={<VerificationPage />} />
         <Route path="/pwa/issue" element={<DoctorPortalDemo />} />
         <Route path="/verify-agreement" element={<VerifyAgreement />} />
+        <Route path="/sla" element={<SLAPage />} />
         {/* MC Verification route - also added here as fallback */}
         <Route path="/verify/:hash" element={<VerifyMC />} />
       </Routes>
