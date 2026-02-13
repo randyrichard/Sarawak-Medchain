@@ -1962,32 +1962,41 @@ export default function LandingPage() {
                 ))}
               </div>
 
-              {/* Button */}
-              <button
-                onClick={handleContactSales}
+              {/* Contact Sales Button */}
+              <a
+                href="https://wa.me/601131825377?text=Hi%20Randy,%20I'm%20interested%20in%20the%20Government%20tier%20for%20Sarawak%20MedChain"
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{
                   width: '100%',
                   padding: '14px 24px',
-                  backgroundColor: '#F5F3FF',
-                  color: '#7C3AED',
+                  background: 'linear-gradient(135deg, #0F766E 0%, #0D9488 100%)',
+                  color: 'white',
                   fontSize: '15px',
                   fontWeight: 600,
                   borderRadius: '12px',
-                  border: '1px solid #DDD6FE',
+                  border: 'none',
                   cursor: 'pointer',
-                  transition: 'all 0.2s ease'
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 4px 20px rgba(15, 118, 110, 0.3)',
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  boxSizing: 'border-box'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#EDE9FE';
-                  e.currentTarget.style.borderColor = '#C4B5FD';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 8px 30px rgba(15, 118, 110, 0.4)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#F5F3FF';
-                  e.currentTarget.style.borderColor = '#DDD6FE';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 20px rgba(15, 118, 110, 0.3)';
                 }}
               >
                 Contact Sales
-              </button>
+              </a>
             </div>
 
           </div>{/* END Pricing Grid */}
