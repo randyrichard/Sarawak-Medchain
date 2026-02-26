@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { supabase } from '../utils/supabase';
 
 export default function VerifyMC() {
   const { hash } = useParams();
@@ -8,58 +9,111 @@ export default function VerifyMC() {
   const [mcData, setMcData] = useState(null);
   const [error, setError] = useState(null);
 
-  // Debug logging
-  console.log('[VerifyMC] Rendering - hash:', hash, 'loading:', loading, 'error:', error);
+  // Mask patient name: "randy" -> "Randy ***", "Randy Richard" -> "Randy ***"
+  const maskName = (name) => {
+    if (!name) return '***';
+    const parts = name.trim().split(/\s+/);
+    const firstName = parts[0].charAt(0).toUpperCase() + parts[0].slice(1).toLowerCase();
+    return firstName + ' ***';
+  };
+
+  // Mask IC number: "1212121212" -> "121212-**-1212"
+  const maskIC = (ic) => {
+    if (!ic) return '******-**-****';
+    const digits = ic.replace(/\D/g, '');
+    if (digits.length >= 10) {
+      return digits.slice(0, 6) + '-**-' + digits.slice(-4);
+    }
+    return ic;
+  };
 
   useEffect(() => {
-    console.log('[VerifyMC] useEffect triggered - hash:', hash);
-
-    // Guard: require hash to proceed
     if (!hash) {
       setError('No MC hash provided');
       setLoading(false);
       return;
     }
 
-    // Simulate blockchain verification
     const verifyOnChain = async () => {
       try {
         setLoading(true);
         setError(null);
-        // Simulate network delay
         await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // Mock MC data (in production, fetch from blockchain)
-      const mockData = {
-        mcId: 'MC-2026-0847',
-        patientName: 'Ahmad B***',
-        patientIC: '901201-**-5678',
-        doctor: 'Dr. Sarah Lim',
-        doctorMMC: 'MMC-45678',
-        hospital: 'Timberland Medical Centre',
-        dateIssued: '30 Jan 2026',
-        mcDays: 2,
-        startDate: '30 Jan 2026',
-        endDate: '31 Jan 2026',
-        diagnosis: 'Medical Leave - Certified Unfit for Work',
-        blockchainHash: hash || '0x7a3f8c2d9e4b1a6f3c8d2e5a9b7f4c1d8e3a6b9c',
-        blockNumber: 8234567,
-        verifiedAt: new Date().toLocaleString('en-GB', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        }),
-        networkName: 'Sarawak MedChain Network'
-      };
+        let data = null;
 
-      setMcData(mockData);
-      setVerified(true);
-      setLoading(false);
+        // Try Supabase first (works cross-device)
+        const { data: row, error: dbError } = await supabase
+          .from('medical_certificates')
+          .select('*')
+          .eq('id', hash)
+          .single();
+
+        if (dbError) {
+          console.warn('Supabase SELECT error:', dbError.message, dbError);
+        }
+
+        if (!dbError && row) {
+          console.log('Supabase hit — loaded MC from database');
+          data = {
+            mcId: row.mc_id,
+            patientName: row.patient_name,
+            patientIC: row.ic_number,
+            doctorName: row.doctor_name,
+            mmcNumber: row.mmc_number,
+            hospital: row.clinic_name,
+            dateIssued: row.date_issued,
+            duration: row.duration,
+            startDate: row.start_date,
+            endDate: row.end_date,
+            diagnosis: row.diagnosis,
+            blockNumber: row.block_number,
+          };
+        }
+
+        // Fall back to localStorage (same-device)
+        if (!data) {
+          const stored = localStorage.getItem(`mc_${hash}`);
+          if (stored) {
+            data = JSON.parse(stored);
+          }
+        }
+
+        if (!data) {
+          setError('MC record not found. This QR code may be invalid or expired.');
+          setLoading(false);
+          return;
+        }
+
+        // Build display object from REAL data — zero hardcoded values
+        setMcData({
+          mcId: data.mcId,
+          patientName: maskName(data.patientName),
+          patientIC: maskIC(data.patientIC),
+          doctor: data.doctorName,
+          doctorMMC: data.mmcNumber,
+          hospital: data.hospital,
+          dateIssued: data.dateIssued,
+          mcDays: data.duration,
+          startDate: data.startDate,
+          endDate: data.endDate,
+          diagnosis: data.diagnosis,
+          blockchainHash: hash,
+          blockNumber: data.blockNumber,
+          verifiedAt: new Date().toLocaleString('en-GB', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          }),
+          networkName: 'Sarawak MedChain Network'
+        });
+        setVerified(true);
+        setLoading(false);
       } catch (err) {
         console.error('Verification error:', err);
-        setError(err.message || 'Failed to verify MC');
+        setError('Failed to verify MC. The stored data may be corrupted.');
         setLoading(false);
       }
     };
@@ -194,6 +248,7 @@ export default function VerifyMC() {
             <DetailRow label="MC ID" value={mcData.mcId} highlight />
             <DetailRow label="Patient" value={mcData.patientName} />
             <DetailRow label="IC Number" value={mcData.patientIC} />
+            <DetailRow label="Diagnosis" value={mcData.diagnosis} />
             <DetailRow label="Doctor" value={mcData.doctor} />
             <DetailRow label="MMC Registration" value={mcData.doctorMMC} />
             <DetailRow label="Hospital" value={mcData.hospital} />

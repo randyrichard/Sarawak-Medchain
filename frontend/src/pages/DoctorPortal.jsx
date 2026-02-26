@@ -10,6 +10,7 @@ import { useDemo, DEMO_DOCTOR_INFO } from '../context/DemoContext';
 import BroadcastNotification from '../components/BroadcastNotification';
 import MaintenanceBanner from '../components/MaintenanceBanner';
 import FoundingPartnerBadge from '../components/FoundingPartnerBadge';
+import { supabase } from '../utils/supabase';
 
 export default function DoctorPortal({ walletAddress }) {
   // Navigation hook - must be at top before any conditionals
@@ -272,19 +273,73 @@ export default function DoctorPortal({ walletAddress }) {
         status: 'confirming'
       };
 
+      // Gather all real MC data
+      console.log('[MC Submit] isDemoMode:', isDemoMode, '| pendingAdmin:', pendingAdmin, '| hospitalName:', hospitalName);
+      const doctorName = isDemoMode ? DEMO_DOCTOR_INFO.name : (pendingAdmin.doctorName || 'Doctor');
+      const mmcNumber = isDemoMode ? DEMO_DOCTOR_INFO.mmcNumber : (pendingAdmin.mmcNumber || 'MMC-00000');
+      console.log('[MC Submit] doctorName:', doctorName, '| mmcNumber:', mmcNumber, '| patientName:', mcFormData.patientName);
+      const mcId = `MC-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
+      const duration = parseInt(mcFormData.duration);
+      const now = new Date();
+      const issueDate = now.toLocaleDateString('en-MY', { day: 'numeric', month: 'long', year: 'numeric' });
+      const startDate = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      const endDateObj = new Date(now);
+      endDateObj.setDate(endDateObj.getDate() + duration - 1);
+      const endDate = endDateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+      // Save real MC data to localStorage keyed by blockchain hash
+      const mcDataToStore = {
+        patientName: mcFormData.patientName,
+        patientIC: mcFormData.patientIC,
+        diagnosis: mcFormData.diagnosis,
+        duration: duration,
+        doctorName: doctorName,
+        mmcNumber: mmcNumber,
+        hospital: hospitalName,
+        dateIssued: issueDate,
+        startDate: startDate,
+        endDate: endDate,
+        mcId: mcId,
+        txHash: mockTxHash,
+        blockNumber: Math.floor(Math.random() * 1000000) + 8000000,
+        timestamp: now.toISOString(),
+      };
+      localStorage.setItem(`mc_${mockTxHash}`, JSON.stringify(mcDataToStore));
+
+      // Persist to Supabase for cross-device verification
+      const { error: insertError } = await supabase
+        .from('medical_certificates')
+        .insert({
+          id: mockTxHash,
+          mc_id: mcId,
+          patient_name: mcFormData.patientName,
+          ic_number: mcFormData.patientIC,
+          diagnosis: mcFormData.diagnosis,
+          duration: duration,
+          doctor_name: doctorName,
+          clinic_name: hospitalName,
+          mmc_number: mmcNumber,
+          date_issued: issueDate,
+          start_date: startDate,
+          end_date: endDate,
+          block_number: mcDataToStore.blockNumber,
+        });
+      if (insertError) {
+        console.error('Supabase insert error:', insertError.message, insertError);
+      } else {
+        console.log('Supabase insert OK — MC available cross-device');
+      }
+
+      const appUrl = import.meta.env.VITE_APP_URL || 'https://sarawak-medchain.pages.dev';
       const receiptInfo = {
         txHash: mockTxHash,
         patientName: mcFormData.patientName,
         patientIC: mcFormData.patientIC,
         diagnosis: mcFormData.diagnosis,
-        duration: parseInt(mcFormData.duration),
+        duration: duration,
         hospital: hospitalName,
-        issueDate: new Date().toLocaleDateString('en-MY', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric'
-        }),
-        verificationUrl: `${window.location.origin}/#/verify/${mockTxHash}`,
+        issueDate: issueDate,
+        verificationUrl: `${appUrl}/#/verify/${mockTxHash}`,
       };
 
       // Update all states at once - React 18 batches these automatically
@@ -643,7 +698,7 @@ export default function DoctorPortal({ walletAddress }) {
               <div className="inline-block p-3 rounded-xl" style={{ backgroundColor: '#ffffff' }}>
                 {receiptData?.txHash && (
                   <QRCodeSVG
-                    value={`https://sarawak-medchain.pages.dev/#/verify/${receiptData.txHash}`}
+                    value={receiptData.verificationUrl}
                     size={140}
                     bgColor="#ffffff"
                     fgColor="#0f172a"
