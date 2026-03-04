@@ -28,12 +28,15 @@ export default function HospitalCEODashboard() {
     { name: 'Dr. Fatimah Abdullah', dept: 'Dermatology', mcs: 89, status: 'offline' },
   ];
 
+  const today = new Date();
+  const yesterday = new Date(Date.now() - 86400000);
+  const fmtDate = (d) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
   const recentMCs = [
-    { id: 'MC-2026-0847', patient: 'Ahmad Y.', doctor: 'Dr. Sarah Lim', date: '29 Jan', status: 'verified' },
-    { id: 'MC-2026-0846', patient: 'Siti A.', doctor: 'Dr. Ahmad Razak', date: '29 Jan', status: 'verified' },
-    { id: 'MC-2026-0845', patient: 'Wong K.', doctor: 'Dr. Wong Mei Ling', date: '29 Jan', status: 'pending' },
-    { id: 'MC-2026-0844', patient: 'Raju K.', doctor: 'Dr. Kumar Rajan', date: '28 Jan', status: 'verified' },
-    { id: 'MC-2026-0843', patient: 'Farah H.', doctor: 'Dr. Fatimah Abdullah', date: '28 Jan', status: 'verified' },
+    { id: 'MC-2026-0847', patient: 'Ahmad Y.', doctor: 'Dr. Sarah Lim', date: fmtDate(today), status: 'verified' },
+    { id: 'MC-2026-0846', patient: 'Siti A.', doctor: 'Dr. Ahmad Razak', date: fmtDate(today), status: 'verified' },
+    { id: 'MC-2026-0845', patient: 'Wong K.', doctor: 'Dr. Wong Mei Ling', date: fmtDate(today), status: 'pending' },
+    { id: 'MC-2026-0844', patient: 'Raju K.', doctor: 'Dr. Kumar Rajan', date: fmtDate(yesterday), status: 'verified' },
+    { id: 'MC-2026-0843', patient: 'Farah H.', doctor: 'Dr. Fatimah Abdullah', date: fmtDate(yesterday), status: 'verified' },
   ];
 
   const systemStatus = [

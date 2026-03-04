@@ -42,40 +42,42 @@ export default function VerifyMC() {
 
         let data = null;
 
-        // Try Supabase first (works cross-device)
-        const { data: row, error: dbError } = await supabase
-          .from('medical_certificates')
-          .select('*')
-          .eq('id', hash)
-          .single();
+        // PRIMARY: Fetch from Supabase (works cross-device)
+        if (supabase) {
+          const result = await supabase
+            .from('medical_certificates')
+            .select('*')
+            .eq('id', hash)
+            .single();
 
-        if (dbError) {
-          console.warn('Supabase SELECT error:', dbError.message, dbError);
+          if (!result.error && result.data) {
+            const row = result.data;
+            data = {
+              mcId: row.mc_id,
+              patientName: row.patient_name,
+              patientIC: row.ic_number,
+              doctorName: row.doctor_name,
+              mmcNumber: row.mmc_number,
+              hospital: row.clinic_name,
+              dateIssued: row.date_issued,
+              duration: row.duration,
+              startDate: row.start_date,
+              endDate: row.end_date,
+              diagnosis: row.diagnosis,
+              blockNumber: row.block_number,
+            };
+          }
         }
 
-        if (!dbError && row) {
-          console.log('Supabase hit — loaded MC from database');
-          data = {
-            mcId: row.mc_id,
-            patientName: row.patient_name,
-            patientIC: row.ic_number,
-            doctorName: row.doctor_name,
-            mmcNumber: row.mmc_number,
-            hospital: row.clinic_name,
-            dateIssued: row.date_issued,
-            duration: row.duration,
-            startDate: row.start_date,
-            endDate: row.end_date,
-            diagnosis: row.diagnosis,
-            blockNumber: row.block_number,
-          };
-        }
-
-        // Fall back to localStorage (same-device)
+        // FALLBACK: localStorage (same-device only)
         if (!data) {
           const stored = localStorage.getItem(`mc_${hash}`);
           if (stored) {
-            data = JSON.parse(stored);
+            try {
+              data = JSON.parse(stored);
+            } catch (parseErr) {
+              // Corrupted data, ignore
+            }
           }
         }
 

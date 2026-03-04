@@ -1217,7 +1217,7 @@ export default function LandingPage() {
         {/* Stats Row */}
         <div className="stats-row">
           <div className="stat-item">
-            <p className="font-heading stat-number">24</p>
+            <p className="font-heading stat-number">16</p>
             <p className="font-body stat-label">Hospitals</p>
           </div>
           <div className="stat-divider"></div>
@@ -1395,7 +1395,7 @@ export default function LandingPage() {
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
           <p className="font-heading" style={{ fontSize: '11px', fontWeight: 600, color: '#059669', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.2em' }}>Network</p>
           <h2 className="font-heading section-title" style={{ fontSize: 'clamp(36px, 5vw, 44px)', fontWeight: 800, color: '#0f172a', marginBottom: '16px', letterSpacing: '-0.02em' }}>Hospital Network</h2>
-          <p className="font-body" style={{ fontSize: '17px', color: '#64748b', maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>24 hospitals across Sarawak already connected</p>
+          <p className="font-body" style={{ fontSize: '17px', color: '#64748b', maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>16 hospitals across Sarawak already connected</p>
         </div>
 
         {/* Hospital Grid - Premium cards */}
@@ -2004,7 +2004,7 @@ export default function LandingPage() {
           {/* Footer Text */}
           <div style={{ textAlign: 'center', marginTop: '56px' }}>
             <p className="font-body" style={{ color: '#64748B', fontSize: '16px' }}>
-              Ready to get started? <span style={{ color: '#0F766E', fontWeight: 600 }}>Join 24 hospitals</span> already using MedChain.
+              Ready to get started? <span style={{ color: '#0F766E', fontWeight: 600 }}>Join 16 hospitals</span> already using MedChain.
             </p>
           </div>
         </div>

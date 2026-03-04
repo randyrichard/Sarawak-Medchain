@@ -59,7 +59,38 @@ export async function connectWallet() {
       if (isProduction) {
         throw new Error('Live blockchain not available on demo site. Please use "Try Demo" button on the landing page to explore the app.');
       }
-      throw new Error(`Wrong network. Please connect MetaMask to Localhost 8545 (Hardhat). Current chainId: ${chainId}`);
+      // Auto-switch to Hardhat network — try both common chainIds
+      const hardhatChainIds = ['0x539', '0x7A69']; // 1337, 31337
+      let switched = false;
+      for (const hcId of hardhatChainIds) {
+        try {
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: hcId }],
+          });
+          switched = true;
+          break;
+        } catch (e) {
+          // Try next chainId if this one isn't found (4902)
+          if (e.code !== 4902) {
+            throw new Error(`Please switch MetaMask to Localhost 8545 (Hardhat). Current chainId: ${chainId}`);
+          }
+        }
+      }
+      if (!switched) {
+        // Neither exists — add with 0x539 (1337) which Hardhat commonly uses
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [{
+            chainId: '0x539',
+            chainName: 'Hardhat Localhost',
+            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+            rpcUrls: ['http://127.0.0.1:8545'],
+          }],
+        });
+      }
+      // Re-initialize provider after network switch
+      provider = new ethers.BrowserProvider(window.ethereum);
     }
 
     signer = await provider.getSigner();
@@ -154,8 +185,7 @@ export async function getMyRecords() {
 export async function readRecords(patientAddress) {
   const validAddress = validateAddress(patientAddress);
   const contract = getContract();
-  const tx = await contract.readRecords(validAddress);
-  return await tx.wait();
+  return await contract.readRecords(validAddress);
 }
 
 /**

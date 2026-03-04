@@ -6,8 +6,9 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Shield, Lock, FileCheck, ChevronLeft } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Shield, Lock, FileCheck, ChevronLeft, Play } from 'lucide-react';
+import { useDemo } from '../context/DemoContext';
 
 const MEDCHAIN_BLUE = '#0066CC';
 
@@ -257,6 +258,8 @@ function getInitialPendingAdmin() {
 
 export default function ConnectWallet({ onConnect, loading, error }) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { enterDemoMode } = useDemo();
   const [pendingAdmin, setPendingAdmin] = useState(getInitialPendingAdmin);
   const autoConnectTriggeredRef = useRef(false);
   const [showSecurityAnimation, setShowSecurityAnimation] = useState(false);
@@ -265,6 +268,13 @@ export default function ConnectWallet({ onConnect, loading, error }) {
 
   // Check if MetaMask is installed
   const isMetaMaskInstalled = typeof window !== 'undefined' && Boolean(window.ethereum);
+
+  // Demo mode bypass — enter demo and go to intended portal
+  const handleEnterDemoMode = (role = 'doctor') => {
+    enterDemoMode(role);
+    const from = location.state?.from || '/doctor';
+    navigate(from, { replace: true });
+  };
 
   // Check if we're on production (not localhost)
   const isProduction = typeof window !== 'undefined' &&
@@ -701,31 +711,41 @@ export default function ConnectWallet({ onConnect, loading, error }) {
               </div>
             )}
 
-            {/* Production Warning - Show on deployed site */}
-            {isProduction && (
-              <div className="p-6 rounded-xl mb-6" style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', color: '#1E40AF' }}>
+            {/* Demo Mode Entry — available on production or when MetaMask not installed */}
+            {(isProduction || !isMetaMaskInstalled) && (
+              <div className="p-6 rounded-xl mb-6" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', color: '#166534' }}>
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(59, 130, 246, 0.1)' }}>
-                    <svg className="w-5 h-5" style={{ color: '#2563EB' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(22, 163, 74, 0.1)' }}>
+                    <Play className="w-5 h-5" style={{ color: '#16A34A' }} />
                   </div>
-                  <p className="font-bold text-lg" style={{ color: '#1E40AF' }}>Demo Deployment</p>
+                  <p className="font-bold text-lg" style={{ color: '#166534' }}>Live Demo Mode</p>
                 </div>
                 <p className="mb-4 leading-relaxed" style={{ color: '#334155' }}>
-                  This is a live demo site without a blockchain backend. MetaMask connection is not available here.
+                  Experience the full MedChain system with simulated blockchain transactions. No wallet required.
                 </p>
-                <p className="text-sm mb-4" style={{ color: '#64748B' }}>
-                  To explore the full application with simulated blockchain features, use our interactive demo mode.
-                </p>
-                <Link
-                  to="/"
-                  className="inline-flex items-center gap-2 text-white px-6 py-3 rounded-xl font-bold transition-all"
-                  style={{ background: 'linear-gradient(135deg, #0F766E, #14B8A6)', boxShadow: '0 4px 16px rgba(15, 118, 110, 0.25)' }}
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                  Go to Landing Page & Try Demo
-                </Link>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={() => handleEnterDemoMode('doctor')}
+                    className="inline-flex items-center gap-2 text-white px-6 py-3 rounded-xl font-bold transition-all"
+                    style={{ background: 'linear-gradient(135deg, #0F766E, #14B8A6)', boxShadow: '0 4px 16px rgba(15, 118, 110, 0.25)' }}
+                  >
+                    Enter as Doctor
+                  </button>
+                  <button
+                    onClick={() => handleEnterDemoMode('patient')}
+                    className="inline-flex items-center gap-2 text-white px-6 py-3 rounded-xl font-bold transition-all"
+                    style={{ background: 'linear-gradient(135deg, #2563EB, #3B82F6)', boxShadow: '0 4px 16px rgba(37, 99, 235, 0.25)' }}
+                  >
+                    Enter as Patient
+                  </button>
+                  <button
+                    onClick={() => handleEnterDemoMode('admin')}
+                    className="inline-flex items-center gap-2 text-white px-6 py-3 rounded-xl font-bold transition-all"
+                    style={{ background: 'linear-gradient(135deg, #7C3AED, #8B5CF6)', boxShadow: '0 4px 16px rgba(124, 58, 237, 0.25)' }}
+                  >
+                    Enter as Admin
+                  </button>
+                </div>
               </div>
             )}
 

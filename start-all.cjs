@@ -56,12 +56,19 @@ async function deployContract() {
         const billingMatch = output.match(/VITE_BILLING_CONTRACT_ADDRESS=(\S+)/);
 
         if (mainMatch && billingMatch) {
-          // Update frontend .env
+          // Update frontend .env — preserve existing vars (like Supabase keys)
           const envPath = path.join(FRONTEND_DIR, '.env');
-          const envContent = `VITE_API_BASE_URL=http://localhost:3001
-VITE_CONTRACT_ADDRESS=${mainMatch[1]}
-VITE_BILLING_CONTRACT_ADDRESS=${billingMatch[1]}
-`;
+          let existing = {};
+          if (fs.existsSync(envPath)) {
+            fs.readFileSync(envPath, 'utf-8').split('\n').forEach(line => {
+              const [key, ...rest] = line.split('=');
+              if (key && rest.length) existing[key.trim()] = rest.join('=').trim();
+            });
+          }
+          existing['VITE_API_BASE_URL'] = 'http://localhost:3001';
+          existing['VITE_CONTRACT_ADDRESS'] = mainMatch[1];
+          existing['VITE_BILLING_CONTRACT_ADDRESS'] = billingMatch[1];
+          const envContent = Object.entries(existing).map(([k, v]) => `${k}=${v}`).join('\n') + '\n';
           fs.writeFileSync(envPath, envContent);
           log('DEPLOY', 'Updated frontend/.env with contract addresses');
         }

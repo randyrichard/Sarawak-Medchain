@@ -478,7 +478,7 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
   const location = useLocation();
   const currentPath = location.pathname;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  console.log('[ProtectedApp] Rendering with walletAddress:', walletAddress, 'isDemo:', isDemo);
+  // Debug removed for production demo
 
   // Close mobile menu when route changes
   useEffect(() => {
@@ -951,25 +951,17 @@ function AppRoutes() {
   const effectiveWalletAddress = isDemoMode ? getDemoWallet() : walletAddress;
 
   const handleConnectWallet = async () => {
-    console.log('[App] handleConnectWallet called');
     try {
       setLoading(true);
       setError('');
-      // IMPORTANT: Clear demo mode SYNCHRONOUSLY before connecting
-      // This ensures routing logic sees demo mode as false immediately
-      console.log('[App] Clearing demo mode from localStorage');
+      // Clear demo mode SYNCHRONOUSLY before connecting
       localStorage.removeItem('medchain_demo_mode');
       localStorage.removeItem('medchain_demo_role');
-      // Also call exitDemoMode to update React state
       exitDemoMode();
 
-      console.log('[App] Calling connectWallet()...');
       const { address } = await connectWallet();
-      console.log('[App] Wallet connected:', address);
       setWalletAddress(address);
-      // After successful connection, redirect to intended destination
       const from = location.state?.from || '/patient';
-      console.log('[App] Navigating to:', from);
       navigate(from, { replace: true });
     } catch (err) {
       console.error('[App] Wallet connection error:', err);
@@ -1021,19 +1013,13 @@ function AppRoutes() {
   // Check localStorage directly for demo mode (React state might be stale after clearing)
   const demoModeInStorage = localStorage.getItem('medchain_demo_mode') === 'true';
 
-  // Debug logging
-  console.log('[AppRoutes] Render - path:', location.pathname, 'walletAddress:', walletAddress, 'isDemoMode:', isDemoMode, 'demoModeInStorage:', demoModeInStorage);
-
   // PRIORITY 1: Demo mode - user EXPLICITLY clicked "Try Demo"
-  // Check localStorage directly (more reliable than React state)
   if (demoModeInStorage && isProtectedRoute) {
-    console.log('[AppRoutes] Demo mode active -> ProtectedApp with demo wallet');
     return <ProtectedApp walletAddress={effectiveWalletAddress} handleDisconnect={handleDisconnect} isDemo={true} />;
   }
 
   // PRIORITY 2: Real wallet connected (and NOT in demo mode)
   if (walletAddress && isProtectedRoute && !demoModeInStorage) {
-    console.log('[AppRoutes] Real wallet connected (not demo) -> ProtectedApp');
     return <ProtectedApp walletAddress={walletAddress} handleDisconnect={handleDisconnect} isDemo={false} />;
   }
 
@@ -1085,7 +1071,6 @@ function AppRoutes() {
 
   // Verification page is public (for employers to verify MCs)
   if (isVerificationRoute) {
-    console.log('[AppRoutes] isVerificationRoute matched - rendering VerifyMC');
     return (
       <Routes>
         <Route path="/verify/:hash" element={<VerifyMC />} />
@@ -1100,7 +1085,6 @@ function AppRoutes() {
 
   // Wallet connected - show protected app
   if (walletAddress) {
-    console.log('[AppRoutes] Rendering ProtectedApp');
     try {
       return <ProtectedApp walletAddress={walletAddress} handleDisconnect={handleDisconnect} />;
     } catch (err) {
@@ -1118,7 +1102,6 @@ function AppRoutes() {
   }
 
   // Fallback: redirect to home
-  console.log('[AppRoutes] Fallback - redirecting to home');
   return <Navigate to="/" replace />;
 }
 
