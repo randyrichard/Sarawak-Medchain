@@ -1,116 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { usePWA, PWA_CONFIGS } from '../hooks/usePWA';
-
-/**
- * CountUp — animates from 0 to `end` once it scrolls into view.
- * Uses requestAnimationFrame for 60fps smoothness.
- * Respects prefers-reduced-motion (jumps to final value).
- *
- * Props:
- *   end       — target number (required)
- *   duration  — ms for the count animation (default 1800)
- *   decimals  — number of decimal places (default 0)
- *   formatter — optional fn(value) => string for custom formatting
- *   prefix    — text prepended (e.g. "RM ")
- *   suffix    — text appended
- */
-function CountUp({ end, duration = 1800, decimals = 0, formatter, prefix = '', suffix = '', className = '', style = {} }) {
-  const [value, setValue] = useState(0);
-  const ref = useRef(null);
-  const hasAnimated = useRef(false);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setValue(end);
-      hasAnimated.current = true;
-      return;
-    }
-    if (!ref.current) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting && !hasAnimated.current) {
-          hasAnimated.current = true;
-          const startTime = performance.now();
-          const tick = (now) => {
-            const elapsed = now - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            // easeOutExpo for premium feel
-            const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
-            setValue(end * eased);
-            if (progress < 1) requestAnimationFrame(tick);
-            else setValue(end);
-          };
-          requestAnimationFrame(tick);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.4 }
-    );
-    observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [end, duration]);
-
-  const display = formatter
-    ? formatter(value)
-    : value.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
-
-  return <span ref={ref} className={className} style={style}>{prefix}{display}{suffix}</span>;
-}
-
-/**
- * ScrollReveal — fades + slides children into view when they enter the viewport.
- * direction: 'left' | 'right' | 'up' (default 'up')
- * delay: ms to wait before the animation starts (for stagger effects)
- *
- * Uses Intersection Observer; no library dependency.
- * Animation plays once. Reduced-motion users see the content immediately.
- */
-function ScrollReveal({ children, direction = 'up', delay = 0, className = '' }) {
-  const ref = useRef(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    // Respect reduced-motion preference
-    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setVisible(true);
-      return;
-    }
-    if (!ref.current) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.12, rootMargin: '0px 0px -60px 0px' }
-    );
-    observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, []);
-
-  const offset = {
-    left: 'translate3d(-48px, 0, 0)',
-    right: 'translate3d(48px, 0, 0)',
-    up: 'translate3d(0, 32px, 0)',
-  }[direction] || 'translate3d(0, 32px, 0)';
-
-  return (
-    <div
-      ref={ref}
-      className={className}
-      style={{
-        transform: visible ? 'translate3d(0, 0, 0)' : offset,
-        opacity: visible ? 1 : 0,
-        transition: `transform 0.85s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms, opacity 0.85s ease-out ${delay}ms`,
-        willChange: visible ? 'auto' : 'transform, opacity',
-      }}
-    >
-      {children}
-    </div>
-  );
-}
+import { ScrollReveal, CountUp, useScrollProgress, ScrollProgressBar } from '../components/ScrollEffects';
 
 /**
  * Councilor View - Government Preview Dashboard
@@ -167,23 +58,8 @@ export default function CouncilorView() {
   const [animatedFraud, setAnimatedFraud] = useState(0);
   const [hoveredDistrict, setHoveredDistrict] = useState(null);
   const [isHighContrast, setIsHighContrast] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [isHeaderShrunk, setIsHeaderShrunk] = useState(false);
+  const { progress: scrollProgress, shrunk: isHeaderShrunk } = useScrollProgress(80);
   const counterRef = useRef(null);
-
-  // Scroll progress bar + sticky header shrink
-  useEffect(() => {
-    const onScroll = () => {
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-      setScrollProgress(progress);
-      setIsHeaderShrunk(scrollTop > 80);
-    };
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
 
   // Check if we're on the PWA route (for home screen icon)
   const isPWARoute = location.pathname === '/admin/gov-dashboard' || location.pathname.startsWith('/admin/gov-dashboard');
@@ -281,16 +157,8 @@ export default function CouncilorView() {
         }
       `}</style>
 
-      {/* Scroll Progress Bar — premium dashboard signal */}
-      <div
-        className="fixed top-0 left-0 z-[60] h-[3px] pointer-events-none"
-        style={{
-          width: `${scrollProgress}%`,
-          background: 'linear-gradient(90deg, #0F2A5C 0%, #1E3A8A 50%, #0F766E 100%)',
-          transition: 'width 0.12s ease-out',
-          boxShadow: '0 0 8px rgba(15, 42, 92, 0.3)',
-        }}
-      />
+      {/* Scroll Progress Bar — shared component */}
+      <ScrollProgressBar progress={scrollProgress} />
 
       {/* Header — sticky, shrinks on scroll for premium feel */}
       <header

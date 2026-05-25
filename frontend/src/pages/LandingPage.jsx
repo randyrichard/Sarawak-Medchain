@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PublicImpactCounter from '../components/PublicImpactCounter';
 import SarawakReadinessMap from '../components/SarawakReadinessMap';
+import { ScrollReveal, CountUp, useScrollProgress, ScrollProgressBar } from '../components/ScrollEffects';
 import { usePWA, PWA_CONFIGS } from '../hooks/usePWA';
 import { useDemo } from '../context/DemoContext';
 import { Shield, Headphones, Lock } from 'lucide-react';
@@ -611,6 +612,7 @@ export default function LandingPage() {
   const [provisioningData, setProvisioningData] = useState({ facilityName: '', blockchainRef: '' });
   const [securityLoading, setSecurityLoading] = useState(null); // 'clinic' | 'hospital' | null
   const [integrityFlash, setIntegrityFlash] = useState(false); // Flash 100% Integrity badge on click
+  const { progress: scrollProgress, shrunk: isHeaderShrunk } = useScrollProgress(80);
 
   // Handle demo mode entry
   const handleTryDemo = () => {
@@ -1062,9 +1064,20 @@ export default function LandingPage() {
         }
       `}</style>
 
-      {/* ===== STICKY HEADER - Premium ===== */}
-      <header className="sticky top-0 z-50 border-b border-slate-200/50 backdrop-blur-xl" style={{ width: '100%', backgroundColor: 'rgba(255,255,255,0.8)' }}>
-        <nav className="landing-nav" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 32px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      {/* Scroll progress indicator — premium dashboard signal */}
+      <ScrollProgressBar progress={scrollProgress} />
+
+      {/* ===== STICKY HEADER - Premium, shrinks on scroll ===== */}
+      <header
+        className="sticky top-0 z-50 border-b border-slate-200/50 backdrop-blur-xl"
+        style={{
+          width: '100%',
+          backgroundColor: isHeaderShrunk ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.8)',
+          boxShadow: isHeaderShrunk ? '0 4px 12px rgba(0,0,0,0.04)' : 'none',
+          transition: 'background-color 0.3s ease-out, box-shadow 0.3s ease-out',
+        }}
+      >
+        <nav className="landing-nav" style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 32px', height: isHeaderShrunk ? '52px' : '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'height 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}>
           {/* Logo */}
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-violet-600 rounded-lg flex items-center justify-center">
@@ -1246,27 +1259,27 @@ export default function LandingPage() {
           For Sarawak Government & State Agencies <span style={{ fontSize: '16px' }}>→</span>
         </a>
 
-        {/* Stats Row */}
-        <div className="stats-row">
+        {/* Stats Row — animated counters */}
+        <ScrollReveal direction="up" className="stats-row">
           <div className="stat-item">
-            <p className="font-heading stat-number">16</p>
+            <p className="font-heading stat-number"><CountUp end={16} duration={1400} /></p>
             <p className="font-body stat-label">Hospitals</p>
           </div>
           <div className="stat-divider"></div>
           <div className="stat-item">
-            <p className="font-heading stat-number">180+</p>
+            <p className="font-heading stat-number"><CountUp end={180} duration={1600} suffix="+" /></p>
             <p className="font-body stat-label">Clinics</p>
           </div>
           <div className="stat-divider"></div>
           <div className="stat-item stat-item-blue">
-            <p className="font-heading stat-number stat-number-blue">99.9%</p>
+            <p className="font-heading stat-number stat-number-blue"><CountUp end={99.9} duration={1800} decimals={1} suffix="%" /></p>
             <p className="font-body stat-label">Uptime</p>
           </div>
-        </div>
+        </ScrollReveal>
       </section>
 
       {/* ========== TRUST BADGES SECTION ========== */}
-      <section style={{ background: '#F8FAFC', padding: '48px 0' }}>
+      <ScrollReveal direction="up"><section style={{ background: '#F8FAFC', padding: '48px 0' }}>
         <div style={{
           maxWidth: '1100px',
           margin: '0 auto',
@@ -1337,10 +1350,10 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-      </section>
+      </section></ScrollReveal>
 
       {/* ========== FOR GOVERNMENT SECTION - SDEC / State Agencies ========== */}
-      <section
+      <ScrollReveal direction="left"><section
         id="for-government"
         style={{
           background: 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)',
@@ -1556,10 +1569,10 @@ export default function LandingPage() {
             Direct line to founder: <a href="mailto:randyrjm99@gmail.com" style={{ color: '#0F766E', fontWeight: 600, textDecoration: 'none' }}>randyrjm99@gmail.com</a>
           </p>
         </div>
-      </section>
+      </section></ScrollReveal>
 
       {/* ========== THE PROBLEM SECTION - Premium ========== */}
-      <section className="problem-section" style={{ padding: '96px 0' }}>
+      <ScrollReveal direction="right"><section className="problem-section" style={{ padding: '96px 0' }}>
         <div className="problem-card" style={{ position: 'relative', background: '#FFFFFF', color: '#1E293B', borderRadius: '20px', padding: '64px', overflow: 'hidden', border: '1px solid #E2E8F0', boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
           {/* Subtle gradient orb */}
           <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translate(-50%, -50%)', width: '600px', height: '600px', background: 'rgba(239, 68, 68, 0.06)', borderRadius: '50%', filter: 'blur(120px)' }}></div>
@@ -1623,10 +1636,10 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-      </section>
+      </section></ScrollReveal>
 
       {/* ========== NETWORK READINESS MAP - Premium ========== */}
-      <section className="map-section" style={{ padding: '96px 0' }}>
+      <ScrollReveal direction="left"><section className="map-section" style={{ padding: '96px 0' }}>
         {/* Section Header */}
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
           <p className="font-heading" style={{ fontSize: '11px', fontWeight: 600, color: '#2563eb', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.2em' }}>Infrastructure</p>
@@ -1638,10 +1651,10 @@ export default function LandingPage() {
         <div style={{ backgroundColor: 'white', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
           <SarawakReadinessMap />
         </div>
-      </section>
+      </section></ScrollReveal>
 
       {/* ========== HOSPITAL NETWORK GRID - Premium ========== */}
-      <section className="hospital-section" style={{ padding: '96px 0' }}>
+      <ScrollReveal direction="right"><section className="hospital-section" style={{ padding: '96px 0' }}>
         {/* Section Header */}
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
           <p className="font-heading" style={{ fontSize: '11px', fontWeight: 600, color: '#059669', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.2em' }}>Network</p>
@@ -1829,10 +1842,10 @@ export default function LandingPage() {
             <span style={{ fontSize: '14px', color: '#475569', fontWeight: 500 }}>4 Coming Soon</span>
           </div>
         </div>
-      </section>
+      </section></ScrollReveal>
 
       {/* ========== FEATURES - Premium ========== */}
-      <section id="features" style={{ padding: '96px 0' }}>
+      <ScrollReveal direction="left"><section id="features" style={{ padding: '96px 0' }}>
         {/* Section Header */}
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
           <p className="font-heading" style={{ fontSize: '11px', fontWeight: 600, color: '#7c3aed', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.2em' }}>Features</p>
@@ -1872,10 +1885,10 @@ export default function LandingPage() {
             <p className="font-body text-[15px] text-slate-500 leading-relaxed">All data stays local in Sarawak with full data sovereignty compliance.</p>
           </div>
         </div>
-      </section>
+      </section></ScrollReveal>
 
       {/* ========== PRICING SECTION - Light ========== */}
-      <section id="pricing" className="pricing-section" style={{
+      <ScrollReveal direction="right"><section id="pricing" className="pricing-section" style={{
         padding: '96px 0',
         background: '#FFFFFF',
         borderRadius: '32px',
@@ -2259,10 +2272,10 @@ export default function LandingPage() {
             </p>
           </div>
         </div>
-      </section>
+      </section></ScrollReveal>
 
       {/* ========== CTA SECTION - Premium ========== */}
-      <section style={{ padding: '96px 0' }}>
+      <ScrollReveal direction="up"><section style={{ padding: '96px 0' }}>
         <div style={{
           position: 'relative',
           background: 'linear-gradient(135deg, #0F766E 0%, #0D9488 50%, #059669 100%)',
@@ -2348,7 +2361,7 @@ export default function LandingPage() {
             </button>
           </div>
         </div>
-      </section>
+      </section></ScrollReveal>
 
       </div>{/* END CONTENT WRAPPER */}
 
