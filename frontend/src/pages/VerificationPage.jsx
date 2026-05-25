@@ -272,7 +272,7 @@ export default function VerificationPage() {
             This medical certificate has been cryptographically secured on the Sarawak MedChain blockchain.
           </p>
           <p className="text-slate-400 text-xs">
-            For verification inquiries, contact your healthcare provider or visit medchain.sarawak.gov.my
+            For verification inquiries, contact your healthcare provider or visit sarawak-medchain.pages.dev
           </p>
         </div>
       </div>

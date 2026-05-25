@@ -372,7 +372,7 @@ MedChain's pricing model is designed for long-term sustainability while ensuring
 ║  │  🏛️ GOVERNMENT PLAN                                      │  ║
 ║  │                                                          │  ║
 ║  │  Custom pricing for public healthcare facilities         │  ║
-║  │  Contact: enterprise@medchain.sarawak.gov.my             │  ║
+║  │  Founder direct: randyrjm99@gmail.com                    │  ║
 ║  └──────────────────────────────────────────────────────────┘  ║
 ║                                                                 ║
 ╚════════════════════════════════════════════════════════════════╝
@@ -501,9 +501,9 @@ MedChain positions Sarawak as the pioneer of healthcare digitization in Malaysia
 
 **Contact Information**
 
-- Website: medchain.sarawak.gov.my
-- Enterprise Sales: enterprise@medchain.sarawak.gov.my
-- Technical Support: support@medchain.sarawak.gov.my
+- Website: sarawak-medchain.pages.dev
+- Founder Direct: randyrjm99@gmail.com
+- Pilot Programs: randyrjm99@gmail.com
 - GitHub: github.com/randyrichard/Sarawak-Medchain
 
 ---

@@ -425,8 +425,8 @@ export default function SystemStatus() {
         <div className="mt-12 pt-8 border-t border-slate-200 text-center">
           <p className="text-slate-500 text-sm">
             This page auto-refreshes every 30 seconds. For urgent issues, contact{' '}
-            <a href="mailto:support@medchain.sarawak.gov.my" className="text-emerald-400 hover:text-emerald-300">
-              support@medchain.sarawak.gov.my
+            <a href="mailto:randyrjm99@gmail.com?subject=Sarawak%20MedChain%20-%20Urgent%20Support" className="text-emerald-400 hover:text-emerald-300">
+              randyrjm99@gmail.com
             </a>
           </p>
         </div>

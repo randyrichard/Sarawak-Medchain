@@ -80,7 +80,7 @@ export default function ServiceAgreement() {
     version: CONTRACT_VERSION,
     hospital: formData.hospitalName || 'Pending',
     timestamp: new Date().toISOString(),
-    verifyUrl: `https://medchain.sarawak.gov.my/verify/${documentId}`,
+    verifyUrl: `${window.location.origin}/#/verify/${documentId}`,
   });
 
   // Authorization URL for QR code scanning

@@ -752,7 +752,7 @@ export default function LandingPage() {
 
   // Handle contact sales for government plan
   const handleContactSales = () => {
-    window.location.href = 'mailto:enterprise@medchain.sarawak.gov.my?subject=Government%20Plan%20Inquiry';
+    window.location.href = 'mailto:randyrjm99@gmail.com?subject=Sarawak%20MedChain%20-%20Government%20Plan%20Inquiry';
   };
 
   return (
@@ -1080,10 +1080,16 @@ export default function LandingPage() {
             <a href="#features" className="hidden md:block text-[13px] text-slate-600 hover:text-slate-900 transition-colors font-medium">Features</a>
             <a href="#pricing" className="hidden md:block text-[13px] text-slate-600 hover:text-slate-900 transition-colors font-medium">Pricing</a>
             <a
-              href="mailto:enterprise@medchain.sarawak.gov.my"
+              href="#for-government"
+              className="hidden md:block text-[13px] text-slate-600 hover:text-slate-900 transition-colors font-medium"
+            >
+              For Government
+            </a>
+            <a
+              href="mailto:randyrjm99@gmail.com?subject=Sarawak%20MedChain%20-%20Briefing%20Request"
               className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-medium text-[13px] rounded-lg transition-all duration-200"
             >
-              Contact Sales
+              Founder Direct
             </a>
           </div>
         </nav>
@@ -1132,12 +1138,17 @@ export default function LandingPage() {
 
         {/* Headline */}
         <h1 className="font-heading gradient-text hero-headline" style={{ fontSize: 'clamp(44px, 5vw, 64px)', fontWeight: 800, letterSpacing: '-0.02em', color: '#0f172a', textAlign: 'center', lineHeight: 1.08, marginBottom: '24px', maxWidth: '900px' }}>
-          Blockchain-Secured Medical Records <span className="gradient-text">for Sarawak</span>
+          Sarawak's Sovereign <span className="gradient-text">Health Record System</span>
         </h1>
 
         {/* Subtitle */}
-        <p className="font-body hero-subtitle" style={{ fontSize: '20px', color: '#64748b', lineHeight: 1.6, marginBottom: '48px', maxWidth: '580px', textAlign: 'center', fontWeight: 400 }}>
-          Sarawak's first tamper-proof healthcare platform. Eliminate MC fraud with military-grade encryption.
+        <p className="font-body hero-subtitle" style={{ fontSize: '20px', color: '#64748b', lineHeight: 1.6, marginBottom: '20px', maxWidth: '620px', textAlign: 'center', fontWeight: 400 }}>
+          Tamper-proof medical records hosted in Malaysia, controlled by patients. Built with hospitals — designed to give Sarawak full oversight of our state's health data.
+        </p>
+
+        {/* Blueprint alignment line */}
+        <p style={{ fontSize: '13px', color: '#0F766E', fontWeight: 600, marginBottom: '40px', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+          Aligned with Sarawak Digital Economy Blueprint 2030
         </p>
 
         {/* CTA Buttons */}
@@ -1214,6 +1225,27 @@ export default function LandingPage() {
           </button>
         </div>
 
+        {/* Tertiary govt link - subtle, non-crowding */}
+        <a
+          href="#for-government"
+          style={{
+            marginTop: '-56px',
+            marginBottom: '64px',
+            fontSize: '14px',
+            color: '#64748b',
+            fontWeight: 500,
+            textDecoration: 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            transition: 'color 0.2s ease',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = '#0F766E'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = '#64748b'; }}
+        >
+          For Sarawak Government & State Agencies <span style={{ fontSize: '16px' }}>→</span>
+        </a>
+
         {/* Stats Row */}
         <div className="stats-row">
           <div className="stat-item">
@@ -1270,8 +1302,8 @@ export default function LandingPage() {
               🇲🇾
             </div>
             <div>
-              <p className="font-heading" style={{ fontSize: '14px', fontWeight: 700, color: '#1E293B', margin: 0, lineHeight: 1.3 }}>Data Hosted in Malaysia</p>
-              <p className="font-body" style={{ fontSize: '12px', color: '#64748B', margin: 0, lineHeight: 1.4 }}>PDPA Compliant</p>
+              <p className="font-heading" style={{ fontSize: '14px', fontWeight: 700, color: '#1E293B', margin: 0, lineHeight: 1.3 }}>Data Resident in Malaysia</p>
+              <p className="font-body" style={{ fontSize: '12px', color: '#64748B', margin: 0, lineHeight: 1.4 }}>PDPA 2010 Compliant</p>
             </div>
           </div>
 
@@ -1290,7 +1322,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Blockchain Secured */}
+          {/* MOH-Aligned Standards */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: '200px' }}>
             <div style={{
               width: '48px', height: '48px', borderRadius: '50%',
@@ -1300,10 +1332,229 @@ export default function LandingPage() {
               <Lock size={22} color="#7C3AED" strokeWidth={2.2} />
             </div>
             <div>
-              <p className="font-heading" style={{ fontSize: '14px', fontWeight: 700, color: '#1E293B', margin: 0, lineHeight: 1.3 }}>Blockchain Secured</p>
-              <p className="font-body" style={{ fontSize: '12px', color: '#64748B', margin: 0, lineHeight: 1.4 }}>Tamper-Proof</p>
+              <p className="font-heading" style={{ fontSize: '14px', fontWeight: 700, color: '#1E293B', margin: 0, lineHeight: 1.3 }}>MOH Documentation Standards</p>
+              <p className="font-body" style={{ fontSize: '12px', color: '#64748B', margin: 0, lineHeight: 1.4 }}>Tamper-Proof Audit Trail</p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ========== FOR GOVERNMENT SECTION - SDEC / State Agencies ========== */}
+      <section
+        id="for-government"
+        style={{
+          background: 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)',
+          padding: '96px 0',
+          scrollMarginTop: '80px',
+        }}
+      >
+        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px' }}>
+          {/* Section header */}
+          <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '6px 14px',
+              borderRadius: '9999px',
+              background: 'rgba(15, 118, 110, 0.08)',
+              border: '1px solid rgba(15, 118, 110, 0.2)',
+              marginBottom: '20px',
+            }}>
+              <span style={{ fontSize: '12px', color: '#0F766E', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                For Sarawak Government
+              </span>
+            </div>
+            <h2 className="font-heading" style={{
+              fontSize: 'clamp(32px, 4.5vw, 44px)',
+              fontWeight: 800,
+              color: '#0f172a',
+              marginBottom: '16px',
+              letterSpacing: '-0.02em',
+              lineHeight: 1.15,
+            }}>
+              State Oversight of Sarawak's Health Data
+            </h2>
+            <p className="font-body" style={{
+              fontSize: '18px',
+              color: '#64748b',
+              maxWidth: '720px',
+              margin: '0 auto',
+              lineHeight: 1.6,
+            }}>
+              A patient-controlled, hospital-operated medical record system — with the audit visibility state agencies need for policy, fraud monitoring, and public health response.
+            </p>
+          </div>
+
+          {/* Three-column grid: Sovereignty / Compliance / Pilot */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '24px',
+            marginBottom: '56px',
+          }}>
+            {/* Sovereignty */}
+            <div style={{
+              background: '#FFFFFF',
+              border: '1px solid #E2E8F0',
+              borderRadius: '16px',
+              padding: '32px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            }}>
+              <div style={{
+                width: '44px', height: '44px', borderRadius: '10px',
+                background: 'rgba(15, 118, 110, 0.1)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginBottom: '20px',
+              }}>
+                <Shield size={22} color="#0F766E" strokeWidth={2.2} />
+              </div>
+              <h3 className="font-heading" style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a', marginBottom: '12px' }}>
+                Data Sovereignty
+              </h3>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, color: '#475569', fontSize: '14px', lineHeight: 1.7 }}>
+                <li style={{ marginBottom: '8px' }}>• Records reside in Malaysia, not foreign clouds</li>
+                <li style={{ marginBottom: '8px' }}>• Encryption keys controlled by patients, not vendors</li>
+                <li style={{ marginBottom: '8px' }}>• Open-source smart contract on public ledger</li>
+                <li>• Built in Kuching, by Sarawakians, for Sarawak</li>
+              </ul>
+            </div>
+
+            {/* Compliance */}
+            <div style={{
+              background: '#FFFFFF',
+              border: '1px solid #E2E8F0',
+              borderRadius: '16px',
+              padding: '32px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            }}>
+              <div style={{
+                width: '44px', height: '44px', borderRadius: '10px',
+                background: 'rgba(124, 58, 237, 0.1)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginBottom: '20px',
+              }}>
+                <Lock size={22} color="#7C3AED" strokeWidth={2.2} />
+              </div>
+              <h3 className="font-heading" style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a', marginBottom: '12px' }}>
+                Compliance Posture
+              </h3>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, color: '#475569', fontSize: '14px', lineHeight: 1.7 }}>
+                <li style={{ marginBottom: '8px' }}>• PDPA 2010 — data resident in Malaysia</li>
+                <li style={{ marginBottom: '8px' }}>• MOH documentation standards alignment</li>
+                <li style={{ marginBottom: '8px' }}>• Read-only oversight dashboard for state agencies</li>
+                <li>• Full audit trail — every access logged on-chain</li>
+              </ul>
+            </div>
+
+            {/* Pilot offer */}
+            <div style={{
+              background: 'linear-gradient(135deg, #0F2A5C 0%, #1E3A8A 100%)',
+              border: '1px solid rgba(15, 42, 92, 0.3)',
+              borderRadius: '16px',
+              padding: '32px',
+              boxShadow: '0 8px 24px rgba(15, 42, 92, 0.15)',
+              color: '#FFFFFF',
+            }}>
+              <div style={{
+                display: 'inline-block',
+                padding: '4px 10px',
+                borderRadius: '9999px',
+                background: 'rgba(245, 158, 11, 0.15)',
+                border: '1px solid rgba(245, 158, 11, 0.35)',
+                marginBottom: '16px',
+              }}>
+                <span style={{ fontSize: '11px', color: '#FBBF24', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                  30-Day Pilot
+                </span>
+              </div>
+              <h3 className="font-heading" style={{ fontSize: '18px', fontWeight: 700, color: '#FFFFFF', marginBottom: '12px' }}>
+                Free Audit Pilot
+              </h3>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, color: 'rgba(255,255,255,0.85)', fontSize: '14px', lineHeight: 1.7 }}>
+                <li style={{ marginBottom: '8px' }}>• 30 days free, no obligation</li>
+                <li style={{ marginBottom: '8px' }}>• One clinic of your choosing</li>
+                <li style={{ marginBottom: '8px' }}>• Audit report delivered to your office</li>
+                <li>• Founder supports onboarding personally</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* CTA row */}
+          <div style={{
+            display: 'flex',
+            gap: '16px',
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+          }}>
+            <a
+              href="#/gov-preview"
+              style={{
+                padding: '14px 28px',
+                background: '#0F2A5C',
+                color: 'white',
+                fontSize: '15px',
+                fontWeight: 600,
+                borderRadius: '12px',
+                textDecoration: 'none',
+                transition: 'all 0.25s ease',
+                boxShadow: '0 4px 12px rgba(15, 42, 92, 0.25)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 18px rgba(15, 42, 92, 0.35)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(15, 42, 92, 0.25)';
+              }}
+            >
+              Open Government Preview
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </a>
+            <a
+              href="mailto:randyrjm99@gmail.com?subject=Sarawak%20MedChain%20-%20Pilot%20Briefing%20Request&body=Hello%20Randy%2C%0A%0AWe%20would%20like%20a%20briefing%20on%20Sarawak%20MedChain%20and%20the%2030-day%20pilot%20program.%0A%0AAgency%2FDepartment%3A%20%0AContact%20Name%3A%20%0ABest%20time%20to%20meet%3A%20%0A%0A"
+              style={{
+                padding: '14px 28px',
+                background: '#FFFFFF',
+                color: '#0F2A5C',
+                fontSize: '15px',
+                fontWeight: 600,
+                borderRadius: '12px',
+                textDecoration: 'none',
+                transition: 'all 0.25s ease',
+                border: '1.5px solid #0F2A5C',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#0F2A5C';
+                e.currentTarget.style.color = '#FFFFFF';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#FFFFFF';
+                e.currentTarget.style.color = '#0F2A5C';
+              }}
+            >
+              Request Pilot Briefing
+            </a>
+          </div>
+
+          {/* Founder direct line */}
+          <p style={{
+            textAlign: 'center',
+            marginTop: '24px',
+            fontSize: '13px',
+            color: '#64748b',
+          }}>
+            Direct line to founder: <a href="mailto:randyrjm99@gmail.com" style={{ color: '#0F766E', fontWeight: 600, textDecoration: 'none' }}>randyrjm99@gmail.com</a>
+          </p>
         </div>
       </section>
 
@@ -2120,7 +2371,8 @@ export default function LandingPage() {
               <a href="#features" style={{ fontSize: '14px', color: '#64748b', fontWeight: 500, textDecoration: 'none' }}>Features</a>
               <a href="#pricing" style={{ fontSize: '14px', color: '#64748b', fontWeight: 500, textDecoration: 'none' }}>Pricing</a>
               <a href="#/sla" style={{ fontSize: '14px', color: '#64748b', fontWeight: 500, textDecoration: 'none' }}>SLA</a>
-              <a href="mailto:enterprise@medchain.sarawak.gov.my" style={{ fontSize: '14px', color: '#64748b', fontWeight: 500, textDecoration: 'none' }}>Contact</a>
+              <a href="#for-government" style={{ fontSize: '14px', color: '#64748b', fontWeight: 500, textDecoration: 'none' }}>For Government</a>
+              <a href="mailto:randyrjm99@gmail.com" style={{ fontSize: '14px', color: '#64748b', fontWeight: 500, textDecoration: 'none' }}>Contact</a>
             </div>
 
             {/* Copyright */}
