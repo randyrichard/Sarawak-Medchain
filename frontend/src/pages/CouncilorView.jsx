@@ -3,6 +3,62 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { usePWA, PWA_CONFIGS } from '../hooks/usePWA';
 
 /**
+ * CountUp — animates from 0 to `end` once it scrolls into view.
+ * Uses requestAnimationFrame for 60fps smoothness.
+ * Respects prefers-reduced-motion (jumps to final value).
+ *
+ * Props:
+ *   end       — target number (required)
+ *   duration  — ms for the count animation (default 1800)
+ *   decimals  — number of decimal places (default 0)
+ *   formatter — optional fn(value) => string for custom formatting
+ *   prefix    — text prepended (e.g. "RM ")
+ *   suffix    — text appended
+ */
+function CountUp({ end, duration = 1800, decimals = 0, formatter, prefix = '', suffix = '', className = '', style = {} }) {
+  const [value, setValue] = useState(0);
+  const ref = useRef(null);
+  const hasAnimated = useRef(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setValue(end);
+      hasAnimated.current = true;
+      return;
+    }
+    if (!ref.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAnimated.current) {
+          hasAnimated.current = true;
+          const startTime = performance.now();
+          const tick = (now) => {
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            // easeOutExpo for premium feel
+            const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+            setValue(end * eased);
+            if (progress < 1) requestAnimationFrame(tick);
+            else setValue(end);
+          };
+          requestAnimationFrame(tick);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.4 }
+    );
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [end, duration]);
+
+  const display = formatter
+    ? formatter(value)
+    : value.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+
+  return <span ref={ref} className={className} style={style}>{prefix}{display}{suffix}</span>;
+}
+
+/**
  * ScrollReveal — fades + slides children into view when they enter the viewport.
  * direction: 'left' | 'right' | 'up' (default 'up')
  * delay: ms to wait before the animation starts (for stagger effects)
@@ -111,7 +167,23 @@ export default function CouncilorView() {
   const [animatedFraud, setAnimatedFraud] = useState(0);
   const [hoveredDistrict, setHoveredDistrict] = useState(null);
   const [isHighContrast, setIsHighContrast] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [isHeaderShrunk, setIsHeaderShrunk] = useState(false);
   const counterRef = useRef(null);
+
+  // Scroll progress bar + sticky header shrink
+  useEffect(() => {
+    const onScroll = () => {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      setScrollProgress(progress);
+      setIsHeaderShrunk(scrollTop > 80);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   // Check if we're on the PWA route (for home screen icon)
   const isPWARoute = location.pathname === '/admin/gov-dashboard' || location.pathname.startsWith('/admin/gov-dashboard');
@@ -209,15 +281,29 @@ export default function CouncilorView() {
         }
       `}</style>
 
-      {/* Header with Governance Branding - Mobile Optimized */}
-      {/* iPhone 8 Plus Safe Area: Extra 20px padding to prevent iOS status bar overlap */}
-      <header
-        className="sticky top-0 z-50 pt-[20px]"
+      {/* Scroll Progress Bar — premium dashboard signal */}
+      <div
+        className="fixed top-0 left-0 z-[60] h-[3px] pointer-events-none"
         style={{
-          backgroundColor: '#FFFFFF',
+          width: `${scrollProgress}%`,
+          background: 'linear-gradient(90deg, #0F2A5C 0%, #1E3A8A 50%, #0F766E 100%)',
+          transition: 'width 0.12s ease-out',
+          boxShadow: '0 0 8px rgba(15, 42, 92, 0.3)',
+        }}
+      />
+
+      {/* Header — sticky, shrinks on scroll for premium feel */}
+      <header
+        className="sticky top-0 z-50"
+        style={{
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
           borderBottom: '1px solid #E2E8F0',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-          paddingTop: 'calc(20px + env(safe-area-inset-top, 0px))'
+          boxShadow: isHeaderShrunk ? '0 4px 12px rgba(0,0,0,0.04)' : '0 1px 3px rgba(0,0,0,0.03)',
+          paddingTop: `calc(${isHeaderShrunk ? '6px' : '20px'} + env(safe-area-inset-top, 0px))`,
+          paddingBottom: isHeaderShrunk ? '6px' : '0px',
+          transition: 'padding 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease-out',
         }}
       >
         <div style={{ maxWidth: '1400px', margin: '0 auto' }} className="px-3 sm:px-6 py-3 sm:py-4">
@@ -625,7 +711,7 @@ export default function CouncilorView() {
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Paper saved</p>
               </div>
               <p className="text-3xl font-bold text-slate-900 tabular-nums">
-                {paperSavedKg.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                <CountUp end={paperSavedKg} />
               </p>
               <p className="text-xs text-slate-500 mt-1">kilograms / year</p>
               <div className="mt-4 pt-3 border-t border-slate-100">
@@ -642,7 +728,7 @@ export default function CouncilorView() {
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">CO₂ avoided</p>
               </div>
               <p className="text-3xl font-bold text-slate-900 tabular-nums">
-                {co2Saved.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                <CountUp end={co2Saved} />
               </p>
               <p className="text-xs text-slate-500 mt-1">kg CO₂ / year</p>
               <div className="mt-4 pt-3 border-t border-slate-100">
@@ -659,7 +745,7 @@ export default function CouncilorView() {
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Trees preserved</p>
               </div>
               <p className="text-3xl font-bold text-slate-900 tabular-nums">
-                {treesSaved.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                <CountUp end={treesSaved} />
               </p>
               <p className="text-xs text-slate-500 mt-1">trees / year</p>
               <div className="mt-4 pt-3 border-t border-slate-100">
@@ -676,7 +762,7 @@ export default function CouncilorView() {
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Water conserved</p>
               </div>
               <p className="text-3xl font-bold text-slate-900 tabular-nums">
-                {(waterSaved / 1000).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                <CountUp end={waterSaved / 1000} />
               </p>
               <p className="text-xs text-slate-500 mt-1">cubic metres / year</p>
               <div className="mt-4 pt-3 border-t border-slate-100">
@@ -698,23 +784,25 @@ export default function CouncilorView() {
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 sm:gap-5">
             <div className="bg-white rounded-2xl border border-slate-200 p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
               <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500 mb-3">Hospitals</p>
-              <p className="text-3xl font-bold text-slate-900 tabular-nums">27</p>
+              <p className="text-3xl font-bold text-slate-900 tabular-nums"><CountUp end={27} duration={1400} /></p>
             </div>
             <div className="bg-white rounded-2xl border border-slate-200 p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
               <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500 mb-3">Clinics</p>
-              <p className="text-3xl font-bold text-slate-900 tabular-nums">142</p>
+              <p className="text-3xl font-bold text-slate-900 tabular-nums"><CountUp end={142} duration={1600} /></p>
             </div>
             <div className="bg-white rounded-2xl border border-slate-200 p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
               <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500 mb-3">Doctors</p>
-              <p className="text-3xl font-bold text-slate-900 tabular-nums">1,247</p>
+              <p className="text-3xl font-bold text-slate-900 tabular-nums"><CountUp end={1247} duration={1800} /></p>
             </div>
             <div className="bg-white rounded-2xl border border-slate-200 p-6 col-span-2 sm:col-span-1" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
               <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500 mb-3">Patients</p>
-              <p className="text-3xl font-bold text-slate-900 tabular-nums">89,432</p>
+              <p className="text-3xl font-bold text-slate-900 tabular-nums"><CountUp end={89432} duration={2000} /></p>
             </div>
             <div className="bg-white rounded-2xl border border-slate-200 p-6 col-span-2 sm:col-span-1" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
               <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500 mb-3">Uptime</p>
-              <p className="text-3xl font-bold tabular-nums" style={{ color: '#0F766E' }}>99.99%</p>
+              <p className="text-3xl font-bold tabular-nums" style={{ color: '#0F766E' }}>
+                <CountUp end={99.99} duration={1800} decimals={2} suffix="%" />
+              </p>
             </div>
           </div>
         </ScrollReveal>
