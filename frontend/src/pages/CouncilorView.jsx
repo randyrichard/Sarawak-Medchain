@@ -168,43 +168,29 @@ export default function CouncilorView() {
       >
         <div style={{ maxWidth: '1400px', margin: '0 auto' }} className="px-3 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            {/* Logo Strip - Responsive */}
-            <div className="flex items-center gap-2 sm:gap-6 overflow-x-auto">
-              {/* Sarawak Digital Logo - Compact on mobile */}
-              <div className="flex items-center gap-2 sm:gap-3 pr-2 sm:pr-6 border-r border-slate-200 flex-shrink-0">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center">
-                  <span className="text-lg sm:text-2xl font-black text-white">SD</span>
-                </div>
-                <div className="hidden sm:block">
-                  <p className="text-slate-800 font-bold text-sm">Sarawak</p>
-                  <p className="text-cyan-600 text-xs font-semibold">DIGITAL</p>
-                </div>
-              </div>
-
-              {/* Smart City Logo - Hidden on small mobile */}
-              <div className="hidden xs:flex items-center gap-2 sm:gap-3 pr-2 sm:pr-6 border-r border-slate-200 flex-shrink-0">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl flex items-center justify-center">
-                  <svg className="w-5 h-5 sm:w-7 sm:h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                </div>
-                <div className="hidden sm:block">
-                  <p className="text-slate-800 font-bold text-sm">Smart City</p>
-                  <p className="text-emerald-600 text-xs font-semibold">INITIATIVE</p>
-                </div>
-              </div>
-
-              {/* MedChain Logo */}
+            {/* Logo + Alignment Text */}
+            <div className="flex items-center gap-3 sm:gap-5 flex-1 min-w-0">
+              {/* MedChain Logo - Clean & Single */}
               <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0F2A5C 0%, #1E3A8A 100%)' }}>
                   <svg className="w-5 h-5 sm:w-7 sm:h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                 </div>
                 <div className="hidden sm:block">
-                  <p className="text-slate-800 font-bold text-sm">Sarawak</p>
-                  <p className="text-orange-500 text-xs font-semibold">MEDCHAIN</p>
+                  <p className="text-slate-800 font-bold text-sm leading-tight">Sarawak MedChain</p>
+                  <p className="text-xs font-semibold" style={{ color: '#0F766E' }}>Government Preview</p>
                 </div>
+              </div>
+
+              {/* Alignment line - shows on tablet and up */}
+              <div className="hidden md:flex items-center gap-2 pl-5 border-l border-slate-200 min-w-0">
+                <svg className="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+                <p className="text-xs text-slate-500 truncate">
+                  Aligned with <span className="font-semibold text-slate-700">Sarawak Digital Economy Blueprint 2030</span>
+                </p>
               </div>
             </div>
 
@@ -237,17 +223,30 @@ export default function CouncilorView() {
 
       {/* Main Content - Centered with max-width 1400px */}
       <main style={{ maxWidth: '1400px', margin: '0 auto', backgroundColor: '#FFFFFF' }} className="px-3 sm:px-6 py-4 sm:py-8">
+        {/* Preview Dashboard Disclaimer - Honest framing for govt readers */}
+        <div className="mb-4 sm:mb-6 rounded-xl border px-4 py-3 flex items-start gap-3" style={{ background: '#FFFBEB', borderColor: '#FDE68A' }}>
+          <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#D97706' }}>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold" style={{ color: '#92400E' }}>Preview Dashboard</p>
+            <p className="text-xs sm:text-sm mt-0.5" style={{ color: '#78350F' }}>
+              Economic impact figures shown are <strong>industry-benchmark projections</strong> for Sarawak (population ~2.9M). District data is illustrative. Live data populates upon pilot deployment.
+            </p>
+          </div>
+        </div>
+
         {/* Page Title */}
         <div className="mb-4 sm:mb-8 text-center sm:text-left">
           <h1 className={`text-xl sm:text-3xl font-black ${theme.text} mb-2`}>
             Public Health Intelligence Dashboard
           </h1>
           <p className={`${theme.textMuted} text-sm sm:text-base`}>
-            Real-time anonymized health data across Sarawak districts
+            What state agencies see when MedChain runs across Sarawak — anonymized, aggregated, audit-ready.
           </p>
         </div>
 
-        {/* 100% Integrity Badge - WEALTH 2026 DEMO: First visible element on iPhone 8 Plus */}
+        {/* Architecture Integrity Badge - reframed honestly */}
         <div className="flex justify-center mb-4 sm:mb-6 hero-badge-priority">
           <div className={`pass-rate-badge inline-flex items-center gap-3 px-5 py-3 sm:px-6 sm:py-4 rounded-2xl ${
             isHighContrast ? 'bg-yellow-500/20 border-2 border-yellow-400' : 'bg-emerald-500/20 border border-emerald-500/50'
@@ -256,14 +255,14 @@ export default function CouncilorView() {
               isHighContrast ? 'bg-yellow-500' : 'bg-emerald-500'
             } flex items-center justify-center`}>
               <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
             </div>
             <div>
-              <p className={`text-2xl sm:text-3xl font-black ${isHighContrast ? 'text-yellow-400' : 'text-emerald-400'}`}>
-                100%
+              <p className={`text-lg sm:text-xl font-black ${isHighContrast ? 'text-yellow-400' : 'text-emerald-600'} leading-tight`}>
+                Tamper-Proof
               </p>
-              <p className={`text-xs sm:text-sm font-bold ${theme.textMuted}`}>INTEGRITY</p>
+              <p className={`text-xs sm:text-sm font-bold ${theme.textMuted}`}>BY ARCHITECTURE</p>
             </div>
           </div>
         </div>
@@ -291,8 +290,8 @@ export default function CouncilorView() {
                       <span className="text-2xl sm:text-3xl">💰</span>
                     </div>
                     <div>
-                      <p className={`${isHighContrast ? 'text-yellow-300' : 'text-emerald-300'} text-xs sm:text-sm font-semibold uppercase tracking-wider`}>Economic Impact</p>
-                      <p className="text-slate-300 text-xs sm:text-sm">Fraud Prevention Savings</p>
+                      <p className={`${isHighContrast ? 'text-yellow-300' : 'text-emerald-300'} text-xs sm:text-sm font-semibold uppercase tracking-wider`}>Projected Economic Impact</p>
+                      <p className="text-slate-300 text-xs sm:text-sm">Annual fraud prevention — Sarawak statewide</p>
                     </div>
                   </div>
 
@@ -313,23 +312,23 @@ export default function CouncilorView() {
                       <svg className={`w-4 h-4 sm:w-5 sm:h-5 ${isHighContrast ? 'text-yellow-400' : 'text-emerald-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                       </svg>
-                      <span className={`${isHighContrast ? 'text-yellow-400' : 'text-emerald-400'} font-bold text-sm`}>+RM 5,000</span>
-                      <span className="text-slate-300 text-xs">/ 5 sec</span>
+                      <span className="text-slate-300 text-xs italic">Illustrative ticker — based on MOH estimates</span>
                     </div>
                     <div className="hidden sm:block h-4 w-px bg-slate-500"></div>
                     <div className="text-slate-300 text-xs sm:text-sm">
-                      <span className="text-white font-bold">{mcsProcessed.toLocaleString()}</span> MCs verified
+                      <span className="text-white font-bold">{mcsProcessed.toLocaleString()}</span> MCs / year — projected at scale
                     </div>
                   </div>
                 </div>
 
                 {/* Impact Breakdown - Stacked on mobile */}
                 <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200">
-                  <p className={`${theme.textMuted} text-xs font-semibold uppercase tracking-wider mb-3 sm:mb-4`}>Impact Breakdown</p>
+                  <p className={`${theme.textMuted} text-xs font-semibold uppercase tracking-wider mb-1`}>Projected Impact Breakdown</p>
+                  <p className="text-xs text-slate-400 mb-3 sm:mb-4 italic">At full statewide adoption</p>
                   <div className="space-y-3 sm:space-y-4">
                     <div>
                       <div className="flex justify-between text-xs sm:text-sm mb-1">
-                        <span className={theme.textMuted}>Fake MC Fraud Blocked</span>
+                        <span className={theme.textMuted}>Annual fraud prevention</span>
                         <span className={`${theme.text} font-bold`}>RM 1.8B</span>
                       </div>
                       <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -338,7 +337,7 @@ export default function CouncilorView() {
                     </div>
                     <div>
                       <div className="flex justify-between text-xs sm:text-sm mb-1">
-                        <span className={theme.textMuted}>Admin Cost Reduction</span>
+                        <span className={theme.textMuted}>Admin cost savings</span>
                         <span className={`${theme.text} font-bold`}>RM 350M</span>
                       </div>
                       <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -347,7 +346,7 @@ export default function CouncilorView() {
                     </div>
                     <div>
                       <div className="flex justify-between text-xs sm:text-sm mb-1">
-                        <span className={theme.textMuted}>Healthcare Efficiency</span>
+                        <span className={theme.textMuted}>Healthcare efficiency gain</span>
                         <span className={`${theme.text} font-bold`}>RM 150M</span>
                       </div>
                       <div className="h-2 bg-slate-100 rounded-full overflow-hidden">

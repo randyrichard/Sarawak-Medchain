@@ -406,15 +406,18 @@ const drState = {
 };
 
 // DR Configuration
+// NOTE: This is the design target for production. The URLs below are illustrative —
+// they describe the planned topology (primary in Malaysia, backup in Malaysia + SG).
+// Actual infrastructure is provisioned at pilot deployment time.
 const drConfig = {
-  primaryNode: 'https://api.medchain.sarawak.my',
+  primaryNode: process.env.DR_PRIMARY_NODE || 'http://localhost:3001',
   backupNodes: [
-    { id: 'sg-backup', url: 'https://sg.backup.medchain.my', region: 'Singapore' },
-    { id: 'my-backup', url: 'https://my.backup.medchain.my', region: 'Malaysia (KL)' },
+    { id: 'my-backup', url: process.env.DR_MY_BACKUP || '', region: 'Malaysia (KL) — planned' },
+    { id: 'sg-backup', url: process.env.DR_SG_BACKUP || '', region: 'Singapore — planned' },
   ],
   failoverThreshold: 30000, // 30 seconds
   replicationInterval: 300000, // 5 minutes
-  ceoPhone: process.env.CEO_PHONE || '+60123456789',
+  ceoPhone: process.env.CEO_PHONE || '',
 };
 
 // Get DR Status

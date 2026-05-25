@@ -10,12 +10,14 @@ import path from 'path';
 // Configuration
 const DR_CONFIG = {
   // Replication settings
+  // NOTE: URLs below are placeholders for the planned production topology.
+  // Real infrastructure URLs are injected via env vars at pilot deployment.
   replication: {
     interval: 5 * 60 * 1000, // 5 minutes
-    primaryNode: process.env.PRIMARY_NODE || 'https://api.medchain.sarawak.my',
+    primaryNode: process.env.PRIMARY_NODE || 'http://localhost:3001',
     secondaryNodes: [
-      { id: 'sg-backup', url: 'https://sg.backup.medchain.my', region: 'Singapore' },
-      { id: 'my-backup', url: 'https://my.backup.medchain.my', region: 'Malaysia (KL)' },
+      { id: 'my-backup', url: process.env.MY_BACKUP_URL || '', region: 'Malaysia (KL) — planned' },
+      { id: 'sg-backup', url: process.env.SG_BACKUP_URL || '', region: 'Singapore — planned' },
     ],
   },
   // Failover settings
