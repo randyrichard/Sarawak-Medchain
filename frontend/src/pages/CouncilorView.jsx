@@ -194,27 +194,34 @@ export default function CouncilorView() {
               </div>
             </div>
 
-            {/* Header Right - High Contrast Toggle & Live Status */}
-            <div className="flex items-center gap-2 sm:gap-4">
-              {/* High Contrast Toggle */}
+            {/* Header Right — Chrome controls */}
+            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              {/* Last updated */}
+              <div className="hidden md:flex flex-col items-end mr-2">
+                <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Last updated</span>
+                <span className="text-xs text-slate-600 font-medium tabular-nums">
+                  {new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} MYT
+                </span>
+              </div>
+
+              {/* High Contrast Toggle — smaller */}
               <button
                 onClick={() => setIsHighContrast(!isHighContrast)}
-                className={`w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-xl border hover:bg-slate-100 active:scale-95 transition-all touch-manipulation ${
-                  isHighContrast ? 'bg-yellow-500/20 border-yellow-500/50' : 'bg-slate-50 border-slate-200'
+                className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-lg border hover:bg-slate-50 active:scale-95 transition-all ${
+                  isHighContrast ? 'bg-yellow-100 border-yellow-300' : 'bg-white border-slate-200'
                 }`}
                 aria-label="Toggle high contrast"
+                title="Toggle high contrast"
               >
-                <svg className={`w-6 h-6 ${isHighContrast ? 'text-yellow-400' : 'text-slate-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-4 h-4 ${isHighContrast ? 'text-yellow-600' : 'text-slate-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
               </button>
 
-              <div className="hidden sm:block w-px h-10 bg-slate-200"></div>
-
-              {/* Live Status Badge */}
-              <div className={`flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 ${theme.accentBg} border border-emerald-500/30 rounded-xl`}>
-                <span className={`w-2 h-2 ${theme.accent.replace('text-', 'bg-')} rounded-full animate-pulse`}></span>
-                <span className={`${theme.accent} font-bold text-xs sm:text-sm`}>LIVE</span>
+              {/* Live Status Badge — refined */}
+              <div className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg border" style={{ background: '#F0FDF4', borderColor: '#A7F3D0' }}>
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: '#10B981' }}></span>
+                <span className="text-xs font-semibold" style={{ color: '#047857' }}>LIVE</span>
               </div>
             </div>
           </div>
@@ -236,122 +243,119 @@ export default function CouncilorView() {
           </div>
         </div>
 
-        {/* Page Title */}
-        <div className="mb-4 sm:mb-8 text-center sm:text-left">
-          <h1 className={`text-xl sm:text-3xl font-black ${theme.text} mb-2`}>
-            Public Health Intelligence Dashboard
-          </h1>
-          <p className={`${theme.textMuted} text-sm sm:text-base`}>
-            What state agencies see when MedChain runs across Sarawak — anonymized, aggregated, audit-ready.
-          </p>
-        </div>
+        {/* Page Title + Trust Strip — tight, institutional */}
+        <div className="mb-6 sm:mb-8 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#0F766E' }}>State Agency Preview</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">
+              Public Health Intelligence Dashboard
+            </h1>
+            <p className="text-sm text-slate-500 mt-1.5 max-w-2xl">
+              What Sarawak state agencies see when MedChain runs across the state — anonymized, aggregated, audit-ready.
+            </p>
+          </div>
 
-        {/* Architecture Integrity Badge - reframed honestly */}
-        <div className="flex justify-center mb-4 sm:mb-6 hero-badge-priority">
-          <div className={`pass-rate-badge inline-flex items-center gap-3 px-5 py-3 sm:px-6 sm:py-4 rounded-2xl ${
-            isHighContrast ? 'bg-yellow-500/20 border-2 border-yellow-400' : 'bg-emerald-500/20 border border-emerald-500/50'
-          }`}>
-            <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full ${
-              isHighContrast ? 'bg-yellow-500' : 'bg-emerald-500'
-            } flex items-center justify-center`}>
-              <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          {/* Trust signals — inline, not a giant badge */}
+          <div className="flex flex-wrap gap-2 lg:gap-3 lg:flex-shrink-0">
+            <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#0F766E' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
+              <div>
+                <p className="text-[11px] font-semibold text-slate-900 leading-tight">Tamper-proof</p>
+                <p className="text-[10px] text-slate-500 leading-tight">by architecture</p>
+              </div>
             </div>
-            <div>
-              <p className={`text-lg sm:text-xl font-black ${isHighContrast ? 'text-yellow-400' : 'text-emerald-600'} leading-tight`}>
-                Tamper-Proof
-              </p>
-              <p className={`text-xs sm:text-sm font-bold ${theme.textMuted}`}>BY ARCHITECTURE</p>
+            <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white">
+              <span className="text-base leading-none">🇲🇾</span>
+              <div>
+                <p className="text-[11px] font-semibold text-slate-900 leading-tight">Data resident</p>
+                <p className="text-[10px] text-slate-500 leading-tight">in Malaysia</p>
+              </div>
+            </div>
+            <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white">
+              <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+              </svg>
+              <div>
+                <p className="text-[11px] font-semibold text-slate-900 leading-tight">PDPA 2010</p>
+                <p className="text-[10px] text-slate-500 leading-tight">compliant</p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Economic Impact Hero Section - Mobile Centered */}
-        <div className="mb-4 sm:mb-8">
-          <div className={`relative overflow-hidden rounded-2xl sm:rounded-3xl border ${
-            isHighContrast
-              ? 'bg-gradient-to-r from-yellow-900/50 via-amber-800/30 to-orange-900/50 border-yellow-500/30'
-              : 'bg-gradient-to-r from-emerald-900/50 via-emerald-800/30 to-cyan-900/50 border-emerald-500/30'
-          }`}>
-            {/* Animated background */}
-            <div className="absolute inset-0 opacity-30">
-              <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-emerald-500/20 via-transparent to-transparent"></div>
-              <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-cyan-500/20 via-transparent to-transparent"></div>
-            </div>
+        {/* Economic Impact — Clean institutional card */}
+        <div className="mb-6 sm:mb-8">
+          <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-3">
+              {/* Left: Primary counter */}
+              <div className="lg:col-span-2 p-6 sm:p-8 border-b lg:border-b-0 lg:border-r border-slate-200" style={{ background: 'linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%)' }}>
+                <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: '#0F766E' }}>
+                  Projected Economic Impact
+                </p>
+                <p className="text-sm text-slate-500 mb-5">Annual fraud prevention at full statewide adoption</p>
 
-            <div className="relative p-4 sm:p-8">
-              {/* Mobile: Stack vertically, Desktop: Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
-                {/* Fraud Saved Counter - Centered on mobile */}
-                <div className="lg:col-span-2 text-center lg:text-left">
-                  <div className="flex items-center justify-center lg:justify-start gap-3 mb-3 sm:mb-4">
-                    <div className={`w-12 h-12 sm:w-14 sm:h-14 ${isHighContrast ? 'bg-yellow-500/20' : 'bg-emerald-500/20'} rounded-2xl flex items-center justify-center`}>
-                      <span className="text-2xl sm:text-3xl">💰</span>
-                    </div>
-                    <div>
-                      <p className={`${isHighContrast ? 'text-yellow-300' : 'text-emerald-300'} text-xs sm:text-sm font-semibold uppercase tracking-wider`}>Projected Economic Impact</p>
-                      <p className="text-slate-300 text-xs sm:text-sm">Annual fraud prevention — Sarawak statewide</p>
-                    </div>
-                  </div>
-
-                  {/* RM 2.3B Counter - Scaled and centered for iPhone 8 Plus */}
-                  <div className="flex items-baseline justify-center lg:justify-start gap-2 sm:gap-3">
-                    <span className={`${isHighContrast ? 'text-yellow-400' : 'text-emerald-400'} text-lg sm:text-2xl font-bold`}>RM</span>
-                    <span
-                      ref={counterRef}
-                      className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tabular-nums"
-                      style={{ fontFamily: 'monospace' }}
-                    >
-                      {animatedFraud.toLocaleString()}
-                    </span>
-                  </div>
-
-                  <div className="mt-3 sm:mt-4 flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-6">
-                    <div className="flex items-center gap-2">
-                      <svg className={`w-4 h-4 sm:w-5 sm:h-5 ${isHighContrast ? 'text-yellow-400' : 'text-emerald-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                      </svg>
-                      <span className="text-slate-300 text-xs italic">Illustrative ticker — based on MOH estimates</span>
-                    </div>
-                    <div className="hidden sm:block h-4 w-px bg-slate-500"></div>
-                    <div className="text-slate-300 text-xs sm:text-sm">
-                      <span className="text-white font-bold">{mcsProcessed.toLocaleString()}</span> MCs / year — projected at scale
-                    </div>
-                  </div>
+                {/* Counter */}
+                <div className="flex items-baseline gap-2 sm:gap-3 mb-5">
+                  <span className="text-xl sm:text-2xl font-bold text-slate-400">RM</span>
+                  <span
+                    ref={counterRef}
+                    className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 tabular-nums"
+                  >
+                    {animatedFraud.toLocaleString()}
+                  </span>
                 </div>
 
-                {/* Impact Breakdown - Stacked on mobile */}
-                <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200">
-                  <p className={`${theme.textMuted} text-xs font-semibold uppercase tracking-wider mb-1`}>Projected Impact Breakdown</p>
-                  <p className="text-xs text-slate-400 mb-3 sm:mb-4 italic">At full statewide adoption</p>
-                  <div className="space-y-3 sm:space-y-4">
-                    <div>
-                      <div className="flex justify-between text-xs sm:text-sm mb-1">
-                        <span className={theme.textMuted}>Annual fraud prevention</span>
-                        <span className={`${theme.text} font-bold`}>RM 1.8B</span>
-                      </div>
-                      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-red-500 to-red-400 rounded-full" style={{ width: '78%' }}></div>
-                      </div>
+                {/* Sub-metrics row */}
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-5 border-t border-slate-200">
+                  <div>
+                    <p className="text-xs text-slate-400 uppercase tracking-wider mb-0.5">Volume / year</p>
+                    <p className="text-sm font-semibold text-slate-700">{mcsProcessed.toLocaleString()} MCs</p>
+                  </div>
+                  <div className="h-8 w-px bg-slate-200"></div>
+                  <div>
+                    <p className="text-xs text-slate-400 uppercase tracking-wider mb-0.5">Source</p>
+                    <p className="text-sm font-semibold text-slate-700">MOH industry estimates</p>
+                  </div>
+                  <div className="h-8 w-px bg-slate-200"></div>
+                  <div>
+                    <p className="text-xs text-slate-400 uppercase tracking-wider mb-0.5">Status</p>
+                    <p className="text-sm font-semibold" style={{ color: '#0F766E' }}>Illustrative</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Impact breakdown */}
+              <div className="p-6 sm:p-8 bg-white">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Impact Breakdown</p>
+                <p className="text-xs text-slate-400 mb-5">At full statewide adoption</p>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between text-sm mb-1.5">
+                      <span className="text-slate-600">Annual fraud prevention</span>
+                      <span className="font-semibold text-slate-900">RM 1.8B</span>
                     </div>
-                    <div>
-                      <div className="flex justify-between text-xs sm:text-sm mb-1">
-                        <span className={theme.textMuted}>Admin cost savings</span>
-                        <span className={`${theme.text} font-bold`}>RM 350M</span>
-                      </div>
-                      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full" style={{ width: '15%' }}></div>
-                      </div>
+                    <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: '78%', background: '#0F2A5C' }}></div>
                     </div>
-                    <div>
-                      <div className="flex justify-between text-xs sm:text-sm mb-1">
-                        <span className={theme.textMuted}>Healthcare efficiency gain</span>
-                        <span className={`${theme.text} font-bold`}>RM 150M</span>
-                      </div>
-                      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full" style={{ width: '7%' }}></div>
-                      </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-1.5">
+                      <span className="text-slate-600">Admin cost savings</span>
+                      <span className="font-semibold text-slate-900">RM 350M</span>
+                    </div>
+                    <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: '15%', background: '#1E3A8A' }}></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-1.5">
+                      <span className="text-slate-600">Healthcare efficiency gain</span>
+                      <span className="font-semibold text-slate-900">RM 150M</span>
+                    </div>
+                    <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: '7%', background: '#0F766E' }}></div>
                     </div>
                   </div>
                 </div>
@@ -360,26 +364,33 @@ export default function CouncilorView() {
           </div>
         </div>
 
-        {/* Touch-Friendly Action Buttons for Demo - 48px minimum height */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
-          <button
-            onClick={() => navigate(`/verify/${DEMO_TX_HASH}`)}
-            className="flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 active:scale-[0.98] text-white font-bold text-sm sm:text-base rounded-xl sm:rounded-2xl shadow-lg transition-all touch-manipulation min-h-[56px] sm:min-h-[64px] instant-touch"
-          >
-            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>Verify MC</span>
-          </button>
-          <button
-            onClick={() => navigate('/demo')}
-            className="flex items-center justify-center gap-2 sm:gap-3 px-4 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 active:scale-[0.98] text-white font-bold text-sm sm:text-base rounded-xl sm:rounded-2xl shadow-lg transition-all touch-manipulation min-h-[56px] sm:min-h-[64px] instant-touch"
-          >
-            <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <span>Issue MC</span>
-          </button>
+        {/* Try-It Action Buttons — restrained secondary style */}
+        <div className="mb-6 sm:mb-8">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Try it now</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              onClick={() => navigate(`/verify/${DEMO_TX_HASH}`)}
+              className="flex items-center justify-center gap-2.5 px-5 py-3.5 bg-white border border-slate-200 hover:border-slate-300 active:scale-[0.99] text-slate-800 font-semibold text-sm rounded-lg transition-all"
+              style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}
+            >
+              <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Verify a Medical Certificate</span>
+            </button>
+            <button
+              onClick={() => navigate('/demo')}
+              className="flex items-center justify-center gap-2.5 px-5 py-3.5 active:scale-[0.99] text-white font-semibold text-sm rounded-lg transition-all"
+              style={{ background: '#0F2A5C', boxShadow: '0 1px 3px rgba(15, 42, 92, 0.2)' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#1E3A8A'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#0F2A5C'; }}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>See How an MC Is Issued</span>
+            </button>
+          </div>
         </div>
 
         {/* Main Grid - Responsive */}
@@ -502,33 +513,26 @@ export default function CouncilorView() {
             </div>
           </div>
 
-          {/* Health Categories Breakdown */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 bg-purple-500/20 rounded-xl flex items-center justify-center">
-                <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-slate-800 font-bold">Health Categories</h3>
-                <p className="text-slate-500 text-sm">MC distribution by type</p>
-              </div>
+          {/* Health Categories Breakdown — clean institutional */}
+          <div className="bg-white rounded-xl border border-slate-200 p-5">
+            <div className="mb-4 pb-4 border-b border-slate-100">
+              <h3 className="text-slate-900 font-semibold">Diagnosis Categories</h3>
+              <p className="text-slate-500 text-xs mt-0.5">Aggregated, de-identified — pilot illustrative data</p>
             </div>
 
-            <div className="space-y-3">
-              {HEALTH_CATEGORIES.map((cat, idx) => {
+            <div className="space-y-3.5">
+              {HEALTH_CATEGORIES.map((cat) => {
                 const percentage = Math.floor(Math.random() * 30) + 5;
                 return (
-                  <div key={cat.id} className="group">
+                  <div key={cat.id}>
                     <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{cat.icon}</span>
-                        <span className="text-slate-600 text-sm">{cat.name}</span>
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: cat.color }}></span>
+                        <span className="text-slate-700 text-sm">{cat.name}</span>
                       </div>
-                      <span className="text-slate-800 font-bold text-sm">{percentage}%</span>
+                      <span className="text-slate-900 font-semibold text-sm tabular-nums">{percentage}%</span>
                     </div>
-                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-1 bg-slate-100 rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-500"
                         style={{
@@ -542,93 +546,89 @@ export default function CouncilorView() {
               })}
             </div>
 
-            <div className="mt-5 pt-5 border-t border-slate-200">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Total MCs Today</span>
-                <span className="text-slate-800 font-bold">{getTotalCases().toLocaleString()}</span>
+            <div className="mt-5 pt-4 border-t border-slate-100">
+              <div className="flex justify-between items-baseline">
+                <span className="text-xs text-slate-500 uppercase tracking-wider">Sample window</span>
+                <span className="text-slate-900 font-semibold text-sm tabular-nums">{getTotalCases().toLocaleString()} MCs</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* ESG / Green Stats Section - Mobile Optimized */}
-        <div className="mb-4 sm:mb-8">
-          <div className="flex items-center gap-3 mb-4 sm:mb-5">
-            <div className="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center">
-              <span className="text-2xl">🌱</span>
-            </div>
-            <div>
-              <h2 className={`text-lg sm:text-xl font-bold ${theme.text}`}>Environmental Impact (ESG)</h2>
-              <p className={`${theme.textMuted} text-xs sm:text-sm`}>100% digital medical certificates</p>
-            </div>
+        {/* ESG / Sustainability Impact — Clean institutional cards */}
+        <div className="mb-6 sm:mb-10">
+          <div className="mb-5 pb-4 border-b border-slate-200">
+            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: '#0F766E' }}>Sustainability Impact</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Environmental footprint reduction</h2>
+            <p className="text-sm text-slate-500 mt-1">Projected annual impact from paperless medical certificates across Sarawak</p>
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {/* Paper Saved */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-green-900/50 to-emerald-900/30 rounded-2xl border border-green-500/30 p-5">
-              <div className="absolute top-0 right-0 text-6xl opacity-10">📄</div>
-              <div className="relative">
-                <p className="text-green-300 text-xs font-semibold uppercase tracking-wider mb-2">Paper Saved</p>
-                <p className="text-3xl font-black text-white">
-                  {paperSavedKg.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            <div className="bg-white rounded-xl border border-slate-200 p-5 hover:border-slate-300 transition-colors">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-2 h-2 rounded-full" style={{ background: '#10B981' }}></span>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Paper saved</p>
+              </div>
+              <p className="text-3xl font-bold text-slate-900 tabular-nums">
+                {paperSavedKg.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </p>
+              <p className="text-xs text-slate-500 mt-1">kilograms / year</p>
+              <div className="mt-4 pt-3 border-t border-slate-100">
+                <p className="text-xs text-slate-500">
+                  ≈ <span className="font-semibold text-slate-700">{Math.floor(paperSavedKg / 5).toLocaleString()}</span> reams
                 </p>
-                <p className="text-green-400 text-sm mt-1">kilograms</p>
-                <div className="mt-3 pt-3 border-t border-green-500/20">
-                  <p className="text-slate-300 text-xs">
-                    Equivalent to <span className="text-white font-bold">{Math.floor(paperSavedKg / 5).toLocaleString()}</span> reams
-                  </p>
-                </div>
               </div>
             </div>
 
             {/* CO2 Reduced */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-cyan-900/50 to-blue-900/30 rounded-2xl border border-cyan-500/30 p-5">
-              <div className="absolute top-0 right-0 text-6xl opacity-10">💨</div>
-              <div className="relative">
-                <p className="text-cyan-300 text-xs font-semibold uppercase tracking-wider mb-2">CO2 Emissions Avoided</p>
-                <p className="text-3xl font-black text-white">
-                  {co2Saved.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            <div className="bg-white rounded-xl border border-slate-200 p-5 hover:border-slate-300 transition-colors">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-2 h-2 rounded-full" style={{ background: '#06B6D4' }}></span>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">CO₂ avoided</p>
+              </div>
+              <p className="text-3xl font-bold text-slate-900 tabular-nums">
+                {co2Saved.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </p>
+              <p className="text-xs text-slate-500 mt-1">kg CO₂ / year</p>
+              <div className="mt-4 pt-3 border-t border-slate-100">
+                <p className="text-xs text-slate-500">
+                  ≈ <span className="font-semibold text-slate-700">{Math.floor(co2Saved / 4.6).toLocaleString()}</span> car trips avoided
                 </p>
-                <p className="text-cyan-400 text-sm mt-1">kg CO2</p>
-                <div className="mt-3 pt-3 border-t border-cyan-500/20">
-                  <p className="text-slate-300 text-xs">
-                    Like <span className="text-white font-bold">{Math.floor(co2Saved / 4.6).toLocaleString()}</span> car trips avoided
-                  </p>
-                </div>
               </div>
             </div>
 
             {/* Trees Saved */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-emerald-900/50 to-green-900/30 rounded-2xl border border-emerald-500/30 p-5">
-              <div className="absolute top-0 right-0 text-6xl opacity-10">🌳</div>
-              <div className="relative">
-                <p className="text-emerald-300 text-xs font-semibold uppercase tracking-wider mb-2">Trees Preserved</p>
-                <p className="text-3xl font-black text-white">
-                  {treesSaved.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            <div className="bg-white rounded-xl border border-slate-200 p-5 hover:border-slate-300 transition-colors">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-2 h-2 rounded-full" style={{ background: '#059669' }}></span>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Trees preserved</p>
+              </div>
+              <p className="text-3xl font-bold text-slate-900 tabular-nums">
+                {treesSaved.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </p>
+              <p className="text-xs text-slate-500 mt-1">trees / year</p>
+              <div className="mt-4 pt-3 border-t border-slate-100">
+                <p className="text-xs text-slate-500">
+                  <span className="font-semibold text-slate-700">{((treesSaved * 21) / 1000).toFixed(1)}</span> tons O₂ / year
                 </p>
-                <p className="text-emerald-400 text-sm mt-1">trees</p>
-                <div className="mt-3 pt-3 border-t border-emerald-500/20">
-                  <p className="text-slate-300 text-xs">
-                    <span className="text-white font-bold">{((treesSaved * 21) / 1000).toFixed(1)}</span> tons of oxygen/year
-                  </p>
-                </div>
               </div>
             </div>
 
             {/* Water Saved */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-blue-900/50 to-indigo-900/30 rounded-2xl border border-blue-500/30 p-5">
-              <div className="absolute top-0 right-0 text-6xl opacity-10">💧</div>
-              <div className="relative">
-                <p className="text-blue-300 text-xs font-semibold uppercase tracking-wider mb-2">Water Conserved</p>
-                <p className="text-3xl font-black text-white">
-                  {(waterSaved / 1000).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            <div className="bg-white rounded-xl border border-slate-200 p-5 hover:border-slate-300 transition-colors">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-2 h-2 rounded-full" style={{ background: '#3B82F6' }}></span>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Water conserved</p>
+              </div>
+              <p className="text-3xl font-bold text-slate-900 tabular-nums">
+                {(waterSaved / 1000).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              </p>
+              <p className="text-xs text-slate-500 mt-1">cubic metres / year</p>
+              <div className="mt-4 pt-3 border-t border-slate-100">
+                <p className="text-xs text-slate-500">
+                  ≈ <span className="font-semibold text-slate-700">{Math.floor(waterSaved / 150).toLocaleString()}</span> households / day
                 </p>
-                <p className="text-blue-400 text-sm mt-1">cubic meters</p>
-                <div className="mt-3 pt-3 border-t border-blue-500/20">
-                  <p className="text-slate-300 text-xs">
-                    <span className="text-white font-bold">{Math.floor(waterSaved / 150).toLocaleString()}</span> households daily use
-                  </p>
-                </div>
               </div>
             </div>
           </div>
