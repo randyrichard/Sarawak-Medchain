@@ -68,9 +68,9 @@ export default function CouncilorView() {
   // PWA: Only set manifest when on /pwa/gov route
   usePWA(isPWARoute ? PWA_CONFIGS.gov : null);
 
-  // Theme classes for light mode
+  // Theme classes for light mode — institutional palette
   const theme = {
-    bg: '#FFFFFF',
+    bg: '#F8FAFC', // subtle off-white so white cards pop
     cardBg: 'bg-white',
     headerBg: '#FFFFFF',
     text: 'text-slate-800',
@@ -228,10 +228,10 @@ export default function CouncilorView() {
         </div>
       </header>
 
-      {/* Main Content - Centered with max-width 1400px */}
-      <main style={{ maxWidth: '1400px', margin: '0 auto', backgroundColor: '#FFFFFF' }} className="px-3 sm:px-6 py-4 sm:py-8">
+      {/* Main Content - Centered, generous spacing for institutional feel */}
+      <main style={{ maxWidth: '1280px', margin: '0 auto' }} className="px-4 sm:px-8 py-8 sm:py-14">
         {/* Preview Dashboard Disclaimer - Honest framing for govt readers */}
-        <div className="mb-4 sm:mb-6 rounded-xl border px-4 py-3 flex items-start gap-3" style={{ background: '#FFFBEB', borderColor: '#FDE68A' }}>
+        <div className="mb-10 sm:mb-14 rounded-xl border px-5 py-4 flex items-start gap-3" style={{ background: '#FFFBEB', borderColor: '#FDE68A' }}>
           <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#D97706' }}>
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -243,20 +243,20 @@ export default function CouncilorView() {
           </div>
         </div>
 
-        {/* Page Title + Trust Strip — tight, institutional */}
-        <div className="mb-6 sm:mb-8 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+        {/* Page Title + Trust Strip — institutional, generous spacing */}
+        <div className="mb-12 sm:mb-16 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#0F766E' }}>State Agency Preview</p>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] mb-3" style={{ color: '#0F766E' }}>State Agency Preview</p>
+            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight tracking-tight">
               Public Health Intelligence Dashboard
             </h1>
-            <p className="text-sm text-slate-500 mt-1.5 max-w-2xl">
+            <p className="text-base text-slate-500 mt-3 max-w-2xl leading-relaxed">
               What Sarawak state agencies see when MedChain runs across the state — anonymized, aggregated, audit-ready.
             </p>
           </div>
 
-          {/* Trust signals — inline, not a giant badge */}
-          <div className="flex flex-wrap gap-2 lg:gap-3 lg:flex-shrink-0">
+          {/* Trust signals — inline, generous gap */}
+          <div className="flex flex-wrap gap-2.5 lg:gap-3 lg:flex-shrink-0">
             <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 bg-white">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#0F766E' }}>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -285,30 +285,30 @@ export default function CouncilorView() {
           </div>
         </div>
 
-        {/* Economic Impact — Clean institutional card */}
-        <div className="mb-6 sm:mb-8">
-          <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+        {/* Economic Impact — Clean institutional card with generous padding */}
+        <div className="mb-12 sm:mb-16">
+          <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
             <div className="grid grid-cols-1 lg:grid-cols-3">
               {/* Left: Primary counter */}
-              <div className="lg:col-span-2 p-6 sm:p-8 border-b lg:border-b-0 lg:border-r border-slate-200" style={{ background: 'linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%)' }}>
-                <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: '#0F766E' }}>
+              <div className="lg:col-span-2 p-8 sm:p-12 border-b lg:border-b-0 lg:border-r border-slate-200" style={{ background: 'linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%)' }}>
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] mb-3" style={{ color: '#0F766E' }}>
                   Projected Economic Impact
                 </p>
-                <p className="text-sm text-slate-500 mb-5">Annual fraud prevention at full statewide adoption</p>
+                <p className="text-sm text-slate-500 mb-8">Annual fraud prevention at full statewide adoption</p>
 
                 {/* Counter */}
-                <div className="flex items-baseline gap-2 sm:gap-3 mb-5">
+                <div className="flex items-baseline gap-3 mb-8">
                   <span className="text-xl sm:text-2xl font-bold text-slate-400">RM</span>
                   <span
                     ref={counterRef}
-                    className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 tabular-nums"
+                    className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 tabular-nums tracking-tight"
                   >
                     {animatedFraud.toLocaleString()}
                   </span>
                 </div>
 
                 {/* Sub-metrics row */}
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-5 border-t border-slate-200">
+                <div className="flex flex-wrap items-center gap-x-8 gap-y-3 pt-8 border-t border-slate-200">
                   <div>
                     <p className="text-xs text-slate-400 uppercase tracking-wider mb-0.5">Volume / year</p>
                     <p className="text-sm font-semibold text-slate-700">{mcsProcessed.toLocaleString()} MCs</p>
@@ -327,10 +327,10 @@ export default function CouncilorView() {
               </div>
 
               {/* Right: Impact breakdown */}
-              <div className="p-6 sm:p-8 bg-white">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Impact Breakdown</p>
-                <p className="text-xs text-slate-400 mb-5">At full statewide adoption</p>
-                <div className="space-y-4">
+              <div className="p-8 sm:p-10 bg-white">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 mb-2">Impact Breakdown</p>
+                <p className="text-xs text-slate-400 mb-7">At full statewide adoption</p>
+                <div className="space-y-5">
                   <div>
                     <div className="flex justify-between text-sm mb-1.5">
                       <span className="text-slate-600">Annual fraud prevention</span>
@@ -365,12 +365,12 @@ export default function CouncilorView() {
         </div>
 
         {/* Try-It Action Buttons — restrained secondary style */}
-        <div className="mb-6 sm:mb-8">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Try it now</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="mb-12 sm:mb-16">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 mb-4">Try it now</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <button
               onClick={() => navigate(`/verify/${DEMO_TX_HASH}`)}
-              className="flex items-center justify-center gap-2.5 px-5 py-3.5 bg-white border border-slate-200 hover:border-slate-300 active:scale-[0.99] text-slate-800 font-semibold text-sm rounded-lg transition-all"
+              className="flex items-center justify-center gap-3 px-6 py-4 bg-white border border-slate-200 hover:border-slate-300 active:scale-[0.99] text-slate-800 font-semibold text-sm rounded-xl transition-all"
               style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}
             >
               <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -380,7 +380,7 @@ export default function CouncilorView() {
             </button>
             <button
               onClick={() => navigate('/demo')}
-              className="flex items-center justify-center gap-2.5 px-5 py-3.5 active:scale-[0.99] text-white font-semibold text-sm rounded-lg transition-all"
+              className="flex items-center justify-center gap-3 px-6 py-4 active:scale-[0.99] text-white font-semibold text-sm rounded-xl transition-all"
               style={{ background: '#0F2A5C', boxShadow: '0 1px 3px rgba(15, 42, 92, 0.2)' }}
               onMouseEnter={(e) => { e.currentTarget.style.background = '#1E3A8A'; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = '#0F2A5C'; }}
@@ -393,11 +393,11 @@ export default function CouncilorView() {
           </div>
         </div>
 
-        {/* Main Grid - Responsive */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-8">
+        {/* Main Grid - Responsive, generous gaps */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 mb-12 sm:mb-16">
           {/* Health Heatmap */}
-          <div className={`lg:col-span-2 bg-white rounded-2xl border border-slate-200 overflow-hidden`}>
-            <div className="p-3 sm:p-5 border-b border-slate-200">
+          <div className={`lg:col-span-2 bg-white rounded-2xl border border-slate-200 overflow-hidden`} style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div className="p-6 sm:p-7 border-b border-slate-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-blue-500/20 rounded-xl flex items-center justify-center">
@@ -514,13 +514,13 @@ export default function CouncilorView() {
           </div>
 
           {/* Health Categories Breakdown — clean institutional */}
-          <div className="bg-white rounded-xl border border-slate-200 p-5">
-            <div className="mb-4 pb-4 border-b border-slate-100">
-              <h3 className="text-slate-900 font-semibold">Diagnosis Categories</h3>
-              <p className="text-slate-500 text-xs mt-0.5">Aggregated, de-identified — pilot illustrative data</p>
+          <div className="bg-white rounded-2xl border border-slate-200 p-7" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+            <div className="mb-6 pb-5 border-b border-slate-100">
+              <h3 className="text-slate-900 font-semibold text-base">Diagnosis Categories</h3>
+              <p className="text-slate-500 text-xs mt-1">Aggregated, de-identified — pilot illustrative data</p>
             </div>
 
-            <div className="space-y-3.5">
+            <div className="space-y-4">
               {HEALTH_CATEGORIES.map((cat) => {
                 const percentage = Math.floor(Math.random() * 30) + 5;
                 return (
@@ -546,9 +546,9 @@ export default function CouncilorView() {
               })}
             </div>
 
-            <div className="mt-5 pt-4 border-t border-slate-100">
+            <div className="mt-7 pt-5 border-t border-slate-100">
               <div className="flex justify-between items-baseline">
-                <span className="text-xs text-slate-500 uppercase tracking-wider">Sample window</span>
+                <span className="text-xs text-slate-500 uppercase tracking-[0.1em]">Sample window</span>
                 <span className="text-slate-900 font-semibold text-sm tabular-nums">{getTotalCases().toLocaleString()} MCs</span>
               </div>
             </div>
@@ -556,16 +556,16 @@ export default function CouncilorView() {
         </div>
 
         {/* ESG / Sustainability Impact — Clean institutional cards */}
-        <div className="mb-6 sm:mb-10">
-          <div className="mb-5 pb-4 border-b border-slate-200">
-            <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: '#0F766E' }}>Sustainability Impact</p>
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Environmental footprint reduction</h2>
-            <p className="text-sm text-slate-500 mt-1">Projected annual impact from paperless medical certificates across Sarawak</p>
+        <div className="mb-12 sm:mb-16">
+          <div className="mb-8 pb-6 border-b border-slate-200">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: '#0F766E' }}>Sustainability Impact</p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Environmental footprint reduction</h2>
+            <p className="text-base text-slate-500 mt-2">Projected annual impact from paperless medical certificates across Sarawak</p>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
             {/* Paper Saved */}
-            <div className="bg-white rounded-xl border border-slate-200 p-5 hover:border-slate-300 transition-colors">
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 hover:border-slate-300 transition-colors" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
               <div className="flex items-center gap-2 mb-3">
                 <span className="w-2 h-2 rounded-full" style={{ background: '#10B981' }}></span>
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Paper saved</p>
@@ -582,7 +582,7 @@ export default function CouncilorView() {
             </div>
 
             {/* CO2 Reduced */}
-            <div className="bg-white rounded-xl border border-slate-200 p-5 hover:border-slate-300 transition-colors">
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 hover:border-slate-300 transition-colors" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
               <div className="flex items-center gap-2 mb-3">
                 <span className="w-2 h-2 rounded-full" style={{ background: '#06B6D4' }}></span>
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">CO₂ avoided</p>
@@ -599,7 +599,7 @@ export default function CouncilorView() {
             </div>
 
             {/* Trees Saved */}
-            <div className="bg-white rounded-xl border border-slate-200 p-5 hover:border-slate-300 transition-colors">
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 hover:border-slate-300 transition-colors" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
               <div className="flex items-center gap-2 mb-3">
                 <span className="w-2 h-2 rounded-full" style={{ background: '#059669' }}></span>
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Trees preserved</p>
@@ -616,7 +616,7 @@ export default function CouncilorView() {
             </div>
 
             {/* Water Saved */}
-            <div className="bg-white rounded-xl border border-slate-200 p-5 hover:border-slate-300 transition-colors">
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 hover:border-slate-300 transition-colors" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
               <div className="flex items-center gap-2 mb-3">
                 <span className="w-2 h-2 rounded-full" style={{ background: '#3B82F6' }}></span>
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Water conserved</p>
@@ -634,43 +634,53 @@ export default function CouncilorView() {
           </div>
         </div>
 
-        {/* Quick Stats Footer - Mobile Scrollable */}
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-4">
-          <div className={`${theme.cardBg} rounded-xl border ${theme.border} p-3 sm:p-4 text-center`}>
-            <p className={`${theme.textMuted} text-[10px] sm:text-xs mb-1`}>Hospitals</p>
-            <p className={`text-lg sm:text-2xl font-black ${theme.text}`}>27</p>
+        {/* Network Stats — institutional footer block */}
+        <div className="mb-12 sm:mb-16">
+          <div className="mb-8 pb-6 border-b border-slate-200">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: '#0F766E' }}>Network Reach</p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Sarawak healthcare network at scale</h2>
+            <p className="text-base text-slate-500 mt-2">Coverage projected at full statewide deployment</p>
           </div>
-          <div className={`${theme.cardBg} rounded-xl border ${theme.border} p-3 sm:p-4 text-center`}>
-            <p className={`${theme.textMuted} text-[10px] sm:text-xs mb-1`}>Clinics</p>
-            <p className={`text-lg sm:text-2xl font-black ${theme.text}`}>142</p>
-          </div>
-          <div className={`${theme.cardBg} rounded-xl border ${theme.border} p-3 sm:p-4 text-center`}>
-            <p className={`${theme.textMuted} text-[10px] sm:text-xs mb-1`}>Doctors</p>
-            <p className={`text-lg sm:text-2xl font-black ${theme.text}`}>1,247</p>
-          </div>
-          <div className={`${theme.cardBg} rounded-xl border ${theme.border} p-3 sm:p-4 text-center hidden sm:block`}>
-            <p className={`${theme.textMuted} text-[10px] sm:text-xs mb-1`}>Patients</p>
-            <p className={`text-lg sm:text-2xl font-black ${theme.text}`}>89,432</p>
-          </div>
-          <div className={`${theme.cardBg} rounded-xl border ${theme.border} p-3 sm:p-4 text-center hidden sm:block`}>
-            <p className={`${theme.textMuted} text-[10px] sm:text-xs mb-1`}>Uptime</p>
-            <p className={`text-lg sm:text-2xl font-black ${theme.accent}`}>99.99%</p>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 sm:gap-5">
+            <div className="bg-white rounded-2xl border border-slate-200 p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500 mb-3">Hospitals</p>
+              <p className="text-3xl font-bold text-slate-900 tabular-nums">27</p>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-200 p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500 mb-3">Clinics</p>
+              <p className="text-3xl font-bold text-slate-900 tabular-nums">142</p>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-200 p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500 mb-3">Doctors</p>
+              <p className="text-3xl font-bold text-slate-900 tabular-nums">1,247</p>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 col-span-2 sm:col-span-1" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500 mb-3">Patients</p>
+              <p className="text-3xl font-bold text-slate-900 tabular-nums">89,432</p>
+            </div>
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 col-span-2 sm:col-span-1" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500 mb-3">Uptime</p>
+              <p className="text-3xl font-bold tabular-nums" style={{ color: '#0F766E' }}>99.99%</p>
+            </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <footer className="mt-12 pt-8 border-t border-slate-200">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
+        {/* Footer — institutional, refined */}
+        <footer className="mt-12 sm:mt-16 pt-10 border-t border-slate-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
               <p className="text-slate-500 text-sm">
-                Data refreshes every 10 seconds | All health data is anonymized and aggregated
+                Data refreshes every 10 seconds · Anonymized and aggregated
+              </p>
+              <p className="text-slate-400 text-xs mt-1">
+                Sarawak MedChain — Government Preview · Built in Sarawak
               </p>
             </div>
-            <div className="flex items-center gap-4">
-              <Link to="/pitch" className="text-slate-500 hover:text-slate-800 text-sm transition-colors">
-                Learn More
+            <div className="flex items-center gap-6">
+              <Link to="/pitch" className="text-slate-600 hover:text-slate-900 text-sm font-medium transition-colors">
+                For Hospitals
               </Link>
-              <Link to="/" className="text-slate-500 hover:text-slate-800 text-sm transition-colors">
+              <Link to="/" className="text-slate-600 hover:text-slate-900 text-sm font-medium transition-colors">
                 Back to Home
               </Link>
             </div>
