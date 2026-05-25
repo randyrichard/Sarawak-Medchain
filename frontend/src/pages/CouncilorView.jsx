@@ -3,6 +3,60 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { usePWA, PWA_CONFIGS } from '../hooks/usePWA';
 
 /**
+ * ScrollReveal — fades + slides children into view when they enter the viewport.
+ * direction: 'left' | 'right' | 'up' (default 'up')
+ * delay: ms to wait before the animation starts (for stagger effects)
+ *
+ * Uses Intersection Observer; no library dependency.
+ * Animation plays once. Reduced-motion users see the content immediately.
+ */
+function ScrollReveal({ children, direction = 'up', delay = 0, className = '' }) {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    // Respect reduced-motion preference
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setVisible(true);
+      return;
+    }
+    if (!ref.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -60px 0px' }
+    );
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  const offset = {
+    left: 'translate3d(-48px, 0, 0)',
+    right: 'translate3d(48px, 0, 0)',
+    up: 'translate3d(0, 32px, 0)',
+  }[direction] || 'translate3d(0, 32px, 0)';
+
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        transform: visible ? 'translate3d(0, 0, 0)' : offset,
+        opacity: visible ? 1 : 0,
+        transition: `transform 0.85s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms, opacity 0.85s ease-out ${delay}ms`,
+        willChange: visible ? 'auto' : 'transform, opacity',
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
  * Councilor View - Government Preview Dashboard
  * Public Health Dashboard, Economic Impact, Governance Branding, ESG Stats
  *
@@ -244,7 +298,7 @@ export default function CouncilorView() {
         </div>
 
         {/* Page Title + Trust Strip — institutional, generous spacing */}
-        <div className="mb-12 sm:mb-16 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+        <ScrollReveal direction="up" className="mb-20 sm:mb-28 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.12em] mb-3" style={{ color: '#0F766E' }}>State Agency Preview</p>
             <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight tracking-tight">
@@ -283,10 +337,10 @@ export default function CouncilorView() {
               </div>
             </div>
           </div>
-        </div>
+        </ScrollReveal>
 
         {/* Economic Impact — Clean institutional card with generous padding */}
-        <div className="mb-12 sm:mb-16">
+        <ScrollReveal direction="left" className="mb-20 sm:mb-28">
           <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
             <div className="grid grid-cols-1 lg:grid-cols-3">
               {/* Left: Primary counter */}
@@ -362,10 +416,10 @@ export default function CouncilorView() {
               </div>
             </div>
           </div>
-        </div>
+        </ScrollReveal>
 
         {/* Try-It Action Buttons — restrained secondary style */}
-        <div className="mb-12 sm:mb-16">
+        <ScrollReveal direction="right" className="mb-20 sm:mb-28">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 mb-4">Try it now</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <button
@@ -391,10 +445,10 @@ export default function CouncilorView() {
               <span>See How an MC Is Issued</span>
             </button>
           </div>
-        </div>
+        </ScrollReveal>
 
         {/* Main Grid - Responsive, generous gaps */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 mb-12 sm:mb-16">
+        <ScrollReveal direction="left" className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 mb-20 sm:mb-28">
           {/* Health Heatmap */}
           <div className={`lg:col-span-2 bg-white rounded-2xl border border-slate-200 overflow-hidden`} style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
             <div className="p-6 sm:p-7 border-b border-slate-200">
@@ -553,11 +607,11 @@ export default function CouncilorView() {
               </div>
             </div>
           </div>
-        </div>
+        </ScrollReveal>
 
         {/* ESG / Sustainability Impact — Clean institutional cards */}
-        <div className="mb-12 sm:mb-16">
-          <div className="mb-8 pb-6 border-b border-slate-200">
+        <ScrollReveal direction="right" className="mb-20 sm:mb-28">
+          <div className="mb-10 pb-6 border-b border-slate-200">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: '#0F766E' }}>Sustainability Impact</p>
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Environmental footprint reduction</h2>
             <p className="text-base text-slate-500 mt-2">Projected annual impact from paperless medical certificates across Sarawak</p>
@@ -632,11 +686,11 @@ export default function CouncilorView() {
               </div>
             </div>
           </div>
-        </div>
+        </ScrollReveal>
 
         {/* Network Stats — institutional footer block */}
-        <div className="mb-12 sm:mb-16">
-          <div className="mb-8 pb-6 border-b border-slate-200">
+        <ScrollReveal direction="left" className="mb-20 sm:mb-28">
+          <div className="mb-10 pb-6 border-b border-slate-200">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] mb-2" style={{ color: '#0F766E' }}>Network Reach</p>
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Sarawak healthcare network at scale</h2>
             <p className="text-base text-slate-500 mt-2">Coverage projected at full statewide deployment</p>
@@ -663,7 +717,7 @@ export default function CouncilorView() {
               <p className="text-3xl font-bold tabular-nums" style={{ color: '#0F766E' }}>99.99%</p>
             </div>
           </div>
-        </div>
+        </ScrollReveal>
 
         {/* Footer — institutional, refined */}
         <footer className="mt-12 sm:mt-16 pt-10 border-t border-slate-200">
