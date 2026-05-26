@@ -309,27 +309,32 @@ export default function SarawakReadinessMap() {
             );
           })()}
 
-          {/* Zoom out button */}
+          {/* Clear selection button — when a division is active */}
           {isZoomed && (
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               <button
                 onClick={() => { setSelectedDivision(null); setIsZoomed(false); }}
                 style={{
-                  display: 'flex',
+                  display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
-                  padding: '8px 16px',
-                  background: '#F1F5F9',
+                  padding: '7px 14px',
+                  background: '#FFFFFF',
                   border: '1px solid #E2E8F0',
                   borderRadius: '8px',
                   fontSize: '12px',
+                  fontWeight: 500,
                   color: '#64748B',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                 }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#CBD5E1'; e.currentTarget.style.color = '#1E293B'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.color = '#64748B'; }}
               >
-                <ZoomOut size={14} />
-                Zoom Out
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Clear Selection — Show All Divisions
               </button>
             </div>
           )}
@@ -390,41 +395,75 @@ export default function SarawakReadinessMap() {
             {/* Subtle radial center glow — atmosphere */}
             <circle cx="50" cy="50" r="50" fill="url(#mapGlow)" opacity="0.5" />
 
-            {/* SARAWAK SILHOUETTE — simplified outline of NW Borneo coastline */}
+            {/* SARAWAK SILHOUETTE — simplified outline of NW Borneo coastline.
+                Long banana shape hugging the South China Sea coast (SW to NE),
+                with Brunei carve-out implied near Miri. */}
             <path
-              d="M 5 78
-                 Q 7 84 16 86
-                 L 32 88
-                 Q 50 87 64 78
-                 L 78 64
-                 Q 90 45 96 22
-                 L 92 13
-                 Q 80 14 70 20
-                 L 62 24
-                 Q 50 30 38 36
-                 L 26 44
-                 Q 14 54 7 65
-                 Q 4 71 5 78 Z"
-              fill={isProtected ? 'rgba(20, 184, 166, 0.05)' : 'rgba(239, 68, 68, 0.05)'}
-              stroke={isProtected ? 'rgba(20, 184, 166, 0.35)' : 'rgba(239, 68, 68, 0.35)'}
-              strokeWidth="0.4"
+              d="M 3 86
+                 Q 4 92 14 93
+                 L 32 92
+                 Q 50 89 64 80
+                 L 78 65
+                 Q 90 48 96 28
+                 Q 98 18 95 12
+                 L 90 9
+                 Q 80 11 72 18
+                 L 66 24
+                 Q 58 28 50 30
+                 L 42 33
+                 Q 32 39 24 46
+                 L 16 56
+                 Q 8 66 4 76
+                 Q 2 82 3 86 Z"
+              fill={isProtected ? 'rgba(20, 184, 166, 0.08)' : 'rgba(239, 68, 68, 0.08)'}
+              stroke={isProtected ? 'rgba(20, 184, 166, 0.5)' : 'rgba(239, 68, 68, 0.5)'}
+              strokeWidth="0.45"
               style={{
-                filter: isProtected ? 'drop-shadow(0 0 6px rgba(20,184,166,0.25))' : 'none',
+                filter: isProtected ? 'drop-shadow(0 0 8px rgba(20,184,166,0.3))' : 'none',
                 transition: 'all 0.5s ease',
               }}
             />
+
+            {/* Small "Brunei" carve indicator — implies real geography */}
+            {isProtected && (
+              <g opacity="0.45" className="pointer-events-none">
+                <circle cx="82" cy="13" r="2.2" fill="rgba(15, 23, 42, 0.7)" stroke="rgba(20, 184, 166, 0.3)" strokeWidth="0.3" />
+                <text x="82" y="14" textAnchor="middle" fontSize="1.4" fontWeight="500" fill="rgba(148, 163, 184, 0.8)" style={{ userSelect: 'none' }}>BN</text>
+              </g>
+            )}
+
+            {/* Subtle coast label */}
+            {isProtected && (
+              <text
+                x="50"
+                y="6"
+                textAnchor="middle"
+                fontSize="1.6"
+                fontWeight="500"
+                fill="rgba(148, 163, 184, 0.4)"
+                style={{ letterSpacing: '0.18em', userSelect: 'none' }}
+                className="pointer-events-none"
+              >
+                SOUTH CHINA SEA
+              </text>
+            )}
 
             {/* Fraud hotspots overlay (only in fraud mode) */}
             {!isProtected && FRAUD_HOTSPOTS.map((spot, idx) => (
               <circle key={idx} cx={spot.x} cy={spot.y} r={spot.r} fill="url(#fraudHeat)" opacity={spot.intensity} className="animate-pulse" />
             ))}
 
-            {/* 4 division markers — clean dots, no overlapping labels */}
+            {/* 4 division markers — clean dots with hover/active states */}
             {Object.entries(DIVISIONS).map(([key, division]) => {
               const isSelected = selectedDivision === key;
               const dotColor = isProtected ? '#14b8a6' : '#ef4444';
               return (
-                <g key={key} className="cursor-pointer" onClick={() => handleDivisionClick(key)}>
+                <g
+                  key={key}
+                  className="cursor-pointer"
+                  onClick={() => handleDivisionClick(key)}
+                  style={{ transition: 'all 0.2s ease' }}
+                >
                   {/* Selection ring */}
                   {isSelected && isProtected && (
                     <circle
