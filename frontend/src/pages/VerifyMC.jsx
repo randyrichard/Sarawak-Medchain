@@ -397,11 +397,12 @@ const styles = {
     animation: 'pulse 1s ease-in-out infinite',
   },
 
-  // Header styles
+  // Header styles — navy gradient, matches brand
   header: {
-    padding: '16px 20px',
-    backgroundColor: '#1e293b',
+    padding: '18px 20px',
+    background: 'linear-gradient(90deg, #0F2A5C 0%, #1E3A8A 100%)',
     width: '100%',
+    borderBottom: '1px solid rgba(255,255,255,0.06)',
   },
   logoContainer: {
     display: 'flex',
@@ -414,23 +415,28 @@ const styles = {
   logo: {
     width: '40px',
     height: '40px',
-    borderRadius: '50%',
-    backgroundColor: '#14b8a6',
+    borderRadius: '10px',
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    border: '1px solid rgba(255,255,255,0.18)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
   headerTitle: {
-    fontSize: '18px',
+    fontSize: '17px',
     fontWeight: '600',
     margin: 0,
     color: '#FFFFFF',
+    letterSpacing: '-0.01em',
   },
   headerSubtitle: {
-    fontSize: '13px',
-    color: '#94a3b8',
+    fontSize: '12px',
+    color: 'rgba(255,255,255,0.65)',
     margin: 0,
+    fontWeight: '500',
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
   },
 
   // Main content styles

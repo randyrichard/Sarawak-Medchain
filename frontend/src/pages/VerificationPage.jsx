@@ -130,21 +130,22 @@ export default function VerificationPage() {
           className="print-card bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200"
           style={{ maxWidth: '800px', margin: '0 auto' }}
         >
-          {/* Card Header */}
-          <div className="bg-gradient-to-r from-cyan-600 to-blue-600 px-8 py-6">
-            <div className="flex items-center justify-between">
+          {/* Card Header — navy gradient matching brand */}
+          <div className="px-8 py-7" style={{ background: 'linear-gradient(135deg, #0F2A5C 0%, #1E3A8A 100%)' }}>
+            <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)' }}>
+                  <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                   </svg>
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-white">Medical Certificate</h1>
-                  <p className="text-cyan-100">Blockchain Verified Document</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.15em] mb-1" style={{ color: 'rgba(255,255,255,0.65)' }}>Official Document</p>
+                  <h1 className="text-2xl font-bold text-white leading-tight">Medical Certificate</h1>
+                  <p className="text-sm mt-0.5" style={{ color: 'rgba(255,255,255,0.7)' }}>Blockchain-verified · Sarawak MedChain</p>
                 </div>
               </div>
-              <div className="bg-white p-2 rounded-xl">
+              <div className="bg-white p-2 rounded-xl flex-shrink-0">
                 <QRCodeSVG
                   value={window.location.href}
                   size={80}
@@ -189,7 +190,7 @@ export default function VerificationPage() {
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <p className="text-slate-500 text-sm uppercase tracking-wider mb-1">Duration</p>
-                <p className="text-cyan-400 text-2xl font-bold">{mcData?.duration} Day{mcData?.duration > 1 ? 's' : ''}</p>
+                <p className="text-2xl font-bold" style={{ color: '#0F766E' }}>{mcData?.duration} Day{mcData?.duration > 1 ? 's' : ''}</p>
               </div>
               <div>
                 <p className="text-slate-500 text-sm uppercase tracking-wider mb-1">Issue Date</p>
@@ -216,7 +217,7 @@ export default function VerificationPage() {
             {/* Blockchain Hash */}
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
               <p className="text-slate-500 text-sm uppercase tracking-wider mb-2">Blockchain Record ID</p>
-              <code className="text-cyan-600 text-xs font-mono break-all block">
+              <code className="text-xs font-mono break-all block" style={{ color: '#0F2A5C' }}>
                 {mcData?.blockchainHash}
               </code>
             </div>
