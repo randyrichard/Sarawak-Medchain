@@ -16,39 +16,35 @@ export default function DemoBanner() {
   return (
     <div style={{
       width: '100%',
-      height: '40px',
-      background: '#EFF6FF',
-      borderBottom: '1px solid #BFDBFE',
+      height: '44px',
+      background: 'linear-gradient(90deg, #0F2A5C 0%, #1E3A8A 100%)',
+      borderBottom: '1px solid rgba(255,255,255,0.08)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       gap: '12px',
       flexShrink: 0,
       position: 'relative',
+      paddingLeft: '20px',
+      paddingRight: '20px',
     }}>
-      <Info size={14} style={{ color: '#3B82F6' }} />
-
       <span style={{
-        color: '#1E40AF',
-        fontWeight: '700',
-        fontSize: '12px',
-        letterSpacing: '0.5px',
+        padding: '3px 8px',
+        borderRadius: '6px',
+        background: 'rgba(255,255,255,0.15)',
+        color: '#FFFFFF',
+        fontWeight: '600',
+        fontSize: '10px',
+        letterSpacing: '0.1em',
       }}>
-        DEMO MODE
+        PREVIEW
       </span>
 
       <span style={{
-        color: '#93C5FD',
-        fontSize: '12px',
+        color: 'rgba(255,255,255,0.85)',
+        fontSize: '13px',
       }}>
-        |
-      </span>
-
-      <span style={{
-        color: '#6B7280',
-        fontSize: '12px',
-      }}>
-        Exploring with sample data
+        Exploring the platform with sample data — no live patient records involved.
       </span>
 
       <button
@@ -56,26 +52,24 @@ export default function DemoBanner() {
         style={{
           position: 'absolute',
           right: '20px',
-          background: 'transparent',
-          border: '1px solid #3B82F6',
-          borderRadius: '20px',
-          padding: '6px 16px',
-          color: '#3B82F6',
-          fontSize: '11px',
+          background: '#FFFFFF',
+          border: 'none',
+          borderRadius: '8px',
+          padding: '6px 14px',
+          color: '#0F2A5C',
+          fontSize: '12px',
           fontWeight: '600',
           cursor: 'pointer',
           transition: 'all 0.2s ease',
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = '#EFF6FF';
-          e.currentTarget.style.boxShadow = '0 0 12px rgba(59, 130, 246, 0.2)';
+          e.currentTarget.style.background = '#F1F5F9';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'transparent';
-          e.currentTarget.style.boxShadow = 'none';
+          e.currentTarget.style.background = '#FFFFFF';
         }}
       >
-        Connect Wallet for Live
+        Connect Wallet for Live →
       </button>
     </div>
   );

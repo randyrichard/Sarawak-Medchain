@@ -88,36 +88,30 @@ export default function DoctorPortalDemo() {
 
   return (
     <div className="min-h-screen relative" style={{ backgroundColor: terminalTheme.bg }}>
-      {/* Demo Mode Watermark Overlay */}
-      <div className="fixed inset-0 pointer-events-none z-40 flex items-center justify-center overflow-hidden">
-        <div
-          className="absolute transform -rotate-45 text-6xl font-black tracking-widest whitespace-nowrap opacity-[0.03] select-none"
-          style={{ color: terminalTheme.textPrimary }}
-        >
-          DEMO MODE &nbsp;&nbsp; DEMO MODE &nbsp;&nbsp; DEMO MODE &nbsp;&nbsp; DEMO MODE
-        </div>
-      </div>
-
-      {/* Top Demo Banner */}
-      <div className="sticky top-0 z-50 bg-gradient-to-r from-amber-600 to-orange-600 text-white px-6 py-3">
+      {/* Top Preview Banner — refined institutional, not loud amber */}
+      <div className="sticky top-0 z-50 px-6 py-2.5" style={{ background: 'linear-gradient(90deg, #0F2A5C 0%, #1E3A8A 100%)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="px-2 py-1 bg-white/20 rounded text-xs font-bold">DEMO MODE</span>
-            <span className="text-sm">To activate live blockchain nodes for your hospital, contact MedChain</span>
+            <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold tracking-[0.1em]" style={{ background: 'rgba(255,255,255,0.15)', color: '#FFF' }}>
+              PREVIEW
+            </span>
+            <span className="text-[13px] text-white/85">
+              You're viewing the doctor portal with sample data. Live deployment requires hospital onboarding.
+            </span>
           </div>
           <div className="flex items-center gap-4">
             <Link
               to="/pitch"
-              className="text-sm text-white/80 hover:text-white transition-colors"
+              className="text-[13px] text-white/75 hover:text-white transition-colors"
             >
               ← Back to Pitch
             </Link>
             <a
               href="#pricing"
               onClick={(e) => { e.preventDefault(); window.location.href = '/#/pitch#pricing'; }}
-              className="px-4 py-2 bg-white text-amber-600 rounded-lg font-bold text-sm hover:bg-amber-50 transition-colors"
+              className="px-3.5 py-1.5 bg-white text-slate-900 rounded-lg font-semibold text-[13px] hover:bg-slate-100 transition-colors"
             >
-              Get Started
+              Request Pilot
             </a>
           </div>
         </div>
