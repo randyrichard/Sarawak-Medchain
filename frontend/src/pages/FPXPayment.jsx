@@ -1026,7 +1026,8 @@ export default function FPXPayment() {
                 // For top-up, go back to admin; for new signup, go to connect wallet
                 navigate(isTopUp ? '/admin' : '/connect');
               }}
-              className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white py-3 px-6 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+              className="text-white py-3 px-6 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
+              style={{ background: 'linear-gradient(135deg, #0F2A5C 0%, #1E3A8A 100%)', boxShadow: '0 1px 3px rgba(15, 42, 92, 0.2)' }}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {isTopUp ? (

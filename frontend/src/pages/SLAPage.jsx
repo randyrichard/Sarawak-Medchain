@@ -9,7 +9,7 @@ export default function SLAPage() {
 
       {/* ========== HEADER ========== */}
       <header style={{
-        background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+        background: 'linear-gradient(135deg, #0F2A5C 0%, #1E3A8A 100%)',
         padding: '64px 24px',
         textAlign: 'center',
       }}>
