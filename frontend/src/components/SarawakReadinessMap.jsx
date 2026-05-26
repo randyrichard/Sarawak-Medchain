@@ -268,6 +268,47 @@ export default function SarawakReadinessMap() {
             </div>
           </div>
 
+          {/* Network total stats row — visible at-a-glance data density */}
+          {isProtected && (() => {
+            const allHospitals = Object.values(DIVISIONS).flatMap(d => d.hospitals);
+            const govCount = allHospitals.filter(h => h.type === 'Government').length;
+            const privCount = allHospitals.filter(h => h.type === 'Private').length;
+            const totalBeds = allHospitals.reduce((s, h) => s + h.beds, 0);
+            return (
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: '8px',
+                padding: '12px',
+                background: '#FFFFFF',
+                border: '1px solid #E2E8F0',
+                borderRadius: '12px',
+                marginBottom: '4px',
+              }}>
+                <div style={{ textAlign: 'center', padding: '4px' }}>
+                  <p style={{ fontSize: '10px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 4px 0' }}>Divisions</p>
+                  <p style={{ fontSize: '22px', fontWeight: 700, color: '#1E293B', margin: 0, lineHeight: 1 }}>{Object.keys(DIVISIONS).length}</p>
+                </div>
+                <div style={{ textAlign: 'center', padding: '4px', borderLeft: '1px solid #F1F5F9' }}>
+                  <p style={{ fontSize: '10px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 4px 0' }}>Hospitals</p>
+                  <p style={{ fontSize: '22px', fontWeight: 700, color: '#1E293B', margin: 0, lineHeight: 1 }}>{allHospitals.length}</p>
+                </div>
+                <div style={{ textAlign: 'center', padding: '4px', borderLeft: '1px solid #F1F5F9' }}>
+                  <p style={{ fontSize: '10px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 4px 0' }}>Govt / Private</p>
+                  <p style={{ fontSize: '15px', fontWeight: 700, margin: 0, lineHeight: 1 }}>
+                    <span style={{ color: '#0F2A5C' }}>{govCount}</span>
+                    <span style={{ color: '#CBD5E1', margin: '0 4px' }}>/</span>
+                    <span style={{ color: '#0F766E' }}>{privCount}</span>
+                  </p>
+                </div>
+                <div style={{ textAlign: 'center', padding: '4px', borderLeft: '1px solid #F1F5F9' }}>
+                  <p style={{ fontSize: '10px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 4px 0' }}>Total Beds</p>
+                  <p style={{ fontSize: '22px', fontWeight: 700, color: '#1E293B', margin: 0, lineHeight: 1 }}>{totalBeds.toLocaleString()}</p>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Zoom out button */}
           {isZoomed && (
             <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -334,8 +375,44 @@ export default function SarawakReadinessMap() {
 
             <rect x="0" y="0" width="100" height="100" fill={isProtected ? "#0F172A" : "#0a0505"} />
 
-            {/* Subtle radial center glow — atmosphere only, no decorative shape */}
-            <circle cx="50" cy="50" r="50" fill="url(#mapGlow)" opacity="0.6" />
+            {/* Subtle grid for geographic feel */}
+            {isProtected && (
+              <g opacity="0.06">
+                {[10, 25, 40, 55, 70, 85].map(v => (
+                  <line key={`h${v}`} x1="0" y1={v} x2="100" y2={v} stroke="#14b8a6" strokeWidth="0.15" />
+                ))}
+                {[10, 25, 40, 55, 70, 85].map(v => (
+                  <line key={`v${v}`} x1={v} y1="0" x2={v} y2="100" stroke="#14b8a6" strokeWidth="0.15" />
+                ))}
+              </g>
+            )}
+
+            {/* Subtle radial center glow — atmosphere */}
+            <circle cx="50" cy="50" r="50" fill="url(#mapGlow)" opacity="0.5" />
+
+            {/* SARAWAK SILHOUETTE — simplified outline of NW Borneo coastline */}
+            <path
+              d="M 5 78
+                 Q 7 84 16 86
+                 L 32 88
+                 Q 50 87 64 78
+                 L 78 64
+                 Q 90 45 96 22
+                 L 92 13
+                 Q 80 14 70 20
+                 L 62 24
+                 Q 50 30 38 36
+                 L 26 44
+                 Q 14 54 7 65
+                 Q 4 71 5 78 Z"
+              fill={isProtected ? 'rgba(20, 184, 166, 0.05)' : 'rgba(239, 68, 68, 0.05)'}
+              stroke={isProtected ? 'rgba(20, 184, 166, 0.35)' : 'rgba(239, 68, 68, 0.35)'}
+              strokeWidth="0.4"
+              style={{
+                filter: isProtected ? 'drop-shadow(0 0 6px rgba(20,184,166,0.25))' : 'none',
+                transition: 'all 0.5s ease',
+              }}
+            />
 
             {/* Fraud hotspots overlay (only in fraud mode) */}
             {!isProtected && FRAUD_HOTSPOTS.map((spot, idx) => (
@@ -401,6 +478,33 @@ export default function SarawakReadinessMap() {
                   >
                     {division.shortName.toUpperCase()}
                   </text>
+
+                  {/* Hospital count badge — small pill near dot */}
+                  {isProtected && (
+                    <g className="pointer-events-none">
+                      <rect
+                        x={division.position.x + 3}
+                        y={division.position.y - 2.5}
+                        width="6"
+                        height="3.2"
+                        rx="1.6"
+                        fill={isSelected ? '#14b8a6' : 'rgba(20, 184, 166, 0.18)'}
+                        stroke={isSelected ? '#FFFFFF' : 'rgba(20, 184, 166, 0.5)'}
+                        strokeWidth="0.15"
+                      />
+                      <text
+                        x={division.position.x + 6}
+                        y={division.position.y - 0.2}
+                        textAnchor="middle"
+                        fill={isSelected ? '#FFFFFF' : '#14b8a6'}
+                        fontSize="2.2"
+                        fontWeight="700"
+                        style={{ userSelect: 'none' }}
+                      >
+                        {division.hospitals.length}
+                      </text>
+                    </g>
+                  )}
                 </g>
               );
             })}
@@ -512,54 +616,118 @@ export default function SarawakReadinessMap() {
           </div>
         </div>
 
-        {/* Hospital detail panel */}
+        {/* Hospital detail panel — institutional design with type pills */}
         {isZoomed && activeData && isProtected && (
           <div style={{
-            marginTop: '12px',
+            marginTop: '16px',
             background: '#FFFFFF',
-            borderRadius: '12px',
+            borderRadius: '14px',
             border: '1px solid #E2E8F0',
             overflow: 'hidden',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
           }}>
+            {/* Panel header with summary */}
             <div style={{
-              padding: '10px 12px',
+              padding: '14px 18px',
               borderBottom: '1px solid #E2E8F0',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              background: '#F8FAFC',
+              background: 'linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%)',
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10B981' }} />
-                <span style={{ color: '#1E293B', fontWeight: 600, fontSize: '14px' }}>{activeData.name}</span>
-                <span style={{ color: '#94A3B8', fontSize: '12px' }}>- {activeData.hospitals.length} hospitals</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <div>
+                  <p style={{ fontSize: '10px', fontWeight: 700, color: '#0F766E', textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0 }}>
+                    Selected Division
+                  </p>
+                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1E293B', margin: '2px 0 0 0' }}>{activeData.name}</h3>
+                </div>
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  padding: '4px 10px', borderRadius: '9999px',
+                  background: '#F0FDF4', border: '1px solid #BBF7D0',
+                }}>
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981' }} />
+                  <span style={{ color: '#047857', fontSize: '11px', fontWeight: 600 }}>100% Integrity</span>
+                </div>
               </div>
-              <span style={{ color: '#059669', fontSize: '12px', fontWeight: 600 }}>100% Integrity</span>
+              {/* Counts row */}
+              <div style={{ display: 'flex', gap: '20px', marginTop: '10px' }}>
+                <div>
+                  <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 500 }}>Hospitals</span>
+                  <p style={{ fontSize: '18px', fontWeight: 700, color: '#1E293B', margin: 0, lineHeight: 1.1 }}>{activeData.hospitals.length}</p>
+                </div>
+                <div style={{ width: '1px', background: '#E2E8F0' }} />
+                <div>
+                  <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 500 }}>Government</span>
+                  <p style={{ fontSize: '18px', fontWeight: 700, color: '#0F2A5C', margin: 0, lineHeight: 1.1 }}>
+                    {activeData.hospitals.filter(h => h.type === 'Government').length}
+                  </p>
+                </div>
+                <div style={{ width: '1px', background: '#E2E8F0' }} />
+                <div>
+                  <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 500 }}>Private</span>
+                  <p style={{ fontSize: '18px', fontWeight: 700, color: '#0F766E', margin: 0, lineHeight: 1.1 }}>
+                    {activeData.hospitals.filter(h => h.type === 'Private').length}
+                  </p>
+                </div>
+                <div style={{ width: '1px', background: '#E2E8F0' }} />
+                <div>
+                  <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 500 }}>Total beds</span>
+                  <p style={{ fontSize: '18px', fontWeight: 700, color: '#1E293B', margin: 0, lineHeight: 1.1 }}>
+                    {activeData.hospitals.reduce((s, h) => s + h.beds, 0).toLocaleString()}
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <div style={{ padding: '10px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '8px' }}>
-              {activeData.hospitals.map((hospital, index) => (
-                <div
-                  key={index}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '8px',
-                    background: '#F8FAFC',
-                    border: '1px solid #F1F5F9',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981', flexShrink: 0 }} />
-                  <div style={{ minWidth: 0 }}>
-                    <p style={{ color: '#1E293B', fontSize: '12px', fontWeight: 600, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hospital.name}</p>
-                    <p style={{ color: '#94A3B8', fontSize: '10px', margin: 0 }}>{hospital.beds} beds</p>
+            {/* Hospital cards grid */}
+            <div style={{ padding: '14px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '10px' }}>
+              {activeData.hospitals.map((hospital, index) => {
+                const isGov = hospital.type === 'Government';
+                return (
+                  <div
+                    key={index}
+                    style={{
+                      padding: '12px 14px',
+                      background: '#FFFFFF',
+                      border: '1px solid #E2E8F0',
+                      borderRadius: '10px',
+                      transition: 'all 0.2s ease',
+                      cursor: 'default',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#CBD5E1';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.06)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = '#E2E8F0';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '6px' }}>
+                      <p style={{ color: '#1E293B', fontSize: '13px', fontWeight: 600, margin: 0, lineHeight: 1.3 }}>{hospital.name}</p>
+                      <span style={{
+                        flexShrink: 0,
+                        fontSize: '9px',
+                        fontWeight: 700,
+                        letterSpacing: '0.06em',
+                        padding: '2px 7px',
+                        borderRadius: '9999px',
+                        background: isGov ? 'rgba(15, 42, 92, 0.08)' : 'rgba(15, 118, 110, 0.1)',
+                        color: isGov ? '#0F2A5C' : '#0F766E',
+                        border: isGov ? '1px solid rgba(15, 42, 92, 0.15)' : '1px solid rgba(15, 118, 110, 0.2)',
+                        textTransform: 'uppercase',
+                      }}>
+                        {isGov ? 'GOVT' : 'Private'}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                      </svg>
+                      <p style={{ color: '#64748B', fontSize: '11px', margin: 0 }}>{hospital.beds} beds</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
