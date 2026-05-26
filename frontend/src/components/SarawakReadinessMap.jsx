@@ -122,15 +122,10 @@ export default function SarawakReadinessMap() {
     setIsProtected(!isProtected);
   };
 
-  const getViewBox = () => {
-    if (!isZoomed || !selectedDivision) {
-      return '0 0 100 100';
-    }
-    const div = DIVISIONS[selectedDivision];
-    const x = Math.max(0, div.position.x - 20);
-    const y = Math.max(0, div.position.y - 15);
-    return `${x} ${y} 45 40`;
-  };
+  // Single static viewBox — no more zoom-and-fly-out chaos.
+  // The selected division is highlighted; hospital details live in the
+  // clean panel below the map, not as overlapping SVG labels.
+  const getViewBox = () => '0 0 100 100';
 
   return (
     <div style={{
@@ -337,71 +332,75 @@ export default function SarawakReadinessMap() {
               </linearGradient>
             </defs>
 
-            <rect x="0" y="0" width="100" height="100" fill={isProtected ? "#070b14" : "#0a0505"} />
-            <circle cx="50" cy="50" r="45" fill="url(#mapGlow)" />
+            <rect x="0" y="0" width="100" height="100" fill={isProtected ? "#0F172A" : "#0a0505"} />
 
-            <path
-              d="M5 88 Q8 78 12 72 L18 68 Q28 62 35 58 L45 52 Q55 44 65 38 L75 28 Q85 20 94 16 L97 22 Q94 32 88 42 L82 52 Q76 60 70 65 L60 70 Q50 74 40 78 L28 82 Q18 86 10 88 L5 88 Z"
-              fill={isProtected ? "url(#sarawakFill)" : "#1a1010"}
-              stroke={isProtected ? "#14b8a6" : "#5f2020"}
-              strokeWidth={isProtected ? "2.5" : "0.3"}
-              style={{
-                filter: isProtected ? 'drop-shadow(0 0 15px rgba(20, 184, 166, 0.4)) drop-shadow(0 0 30px rgba(20, 184, 166, 0.2))' : 'none',
-                transition: 'all 0.5s ease',
-              }}
-            />
+            {/* Subtle radial center glow — atmosphere only, no decorative shape */}
+            <circle cx="50" cy="50" r="50" fill="url(#mapGlow)" opacity="0.6" />
 
+            {/* Fraud hotspots overlay (only in fraud mode) */}
             {!isProtected && FRAUD_HOTSPOTS.map((spot, idx) => (
               <circle key={idx} cx={spot.x} cy={spot.y} r={spot.r} fill="url(#fraudHeat)" opacity={spot.intensity} className="animate-pulse" />
             ))}
 
-            <g stroke={isProtected ? "#14b8a6" : "#ef4444"} strokeWidth="0.4" opacity={isProtected ? "0.5" : "0.3"} style={{ filter: isProtected ? 'drop-shadow(0 0 3px rgba(20, 184, 166, 0.5))' : 'none' }}>
-              <line x1="18" y1="78" x2="45" y2="55" />
-              <line x1="45" y1="55" x2="60" y2="40" />
-              <line x1="60" y1="40" x2="78" y2="22" />
-            </g>
-
+            {/* 4 division markers — clean dots, no overlapping labels */}
             {Object.entries(DIVISIONS).map(([key, division]) => {
               const isSelected = selectedDivision === key;
+              const dotColor = isProtected ? '#14b8a6' : '#ef4444';
               return (
                 <g key={key} className="cursor-pointer" onClick={() => handleDivisionClick(key)}>
-                  {isSelected && (
-                    <circle cx={division.position.x} cy={division.position.y} r={isZoomed ? 8 : 6} fill="none" stroke={isProtected ? division.color : '#ef4444'} strokeWidth="0.3" opacity="0.6" strokeDasharray="1 1" />
+                  {/* Selection ring */}
+                  {isSelected && isProtected && (
+                    <circle
+                      cx={division.position.x}
+                      cy={division.position.y}
+                      r="6"
+                      fill="none"
+                      stroke="#14b8a6"
+                      strokeWidth="0.4"
+                      opacity="0.5"
+                    />
                   )}
 
-                  {isProtected ? (
-                    <>
-                      <circle cx={division.position.x} cy={division.position.y} r={isSelected ? 5 : 4} fill="none" stroke="#14b8a6" strokeWidth="0.3" opacity="0.4" className="map-city-dot" />
-                      <circle cx={division.position.x} cy={division.position.y} r={isSelected ? 3 : 2.5} fill="#14b8a6" filter="url(#glow)" style={{ filter: 'drop-shadow(0 0 4px rgba(20, 184, 166, 0.8))' }} />
-                      <circle cx={division.position.x} cy={division.position.y} r="1" fill="white" opacity="0.7" />
-                    </>
-                  ) : (
-                    <>
-                      <circle cx={division.position.x} cy={division.position.y} r={isSelected ? 3.5 : 3} fill="#ef4444" className="animate-pulse" />
-                      <circle cx={division.position.x} cy={division.position.y} r="1.5" fill="#fca5a5" opacity="0.8" />
-                    </>
-                  )}
+                  {/* Outer halo */}
+                  <circle
+                    cx={division.position.x}
+                    cy={division.position.y}
+                    r={isSelected ? 4 : 3}
+                    fill={dotColor}
+                    opacity={isSelected ? 0.25 : 0.15}
+                  />
 
-                  <text x={division.position.x} y={division.position.y - 5} textAnchor="middle" fill={isSelected ? '#ffffff' : '#94a3b8'} fontSize={isZoomed ? '2.5' : '3'} fontWeight="600" className="pointer-events-none select-none">
-                    {division.shortName}
+                  {/* Main dot */}
+                  <circle
+                    cx={division.position.x}
+                    cy={division.position.y}
+                    r={isSelected ? 1.8 : 1.4}
+                    fill={dotColor}
+                    style={{ filter: isProtected ? 'drop-shadow(0 0 3px rgba(20,184,166,0.7))' : 'none' }}
+                  />
+
+                  {/* Inner highlight (white center pip) */}
+                  <circle
+                    cx={division.position.x}
+                    cy={division.position.y}
+                    r="0.5"
+                    fill="white"
+                    opacity={isSelected ? 0.95 : 0.7}
+                  />
+
+                  {/* City label — small, never overlaps */}
+                  <text
+                    x={division.position.x}
+                    y={division.position.y - 5}
+                    textAnchor="middle"
+                    fill={isSelected ? '#FFFFFF' : '#94a3b8'}
+                    fontSize="2.6"
+                    fontWeight="600"
+                    style={{ letterSpacing: '0.05em', userSelect: 'none' }}
+                    className="pointer-events-none"
+                  >
+                    {division.shortName.toUpperCase()}
                   </text>
-
-                  {isZoomed && isSelected && isProtected && division.hospitals.map((hospital, idx) => {
-                    const angle = (idx / division.hospitals.length) * Math.PI * 2 - Math.PI / 2;
-                    const radius = 12 + (idx % 2) * 4;
-                    const hx = division.position.x + Math.cos(angle) * radius;
-                    const hy = division.position.y + Math.sin(angle) * radius;
-                    return (
-                      <g key={idx} style={{ opacity: flyInComplete ? 1 : 0, transition: 'all 0.5s ease' }}>
-                        <line x1={division.position.x} y1={division.position.y} x2={hx} y2={hy} stroke="#10b981" strokeWidth="0.15" opacity="0.4" />
-                        <circle cx={hx} cy={hy} r="1" fill="#10b981" />
-                        <rect x={hx - 8} y={hy + 1.5} width="16" height="3" rx="0.5" fill="rgba(255,255,255,0.95)" />
-                        <text x={hx} y={hy + 3.5} textAnchor="middle" fill="#0f172a" fontSize="1.5" fontWeight="600" className="pointer-events-none select-none">
-                          {hospital.name}
-                        </text>
-                      </g>
-                    );
-                  })}
                 </g>
               );
             })}
