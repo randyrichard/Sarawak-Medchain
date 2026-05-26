@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ScrollReveal, CountUp, useScrollProgress, ScrollProgressBar } from '../components/ScrollEffects';
 
 const BLUE = '#0066CC';
 const DARK = '#003366';
@@ -11,6 +12,7 @@ export default function HospitalPitch() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [roiInputs, setRoiInputs] = useState({ numberOfDoctors: 10, monthlyMCs: 500 });
+  const { progress: scrollProgress } = useScrollProgress(80);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,8 +30,11 @@ export default function HospitalPitch() {
   return (
     <div className="min-h-screen bg-white font-sans antialiased">
 
+      {/* Scroll progress indicator — premium signal */}
+      <ScrollProgressBar progress={scrollProgress} />
+
       {/* ═══════════ HERO ═══════════ */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-slate-50 via-white to-white">
+      <ScrollReveal direction="up"><section className="relative overflow-hidden bg-gradient-to-b from-slate-50 via-white to-white">
         <div className="absolute inset-0 opacity-[0.03]" style={{
           backgroundImage: `radial-gradient(${BLUE} 1px, transparent 1px)`,
           backgroundSize: '32px 32px',
@@ -73,11 +78,11 @@ export default function HospitalPitch() {
             <span>✅ PDPA Compliant</span>
           </div>
         </div>
-      </section>
+      </section></ScrollReveal>
 
 
       {/* ═══════════ THE PROBLEM ═══════════ */}
-      <section className="bg-slate-50" style={{ padding: '160px 24px' }}>
+      <ScrollReveal direction="left"><section className="bg-slate-50" style={{ padding: '160px 24px' }}>
         <div className="max-w-4xl mx-auto text-center">
           <span className="inline-block px-5 py-2 rounded-full text-[11px] font-semibold uppercase tracking-[0.15em] text-red-500 bg-red-50" style={{ marginBottom: '24px' }}>
             The Problem
@@ -116,11 +121,11 @@ export default function HospitalPitch() {
             ))}
           </div>
         </div>
-      </section>
+      </section></ScrollReveal>
 
 
       {/* ═══════════ THE SOLUTION ═══════════ */}
-      <section className="bg-white" style={{ padding: '160px 24px' }}>
+      <ScrollReveal direction="right"><section className="bg-white" style={{ padding: '160px 24px' }}>
         <div className="max-w-4xl mx-auto text-center">
           <span className="inline-block px-5 py-2 rounded-full text-[11px] font-semibold uppercase tracking-[0.15em] text-blue-600 bg-blue-50" style={{ marginBottom: '24px' }}>
             The Solution
@@ -146,11 +151,11 @@ export default function HospitalPitch() {
             ))}
           </div>
         </div>
-      </section>
+      </section></ScrollReveal>
 
 
       {/* ═══════════ HOW IT WORKS ═══════════ */}
-      <section className="bg-slate-50" style={{ padding: '160px 24px' }}>
+      <ScrollReveal direction="left"><section className="bg-slate-50" style={{ padding: '160px 24px' }}>
         <div className="max-w-4xl mx-auto text-center">
           <span className="inline-block px-5 py-2 rounded-full text-[11px] font-semibold uppercase tracking-[0.15em] text-blue-600 bg-blue-50" style={{ marginBottom: '24px' }}>
             How It Works
@@ -175,11 +180,11 @@ export default function HospitalPitch() {
             ))}
           </div>
         </div>
-      </section>
+      </section></ScrollReveal>
 
 
       {/* ═══════════ LIVE STATS ═══════════ */}
-      <section className="bg-white" style={{ padding: '160px 24px' }}>
+      <ScrollReveal direction="right"><section className="bg-white" style={{ padding: '160px 24px' }}>
         <div className="max-w-4xl mx-auto text-center">
           <span className="inline-block px-5 py-2 rounded-full text-[11px] font-semibold uppercase tracking-[0.15em] text-emerald-600 bg-emerald-50" style={{ marginBottom: '24px' }}>
             Live Network
@@ -193,13 +198,15 @@ export default function HospitalPitch() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto">
             {[
-              { v: stats.hospitals, l: 'Major Hospitals', c: BLUE },
-              { v: stats.clinics, l: 'Private Clinics', c: '#06b6d4' },
-              { v: stats.mcs.toLocaleString(), l: 'MCs Issued', c: '#10b981' },
-              { v: stats.doctors, l: 'Verified Doctors', c: '#f59e0b' },
+              { v: stats.hospitals, l: 'Major Hospitals', c: BLUE, d: 1400 },
+              { v: stats.clinics, l: 'Private Clinics', c: '#06b6d4', d: 1600 },
+              { v: stats.mcs, l: 'MCs Issued', c: '#10b981', d: 2000 },
+              { v: stats.doctors, l: 'Verified Doctors', c: '#f59e0b', d: 1800 },
             ].map(s => (
               <div key={s.l} className="bg-white rounded-2xl p-6 border border-slate-100 text-center shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                <p className="text-4xl font-extrabold mb-2" style={{ color: s.c }}>{s.v}</p>
+                <p className="text-4xl font-extrabold mb-2" style={{ color: s.c }}>
+                  <CountUp end={s.v} duration={s.d} />
+                </p>
                 <p className="text-slate-500 text-xs font-medium">{s.l}</p>
               </div>
             ))}
@@ -213,11 +220,11 @@ export default function HospitalPitch() {
             <span className="text-emerald-500 text-xs font-medium">Live on Blockchain</span>
           </div>
         </div>
-      </section>
+      </section></ScrollReveal>
 
 
       {/* ═══════════ DEMO ═══════════ */}
-      <section className="bg-slate-50" style={{ padding: '160px 24px' }}>
+      <ScrollReveal direction="left"><section className="bg-slate-50" style={{ padding: '160px 24px' }}>
         <div className="max-w-4xl mx-auto text-center">
           <span className="inline-block px-5 py-2 rounded-full text-[11px] font-semibold uppercase tracking-[0.15em] text-purple-600 bg-purple-50" style={{ marginBottom: '24px' }}>
             See It In Action
@@ -260,11 +267,11 @@ export default function HospitalPitch() {
             <span className="block text-slate-400 text-xs mt-2 not-italic">— Hospital CEO during pilot demo</span>
           </blockquote>
         </div>
-      </section>
+      </section></ScrollReveal>
 
 
       {/* ═══════════ FOUNDING CIRCLE ═══════════ */}
-      <section className="bg-gradient-to-b from-amber-50/50 to-white" style={{ padding: '160px 24px' }}>
+      <ScrollReveal direction="right"><section className="bg-gradient-to-b from-amber-50/50 to-white" style={{ padding: '160px 24px' }}>
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-amber-50 border border-amber-200/50 rounded-full" style={{ marginBottom: '24px' }}>
             <span className="text-sm">⭐</span>
@@ -341,11 +348,11 @@ export default function HospitalPitch() {
           </div>
         </div>
         <style>{`@keyframes shimmer { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }`}</style>
-      </section>
+      </section></ScrollReveal>
 
 
       {/* ═══════════ PRICING ═══════════ */}
-      <section id="pricing" className="bg-slate-50" style={{ padding: '160px 24px' }}>
+      <ScrollReveal direction="left"><section id="pricing" className="bg-slate-50" style={{ padding: '160px 24px' }}>
         <div className="max-w-4xl mx-auto text-center">
           <span className="inline-block px-5 py-2 rounded-full text-[11px] font-semibold uppercase tracking-[0.15em] text-blue-600 bg-blue-50" style={{ marginBottom: '24px' }}>
             Pricing
@@ -398,11 +405,11 @@ export default function HospitalPitch() {
             Smaller clinic? <span className="text-cyan-500 font-semibold">Clinic Tier at RM 2,000/mo</span>
           </p>
         </div>
-      </section>
+      </section></ScrollReveal>
 
 
       {/* ═══════════ ROI CALCULATOR ═══════════ */}
-      <section className="bg-white" style={{ padding: '160px 24px' }}>
+      <ScrollReveal direction="right"><section className="bg-white" style={{ padding: '160px 24px' }}>
         <div className="max-w-4xl mx-auto text-center">
           <span className="inline-block px-5 py-2 rounded-full text-[11px] font-semibold uppercase tracking-[0.15em] text-emerald-600 bg-emerald-50" style={{ marginBottom: '24px' }}>
             ROI Calculator
@@ -495,11 +502,11 @@ export default function HospitalPitch() {
             })()}
           </div>
         </div>
-      </section>
+      </section></ScrollReveal>
 
 
       {/* ═══════════ FINAL CTA ═══════════ */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-slate-50 to-slate-100" style={{ padding: '160px 24px' }}>
+      <ScrollReveal direction="up"><section className="relative overflow-hidden bg-gradient-to-b from-slate-50 to-slate-100" style={{ padding: '160px 24px' }}>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full opacity-[0.05] blur-[80px]" style={{ backgroundColor: BLUE }} />
         <div className="relative max-w-2xl mx-auto text-center">
           <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 leading-[1.1] tracking-tight" style={{ marginBottom: '24px' }}>
@@ -514,7 +521,7 @@ export default function HospitalPitch() {
             Request Access Today
           </button>
         </div>
-      </section>
+      </section></ScrollReveal>
 
 
       {/* ═══════════ FOOTER ═══════════ */}
