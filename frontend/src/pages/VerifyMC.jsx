@@ -150,45 +150,237 @@ export default function VerifyMC() {
     return (
       <div style={styles.container}>
         <style>{mobileResetStyles}</style>
-        <div style={styles.loadingWrapper}>
-          <div style={{...styles.checkmarkCircle, backgroundColor: 'rgba(239, 68, 68, 0.2)', borderColor: '#ef4444'}}>
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+
+        {/* Brand header — keep visible so users know they're on the real site */}
+        <header style={styles.header}>
+          <div style={styles.logoContainer}>
+            <div style={styles.logo}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2">
+                <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <div>
+              <h1 style={styles.headerTitle}>Sarawak MedChain</h1>
+              <p style={styles.headerSubtitle}>MC Verification Portal</p>
+            </div>
           </div>
-          <h2 style={{...styles.loadingTitle, marginTop: '20px'}}>Verification Failed</h2>
-          <p style={styles.loadingSubtitle}>{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            style={{marginTop: '20px', padding: '12px 24px', backgroundColor: '#14b8a6', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '600', cursor: 'pointer'}}
-          >
-            Try Again
-          </button>
-        </div>
+        </header>
+
+        <main style={styles.main}>
+          <div style={{
+            background: '#FFFFFF',
+            border: '1px solid #FECACA',
+            borderRadius: '16px',
+            padding: '40px 28px',
+            textAlign: 'center',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.04)',
+          }}>
+            {/* Error icon */}
+            <div style={{
+              width: '64px',
+              height: '64px',
+              margin: '0 auto 24px',
+              borderRadius: '50%',
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '2px solid rgba(239, 68, 68, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4a2 2 0 00-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z" />
+              </svg>
+            </div>
+
+            <p style={{
+              fontSize: '10px',
+              fontWeight: 700,
+              color: '#DC2626',
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              margin: '0 0 8px 0',
+            }}>
+              Verification Failed
+            </p>
+            <h2 style={{
+              fontSize: '22px',
+              fontWeight: 700,
+              color: '#0F172A',
+              margin: '0 0 12px 0',
+              letterSpacing: '-0.01em',
+            }}>
+              This certificate could not be verified
+            </h2>
+            <p style={{
+              fontSize: '14px',
+              color: '#64748B',
+              lineHeight: 1.6,
+              margin: '0 0 24px 0',
+            }}>
+              {error}
+            </p>
+
+            {/* What this means + what to do */}
+            <div style={{
+              background: '#F8FAFC',
+              border: '1px solid #E2E8F0',
+              borderRadius: '10px',
+              padding: '16px 20px',
+              textAlign: 'left',
+              marginBottom: '28px',
+            }}>
+              <p style={{ fontSize: '12px', fontWeight: 700, color: '#0F172A', margin: '0 0 8px 0', letterSpacing: '0.04em' }}>
+                What this could mean
+              </p>
+              <ul style={{ margin: 0, padding: '0 0 0 18px', fontSize: '13px', color: '#475569', lineHeight: 1.7 }}>
+                <li>The QR code link is broken or expired</li>
+                <li>The certificate was never issued through MedChain</li>
+                <li>The certificate may have been revoked</li>
+                <li>Network connection issue — try again in a moment</li>
+              </ul>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => window.location.reload()}
+                style={{
+                  padding: '12px 22px',
+                  background: '#0F2A5C',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '10px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 1px 3px rgba(15, 42, 92, 0.2)',
+                }}
+              >
+                Try Again
+              </button>
+              <a
+                href="/"
+                style={{
+                  padding: '12px 22px',
+                  background: '#FFFFFF',
+                  color: '#0F2A5C',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '10px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                Back to Home
+              </a>
+            </div>
+
+            <p style={{ fontSize: '12px', color: '#94A3B8', marginTop: '20px' }}>
+              If you scanned this from a printed certificate, please contact the issuing facility.
+            </p>
+          </div>
+        </main>
       </div>
     );
   }
 
-  // Loading state
+  // Loading state — skeleton MC card so users see what's coming
   if (loading) {
     return (
       <div style={styles.container}>
         <style>{mobileResetStyles}</style>
-        <div style={styles.loadingWrapper}>
-          {/* Animated spinner */}
-          <div style={styles.spinnerOuter}>
-            <div style={styles.spinnerInner}></div>
-          </div>
-          <h2 style={styles.loadingTitle}>Verifying on Blockchain...</h2>
-          <p style={styles.loadingSubtitle}>Checking Sarawak MedChain network</p>
+        <style>{`
+          @keyframes verifyPulse {
+            0%, 100% { opacity: 0.55; }
+            50% { opacity: 0.85; }
+          }
+          @keyframes verifyShimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+          }
+          .verify-skeleton-bar {
+            background: linear-gradient(90deg, #E2E8F0 0%, #F1F5F9 50%, #E2E8F0 100%);
+            background-size: 200% 100%;
+            animation: verifyShimmer 1.6s ease-in-out infinite;
+            border-radius: 6px;
+          }
+        `}</style>
 
-          {/* Animated dots */}
-          <div style={styles.dotsContainer}>
-            <span style={{...styles.dot, animationDelay: '0s'}}>●</span>
-            <span style={{...styles.dot, animationDelay: '0.2s'}}>●</span>
-            <span style={{...styles.dot, animationDelay: '0.4s'}}>●</span>
+        {/* Brand header same as success state */}
+        <header style={styles.header}>
+          <div style={styles.logoContainer}>
+            <div style={styles.logo}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2">
+                <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <div>
+              <h1 style={styles.headerTitle}>Sarawak MedChain</h1>
+              <p style={styles.headerSubtitle}>MC Verification Portal</p>
+            </div>
           </div>
-        </div>
+        </header>
+
+        <main style={styles.main}>
+          {/* Verification-in-progress card */}
+          <div style={{
+            background: '#F8FAFC',
+            border: '1px solid #E2E8F0',
+            borderRadius: '16px',
+            padding: '40px 24px',
+            marginBottom: '20px',
+            textAlign: 'center',
+          }}>
+            <div style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              border: '3px solid #E2E8F0',
+              borderTopColor: '#0F2A5C',
+              animation: 'spin 0.9s linear infinite',
+              margin: '0 auto 20px',
+            }} />
+            <p style={{
+              fontSize: '10px',
+              fontWeight: 700,
+              color: '#0F766E',
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              margin: '0 0 8px 0',
+            }}>
+              Verifying on blockchain
+            </p>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#0F172A', margin: '0 0 6px 0' }}>
+              Checking Sarawak MedChain network
+            </h2>
+            <p style={{ fontSize: '14px', color: '#64748B', margin: 0 }}>
+              This usually takes under 2 seconds.
+            </p>
+          </div>
+
+          {/* Skeleton MC details card — shows users what to expect */}
+          <div style={{
+            background: '#FFFFFF',
+            border: '1px solid #E2E8F0',
+            borderRadius: '16px',
+            padding: '24px',
+            animation: 'verifyPulse 1.8s ease-in-out infinite',
+          }}>
+            <div className="verify-skeleton-bar" style={{ width: '40%', height: '14px', marginBottom: '20px' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {[80, 65, 75, 55, 70, 60].map((w, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
+                  <div className="verify-skeleton-bar" style={{ width: '30%', height: '12px' }} />
+                  <div className="verify-skeleton-bar" style={{ width: `${w}px`, maxWidth: '60%', height: '12px' }} />
+                </div>
+              ))}
+            </div>
+            <div style={{ height: '1px', background: '#F1F5F9', margin: '20px 0' }} />
+            <div className="verify-skeleton-bar" style={{ width: '50%', height: '11px', marginBottom: '12px' }} />
+            <div className="verify-skeleton-bar" style={{ width: '100%', height: '36px' }} />
+          </div>
+        </main>
       </div>
     );
   }

@@ -33,6 +33,7 @@ import VerifyAgreement from './pages/VerifyAgreement';
 import SystemStatus from './pages/SystemStatus';
 import CouncilorView from './pages/CouncilorView';
 import DemoApp from './pages/DemoApp';
+import NotFound from './pages/NotFound';
 import { ServiceRestoredToast } from './components/ServiceNotifications';
 import { Shield, DollarSign, X, AlertTriangle, User, Stethoscope, Settings, BarChart3, Lock, CreditCard, Menu, Wallet, ChevronRight, LogOut } from 'lucide-react';
 import './App.css';
@@ -1101,8 +1102,8 @@ function AppRoutes() {
     }
   }
 
-  // Fallback: redirect to home
-  return <Navigate to="/" replace />;
+  // Fallback: proper 404 page (instead of silent redirect)
+  return <NotFound />;
 }
 
 // Error Boundary Component
