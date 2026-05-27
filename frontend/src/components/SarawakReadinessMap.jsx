@@ -580,10 +580,10 @@ export default function SarawakReadinessMap() {
               transition: 'all 0.5s ease',
             }}>
               <span style={{ color: '#94A3B8', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                {isProtected ? 'Fraud Prevention' : 'Annual Loss'}
+                {isProtected ? 'Fraud Prevention' : 'Annual Loss'} <span style={{ fontSize: '8px', textTransform: 'none' }}>(est.)</span>
               </span>
               <p style={{ fontSize: '18px', fontWeight: 900, color: isProtected ? '#F59E0B' : '#EF4444', margin: 0 }}>
-                {isProtected ? 'RM 2.07B' : 'RM 2.3B'}
+                {isProtected ? 'RM 1.5–3B' : 'RM 1.5–3B'}
               </p>
             </div>
 
@@ -785,7 +785,7 @@ export default function SarawakReadinessMap() {
                 <AlertTriangle size={20} style={{ color: '#EF4444' }} />
               </div>
               <div>
-                <p style={{ color: '#DC2626', fontWeight: 700, fontSize: '14px', margin: 0 }}>Malaysia loses RM 2.3 Billion annually</p>
+                <p style={{ color: '#DC2626', fontWeight: 700, fontSize: '14px', margin: 0 }}>Malaysia loses an estimated RM 1.5–3B per year<sup style={{ fontSize: '0.7em', color: '#94A3B8', marginLeft: '2px' }}>est.</sup></p>
                 <p style={{ color: '#F87171', fontSize: '12px', margin: '4px 0 0 0' }}>Fake MCs, unverified records, zero audit trail</p>
               </div>
             </div>

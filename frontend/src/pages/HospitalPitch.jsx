@@ -94,16 +94,19 @@ export default function HospitalPitch() {
             Every year, Malaysian businesses lose billions to fraudulent medical certificates. Paper systems offer zero protection.
           </p>
 
-          <div className="grid grid-cols-2 gap-6 max-w-md mx-auto" style={{ marginBottom: '64px' }}>
+          <div className="grid grid-cols-2 gap-6 max-w-md mx-auto" style={{ marginBottom: '16px' }}>
             <div className="bg-white rounded-xl p-6 border border-red-100 text-center">
-              <p className="text-2xl font-extrabold text-red-400 mb-1">RM 2.3B</p>
-              <p className="text-[11px] text-slate-500">Annual fraud cost</p>
+              <p className="text-2xl font-extrabold text-red-400 mb-1">RM 1.5–3B<sup style={{ fontSize: '0.5em', color: '#94A3B8' }}>est.</sup></p>
+              <p className="text-[11px] text-slate-500">Estimated annual fraud impact</p>
             </div>
             <div className="bg-white rounded-xl p-6 border border-red-100 text-center">
-              <p className="text-2xl font-extrabold text-red-400 mb-1">34%</p>
-              <p className="text-[11px] text-slate-500">Suspect MC fraud</p>
+              <p className="text-2xl font-extrabold text-red-400 mb-1">3–7%<sup style={{ fontSize: '0.5em', color: '#94A3B8' }}>est.</sup></p>
+              <p className="text-[11px] text-slate-500">Healthcare fraud range (NHCAA)</p>
             </div>
           </div>
+          <p className="text-[10px] text-slate-400 italic mb-12 max-w-md mx-auto text-center" style={{ marginBottom: '64px' }}>
+            Estimates based on Malaysia healthcare spend (~RM 60B, MOH 2023) × global fraud rates (3-7%, National Health Care Anti-Fraud Association). MC-specific data not publicly tracked.
+          </p>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-3xl mx-auto">
             {[
@@ -495,7 +498,7 @@ export default function HospitalPitch() {
                     <p className="text-lg font-bold text-slate-800 leading-snug">
                       Pays for itself by preventing just <span className="text-amber-500">{breakEven} fake MCs</span> / month
                     </p>
-                    <p className="text-slate-400 text-[10px] mt-2">Based on RM 2.3B annual MC fraud (MTUC 2023)</p>
+                    <p className="text-slate-400 text-[10px] mt-2">Based on industry fraud estimates (NHCAA range, applied to Malaysia healthcare spend)</p>
                   </div>
                 </>
               );

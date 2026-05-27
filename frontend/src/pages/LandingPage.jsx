@@ -1583,9 +1583,12 @@ export default function LandingPage() {
 
             {/* Main Stat with red glow */}
             <h2 className="font-heading problem-headline" style={{ fontSize: 'clamp(56px, 8vw, 72px)', fontWeight: 800, color: '#DC2626', marginBottom: '16px', lineHeight: 1 }}>
-              RM 2.3 Billion
+              RM 1.5 – 3B<sup style={{ fontSize: '0.35em', fontWeight: 600, color: '#94A3B8', marginLeft: '4px' }}>est.</sup>
             </h2>
-            <p className="font-heading problem-subhead" style={{ fontSize: 'clamp(20px, 3vw, 24px)', fontWeight: 600, color: '#f87171', marginBottom: '40px' }}>Lost to MC Fraud Annually</p>
+            <p className="font-heading problem-subhead" style={{ fontSize: 'clamp(20px, 3vw, 24px)', fontWeight: 600, color: '#f87171', marginBottom: '12px' }}>Estimated annual MC fraud impact in Malaysia</p>
+            <p style={{ fontSize: '12px', color: '#94A3B8', marginBottom: '40px', maxWidth: '540px', margin: '0 auto 40px auto', lineHeight: 1.5 }}>
+              Estimate based on Malaysia healthcare spend (~RM 60B, MOH 2023) × global healthcare-fraud range of 3–7% (NHCAA). Actual MC-specific figures are not publicly tracked.
+            </p>
 
             {/* Description */}
             <p className="font-body problem-description" style={{ fontSize: '18px', color: '#64748B', lineHeight: 1.7, marginBottom: '48px', maxWidth: '540px', marginLeft: 'auto', marginRight: 'auto' }}>
@@ -1635,6 +1638,187 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
+        </div>
+      </section></ScrollReveal>
+
+      {/* ========== HOW IT WORKS — 5-step infographic ========== */}
+      <ScrollReveal direction="up"><section style={{ padding: '96px 0' }}>
+        {/* Section header */}
+        <div style={{ textAlign: 'center', marginBottom: '64px', maxWidth: '720px', margin: '0 auto 64px auto' }}>
+          <p className="font-heading" style={{ fontSize: '11px', fontWeight: 700, color: '#0F766E', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.2em' }}>
+            How It Works
+          </p>
+          <h2 className="font-heading" style={{ fontSize: 'clamp(32px, 5vw, 44px)', fontWeight: 800, color: '#0f172a', marginBottom: '16px', letterSpacing: '-0.02em', lineHeight: 1.15 }}>
+            From doctor's pen to employer's phone — in five steps
+          </h2>
+          <p className="font-body" style={{ fontSize: '17px', color: '#64748b', lineHeight: 1.6 }}>
+            Every medical certificate flows through a cryptographic pipeline that makes it tamper-proof, patient-controlled, and instantly verifiable by anyone with a phone.
+          </p>
+        </div>
+
+        {/* 5-step flow */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '20px',
+          maxWidth: '1100px',
+          margin: '0 auto',
+          padding: '0 16px',
+        }} className="how-it-works-grid">
+          {[
+            {
+              step: '01',
+              title: 'Doctor issues',
+              desc: 'Verified doctor signs in with secure wallet, fills the MC, submits.',
+              icon: (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+              ),
+            },
+            {
+              step: '02',
+              title: 'Encrypted & hashed',
+              desc: 'AES-256-GCM encrypts the file. Only the hash goes on the blockchain.',
+              icon: (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+              ),
+            },
+            {
+              step: '03',
+              title: 'Patient controls',
+              desc: 'Patient grants or revokes access to specific doctors and employers — anytime.',
+              icon: (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+              ),
+            },
+            {
+              step: '04',
+              title: 'Employer verifies',
+              desc: 'Anyone scans the QR code. Sees the verified MC in under 5 seconds.',
+              icon: (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+              ),
+            },
+            {
+              step: '05',
+              title: 'Audit-ready',
+              desc: 'Every action logged on-chain. State agencies see anonymized, aggregated data.',
+              icon: (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+              ),
+            },
+          ].map((item, idx, arr) => (
+            <div key={item.step} style={{
+              position: 'relative',
+              background: '#FFFFFF',
+              border: '1px solid #E2E8F0',
+              borderRadius: '16px',
+              padding: '28px 22px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+              transition: 'all 0.3s ease',
+            }}>
+              {/* Step number */}
+              <div style={{
+                position: 'absolute',
+                top: '-10px',
+                left: '22px',
+                background: '#0F2A5C',
+                color: '#FFFFFF',
+                fontSize: '11px',
+                fontWeight: 700,
+                padding: '4px 10px',
+                borderRadius: '6px',
+                letterSpacing: '0.08em',
+              }}>
+                STEP {item.step}
+              </div>
+
+              {/* Icon */}
+              <div style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '10px',
+                background: 'rgba(15, 118, 110, 0.08)',
+                color: '#0F766E',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginTop: '12px',
+                marginBottom: '16px',
+              }}>
+                {item.icon}
+              </div>
+
+              {/* Title */}
+              <h3 style={{
+                fontSize: '17px',
+                fontWeight: 700,
+                color: '#0F172A',
+                marginBottom: '8px',
+                letterSpacing: '-0.01em',
+              }}>
+                {item.title}
+              </h3>
+
+              {/* Description */}
+              <p style={{
+                fontSize: '14px',
+                color: '#64748B',
+                lineHeight: 1.55,
+                margin: 0,
+              }}>
+                {item.desc}
+              </p>
+
+              {/* Arrow connector — between cards on desktop */}
+              {idx < arr.length - 1 && (
+                <div className="how-it-works-arrow" style={{
+                  position: 'absolute',
+                  right: '-14px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: '28px',
+                  height: '28px',
+                  background: '#FFFFFF',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 2,
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0F766E" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Hide arrows on mobile via media query (handled in inline style block below) */}
+        <style>{`
+          @media (max-width: 900px) {
+            .how-it-works-arrow { display: none !important; }
+          }
+        `}</style>
+
+        {/* Tech stack callout */}
+        <div style={{
+          maxWidth: '720px',
+          margin: '56px auto 0 auto',
+          padding: '20px 28px',
+          background: '#F8FAFC',
+          border: '1px solid #E2E8F0',
+          borderRadius: '12px',
+          textAlign: 'center',
+        }}>
+          <p style={{ fontSize: '11px', fontWeight: 700, color: '#0F766E', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '8px' }}>
+            Stack
+          </p>
+          <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.6, margin: 0 }}>
+            <strong style={{ color: '#0F172A' }}>AES-256-GCM</strong> client-side encryption · <strong style={{ color: '#0F172A' }}>IPFS</strong> for encrypted payloads · <strong style={{ color: '#0F172A' }}>Public smart contract</strong> for hashes & access logs · <strong style={{ color: '#0F172A' }}>MetaMask</strong> wallet signatures
+          </p>
         </div>
       </section></ScrollReveal>
 
