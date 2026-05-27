@@ -34,6 +34,8 @@ import SystemStatus from './pages/SystemStatus';
 import CouncilorView from './pages/CouncilorView';
 import DemoApp from './pages/DemoApp';
 import NotFound from './pages/NotFound';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 import { ServiceRestoredToast } from './components/ServiceNotifications';
 import { Shield, DollarSign, X, AlertTriangle, User, Stethoscope, Settings, BarChart3, Lock, CreditCard, Menu, Wallet, ChevronRight, LogOut } from 'lucide-react';
 import './App.css';
@@ -1002,7 +1004,7 @@ function AppRoutes() {
   }, []);
 
   // Public routes that don't need wallet - NO MetaMask trigger
-  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch', '/pricing', '/connect', '/demo', '/demo-app', '/ceo-dashboard', '/agreement', '/payment', '/ceo/quarterly', '/status', '/gov-preview', '/portal/gov-preview', '/admin/gov-dashboard', '/pwa/verify', '/pwa/issue', '/verify-agreement', '/sla'];
+  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch', '/pricing', '/connect', '/demo', '/demo-app', '/ceo-dashboard', '/agreement', '/payment', '/ceo/quarterly', '/status', '/gov-preview', '/portal/gov-preview', '/admin/gov-dashboard', '/pwa/verify', '/pwa/issue', '/verify-agreement', '/sla', '/privacy', '/terms'];
   const isVerificationRoute = location.pathname.startsWith('/verify/');
   // Verification routes are also public (for employers to scan QR codes)
   const isPublicRoute = publicPaths.includes(location.pathname) || isVerificationRoute;
@@ -1064,6 +1066,8 @@ function AppRoutes() {
         <Route path="/pwa/issue" element={<DoctorPortalDemo />} />
         <Route path="/verify-agreement" element={<VerifyAgreement />} />
         <Route path="/sla" element={<SLAPage />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
         {/* MC Verification route - also added here as fallback */}
         <Route path="/verify/:hash" element={<VerifyMC />} />
       </Routes>

@@ -2564,16 +2564,24 @@ export default function LandingPage() {
             </div>
 
             {/* Links */}
-            <div className="footer-links" style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+            <div className="footer-links" style={{ display: 'flex', alignItems: 'center', gap: '24px', flexWrap: 'wrap', justifyContent: 'center' }}>
               <a href="#features" style={{ fontSize: '14px', color: '#64748b', fontWeight: 500, textDecoration: 'none' }}>Features</a>
               <a href="#pricing" style={{ fontSize: '14px', color: '#64748b', fontWeight: 500, textDecoration: 'none' }}>Pricing</a>
-              <a href="#/sla" style={{ fontSize: '14px', color: '#64748b', fontWeight: 500, textDecoration: 'none' }}>SLA</a>
               <a href="#for-government" style={{ fontSize: '14px', color: '#64748b', fontWeight: 500, textDecoration: 'none' }}>For Government</a>
               <a href="mailto:randyrjm99@gmail.com" style={{ fontSize: '14px', color: '#64748b', fontWeight: 500, textDecoration: 'none' }}>Contact</a>
             </div>
 
+            {/* Legal links — separated row for govt-procurement clarity */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap', justifyContent: 'center', paddingTop: '8px', borderTop: '1px solid #F1F5F9', width: '100%', maxWidth: '600px' }}>
+              <a href="#/privacy" style={{ fontSize: '13px', color: '#94a3b8', fontWeight: 500, textDecoration: 'none' }}>Privacy Policy</a>
+              <span style={{ color: '#CBD5E1', fontSize: '12px' }}>·</span>
+              <a href="#/terms" style={{ fontSize: '13px', color: '#94a3b8', fontWeight: 500, textDecoration: 'none' }}>Terms of Service</a>
+              <span style={{ color: '#CBD5E1', fontSize: '12px' }}>·</span>
+              <a href="#/sla" style={{ fontSize: '13px', color: '#94a3b8', fontWeight: 500, textDecoration: 'none' }}>SLA</a>
+            </div>
+
             {/* Copyright */}
-            <p style={{ color: '#94a3b8', fontSize: '14px' }}>&copy; 2026 Sarawak MedChain</p>
+            <p style={{ color: '#94a3b8', fontSize: '14px' }}>&copy; 2026 Sarawak MedChain · Governed by Malaysian law</p>
           </div>
         </div>
       </footer>
