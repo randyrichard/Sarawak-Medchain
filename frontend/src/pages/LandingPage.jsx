@@ -1397,6 +1397,15 @@ export default function LandingPage() {
             }}>
               A patient-controlled, hospital-operated medical record system — with the audit visibility state agencies need for policy, fraud monitoring, and public health response.
             </p>
+            <p style={{
+              fontSize: '13px',
+              color: '#94A3B8',
+              maxWidth: '620px',
+              margin: '12px auto 0 auto',
+              fontStyle: 'italic',
+            }}>
+              Also relevant for insurance providers, claim processors, and any agency that pays out on the basis of medical certificates.
+            </p>
           </div>
 
           {/* Three-column grid: Sovereignty / Compliance / Pilot */}
@@ -1803,10 +1812,107 @@ export default function LandingPage() {
           }
         `}</style>
 
+        {/* Access Modes — built for elderly patients + guest doctors + cross-clinic */}
+        <div style={{
+          maxWidth: '1100px',
+          margin: '64px auto 0 auto',
+          padding: '0 16px',
+        }}>
+          <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+            <p style={{ fontSize: '11px', fontWeight: 700, color: '#0F766E', textTransform: 'uppercase', letterSpacing: '0.18em', marginBottom: '10px' }}>
+              Access Modes
+            </p>
+            <h3 style={{ fontSize: '22px', fontWeight: 700, color: '#0F172A', marginBottom: '6px', letterSpacing: '-0.01em' }}>
+              Two ways in — built for real Sarawak users
+            </h3>
+            <p style={{ fontSize: '14px', color: '#64748B', maxWidth: '560px', margin: '0 auto', lineHeight: 1.5 }}>
+              Wallet-based for hospital staff. Simple OTP / temporary access codes for elderly patients, guest doctors, and cross-clinic emergencies.
+            </p>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '16px',
+          }}>
+            {/* Mode 1: Wallet — live today */}
+            <div style={{
+              background: '#FFFFFF',
+              border: '1px solid #E2E8F0',
+              borderRadius: '14px',
+              padding: '22px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Wallet sign-in</h4>
+                <span style={{
+                  fontSize: '10px', fontWeight: 700, padding: '3px 8px',
+                  borderRadius: '9999px', background: 'rgba(16, 185, 129, 0.1)',
+                  color: '#047857', letterSpacing: '0.06em',
+                }}>LIVE TODAY</span>
+              </div>
+              <p style={{ fontSize: '13px', color: '#475569', lineHeight: 1.6, margin: '0 0 12px 0' }}>
+                Doctors, hospital admins, and tech-comfortable patients sign in with a MetaMask wallet. Cryptographic signatures = no passwords to steal.
+              </p>
+              <p style={{ fontSize: '12px', color: '#94A3B8', lineHeight: 1.5, margin: 0 }}>
+                Best for: hospital staff, clinic doctors, recurring users.
+              </p>
+            </div>
+
+            {/* Mode 2: OTP / temp access — roadmap */}
+            <div style={{
+              background: '#FFFFFF',
+              border: '1px solid #E2E8F0',
+              borderRadius: '14px',
+              padding: '22px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0 }}>OTP / temporary code</h4>
+                <span style={{
+                  fontSize: '10px', fontWeight: 700, padding: '3px 8px',
+                  borderRadius: '9999px', background: 'rgba(245, 158, 11, 0.12)',
+                  color: '#B45309', letterSpacing: '0.06em',
+                }}>Q3 2026 ROADMAP</span>
+              </div>
+              <p style={{ fontSize: '13px', color: '#475569', lineHeight: 1.6, margin: '0 0 12px 0' }}>
+                Patient receives a 6-digit OTP on their phone. They share it with the doctor or clinic for time-limited access (e.g. 24 hours, then auto-revokes).
+              </p>
+              <p style={{ fontSize: '12px', color: '#94A3B8', lineHeight: 1.5, margin: 0 }}>
+                Best for: elderly patients, guest doctors, emergency cross-clinic access.
+              </p>
+            </div>
+          </div>
+
+          {/* Interoperability note — addresses 'agencies already have systems' objection */}
+          <div style={{
+            marginTop: '20px',
+            padding: '14px 20px',
+            background: 'rgba(15, 118, 110, 0.04)',
+            border: '1px solid rgba(15, 118, 110, 0.15)',
+            borderRadius: '10px',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '12px',
+          }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F766E" strokeWidth="2" style={{ flexShrink: 0, marginTop: '2px' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <div>
+              <p style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A', margin: '0 0 4px 0' }}>
+                Interoperable with existing agency verification systems
+              </p>
+              <p style={{ fontSize: '12px', color: '#475569', lineHeight: 1.55, margin: 0 }}>
+                We are not another silo. Agencies that already verify MCs internally (LHDN, SOCSO, EPF, KKM) can plug into our public verification endpoint via API — one tamper-proof source of truth, no duplicate data entry, no fork in the audit trail.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Tech stack callout */}
         <div style={{
           maxWidth: '720px',
-          margin: '56px auto 0 auto',
+          margin: '40px auto 0 auto',
           padding: '20px 28px',
           background: '#F8FAFC',
           border: '1px solid #E2E8F0',
@@ -1817,7 +1923,7 @@ export default function LandingPage() {
             Stack
           </p>
           <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.6, margin: 0 }}>
-            <strong style={{ color: '#0F172A' }}>AES-256-GCM</strong> client-side encryption · <strong style={{ color: '#0F172A' }}>IPFS</strong> for encrypted payloads · <strong style={{ color: '#0F172A' }}>Public smart contract</strong> for hashes & access logs · <strong style={{ color: '#0F172A' }}>MetaMask</strong> wallet signatures
+            <strong style={{ color: '#0F172A' }}>AES-256-GCM</strong> client-side encryption · <strong style={{ color: '#0F172A' }}>IPFS</strong> for encrypted payloads · <strong style={{ color: '#0F172A' }}>Public smart contract</strong> for hashes & access logs · <strong style={{ color: '#0F172A' }}>Wallet + OTP</strong> for auth
           </p>
         </div>
       </section></ScrollReveal>
