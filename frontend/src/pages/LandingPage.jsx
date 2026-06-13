@@ -1089,7 +1089,7 @@ export default function LandingPage() {
           </div>
 
           {/* Nav Items */}
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-6">
             <a href="#features" className="hidden md:block text-[13px] text-slate-600 hover:text-slate-900 transition-colors font-medium">Features</a>
             <a href="#pricing" className="hidden md:block text-[13px] text-slate-600 hover:text-slate-900 transition-colors font-medium">Pricing</a>
             <a
@@ -1097,6 +1097,16 @@ export default function LandingPage() {
               className="hidden md:block text-[13px] text-slate-600 hover:text-slate-900 transition-colors font-medium"
             >
               For Government
+            </a>
+            <a
+              href="#/otp"
+              className="hidden md:inline-flex items-center gap-1.5 text-[13px] font-semibold transition-colors"
+              style={{ color: '#0F766E' }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = '#0D5F58'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = '#0F766E'; }}
+            >
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981', display: 'inline-block' }}></span>
+              Try OTP Demo
             </a>
             <a
               href="mailto:randyrjm99@gmail.com?subject=Sarawak%20MedChain%20-%20Briefing%20Request"
@@ -1257,6 +1267,41 @@ export default function LandingPage() {
           onMouseLeave={(e) => { e.currentTarget.style.color = '#64748b'; }}
         >
           For Sarawak Government & State Agencies <span style={{ fontSize: '16px' }}>→</span>
+        </a>
+
+        {/* OTP Demo quick link — second tertiary CTA */}
+        <a
+          href="#/otp"
+          style={{
+            marginTop: '-48px',
+            marginBottom: '64px',
+            fontSize: '14px',
+            fontWeight: 600,
+            textDecoration: 'none',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 16px',
+            borderRadius: '9999px',
+            background: 'rgba(15, 118, 110, 0.08)',
+            border: '1px solid rgba(15, 118, 110, 0.2)',
+            color: '#0F766E',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(15, 118, 110, 0.14)';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(15, 118, 110, 0.08)';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
+        >
+          <span style={{ position: 'relative', display: 'inline-flex', width: '8px', height: '8px' }}>
+            <span style={{ position: 'absolute', display: 'inline-flex', width: '100%', height: '100%', borderRadius: '9999px', background: '#10B981', opacity: 0.75 }} className="animate-ping"></span>
+            <span style={{ position: 'relative', display: 'inline-flex', width: '8px', height: '8px', borderRadius: '9999px', background: '#10B981' }}></span>
+          </span>
+          New: Try the OTP access demo <span style={{ fontSize: '16px' }}>→</span>
         </a>
 
         {/* Stats Row — animated counters */}
