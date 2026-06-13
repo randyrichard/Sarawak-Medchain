@@ -1859,29 +1859,40 @@ export default function LandingPage() {
               </p>
             </div>
 
-            {/* Mode 2: OTP / temp access — roadmap */}
-            <div style={{
-              background: '#FFFFFF',
-              border: '1px solid #E2E8F0',
-              borderRadius: '14px',
-              padding: '22px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0 }}>OTP / temporary code</h4>
-                <span style={{
-                  fontSize: '10px', fontWeight: 700, padding: '3px 8px',
-                  borderRadius: '9999px', background: 'rgba(245, 158, 11, 0.12)',
-                  color: '#B45309', letterSpacing: '0.06em',
-                }}>Q3 2026 ROADMAP</span>
+            {/* Mode 2: OTP / temp access — live demo */}
+            <a href="#/otp" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <div style={{
+                background: '#FFFFFF',
+                border: '1px solid #E2E8F0',
+                borderRadius: '14px',
+                padding: '22px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                transition: 'all 0.2s ease',
+                cursor: 'pointer',
+                height: '100%',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#0F2A5C'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(15, 42, 92, 0.08)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'; }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                  <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#0F172A', margin: 0 }}>OTP / temporary code</h4>
+                  <span style={{
+                    fontSize: '10px', fontWeight: 700, padding: '3px 8px',
+                    borderRadius: '9999px', background: 'rgba(15, 118, 110, 0.12)',
+                    color: '#047857', letterSpacing: '0.06em',
+                  }}>DEMO AVAILABLE</span>
+                </div>
+                <p style={{ fontSize: '13px', color: '#475569', lineHeight: 1.6, margin: '0 0 12px 0' }}>
+                  Patient generates a 6-digit code, shares with the doctor for time-limited access (24h auto-expire). No wallet, no app install for the doctor.
+                </p>
+                <p style={{ fontSize: '12px', color: '#94A3B8', lineHeight: 1.5, margin: '0 0 12px 0' }}>
+                  Best for: elderly patients, guest doctors, emergency cross-clinic access.
+                </p>
+                <p style={{ fontSize: '12px', color: '#0F2A5C', fontWeight: 600, margin: 0, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  Try the demo → /otp
+                </p>
               </div>
-              <p style={{ fontSize: '13px', color: '#475569', lineHeight: 1.6, margin: '0 0 12px 0' }}>
-                Patient receives a 6-digit OTP on their phone. They share it with the doctor or clinic for time-limited access (e.g. 24 hours, then auto-revokes).
-              </p>
-              <p style={{ fontSize: '12px', color: '#94A3B8', lineHeight: 1.5, margin: 0 }}>
-                Best for: elderly patients, guest doctors, emergency cross-clinic access.
-              </p>
-            </div>
+            </a>
           </div>
 
           {/* Interoperability note — addresses 'agencies already have systems' objection */}
