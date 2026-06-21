@@ -402,51 +402,11 @@ const unlockAudioContext = () => {
   }
 };
 
-// Professional "Cha-Ching" success sound using Web Audio API
-// Uses the pre-unlocked sharedAudioContext for iOS compatibility
+// Muted for the SDEC / govt audience — a cha-ching sound in a govt meeting room is cringe.
+// Signature kept so call sites still work; flip MUTED to false to re-enable for hospital-CEO demos.
+const SOUND_MUTED = true;
 const playSuccessSound = () => {
-  try {
-    // Use shared context or create new one
-    const audioContext = sharedAudioContext || new (window.AudioContext || window.webkitAudioContext)();
-
-    // Ensure context is running
-    if (audioContext.state === 'suspended') {
-      audioContext.resume();
-    }
-
-    const gainNode = audioContext.createGain();
-    gainNode.connect(audioContext.destination);
-    gainNode.gain.value = 0.7; // Loud and clear for demo
-
-    // First tone - high pitched "cha"
-    const osc1 = audioContext.createOscillator();
-    osc1.type = 'triangle'; // Richer sound than sine
-    osc1.frequency.setValueAtTime(1318, audioContext.currentTime); // E6
-    osc1.frequency.exponentialRampToValueAtTime(880, audioContext.currentTime + 0.1);
-    osc1.connect(gainNode);
-    osc1.start(audioContext.currentTime);
-    osc1.stop(audioContext.currentTime + 0.15);
-
-    // Second tone - "ching"
-    const osc2 = audioContext.createOscillator();
-    osc2.type = 'triangle';
-    osc2.frequency.setValueAtTime(1568, audioContext.currentTime + 0.12); // G6
-    osc2.connect(gainNode);
-    osc2.start(audioContext.currentTime + 0.12);
-    osc2.stop(audioContext.currentTime + 0.3);
-
-    // Third tone - triumphant resolution
-    const osc3 = audioContext.createOscillator();
-    osc3.type = 'triangle';
-    osc3.frequency.setValueAtTime(2093, audioContext.currentTime + 0.25); // C7
-    osc3.connect(gainNode);
-    osc3.start(audioContext.currentTime + 0.25);
-    osc3.stop(audioContext.currentTime + 0.5);
-
-    console.log('[AUDIO] Cha-ching played successfully!');
-  } catch (e) {
-    console.log('[AUDIO] Playback error:', e.message);
-  }
+  if (SOUND_MUTED) return;
 };
 
 // Full-screen Provisioning Overlay Component
@@ -1451,6 +1411,32 @@ export default function LandingPage() {
             }}>
               Also relevant for insurance providers, claim processors, and any agency that pays out on the basis of medical certificates.
             </p>
+
+            {/* KKM alignment callout */}
+            <div style={{
+              maxWidth: '640px',
+              margin: '28px auto 0 auto',
+              padding: '14px 20px',
+              background: '#FFFFFF',
+              border: '1px solid #E2E8F0',
+              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '12px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+            }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0F2A5C" strokeWidth="2" style={{ flexShrink: 0, marginTop: '2px' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <div style={{ textAlign: 'left' }}>
+                <p style={{ fontSize: '13px', fontWeight: 600, color: '#0F2A5C', margin: '0 0 4px 0' }}>
+                  Aligned with KKM's announced e-MC direction
+                </p>
+                <p style={{ fontSize: '12px', color: '#475569', margin: 0, lineHeight: 1.55 }}>
+                  On 21 June 2026, Minister of Health Datuk Seri Dr Dzulkefly Ahmad publicly stated KKM is studying e-MC implementation to curb misuse of sick leave certificates. MedChain is a built, working implementation of exactly this — ready for a Sarawak pilot today.
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Three-column grid: Sovereignty / Compliance / Pilot */}
@@ -1639,9 +1625,40 @@ export default function LandingPage() {
             <h2 className="font-heading problem-headline" style={{ fontSize: 'clamp(56px, 8vw, 72px)', fontWeight: 800, color: '#DC2626', marginBottom: '16px', lineHeight: 1 }}>
               RM 1.5 – 3B<sup style={{ fontSize: '0.35em', fontWeight: 600, color: '#94A3B8', marginLeft: '4px' }}>est.</sup>
             </h2>
-            <p className="font-heading problem-subhead" style={{ fontSize: 'clamp(20px, 3vw, 24px)', fontWeight: 600, color: '#f87171', marginBottom: '12px' }}>Estimated annual MC fraud impact in Malaysia</p>
-            <p style={{ fontSize: '12px', color: '#94A3B8', marginBottom: '40px', maxWidth: '540px', margin: '0 auto 40px auto', lineHeight: 1.5 }}>
-              Estimate based on Malaysia healthcare spend (~RM 60B, MOH 2023) × global healthcare-fraud range of 3–7% (NHCAA). Actual MC-specific figures are not publicly tracked.
+            <p className="font-heading problem-subhead" style={{ fontSize: 'clamp(20px, 3vw, 24px)', fontWeight: 600, color: '#f87171', marginBottom: '20px' }}>Estimated annual MC fraud impact in Malaysia</p>
+
+            {/* Recent coverage callout — Astro Awani, Minister of Health */}
+            <div style={{
+              maxWidth: '620px',
+              margin: '0 auto 24px auto',
+              padding: '14px 20px',
+              background: 'linear-gradient(135deg, rgba(15, 42, 92, 0.04) 0%, rgba(15, 118, 110, 0.04) 100%)',
+              border: '1px solid rgba(15, 42, 92, 0.15)',
+              borderRadius: '10px',
+              textAlign: 'left',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '4px',
+                  fontSize: '10px', fontWeight: 700, padding: '2px 8px',
+                  borderRadius: '4px', background: '#0F2A5C', color: '#FFFFFF',
+                  letterSpacing: '0.08em',
+                }}>
+                  <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#FBBF24' }}></span>
+                  RECENT COVERAGE
+                </span>
+                <span style={{ fontSize: '11px', color: '#64748B', fontWeight: 500 }}>Astro Awani · 21 June 2026</span>
+              </div>
+              <p style={{ fontSize: '13px', color: '#0F172A', lineHeight: 1.55, margin: 0, fontWeight: 500 }}>
+                "KKM <em>teliti pelaksanaan e-MC, kekang penyalahgunaan sijil cuti sakit</em>" — Ministry of Health is studying e-MC implementation to curb medical certificate misuse.
+              </p>
+              <p style={{ fontSize: '11px', color: '#64748B', marginTop: '6px', margin: '6px 0 0 0' }}>
+                — Datuk Seri Dr Dzulkefly Ahmad, Minister of Health Malaysia
+              </p>
+            </div>
+
+            <p style={{ fontSize: '11px', color: '#94A3B8', marginBottom: '40px', maxWidth: '540px', margin: '0 auto 40px auto', lineHeight: 1.5 }}>
+              Range estimate based on Malaysia healthcare spend (~RM 60B, MOH 2023) × global healthcare-fraud rate of 3–7% (NHCAA). MC-specific figures not publicly tracked.
             </p>
 
             {/* Description */}
