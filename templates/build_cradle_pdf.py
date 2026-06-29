@@ -40,7 +40,7 @@ MARGIN_T = 28
 MARGIN_B = 28
 CONTENT_W = PAGE_W - MARGIN_L - MARGIN_R
 
-OUTPUT = Path(__file__).parent / 'SarawakMedChain_Cradle_OnePager.pdf'
+OUTPUT = Path(__file__).parent / 'SarawakMedChain_Cradle_OnePager_v2.pdf'
 
 FONT_REG = 'Helvetica'
 FONT_BOLD = 'Helvetica-Bold'
@@ -165,7 +165,7 @@ def build_pdf():
     c.drawString(inner_x, inner_y - 30, 'Self-taught Sarawakian founder, Miri')
     after = draw_paragraph(
         c, inner_x, inner_y - 46,
-        'Built Sarawak MedChain solo over 12+ months. Just shipped a working OTP demo within 24 hours of community feedback. Plan to register Sdn Bhd post first signed contract.',
+        'Built Sarawak MedChain solo over 7 months. Just shipped a working OTP demo within 24 hours of community feedback. Plan to register Sdn Bhd post first signed contract.',
         FONT_REG, 7.5, SLATE_500, col_w - 28, leading=10
     )
 
@@ -227,7 +227,7 @@ def build_pdf():
     # ==========================================
     # CURRENT STATUS (be honest)
     # ==========================================
-    status_h = 64
+    status_h = 48
     draw_rounded_rect(c, MARGIN_L, y - status_h, CONTENT_W, status_h, r=8, fill=SLATE_50, stroke=SLATE_200)
     inner_x = MARGIN_L + 14
     inner_y = y - 14
@@ -250,11 +250,9 @@ def build_pdf():
         c.setFillColor(SLATE_900)
         c.drawString(cx, inner_y - 30, val)
 
-    # Pipeline detail
-    c.setFont(FONT_REG, 7.5)
-    c.setFillColor(SLATE_500)
-    c.drawString(inner_x, inner_y - 48,
-                 'Active: SDEC contact - Ketua Belia Miri - YB Lukanisman (former Timbalan Menteri Kesihatan) intro pending.')
+    # (Pipeline detail line removed — naming specific pending intros in a printed
+    #  document is risky if anyone follows up. The PIPELINE: 'In active conversations'
+    #  column above conveys the same signal without overcommitting.)
 
     y -= (status_h + 12)
 
