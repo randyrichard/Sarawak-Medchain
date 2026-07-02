@@ -37,7 +37,7 @@ AMBER_400 = HexColor('#F59E0B')
 AMBER_700 = HexColor('#B45309')
 WHITE = HexColor('#FFFFFF')
 
-OUTPUT = Path(__file__).parent / 'SarawakMedChain_BusinessPlan_v2.pdf'
+OUTPUT = Path(__file__).parent / 'SarawakMedChain_BusinessPlan_v3.pdf'
 
 # ============== Styles ==============
 styles = {
@@ -116,76 +116,242 @@ class PageWithFooter:
     def on_page(c, doc):
         page_num = c.getPageNumber()
 
-        # Skip on the cover page
+        # Cover page gets a completely custom design
         if page_num == 1:
+            PageWithFooter._draw_cover(c)
             return
 
         c.saveState()
 
+        # Header: thin top rule + section context
+        c.setStrokeColor(SLATE_200)
+        c.setLineWidth(0.3)
+        c.line(20 * mm, A4[1] - 12 * mm, A4[0] - 20 * mm, A4[1] - 12 * mm)
+
+        # Small brand mark top-left
+        c.setFillColor(NAVY)
+        c.roundRect(20 * mm, A4[1] - 10 * mm, 3 * mm, 3 * mm, 0.5 * mm, stroke=0, fill=1)
+        c.setFont('Helvetica-Bold', 7)
+        c.setFillColor(SLATE_500)
+        c.drawString(25 * mm, A4[1] - 9 * mm, 'SARAWAK MEDCHAIN')
+        c.setFont('Helvetica', 7)
+        c.setFillColor(SLATE_400)
+        c.drawRightString(A4[0] - 20 * mm, A4[1] - 9 * mm, 'Business Plan  ·  v1.0  ·  Confidential')
+
         # Footer: thin rule + brand + page number
         c.setStrokeColor(SLATE_200)
-        c.setLineWidth(0.4)
+        c.setLineWidth(0.3)
         c.line(20 * mm, 15 * mm, A4[0] - 20 * mm, 15 * mm)
 
-        c.setFont('Helvetica', 7.5)
+        c.setFont('Helvetica', 7)
         c.setFillColor(SLATE_500)
         c.drawString(20 * mm, 10 * mm, 'Sarawak MedChain  ·  Business Plan v1.0  ·  June 2026')
 
+        c.setFont('Helvetica-Bold', 8)
+        c.setFillColor(NAVY)
+        c.drawRightString(A4[0] - 20 * mm, 10 * mm, f'{page_num}')
+        c.setFont('Helvetica', 7)
+        c.setFillColor(SLATE_400)
+        c.drawRightString(A4[0] - 20 * mm - 6 * mm, 10 * mm, 'PAGE')
+
+        c.restoreState()
+
+    @staticmethod
+    def _draw_cover(c):
+        """Draw the entire cover page via canvas primitives.
+        Structure: top 55% navy hero, bottom 45% white content with metadata grid.
+        """
+        c.saveState()
+
+        W, H = A4  # 595, 842
+        HERO_H = 480  # navy hero band height from top
+
+        # ============ TOP: full-bleed navy hero ============
+        c.setFillColor(NAVY)
+        c.rect(0, H - HERO_H, W, HERO_H, stroke=0, fill=1)
+
+        # Subtle diagonal accent line (teal) — visual interest without noise
+        c.setStrokeColor(TEAL)
+        c.setLineWidth(2)
+        c.line(0, H - HERO_H, 200, H - HERO_H + 200)  # decorative accent
+
+        # Brand chip pill in top-left
+        chip_x, chip_y = 45, H - 60
+        c.setFillColor(HexColor('#1E3A8A'))  # slightly lighter navy for chip
+        c.roundRect(chip_x, chip_y, 180, 20, 10, stroke=0, fill=1)
+        # Chip dot
+        c.setFillColor(TEAL_LIGHT)
+        c.circle(chip_x + 12, chip_y + 10, 3, stroke=0, fill=1)
+        c.setFont('Helvetica-Bold', 8)
+        c.setFillColor(HexColor('#FFFFFF'))
+        c.drawString(chip_x + 22, chip_y + 7, 'SARAWAK  ·  MADE IN MIRI')
+
+        # Big brand mark
+        c.setFont('Helvetica-Bold', 50)
+        c.setFillColor(HexColor('#FFFFFF'))
+        c.drawString(45, H - 160, 'SARAWAK')
+        c.drawString(45, H - 205, 'MEDCHAIN')
+
+        # Accent divider
+        c.setStrokeColor(TEAL_LIGHT)
+        c.setLineWidth(3)
+        c.line(45, H - 220, 100, H - 220)
+
+        # Tagline
+        c.setFont('Helvetica', 12)
+        c.setFillColor(HexColor('#CBD5E1'))
+        c.drawString(45, H - 245, "Sarawak's Sovereign Health Record System")
+        c.setFont('Helvetica-Oblique', 10)
+        c.setFillColor(HexColor('#94A3B8'))
+        c.drawString(45, H - 262, 'Blockchain-secured  ·  Patient-controlled  ·  Audit-ready')
+
+        # Big "BUSINESS PLAN" section on hero
+        c.setFont('Helvetica-Bold', 9)
+        c.setFillColor(TEAL_LIGHT)
+        c.drawString(45, H - 315, 'BUSINESS PLAN')
+        c.setFont('Helvetica-Bold', 32)
+        c.setFillColor(HexColor('#FFFFFF'))
+        c.drawString(45, H - 355, 'Version 1.0')
+        c.setFont('Helvetica', 10)
+        c.setFillColor(HexColor('#94A3B8'))
+        c.drawString(45, H - 375, 'Prepared  ·  June 2026')
+
+        # Right side: "Prepared for" panel
+        panel_x = W - 220
+        panel_y = H - 130
+        c.setFont('Helvetica-Bold', 8)
+        c.setFillColor(TEAL_LIGHT)
+        c.drawString(panel_x, panel_y, 'PREPARED FOR')
+        c.setFont('Helvetica-Bold', 11)
+        c.setFillColor(HexColor('#FFFFFF'))
+        c.drawString(panel_x, panel_y - 18, 'Cradle Fund Sdn Bhd')
+        c.setFont('Helvetica', 9)
+        c.setFillColor(HexColor('#CBD5E1'))
+        c.drawString(panel_x, panel_y - 32, 'Sarawak Digital Economy Corp.')
+        c.drawString(panel_x, panel_y - 46, 'TEGAS · Prospective funders')
+
+        # Small confidentiality tag on hero bottom-right
+        conf_y = H - HERO_H + 20
+        c.setFillColor(HexColor('#0A1F44'))
+        c.roundRect(W - 155, conf_y - 12, 130, 18, 9, stroke=0, fill=1)
+        c.setFont('Helvetica-Bold', 7.5)
+        c.setFillColor(HexColor('#94A3B8'))
+        c.drawString(W - 145, conf_y - 8, 'CONFIDENTIAL  ·  DRAFT v1.0')
+
+        # ============ BOTTOM: metadata grid on white ============
+        # Section eyebrow
+        c.setFont('Helvetica-Bold', 8)
+        c.setFillColor(TEAL)
+        c.drawString(45, H - HERO_H - 40, 'AT A GLANCE')
+
+        # Divider
+        c.setStrokeColor(SLATE_200)
+        c.setLineWidth(0.6)
+        c.line(45, H - HERO_H - 50, W - 45, H - HERO_H - 50)
+
+        # 3-column metadata grid
+        cols = [
+            {
+                'label': 'COMPANY',
+                'primary': 'Medchain Enterprise',
+                'secondary': 'SSM-registered June 2026',
+                'tertiary': 'Trading brand: Sarawak MedChain',
+            },
+            {
+                'label': 'FOUNDER',
+                'primary': 'Randy Richard',
+                'secondary': '19, Miri, Sarawak',
+                'tertiary': 'Self-taught · Solo builder · 7 months',
+            },
+            {
+                'label': 'CONTACT',
+                'primary': 'randyrjm99@gmail.com',
+                'secondary': 'sarawak-medchain.pages.dev',
+                'tertiary': 'GitHub: randyrichard/Sarawak-Medchain',
+            },
+        ]
+        col_w = (W - 90) / 3
+        col_y = H - HERO_H - 90
+        for i, col in enumerate(cols):
+            x = 45 + i * col_w
+            c.setFont('Helvetica-Bold', 7.5)
+            c.setFillColor(TEAL)
+            c.drawString(x, col_y, col['label'])
+            c.setFont('Helvetica-Bold', 11)
+            c.setFillColor(SLATE_900)
+            c.drawString(x, col_y - 18, col['primary'])
+            c.setFont('Helvetica', 8.5)
+            c.setFillColor(SLATE_500)
+            c.drawString(x, col_y - 32, col['secondary'])
+            c.setFont('Helvetica', 8)
+            c.setFillColor(SLATE_400)
+            c.drawString(x, col_y - 44, col['tertiary'])
+
+        # The Ask callout box
+        ask_y = 190
+        c.setStrokeColor(NAVY)
+        c.setLineWidth(0.8)
+        c.setFillColor(SLATE_50)
+        c.roundRect(45, ask_y, W - 90, 90, 6, stroke=1, fill=1)
+
+        c.setFont('Helvetica-Bold', 8)
+        c.setFillColor(TEAL)
+        c.drawString(60, ask_y + 68, 'THE ASK  ·  AT A GLANCE')
+
+        c.setFont('Helvetica-Bold', 22)
+        c.setFillColor(NAVY)
+        c.drawString(60, ask_y + 40, 'RM 50,000 – RM 150,000')
+
+        c.setFont('Helvetica', 9)
+        c.setFillColor(SLATE_500)
+        c.drawString(60, ask_y + 24, 'Cradle CIP Spark / MyStartup  ·  12-month runway to first paying customers')
+
+        # Small stats on right of ask box
+        stat_x = W - 200
+        c.setFont('Helvetica-Bold', 7.5)
+        c.setFillColor(SLATE_500)
+        c.drawString(stat_x, ask_y + 68, 'TARGET BY MONTH 12')
+        c.setFont('Helvetica-Bold', 12)
+        c.setFillColor(NAVY)
+        c.drawString(stat_x, ask_y + 50, '5 clinics + 2 hospitals')
+        c.setFont('Helvetica', 9)
+        c.setFillColor(TEAL)
+        c.drawString(stat_x, ask_y + 34, 'RM 42,500 MRR  ·  RM 510k ARR')
+
+        # Bottom footer bar
+        c.setFillColor(SLATE_50)
+        c.rect(0, 0, W, 40, stroke=0, fill=1)
+        c.setStrokeColor(SLATE_200)
+        c.setLineWidth(0.4)
+        c.line(0, 40, W, 40)
+
+        # Footer content
         c.setFont('Helvetica-Bold', 7.5)
         c.setFillColor(NAVY)
-        c.drawRightString(A4[0] - 20 * mm, 10 * mm, f'Page {page_num}')
+        c.drawString(45, 22, 'SARAWAK MEDCHAIN  ·  Business Plan v1.0')
+        c.setFont('Helvetica', 7.5)
+        c.setFillColor(SLATE_500)
+        c.drawString(45, 12, 'Prepared June 2026  ·  Confidential  ·  Not for redistribution without founder consent')
 
-        # Small brand tick top-right (except cover)
-        c.setFillColor(NAVY)
-        c.roundRect(A4[0] - 24 * mm, A4[1] - 15 * mm, 4 * mm, 4 * mm, 0.8 * mm, stroke=0, fill=1)
+        c.setFont('Helvetica-Bold', 7.5)
+        c.setFillColor(TEAL)
+        c.drawRightString(W - 45, 22, 'sarawak-medchain.pages.dev')
+        c.setFont('Helvetica', 7)
+        c.setFillColor(SLATE_400)
+        c.drawRightString(W - 45, 12, 'Built in Sarawak  ·  For Sarawak')
 
         c.restoreState()
 
 
 # ============== Content builders ==============
 def cover_page():
-    """First page — cover, no header/footer."""
+    """First page — cover is drawn entirely by PageWithFooter._draw_cover().
+    We just need a Spacer + PageBreak to reserve the page and move past it.
+    """
     story = []
-
-    # Top spacer
-    story.append(Spacer(1, 40 * mm))
-
-    # Big brand mark (drawn as text since Platypus can't easily do custom shapes)
-    story.append(Paragraph('<font color="#0F766E" size="10"><b>SARAWAK · MADE IN MIRI</b></font>', styles['cover_label']))
-    story.append(Spacer(1, 4 * mm))
-    story.append(Paragraph('SARAWAK<br/>MEDCHAIN', styles['cover_brand']))
-    story.append(Paragraph(
-        'Sarawak\'s Sovereign Health Record System.<br/>'
-        'Blockchain-secured. Patient-controlled. Audit-ready.',
-        styles['cover_tagline']
-    ))
-
-    story.append(HRFlowable(width='40%', thickness=1, color=NAVY, spaceBefore=6, spaceAfter=20))
-
-    # Document type
-    story.append(Paragraph('BUSINESS PLAN', styles['cover_label']))
-    story.append(Paragraph('<font size="24" color="#0F172A"><b>Version 1.0</b></font>', styles['cover_meta']))
-    story.append(Paragraph('<font color="#64748B">Prepared June 2026</font>', styles['cover_meta']))
-
-    story.append(Spacer(1, 30 * mm))
-
-    # Company block
-    story.append(Paragraph('COMPANY', styles['cover_label']))
-    story.append(Paragraph('<b>Medchain Enterprise</b>  <font color="#94A3B8">(SSM-registered June 2026)</font>', styles['cover_meta']))
-    story.append(Paragraph('<font color="#64748B">Trading brand: Sarawak MedChain</font>', styles['cover_meta']))
-
-    story.append(Spacer(1, 10 * mm))
-
-    story.append(Paragraph('FOUNDER', styles['cover_label']))
-    story.append(Paragraph('<b>Randy Richard</b>', styles['cover_meta']))
-    story.append(Paragraph('<font color="#64748B">19, Miri, Sarawak, Malaysia</font>', styles['cover_meta']))
-
-    story.append(Spacer(1, 10 * mm))
-
-    story.append(Paragraph('CONTACT', styles['cover_label']))
-    story.append(Paragraph('randyrjm99@gmail.com', styles['cover_meta']))
-    story.append(Paragraph('<font color="#0F766E">sarawak-medchain.pages.dev</font>', styles['cover_meta']))
-
+    # Push flowable content off the visible area so the drawn cover shows alone.
+    # Frame height ~710pt; use 700 to stay within limits then force page break.
+    story.append(Spacer(1, 700))
     story.append(PageBreak())
     return story
 
