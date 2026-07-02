@@ -28,7 +28,7 @@ Malaysia loses an estimated **RM 1.5 – 3 billion** annually to medical certifi
 - **Easily forged** — paper templates freely available online
 - **Impossible to verify at the point of use** — employers cannot check authenticity
 - **No audit trail** — no way to track issuance, access, or misuse
-- **Fragmented across agencies** — LHDN, SOCSO, EPF, KKM each maintain separate verification (or none)
+- **No central registry** — no way to confirm whether a specific MC was actually issued at the named facility, by the named doctor, on the claimed date
 
 *Estimate methodology: Malaysia healthcare spend (~RM 60B, MOH 2023) × global healthcare fraud range of 3–7% (NHCAA — National Health Care Anti-Fraud Association). MC-specific data not publicly tracked.*
 
@@ -105,20 +105,30 @@ This is a Tier-1 public signal that Malaysia is actively moving toward e-MC. The
 2. **Per-MC issuance credits** — pre-paid credits for high-volume issuers
 3. **Enterprise / government tier** — custom pricing for state agencies and large hospital groups
 
-### Indicative pricing (published on site)
+### Pricing (base subscription + per-MC usage)
 
-| Tier | Target | Monthly | Included |
+| Tier | Target facility | Base / month | Per MC |
 |---|---|---|---|
-| **Clinic** | Klinik swasta | RM 199 | 500 MCs / month |
-| **Hospital** | Private + govt hospitals | RM 999 | 5,000 MCs / month |
-| **Government** | State agencies | Custom | Unlimited + oversight dashboard |
+| **Clinic** | Klinik swasta, GP | RM 2,000 | RM 1 |
+| **Hospital** | Private + govt hospitals | RM 10,000+ | RM 1 |
+| **Government** | State agencies (SDEC / KKM) | Custom (from RM 10,000) | Custom |
 
 ### Unit economics (12-month projection)
 
-- Target: 5 paying clinics @ RM 199/month + 2 hospitals @ RM 999/month = **RM 2,993 MRR** by month 12
-- Annualised: **RM 35,916 ARR**
-- Cost to serve: ~30% (backend hosting, IPFS pinning, support)
-- Gross margin: ~70%
+Target by month 12: 5 paying clinics + 2 hospitals.
+
+| Revenue line | Monthly |
+|---|---|
+| 5 clinics × RM 2,000 base subscription | RM 10,000 |
+| 2 hospitals × RM 10,000 base subscription | RM 20,000 |
+| 5 clinics × ~500 MCs/mo × RM 1 (usage) | RM 2,500 |
+| 2 hospitals × ~5,000 MCs/mo × RM 1 (usage) | RM 10,000 |
+| **Total Monthly Recurring Revenue (MRR)** | **RM 42,500** |
+| **Annualised Recurring Revenue (ARR)** | **RM 510,000** |
+
+- Cost to serve: ~15–20% (backend hosting, IPFS pinning, support)
+- Gross margin: ~80%
+- Model scales cleanly — most costs are already sunk in the platform
 
 ### Free pilot as customer-acquisition strategy
 

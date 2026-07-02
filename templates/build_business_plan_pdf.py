@@ -37,7 +37,7 @@ AMBER_400 = HexColor('#F59E0B')
 AMBER_700 = HexColor('#B45309')
 WHITE = HexColor('#FFFFFF')
 
-OUTPUT = Path(__file__).parent / 'SarawakMedChain_BusinessPlan_v1.pdf'
+OUTPUT = Path(__file__).parent / 'SarawakMedChain_BusinessPlan_v2.pdf'
 
 # ============== Styles ==============
 styles = {
@@ -308,7 +308,7 @@ def section_problem():
         '<b>Easily forged</b> - paper templates freely available online',
         '<b>Impossible to verify at the point of use</b> - employers cannot check authenticity',
         '<b>No audit trail</b> - no way to track issuance, access, or misuse',
-        '<b>Fragmented across agencies</b> - LHDN, SOCSO, EPF, KKM each maintain separate verification (or none)',
+        '<b>No central registry</b> - no way to confirm whether a specific MC was actually issued at the named facility, by the named doctor, on the claimed date',
     ]
     for b in bullets:
         story.append(Paragraph(f'&#8226; &nbsp; {b}', styles['body']))
@@ -477,17 +477,17 @@ def section_bizmodel():
     for t, b in streams:
         story.append(Paragraph(f'&#8226; <b>{t}</b> - {b}', styles['body']))
 
-    story.append(Paragraph('Indicative pricing (published on site)', styles['h2']))
+    story.append(Paragraph('Pricing (base subscription + per-MC usage)', styles['h2']))
     pricing_data = [
         [Paragraph('<b>Tier</b>', styles['body']),
-         Paragraph('<b>Target</b>', styles['body']),
-         Paragraph('<b>Monthly</b>', styles['body']),
-         Paragraph('<b>Included</b>', styles['body'])],
-        ['Clinic', 'Klinik swasta', 'RM 199', '500 MCs / month'],
-        ['Hospital', 'Private + govt hospitals', 'RM 999', '5,000 MCs / month'],
-        ['Government', 'State agencies', 'Custom', 'Unlimited + oversight dashboard'],
+         Paragraph('<b>Target facility</b>', styles['body']),
+         Paragraph('<b>Base / month</b>', styles['body']),
+         Paragraph('<b>Per MC</b>', styles['body'])],
+        ['Clinic', 'Klinik swasta, GP', 'RM 2,000', 'RM 1'],
+        ['Hospital', 'Private + govt hospitals', 'RM 10,000+', 'RM 1'],
+        ['Government', 'State agencies (SDEC / KKM)', 'Custom (from RM 10,000)', 'Custom'],
     ]
-    pricing_tbl = Table(pricing_data, colWidths=[32 * mm, 55 * mm, 30 * mm, 53 * mm])
+    pricing_tbl = Table(pricing_data, colWidths=[28 * mm, 58 * mm, 42 * mm, 42 * mm])
     pricing_tbl.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), NAVY),
         ('TEXTCOLOR', (0, 0), (-1, 0), WHITE),
@@ -506,9 +506,41 @@ def section_bizmodel():
 
     story.append(Paragraph('Unit economics (12-month projection)', styles['h2']))
     story.append(Paragraph(
-        '<b>Target:</b> 5 paying clinics at RM 199/month + 2 hospitals at RM 999/month = <b>RM 2,993 MRR</b> by month 12. '
-        '<br/><b>Annualised:</b> RM 35,916 ARR. <br/><b>Cost to serve:</b> ~30% (backend hosting, IPFS pinning, support). '
-        '<br/><b>Gross margin:</b> ~70%.',
+        '<b>Target by month 12:</b> 5 paying clinics + 2 hospitals.',
+        styles['body']
+    ))
+    ue_data = [
+        [Paragraph('<b>Revenue line</b>', styles['body']),
+         Paragraph('<b>Monthly</b>', styles['body'])],
+        ['5 clinics x RM 2,000 base subscription', 'RM 10,000'],
+        ['2 hospitals x RM 10,000 base subscription', 'RM 20,000'],
+        ['5 clinics x ~500 MCs/mo x RM 1 (usage)', 'RM 2,500'],
+        ['2 hospitals x ~5,000 MCs/mo x RM 1 (usage)', 'RM 10,000'],
+        [Paragraph('<b>Total Monthly Recurring Revenue (MRR)</b>', styles['body']),
+         Paragraph('<b>RM 42,500</b>', styles['body'])],
+        [Paragraph('<b>Annualised Recurring Revenue (ARR)</b>', styles['body']),
+         Paragraph('<b>RM 510,000</b>', styles['body'])],
+    ]
+    ue_tbl = Table(ue_data, colWidths=[120 * mm, 50 * mm])
+    ue_tbl.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), NAVY),
+        ('TEXTCOLOR', (0, 0), (-1, 0), WHITE),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BACKGROUND', (0, -2), (-1, -2), SLATE_50),
+        ('BACKGROUND', (0, -1), (-1, -1), AMBER_50),
+        ('BOX', (0, 0), (-1, -1), 0.4, SLATE_200),
+        ('INNERGRID', (0, 0), (-1, -1), 0.4, SLATE_200),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LEFTPADDING', (0, 0), (-1, -1), 8),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    story.append(ue_tbl)
+    story.append(Spacer(1, 2 * mm))
+    story.append(Paragraph(
+        '<b>Cost to serve:</b> ~15-20% (backend hosting, IPFS pinning, support). '
+        '<b>Gross margin:</b> ~80%. Model scales cleanly - most costs are already sunk in the platform.',
         styles['body']
     ))
 
@@ -699,7 +731,7 @@ def section_risk():
         ('Security incident',
          'Client-side encryption + no server-side master key means a breach cannot decrypt records. Regular security review post-Series A.'),
         ('Adoption resistance from hospital IT',
-         'Interoperability positioning: MedChain plugs INTO existing systems (LHDN, SOCSO, EPF, KKM verification) via API, not another silo.'),
+         'Interoperability by design. Public verification API means agencies can plug into our source of truth for their existing MC checks - one tamper-proof endpoint, no duplicate data entry, no fork in the audit trail.'),
     ]
     risk_data = [[Paragraph('<b>Risk</b>', styles['body']),
                   Paragraph('<b>Mitigation</b>', styles['body'])]]
