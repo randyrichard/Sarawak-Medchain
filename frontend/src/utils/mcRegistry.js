@@ -83,6 +83,12 @@ export async function verifyMCOnChain(mcHash) {
   };
 }
 
+// RPCs that allow eth_getLogs (publicnode blocks event queries with 403)
+const SEPOLIA_LOG_RPC_URLS = [
+  'https://sepolia.drpc.org',
+  'https://sepolia.gateway.tenderly.co',
+];
+
 /**
  * Look up the on-chain transaction that anchored this MC (via the indexed
  * MCIssued event). Returns null if the event can't be found — verification
@@ -90,22 +96,26 @@ export async function verifyMCOnChain(mcHash) {
  * @returns {Object|null} { txHash, blockNumber }
  */
 export async function getMCIssuanceTx(mcHash) {
-  try {
-    const provider = getReadOnlyProvider();
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, ContractABI.abi, provider);
+  const rpcUrls = isProduction() ? SEPOLIA_LOG_RPC_URLS : ['http://127.0.0.1:8545'];
 
-    const filter = contract.filters.MCIssued(mcHash);
-    const events = await contract.queryFilter(filter, DEPLOY_BLOCK || 0, 'latest');
+  for (const url of rpcUrls) {
+    try {
+      const provider = new ethers.JsonRpcProvider(url);
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, ContractABI.abi, provider);
 
-    if (events.length === 0) return null;
-    return {
-      txHash: events[0].transactionHash,
-      blockNumber: events[0].blockNumber,
-    };
-  } catch (err) {
-    console.warn('MCIssued event lookup failed (non-fatal):', err.message);
-    return null;
+      const filter = contract.filters.MCIssued(mcHash);
+      const events = await contract.queryFilter(filter, DEPLOY_BLOCK || 0, 'latest');
+
+      if (events.length === 0) return null; // query worked, MC has no event
+      return {
+        txHash: events[0].transactionHash,
+        blockNumber: events[0].blockNumber,
+      };
+    } catch (err) {
+      console.warn(`MCIssued event lookup failed on ${url} (non-fatal):`, err.message);
+    }
   }
+  return null;
 }
 
 /**

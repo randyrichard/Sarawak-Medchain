@@ -87,8 +87,15 @@ VITE_SUPABASE_ANON_KEY=...           # from step 1
 
 ## 4. Publish
 
-Commit and push to GitHub — Cloudflare Pages rebuilds `sarawak-medchain.pages.dev`
-automatically. (Or build locally with `cd frontend && npm run build` and upload `dist/`.)
+The Cloudflare Pages project is **direct-upload** (NOT connected to GitHub — pushing
+does not deploy anything). Publish with:
+
+```
+cd frontend && npm run build
+npx wrangler pages deploy dist --project-name sarawak-medchain
+```
+
+(If wrangler says "Not logged in", run `npx wrangler login` first.)
 
 ## 5. Issue a real MC (the demo-day flow)
 
