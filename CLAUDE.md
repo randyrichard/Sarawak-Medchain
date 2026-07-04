@@ -12,9 +12,11 @@ Sarawak MedChain is a patient-controlled medical records MVP using blockchain fo
 ```bash
 npm install                  # Install root dependencies
 npx hardhat compile          # Compile Solidity contracts
-npx hardhat test             # Run all 31 smart contract tests
+npx hardhat test             # Run all 56 smart contract tests
 npx hardhat node             # Start local blockchain (chainId 1337)
-node scripts/deploy.cjs      # Deploy contract and verify test doctors
+npx hardhat run scripts/deploy.cjs --network localhost   # Deploy contract and verify test doctors
+# NOTE: plain `node scripts/deploy.cjs` deploys to an ephemeral in-process chain and is lost on exit
+npx hardhat run scripts/deploy-sepolia.cjs --network sepolia  # Deploy to Sepolia (needs DEPLOYER_PRIVATE_KEY in .env)
 ```
 
 ### Backend (backend/)
@@ -63,6 +65,19 @@ Backend (Express)  ──────────────▶  IPFS (encrypte
 - `grantAccess(doctorAddress)` / `revokeAccess(doctorAddress)` - Patient only
 - `readRecords(patientAddress)` - Requires patient permission or self
 - `getMyRecords()` - Patient's own records
+- `issueMC(bytes32 mcHash)` - Verified doctor anchors an MC's canonical keccak256 fingerprint on-chain
+- `verifyMC(bytes32 mcHash)` - Public view; returns (exists, doctor, timestamp, doctorVerified)
+
+## MC Fraud Prevention Flow
+
+`frontend/src/utils/mcRegistry.js` holds `computeMCHash()` — the canonical keccak256
+over MC fields (order/format must never change once MCs circulate). Doctor Portal
+anchors the hash on-chain at issuance (real mode) and stores details in Supabase keyed
+by the hash; demo mode stores with `block_number = 0` and no anchor. `/verify/<hash>`
+(VerifyMC.jsx) recomputes the hash from stored data, compares with the URL hash, and
+checks the chain read-only (no wallet): green VERIFIED (anchored + intact), amber DEMO
+RECORD (unanchored), red SECURITY ALERT (anchored but data mismatch = tampering).
+See `docs/GO_LIVE_SEPOLIA.md` for Sepolia deployment steps.
 
 ## Environment Configuration
 

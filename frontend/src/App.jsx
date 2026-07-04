@@ -38,6 +38,8 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import OTPDemo from './pages/OTPDemo';
 import { ServiceRestoredToast } from './components/ServiceNotifications';
+import AccessRestricted from './components/AccessRestricted';
+import { resolveRole, canAccess, ROLE_HOME } from './utils/roles';
 import { Shield, DollarSign, X, AlertTriangle, User, Stethoscope, Settings, BarChart3, Lock, CreditCard, Menu, Wallet, ChevronRight, LogOut } from 'lucide-react';
 import './App.css';
 
@@ -484,10 +486,40 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   // Debug removed for production demo
 
+  // Resolve the signed-in wallet's role. Demo mode uses the chosen demo role;
+  // real mode reads it from the blockchain (admin / verified doctor / patient).
+  const [role, setRole] = useState(() =>
+    isDemo ? (localStorage.getItem('medchain_demo_role') || 'doctor') : null
+  );
+
+  useEffect(() => {
+    if (isDemo) {
+      setRole(localStorage.getItem('medchain_demo_role') || 'doctor');
+      return;
+    }
+    let cancelled = false;
+    setRole(null);
+    resolveRole(walletAddress).then(r => {
+      if (!cancelled) setRole(r);
+    });
+    return () => { cancelled = true; };
+  }, [walletAddress, isDemo]);
+
   // Close mobile menu when route changes
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
+
+  if (!role) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F8FAFC' }}>
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-400">Checking your access level...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`flex flex-col h-screen w-full overflow-hidden ${isDemo ? 'demo-mode' : ''}`} style={{ backgroundColor: '#F8FAFC' }}>
@@ -561,6 +593,7 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
         {/* Navigation Links */}
         <nav className="flex-1 p-4">
           <ul className="space-y-1">
+            {canAccess(role, '/patient') && (
             <li>
               <Link
                 to="/patient"
@@ -575,6 +608,8 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
                 <span className={`${currentPath === '/patient' ? 'text-teal-700 font-semibold' : 'text-slate-600 group-hover:text-slate-900'}`}>Patient Portal</span>
               </Link>
             </li>
+            )}
+            {canAccess(role, '/doctor') && (
             <li>
               <Link
                 to="/doctor"
@@ -589,6 +624,8 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
                 <span className={`${currentPath === '/doctor' ? 'text-teal-700 font-semibold' : 'text-slate-600 group-hover:text-slate-900'}`}>Doctor Portal</span>
               </Link>
             </li>
+            )}
+            {canAccess(role, '/admin') && (
             <li>
               <Link
                 to="/admin"
@@ -603,6 +640,8 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
                 <span className={`${currentPath === '/admin' ? 'text-teal-700 font-semibold' : 'text-slate-600 group-hover:text-slate-900'}`}>Admin Portal</span>
               </Link>
             </li>
+            )}
+            {canAccess(role, '/ceo-dashboard') && (
             <li>
               <Link
                 to="/ceo-dashboard"
@@ -617,6 +656,7 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
                 <span className={`${currentPath === '/ceo-dashboard' ? 'text-teal-700 font-semibold' : 'text-slate-600 group-hover:text-slate-900'}`}>CEO Dashboard</span>
               </Link>
             </li>
+            )}
             {/* Founder Dashboard - Only shows for founder wallet AND not in demo mode */}
             {!isDemo && walletAddress?.toLowerCase() === '0x70997970c51812dc3a010c7d01b50e0d17dc79c8' && (
               <li>
@@ -669,12 +709,32 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
         <StickyBalanceHeader walletAddress={walletAddress} />
 
         <Routes>
-          <Route path="/patient" element={<PatientPortal walletAddress={walletAddress} />} />
-          <Route path="/doctor" element={<DoctorPortal walletAddress={walletAddress} />} />
-          <Route path="/admin" element={<AdminPortal walletAddress={walletAddress} />} />
-          <Route path="/ceo" element={<CEODashboard walletAddress={walletAddress} />} />
-          <Route path="/ceo-dashboard" element={<HospitalCEODashboard />} />
-          <Route path="*" element={<Navigate to="/patient" replace />} />
+          <Route path="/patient" element={
+            canAccess(role, '/patient')
+              ? <PatientPortal walletAddress={walletAddress} />
+              : <AccessRestricted role={role} requiredLabel="patients" walletAddress={walletAddress} />
+          } />
+          <Route path="/doctor" element={
+            canAccess(role, '/doctor')
+              ? <DoctorPortal walletAddress={walletAddress} />
+              : <AccessRestricted role={role} requiredLabel="verified doctors" walletAddress={walletAddress} />
+          } />
+          <Route path="/admin" element={
+            canAccess(role, '/admin')
+              ? <AdminPortal walletAddress={walletAddress} />
+              : <AccessRestricted role={role} requiredLabel="administrators" walletAddress={walletAddress} />
+          } />
+          <Route path="/ceo" element={
+            canAccess(role, '/ceo')
+              ? <CEODashboard walletAddress={walletAddress} />
+              : <AccessRestricted role={role} requiredLabel="the platform administrator" walletAddress={walletAddress} />
+          } />
+          <Route path="/ceo-dashboard" element={
+            canAccess(role, '/ceo-dashboard')
+              ? <HospitalCEODashboard />
+              : <AccessRestricted role={role} requiredLabel="the platform administrator" walletAddress={walletAddress} />
+          } />
+          <Route path="*" element={<Navigate to={ROLE_HOME[role] || '/patient'} replace />} />
         </Routes>
       </main>
       </div>
@@ -965,8 +1025,11 @@ function AppRoutes() {
 
       const { address } = await connectWallet();
       setWalletAddress(address);
-      const from = location.state?.from || '/patient';
-      navigate(from, { replace: true });
+      // Land the user on their own portal (admin/doctor/patient), or the page
+      // they originally asked for if their role is allowed to open it
+      const role = await resolveRole(address);
+      const from = location.state?.from;
+      navigate(from && canAccess(role, from) ? from : (ROLE_HOME[role] || '/patient'), { replace: true });
     } catch (err) {
       console.error('[App] Wallet connection error:', err);
       setError(err.message);
@@ -1005,7 +1068,7 @@ function AppRoutes() {
   }, []);
 
   // Public routes that don't need wallet - NO MetaMask trigger
-  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch', '/pricing', '/connect', '/demo', '/demo-app', '/ceo-dashboard', '/agreement', '/payment', '/ceo/quarterly', '/status', '/gov-preview', '/portal/gov-preview', '/admin/gov-dashboard', '/pwa/verify', '/pwa/issue', '/verify-agreement', '/sla', '/privacy', '/terms', '/otp'];
+  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch', '/pricing', '/connect', '/demo', '/demo-app', '/agreement', '/payment', '/ceo/quarterly', '/status', '/gov-preview', '/portal/gov-preview', '/admin/gov-dashboard', '/pwa/verify', '/pwa/issue', '/verify-agreement', '/sla', '/privacy', '/terms', '/otp'];
   const isVerificationRoute = location.pathname.startsWith('/verify/');
   // Verification routes are also public (for employers to scan QR codes)
   const isPublicRoute = publicPaths.includes(location.pathname) || isVerificationRoute;
@@ -1050,12 +1113,11 @@ function AppRoutes() {
         <Route path="/pricing" element={<Navigate to="/pitch#pricing" replace />} />
         <Route path="/connect" element={
           walletAddress
-            ? <Navigate to="/patient" replace />
+            ? <Navigate to="/mvp" replace /> // no /mvp route exists: ProtectedApp's catch-all sends the user to their role's portal
             : <ConnectWallet onConnect={handleConnectWallet} loading={loading} error={error} />
         } />
         <Route path="/demo" element={<DoctorPortalDemo />} />
         <Route path="/demo-app" element={<DemoApp />} />
-        <Route path="/ceo-dashboard" element={<HospitalCEODashboard />} />
         <Route path="/agreement" element={<ServiceAgreement />} />
         <Route path="/payment" element={<FPXPayment />} />
         <Route path="/ceo/quarterly" element={<CEOQuarterlySummary />} />

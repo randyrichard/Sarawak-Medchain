@@ -35,6 +35,11 @@ contract SarawakMedMVP {
         address doctorAddress;
     }
 
+    struct MCIssuance {
+        address doctor;
+        uint256 timestamp;
+    }
+
     // ========== MAPPINGS ==========
 
     // Track verified doctors
@@ -51,6 +56,9 @@ contract SarawakMedMVP {
 
     // Hospital node status: hospital address => paused status
     mapping(address => bool) public pausedHospitals;
+
+    // Medical Certificate registry: keccak256 hash of MC data => issuance details
+    mapping(bytes32 => MCIssuance) public issuedMCs;
 
     // ========== EVENTS ==========
 
@@ -89,6 +97,11 @@ contract SarawakMedMVP {
     );
     event HospitalPaused(address indexed hospitalAddress, uint256 timestamp);
     event HospitalUnpaused(address indexed hospitalAddress, uint256 timestamp);
+    event MCIssued(
+        bytes32 indexed mcHash,
+        address indexed doctorAddress,
+        uint256 timestamp
+    );
 
     // ========== MODIFIERS ==========
 
@@ -249,6 +262,52 @@ contract SarawakMedMVP {
             msg.sender,
             _ipfsHash,
             block.timestamp
+        );
+    }
+
+    /**
+     * @notice Anchor a Medical Certificate on-chain by its data hash
+     * @dev The hash is keccak256 over the canonical MC fields, computed client-side.
+     *      Anyone can later verify the MC without a wallet via verifyMC().
+     * @param _mcHash keccak256 hash of the MC data
+     */
+    function issueMC(bytes32 _mcHash) external onlyVerifiedDoctor {
+        require(_mcHash != bytes32(0), "Invalid MC hash");
+        require(issuedMCs[_mcHash].timestamp == 0, "MC already issued");
+        require(!pausedHospitals[msg.sender], "Hospital node is paused. Contact administrator.");
+
+        issuedMCs[_mcHash] = MCIssuance({
+            doctor: msg.sender,
+            timestamp: block.timestamp
+        });
+
+        // Bill the doctor/hospital for issuing this MC
+        if (address(billingContract) != address(0)) {
+            billingContract.issueDigitalMC(msg.sender);
+        }
+
+        emit MCIssued(_mcHash, msg.sender, block.timestamp);
+    }
+
+    /**
+     * @notice Verify a Medical Certificate by its data hash (public, no wallet needed)
+     * @param _mcHash keccak256 hash of the MC data
+     * @return exists Whether this MC was anchored on-chain
+     * @return doctor Address of the issuing doctor
+     * @return timestamp Block timestamp when the MC was issued
+     * @return doctorVerified Whether the issuing doctor is currently verified
+     */
+    function verifyMC(bytes32 _mcHash)
+        external
+        view
+        returns (bool exists, address doctor, uint256 timestamp, bool doctorVerified)
+    {
+        MCIssuance memory mc = issuedMCs[_mcHash];
+        return (
+            mc.timestamp != 0,
+            mc.doctor,
+            mc.timestamp,
+            verifiedDoctors[mc.doctor]
         );
     }
 

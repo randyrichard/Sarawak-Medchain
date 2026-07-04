@@ -6,6 +6,11 @@ import BillingABI from '../BillingHistory.json';
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '0x5FbDB2315678afecb367f032d93F642f64180aa3';
 const BILLING_CONTRACT_ADDRESS = import.meta.env.VITE_BILLING_CONTRACT_ADDRESS || '0x9A676e781A523b5d0C0e43731313A708CB607508';
 
+// Sepolia testnet constants
+const SEPOLIA_CHAIN_ID = 11155111;
+const SEPOLIA_CHAIN_ID_HEX = '0xaa36a7';
+const SEPOLIA_RPC_URL = import.meta.env.VITE_SEPOLIA_RPC_URL || 'https://ethereum-sepolia-rpc.publicnode.com';
+
 /**
  * Validate Ethereum address format
  */
@@ -46,48 +51,69 @@ export async function connectWallet() {
 
     provider = new ethers.BrowserProvider(window.ethereum);
 
-    // Check network - should be localhost:8545 (chainId 31337 or 1337)
+    // Check network
     const network = await provider.getNetwork();
     const chainId = Number(network.chainId);
     console.log('Connected to network:', chainId);
 
-    // Check if we're on production (not localhost)
     const isProduction = !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1');
 
-    // Accept both Hardhat default chainIds
-    if (chainId !== 31337 && chainId !== 1337) {
+    // Accept Sepolia (production) and Hardhat (local dev)
+    const isValidNetwork = chainId === SEPOLIA_CHAIN_ID || chainId === 31337 || chainId === 1337;
+
+    if (!isValidNetwork) {
       if (isProduction) {
-        throw new Error('Live blockchain not available on demo site. Please use "Try Demo" button on the landing page to explore the app.');
-      }
-      // Auto-switch to Hardhat network — try both common chainIds
-      const hardhatChainIds = ['0x539', '0x7A69']; // 1337, 31337
-      let switched = false;
-      for (const hcId of hardhatChainIds) {
+        // Auto-switch to Sepolia on production
         try {
           await window.ethereum.request({
             method: 'wallet_switchEthereumChain',
-            params: [{ chainId: hcId }],
+            params: [{ chainId: SEPOLIA_CHAIN_ID_HEX }],
           });
-          switched = true;
-          break;
         } catch (e) {
-          // Try next chainId if this one isn't found (4902)
-          if (e.code !== 4902) {
-            throw new Error(`Please switch MetaMask to Localhost 8545 (Hardhat). Current chainId: ${chainId}`);
+          if (e.code === 4902) {
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: SEPOLIA_CHAIN_ID_HEX,
+                chainName: 'Sepolia Testnet',
+                nativeCurrency: { name: 'SepoliaETH', symbol: 'ETH', decimals: 18 },
+                rpcUrls: [SEPOLIA_RPC_URL],
+                blockExplorerUrls: ['https://sepolia.etherscan.io'],
+              }],
+            });
+          } else {
+            throw new Error('Please switch MetaMask to Sepolia testnet to use this app.');
           }
         }
-      }
-      if (!switched) {
-        // Neither exists — add with 0x539 (1337) which Hardhat commonly uses
-        await window.ethereum.request({
-          method: 'wallet_addEthereumChain',
-          params: [{
-            chainId: '0x539',
-            chainName: 'Hardhat Localhost',
-            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-            rpcUrls: ['http://127.0.0.1:8545'],
-          }],
-        });
+      } else {
+        // Local dev — auto-switch to Hardhat
+        const hardhatChainIds = ['0x539', '0x7A69']; // 1337, 31337
+        let switched = false;
+        for (const hcId of hardhatChainIds) {
+          try {
+            await window.ethereum.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: hcId }],
+            });
+            switched = true;
+            break;
+          } catch (e) {
+            if (e.code !== 4902) {
+              throw new Error(`Please switch MetaMask to Localhost 8545 (Hardhat). Current chainId: ${chainId}`);
+            }
+          }
+        }
+        if (!switched) {
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: '0x539',
+              chainName: 'Hardhat Localhost',
+              nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+              rpcUrls: ['http://127.0.0.1:8545'],
+            }],
+          });
+        }
       }
       // Re-initialize provider after network switch
       provider = new ethers.BrowserProvider(window.ethereum);
@@ -105,7 +131,10 @@ export async function connectWallet() {
       await contract.admin();
     } catch (err) {
       console.error('Contract initialization error:', err);
-      throw new Error('Contracts not found. Please run: npx hardhat node && node scripts/deploy.cjs');
+      const isProduction2 = !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1');
+      throw new Error(isProduction2
+        ? 'Contracts not found on Sepolia. Please verify the contract addresses in .env.production.'
+        : 'Contracts not found. Please run: npx hardhat node && node scripts/deploy.cjs');
     }
 
     console.log('Connected to wallet:', address);
@@ -422,8 +451,9 @@ export async function getTotalRecordStats() {
   if (!readProvider && window.ethereum) {
     readProvider = new ethers.BrowserProvider(window.ethereum);
   } else if (!readProvider) {
-    // Fallback to local Hardhat node for development
-    readProvider = new ethers.JsonRpcProvider('http://127.0.0.1:8545');
+    // Fallback: use Sepolia on production, local Hardhat for dev
+    const isProductionFallback = !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1');
+    readProvider = new ethers.JsonRpcProvider(isProductionFallback ? SEPOLIA_RPC_URL : 'http://127.0.0.1:8545');
   }
 
   const readContract = new ethers.Contract(CONTRACT_ADDRESS, ContractABI.abi, readProvider);

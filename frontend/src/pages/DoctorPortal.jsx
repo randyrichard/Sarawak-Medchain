@@ -11,6 +11,7 @@ import BroadcastNotification from '../components/BroadcastNotification';
 import MaintenanceBanner from '../components/MaintenanceBanner';
 import FoundingPartnerBadge from '../components/FoundingPartnerBadge';
 import { supabase } from '../utils/supabase';
+import { computeMCHash, issueMCOnChain } from '../utils/mcRegistry';
 
 export default function DoctorPortal({ walletAddress }) {
   // Navigation hook - must be at top before any conditionals
@@ -254,25 +255,6 @@ export default function DoctorPortal({ walletAddress }) {
     setMessage('');
 
     try {
-      // Simulate blockchain transaction
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Generate mock transaction hash
-      const mockTxHash = '0x' + Array.from({ length: 64 }, () =>
-        '0123456789abcdef'[Math.floor(Math.random() * 16)]
-      ).join('');
-
-      // Prepare all data first before any state updates
-      const newEntry = {
-        id: Date.now(),
-        time: 'Just now',
-        patientName: mcFormData.patientName,
-        diagnosis: mcFormData.diagnosis,
-        duration: parseInt(mcFormData.duration),
-        txHash: mockTxHash.slice(0, 6) + '...' + mockTxHash.slice(-4),
-        status: 'confirming'
-      };
-
       // Gather all real MC data
       const doctorName = isDemoMode ? DEMO_DOCTOR_INFO.name : (pendingAdmin.doctorName || 'Doctor');
       const mmcNumber = isDemoMode ? DEMO_DOCTOR_INFO.mmcNumber : (pendingAdmin.mmcNumber || 'MMC-00000');
@@ -285,30 +267,63 @@ export default function DoctorPortal({ walletAddress }) {
       endDateObj.setDate(endDateObj.getDate() + duration - 1);
       const endDate = endDateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
-      // Build MC data object
-      const mcDataToStore = {
-        patientName: mcFormData.patientName,
+      // Canonical fingerprint of this MC — anchored on-chain, recomputed at verification
+      const mcFields = {
+        mcId,
         patientIC: mcFormData.patientIC,
+        patientName: mcFormData.patientName,
         diagnosis: mcFormData.diagnosis,
-        duration: duration,
-        doctorName: doctorName,
-        mmcNumber: mmcNumber,
+        duration,
+        doctorName,
+        mmcNumber,
         hospital: hospitalName,
         dateIssued: issueDate,
-        startDate: startDate,
-        endDate: endDate,
-        mcId: mcId,
-        txHash: mockTxHash,
-        blockNumber: Math.floor(Math.random() * 1000000) + 8000000,
+        startDate,
+        endDate,
+      };
+      const mcHash = computeMCHash(mcFields);
+
+      let txHash = null;
+      let blockNumber = 0; // 0 = not anchored on-chain (demo mode)
+
+      if (isDemoMode) {
+        // Demo mode: simulate the transaction delay, no chain interaction
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } else {
+        // Real mode: anchor the MC hash on-chain (MetaMask signs, doctor must be verified)
+        const chainResult = await issueMCOnChain(mcHash);
+        txHash = chainResult.txHash;
+        blockNumber = chainResult.blockNumber;
+      }
+
+      // Prepare all data first before any state updates
+      const newEntry = {
+        id: Date.now(),
+        time: 'Just now',
+        patientName: mcFormData.patientName,
+        diagnosis: mcFormData.diagnosis,
+        duration: duration,
+        txHash: (txHash || mcHash).slice(0, 6) + '...' + (txHash || mcHash).slice(-4),
+        status: 'confirming'
+      };
+
+      // Build MC data object
+      const mcDataToStore = {
+        ...mcFields,
+        patientIC: mcFormData.patientIC,
+        txHash: txHash,
+        mcHash: mcHash,
+        blockNumber: blockNumber,
         timestamp: now.toISOString(),
       };
 
       // PRIMARY: Persist to Supabase for cross-device verification
+      // Keyed by the MC's canonical hash so verifiers can recompute and compare
       if (supabase) {
         const { error: insertError } = await supabase
           .from('medical_certificates')
           .insert({
-            id: mockTxHash,
+            id: mcHash,
             mc_id: mcId,
             patient_name: mcFormData.patientName,
             ic_number: mcFormData.patientIC,
@@ -320,34 +335,35 @@ export default function DoctorPortal({ walletAddress }) {
             date_issued: issueDate,
             start_date: startDate,
             end_date: endDate,
-            block_number: mcDataToStore.blockNumber,
+            block_number: blockNumber,
           });
         if (insertError) {
           console.warn('Supabase insert error:', insertError.message);
           // FALLBACK: Only use localStorage if Supabase fails
-          localStorage.setItem(`mc_${mockTxHash}`, JSON.stringify(mcDataToStore));
+          localStorage.setItem(`mc_${mcHash}`, JSON.stringify(mcDataToStore));
         }
       } else {
         // No Supabase configured — fallback to localStorage
-        localStorage.setItem(`mc_${mockTxHash}`, JSON.stringify(mcDataToStore));
+        localStorage.setItem(`mc_${mcHash}`, JSON.stringify(mcDataToStore));
       }
 
       const appUrl = import.meta.env.VITE_APP_URL || 'https://sarawak-medchain.pages.dev';
       const receiptInfo = {
-        txHash: mockTxHash,
+        txHash: txHash || mcHash,
+        mcHash: mcHash,
         patientName: mcFormData.patientName,
         patientIC: mcFormData.patientIC,
         diagnosis: mcFormData.diagnosis,
         duration: duration,
         hospital: hospitalName,
         issueDate: issueDate,
-        verificationUrl: `${appUrl}/#/verify/${mockTxHash}`,
+        verificationUrl: `${appUrl}/#/verify/${mcHash}`,
       };
 
       // Update all states at once - React 18 batches these automatically
       setIsMinting(false);
       setReceiptData(receiptInfo);
-      setTransactionHash(mockTxHash);
+      setTransactionHash(txHash || mcHash);
       setLiveFeed(prev => [newEntry, ...prev.slice(0, 9)]);
       setMessage('✓ Medical Certificate secured on blockchain!');
 
@@ -371,7 +387,15 @@ export default function DoctorPortal({ walletAddress }) {
       }, 3000);
 
     } catch (error) {
-      setMessage(`Error: ${error.message}`);
+      let friendly = error.message;
+      if (error.code === 'ACTION_REJECTED' || error.code === 4001) {
+        friendly = 'Transaction was rejected in MetaMask.';
+      } else if (error.reason) {
+        friendly = error.reason; // Solidity revert reason, e.g. "Only verified doctors..."
+      } else if (error.message?.includes('Contract not initialized')) {
+        friendly = 'Wallet not connected. Please reconnect your wallet, or switch to Demo Mode.';
+      }
+      setMessage(`Error: ${friendly}`);
       setIsMinting(false);
     }
   };
@@ -443,7 +467,7 @@ export default function DoctorPortal({ walletAddress }) {
 
   // Download QR code as image
   const downloadQRCode = () => {
-    if (!qrRef.current || !mcSuccess) return;
+    if (!qrRef.current || !receiptData) return;
 
     const svg = qrRef.current.querySelector('svg');
     if (!svg) return;
@@ -461,9 +485,11 @@ export default function DoctorPortal({ walletAddress }) {
       ctx.drawImage(img, 0, 0);
 
       const link = document.createElement('a');
-      link.download = `MC-${mcSuccess.ipfsHash.slice(0, 8)}-QR.png`;
+      link.download = `MC-QR-${(receiptData.txHash || '').slice(0, 10)}.png`;
       link.href = canvas.toDataURL('image/png');
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
     };
 
     img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));

@@ -9,6 +9,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Shield, Lock, FileCheck, ChevronLeft, Play } from 'lucide-react';
 import { useDemo } from '../context/DemoContext';
+import { canAccess, ROLE_HOME } from '../utils/roles';
 
 const MEDCHAIN_BLUE = '#0066CC';
 
@@ -269,11 +270,11 @@ export default function ConnectWallet({ onConnect, loading, error }) {
   // Check if MetaMask is installed
   const isMetaMaskInstalled = typeof window !== 'undefined' && Boolean(window.ethereum);
 
-  // Demo mode bypass — enter demo and go to intended portal
+  // Demo mode bypass — enter demo and go to that role's own portal
   const handleEnterDemoMode = (role = 'doctor') => {
     enterDemoMode(role);
-    const from = location.state?.from || '/doctor';
-    navigate(from, { replace: true });
+    const from = location.state?.from;
+    navigate(from && canAccess(role, from) ? from : (ROLE_HOME[role] || '/doctor'), { replace: true });
   };
 
   // Check if we're on production (not localhost)
@@ -692,8 +693,8 @@ export default function ConnectWallet({ onConnect, loading, error }) {
               </div>
             </div>
 
-            {/* MetaMask Not Installed Warning - Only on localhost */}
-            {!isProduction && !isMetaMaskInstalled && (
+            {/* MetaMask Not Installed Warning */}
+            {!isMetaMaskInstalled && (
               <div className="p-4 rounded-xl mb-6 text-sm" style={{ background: '#FFFBEB', border: '1px solid #FDE68A', color: '#B45309' }}>
                 <p className="font-semibold mb-2">MetaMask Required</p>
                 <p style={{ color: '#64748B' }}>
@@ -711,8 +712,8 @@ export default function ConnectWallet({ onConnect, loading, error }) {
               </div>
             )}
 
-            {/* Demo Mode Entry — available on production or when MetaMask not installed */}
-            {(isProduction || !isMetaMaskInstalled) && (
+            {/* Demo Mode Entry — always available as fallback */}
+            {(
               <div className="p-6 rounded-xl mb-6" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', color: '#166534' }}>
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(22, 163, 74, 0.1)' }}>
@@ -759,55 +760,51 @@ export default function ConnectWallet({ onConnect, loading, error }) {
               </div>
             )}
 
-            {/* Connect Button - Hidden on production */}
-            {!isProduction && (
-              <button
-                onClick={handleSecureConnect}
-                disabled={isLoading || !isMetaMaskInstalled}
-                className={`w-full py-4 text-white font-bold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-3 ${
-                  !isMetaMaskInstalled
-                    ? 'cursor-not-allowed'
-                    : ''
-                }`}
-                style={{
-                  background: !isMetaMaskInstalled
-                    ? 'linear-gradient(135deg, #94A3B8, #64748B)'
-                    : 'linear-gradient(135deg, #0F766E, #14B8A6)',
-                  boxShadow: !isMetaMaskInstalled
-                    ? 'none'
-                    : '0 8px 24px rgba(15, 118, 110, 0.3)',
-                }}
-              >
-                {isLoading ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    Connecting to MetaMask...
-                  </>
-                ) : !isMetaMaskInstalled ? (
-                  <>
-                    <span>MetaMask Not Installed</span>
-                  </>
-                ) : (
-                  <>
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" className="w-6 h-6" />
-                    Connect MetaMask Wallet
-                  </>
-                )}
-              </button>
-            )}
+            {/* Connect Button */}
+            <button
+              onClick={handleSecureConnect}
+              disabled={isLoading || !isMetaMaskInstalled}
+              className={`w-full py-4 text-white font-bold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-3 ${
+                !isMetaMaskInstalled
+                  ? 'cursor-not-allowed'
+                  : ''
+              }`}
+              style={{
+                background: !isMetaMaskInstalled
+                  ? 'linear-gradient(135deg, #94A3B8, #64748B)'
+                  : 'linear-gradient(135deg, #0F766E, #14B8A6)',
+                boxShadow: !isMetaMaskInstalled
+                  ? 'none'
+                  : '0 8px 24px rgba(15, 118, 110, 0.3)',
+              }}
+            >
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Connecting to MetaMask...
+                </>
+              ) : !isMetaMaskInstalled ? (
+                <>
+                  <span>MetaMask Not Installed</span>
+                </>
+              ) : (
+                <>
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" className="w-6 h-6" />
+                  Connect MetaMask Wallet
+                </>
+              )}
+            </button>
 
-            {/* Info Text - Only show on localhost */}
-            {!isProduction && (
-              <p className="text-xs text-center mt-4" style={{ color: '#94A3B8' }}>
-                Don't have MetaMask?{' '}
-                <a href="https://metamask.io/download/" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: '#0F766E' }}>
-                  Download here
-                </a>
-              </p>
-            )}
+            {/* Info Text */}
+            <p className="text-xs text-center mt-4" style={{ color: '#94A3B8' }}>
+              Don't have MetaMask?{' '}
+              <a href="https://metamask.io/download/" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: '#0F766E' }}>
+                Download here
+              </a>
+            </p>
           </div>
 
           {/* Features */}

@@ -308,6 +308,66 @@ describe("SarawakMedMVP", function () {
     });
   });
 
+  describe("MC Issuance (Fraud Prevention Registry)", function () {
+    const mcHash = ethers.keccak256(ethers.toUtf8Bytes("MC-2026-0001|123456121234|Randy Richard|Viral Fever|2"));
+
+    beforeEach(async function () {
+      await sarawakMed.connect(admin).addVerifiedDoctor(doctor1.address);
+    });
+
+    it("Should allow verified doctor to issue an MC", async function () {
+      await expect(sarawakMed.connect(doctor1).issueMC(mcHash))
+        .to.emit(sarawakMed, "MCIssued");
+
+      const [exists, doctor, timestamp, doctorVerified] = await sarawakMed.verifyMC(mcHash);
+      expect(exists).to.be.true;
+      expect(doctor).to.equal(doctor1.address);
+      expect(timestamp).to.be.greaterThan(0);
+      expect(doctorVerified).to.be.true;
+    });
+
+    it("Should not allow unverified doctor to issue an MC", async function () {
+      await expect(
+        sarawakMed.connect(unauthorizedUser).issueMC(mcHash)
+      ).to.be.revertedWith("Only verified doctors can call this function");
+    });
+
+    it("Should not allow issuing the same MC hash twice", async function () {
+      await sarawakMed.connect(doctor1).issueMC(mcHash);
+      await expect(
+        sarawakMed.connect(doctor1).issueMC(mcHash)
+      ).to.be.revertedWith("MC already issued");
+    });
+
+    it("Should not allow issuing a zero hash", async function () {
+      await expect(
+        sarawakMed.connect(doctor1).issueMC(ethers.ZeroHash)
+      ).to.be.revertedWith("Invalid MC hash");
+    });
+
+    it("Should not allow paused hospital to issue an MC", async function () {
+      await sarawakMed.connect(admin).pauseHospital(doctor1.address);
+      await expect(
+        sarawakMed.connect(doctor1).issueMC(mcHash)
+      ).to.be.revertedWith("Hospital node is paused. Contact administrator.");
+    });
+
+    it("Should return exists=false for unknown MC hash", async function () {
+      const [exists, doctor] = await sarawakMed.verifyMC(mcHash);
+      expect(exists).to.be.false;
+      expect(doctor).to.equal(ethers.ZeroAddress);
+    });
+
+    it("Should report doctorVerified=false after issuing doctor is removed", async function () {
+      await sarawakMed.connect(doctor1).issueMC(mcHash);
+      await sarawakMed.connect(admin).removeVerifiedDoctor(doctor1.address);
+
+      const [exists, , , doctorVerified] = await sarawakMed.verifyMC(mcHash);
+      expect(exists).to.be.true;
+      expect(doctorVerified).to.be.false;
+    });
+  });
+
   // Helper function to get current block timestamp
   async function getBlockTimestamp() {
     const blockNumber = await ethers.provider.getBlockNumber();

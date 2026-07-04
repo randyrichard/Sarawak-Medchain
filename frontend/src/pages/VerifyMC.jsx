@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
+import { computeMCHash, verifyMCOnChain, getMCIssuanceTx, getExplorerTxUrl } from '../utils/mcRegistry';
 
 export default function VerifyMC() {
   const { hash } = useParams();
@@ -38,11 +39,10 @@ export default function VerifyMC() {
       try {
         setLoading(true);
         setError(null);
-        await new Promise(resolve => setTimeout(resolve, 1500));
 
         let data = null;
 
-        // PRIMARY: Fetch from Supabase (works cross-device)
+        // STEP 1: Fetch the MC details (Supabase primary, localStorage fallback)
         if (supabase) {
           const result = await supabase
             .from('medical_certificates')
@@ -69,7 +69,6 @@ export default function VerifyMC() {
           }
         }
 
-        // FALLBACK: localStorage (same-device only)
         if (!data) {
           const stored = localStorage.getItem(`mc_${hash}`);
           if (stored) {
@@ -87,7 +86,57 @@ export default function VerifyMC() {
           return;
         }
 
-        // Build display object from REAL data — zero hardcoded values
+        // STEP 2: Integrity check — recompute the canonical hash from the
+        // stored data and compare with the hash in the QR code. If anyone
+        // altered the record (name, dates, duration...), this fails.
+        const recomputedHash = computeMCHash({
+          mcId: data.mcId,
+          patientIC: data.patientIC,
+          patientName: data.patientName,
+          diagnosis: data.diagnosis,
+          duration: data.duration,
+          doctorName: data.doctorName,
+          mmcNumber: data.mmcNumber,
+          hospital: data.hospital,
+          dateIssued: data.dateIssued,
+          startDate: data.startDate,
+          endDate: data.endDate,
+        });
+        const integrityOk = recomputedHash.toLowerCase() === hash.toLowerCase();
+
+        // STEP 3: Blockchain check — does this exact hash exist on-chain,
+        // and was it issued by a verified doctor? (Read-only, no wallet.)
+        let chain = null;
+        let chainTx = null;
+        let chainUnavailable = false;
+        try {
+          chain = await verifyMCOnChain(hash);
+          if (chain.exists) {
+            chainTx = await getMCIssuanceTx(hash);
+          }
+        } catch (chainErr) {
+          console.warn('Blockchain check unavailable:', chainErr.message);
+          chainUnavailable = true;
+        }
+
+        // STEP 4: Decide the verification level
+        let level; // 'chain' | 'database' | 'tampered' | 'chain-unavailable'
+        if (chain?.exists && integrityOk) {
+          level = 'chain';
+        } else if (chain?.exists && !integrityOk) {
+          level = 'tampered';
+        } else if (chainUnavailable) {
+          level = 'chain-unavailable';
+        } else {
+          level = 'database';
+        }
+
+        if (level === 'tampered') {
+          setError('SECURITY ALERT: This certificate exists on the blockchain, but the record details do NOT match the original. The data may have been tampered with. Do not accept this MC.');
+          setLoading(false);
+          return;
+        }
+
         setMcData({
           mcId: data.mcId,
           patientName: maskName(data.patientName),
@@ -101,7 +150,14 @@ export default function VerifyMC() {
           endDate: data.endDate,
           diagnosis: data.diagnosis,
           blockchainHash: hash,
-          blockNumber: data.blockNumber,
+          blockNumber: chainTx?.blockNumber ?? data.blockNumber ?? 0,
+          txHash: chainTx?.txHash || null,
+          explorerUrl: chainTx?.txHash ? getExplorerTxUrl(chainTx.txHash) : null,
+          issuingDoctorAddress: chain?.exists ? chain.doctor : null,
+          issuingDoctorVerified: chain?.exists ? chain.doctorVerified : null,
+          chainTimestamp: chain?.exists ? chain.timestamp : null,
+          integrityOk,
+          verificationLevel: level,
           verifiedAt: new Date().toLocaleString('en-GB', {
             year: 'numeric',
             month: 'short',
@@ -385,6 +441,18 @@ export default function VerifyMC() {
     );
   }
 
+  const isChainVerified = mcData.verificationLevel === 'chain';
+  const statusColor = isChainVerified ? '#0d9488' : '#d97706';
+  const statusBg = isChainVerified ? '#ccfbf1' : '#fef3c7';
+  const statusLabel = isChainVerified
+    ? 'VERIFIED'
+    : mcData.verificationLevel === 'chain-unavailable' ? 'RECORD FOUND' : 'DEMO RECORD';
+  const statusSubtext = isChainVerified
+    ? 'This Medical Certificate is authentic — anchored on the blockchain'
+    : mcData.verificationLevel === 'chain-unavailable'
+      ? 'Record found, but the blockchain network is temporarily unreachable. Try again to complete verification.'
+      : 'This record exists in the registry database but is not anchored on the blockchain (demo certificate).';
+
   return (
     <div style={styles.container}>
       <style>{mobileResetStyles}</style>
@@ -409,23 +477,31 @@ export default function VerifyMC() {
         <div style={styles.statusCard}>
           {/* Stacked layout: checkmark -> badge -> subtitle */}
           <div style={styles.verificationStack}>
-            {/* Large checkmark circle */}
-            <div style={styles.checkmarkCircle}>
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#0d9488" strokeWidth="3">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
+            {/* Large status circle */}
+            <div style={{ ...styles.checkmarkCircle, backgroundColor: statusBg, border: `4px solid ${statusColor}` }}>
+              {isChainVerified ? (
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={statusColor} strokeWidth="3">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={statusColor} strokeWidth="3">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01" />
+                </svg>
+              )}
             </div>
 
-            {/* VERIFIED Badge */}
-            <div style={styles.verifiedBadge}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3" style={{marginRight: '8px'}}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-              <span style={styles.verifiedText}>VERIFIED</span>
+            {/* Status Badge */}
+            <div style={{ ...styles.verifiedBadge, backgroundColor: statusColor }}>
+              {isChainVerified && (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="3" style={{marginRight: '8px'}}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+              <span style={styles.verifiedText}>{statusLabel}</span>
             </div>
 
             {/* Subtitle */}
-            <p style={styles.verifiedSubtext}>This Medical Certificate is authentic</p>
+            <p style={styles.verifiedSubtext}>{statusSubtext}</p>
           </div>
         </div>
 
@@ -465,13 +541,56 @@ export default function VerifyMC() {
 
           <div style={styles.blockchainInfo}>
             <div style={styles.hashContainer}>
-              <span style={styles.hashLabel}>Transaction Hash</span>
+              <span style={styles.hashLabel}>MC Fingerprint (keccak256)</span>
               <code style={styles.hashValue}>{mcData.blockchainHash}</code>
             </div>
-            <div style={styles.blockInfo}>
-              <span style={styles.blockLabel}>Block #</span>
-              <span style={styles.blockValue}>{mcData.blockNumber.toLocaleString()}</span>
-            </div>
+            {mcData.txHash && (
+              <div style={styles.hashContainer}>
+                <span style={styles.hashLabel}>Transaction Hash</span>
+                <code style={styles.hashValue}>{mcData.txHash}</code>
+                {mcData.explorerUrl && (
+                  <a
+                    href={mcData.explorerUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: '12px', color: '#0d9488', fontWeight: 600, display: 'inline-block', marginTop: '6px' }}
+                  >
+                    View on Etherscan ↗
+                  </a>
+                )}
+              </div>
+            )}
+            {mcData.issuingDoctorAddress && (
+              <div style={styles.hashContainer}>
+                <span style={styles.hashLabel}>
+                  Issuing Doctor Wallet {mcData.issuingDoctorVerified ? '(Verified by Registry)' : '(NO LONGER VERIFIED)'}
+                </span>
+                <code style={styles.hashValue}>{mcData.issuingDoctorAddress}</code>
+              </div>
+            )}
+            {Number(mcData.blockNumber) > 0 && (
+              <div style={styles.blockInfo}>
+                <span style={styles.blockLabel}>Block #</span>
+                <span style={styles.blockValue}>{Number(mcData.blockNumber).toLocaleString()}</span>
+              </div>
+            )}
+            {mcData.chainTimestamp && (
+              <div style={styles.blockInfo}>
+                <span style={styles.blockLabel}>Anchored on-chain at</span>
+                <span style={styles.blockValue}>
+                  {new Date(mcData.chainTimestamp * 1000).toLocaleString('en-GB', {
+                    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                  })}
+                </span>
+              </div>
+            )}
+            {!isChainVerified && (
+              <div style={{ ...styles.blockInfo, marginTop: '8px' }}>
+                <span style={{ ...styles.blockLabel, color: '#d97706' }}>
+                  No blockchain anchor found for this record
+                </span>
+              </div>
+            )}
             <div style={styles.timestampInfo}>
               <span style={styles.timestampLabel}>Verified at</span>
               <span style={styles.timestampValue}>{mcData.verifiedAt}</span>
