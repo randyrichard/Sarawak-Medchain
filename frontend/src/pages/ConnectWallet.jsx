@@ -247,12 +247,24 @@ function SecurityVerifiedAnimation({ onComplete }) {
   );
 }
 
-// Helper to get initial pending admin data
+// Helper to get initial pending admin data.
+// Only treat it as a real pending application if it actually has the core
+// fields — otherwise stale/empty data would hijack the connect screen with a
+// broken "Welcome, / Invalid Date" card and hide the demo buttons.
 function getInitialPendingAdmin() {
   try {
     const storedData = localStorage.getItem('medchain_pending_admin');
-    return storedData ? JSON.parse(storedData) : null;
+    if (!storedData) return null;
+    const parsed = JSON.parse(storedData);
+    const hasName = parsed && typeof parsed.facilityName === 'string' && parsed.facilityName.trim().length > 0;
+    if (!hasName) {
+      // Corrupt / incomplete onboarding state — clear it and fall through to normal login
+      localStorage.removeItem('medchain_pending_admin');
+      return null;
+    }
+    return parsed;
   } catch {
+    localStorage.removeItem('medchain_pending_admin');
     return null;
   }
 }
