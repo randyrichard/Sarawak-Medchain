@@ -672,7 +672,7 @@ export default function DoctorPortal({ walletAddress }) {
   };
 
   return (
-    <div className="min-h-screen font-sans doctor-portal" style={{ backgroundColor: '#F1F5F9', overflowX: 'hidden', fontFamily: "'Plus Jakarta Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
+    <div className="min-h-screen font-sans doctor-portal" style={{ backgroundColor: '#F1F5F9', flexShrink: 0, fontFamily: "'Plus Jakarta Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
       {/* Receipt Modal - ALWAYS in DOM, smooth fade transitions */}
       <div
         className="fixed inset-0 z-50 flex items-center justify-center p-4 transition-opacity duration-200"
@@ -1488,7 +1488,9 @@ export default function DoctorPortal({ walletAddress }) {
         /* ============ MOBILE RESPONSIVE STYLES ============ */
         @media (max-width: 1023px) {
           .doctor-portal {
-            overflow-x: hidden !important;
+            /* max-width (not overflow-x:hidden) avoids forcing overflow-y to auto,
+               which would trap scrolling inside the portal */
+            max-width: 100% !important;
           }
 
           /* Utility Bar - Mobile */

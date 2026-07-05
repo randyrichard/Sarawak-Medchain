@@ -217,7 +217,8 @@ export default function PatientPortal({ walletAddress }) {
       flexDirection: 'column',
       alignItems: 'center',
       width: '100%',
-      overflowX: 'hidden',
+      maxWidth: '100%',
+      flexShrink: 0,
       fontFamily: "'Plus Jakarta Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
     }}>
       {/* Premium Header */}
@@ -650,7 +651,9 @@ export default function PatientPortal({ walletAddress }) {
         /* ============ MOBILE RESPONSIVE STYLES ============ */
         @media (max-width: 768px) {
           .patient-portal {
-            overflow-x: hidden !important;
+            /* max-width (not overflow-x:hidden) avoids forcing overflow-y to auto,
+               which would trap page scrolling inside the portal */
+            max-width: 100% !important;
           }
 
           /* Stack cards vertically */
