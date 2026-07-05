@@ -69,6 +69,24 @@ live on a public blockchain. We're ready to run a pilot with a first clinic."
 
 ---
 
+## Handling the tough question: "Can't someone just fake the QR code?"
+This will come up — it's the sharpest question about the system, and the honest
+answer builds credibility:
+
+> "Good question. The blockchain makes the certificate's *data* impossible to
+> alter secretly. The QR is a pointer to that record — so the two real risks are
+> someone copying a genuine QR onto a forged paper, or pointing a QR at a fake
+> look-alike site. We handle both: when you verify, the screen shows the *real*
+> details straight from the blockchain — name, IC, dates, days — and prompts you
+> to confirm they match both the certificate and the person in front of you. A
+> copied or altered MC shows details that won't match, so it's caught. And the
+> page reminds verifiers to trust only our official address, so a fake site
+> doesn't fool anyone. Verification is a two-second check by a human comparing
+> what's on screen to who's in front of them — that's the point."
+
+You can demo this live: on the green VERIFIED screen, point out the amber
+"confirm these match the person" callout and the highlighted name/IC.
+
 ## Fallback / troubleshooting
 - **QR won't scan?** Open the link printed under each QR card directly in a browser.
 - **Verify page says "network unreachable"?** The public blockchain RPC was briefly
