@@ -674,187 +674,220 @@ export default function ConnectWallet({ onConnect, loading, error }) {
   ];
 
   return (
-    <div className="cw-split" style={{ background: '#FFFFFF' }}>
+    <div className="cw-root">
       <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        /* Own class so the global ".min-h-screen { display:flex }" rule can't hijack the grid */
-        .cw-split { display: grid; grid-template-columns: 1fr; min-height: 100vh; width: 100%; }
-        @media (min-width: 1024px) { .cw-split { grid-template-columns: 1fr 1fr; } }
-        /* Prevent grid tracks from being forced wider than the viewport by max-w-md content */
-        .cw-split > * { min-width: 0; }
-        .role-card { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
-        .role-card:hover { transform: translateY(-3px); }
-        .cw-primary-btn { transition: transform .18s ease, box-shadow .18s ease, filter .18s ease; }
-        .cw-primary-btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.05); }
+        @keyframes cwspin { to { transform: rotate(360deg); } }
+        @keyframes cwfade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+        .cw-root { display: grid; grid-template-columns: 1fr; min-height: 100vh; width: 100%; max-width: 100%; overflow-x: hidden; background: #F1F5F9; font-family: 'Plus Jakarta Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; }
+        .cw-root * { box-sizing: border-box; }
+        /* Let grid tracks shrink below content width so nothing forces horizontal scroll */
+        .cw-root > * { min-width: 0; }
+        .cw-body { min-width: 0; }
+        @media (min-width: 1024px) { .cw-root { grid-template-columns: 1.05fr 1fr; } }
+
+        /* ---------- LEFT HERO ---------- */
+        .cw-hero { display: none; }
+        @media (min-width: 1024px) {
+          .cw-hero {
+            position: relative; display: flex; flex-direction: column; justify-content: space-between;
+            padding: 56px; overflow: hidden;
+            background:
+              radial-gradient(1200px 500px at 15% -10%, rgba(45,212,191,0.18), transparent 60%),
+              radial-gradient(900px 600px at 110% 110%, rgba(20,184,166,0.22), transparent 55%),
+              linear-gradient(160deg, #0A3A36 0%, #0E5F58 60%, #0F766E 100%);
+          }
+        }
+        .cw-hero-grid { position: absolute; inset: 0; opacity: 0.5;
+          background-image: linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+          background-size: 44px 44px; }
+        .cw-hero > * { position: relative; z-index: 1; }
+        .cw-brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; }
+        .cw-brand-badge { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+          background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.22); }
+        .cw-brand-name { color: #fff; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+        .cw-eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 999px;
+          background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); margin-bottom: 28px; }
+        .cw-eyebrow span { color: #CCFBF1; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; }
+        .cw-dot { width: 8px; height: 8px; border-radius: 999px; background: #5EEAD4; box-shadow: 0 0 0 0 rgba(94,234,212,0.7); animation: cwpulse 2s infinite; }
+        @keyframes cwpulse { 0% { box-shadow: 0 0 0 0 rgba(94,234,212,0.6);} 70% { box-shadow: 0 0 0 8px rgba(94,234,212,0);} 100% { box-shadow: 0 0 0 0 rgba(94,234,212,0);} }
+        .cw-h1 { color: #fff; font-size: 44px; line-height: 1.08; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 18px; max-width: 15ch; }
+        .cw-h1 em { color: #5EEAD4; font-style: normal; }
+        .cw-lead { color: rgba(226,255,251,0.82); font-size: 17px; line-height: 1.6; margin: 0; max-width: 46ch; }
+        .cw-values { margin-top: 36px; display: flex; flex-direction: column; gap: 18px; }
+        .cw-value { display: flex; align-items: flex-start; gap: 14px; }
+        .cw-value-ic { width: 42px; height: 42px; border-radius: 11px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+          background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.16); }
+        .cw-value-t { color: #fff; font-weight: 700; font-size: 15px; margin: 0; }
+        .cw-value-b { color: rgba(204,251,241,0.72); font-size: 13.5px; margin: 2px 0 0; }
+        .cw-stats { display: flex; gap: 40px; padding-top: 28px; border-top: 1px solid rgba(255,255,255,0.14); }
+        .cw-stat-n { color: #fff; font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.02em; }
+        .cw-stat-l { color: rgba(204,251,241,0.66); font-size: 12px; margin: 2px 0 0; }
+
+        /* ---------- RIGHT PANEL ---------- */
+        .cw-panel { display: flex; flex-direction: column; min-height: 100vh; background: #FFFFFF; }
+        .cw-topbar { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-bottom: 1px solid #E2E8F0; }
+        @media (min-width: 1024px) { .cw-topbar { border-bottom: none; padding: 28px 40px; justify-content: flex-end; } }
+        .cw-topbar-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+        @media (min-width: 1024px) { .cw-topbar-brand { display: none; } }
+        .cw-topbar-badge { width: 36px; height: 36px; border-radius: 10px; background: #0F766E; display: flex; align-items: center; justify-content: center; }
+        .cw-back { display: inline-flex; align-items: center; gap: 4px; color: #64748B; font-size: 14px; text-decoration: none; font-weight: 500; }
+        .cw-back:hover { color: #0F766E; }
+
+        .cw-body { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 32px 24px 40px; }
+        @media (min-width: 640px) { .cw-body { padding: 40px; } }
+        @media (min-width: 1280px) { .cw-body { padding: 40px 72px; } }
+        .cw-card { width: 100%; max-width: 430px; margin: 0 auto; animation: cwfade 0.5s ease both; }
+
+        .cw-title { color: #0F172A; font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 6px; }
+        .cw-sub { color: #64748B; font-size: 15px; line-height: 1.5; margin: 0 0 28px; }
+        .cw-section-label { color: #94A3B8; font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; margin: 0 0 12px; }
+
+        .cw-roles { display: flex; flex-direction: column; gap: 12px; margin-bottom: 26px; }
+        .cw-role { display: flex; align-items: center; gap: 16px; width: 100%; text-align: left; cursor: pointer;
+          padding: 16px; border-radius: 16px; background: #FFFFFF; border: 1.5px solid #E8EDF3;
+          transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+        .cw-role:hover { transform: translateY(-2px); }
+        .cw-role-ic { width: 48px; height: 48px; border-radius: 13px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .cw-role-t { color: #0F172A; font-weight: 700; font-size: 15.5px; margin: 0; }
+        .cw-role-d { color: #64748B; font-size: 13px; margin: 2px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cw-role-arrow { color: #CBD5E1; flex-shrink: 0; transition: transform .18s ease, color .18s ease; }
+        .cw-role:hover .cw-role-arrow { transform: translateX(3px); color: #0F766E; }
+        .cw-role-txt { flex: 1; min-width: 0; }
+
+        .cw-or { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; }
+        .cw-or-line { flex: 1; height: 1px; background: #E2E8F0; }
+        .cw-or-txt { color: #94A3B8; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; }
+
+        .cw-err { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border-radius: 12px; margin-bottom: 16px;
+          background: #FEF2F2; border: 1px solid #FECACA; color: #DC2626; font-size: 13.5px; }
+
+        .cw-connect { width: 100%; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 15px 20px; border: none;
+          border-radius: 13px; color: #fff; font-size: 15.5px; font-weight: 700; cursor: pointer;
+          background: linear-gradient(135deg, #f6851b, #e2761b); box-shadow: 0 10px 26px rgba(246,133,27,0.32);
+          transition: transform .18s ease, box-shadow .18s ease, filter .18s ease; }
+        .cw-connect:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.05); box-shadow: 0 14px 32px rgba(246,133,27,0.4); }
+        .cw-connect:disabled { background: linear-gradient(135deg, #94A3B8, #64748B); box-shadow: none; cursor: not-allowed; }
+        .cw-connect img { width: 24px; height: 24px; }
+
+        .cw-hint { text-align: center; font-size: 12.5px; color: #94A3B8; margin: 14px 0 0; }
+        .cw-hint a { color: #0F766E; font-weight: 600; text-decoration: none; }
+        .cw-hint a:hover { text-decoration: underline; }
+
+        .cw-chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 28px; }
+        .cw-chip { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 14px 6px; border-radius: 13px;
+          background: #F8FAFC; border: 1px solid #EEF2F6; }
+        .cw-chip span { font-size: 11.5px; font-weight: 600; color: #475569; text-align: center; }
+
+        .cw-foot { text-align: center; margin-top: 28px; display: flex; align-items: center; justify-content: center; gap: 14px; }
+        .cw-foot a { color: #94A3B8; font-size: 13.5px; text-decoration: none; }
+        .cw-foot a:hover { color: #0F766E; }
+        .cw-foot i { color: #CBD5E1; font-style: normal; }
       `}</style>
 
       {/* ============ LEFT: Brand / value hero ============ */}
-      <div
-        className="relative hidden lg:flex flex-col justify-between p-12 xl:p-16 overflow-hidden"
-        style={{ background: 'linear-gradient(150deg, #0B3B37 0%, #0F766E 55%, #115E59 100%)' }}
-      >
-        {/* Decorative glows */}
-        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full" style={{ background: 'radial-gradient(circle, rgba(20,184,166,0.35), transparent 65%)' }} />
-        <div className="absolute -bottom-32 -left-20 w-96 h-96 rounded-full" style={{ background: 'radial-gradient(circle, rgba(45,212,191,0.22), transparent 65%)' }} />
+      <div className="cw-hero">
+        <div className="cw-hero-grid" />
 
         {/* Brand */}
-        <div className="relative z-10">
-          <Link to="/" className="inline-flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }}>
-              <Shield className="w-6 h-6 text-white" />
-            </div>
-            <div className="text-white text-xl font-bold tracking-tight">
-              Sarawak<span style={{ color: '#5EEAD4' }}>MedChain</span>
-            </div>
-          </Link>
-        </div>
+        <Link to="/" className="cw-brand">
+          <span className="cw-brand-badge"><Shield className="w-6 h-6 text-white" /></span>
+          <span className="cw-brand-name">Sarawak<span style={{ color: '#5EEAD4' }}>MedChain</span></span>
+        </Link>
 
         {/* Headline + value */}
-        <div className="relative z-10 max-w-lg">
-          <div className="inline-flex items-center gap-2 mb-6 px-3 py-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.18)' }}>
-            <span className="w-2 h-2 rounded-full" style={{ background: '#5EEAD4' }} />
-            <span className="text-xs font-semibold tracking-wide" style={{ color: '#CCFBF1' }}>LIVE ON BLOCKCHAIN · SEPOLIA</span>
+        <div>
+          <div className="cw-eyebrow">
+            <span className="cw-dot" />
+            <span>LIVE ON BLOCKCHAIN · SEPOLIA</span>
           </div>
-          <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight mb-5">
-            Medical certificates that <span style={{ color: '#5EEAD4' }}>can't be faked.</span>
-          </h1>
-          <p className="text-lg leading-relaxed" style={{ color: 'rgba(226,255,251,0.85)' }}>
-            Every MC is cryptographically anchored on-chain and verifiable in seconds — by any employer, anywhere, with no login. Fraud stops here.
+          <h1 className="cw-h1">Medical certificates that <em>can't be faked.</em></h1>
+          <p className="cw-lead">
+            Every certificate is cryptographically anchored on-chain and verifiable in seconds — by any employer, anywhere, with no login. Fraud stops here.
           </p>
 
-          {/* Value bullets */}
-          <div className="mt-10 space-y-4">
+          <div className="cw-values">
             {[
               { Icon: Lock, title: 'Tamper-proof by design', body: 'Alter one detail and verification instantly fails.' },
               { Icon: CheckCircle2, title: 'Verify without a wallet', body: 'Employers scan a QR code and see the truth.' },
               { Icon: Link2, title: 'Permanent public record', body: 'Backed by a real blockchain transaction.' },
             ].map(({ Icon, title, body }) => (
-              <div key={title} className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.16)' }}>
-                  <Icon className="w-5 h-5" style={{ color: '#5EEAD4' }} />
-                </div>
+              <div key={title} className="cw-value">
+                <span className="cw-value-ic"><Icon className="w-5 h-5" style={{ color: '#5EEAD4' }} /></span>
                 <div>
-                  <p className="text-white font-semibold">{title}</p>
-                  <p className="text-sm" style={{ color: 'rgba(204,251,241,0.75)' }}>{body}</p>
+                  <p className="cw-value-t">{title}</p>
+                  <p className="cw-value-b">{body}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Footer trust row */}
-        <div className="relative z-10 flex items-center gap-8 pt-8" style={{ borderTop: '1px solid rgba(255,255,255,0.12)' }}>
-          <div>
-            <p className="text-2xl font-bold text-white">256-bit</p>
-            <p className="text-xs" style={{ color: 'rgba(204,251,241,0.7)' }}>AES encryption</p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-white">&lt; 2s</p>
-            <p className="text-xs" style={{ color: 'rgba(204,251,241,0.7)' }}>to verify an MC</p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-white">100%</p>
-            <p className="text-xs" style={{ color: 'rgba(204,251,241,0.7)' }}>on-chain audit trail</p>
-          </div>
+        {/* Stats */}
+        <div className="cw-stats">
+          <div><p className="cw-stat-n">256-bit</p><p className="cw-stat-l">AES encryption</p></div>
+          <div><p className="cw-stat-n">&lt; 2s</p><p className="cw-stat-l">to verify an MC</p></div>
+          <div><p className="cw-stat-n">100%</p><p className="cw-stat-l">on-chain audit trail</p></div>
         </div>
       </div>
 
       {/* ============ RIGHT: Login panel ============ */}
-      {/* Inline minHeight instead of the min-h-screen class, which a global rule
-          overrides with align-items:center and breaks the column width. */}
-      <div className="flex flex-col" style={{ minHeight: '100vh' }}>
-        {/* Mobile top bar (brand + back) — hidden on desktop */}
-        <div className="lg:hidden flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid #E2E8F0' }}>
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#0F766E' }}>
-              <Shield className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-bold" style={{ color: '#1E293B' }}>Sarawak<span style={{ color: '#0F766E' }}>MedChain</span></span>
+      <div className="cw-panel">
+        <div className="cw-topbar">
+          <Link to="/" className="cw-topbar-brand">
+            <span className="cw-topbar-badge"><Shield className="w-5 h-5 text-white" /></span>
+            <span style={{ fontWeight: 800, color: '#1E293B' }}>Sarawak<span style={{ color: '#0F766E' }}>MedChain</span></span>
           </Link>
-          <Link to="/" className="flex items-center gap-1 text-sm" style={{ color: '#64748B' }}>
-            <ChevronLeft className="w-4 h-4" /> Home
-          </Link>
+          <Link to="/" className="cw-back"><ChevronLeft className="w-4 h-4" /> Back to Home</Link>
         </div>
 
-        {/* Desktop back link */}
-        <div className="hidden lg:flex justify-end px-10 pt-8">
-          <Link to="/" className="flex items-center gap-1 text-sm transition-colors hover:opacity-70" style={{ color: '#64748B' }}>
-            <ChevronLeft className="w-4 h-4" /> Back to Home
-          </Link>
-        </div>
-
-        {/* Centered content */}
-        <div className="flex-1 flex flex-col justify-center px-6 sm:px-10 xl:px-20 py-10">
-          <div className="w-full max-w-md mx-auto">
-            {/* Heading */}
-            <h2 className="text-3xl font-bold mb-2" style={{ color: '#0F172A' }}>
-              {isFromDoctorPortal ? 'Doctor Portal Access' : 'Sign in to MedChain'}
-            </h2>
-            <p className="mb-8" style={{ color: '#64748B' }}>
+        <div className="cw-body">
+          <div className="cw-card">
+            <h2 className="cw-title">{isFromDoctorPortal ? 'Doctor Portal Access' : 'Sign in to MedChain'}</h2>
+            <p className="cw-sub">
               {isFromDoctorPortal
                 ? 'Verify your identity to access the doctor terminal.'
-                : 'Choose a role to explore, or connect your wallet for live blockchain access.'}
+                : 'Choose a role to explore the prototype, or connect your wallet for live blockchain access.'}
             </p>
 
-            {/* Role cards (demo mode) */}
-            <div className="space-y-3 mb-7">
-              <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: '#94A3B8' }}>
-                Explore instantly — no wallet needed
-              </p>
+            {/* Role cards */}
+            <p className="cw-section-label">Explore instantly — no wallet needed</p>
+            <div className="cw-roles">
               {roleOptions.map(({ role, label, desc, Icon, gradient, ring }) => (
                 <button
                   key={role}
                   onClick={() => handleEnterDemoMode(role)}
-                  className="role-card w-full flex items-center gap-4 p-4 rounded-2xl text-left"
-                  style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = ring; e.currentTarget.style.boxShadow = `0 10px 28px ${ring}`; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'; }}
+                  className="cw-role"
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = ring; e.currentTarget.style.boxShadow = `0 12px 28px ${ring}`; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#E8EDF3'; e.currentTarget.style.boxShadow = 'none'; }}
                 >
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: gradient }}>
-                    <Icon className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold" style={{ color: '#0F172A' }}>Enter as {label}</p>
-                    <p className="text-sm truncate" style={{ color: '#64748B' }}>{desc}</p>
-                  </div>
-                  <ArrowRight className="w-5 h-5 flex-shrink-0" style={{ color: '#CBD5E1' }} />
+                  <span className="cw-role-ic" style={{ background: gradient }}><Icon className="w-6 h-6 text-white" /></span>
+                  <span className="cw-role-txt">
+                    <p className="cw-role-t">Enter as {label}</p>
+                    <p className="cw-role-d">{desc}</p>
+                  </span>
+                  <ArrowRight className="w-5 h-5 cw-role-arrow" />
                 </button>
               ))}
             </div>
 
-            {/* Divider */}
-            <div className="flex items-center gap-4 mb-6">
-              <div className="flex-1 h-px" style={{ background: '#E2E8F0' }} />
-              <span className="text-xs font-semibold" style={{ color: '#94A3B8' }}>OR CONNECT LIVE</span>
-              <div className="flex-1 h-px" style={{ background: '#E2E8F0' }} />
+            <div className="cw-or">
+              <span className="cw-or-line" /><span className="cw-or-txt">OR CONNECT LIVE</span><span className="cw-or-line" />
             </div>
 
-            {/* Error Message */}
             {displayError && (
-              <div className="p-4 rounded-xl mb-4 text-sm flex items-start gap-3" style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626' }}>
-                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="cw-err">
+                <svg className="w-5 h-5" style={{ flexShrink: 0 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span>{displayError}</span>
               </div>
             )}
 
-            {/* MetaMask connect */}
-            <button
-              onClick={handleSecureConnect}
-              disabled={isLoading || !isMetaMaskInstalled}
-              className="cw-primary-btn w-full py-4 text-white font-bold rounded-xl disabled:opacity-60 flex items-center justify-center gap-3"
-              style={{
-                background: !isMetaMaskInstalled
-                  ? 'linear-gradient(135deg, #94A3B8, #64748B)'
-                  : 'linear-gradient(135deg, #f6851b, #e2761b)',
-                boxShadow: !isMetaMaskInstalled ? 'none' : '0 8px 24px rgba(246, 133, 27, 0.35)',
-                cursor: (isLoading || !isMetaMaskInstalled) ? 'not-allowed' : 'pointer',
-              }}
-            >
+            <button onClick={handleSecureConnect} disabled={isLoading || !isMetaMaskInstalled} className="cw-connect">
               {isLoading ? (
                 <>
-                  <svg className="h-5 w-5" style={{ animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24">
+                  <svg className="h-5 w-5" style={{ animation: 'cwspin 1s linear infinite' }} viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
@@ -864,39 +897,35 @@ export default function ConnectWallet({ onConnect, loading, error }) {
                 <span>MetaMask Not Installed</span>
               ) : (
                 <>
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" className="w-6 h-6" />
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" />
                   Connect MetaMask Wallet
                 </>
               )}
             </button>
 
-            <p className="text-xs text-center mt-3" style={{ color: '#94A3B8' }}>
+            <p className="cw-hint">
               {isMetaMaskInstalled ? 'Your wallet is your identity — no passwords stored.' : (
-                <>Don't have MetaMask?{' '}
-                  <a href="https://metamask.io/download/" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: '#0F766E' }}>Download here</a>
-                </>
+                <>Don't have MetaMask? <a href="https://metamask.io/download/" target="_blank" rel="noopener noreferrer">Download here</a></>
               )}
             </p>
 
-            {/* Trust chips */}
-            <div className="grid grid-cols-3 gap-3 mt-8">
+            <div className="cw-chips">
               {[
                 { Icon: Lock, label: 'Zero Passwords' },
                 { Icon: Shield, label: 'Audit Trail' },
                 { Icon: FileCheck, label: 'Instant Verify' },
               ].map(({ Icon, label }) => (
-                <div key={label} className="flex flex-col items-center gap-2 py-3 rounded-xl" style={{ background: '#F8FAFC', border: '1px solid #F1F5F9' }}>
+                <div key={label} className="cw-chip">
                   <Icon className="w-5 h-5" style={{ color: '#0F766E' }} />
-                  <p className="text-xs font-medium" style={{ color: '#475569' }}>{label}</p>
+                  <span>{label}</span>
                 </div>
               ))}
             </div>
 
-            {/* Footer links */}
-            <div className="mt-8 text-center space-x-4">
-              <Link to="/pitch" className="text-sm transition-colors hover:opacity-70" style={{ color: '#94A3B8' }}>View Pitch Deck</Link>
-              <span style={{ color: '#CBD5E1' }}>|</span>
-              <Link to="/" className="text-sm transition-colors hover:opacity-70" style={{ color: '#94A3B8' }}>Return Home</Link>
+            <div className="cw-foot">
+              <Link to="/pitch">View Pitch Deck</Link>
+              <i>|</i>
+              <Link to="/">Return Home</Link>
             </div>
           </div>
         </div>
