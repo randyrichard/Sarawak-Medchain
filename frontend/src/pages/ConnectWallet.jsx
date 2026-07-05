@@ -333,6 +333,7 @@ export default function ConnectWallet({ onConnect, loading, error }) {
   // Get the intended destination (moved before any returns)
   const from = location.state?.from || '/patient';
   const isFromDoctorPortal = from.includes('doctor');
+  const isFromPatient = from.includes('patient');
 
   // Combined error from parent or local
   const displayError = localError || error;
@@ -843,11 +844,13 @@ export default function ConnectWallet({ onConnect, loading, error }) {
 
         <div className="cw-body">
           <div className="cw-card">
-            <h2 className="cw-title">{isFromDoctorPortal ? 'Doctor Portal Access' : 'Sign in to MedChain'}</h2>
+            <h2 className="cw-title">{isFromDoctorPortal ? 'Doctor Portal Access' : isFromPatient ? 'Access Your Records' : 'Sign in to MedChain'}</h2>
             <p className="cw-sub">
               {isFromDoctorPortal
                 ? 'Verify your identity to access the doctor terminal.'
-                : 'Choose a role to explore the prototype, or connect your wallet for live blockchain access.'}
+                : isFromPatient
+                  ? 'Connect your wallet to view your own medical records and control who can access them. Free — no subscription.'
+                  : 'Choose a role to explore the prototype, or connect your wallet for live blockchain access.'}
             </p>
 
             {/* Role cards */}

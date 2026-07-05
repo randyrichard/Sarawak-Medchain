@@ -1068,6 +1068,16 @@ export default function LandingPage() {
               <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981', display: 'inline-block' }}></span>
               Try OTP Demo
             </a>
+            <button
+              onClick={() => navigate('/patient')}
+              className="hidden md:inline-flex items-center gap-1.5 px-4 py-2 text-[13px] font-semibold rounded-lg transition-all duration-200"
+              style={{ color: '#0F766E', border: '1px solid #99F6E4', background: '#F0FDFA' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#CCFBF1'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#F0FDFA'; }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+              Patient Login
+            </button>
             <a
               href="mailto:randyrjm99@gmail.com?subject=Sarawak%20MedChain%20-%20Briefing%20Request"
               className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-medium text-[13px] rounded-lg transition-all duration-200"
@@ -1204,6 +1214,40 @@ export default function LandingPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               Try Demo
+            </span>
+          </button>
+
+          {/* Access My Records — patient entry, separate from the clinic sign-up */}
+          <button
+            onClick={() => navigate('/patient')}
+            className="group"
+            style={{
+              padding: '14px 28px',
+              backgroundColor: '#FFFFFF',
+              color: '#0F766E',
+              fontSize: '15px',
+              fontWeight: 600,
+              borderRadius: '12px',
+              border: '2px solid #99F6E4',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#F0FDFA';
+              e.currentTarget.style.borderColor = '#0F766E';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#FFFFFF';
+              e.currentTarget.style.borderColor = '#99F6E4';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              Access My Records
             </span>
           </button>
         </div>
