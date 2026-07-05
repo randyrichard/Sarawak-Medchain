@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sarawak MedChain — POC Demo Cards</title>
+<style>
+  :root { --teal:#0F766E; --teal2:#14B8A6; --slate:#F1F5F9; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--slate); color:#0F172A;
+    font-family:'Plus Jakarta Sans','Segoe UI',system-ui,-apple-system,sans-serif; padding:40px 24px; }
+  .head { text-align:center; margin-bottom:36px; }
+  .brand { display:inline-flex; align-items:center; gap:10px; font-weight:800; font-size:22px; }
+  .brand .b { width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--teal),var(--teal2));
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800; }
+  .sub { color:#64748B; margin-top:8px; font-size:15px; }
+  .cards { display:flex; gap:28px; justify-content:center; flex-wrap:wrap; max-width:900px; margin:0 auto; }
+  .card { background:#fff; border:1.5px solid #E8EDF3; border-radius:22px; padding:28px; width:400px;
+    box-shadow:0 8px 28px rgba(15,23,42,.05); text-align:center; }
+  .tag { display:inline-block; font-size:12px; font-weight:800; letter-spacing:.08em; text-transform:uppercase;
+    padding:6px 14px; border-radius:999px; margin-bottom:16px; }
+  .tag.ok { background:#CCFBF1; color:#0F766E; }
+  .tag.bad { background:#FEE2E2; color:#DC2626; }
+  .card h2 { margin:0 0 6px; font-size:20px; }
+  .card p.desc { margin:0 0 20px; color:#64748B; font-size:14px; line-height:1.5; }
+  .qr { width:300px; height:300px; border-radius:16px; border:1px solid #EEF2F6; padding:10px; background:#fff; }
+  .exp { font-size:12.5px; color:#94A3B8; margin-top:16px; word-break:break-all; }
+  .exp a { color:#0F766E; text-decoration:none; }
+  .foot { text-align:center; color:#94A3B8; font-size:13px; margin-top:40px; }
+  @media print { body { background:#fff; } .card { box-shadow:none; page-break-inside:avoid; } }
+</style>
+</head>
+<body>
+  <div class="head">
+    <div class="brand"><span class="b">✓</span> Sarawak<span style="color:var(--teal)">MedChain</span></div>
+    <div class="sub">POC Demo · Scan each QR with a phone camera — no app or wallet needed</div>
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <span class="tag ok">Genuine Certificate</span>
+      <h2>Real MC — should VERIFY</h2>
+      <p class="desc">Anchored on the public Ethereum (Sepolia) blockchain. Scanning shows a green <b>VERIFIED</b> badge with a live Etherscan transaction link.</p>
+      <img class="qr" src="./qr-genuine.png" alt="Genuine MC QR" />
+      <div class="exp"><a href="https://sarawak-medchain.pages.dev/#/verify/0x8c6be0f0589c8578555bf5890cc9962405c862eb0f9f060c20c8b3c4c51ee0df">Open link ↗</a></div>
+    </div>
+
+    <div class="card">
+      <span class="tag bad">Tampered Certificate</span>
+      <h2>Edited MC — fraud caught</h2>
+      <p class="desc">Same certificate, but the sick-leave was altered from 2 days to 14 in the records. The blockchain fingerprint no longer matches — scanning shows a red <b>SECURITY ALERT</b>.</p>
+      <img class="qr" src="./qr-tampered.png" alt="Tampered MC QR" />
+      <div class="exp"><a href="https://sarawak-medchain.pages.dev/#/verify/0x8771aaae8d1290e7dc5882118d7de6ed475ba4876fe321f9348963889fcee4fb">Open link ↗</a></div>
+    </div>
+  </div>
+
+  <div class="foot">Both certificates are anchored on the live Sepolia testnet. The tampered one proves detection: identical QR-based flow, opposite result.</div>
+</body>
+</html>
