@@ -505,6 +505,33 @@ export default function VerifyMC() {
           </div>
         </div>
 
+        {/* Compare callout — defeats the "swap a genuine QR onto a forged
+            document" attack by forcing the verifier to actively compare. */}
+        {isChainVerified && (
+          <div style={{
+            background: '#FFFBEB',
+            border: '1px solid #FDE68A',
+            borderRadius: '14px',
+            padding: '16px 18px',
+            marginBottom: '20px',
+            display: 'flex',
+            gap: '12px',
+            alignItems: 'flex-start',
+          }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2" style={{ flexShrink: 0, marginTop: '1px' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            </svg>
+            <div>
+              <p style={{ fontSize: '13px', fontWeight: 700, color: '#B45309', margin: '0 0 4px' }}>
+                This proves the record is real — now check it belongs here
+              </p>
+              <p style={{ fontSize: '13px', color: '#78350F', lineHeight: 1.6, margin: 0 }}>
+                Confirm the <b>name, IC, dates and number of days</b> below match <b>both the certificate presented and the person in front of you</b>. A real QR copied onto a fake or altered MC still shows these true details — which won't match.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* MC Details Card */}
         <div style={styles.detailsCard}>
           <h2 style={styles.cardTitle}>
@@ -516,8 +543,8 @@ export default function VerifyMC() {
 
           <div style={styles.detailsGrid}>
             <DetailRow label="MC ID" value={mcData.mcId} highlight />
-            <DetailRow label="Patient" value={mcData.patientName} />
-            <DetailRow label="IC Number" value={mcData.patientIC} />
+            <DetailRow label="Patient" value={mcData.patientName} highlight />
+            <DetailRow label="IC Number" value={mcData.patientIC} highlight />
             <DetailRow label="Diagnosis" value={mcData.diagnosis} />
             <DetailRow label="Doctor" value={mcData.doctor} />
             <DetailRow label="MMC Registration" value={mcData.doctorMMC} />
@@ -620,6 +647,33 @@ export default function VerifyMC() {
           </div>
         </div>
       </main>
+
+      {/* Domain-trust strip — defends against fake look-alike verification
+          sites by teaching verifiers to trust only the official address. */}
+      <div style={{
+        maxWidth: '500px',
+        width: '100%',
+        padding: '0 20px',
+        boxSizing: 'border-box',
+        margin: '0 auto 8px',
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          background: '#F0FDFA',
+          border: '1px solid #CCFBF1',
+          borderRadius: '10px',
+          padding: '12px 14px',
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0d9488" strokeWidth="2" style={{ flexShrink: 0 }}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          <p style={{ fontSize: '12px', color: '#0F766E', margin: 0, lineHeight: 1.5 }}>
+            Only trust results on the official address <b>sarawak-medchain.pages.dev</b>. Never rely on a certificate you can't check here.
+          </p>
+        </div>
+      </div>
 
       {/* Footer */}
       <footer style={styles.footer}>
