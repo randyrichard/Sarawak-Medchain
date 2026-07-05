@@ -50,10 +50,10 @@ export default function HospitalCEODashboard() {
   const styles = {
     container: {
       minHeight: '100vh',
-      background: '#FFFFFF',
+      background: '#F1F5F9',
       color: '#64748B',
-      padding: isMobile ? '16px' : '32px',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
+      padding: isMobile ? '16px' : '40px 40px 72px',
+      fontFamily: "'Plus Jakarta Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
     },
     header: {
       display: 'flex',
@@ -72,12 +72,12 @@ export default function HospitalCEODashboard() {
     logoContainer: {
       width: isMobile ? '44px' : '56px',
       height: isMobile ? '44px' : '56px',
-      background: 'linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%)',
+      background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)',
       borderRadius: isMobile ? '10px' : '14px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      boxShadow: '0 4px 20px rgba(56, 189, 248, 0.3)',
+      boxShadow: '0 4px 20px rgba(15, 118, 110, 0.3)',
       flexShrink: 0,
     },
     titleWrapper: {
@@ -85,9 +85,9 @@ export default function HospitalCEODashboard() {
     },
     title: {
       fontSize: isMobile ? '20px' : '32px',
-      fontWeight: '700',
+      fontWeight: '800',
       margin: 0,
-      color: '#1E293B',
+      color: '#0F172A',
       letterSpacing: '-0.5px',
     },
     titleUnderline: {
@@ -96,7 +96,7 @@ export default function HospitalCEODashboard() {
       left: 0,
       width: isMobile ? '40px' : '60px',
       height: '3px',
-      background: 'linear-gradient(90deg, #38bdf8, transparent)',
+      background: 'linear-gradient(90deg, #0F766E, transparent)',
       borderRadius: '2px',
     },
     subtitle: {
@@ -127,14 +127,14 @@ export default function HospitalCEODashboard() {
     },
     metricCard: (isHovered) => ({
       background: '#FFFFFF',
-      border: `1px solid ${isHovered ? '#0EA5E9' : '#E2E8F0'}`,
-      borderRadius: isMobile ? '12px' : '16px',
-      padding: isMobile ? '16px' : '24px',
+      border: `1.5px solid ${isHovered ? '#99F6E4' : '#E8EDF3'}`,
+      borderRadius: isMobile ? '14px' : '18px',
+      padding: isMobile ? '16px' : '26px',
       transition: 'all 0.3s ease',
       transform: isHovered && !isMobile ? 'translateY(-2px)' : 'translateY(0)',
       boxShadow: isHovered && !isMobile
-        ? '0 8px 24px rgba(0,0,0,0.1)'
-        : '0 4px 12px rgba(0,0,0,0.06)',
+        ? '0 12px 28px rgba(15, 118, 110, 0.10)'
+        : '0 1px 3px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.03)',
       cursor: 'default',
     }),
     cardLabel: {
@@ -148,7 +148,7 @@ export default function HospitalCEODashboard() {
     cardValue: {
       fontSize: isMobile ? '24px' : '36px',
       fontWeight: '700',
-      color: '#38bdf8',
+      color: '#0F766E',
       margin: 0,
       lineHeight: 1,
     },
@@ -165,10 +165,10 @@ export default function HospitalCEODashboard() {
     },
     sectionCard: {
       background: '#FFFFFF',
-      border: '1px solid #E2E8F0',
-      borderRadius: isMobile ? '12px' : '16px',
-      padding: isMobile ? '16px' : '24px',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+      border: '1.5px solid #E8EDF3',
+      borderRadius: isMobile ? '14px' : '18px',
+      padding: isMobile ? '16px' : '26px',
+      boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.03)',
     },
     sectionHeader: {
       display: 'flex',
@@ -187,7 +187,7 @@ export default function HospitalCEODashboard() {
       border: '1px solid #E2E8F0',
       borderRadius: '8px',
       padding: isMobile ? '5px 10px' : '6px 14px',
-      color: '#38bdf8',
+      color: '#0F766E',
       fontSize: isMobile ? '11px' : '12px',
       fontWeight: '600',
       cursor: 'pointer',
@@ -243,14 +243,14 @@ export default function HospitalCEODashboard() {
       gap: '12px',
     },
     mcId: {
-      color: '#38bdf8',
+      color: '#0F766E',
       fontFamily: 'monospace',
       fontSize: isMobile ? '11px' : '13px',
       fontWeight: '600',
     },
     billingBox: {
-      background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.06) 0%, rgba(56, 189, 248, 0.02) 100%)',
-      border: '1px solid rgba(56, 189, 248, 0.2)',
+      background: 'linear-gradient(135deg, rgba(15, 118, 110, 0.06) 0%, rgba(15, 118, 110, 0.02) 100%)',
+      border: '1px solid rgba(15, 118, 110, 0.2)',
       borderRadius: isMobile ? '10px' : '14px',
       padding: isMobile ? '16px' : '24px',
       marginBottom: isMobile ? '16px' : '20px',
@@ -288,10 +288,10 @@ export default function HospitalCEODashboard() {
     buttonCyan: {
       flex: 1,
       padding: isMobile ? '12px' : '14px',
-      background: 'rgba(56, 189, 248, 0.15)',
-      border: '1px solid rgba(56, 189, 248, 0.3)',
+      background: 'rgba(15, 118, 110, 0.15)',
+      border: '1px solid rgba(15, 118, 110, 0.3)',
       borderRadius: '10px',
-      color: '#38bdf8',
+      color: '#0F766E',
       fontSize: isMobile ? '13px' : '14px',
       fontWeight: '600',
       cursor: 'pointer',
@@ -393,10 +393,10 @@ export default function HospitalCEODashboard() {
       {/* Metrics */}
       <div style={styles.metricsGrid}>
         {[
-          { label: 'MCs Issued This Month', value: '847', sub: '+12% vs last month', color: '#38bdf8' },
-          { label: 'Active Doctors', value: '3/5', sub: 'Currently online', color: '#38bdf8' },
+          { label: 'MCs Issued This Month', value: '847', sub: '+12% vs last month', color: '#0F766E' },
+          { label: 'Active Doctors', value: '3/5', sub: 'Currently online', color: '#0F766E' },
           { label: 'Subscription Status', value: 'ACTIVE', sub: 'Next billing: 15 Feb 2026', color: '#10b981' },
-          { label: 'Verification Rate', value: '98%', sub: 'MCs verified on-chain', color: '#38bdf8' },
+          { label: 'Verification Rate', value: '98%', sub: 'MCs verified on-chain', color: '#0F766E' },
         ].map((metric, i) => (
           <div
             key={i}
@@ -434,7 +434,7 @@ export default function HospitalCEODashboard() {
                   <tr key={i}>
                     <td style={styles.td}>{doc.name}</td>
                     <td style={{ ...styles.td, color: '#94a3b8' }}>{doc.dept}</td>
-                    <td style={{ ...styles.td, textAlign: 'center', fontWeight: '600', color: '#38bdf8' }}>{doc.mcs}</td>
+                    <td style={{ ...styles.td, textAlign: 'center', fontWeight: '600', color: '#0F766E' }}>{doc.mcs}</td>
                     <td style={{ ...styles.td, textAlign: 'right' }}>
                       <span style={styles.statusBadge(doc.status)}>
                         {doc.status === 'online' ? '● Online' : '○ Offline'}
@@ -479,7 +479,7 @@ export default function HospitalCEODashboard() {
           <div style={styles.billingBox}>
             <div style={{ marginBottom: '8px' }}>
               <span style={{ color: '#94a3b8', fontSize: isMobile ? '10px' : '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Current Plan</span>
-              <span style={{ float: 'right', color: '#38bdf8', fontWeight: '600', fontSize: isMobile ? '10px' : '12px' }}>HOSPITAL TIER</span>
+              <span style={{ float: 'right', color: '#0F766E', fontWeight: '600', fontSize: isMobile ? '10px' : '12px' }}>HOSPITAL TIER</span>
             </div>
             <div style={{ fontSize: isMobile ? '22px' : '28px', fontWeight: '700', marginBottom: '4px', color: '#1E293B' }}>
               RM 10,000<span style={{ fontSize: isMobile ? '12px' : '14px', color: '#94a3b8', fontWeight: '400' }}>/month</span>
@@ -530,7 +530,7 @@ export default function HospitalCEODashboard() {
 
       {/* Footer */}
       <div style={styles.footer}>
-        Powered by <span style={{ color: '#38bdf8', fontWeight: '600' }}>Sarawak MedChain</span> {!isMobile && '•'} {!isMobile && 'Blockchain-Verified Medical Certificates'}
+        Powered by <span style={{ color: '#0F766E', fontWeight: '600' }}>Sarawak MedChain</span> {!isMobile && '•'} {!isMobile && 'Blockchain-Verified Medical Certificates'}
       </div>
     </div>
   );

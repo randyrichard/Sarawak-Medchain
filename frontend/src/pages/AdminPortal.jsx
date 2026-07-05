@@ -37,10 +37,11 @@ const Card = ({ children, className = '', noPadding = false }) => (
   <div
     className={`${className}`}
     style={{
-      border: '1px solid #E2E8F0',
-      borderRadius: '16px',
-      padding: noPadding ? '0' : '24px',
-      background: '#FFFFFF'
+      border: '1.5px solid #E8EDF3',
+      borderRadius: '18px',
+      padding: noPadding ? '0' : '26px',
+      background: '#FFFFFF',
+      boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.03)'
     }}
   >
     {children}
@@ -332,16 +333,16 @@ export default function AdminPortal({ walletAddress }) {
   };
 
   return (
-    <div className="flex-1 flex-grow w-full min-h-full font-sans" style={{ backgroundColor: '#FFFFFF' }}>
+    <div className="flex-1 flex-grow w-full min-h-full font-sans admin-portal" style={{ backgroundColor: '#F1F5F9', fontFamily: "'Plus Jakarta Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
       <BroadcastNotification />
 
-      <div className="px-8 lg:px-12 py-10" style={{ maxWidth: '1600px', margin: '0 auto', padding: '40px 48px' }}>
+      <div className="px-8 lg:px-12 py-10" style={{ maxWidth: '1600px', margin: '0 auto', padding: '40px 48px 72px' }}>
 
         {/* ==================== HEADER SECTION ==================== */}
         <div style={{ marginBottom: '32px' }}>
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl lg:text-4xl font-bold text-slate-800 mb-2">Hospital Admin Portal</h1>
+              <h1 className="text-3xl lg:text-4xl font-extrabold text-slate-900 mb-2 tracking-tight">Hospital Admin Portal</h1>
               <p className="text-slate-500">Sarawak MedChain Enterprise Billing Dashboard</p>
             </div>
             <div className="flex items-center gap-3">
