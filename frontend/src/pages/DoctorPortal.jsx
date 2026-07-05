@@ -672,7 +672,7 @@ export default function DoctorPortal({ walletAddress }) {
   };
 
   return (
-    <div className="min-h-screen font-sans doctor-portal" style={{ backgroundColor: '#FFFFFF', overflowX: 'hidden' }}>
+    <div className="min-h-screen font-sans doctor-portal" style={{ backgroundColor: '#F1F5F9', overflowX: 'hidden', fontFamily: "'Plus Jakarta Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
       {/* Receipt Modal - ALWAYS in DOM, smooth fade transitions */}
       <div
         className="fixed inset-0 z-50 flex items-center justify-center p-4 transition-opacity duration-200"
@@ -763,7 +763,7 @@ export default function DoctorPortal({ walletAddress }) {
             <button
               onClick={closeReceipt}
               className="w-full py-3 rounded-lg font-semibold transition-all hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)', color: '#fff' }}
+              style={{ background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)', color: '#fff' }}
             >
               Done
             </button>
@@ -782,7 +782,7 @@ export default function DoctorPortal({ walletAddress }) {
               <button
                 onClick={handleTopUp}
                 className="px-4 py-1.5 rounded-lg text-sm font-medium transition-all hover:opacity-90"
-                style={{ background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)', color: '#fff' }}
+                style={{ background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)', color: '#fff' }}
               >
                 Top Up
               </button>
@@ -895,7 +895,7 @@ export default function DoctorPortal({ walletAddress }) {
             {/* Left: Hospital Branding */}
             <div className="flex items-center gap-4">
               {/* Hospital Logo */}
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)', boxShadow: '0 4px 12px rgba(20, 184, 166, 0.25)' }}>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)', boxShadow: '0 4px 12px rgba(20, 184, 166, 0.25)' }}>
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
@@ -903,7 +903,7 @@ export default function DoctorPortal({ walletAddress }) {
 
               {/* Hospital Name, Subtitle & Badges */}
               <div>
-                <h1 className="text-xl font-semibold text-slate-900 tracking-tight">{hospitalName}</h1>
+                <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">{hospitalName}</h1>
                 <p className="text-sm text-slate-500 mt-0.5">Medical Certificate Terminal</p>
 
                 {/* Badges Row */}
@@ -940,7 +940,7 @@ export default function DoctorPortal({ walletAddress }) {
       </header>
 
       {/* Main Content */}
-      <div className="doctor-main-content" style={{ backgroundColor: '#FFFFFF', minHeight: 'calc(100vh - 64px)', padding: '32px' }}>
+      <div className="doctor-main-content" style={{ backgroundColor: '#F1F5F9', minHeight: 'calc(100vh - 64px)', padding: '32px' }}>
         <div className="doctor-content-inner" style={{ maxWidth: '1200px', margin: '0 auto' }}>
 
           {/* Verification Badge - Centered */}
@@ -1035,10 +1035,10 @@ export default function DoctorPortal({ walletAddress }) {
             {/* ========== LEFT COLUMN: FORM CARD ========== */}
             <div className="issue-mc-card" style={{
               backgroundColor: '#FFFFFF',
-              border: '1px solid #E2E8F0',
-              borderRadius: '16px',
-              padding: '24px',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
+              border: '1.5px solid #E8EDF3',
+              borderRadius: '18px',
+              padding: '26px',
+              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.03)',
               display: 'flex',
               flexDirection: 'column'
             }}>
@@ -1055,7 +1055,7 @@ export default function DoctorPortal({ walletAddress }) {
                   width: '48px',
                   height: '48px',
                   borderRadius: '12px',
-                  background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
+                  background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -1276,7 +1276,7 @@ export default function DoctorPortal({ walletAddress }) {
                     padding: '16px',
                     borderRadius: '12px',
                     border: 'none',
-                    background: (isMinting || !isVerified) ? '#E2E8F0' : 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
+                    background: (isMinting || !isVerified) ? '#E2E8F0' : 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)',
                     color: (isMinting || !isVerified) ? '#94A3B8' : '#ffffff',
                     fontSize: '14px',
                     fontWeight: 700,
@@ -1313,10 +1313,10 @@ export default function DoctorPortal({ walletAddress }) {
             {/* ========== RIGHT COLUMN: LIVE FEED CARD ========== */}
             <div className="live-feed-card" style={{
               backgroundColor: '#FFFFFF',
-              border: '1px solid #E2E8F0',
-              borderRadius: '16px',
-              padding: '24px',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
+              border: '1.5px solid #E8EDF3',
+              borderRadius: '18px',
+              padding: '26px',
+              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.03)',
               display: 'flex',
               flexDirection: 'column'
             }}>
@@ -1333,7 +1333,7 @@ export default function DoctorPortal({ walletAddress }) {
                   width: '40px',
                   height: '40px',
                   borderRadius: '10px',
-                  background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
+                  background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',

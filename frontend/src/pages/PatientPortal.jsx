@@ -162,14 +162,14 @@ export default function PatientPortal({ walletAddress }) {
 
   // Card styles - light theme
   const cardStyle = {
-    border: '1px solid #E2E8F0',
-    borderRadius: '16px',
+    border: '1.5px solid #E8EDF3',
+    borderRadius: '18px',
     backgroundColor: '#FFFFFF',
-    padding: '24px',
+    padding: '26px',
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)'
+    boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.03)'
   };
 
   // Button styles with hover transitions
@@ -179,7 +179,7 @@ export default function PatientPortal({ walletAddress }) {
     borderRadius: '10px',
     background: isButtonDisabled
       ? '#E2E8F0'
-      : 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
+      : 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)',
     border: 'none',
     color: isButtonDisabled ? '#94A3B8' : '#fff',
     fontSize: '0.85rem',
@@ -211,19 +211,20 @@ export default function PatientPortal({ walletAddress }) {
 
   return (
     <div className="patient-portal" style={{
-      backgroundColor: '#FFFFFF',
+      backgroundColor: '#F1F5F9',
       minHeight: '100vh',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       width: '100%',
-      overflowX: 'hidden'
+      overflowX: 'hidden',
+      fontFamily: "'Plus Jakarta Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
     }}>
       {/* Premium Header */}
       <header className="patient-header" style={{
         background: '#FFFFFF',
         borderBottom: '1px solid #E2E8F0',
-        padding: '20px 24px',
+        padding: '22px 24px',
         width: '100%',
         boxSizing: 'border-box'
       }}>
@@ -240,14 +241,14 @@ export default function PatientPortal({ walletAddress }) {
           {/* Left: Title */}
           <div className="header-title" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
+              width: '46px',
+              height: '46px',
+              borderRadius: '13px',
+              background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 15px rgba(20, 184, 166, 0.3)',
+              boxShadow: '0 6px 18px rgba(15, 118, 110, 0.28)',
               flexShrink: 0
             }}>
               <svg style={{ width: '22px', height: '22px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -255,13 +256,13 @@ export default function PatientPortal({ walletAddress }) {
               </svg>
             </div>
             <div>
-              <h1 className="portal-title" style={{ color: '#1E293B', fontSize: '1.3rem', fontWeight: '700', margin: 0, letterSpacing: '-0.02em' }}>Patient Portal</h1>
+              <h1 className="portal-title" style={{ color: '#0F172A', fontSize: '1.35rem', fontWeight: '800', margin: 0, letterSpacing: '-0.02em' }}>Patient Portal</h1>
               <span style={{
                 fontSize: '0.65rem',
-                fontWeight: '600',
-                color: '#14b8a6',
+                fontWeight: '700',
+                color: '#0F766E',
                 textTransform: 'uppercase',
-                letterSpacing: '0.8px'
+                letterSpacing: '1px'
               }}>Secure Patient View</span>
             </div>
           </div>
@@ -358,7 +359,7 @@ export default function PatientPortal({ walletAddress }) {
                 width: '40px',
                 height: '40px',
                 borderRadius: '10px',
-                background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
+                background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -447,7 +448,7 @@ export default function PatientPortal({ walletAddress }) {
                 width: '40px',
                 height: '40px',
                 borderRadius: '10px',
-                background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
+                background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -551,7 +552,7 @@ export default function PatientPortal({ walletAddress }) {
                         style={{
                           padding: '12px 20px',
                           borderRadius: '10px',
-                          background: 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
+                          background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)',
                           border: 'none',
                           color: '#fff',
                           fontSize: '0.85rem',
@@ -611,15 +612,16 @@ export default function PatientPortal({ walletAddress }) {
         }
 
         .patient-portal-card {
-          border: 1px solid #E2E8F0 !important;
-          border-radius: 16px !important;
+          border: 1.5px solid #E8EDF3 !important;
+          border-radius: 18px !important;
           background-color: #FFFFFF !important;
           transition: all 0.2s ease;
         }
 
         .patient-portal-card:hover {
-          border-color: #CBD5E1 !important;
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+          border-color: #99F6E4 !important;
+          box-shadow: 0 10px 28px rgba(15, 118, 110, 0.10) !important;
+          transform: translateY(-2px);
         }
 
         .shield-glow {
