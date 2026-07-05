@@ -940,7 +940,7 @@ export default function DoctorPortal({ walletAddress }) {
       </header>
 
       {/* Main Content */}
-      <div className="doctor-main-content" style={{ backgroundColor: '#F1F5F9', minHeight: 'calc(100vh - 64px)', padding: '32px', width: '100%' }}>
+      <div className="doctor-main-content" style={{ backgroundColor: '#F1F5F9', minHeight: 'calc(100vh - 64px)', padding: '40px 40px 72px', width: '100%' }}>
         <div className="doctor-content-inner" style={{ maxWidth: '1200px', margin: '0 auto' }}>
 
           {/* Verification Badge - Centered */}
@@ -1028,7 +1028,7 @@ export default function DoctorPortal({ walletAddress }) {
           <div className="doctor-portal-grid" style={{
             display: 'grid',
             gridTemplateColumns: '2fr 1fr',
-            gap: '24px',
+            gap: '32px',
             alignItems: 'stretch'
           }}>
 
