@@ -17,13 +17,17 @@ function isProduction() {
  * verification time — if any field is altered, the hashes no longer match.
  *
  * Field order and formatting must never change once MCs are in circulation.
+ *
+ * NOTE: the diagnosis (medical reason) is deliberately NOT part of the hash and
+ * is never stored in the public verification system — employers verify that a
+ * valid certificate exists for a given person and duration, not the private
+ * medical reason. This keeps sensitive health data out of the public flow.
  */
 export function computeMCHash(mc) {
   const canonical = [
     mc.mcId,
     mc.patientIC,
     mc.patientName,
-    mc.diagnosis,
     String(mc.duration),
     mc.doctorName,
     mc.mmcNumber,

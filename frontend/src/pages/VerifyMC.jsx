@@ -42,30 +42,46 @@ export default function VerifyMC() {
 
         let data = null;
 
-        // STEP 1: Fetch the MC details (Supabase primary, localStorage fallback)
-        if (supabase) {
-          const result = await supabase
-            .from('medical_certificates')
-            .select('*')
-            .eq('id', hash)
-            .single();
+        // Map a DB row (snake_case) to the display object. Never reads diagnosis.
+        const mapRow = (row) => ({
+          mcId: row.mc_id,
+          patientName: row.patient_name,
+          patientIC: row.ic_number,
+          doctorName: row.doctor_name,
+          mmcNumber: row.mmc_number,
+          hospital: row.clinic_name,
+          dateIssued: row.date_issued,
+          duration: row.duration,
+          startDate: row.start_date,
+          endDate: row.end_date,
+          blockNumber: row.block_number,
+        });
 
-          if (!result.error && result.data) {
-            const row = result.data;
-            data = {
-              mcId: row.mc_id,
-              patientName: row.patient_name,
-              patientIC: row.ic_number,
-              doctorName: row.doctor_name,
-              mmcNumber: row.mmc_number,
-              hospital: row.clinic_name,
-              dateIssued: row.date_issued,
-              duration: row.duration,
-              startDate: row.start_date,
-              endDate: row.end_date,
-              diagnosis: row.diagnosis,
-              blockNumber: row.block_number,
-            };
+        // STEP 1: Fetch the MC details.
+        // Prefer the locked-down verify_mc() RPC (returns only one record by its
+        // exact hash and never exposes the whole table). Falls back to a direct
+        // single-row read if the RPC isn't set up yet, then to localStorage.
+        if (supabase) {
+          try {
+            const rpc = await supabase.rpc('verify_mc', { mc_hash: hash });
+            if (!rpc.error && rpc.data && rpc.data.length > 0) {
+              data = mapRow(rpc.data[0]);
+            } else if (rpc.error) {
+              // RPC not created yet — fall back to a scoped single-row read
+              const result = await supabase
+                .from('medical_certificates')
+                .select('*')
+                .eq('id', hash)
+                .single();
+              if (!result.error && result.data) data = mapRow(result.data);
+            }
+          } catch (e) {
+            const result = await supabase
+              .from('medical_certificates')
+              .select('*')
+              .eq('id', hash)
+              .single();
+            if (!result.error && result.data) data = mapRow(result.data);
           }
         }
 
@@ -93,7 +109,6 @@ export default function VerifyMC() {
           mcId: data.mcId,
           patientIC: data.patientIC,
           patientName: data.patientName,
-          diagnosis: data.diagnosis,
           duration: data.duration,
           doctorName: data.doctorName,
           mmcNumber: data.mmcNumber,
@@ -545,7 +560,7 @@ export default function VerifyMC() {
             <DetailRow label="MC ID" value={mcData.mcId} highlight />
             <DetailRow label="Patient" value={mcData.patientName} highlight />
             <DetailRow label="IC Number" value={mcData.patientIC} highlight />
-            <DetailRow label="Diagnosis" value={mcData.diagnosis} />
+            <DetailRow label="Medical Reason" value="Kept confidential" />
             <DetailRow label="Doctor" value={mcData.doctor} />
             <DetailRow label="MMC Registration" value={mcData.doctorMMC} />
             <DetailRow label="Hospital" value={mcData.hospital} />

@@ -268,11 +268,12 @@ export default function DoctorPortal({ walletAddress }) {
       const endDate = endDateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 
       // Canonical fingerprint of this MC — anchored on-chain, recomputed at verification
+      // Note: diagnosis is intentionally excluded — the medical reason is kept
+      // private and never anchored on-chain or stored in the verification DB.
       const mcFields = {
         mcId,
         patientIC: mcFormData.patientIC,
         patientName: mcFormData.patientName,
-        diagnosis: mcFormData.diagnosis,
         duration,
         doctorName,
         mmcNumber,
@@ -327,7 +328,7 @@ export default function DoctorPortal({ walletAddress }) {
             mc_id: mcId,
             patient_name: mcFormData.patientName,
             ic_number: mcFormData.patientIC,
-            diagnosis: mcFormData.diagnosis,
+            // diagnosis intentionally NOT stored — kept private, off the public record
             duration: duration,
             doctor_name: doctorName,
             clinic_name: hospitalName,
