@@ -331,7 +331,9 @@ export default function ConnectWallet({ onConnect, loading, error }) {
   };
 
   // Get the intended destination (moved before any returns)
-  const from = location.state?.from || '/patient';
+  // No default here: an unspecified origin means the generic sign-in (shows all
+  // roles). Only an explicit /patient or /doctor origin scopes the page.
+  const from = location.state?.from || '';
   const isFromDoctorPortal = from.includes('doctor');
   const isFromPatient = from.includes('patient');
 
@@ -853,10 +855,17 @@ export default function ConnectWallet({ onConnect, loading, error }) {
                   : 'Choose a role to explore the prototype, or connect your wallet for live blockchain access.'}
             </p>
 
-            {/* Role cards */}
-            <p className="cw-section-label">Explore instantly — no wallet needed</p>
+            {/* Role cards — scoped to the audience that arrived here. A patient
+                coming from "Patient Login" only sees the patient option, etc. */}
+            <p className="cw-section-label">
+              {isFromPatient ? 'Preview as a patient — no wallet needed'
+                : isFromDoctorPortal ? 'Preview as a doctor — no wallet needed'
+                : 'Explore instantly — no wallet needed'}
+            </p>
             <div className="cw-roles">
-              {roleOptions.map(({ role, label, desc, Icon, gradient, ring }) => (
+              {roleOptions
+                .filter(({ role }) => isFromPatient ? role === 'patient' : isFromDoctorPortal ? role === 'doctor' : true)
+                .map(({ role, label, desc, Icon, gradient, ring }) => (
                 <button
                   key={role}
                   onClick={() => handleEnterDemoMode(role)}
