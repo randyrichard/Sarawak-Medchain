@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Shield, Lock, FileCheck, ChevronLeft, Play } from 'lucide-react';
+import { Shield, Lock, FileCheck, ChevronLeft, Play, Stethoscope, User, Settings, ArrowRight, CheckCircle2, Link2 } from 'lucide-react';
 import { useDemo } from '../context/DemoContext';
 import { canAccess, ROLE_HOME } from '../utils/roles';
 
@@ -645,126 +645,193 @@ export default function ConnectWallet({ onConnect, loading, error }) {
     );
   }
 
-  // Main Connect Wallet UI
+  // Main Connect Wallet UI — full-bleed split-screen layout
+  const roleOptions = [
+    {
+      role: 'doctor',
+      label: 'Doctor',
+      desc: 'Issue & anchor medical certificates on-chain',
+      Icon: Stethoscope,
+      gradient: 'linear-gradient(135deg, #0F766E, #14B8A6)',
+      ring: 'rgba(15, 118, 110, 0.35)',
+    },
+    {
+      role: 'patient',
+      label: 'Patient',
+      desc: 'View your records & control who can access them',
+      Icon: User,
+      gradient: 'linear-gradient(135deg, #2563EB, #3B82F6)',
+      ring: 'rgba(37, 99, 235, 0.35)',
+    },
+    {
+      role: 'admin',
+      label: 'Admin',
+      desc: 'Verify doctors & oversee the network (+ CEO view)',
+      Icon: Settings,
+      gradient: 'linear-gradient(135deg, #7C3AED, #8B5CF6)',
+      ring: 'rgba(124, 58, 237, 0.35)',
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      {/* Header */}
-      <header style={{ borderBottom: '1px solid #E2E8F0', background: '#FFFFFF' }}>
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#0F766E' }}>
+    <div className="cw-split" style={{ background: '#FFFFFF' }}>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        /* Own class so the global ".min-h-screen { display:flex }" rule can't hijack the grid */
+        .cw-split { display: grid; grid-template-columns: 1fr; min-height: 100vh; width: 100%; }
+        @media (min-width: 1024px) { .cw-split { grid-template-columns: 1fr 1fr; } }
+        /* Prevent grid tracks from being forced wider than the viewport by max-w-md content */
+        .cw-split > * { min-width: 0; }
+        .role-card { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+        .role-card:hover { transform: translateY(-3px); }
+        .cw-primary-btn { transition: transform .18s ease, box-shadow .18s ease, filter .18s ease; }
+        .cw-primary-btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.05); }
+      `}</style>
+
+      {/* ============ LEFT: Brand / value hero ============ */}
+      <div
+        className="relative hidden lg:flex flex-col justify-between p-12 xl:p-16 overflow-hidden"
+        style={{ background: 'linear-gradient(150deg, #0B3B37 0%, #0F766E 55%, #115E59 100%)' }}
+      >
+        {/* Decorative glows */}
+        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full" style={{ background: 'radial-gradient(circle, rgba(20,184,166,0.35), transparent 65%)' }} />
+        <div className="absolute -bottom-32 -left-20 w-96 h-96 rounded-full" style={{ background: 'radial-gradient(circle, rgba(45,212,191,0.22), transparent 65%)' }} />
+
+        {/* Brand */}
+        <div className="relative z-10">
+          <Link to="/" className="inline-flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }}>
               <Shield className="w-6 h-6 text-white" />
             </div>
-            <div>
-              <span className="text-xl font-bold" style={{ color: '#1E293B' }}>Sarawak</span>
-              <span className="text-xl font-bold ml-1" style={{ color: '#0F766E' }}>MedChain</span>
+            <div className="text-white text-xl font-bold tracking-tight">
+              Sarawak<span style={{ color: '#5EEAD4' }}>MedChain</span>
             </div>
-          </Link>
-          <Link to="/" className="flex items-center gap-1 text-sm transition-colors hover:opacity-80" style={{ color: '#64748B' }}>
-            <ChevronLeft className="w-4 h-4" />
-            Back to Home
           </Link>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="max-w-md w-full">
-          {/* Connection Card */}
-          <div className="rounded-3xl p-8" style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06)' }}>
-            {/* Icon */}
-            <div className="w-20 h-20 mx-auto mb-6 relative">
-              <div className="absolute inset-0 rounded-2xl opacity-20 blur-xl" style={{ background: 'linear-gradient(135deg, #0F766E, #14B8A6)' }}></div>
-              <div className="relative w-full h-full rounded-2xl flex items-center justify-center" style={{ background: 'rgba(15, 118, 110, 0.08)', border: '1px solid rgba(15, 118, 110, 0.2)' }}>
-                <Lock className="w-10 h-10" style={{ color: '#0F766E' }} />
-              </div>
-            </div>
+        {/* Headline + value */}
+        <div className="relative z-10 max-w-lg">
+          <div className="inline-flex items-center gap-2 mb-6 px-3 py-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.18)' }}>
+            <span className="w-2 h-2 rounded-full" style={{ background: '#5EEAD4' }} />
+            <span className="text-xs font-semibold tracking-wide" style={{ color: '#CCFBF1' }}>LIVE ON BLOCKCHAIN · SEPOLIA</span>
+          </div>
+          <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight mb-5">
+            Medical certificates that <span style={{ color: '#5EEAD4' }}>can't be faked.</span>
+          </h1>
+          <p className="text-lg leading-relaxed" style={{ color: 'rgba(226,255,251,0.85)' }}>
+            Every MC is cryptographically anchored on-chain and verifiable in seconds — by any employer, anywhere, with no login. Fraud stops here.
+          </p>
 
-            {/* Title */}
-            <h1 className="text-2xl font-bold text-center mb-2" style={{ color: '#1E293B' }}>
-              {isFromDoctorPortal ? 'Doctor Portal Access' : 'Connect to MedChain'}
-            </h1>
-            <p className="text-center mb-8" style={{ color: '#64748B' }}>
-              {isFromDoctorPortal
-                ? 'Verify your identity to access the doctor terminal'
-                : 'Connect your wallet to access the secure medical records system'}
-            </p>
-
-            {/* Security Badge */}
-            <div className="rounded-xl p-4 mb-6" style={{ background: '#ECFDF5', border: '1px solid #A7F3D0' }}>
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(16, 185, 129, 0.15)' }}>
-                  <Shield className="w-4 h-4" style={{ color: '#059669' }} />
+          {/* Value bullets */}
+          <div className="mt-10 space-y-4">
+            {[
+              { Icon: Lock, title: 'Tamper-proof by design', body: 'Alter one detail and verification instantly fails.' },
+              { Icon: CheckCircle2, title: 'Verify without a wallet', body: 'Employers scan a QR code and see the truth.' },
+              { Icon: Link2, title: 'Permanent public record', body: 'Backed by a real blockchain transaction.' },
+            ].map(({ Icon, title, body }) => (
+              <div key={title} className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.16)' }}>
+                  <Icon className="w-5 h-5" style={{ color: '#5EEAD4' }} />
                 </div>
                 <div>
-                  <p className="font-semibold text-sm" style={{ color: '#059669' }}>Blockchain-Secured</p>
-                  <p className="text-xs mt-1" style={{ color: '#64748B' }}>
-                    Your wallet acts as your cryptographic identity. No passwords, no breaches.
-                  </p>
+                  <p className="text-white font-semibold">{title}</p>
+                  <p className="text-sm" style={{ color: 'rgba(204,251,241,0.75)' }}>{body}</p>
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer trust row */}
+        <div className="relative z-10 flex items-center gap-8 pt-8" style={{ borderTop: '1px solid rgba(255,255,255,0.12)' }}>
+          <div>
+            <p className="text-2xl font-bold text-white">256-bit</p>
+            <p className="text-xs" style={{ color: 'rgba(204,251,241,0.7)' }}>AES encryption</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-white">&lt; 2s</p>
+            <p className="text-xs" style={{ color: 'rgba(204,251,241,0.7)' }}>to verify an MC</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-white">100%</p>
+            <p className="text-xs" style={{ color: 'rgba(204,251,241,0.7)' }}>on-chain audit trail</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ============ RIGHT: Login panel ============ */}
+      {/* Inline minHeight instead of the min-h-screen class, which a global rule
+          overrides with align-items:center and breaks the column width. */}
+      <div className="flex flex-col" style={{ minHeight: '100vh' }}>
+        {/* Mobile top bar (brand + back) — hidden on desktop */}
+        <div className="lg:hidden flex items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid #E2E8F0' }}>
+          <Link to="/" className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#0F766E' }}>
+              <Shield className="w-5 h-5 text-white" />
+            </div>
+            <span className="font-bold" style={{ color: '#1E293B' }}>Sarawak<span style={{ color: '#0F766E' }}>MedChain</span></span>
+          </Link>
+          <Link to="/" className="flex items-center gap-1 text-sm" style={{ color: '#64748B' }}>
+            <ChevronLeft className="w-4 h-4" /> Home
+          </Link>
+        </div>
+
+        {/* Desktop back link */}
+        <div className="hidden lg:flex justify-end px-10 pt-8">
+          <Link to="/" className="flex items-center gap-1 text-sm transition-colors hover:opacity-70" style={{ color: '#64748B' }}>
+            <ChevronLeft className="w-4 h-4" /> Back to Home
+          </Link>
+        </div>
+
+        {/* Centered content */}
+        <div className="flex-1 flex flex-col justify-center px-6 sm:px-10 xl:px-20 py-10">
+          <div className="w-full max-w-md mx-auto">
+            {/* Heading */}
+            <h2 className="text-3xl font-bold mb-2" style={{ color: '#0F172A' }}>
+              {isFromDoctorPortal ? 'Doctor Portal Access' : 'Sign in to MedChain'}
+            </h2>
+            <p className="mb-8" style={{ color: '#64748B' }}>
+              {isFromDoctorPortal
+                ? 'Verify your identity to access the doctor terminal.'
+                : 'Choose a role to explore, or connect your wallet for live blockchain access.'}
+            </p>
+
+            {/* Role cards (demo mode) */}
+            <div className="space-y-3 mb-7">
+              <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: '#94A3B8' }}>
+                Explore instantly — no wallet needed
+              </p>
+              {roleOptions.map(({ role, label, desc, Icon, gradient, ring }) => (
+                <button
+                  key={role}
+                  onClick={() => handleEnterDemoMode(role)}
+                  className="role-card w-full flex items-center gap-4 p-4 rounded-2xl text-left"
+                  style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = ring; e.currentTarget.style.boxShadow = `0 10px 28px ${ring}`; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)'; }}
+                >
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: gradient }}>
+                    <Icon className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold" style={{ color: '#0F172A' }}>Enter as {label}</p>
+                    <p className="text-sm truncate" style={{ color: '#64748B' }}>{desc}</p>
+                  </div>
+                  <ArrowRight className="w-5 h-5 flex-shrink-0" style={{ color: '#CBD5E1' }} />
+                </button>
+              ))}
             </div>
 
-            {/* MetaMask Not Installed Warning */}
-            {!isMetaMaskInstalled && (
-              <div className="p-4 rounded-xl mb-6 text-sm" style={{ background: '#FFFBEB', border: '1px solid #FDE68A', color: '#B45309' }}>
-                <p className="font-semibold mb-2">MetaMask Required</p>
-                <p style={{ color: '#64748B' }}>
-                  Please install the MetaMask browser extension to connect your wallet.{' '}
-                  <a
-                    href="https://metamask.io/download/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:underline"
-                    style={{ color: '#0F766E' }}
-                  >
-                    Download MetaMask
-                  </a>
-                </p>
-              </div>
-            )}
-
-            {/* Demo Mode Entry — always available as fallback */}
-            {(
-              <div className="p-6 rounded-xl mb-6" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', color: '#166534' }}>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(22, 163, 74, 0.1)' }}>
-                    <Play className="w-5 h-5" style={{ color: '#16A34A' }} />
-                  </div>
-                  <p className="font-bold text-lg" style={{ color: '#166534' }}>Live Demo Mode</p>
-                </div>
-                <p className="mb-4 leading-relaxed" style={{ color: '#334155' }}>
-                  Experience the full MedChain system with simulated blockchain transactions. No wallet required.
-                </p>
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    onClick={() => handleEnterDemoMode('doctor')}
-                    className="inline-flex items-center gap-2 text-white px-6 py-3 rounded-xl font-bold transition-all"
-                    style={{ background: 'linear-gradient(135deg, #0F766E, #14B8A6)', boxShadow: '0 4px 16px rgba(15, 118, 110, 0.25)' }}
-                  >
-                    Enter as Doctor
-                  </button>
-                  <button
-                    onClick={() => handleEnterDemoMode('patient')}
-                    className="inline-flex items-center gap-2 text-white px-6 py-3 rounded-xl font-bold transition-all"
-                    style={{ background: 'linear-gradient(135deg, #2563EB, #3B82F6)', boxShadow: '0 4px 16px rgba(37, 99, 235, 0.25)' }}
-                  >
-                    Enter as Patient
-                  </button>
-                  <button
-                    onClick={() => handleEnterDemoMode('admin')}
-                    className="inline-flex items-center gap-2 text-white px-6 py-3 rounded-xl font-bold transition-all"
-                    style={{ background: 'linear-gradient(135deg, #7C3AED, #8B5CF6)', boxShadow: '0 4px 16px rgba(124, 58, 237, 0.25)' }}
-                  >
-                    Enter as Admin
-                  </button>
-                </div>
-              </div>
-            )}
+            {/* Divider */}
+            <div className="flex items-center gap-4 mb-6">
+              <div className="flex-1 h-px" style={{ background: '#E2E8F0' }} />
+              <span className="text-xs font-semibold" style={{ color: '#94A3B8' }}>OR CONNECT LIVE</span>
+              <div className="flex-1 h-px" style={{ background: '#E2E8F0' }} />
+            </div>
 
             {/* Error Message */}
             {displayError && (
-              <div className="p-4 rounded-xl mb-6 text-sm flex items-start gap-3" style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626' }}>
+              <div className="p-4 rounded-xl mb-4 text-sm flex items-start gap-3" style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626' }}>
                 <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -772,36 +839,29 @@ export default function ConnectWallet({ onConnect, loading, error }) {
               </div>
             )}
 
-            {/* Connect Button */}
+            {/* MetaMask connect */}
             <button
               onClick={handleSecureConnect}
               disabled={isLoading || !isMetaMaskInstalled}
-              className={`w-full py-4 text-white font-bold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-3 ${
-                !isMetaMaskInstalled
-                  ? 'cursor-not-allowed'
-                  : ''
-              }`}
+              className="cw-primary-btn w-full py-4 text-white font-bold rounded-xl disabled:opacity-60 flex items-center justify-center gap-3"
               style={{
                 background: !isMetaMaskInstalled
                   ? 'linear-gradient(135deg, #94A3B8, #64748B)'
-                  : 'linear-gradient(135deg, #0F766E, #14B8A6)',
-                boxShadow: !isMetaMaskInstalled
-                  ? 'none'
-                  : '0 8px 24px rgba(15, 118, 110, 0.3)',
+                  : 'linear-gradient(135deg, #f6851b, #e2761b)',
+                boxShadow: !isMetaMaskInstalled ? 'none' : '0 8px 24px rgba(246, 133, 27, 0.35)',
+                cursor: (isLoading || !isMetaMaskInstalled) ? 'not-allowed' : 'pointer',
               }}
             >
               {isLoading ? (
                 <>
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                  <svg className="h-5 w-5" style={{ animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
                   Connecting to MetaMask...
                 </>
               ) : !isMetaMaskInstalled ? (
-                <>
-                  <span>MetaMask Not Installed</span>
-                </>
+                <span>MetaMask Not Installed</span>
               ) : (
                 <>
                   <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" className="w-6 h-6" />
@@ -810,46 +870,34 @@ export default function ConnectWallet({ onConnect, loading, error }) {
               )}
             </button>
 
-            {/* Info Text */}
-            <p className="text-xs text-center mt-4" style={{ color: '#94A3B8' }}>
-              Don't have MetaMask?{' '}
-              <a href="https://metamask.io/download/" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: '#0F766E' }}>
-                Download here
-              </a>
+            <p className="text-xs text-center mt-3" style={{ color: '#94A3B8' }}>
+              {isMetaMaskInstalled ? 'Your wallet is your identity — no passwords stored.' : (
+                <>Don't have MetaMask?{' '}
+                  <a href="https://metamask.io/download/" target="_blank" rel="noopener noreferrer" className="hover:underline" style={{ color: '#0F766E' }}>Download here</a>
+                </>
+              )}
             </p>
-          </div>
 
-          {/* Features */}
-          <div className="mt-8 grid grid-cols-3 gap-4">
-            <div className="text-center">
-              <div className="w-10 h-10 mx-auto mb-2 rounded-lg flex items-center justify-center" style={{ background: '#F1F5F9' }}>
-                <Lock className="w-5 h-5" style={{ color: '#64748B' }} />
-              </div>
-              <p className="text-xs" style={{ color: '#1E293B' }}>Zero Passwords</p>
+            {/* Trust chips */}
+            <div className="grid grid-cols-3 gap-3 mt-8">
+              {[
+                { Icon: Lock, label: 'Zero Passwords' },
+                { Icon: Shield, label: 'Audit Trail' },
+                { Icon: FileCheck, label: 'Instant Verify' },
+              ].map(({ Icon, label }) => (
+                <div key={label} className="flex flex-col items-center gap-2 py-3 rounded-xl" style={{ background: '#F8FAFC', border: '1px solid #F1F5F9' }}>
+                  <Icon className="w-5 h-5" style={{ color: '#0F766E' }} />
+                  <p className="text-xs font-medium" style={{ color: '#475569' }}>{label}</p>
+                </div>
+              ))}
             </div>
-            <div className="text-center">
-              <div className="w-10 h-10 mx-auto mb-2 rounded-lg flex items-center justify-center" style={{ background: '#F1F5F9' }}>
-                <Shield className="w-5 h-5" style={{ color: '#64748B' }} />
-              </div>
-              <p className="text-xs" style={{ color: '#1E293B' }}>Audit Trail</p>
-            </div>
-            <div className="text-center">
-              <div className="w-10 h-10 mx-auto mb-2 rounded-lg flex items-center justify-center" style={{ background: '#F1F5F9' }}>
-                <FileCheck className="w-5 h-5" style={{ color: '#64748B' }} />
-              </div>
-              <p className="text-xs" style={{ color: '#1E293B' }}>Instant Verify</p>
-            </div>
-          </div>
 
-          {/* Back Links */}
-          <div className="mt-8 text-center space-x-4">
-            <Link to="/pitch" className="text-sm transition-colors hover:opacity-70" style={{ color: '#94A3B8' }}>
-              View Pitch Deck
-            </Link>
-            <span style={{ color: '#CBD5E1' }}>|</span>
-            <Link to="/" className="text-sm transition-colors hover:opacity-70" style={{ color: '#94A3B8' }}>
-              Return Home
-            </Link>
+            {/* Footer links */}
+            <div className="mt-8 text-center space-x-4">
+              <Link to="/pitch" className="text-sm transition-colors hover:opacity-70" style={{ color: '#94A3B8' }}>View Pitch Deck</Link>
+              <span style={{ color: '#CBD5E1' }}>|</span>
+              <Link to="/" className="text-sm transition-colors hover:opacity-70" style={{ color: '#94A3B8' }}>Return Home</Link>
+            </div>
           </div>
         </div>
       </div>
