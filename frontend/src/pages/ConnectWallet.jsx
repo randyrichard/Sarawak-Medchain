@@ -332,10 +332,12 @@ export default function ConnectWallet({ onConnect, loading, error }) {
 
   // Get the intended destination (moved before any returns)
   // No default here: an unspecified origin means the generic sign-in (shows all
-  // roles). Only an explicit /patient or /doctor origin scopes the page.
+  // roles). An explicit origin scopes the page to that audience.
   const from = location.state?.from || '';
   const isFromDoctorPortal = from.includes('doctor');
   const isFromPatient = from.includes('patient');
+  // Facility (clinic/hospital) sign-up lands here as the admin owner.
+  const isFromFacility = from.includes('admin') || from.includes('mvp') || from.includes('ceo');
 
   // Combined error from parent or local
   const displayError = localError || error;
@@ -846,13 +848,20 @@ export default function ConnectWallet({ onConnect, loading, error }) {
 
         <div className="cw-body">
           <div className="cw-card">
-            <h2 className="cw-title">{isFromDoctorPortal ? 'Doctor Portal Access' : isFromPatient ? 'Access Your Records' : 'Sign in to MedChain'}</h2>
+            <h2 className="cw-title">
+              {isFromDoctorPortal ? 'Doctor Portal Access'
+                : isFromPatient ? 'Access Your Records'
+                : isFromFacility ? 'Facility Admin Access'
+                : 'Sign in to MedChain'}
+            </h2>
             <p className="cw-sub">
               {isFromDoctorPortal
                 ? 'Verify your identity to access the doctor terminal.'
                 : isFromPatient
                   ? 'Connect your wallet to view your own medical records and control who can access them. Free — no subscription.'
-                  : 'Choose a role to explore the prototype, or connect your wallet for live blockchain access.'}
+                  : isFromFacility
+                    ? 'Connect your admin wallet to manage your clinic or hospital — verify doctors and oversee your network.'
+                    : 'Choose a role to explore the prototype, or connect your wallet for live blockchain access.'}
             </p>
 
             {/* Role cards — scoped to the audience that arrived here. A patient
@@ -860,11 +869,12 @@ export default function ConnectWallet({ onConnect, loading, error }) {
             <p className="cw-section-label">
               {isFromPatient ? 'Preview as a patient — no wallet needed'
                 : isFromDoctorPortal ? 'Preview as a doctor — no wallet needed'
+                : isFromFacility ? 'Preview as an admin — no wallet needed'
                 : 'Explore instantly — no wallet needed'}
             </p>
             <div className="cw-roles">
               {roleOptions
-                .filter(({ role }) => isFromPatient ? role === 'patient' : isFromDoctorPortal ? role === 'doctor' : true)
+                .filter(({ role }) => isFromPatient ? role === 'patient' : isFromDoctorPortal ? role === 'doctor' : isFromFacility ? role === 'admin' : true)
                 .map(({ role, label, desc, Icon, gradient, ring }) => (
                 <button
                   key={role}

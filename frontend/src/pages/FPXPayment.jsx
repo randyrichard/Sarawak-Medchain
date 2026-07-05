@@ -1023,8 +1023,9 @@ export default function FPXPayment() {
                 // Clear demo mode to ensure real wallet connection
                 localStorage.removeItem('medchain_demo_mode');
                 localStorage.removeItem('medchain_demo_role');
-                // For top-up, go back to admin; for new signup, go to connect wallet
-                navigate(isTopUp ? '/admin' : '/connect');
+                // For top-up, go back to admin; for a new facility signup, go to
+                // the connect page scoped to the admin (facility owner) role.
+                navigate(isTopUp ? '/admin' : '/connect', isTopUp ? undefined : { state: { from: '/admin' } });
               }}
               className="text-white py-3 px-6 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
               style={{ background: 'linear-gradient(135deg, #0F2A5C 0%, #1E3A8A 100%)', boxShadow: '0 1px 3px rgba(15, 42, 92, 0.2)' }}
