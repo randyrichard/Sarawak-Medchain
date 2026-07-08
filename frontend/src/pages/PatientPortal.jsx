@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getMyRecords, grantAccess, revokeAccess, hasAccess, formatTimestamp } from '../utils/contract';
-import { retrieveMedicalRecord, openPDFInNewTab } from '../utils/api';
+import { getMyRecords, grantAccess, revokeAccess, hasAccess, formatTimestamp } from '../lib/blockchain/contract';
+import { retrieveMedicalRecord, openPDFInNewTab } from '../lib/data/api';
 import { useDemo, DEMO_MCS } from '../context/DemoContext';
 import { CheckCircle, XCircle, ShieldCheck, Key, FileText, RefreshCw, HelpCircle } from 'lucide-react';
 

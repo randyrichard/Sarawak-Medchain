@@ -10,7 +10,7 @@ import {
   addVerifiedDoctor,
   removeVerifiedDoctor,
   isVerifiedDoctor
-} from '../utils/contract';
+} from '../lib/blockchain/contract';
 import { useBilling } from '../context/BillingContext';
 import { useDemo } from '../context/DemoContext';
 import BroadcastNotification from '../components/BroadcastNotification';

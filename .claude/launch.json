@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "ai-chatbot",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Users/randyrichardd/Desktop/ai-chatbot/server.js"],
+      "port": 3000
+    },
+    {
+      "name": "medchain-frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "C:/Users/randyrichardd/Desktop/sarawak-medchain/frontend"],
+      "port": 5173
+    },
+    {
+      "name": "mc-audit-copilot",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "C:/Users/randyrichardd/Desktop/mc-audit-copilot"],
+      "port": 5174
+    }
+  ]
+}

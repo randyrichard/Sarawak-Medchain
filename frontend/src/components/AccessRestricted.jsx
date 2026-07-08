@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Lock } from 'lucide-react';
-import { ROLE_HOME, roleLabel } from '../utils/roles';
+import { ROLE_HOME, roleLabel } from '../lib/blockchain/roles';
 
 /**
  * Shown when a signed-in user opens a portal their role does not allow

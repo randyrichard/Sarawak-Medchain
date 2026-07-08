@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { connectWallet, getMyBalance } from './utils/contract';
+import { connectWallet, getMyBalance } from './lib/blockchain/contract';
 import { BillingProvider } from './context/BillingContext';
 import { MaintenanceProvider } from './context/MaintenanceContext';
 import { FoundingMemberProvider } from './context/FoundingMemberContext';
@@ -39,7 +39,7 @@ import TermsOfService from './pages/TermsOfService';
 import OTPDemo from './pages/OTPDemo';
 import { ServiceRestoredToast } from './components/ServiceNotifications';
 import AccessRestricted from './components/AccessRestricted';
-import { resolveRole, canAccess, ROLE_HOME } from './utils/roles';
+import { resolveRole, canAccess, ROLE_HOME } from './lib/blockchain/roles';
 import { Shield, DollarSign, X, AlertTriangle, User, Stethoscope, Settings, BarChart3, Lock, CreditCard, Menu, Wallet, ChevronRight, LogOut } from 'lucide-react';
 import './App.css';
 

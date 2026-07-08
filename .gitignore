@@ -54,3 +54,6 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Local Claude Code settings (may contain tokens) — never commit
+.claude/settings.local.json

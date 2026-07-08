@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getTotalRecordStats, getContractAddress, formatTimestamp } from '../utils/contract';
+import { getTotalRecordStats, getContractAddress, formatTimestamp } from '../lib/blockchain/contract';
 import { Shield, ExternalLink, ChevronRight, Zap } from 'lucide-react';
 
 // Average fraud cost per fake MC in Malaysia (RM)

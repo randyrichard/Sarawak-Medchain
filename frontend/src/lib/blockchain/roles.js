@@ -1,8 +1,7 @@
 import { ethers } from 'ethers';
-import ContractABI from '../SarawakMedMVP.json';
-import { getReadOnlyProvider } from './mcRegistry';
-
-const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '0x5FbDB2315678afecb367f032d93F642f64180aa3';
+import ContractABI from '../../SarawakMedMVP.json';
+import { getReadOnlyProvider } from './mc';
+import { CONTRACT_ADDRESS } from '../config';
 
 // Where each role lands after login
 export const ROLE_HOME = {

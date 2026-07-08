@@ -9,7 +9,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Shield, Lock, FileCheck, ChevronLeft, Play, Stethoscope, User, Settings, ArrowRight, CheckCircle2, Link2 } from 'lucide-react';
 import { useDemo } from '../context/DemoContext';
-import { canAccess, ROLE_HOME } from '../utils/roles';
+import { canAccess, ROLE_HOME } from '../lib/blockchain/roles';
 
 const MEDCHAIN_BLUE = '#0066CC';
 

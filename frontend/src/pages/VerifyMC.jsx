@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { supabase } from '../utils/supabase';
-import { computeMCHash, verifyMCOnChain, getMCIssuanceTx, getExplorerTxUrl } from '../utils/mcRegistry';
+import { fetchMCByHash } from '../lib/data/mcStore';
+import { computeMCHash, verifyMCOnChain, getMCIssuanceTx, getExplorerTxUrl } from '../lib/blockchain/mc';
 
 export default function VerifyMC() {
   const { hash } = useParams();
@@ -40,61 +40,9 @@ export default function VerifyMC() {
         setLoading(true);
         setError(null);
 
-        let data = null;
-
-        // Map a DB row (snake_case) to the display object. Never reads diagnosis.
-        const mapRow = (row) => ({
-          mcId: row.mc_id,
-          patientName: row.patient_name,
-          patientIC: row.ic_number,
-          doctorName: row.doctor_name,
-          mmcNumber: row.mmc_number,
-          hospital: row.clinic_name,
-          dateIssued: row.date_issued,
-          duration: row.duration,
-          startDate: row.start_date,
-          endDate: row.end_date,
-          blockNumber: row.block_number,
-        });
-
-        // STEP 1: Fetch the MC details.
-        // Prefer the locked-down verify_mc() RPC (returns only one record by its
-        // exact hash and never exposes the whole table). Falls back to a direct
-        // single-row read if the RPC isn't set up yet, then to localStorage.
-        if (supabase) {
-          try {
-            const rpc = await supabase.rpc('verify_mc', { mc_hash: hash });
-            if (!rpc.error && rpc.data && rpc.data.length > 0) {
-              data = mapRow(rpc.data[0]);
-            } else if (rpc.error) {
-              // RPC not created yet — fall back to a scoped single-row read
-              const result = await supabase
-                .from('medical_certificates')
-                .select('*')
-                .eq('id', hash)
-                .single();
-              if (!result.error && result.data) data = mapRow(result.data);
-            }
-          } catch (e) {
-            const result = await supabase
-              .from('medical_certificates')
-              .select('*')
-              .eq('id', hash)
-              .single();
-            if (!result.error && result.data) data = mapRow(result.data);
-          }
-        }
-
-        if (!data) {
-          const stored = localStorage.getItem(`mc_${hash}`);
-          if (stored) {
-            try {
-              data = JSON.parse(stored);
-            } catch (parseErr) {
-              // Corrupted data, ignore
-            }
-          }
-        }
+        // STEP 1: Fetch the MC details through the data layer (locked-down
+        // verify_mc RPC, with fallbacks). Diagnosis is never returned.
+        const data = await fetchMCByHash(hash);
 
         if (!data) {
           setError('MC record not found. This QR code may be invalid or expired.');

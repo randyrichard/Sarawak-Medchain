@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { getAllHospitalBalances } from '../utils/contract';
+import { getAllHospitalBalances } from '../lib/blockchain/contract';
 import { useBilling } from '../context/BillingContext';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';

@@ -2,16 +2,16 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import SignatureCanvas from 'react-signature-canvas';
-import { isVerifiedDoctor, writeRecord, readRecords, getMyBalance, requestEmergencyAccess, isHospitalPaused } from '../utils/contract';
-import { uploadMedicalRecord, checkStatus } from '../utils/api';
+import { isVerifiedDoctor, writeRecord, readRecords, getMyBalance, requestEmergencyAccess, isHospitalPaused } from '../lib/blockchain/contract';
+import { uploadMedicalRecord, checkStatus } from '../lib/data/api';
 import { useBilling } from '../context/BillingContext';
 import { useFoundingMember } from '../context/FoundingMemberContext';
 import { useDemo, DEMO_DOCTOR_INFO } from '../context/DemoContext';
 import BroadcastNotification from '../components/BroadcastNotification';
 import MaintenanceBanner from '../components/MaintenanceBanner';
 import FoundingPartnerBadge from '../components/FoundingPartnerBadge';
-import { supabase } from '../utils/supabase';
-import { computeMCHash, issueMCOnChain } from '../utils/mcRegistry';
+import { storeMC } from '../lib/data/mcStore';
+import { computeMCHash, issueMCOnChain } from '../lib/blockchain/mc';
 
 export default function DoctorPortal({ walletAddress }) {
   // Navigation hook - must be at top before any conditionals
@@ -318,35 +318,9 @@ export default function DoctorPortal({ walletAddress }) {
         timestamp: now.toISOString(),
       };
 
-      // PRIMARY: Persist to Supabase for cross-device verification
-      // Keyed by the MC's canonical hash so verifiers can recompute and compare
-      if (supabase) {
-        const { error: insertError } = await supabase
-          .from('medical_certificates')
-          .insert({
-            id: mcHash,
-            mc_id: mcId,
-            patient_name: mcFormData.patientName,
-            ic_number: mcFormData.patientIC,
-            // diagnosis intentionally NOT stored — kept private, off the public record
-            duration: duration,
-            doctor_name: doctorName,
-            clinic_name: hospitalName,
-            mmc_number: mmcNumber,
-            date_issued: issueDate,
-            start_date: startDate,
-            end_date: endDate,
-            block_number: blockNumber,
-          });
-        if (insertError) {
-          console.warn('Supabase insert error:', insertError.message);
-          // FALLBACK: Only use localStorage if Supabase fails
-          localStorage.setItem(`mc_${mcHash}`, JSON.stringify(mcDataToStore));
-        }
-      } else {
-        // No Supabase configured — fallback to localStorage
-        localStorage.setItem(`mc_${mcHash}`, JSON.stringify(mcDataToStore));
-      }
+      // Persist for cross-device verification through the data layer
+      // (locked-down store, keyed by the MC's canonical hash; no diagnosis).
+      await storeMC(mcDataToStore);
 
       const appUrl = import.meta.env.VITE_APP_URL || 'https://sarawak-medchain.pages.dev';
       const receiptInfo = {

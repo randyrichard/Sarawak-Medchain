@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { getBillingContract, getAllHospitalBalances } from '../utils/contract';
+import { getBillingContract, getAllHospitalBalances } from '../lib/blockchain/contract';
 
 const BillingContext = createContext(null);
 

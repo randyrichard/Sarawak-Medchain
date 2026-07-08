@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getTotalRecordStats } from '../utils/contract';
+import { getTotalRecordStats } from '../lib/blockchain/contract';
 
 // System components to monitor
 const SYSTEM_COMPONENTS = [
