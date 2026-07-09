@@ -5,11 +5,8 @@ import SignatureCanvas from 'react-signature-canvas';
 import { isVerifiedDoctor, writeRecord, readRecords, getMyBalance, requestEmergencyAccess, isHospitalPaused } from '../lib/blockchain/contract';
 import { uploadMedicalRecord, checkStatus } from '../lib/data/api';
 import { useBilling } from '../context/BillingContext';
-import { useFoundingMember } from '../context/FoundingMemberContext';
 import { useDemo, DEMO_DOCTOR_INFO } from '../context/DemoContext';
 import BroadcastNotification from '../components/BroadcastNotification';
-import MaintenanceBanner from '../components/MaintenanceBanner';
-import FoundingPartnerBadge from '../components/FoundingPartnerBadge';
 import { storeMC } from '../lib/data/mcStore';
 import { computeMCHash, issueMCOnChain } from '../lib/blockchain/mc';
 import PageHeader from '../ui/PageHeader';
@@ -33,11 +30,6 @@ export default function DoctorPortal({ walletAddress }) {
     mcsIssuedThisMonth,
     subscriptionPaid
   } = useBilling();
-
-  // Use Founding Member Context
-  const { isFoundingMember, getFoundingMemberNumber } = useFoundingMember();
-  const foundingMemberNumber = getFoundingMemberNumber(walletAddress);
-  const isFoundingPartner = isFoundingMember(walletAddress);
 
   const [isVerified, setIsVerified] = useState(false);
   const [loading, setLoading] = useState(false);

@@ -2,16 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { connectWallet, getMyBalance } from './lib/blockchain/contract';
 import { BillingProvider } from './context/BillingContext';
-import { MaintenanceProvider } from './context/MaintenanceContext';
-import { FoundingMemberProvider } from './context/FoundingMemberContext';
-import { LeadAnalyticsProvider } from './context/LeadAnalyticsContext';
-import { RevenueAlertProvider } from './context/RevenueAlertContext';
-import { DisasterRecoveryProvider } from './context/DisasterRecoveryContext';
 import { DemoProvider, useDemo } from './context/DemoContext';
 import DemoBanner from './components/DemoBanner';
-import { CEOAlertToast } from './components/CEOLeadAlerts';
-import RevenueAlertToast from './components/RevenueAlertToast';
-import { DRAlertToast } from './components/DisasterRecoveryDashboard';
 import PatientPortal from './pages/PatientPortal';
 import DoctorPortal from './pages/DoctorPortal';
 import AdminPortal from './pages/AdminPortal';
@@ -37,7 +29,6 @@ import NotFound from './pages/NotFound';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import OTPDemo from './pages/OTPDemo';
-import { ServiceRestoredToast } from './components/ServiceNotifications';
 import AccessRestricted from './components/AccessRestricted';
 import { resolveRole, canAccess, ROLE_HOME } from './lib/blockchain/roles';
 import { Shield, DollarSign, X, AlertTriangle, User, Stethoscope, Settings, BarChart3, Lock, CreditCard, Menu, Wallet, ChevronRight, LogOut } from 'lucide-react';
@@ -556,8 +547,6 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
       )}
 
       <div className="flex flex-1 overflow-hidden h-full">
-      {/* Service Restored Toast Notification */}
-      <ServiceRestoredToast />
       {/* Sidebar - hidden on mobile unless menu open, ALWAYS visible on desktop */}
       <aside
         className={`sidebar-nav ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} fixed md:relative z-50 w-72 flex flex-col flex-shrink-0 transition-transform duration-300`}
@@ -1215,21 +1204,11 @@ function App() {
   return (
     <ErrorBoundary>
       <DemoProvider>
-        <MaintenanceProvider>
-          <FoundingMemberProvider>
-            <LeadAnalyticsProvider>
-              <RevenueAlertProvider>
-                <DisasterRecoveryProvider>
-                  <BillingProvider>
-                    <HashRouter>
-                      <AppRoutes />
-                    </HashRouter>
-                  </BillingProvider>
-                </DisasterRecoveryProvider>
-              </RevenueAlertProvider>
-            </LeadAnalyticsProvider>
-          </FoundingMemberProvider>
-        </MaintenanceProvider>
+        <BillingProvider>
+          <HashRouter>
+            <AppRoutes />
+          </HashRouter>
+        </BillingProvider>
       </DemoProvider>
     </ErrorBoundary>
   );

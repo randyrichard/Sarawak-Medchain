@@ -6,7 +6,6 @@ import { useBilling } from '../context/BillingContext';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import BroadcastNotification from '../components/BroadcastNotification';
-import { ServiceRestoredToast } from '../components/ServiceNotifications';
 
 // HOSPITAL WALLET MAPPING - Maps wallet addresses to hospital data
 // In production, this would come from the blockchain or backend
@@ -644,9 +643,6 @@ export default function CEODashboard({ walletAddress }) {
     <div className="flex-1 flex-grow w-full min-h-full font-sans ceo-dashboard" style={{ backgroundColor: '#FFFFFF' }}>
       {/* Network-Wide Broadcast Notification */}
       <BroadcastNotification />
-
-      {/* Service Restored Toast Notification */}
-      <ServiceRestoredToast />
 
       <div className="px-12 py-10" style={{ maxWidth: '1600px', margin: '0 auto', padding: '40px 48px' }}>
       {/* Header - Full Width Enterprise Style */}
