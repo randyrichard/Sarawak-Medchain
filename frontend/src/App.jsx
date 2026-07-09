@@ -12,7 +12,6 @@ import ConnectWallet from './pages/ConnectWallet';
 import ServiceAgreement from './pages/ServiceAgreement';
 import FPXPayment from './pages/FPXPayment';
 import CEOQuarterlySummary from './pages/CEOQuarterlySummary';
-import FounderAdmin from './pages/FounderAdmin';
 import HospitalCEODashboard from './pages/HospitalCEODashboard';
 import BusinessOverview from './pages/BusinessOverview';
 import LandingPage from './pages/LandingPage';
@@ -643,19 +642,6 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
               </Link>
             </li>
             )}
-            {/* Founder Dashboard - Only shows for founder wallet AND not in demo mode */}
-            {!isDemo && walletAddress?.toLowerCase() === '0x70997970c51812dc3a010c7d01b50e0d17dc79c8' && (
-              <li>
-                <Link
-                  to="/founder-admin-secret-99"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-amber-50 transition-colors group border border-amber-300 bg-amber-50"
-                >
-                  <Lock className="w-5 h-5 text-amber-500" />
-                  <span className="text-amber-600 font-semibold">Founder Command</span>
-                </Link>
-              </li>
-            )}
           </ul>
         </nav>
 
@@ -1051,7 +1037,7 @@ function AppRoutes() {
   }, []);
 
   // Public routes that don't need wallet - NO MetaMask trigger
-  const publicPaths = ['/', '/founder-admin-secret-99', '/business-overview', '/pitch', '/pricing', '/connect', '/demo', '/demo-app', '/agreement', '/payment', '/ceo/quarterly', '/status', '/gov-preview', '/portal/gov-preview', '/admin/gov-dashboard', '/pwa/verify', '/pwa/issue', '/verify-agreement', '/sla', '/privacy', '/terms', '/otp'];
+  const publicPaths = ['/', '/business-overview', '/pitch', '/pricing', '/connect', '/demo', '/demo-app', '/agreement', '/payment', '/ceo/quarterly', '/status', '/gov-preview', '/portal/gov-preview', '/admin/gov-dashboard', '/pwa/verify', '/pwa/issue', '/verify-agreement', '/sla', '/privacy', '/terms', '/otp'];
   const isVerificationRoute = location.pathname.startsWith('/verify/');
   // Verification routes are also public (for employers to scan QR codes)
   const isPublicRoute = publicPaths.includes(location.pathname) || isVerificationRoute;
@@ -1090,7 +1076,6 @@ function AppRoutes() {
     return (
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/founder-admin-secret-99" element={<FounderAdmin />} />
         <Route path="/business-overview" element={<BusinessOverview />} />
         <Route path="/pitch" element={<HospitalPitch />} />
         <Route path="/pricing" element={<Navigate to="/pitch#pricing" replace />} />
