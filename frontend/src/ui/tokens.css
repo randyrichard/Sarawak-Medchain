@@ -1,0 +1,54 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Sarawak MedChain — Design Tokens
+   One source of truth for the institutional look. Components reference these
+   variables instead of hard-coded hex, so the whole product restyles from here.
+   ───────────────────────────────────────────────────────────────────────────── */
+:root {
+  /* Brand — teal */
+  --mc-teal-900: #0B3B37;
+  --mc-teal-700: #0F766E;
+  --mc-teal-500: #14B8A6;
+  --mc-teal-300: #5EEAD4;
+  --mc-teal-50:  #F0FDFA;
+  --mc-teal-border: #99F6E4;
+
+  /* Neutrals */
+  --mc-ink:       #0F172A;
+  --mc-slate-700: #334155;
+  --mc-slate-500: #64748B;
+  --mc-slate-400: #94A3B8;
+  --mc-border:    #E8EDF3;
+  --mc-bg:        #F1F5F9;
+  --mc-surface:   #FFFFFF;
+  --mc-surface-2: #F8FAFC;
+
+  /* Status */
+  --mc-green: #10B981;
+  --mc-amber: #D97706;
+  --mc-red:   #DC2626;
+
+  /* Typography */
+  --mc-font: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Shape */
+  --mc-radius:     18px;
+  --mc-radius-sm:  12px;
+  --mc-radius-pill: 999px;
+
+  /* Elevation */
+  --mc-shadow:       0 1px 3px rgba(15, 23, 42, .04), 0 8px 24px rgba(15, 23, 42, .03);
+  --mc-shadow-hover: 0 12px 28px rgba(15, 118, 110, .10);
+
+  /* Gradients */
+  --mc-grad-teal: linear-gradient(135deg, var(--mc-teal-700) 0%, var(--mc-teal-500) 100%);
+
+  /* Layout */
+  --mc-content-max: 1200px;
+}
+
+/* Shared primitive behaviours (kept tiny; the rest is inline-token styling) */
+.mc-card { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+.mc-card--hover:hover { transform: translateY(-2px); border-color: var(--mc-teal-border); box-shadow: var(--mc-shadow-hover); }
+.mc-btn { transition: transform .18s ease, box-shadow .18s ease, filter .18s ease; cursor: pointer; }
+.mc-btn:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.04); }
+.mc-btn:disabled { opacity: .55; cursor: not-allowed; }

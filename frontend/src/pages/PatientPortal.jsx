@@ -1,32 +1,30 @@
 import { useState, useEffect } from 'react';
-import { getMyRecords, grantAccess, revokeAccess, hasAccess, formatTimestamp } from '../lib/blockchain/contract';
+import { getMyRecords, grantAccess, revokeAccess, hasAccess } from '../lib/blockchain/contract';
 import { retrieveMedicalRecord, openPDFInNewTab } from '../lib/data/api';
-import { useDemo, DEMO_MCS } from '../context/DemoContext';
-import { CheckCircle, XCircle, ShieldCheck, Key, FileText, RefreshCw, HelpCircle } from 'lucide-react';
+import { useDemo } from '../context/DemoContext';
+import { CheckCircle, XCircle, ShieldCheck, Key, FileText, RefreshCw, HelpCircle, User } from 'lucide-react';
+import PortalPage from '../ui/PortalPage';
+import PageHeader from '../ui/PageHeader';
+import Card, { CardHeader } from '../ui/Card';
+import Button from '../ui/Button';
+import Badge from '../ui/Badge';
 
 // Format date for display - handles both Unix timestamps and ISO strings
 const formatRecordDate = (timestamp, dateIssued) => {
-  // If dateIssued is provided (demo mode), use it directly
   if (dateIssued) return dateIssued;
-
-  // Handle Unix timestamp (from blockchain)
   if (typeof timestamp === 'number' || !isNaN(Number(timestamp))) {
     const ts = Number(timestamp);
-    // If it's a Unix timestamp (seconds), convert to milliseconds
     const date = new Date(ts > 9999999999 ? ts : ts * 1000);
     if (!isNaN(date.getTime())) {
       return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     }
   }
-
-  // Handle ISO string
   if (typeof timestamp === 'string') {
     const date = new Date(timestamp);
     if (!isNaN(date.getTime())) {
       return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     }
   }
-
   return 'Date unavailable';
 };
 
@@ -43,22 +41,19 @@ export default function PatientPortal({ walletAddress }) {
   }, [isDemoMode]);
 
   const loadRecords = async () => {
-    // Demo mode: use demo data, no blockchain calls
     if (isDemoMode) {
       setRecords(demoMCs.map(mc => ({
         ipfsHash: mc.txHash,
         timestamp: mc.timestamp,
-        dateIssued: mc.dateIssued, // Use formatted date from demo data
+        dateIssued: mc.dateIssued,
         doctor: mc.doctor,
         doctorAddress: mc.txHash?.slice(0, 42) || '0xDemoDoctor',
-        diagnosis: mc.diagnosis,
         patientName: mc.patientName,
         mcDays: mc.mcDays,
       })));
       setMessage('');
       return;
     }
-
     try {
       setLoading(true);
       const myRecords = await getMyRecords();
@@ -72,695 +67,162 @@ export default function PatientPortal({ walletAddress }) {
   };
 
   const handleGrantAccess = async () => {
-    // Demo mode: simulate success
-    if (isDemoMode) {
-      setMessage(`✓ Demo: Access granted to ${doctorAddress}`);
-      setDoctorAddress('');
-      return;
-    }
-
+    if (isDemoMode) { setMessage(`✓ Demo: Access granted to ${doctorAddress}`); setDoctorAddress(''); return; }
     try {
-      setLoading(true);
-      setMessage('Granting access...');
+      setLoading(true); setMessage('Granting access...');
       await grantAccess(doctorAddress);
-      setMessage(`Access granted to ${doctorAddress}`);
-      setDoctorAddress('');
-    } catch (error) {
-      console.error('Error granting access:', error);
-      setMessage(`Error: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
+      setMessage(`Access granted to ${doctorAddress}`); setDoctorAddress('');
+    } catch (error) { setMessage(`Error: ${error.message}`); } finally { setLoading(false); }
   };
 
   const handleRevokeAccess = async () => {
-    // Demo mode: simulate success
-    if (isDemoMode) {
-      setMessage(`✓ Demo: Access revoked from ${doctorAddress}`);
-      setDoctorAddress('');
-      return;
-    }
-
+    if (isDemoMode) { setMessage(`✓ Demo: Access revoked from ${doctorAddress}`); setDoctorAddress(''); return; }
     try {
-      setLoading(true);
-      setMessage('Revoking access...');
+      setLoading(true); setMessage('Revoking access...');
       await revokeAccess(doctorAddress);
-      setMessage(`Access revoked from ${doctorAddress}`);
-      setDoctorAddress('');
-    } catch (error) {
-      console.error('Error revoking access:', error);
-      setMessage(`Error: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
+      setMessage(`Access revoked from ${doctorAddress}`); setDoctorAddress('');
+    } catch (error) { setMessage(`Error: ${error.message}`); } finally { setLoading(false); }
   };
 
   const handleCheckAccess = async () => {
-    // Demo mode: simulate success
-    if (isDemoMode) {
-      setMessage(`✓ Demo: Doctor ${doctorAddress} HAS access`);
-      return;
-    }
-
+    if (isDemoMode) { setMessage(`✓ Demo: Doctor ${doctorAddress} HAS access`); return; }
     try {
       setLoading(true);
       const access = await hasAccess(doctorAddress);
       setMessage(`Doctor ${doctorAddress} ${access ? 'HAS' : 'DOES NOT HAVE'} access`);
-    } catch (error) {
-      console.error('Error checking access:', error);
-      setMessage(`Error: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
+    } catch (error) { setMessage(`Error: ${error.message}`); } finally { setLoading(false); }
   };
 
   const handleViewRecord = async (ipfsHash) => {
     try {
       const key = encryptionKeys[ipfsHash];
-      if (!key) {
-        setMessage('Please enter the encryption key for this record');
-        return;
-      }
-      setLoading(true);
-      setMessage('Retrieving and decrypting record...');
+      if (!key) { setMessage('Please enter the encryption key for this record'); return; }
+      setLoading(true); setMessage('Retrieving and decrypting record...');
       const pdfBlob = await retrieveMedicalRecord(ipfsHash, key, walletAddress);
       openPDFInNewTab(pdfBlob);
       setMessage('Record opened in new tab');
-    } catch (error) {
-      console.error('Error viewing record:', error);
-      setMessage(`Error: ${error.message}`);
-    } finally {
-      setLoading(false);
-    }
+    } catch (error) { setMessage(`Error: ${error.message}`); } finally { setLoading(false); }
   };
 
-  const handleKeyChange = (ipfsHash, value) => {
-    setEncryptionKeys(prev => ({ ...prev, [ipfsHash]: value }));
-  };
+  const handleKeyChange = (ipfsHash, value) => setEncryptionKeys(prev => ({ ...prev, [ipfsHash]: value }));
 
   const isButtonDisabled = loading || !doctorAddress;
+  const isError = message.includes('Error');
 
-  // Card styles - light theme
-  const cardStyle = {
-    border: '1.5px solid #E8EDF3',
-    borderRadius: '18px',
-    backgroundColor: '#FFFFFF',
-    padding: '26px',
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-    boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.03)'
+  const inputStyle = {
+    width: '100%', padding: '15px 16px', borderRadius: 'var(--mc-radius-sm)',
+    background: 'var(--mc-surface-2)', border: '1px solid var(--mc-border)',
+    color: 'var(--mc-ink)', fontSize: '0.95rem', outline: 'none', boxSizing: 'border-box',
+    fontFamily: 'monospace',
   };
 
-  // Button styles with hover transitions
-  const primaryButtonStyle = {
-    width: '100%',
-    padding: '12px 18px',
-    borderRadius: '10px',
-    background: isButtonDisabled
-      ? '#E2E8F0'
-      : 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)',
-    border: 'none',
-    color: isButtonDisabled ? '#94A3B8' : '#fff',
-    fontSize: '0.85rem',
-    fontWeight: '600',
-    cursor: isButtonDisabled ? 'not-allowed' : 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    transition: 'all 0.2s ease'
-  };
-
-  const secondaryButtonStyle = {
-    width: '100%',
-    padding: '12px 18px',
-    borderRadius: '10px',
-    background: '#F8FAFC',
-    border: '1px solid #E2E8F0',
-    color: isButtonDisabled ? '#94A3B8' : '#1E293B',
-    fontSize: '0.85rem',
-    fontWeight: '500',
-    cursor: isButtonDisabled ? 'not-allowed' : 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    transition: 'all 0.2s ease'
-  };
+  const header = (
+    <PageHeader
+      icon={<User size={22} />}
+      title="Patient Portal"
+      eyebrow="Secure Patient View"
+      actions={
+        <>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderRadius: 'var(--mc-radius-sm)', background: 'var(--mc-teal-50)', border: '1px solid var(--mc-border)' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--mc-green)', boxShadow: '0 0 8px var(--mc-green)' }} />
+            <code style={{ color: 'var(--mc-slate-500)', fontSize: '0.75rem' }}>
+              {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
+            </code>
+          </span>
+          <Button variant="ghost" onClick={loadRecords} disabled={loading} style={{ padding: '9px 14px', fontSize: '0.8rem' }}>
+            <RefreshCw size={16} /> Refresh
+          </Button>
+        </>
+      }
+    />
+  );
 
   return (
-    <div className="patient-portal" style={{
-      backgroundColor: '#F1F5F9',
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      width: '100%',
-      maxWidth: '100%',
-      flexShrink: 0,
-      fontFamily: "'Plus Jakarta Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
-    }}>
-      {/* Premium Header */}
-      <header className="patient-header" style={{
-        background: '#FFFFFF',
-        borderBottom: '1px solid #E2E8F0',
-        padding: '22px 24px',
-        width: '100%',
-        boxSizing: 'border-box'
-      }}>
-        <div className="header-content" style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          maxWidth: '920px',
-          margin: '0 auto',
-          width: '100%',
-          flexWrap: 'wrap',
-          gap: '16px'
+    <PortalPage header={header} maxWidth="1000px">
+      {message && (
+        <div style={{
+          marginBottom: '24px', padding: '16px 20px', borderRadius: 'var(--mc-radius-sm)',
+          background: isError ? 'rgba(220,38,38,.06)' : 'rgba(16,185,129,.06)',
+          border: `1px solid ${isError ? 'rgba(220,38,38,.2)' : 'rgba(16,185,129,.2)'}`,
+          color: isError ? 'var(--mc-red)' : 'var(--mc-green)',
+          fontSize: '0.9rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '12px',
         }}>
-          {/* Left: Title */}
-          <div className="header-title" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{
-              width: '46px',
-              height: '46px',
-              borderRadius: '13px',
-              background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 6px 18px rgba(15, 118, 110, 0.28)',
-              flexShrink: 0
-            }}>
-              <svg style={{ width: '22px', height: '22px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </div>
-            <div>
-              <h1 className="portal-title" style={{ color: '#0F172A', fontSize: '1.35rem', fontWeight: '800', margin: 0, letterSpacing: '-0.02em' }}>Patient Portal</h1>
-              <span style={{
-                fontSize: '0.65rem',
-                fontWeight: '700',
-                color: '#0F766E',
-                textTransform: 'uppercase',
-                letterSpacing: '1px'
-              }}>Secure Patient View</span>
-            </div>
-          </div>
-
-          {/* Right: Wallet + Refresh */}
-          <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            <div className="wallet-badge" style={{
-              padding: '8px 12px',
-              borderRadius: '10px',
-              background: 'rgba(20, 184, 166, 0.06)',
-              border: '1px solid #E2E8F0',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', boxShadow: '0 0 8px #10b981', flexShrink: 0 }}></div>
-              <code className="wallet-address" style={{ color: '#64748B', fontSize: '0.75rem', fontFamily: 'monospace' }}>
-                {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}
-              </code>
-            </div>
-            <button
-              onClick={loadRecords}
-              disabled={loading}
-              className="refresh-btn"
-              style={{
-                padding: '8px 14px',
-                borderRadius: '10px',
-                background: 'rgba(20, 184, 166, 0.08)',
-                border: '1px solid #E2E8F0',
-                color: '#14b8a6',
-                fontSize: '0.8rem',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              <RefreshCw size={16} />
-              <span className="refresh-text">Refresh</span>
-            </button>
-          </div>
+          {isError ? <XCircle size={20} style={{ flexShrink: 0 }} /> : <CheckCircle size={20} style={{ flexShrink: 0 }} />}
+          {message}
         </div>
-      </header>
+      )}
 
-      {/* Main Content */}
-      <div className="main-content" style={{
-        padding: '32px 16px',
-        width: '100%',
-        maxWidth: '1000px',
-        boxSizing: 'border-box'
-      }}>
-        {/* Status Messages */}
-        {message && (
-          <div style={{
-            marginBottom: '24px',
-            padding: '16px 20px',
-            borderRadius: '12px',
-            background: message.includes('Error')
-              ? 'rgba(239, 68, 68, 0.06)'
-              : 'rgba(16, 185, 129, 0.06)',
-            border: message.includes('Error') ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid rgba(16, 185, 129, 0.2)',
-            color: message.includes('Error') ? '#dc2626' : '#059669',
-            fontSize: '0.9rem',
-            fontWeight: '500',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px'
-          }}>
-            {message.includes('Error') ? (
-              <XCircle size={20} style={{ flexShrink: 0 }} />
-            ) : (
-              <CheckCircle size={20} style={{ flexShrink: 0 }} />
-            )}
-            {message}
+      <div className="patient-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', alignItems: 'stretch' }}>
+        {/* Access Control */}
+        <Card hover style={{ display: 'flex', flexDirection: 'column' }}>
+          <CardHeader icon={<Key size={20} />} title="Access Control" subtitle="Manage doctor permissions" />
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: 'var(--mc-slate-400)', textTransform: 'uppercase', letterSpacing: '1.2px', marginBottom: '10px' }}>
+              Doctor's Wallet Address
+            </label>
+            <input type="text" placeholder="0x..." value={doctorAddress} onChange={(e) => setDoctorAddress(e.target.value)} style={inputStyle} />
           </div>
-        )}
-
-        {/* Two Column Grid - Responsive */}
-        <div className="patient-grid" style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '24px',
-          padding: '24px',
-          alignItems: 'stretch'
-        }}>
-
-          {/* LEFT CARD - Access Control */}
-          <div className="patient-portal-card" style={cardStyle}>
-            {/* Header row - fixed at top */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0
-              }}>
-                <Key size={20} color="white" />
-              </div>
-              <div style={{ flex: 1 }}>
-                <h2 style={{ color: '#1E293B', fontSize: '1.1rem', fontWeight: '600', margin: 0 }}>Access Control</h2>
-                <span style={{ color: '#94A3B8', fontSize: '0.75rem' }}>Manage doctor permissions</span>
-              </div>
-            </div>
-
-            {/* Input Field */}
-            <div style={{ marginBottom: '16px', flexShrink: 0 }}>
-              <label style={{
-                display: 'block',
-                fontSize: '0.7rem',
-                fontWeight: '700',
-                color: '#94A3B8',
-                textTransform: 'uppercase',
-                letterSpacing: '1.2px',
-                marginBottom: '10px'
-              }}>Doctor's Wallet Address</label>
-              <input
-                type="text"
-                placeholder="0x..."
-                value={doctorAddress}
-                onChange={(e) => setDoctorAddress(e.target.value)}
-                className="premium-input"
-                style={{
-                  width: '100%',
-                  padding: '16px 18px',
-                  borderRadius: '12px',
-                  backgroundColor: '#F8FAFC',
-                  border: '1px solid #E2E8F0',
-                  color: '#1E293B',
-                  fontSize: '0.95rem',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                  transition: 'all 0.2s ease',
-                  fontFamily: 'monospace'
-                }}
-              />
-            </div>
-
-            {/* Buttons */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: 'auto', flexShrink: 0 }}>
-              <button
-                onClick={handleGrantAccess}
-                disabled={isButtonDisabled}
-                className="btn-primary"
-                style={primaryButtonStyle}
-              >
-                <CheckCircle size={18} />
-                Grant Access
-              </button>
-
-              <button
-                onClick={handleRevokeAccess}
-                disabled={isButtonDisabled}
-                className="btn-secondary"
-                style={secondaryButtonStyle}
-              >
-                <XCircle size={18} />
-                Revoke Access
-              </button>
-
-              <button
-                onClick={handleCheckAccess}
-                disabled={isButtonDisabled}
-                className="btn-secondary"
-                style={secondaryButtonStyle}
-              >
-                <HelpCircle size={18} />
-                Check Access
-              </button>
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: 'auto' }}>
+            <Button variant="primary" onClick={handleGrantAccess} disabled={isButtonDisabled} style={{ width: '100%' }}>
+              <CheckCircle size={18} /> Grant Access
+            </Button>
+            <Button variant="secondary" onClick={handleRevokeAccess} disabled={isButtonDisabled} style={{ width: '100%' }}>
+              <XCircle size={18} /> Revoke Access
+            </Button>
+            <Button variant="secondary" onClick={handleCheckAccess} disabled={isButtonDisabled} style={{ width: '100%' }}>
+              <HelpCircle size={18} /> Check Access
+            </Button>
           </div>
+        </Card>
 
-          {/* RIGHT CARD - My Medical Records */}
-          <div className="patient-portal-card" style={cardStyle}>
-            {/* Header row - fixed at top */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0
-              }}>
-                <FileText size={20} color="white" />
+        {/* My Medical Records */}
+        <Card hover style={{ display: 'flex', flexDirection: 'column' }}>
+          <CardHeader
+            icon={<FileText size={20} />}
+            title="My Medical Records"
+            subtitle="Blockchain-secured documents"
+            right={<Badge tone="teal">{records.length} records</Badge>}
+          />
+          {records.length === 0 ? (
+            <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '20px 0' }}>
+              <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(15,118,110,.1) 0%, transparent 75%)', border: '1px solid var(--mc-teal-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+                <ShieldCheck size={40} color="var(--mc-teal-500)" strokeWidth={1.5} />
               </div>
-              <div style={{ flex: 1 }}>
-                <h2 style={{ color: '#1E293B', fontSize: '1.1rem', fontWeight: '600', margin: 0 }}>My Medical Records</h2>
-                <span style={{ color: '#94A3B8', fontSize: '0.75rem' }}>Blockchain-secured documents</span>
-              </div>
-              <span style={{
-                padding: '3px 10px',
-                borderRadius: '10px',
-                backgroundColor: 'rgba(20, 184, 166, 0.08)',
-                color: '#0d9488',
-                fontSize: '0.7rem',
-                fontWeight: '500',
-                flexShrink: 0
-              }}>{records.length} records</span>
+              <p style={{ color: 'var(--mc-ink)', fontSize: '0.95rem', fontWeight: 600, margin: '0 0 4px' }}>Your medical history is secured</p>
+              <p style={{ color: 'var(--mc-teal-700)', fontSize: '0.85rem', fontWeight: 500, margin: 0 }}>on the Sarawak Blockchain</p>
             </div>
-
-            {/* Content - grows and centers */}
-            {records.length === 0 ? (
-              <div style={{
-                flexGrow: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                alignItems: 'center'
-              }}>
-                {/* Shield Icon */}
-                <div className="shield-glow" style={{
-                  width: '80px',
-                  height: '80px',
-                  borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(20, 184, 166, 0.1) 0%, rgba(20, 184, 166, 0.03) 60%, transparent 80%)',
-                  border: '1px solid rgba(20, 184, 166, 0.2)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '16px'
-                }}>
-                  <ShieldCheck size={40} color="#14b8a6" strokeWidth={1.5} />
-                </div>
-                <p style={{ color: '#1E293B', fontSize: '0.95rem', fontWeight: '600', margin: '0 0 4px 0' }}>
-                  Your medical history is secured
-                </p>
-                <p style={{ color: '#14b8a6', fontSize: '0.85rem', fontWeight: '500', margin: 0 }}>
-                  on the Sarawak Blockchain
-                </p>
-              </div>
-            ) : (
-              <div style={{ flexGrow: 1, overflowY: 'auto' }}>
-                {records.map((record, index) => (
-                  <div
-                    key={index}
-                    className="record-item"
-                    style={{
-                      background: '#F8FAFC',
-                      border: '1px solid #E2E8F0',
-                      borderRadius: '14px',
-                      padding: '18px',
-                      marginBottom: '12px',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    <div style={{ display: 'flex', gap: '20px', marginBottom: '14px' }}>
-                      <div>
-                        <span style={{ color: '#94A3B8', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>Date</span>
-                        <p style={{ color: '#1E293B', margin: '4px 0 0 0', fontWeight: '500' }}>{formatRecordDate(record.timestamp, record.dateIssued)}</p>
-                      </div>
-                      <div>
-                        <span style={{ color: '#94A3B8', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: '600' }}>Doctor</span>
-                        <p style={{ color: '#64748B', margin: '4px 0 0 0', fontFamily: 'monospace', fontSize: '0.85rem' }}>{(record.doctorAddress || '0xDemoDoctor').slice(0, 10)}...</p>
-                      </div>
+          ) : (
+            <div style={{ flexGrow: 1, overflowY: 'auto' }}>
+              {records.map((record, index) => (
+                <div key={index} style={{ background: 'var(--mc-surface-2)', border: '1px solid var(--mc-border)', borderRadius: '14px', padding: '18px', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', gap: '20px', marginBottom: '14px' }}>
+                    <div>
+                      <span style={{ color: 'var(--mc-slate-400)', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>Date</span>
+                      <p style={{ color: 'var(--mc-ink)', margin: '4px 0 0', fontWeight: 500 }}>{formatRecordDate(record.timestamp, record.dateIssued)}</p>
                     </div>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <input
-                        type="text"
-                        placeholder="Enter encryption key"
-                        value={encryptionKeys[record.ipfsHash] || ''}
-                        onChange={(e) => handleKeyChange(record.ipfsHash, e.target.value)}
-                        className="premium-input"
-                        style={{
-                          flex: 1,
-                          padding: '12px 14px',
-                          borderRadius: '10px',
-                          backgroundColor: '#FFFFFF',
-                          border: '1px solid #E2E8F0',
-                          color: '#1E293B',
-                          fontSize: '0.85rem',
-                          outline: 'none',
-                          transition: 'all 0.2s ease'
-                        }}
-                      />
-                      <button
-                        onClick={() => handleViewRecord(record.ipfsHash)}
-                        disabled={loading || !encryptionKeys[record.ipfsHash]}
-                        className="view-btn"
-                        style={{
-                          padding: '12px 20px',
-                          borderRadius: '10px',
-                          background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)',
-                          border: 'none',
-                          color: '#fff',
-                          fontSize: '0.85rem',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          boxShadow: '0 2px 10px rgba(20, 184, 166, 0.25)'
-                        }}
-                      >
-                        View
-                      </button>
+                    <div>
+                      <span style={{ color: 'var(--mc-slate-400)', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>Doctor</span>
+                      <p style={{ color: 'var(--mc-slate-500)', margin: '4px 0 0', fontFamily: 'monospace', fontSize: '0.85rem' }}>{(record.doctorAddress || '0xDemoDoctor').slice(0, 10)}...</p>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-        </div>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <input type="text" placeholder="Enter encryption key" value={encryptionKeys[record.ipfsHash] || ''} onChange={(e) => handleKeyChange(record.ipfsHash, e.target.value)} style={{ ...inputStyle, flex: 1, padding: '12px 14px', fontSize: '0.85rem', background: 'var(--mc-surface)' }} />
+                    <Button variant="primary" onClick={() => handleViewRecord(record.ipfsHash)} disabled={loading || !encryptionKeys[record.ipfsHash]} style={{ padding: '12px 20px' }}>
+                      View
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
       </div>
 
-      {/* Premium CSS */}
       <style>{`
-        /* Premium hover effects */
-        .btn-primary:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 25px rgba(20, 184, 166, 0.3) !important;
-          filter: brightness(1.1);
-        }
-        .btn-primary:active:not(:disabled) {
-          transform: translateY(0);
-        }
-
-        .btn-secondary:hover:not(:disabled) {
-          background: #F1F5F9 !important;
-          border-color: #CBD5E1 !important;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
-        }
-        .btn-secondary:active:not(:disabled) {
-          transform: translateY(0);
-        }
-
-        .refresh-btn:hover {
-          background: rgba(20, 184, 166, 0.12) !important;
-          border-color: rgba(20, 184, 166, 0.3) !important;
-          transform: translateY(-1px);
-        }
-
-        .premium-input:focus {
-          border-color: rgba(20, 184, 166, 0.4) !important;
-          box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
-        }
-
-        .premium-input::placeholder {
-          color: #94A3B8;
-        }
-
-        .patient-portal-card {
-          border: 1.5px solid #E8EDF3 !important;
-          border-radius: 18px !important;
-          background-color: #FFFFFF !important;
-          transition: all 0.2s ease;
-        }
-
-        .patient-portal-card:hover {
-          border-color: #99F6E4 !important;
-          box-shadow: 0 10px 28px rgba(15, 118, 110, 0.10) !important;
-          transform: translateY(-2px);
-        }
-
-        .shield-glow {
-          animation: shieldPulse 3s ease-in-out infinite;
-        }
-
-        @keyframes shieldPulse {
-          0%, 100% {
-            box-shadow: 0 0 30px rgba(20, 184, 166, 0.08), 0 0 60px rgba(20, 184, 166, 0.04);
-          }
-          50% {
-            box-shadow: 0 0 40px rgba(20, 184, 166, 0.12), 0 0 80px rgba(20, 184, 166, 0.06);
-          }
-        }
-
-        .record-item:hover {
-          background: #F1F5F9 !important;
-          border-color: #CBD5E1 !important;
-        }
-
-        .view-btn:hover:not(:disabled) {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 15px rgba(20, 184, 166, 0.35);
-        }
-
-        /* ============ MOBILE RESPONSIVE STYLES ============ */
         @media (max-width: 768px) {
-          .patient-portal {
-            /* max-width (not overflow-x:hidden) avoids forcing overflow-y to auto,
-               which would trap page scrolling inside the portal */
-            max-width: 100% !important;
-          }
-
-          /* Stack cards vertically */
-          .patient-grid {
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 20px !important;
-            padding: 8px !important;
-          }
-
-          /* Full width cards */
-          .patient-portal-card {
-            width: 100% !important;
-            min-width: unset !important;
-            max-width: 100% !important;
-            padding: 20px !important;
-            box-sizing: border-box !important;
-          }
-
-          /* Header adjustments */
-          .header-content {
-            flex-direction: column !important;
-            gap: 16px !important;
-            align-items: stretch !important;
-          }
-
-          .header-title {
-            width: 100% !important;
-          }
-
-          .portal-title {
-            font-size: 1.15rem !important;
-          }
-
-          /* Wallet + refresh row */
-          .header-actions {
-            width: 100% !important;
-            justify-content: space-between !important;
-          }
-
-          .wallet-badge {
-            flex: 1 !important;
-            min-width: 0 !important;
-          }
-
-          .wallet-address {
-            font-size: 0.7rem !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
-          }
-
-          /* Main content padding */
-          .main-content {
-            padding: 20px 12px !important;
-          }
-
-          /* Smaller buttons */
-          .btn-primary, .btn-secondary {
-            padding: 14px 16px !important;
-            font-size: 0.9rem !important;
-          }
-
-          /* Record items stack */
-          .record-item > div:first-child {
-            flex-direction: column !important;
-            gap: 12px !important;
-          }
-
-          /* Input and view button stack */
-          .record-item > div:last-child {
-            flex-direction: column !important;
-            gap: 10px !important;
-          }
-
-          .record-item .view-btn,
-          .view-btn {
-            width: 100% !important;
-          }
-        }
-
-        /* Extra small screens */
-        @media (max-width: 480px) {
-          .patient-grid {
-            padding: 4px !important;
-          }
-
-          .patient-portal-card {
-            padding: 16px !important;
-            border-radius: 12px !important;
-          }
-
-          .patient-header {
-            padding: 16px 12px !important;
-          }
-
-          /* Shorter wallet display */
-          .wallet-address {
-            max-width: 80px !important;
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
-          }
-
-          .refresh-text {
-            display: none !important;
-          }
+          .patient-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
-    </div>
+    </PortalPage>
   );
 }
