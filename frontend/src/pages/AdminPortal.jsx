@@ -14,6 +14,7 @@ import {
 import { useBilling } from '../context/BillingContext';
 import { useDemo } from '../context/DemoContext';
 import BroadcastNotification from '../components/BroadcastNotification';
+import PageHeader from '../ui/PageHeader';
 
 // Doctor Performance Leaderboard Data
 const generateDoctorPerformanceData = () => {
@@ -336,36 +337,40 @@ export default function AdminPortal({ walletAddress }) {
     <div className="flex-1 flex-grow w-full min-h-full font-sans admin-portal" style={{ backgroundColor: '#F1F5F9', fontFamily: "'Plus Jakarta Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" }}>
       <BroadcastNotification />
 
-      <div className="px-8 lg:px-12 py-10" style={{ maxWidth: '1600px', margin: '0 auto', padding: '40px 48px 72px' }}>
+      <PageHeader
+        icon={
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        }
+        title="Hospital Admin Portal"
+        eyebrow="Enterprise Billing Dashboard"
+        maxWidth="1600px"
+        actions={
+          <>
+            <select
+              value={facilityType}
+              onChange={(e) => setFacilityType(e.target.value)}
+              className="bg-white border border-slate-200 text-slate-800 text-sm font-medium rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            >
+              <option value="Hospital">Hospital</option>
+              <option value="Clinic">Clinic</option>
+            </select>
+            <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
+              isAdmin
+                ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/30'
+                : isPendingAdmin
+                  ? 'bg-yellow-500/10 text-yellow-600 border border-yellow-500/30'
+                  : 'bg-slate-100 text-slate-500 border border-slate-200'
+            }`}>
+              {isAdmin ? 'Admin' : isPendingAdmin ? 'Pending Admin' : 'Viewer'}
+            </span>
+          </>
+        }
+      />
 
-        {/* ==================== HEADER SECTION ==================== */}
-        <div style={{ marginBottom: '32px' }}>
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-3xl lg:text-4xl font-extrabold text-slate-900 mb-2 tracking-tight">Hospital Admin Portal</h1>
-              <p className="text-slate-500">Sarawak MedChain Enterprise Billing Dashboard</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <select
-                value={facilityType}
-                onChange={(e) => setFacilityType(e.target.value)}
-                className="bg-white border border-slate-200 text-slate-800 text-sm font-medium rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-              >
-                <option value="Hospital">Hospital</option>
-                <option value="Clinic">Clinic</option>
-              </select>
-              <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                isAdmin
-                  ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/30'
-                  : isPendingAdmin
-                    ? 'bg-yellow-500/10 text-yellow-600 border border-yellow-500/30'
-                    : 'bg-slate-100 text-slate-500 border border-slate-200'
-              }`}>
-                {isAdmin ? 'Admin' : isPendingAdmin ? 'Pending Admin' : 'Viewer'}
-              </span>
-            </div>
-          </div>
-        </div>
+      <div className="px-8 lg:px-12 py-10" style={{ maxWidth: '1600px', margin: '0 auto', padding: '40px 48px 72px' }}>
 
         {/* ==================== ALERT BANNERS ==================== */}
         {isSubscriptionOverdue && (

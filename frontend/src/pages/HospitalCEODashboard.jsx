@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import PageHeader from '../ui/PageHeader';
 
 // Premium Hospital CEO Dashboard - Worth RM10K/month
 export default function HospitalCEODashboard() {
@@ -52,8 +53,15 @@ export default function HospitalCEODashboard() {
       minHeight: '100vh',
       background: '#F1F5F9',
       color: '#64748B',
-      padding: isMobile ? '16px' : '40px 40px 72px',
+      padding: 0,
       fontFamily: "'Plus Jakarta Sans','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
+    },
+    contentWrap: {
+      padding: isMobile ? '16px' : '40px 40px 72px',
+      maxWidth: '1280px',
+      margin: '0 auto',
+      width: '100%',
+      boxSizing: 'border-box',
     },
     header: {
       display: 'flex',
@@ -358,38 +366,31 @@ export default function HospitalCEODashboard() {
         }
       `}</style>
 
-      {/* Header */}
-      <div style={styles.header}>
-        <div>
-          <div style={styles.headerLeft}>
-            <div style={styles.logoContainer}>
-              <svg width={isMobile ? "22" : "28"} height={isMobile ? "22" : "28"} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
+      {/* Standardized institutional header */}
+      <PageHeader
+        icon={
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+        }
+        title="Timberland Medical Centre"
+        eyebrow="CEO Dashboard"
+        maxWidth="1280px"
+        actions={
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: isMobile ? '18px' : '22px', fontWeight: '700', color: 'var(--mc-ink)', lineHeight: 1 }}>
+              {currentTime.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' })}
             </div>
-            <div style={styles.titleWrapper}>
-              <h1 style={styles.title}>Timberland Medical Centre</h1>
-              <div style={styles.titleUnderline}></div>
+            <div style={{ fontSize: '12px', color: 'var(--mc-slate-400)', marginTop: '4px' }}>
+              {isMobile
+                ? currentTime.toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })
+                : currentTime.toLocaleDateString('en-MY', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </div>
           </div>
-          <p style={styles.subtitle}>
-            <span style={styles.liveDot}></span>
-            CEO Dashboard {!isMobile && '•'} {!isMobile && 'Dr. Ahmad bin Hassan'}
-          </p>
-        </div>
-        <div style={styles.dateTime}>
-          <div style={{ fontSize: isMobile ? '18px' : '24px', fontWeight: '600', color: '#1E293B', marginBottom: '4px' }}>
-            {currentTime.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' })}
-          </div>
-          <div style={{ fontSize: isMobile ? '12px' : '14px' }}>
-            {isMobile
-              ? currentTime.toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })
-              : currentTime.toLocaleDateString('en-MY', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-            }
-          </div>
-        </div>
-      </div>
+        }
+      />
 
+      <div style={styles.contentWrap}>
       {/* Metrics */}
       <div style={styles.metricsGrid}>
         {[
@@ -531,6 +532,7 @@ export default function HospitalCEODashboard() {
       {/* Footer */}
       <div style={styles.footer}>
         Powered by <span style={{ color: '#0F766E', fontWeight: '600' }}>Sarawak MedChain</span> {!isMobile && '•'} {!isMobile && 'Blockchain-Verified Medical Certificates'}
+      </div>
       </div>
     </div>
   );
