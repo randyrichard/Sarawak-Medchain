@@ -12,6 +12,8 @@ import MaintenanceBanner from '../components/MaintenanceBanner';
 import FoundingPartnerBadge from '../components/FoundingPartnerBadge';
 import { storeMC } from '../lib/data/mcStore';
 import { computeMCHash, issueMCOnChain } from '../lib/blockchain/mc';
+import PageHeader from '../ui/PageHeader';
+import Card from '../ui/Card';
 
 export default function DoctorPortal({ walletAddress }) {
   // Navigation hook - must be at top before any conditionals
@@ -746,35 +748,33 @@ export default function DoctorPortal({ walletAddress }) {
         </div>
       </div>
 
-      {/* Premium Enterprise Header - Two Row Layout */}
-      <header style={{ backgroundColor: '#FFFFFF', width: '100%' }}>
-        {/* Utility Bar (Top Row) - Slim */}
-        <div className="header-utility-bar" style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-          <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '8px 40px' }} className="flex items-center justify-end gap-4">
-            {/* Balance & Top Up */}
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-slate-600">Balance: <strong className="text-slate-800">RM {creditBalance !== null ? creditBalance : '10'}</strong></span>
-              <button
-                onClick={handleTopUp}
-                className="px-4 py-1.5 rounded-lg text-sm font-medium transition-all hover:opacity-90"
-                style={{ background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)', color: '#fff' }}
-              >
-                Top Up
-              </button>
-            </div>
-
-            {/* Notification Bell */}
-            <button className="p-2 rounded-lg hover:bg-slate-200 transition-colors" style={{ color: '#64748B' }}>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
+      {/* Standardized institutional header (shared PageHeader) */}
+      <PageHeader
+        icon={
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+        }
+        title={hospitalName}
+        eyebrow="Medical Certificate Terminal"
+        actions={
+          <>
+            <span style={{ fontSize: '0.85rem', color: 'var(--mc-slate-500)' }}>
+              Balance: <strong style={{ color: 'var(--mc-ink)' }}>RM {creditBalance !== null ? creditBalance : '10'}</strong>
+            </span>
+            <button
+              onClick={handleTopUp}
+              className="mc-btn"
+              style={{ padding: '8px 16px', borderRadius: 'var(--mc-radius-sm)', fontSize: '0.8rem', fontWeight: 600, background: 'var(--mc-grad-teal)', color: '#fff', border: 'none' }}
+            >
+              Top Up
             </button>
 
             {/* Profile Dropdown */}
             <div className="relative" ref={profileDropdownRef}>
               <button
                 onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-200 transition-colors"
+                className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: '#E2E8F0' }}>
                   <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -786,21 +786,15 @@ export default function DoctorPortal({ walletAddress }) {
                 </svg>
               </button>
 
-              {/* Dropdown Menu */}
               {showProfileDropdown && (
                 <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50" style={{ boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)' }}>
-                  {/* Wallet Info */}
                   <div className="px-4 py-3 border-b border-gray-100">
                     <p className="text-xs text-gray-500 mb-1">Connected Wallet</p>
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-mono text-gray-900 bg-gray-100 px-2 py-1 rounded">
                         {truncateAddress(walletAddress)}
                       </span>
-                      <button
-                        onClick={copyWalletAddress}
-                        className="p-1.5 rounded-md hover:bg-gray-100 transition-colors"
-                        title="Copy address"
-                      >
+                      <button onClick={copyWalletAddress} className="p-1.5 rounded-md hover:bg-gray-100 transition-colors" title="Copy address">
                         {copySuccess ? (
                           <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -812,18 +806,11 @@ export default function DoctorPortal({ walletAddress }) {
                         )}
                       </button>
                     </div>
-                    {copySuccess && (
-                      <p className="text-xs text-green-500 mt-1">Copied to clipboard!</p>
-                    )}
+                    {copySuccess && <p className="text-xs text-green-500 mt-1">Copied to clipboard!</p>}
                   </div>
-
-                  {/* Menu Items */}
                   <div className="py-1">
                     <button
-                      onClick={() => {
-                        setShowProfileDropdown(false);
-                        navigate('/settings');
-                      }}
+                      onClick={() => { setShowProfileDropdown(false); navigate('/settings'); }}
                       className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
                     >
                       <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -834,8 +821,7 @@ export default function DoctorPortal({ walletAddress }) {
                     </button>
                     <a
                       href={`https://etherscan.io/address/${walletAddress}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      target="_blank" rel="noopener noreferrer"
                       onClick={() => setShowProfileDropdown(false)}
                       className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
                     >
@@ -845,13 +831,8 @@ export default function DoctorPortal({ walletAddress }) {
                       View on Explorer
                     </a>
                   </div>
-
-                  {/* Disconnect - Red, at bottom */}
                   <div className="border-t border-gray-100 pt-1 mt-1">
-                    <button
-                      onClick={handleDisconnectWallet}
-                      className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
-                    >
+                    <button onClick={handleDisconnectWallet} className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                       </svg>
@@ -861,58 +842,9 @@ export default function DoctorPortal({ walletAddress }) {
                 </div>
               )}
             </div>
-          </div>
-        </div>
-
-        {/* Main Header (Bottom Row) - Brand Bar */}
-        <div className="header-main-bar" style={{ borderBottom: '1px solid #E2E8F0', backgroundColor: '#FFFFFF' }}>
-          <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '20px 40px' }} className="flex items-center justify-between">
-            {/* Left: Hospital Branding */}
-            <div className="flex items-center gap-4">
-              {/* Hospital Logo */}
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)', boxShadow: '0 4px 12px rgba(20, 184, 166, 0.25)' }}>
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-              </div>
-
-              {/* Hospital Name, Subtitle & Badges */}
-              <div>
-                <h1 className="text-xl font-extrabold text-slate-900 tracking-tight">{hospitalName}</h1>
-                <p className="text-sm text-slate-500 mt-0.5">Medical Certificate Terminal</p>
-
-                {/* Badges Row */}
-                <div className="flex items-center gap-3 mt-2">
-                  {/* LIVE Badge */}
-                  <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#059669' }}>
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                    </span>
-                    LIVE
-                  </span>
-
-                  {/* Verified Badge */}
-                  <span
-                    className="inline-flex items-center gap-1 text-xs font-medium"
-                    style={{ color: isVerified ? '#0d9488' : '#ef4444' }}
-                  >
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    {isVerified ? 'Verified' : 'Unverified'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right: Empty space or optional search (can add later) */}
-            <div className="header-right-placeholder hidden md:block">
-              {/* Reserved for future: search bar, quick actions, etc. */}
-            </div>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       {/* Main Content */}
       <div className="doctor-main-content" style={{ backgroundColor: '#F1F5F9', minHeight: 'calc(100vh - 64px)', padding: '40px 40px 72px', width: '100%' }}>
