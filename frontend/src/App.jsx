@@ -7,10 +7,8 @@ import DemoBanner from './components/DemoBanner';
 import PatientPortal from './pages/PatientPortal';
 import DoctorPortal from './pages/DoctorPortal';
 import AdminPortal from './pages/AdminPortal';
-import CEODashboard from './pages/CEODashboard';
 import HospitalPitch from './pages/HospitalPitch';
 import ConnectWallet from './pages/ConnectWallet';
-import DoctorPortalDemo from './pages/DoctorPortalDemo';
 import ServiceAgreement from './pages/ServiceAgreement';
 import FPXPayment from './pages/FPXPayment';
 import CEOQuarterlySummary from './pages/CEOQuarterlySummary';
@@ -19,7 +17,6 @@ import HospitalCEODashboard from './pages/HospitalCEODashboard';
 import BusinessOverview from './pages/BusinessOverview';
 import LandingPage from './pages/LandingPage';
 import SLAPage from './pages/SLAPage';
-import VerificationPage from './pages/VerificationPage';
 import VerifyMC from './pages/VerifyMC';
 import VerifyAgreement from './pages/VerifyAgreement';
 import SystemStatus from './pages/SystemStatus';
@@ -713,11 +710,8 @@ function ProtectedApp({ walletAddress, handleDisconnect, isDemo = false }) {
               ? <AdminPortal walletAddress={walletAddress} />
               : <AccessRestricted role={role} requiredLabel="administrators" walletAddress={walletAddress} />
           } />
-          <Route path="/ceo" element={
-            canAccess(role, '/ceo')
-              ? <CEODashboard walletAddress={walletAddress} />
-              : <AccessRestricted role={role} requiredLabel="the platform administrator" walletAddress={walletAddress} />
-          } />
+          {/* /ceo is superseded by /ceo-dashboard — redirect for any old links */}
+          <Route path="/ceo" element={<Navigate to="/ceo-dashboard" replace />} />
           <Route path="/ceo-dashboard" element={
             canAccess(role, '/ceo-dashboard')
               ? <HospitalCEODashboard />
@@ -1105,7 +1099,8 @@ function AppRoutes() {
             ? <Navigate to="/mvp" replace /> // no /mvp route exists: ProtectedApp's catch-all sends the user to their role's portal
             : <ConnectWallet onConnect={handleConnectWallet} loading={loading} error={error} />
         } />
-        <Route path="/demo" element={<DoctorPortalDemo />} />
+        {/* /demo is superseded by the role-scoped /connect login — redirect old links */}
+        <Route path="/demo" element={<Navigate to="/connect" replace />} />
         <Route path="/demo-app" element={<DemoApp />} />
         <Route path="/agreement" element={<ServiceAgreement />} />
         <Route path="/payment" element={<FPXPayment />} />
@@ -1114,8 +1109,9 @@ function AppRoutes() {
         <Route path="/gov-preview" element={<CouncilorView />} />
         <Route path="/portal/gov-preview" element={<CouncilorView />} />
         <Route path="/admin/gov-dashboard" element={<CouncilorView />} />
-        <Route path="/pwa/verify" element={<VerificationPage />} />
-        <Route path="/pwa/issue" element={<DoctorPortalDemo />} />
+        {/* Legacy PWA entry points — fold into the canonical flows */}
+        <Route path="/pwa/verify" element={<Navigate to="/" replace />} />
+        <Route path="/pwa/issue" element={<Navigate to="/connect" replace />} />
         <Route path="/verify-agreement" element={<VerifyAgreement />} />
         <Route path="/sla" element={<SLAPage />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
