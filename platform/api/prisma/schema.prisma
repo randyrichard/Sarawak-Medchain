@@ -308,6 +308,7 @@ model MedicalCertificate {
   updatedAt DateTime @updatedAt
 
   @@index([patientIcHash])
+  @@index([patientUserId])
   @@index([doctorId, dateIssued])
   @@index([facilityId, dateIssued])
   @@index([status])

@@ -41,6 +41,10 @@ export function stableStringify(value: unknown): string {
 export async function audit(entry: AuditEntryInput): Promise<void> {
   try {
     await prisma.$transaction(async (tx) => {
+      // Serialize appends: without this, two concurrent writers read the
+      // same "last" entry and fork the hash chain. The advisory lock is
+      // transaction-scoped and released automatically on commit/rollback.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(874201)`;
       const last = await tx.auditLog.findFirst({
         orderBy: { seq: 'desc' },
         select: { entryHash: true },

@@ -51,7 +51,13 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   try {
     const payload = jwt.verify(token, config.jwtSecret, {
       issuer: 'emc-platform',
-    }) as AccessTokenPayload;
+      algorithms: ['HS256'], // pin: prevents algorithm-confusion attacks
+    }) as AccessTokenPayload & { purpose?: string };
+    // Purpose-bound tokens (e.g. pending-2FA) must never act as access tokens
+    if (payload.purpose) {
+      res.status(401).json({ error: 'Invalid or expired token' });
+      return;
+    }
     req.user = {
       id: payload.sub,
       role: payload.role,

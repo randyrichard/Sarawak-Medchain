@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import QRCode from 'qrcode';
 import { authenticator } from 'otplib';
 import type { Role, User } from '@prisma/client';
@@ -101,7 +102,29 @@ export interface LoginResult {
   twoFactorToken?: string; // short-lived, exchanged with the TOTP code
 }
 
-const pendingTwoFactor = new Map<string, { userId: string; expiresAt: number }>();
+/**
+ * Pending-2FA state is a purpose-bound signed JWT rather than server-side
+ * state, so any instance behind a load balancer can complete the exchange.
+ * It grants nothing on its own — only the right to present a TOTP code.
+ */
+function issuePendingTwoFactorToken(userId: string): string {
+  return jwt.sign({ sub: userId, purpose: '2fa-pending' }, config.jwtSecret, {
+    expiresIn: '5m',
+    issuer: 'emc-platform',
+  });
+}
+
+function consumePendingTwoFactorToken(token: string): string | null {
+  try {
+    const payload = jwt.verify(token, config.jwtSecret, {
+      issuer: 'emc-platform',
+      algorithms: ['HS256'],
+    }) as { sub: string; purpose?: string };
+    return payload.purpose === '2fa-pending' ? payload.sub : null;
+  } catch {
+    return null;
+  }
+}
 
 export async function login(
   email: string,
@@ -152,9 +175,7 @@ export async function login(
   });
 
   if (user.totpEnabled) {
-    const token = randomToken(24);
-    pendingTwoFactor.set(token, { userId: user.id, expiresAt: Date.now() + 5 * 60 * 1000 });
-    return { requiresTwoFactor: true, twoFactorToken: token };
+    return { requiresTwoFactor: true, twoFactorToken: issuePendingTwoFactorToken(user.id) };
   }
 
   await completeLogin(user.id, context);
@@ -183,17 +204,17 @@ export async function loginTwoFactor(
   code: string,
   context: { ip?: string; userAgent?: string; country?: string | null }
 ): Promise<TokenPair> {
-  const pending = pendingTwoFactor.get(twoFactorToken);
-  if (!pending || pending.expiresAt < Date.now()) {
+  const userId = consumePendingTwoFactorToken(twoFactorToken);
+  if (!userId) {
     throw new HttpError(401, 'Two-factor session expired — log in again');
   }
-  const user = await prisma.user.findUnique({ where: { id: pending.userId } });
+  const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user?.totpSecretEncrypted) throw new HttpError(401, 'Two-factor not configured');
+  if (user.status !== 'ACTIVE') throw new HttpError(403, `Account is ${user.status.toLowerCase()}`);
 
   const valid = authenticator.verify({ token: code, secret: decryptField(user.totpSecretEncrypted) });
   if (!valid) throw new HttpError(401, 'Invalid authentication code');
 
-  pendingTwoFactor.delete(twoFactorToken);
   await completeLogin(user.id, context);
   return issueTokens(user, context.ip, context.userAgent);
 }
@@ -234,7 +255,26 @@ export async function refresh(
     where: { tokenHash },
     include: { user: true },
   });
-  if (!stored || stored.revokedAt || stored.expiresAt < new Date()) {
+  if (!stored) throw new HttpError(401, 'Invalid refresh token');
+
+  // Reuse of a rotated (revoked) token is the signature of token theft:
+  // someone replayed a token that was already exchanged. Kill every
+  // session for the account and let the legitimate user log in again.
+  if (stored.revokedAt) {
+    await prisma.refreshToken.updateMany({
+      where: { userId: stored.userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+    await audit({
+      actorId: stored.userId,
+      action: 'LOGIN_FAILED',
+      ip: context.ip,
+      userAgent: context.userAgent,
+      meta: { reason: 'refresh token reuse detected — all sessions revoked' },
+    });
+    throw new HttpError(401, 'Session security event — please log in again');
+  }
+  if (stored.expiresAt < new Date()) {
     throw new HttpError(401, 'Invalid refresh token');
   }
   if (stored.user.status !== 'ACTIVE') throw new HttpError(403, 'Account is not active');

@@ -3,7 +3,7 @@
 /** KKM (SUPER_ADMIN) and State Admin dashboard: national analytics,
  *  facility approvals, fraud alerts, audit trail. */
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Badge, BarChart, Button, Card, Stat, statusTone, Table, Td } from '@/components/ui';
+import { Alert, Badge, BarChart, Button, Card, PageLoading, Stat, statusTone, Table, Td } from '@/components/ui';
 import { api } from '@/lib/api';
 
 interface Analytics {
@@ -122,6 +122,7 @@ export default function AdminDashboard() {
         ))}
       </div>
 
+      {tab === 'overview' && !analytics && !error && <PageLoading />}
       {tab === 'overview' && analytics && (
         <>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-7">

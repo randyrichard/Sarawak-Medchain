@@ -218,7 +218,24 @@ export function Alert({
       'border-green-200 bg-green-50 text-green-800 dark:border-green-900 dark:bg-green-950/50 dark:text-green-300',
     info: 'border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-300',
   };
-  return <div className={cn('rounded-lg border px-4 py-3 text-sm', tones[tone])}>{children}</div>;
+  return (
+    <div
+      role={tone === 'error' ? 'alert' : 'status'}
+      className={cn('rounded-lg border px-4 py-3 text-sm', tones[tone])}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** Consistent loading indicator for dashboards while data is fetched. */
+export function PageLoading({ label = 'Loading data…' }: { label?: string }) {
+  return (
+    <div className="flex items-center justify-center gap-3 py-16 text-slate-400" role="status" aria-live="polite">
+      <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-brand-600" aria-hidden />
+      <span className="text-sm">{label}</span>
+    </div>
+  );
 }
 
 // ── Minimal SVG bar chart (no chart-library dependency) ─────────────────────

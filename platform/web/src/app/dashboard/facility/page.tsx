@@ -2,7 +2,7 @@
 
 /** Hospital / clinic administrator portal: doctor management + analytics. */
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Badge, Button, Card, Input, Label, Stat, statusTone, Table, Td } from '@/components/ui';
+import { Alert, Badge, Button, Card, Input, Label, PageLoading, Stat, statusTone, Table, Td } from '@/components/ui';
 import { api } from '@/lib/api';
 
 interface FacilityInfo {
@@ -88,6 +88,7 @@ export default function FacilityDashboard() {
     <div className="space-y-6">
       {error && <Alert tone="error">{error}</Alert>}
       {success && <Alert tone="success">{success}</Alert>}
+      {!facility && !error && <PageLoading />}
 
       {facility && (
         <div className="flex flex-wrap items-center justify-between gap-4">

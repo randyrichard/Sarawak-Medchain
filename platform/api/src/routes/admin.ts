@@ -234,16 +234,19 @@ adminRouter.get(
         }),
       ]);
 
-    // Daily issuance (last 30 days)
-    const recent = await prisma.medicalCertificate.findMany({
-      where: { ...facilityFilter, dateIssued: { gte: since } },
-      select: { dateIssued: true },
-    });
-    const daily: Record<string, number> = {};
-    for (const mc of recent) {
-      const d = mc.dateIssued.toISOString().slice(0, 10);
-      daily[d] = (daily[d] ?? 0) + 1;
-    }
+    // Daily issuance (last 30 days) — aggregated in the database
+    const stateParam = scope.state ?? null;
+    const dailyRows = await prisma.$queryRaw<Array<{ date: string; count: number }>>`
+      SELECT to_char(mc."dateIssued", 'YYYY-MM-DD') AS date, count(*)::int AS count
+      FROM "MedicalCertificate" mc
+      JOIN "Facility" f ON f.id = mc."facilityId"
+      WHERE mc."dateIssued" >= ${since}
+        AND (${stateParam}::text IS NULL OR f.state = ${stateParam})
+      GROUP BY 1
+      ORDER BY 1`;
+    const daily: Record<string, number> = Object.fromEntries(
+      dailyRows.map((r) => [r.date, r.count])
+    );
 
     // Verification outcomes (last 30 days)
     const outcomes = await prisma.verificationEvent.groupBy({
@@ -252,14 +255,22 @@ adminRouter.get(
       _count: true,
     });
 
-    // Issuance by state (heatmap)
-    const byStateRaw = await prisma.medicalCertificate.findMany({
+    // Issuance by state (heatmap). Aggregated per facility in the database —
+    // never materializes MC rows, so it stays O(#facilities) at any scale.
+    const perFacility = await prisma.medicalCertificate.groupBy({
+      by: ['facilityId'],
       where: facilityFilter,
-      select: { facility: { select: { state: true } } },
+      _count: true,
     });
+    const facilityStates = await prisma.facility.findMany({
+      where: { id: { in: perFacility.map((p) => p.facilityId) } },
+      select: { id: true, state: true },
+    });
+    const stateOf = new Map(facilityStates.map((f) => [f.id, f.state]));
     const byState: Record<string, number> = {};
-    for (const r of byStateRaw) {
-      byState[r.facility.state] = (byState[r.facility.state] ?? 0) + 1;
+    for (const p of perFacility) {
+      const s = stateOf.get(p.facilityId) ?? 'Unknown';
+      byState[s] = (byState[s] ?? 0) + p._count;
     }
 
     // Top facilities
