@@ -1,5 +1,8 @@
 # ── Build stage ──────────────────────────────────────────────────────────────
-FROM node:20-alpine AS build
+# Debian slim (not Alpine): Prisma's engines need glibc + OpenSSL 3 and
+# misdetect libssl on musl, which breaks `prisma migrate deploy` at runtime.
+FROM node:20-slim AS build
+RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci --no-audit --no-fund
@@ -10,10 +13,11 @@ COPY src ./src
 RUN npm run build
 
 # ── Runtime stage ────────────────────────────────────────────────────────────
-FROM node:20-alpine
+FROM node:20-slim
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 ENV NODE_ENV=production
-RUN addgroup -S emc && adduser -S emc -G emc
+RUN groupadd -r emc && useradd -r -g emc emc
 COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev --no-audit --no-fund
 COPY prisma ./prisma
@@ -21,5 +25,4 @@ RUN npx prisma generate
 COPY --from=build /app/dist ./dist
 USER emc
 EXPOSE 3005
-HEALTHCHECK --interval=30s --timeout=3s CMD wget -qO- http://localhost:3005/healthz || exit 1
 CMD ["node", "dist/server.js"]
