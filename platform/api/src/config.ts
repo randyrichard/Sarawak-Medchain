@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { createHash } from 'node:crypto';
 
 function required(name: string, fallback?: string): string {
   const v = process.env[name] ?? fallback;
@@ -8,15 +9,31 @@ function required(name: string, fallback?: string): string {
   return v;
 }
 
+/** PaaS blueprints (e.g. Render fromService) provide bare hostnames. */
+function ensureUrl(value: string): string {
+  return /^https?:\/\//.test(value) ? value : `https://${value}`;
+}
+
+/**
+ * The AES key must be exactly 32 bytes. Accept a 64-char hex key verbatim;
+ * derive via SHA-256 from any other secret material (e.g. a generated
+ * platform secret) so deploys can't end up with a malformed key.
+ */
+function normalizeKey(secret: string): string {
+  return /^[0-9a-f]{64}$/i.test(secret)
+    ? secret.toLowerCase()
+    : createHash('sha256').update(secret).digest('hex');
+}
+
 const isProd = process.env.NODE_ENV === 'production';
 
 export const config = {
   isProd,
   port: Number(process.env.PORT ?? 3005),
-  publicWebUrl: process.env.PUBLIC_WEB_URL ?? 'http://localhost:3000',
+  publicWebUrl: ensureUrl(process.env.PUBLIC_WEB_URL ?? 'http://localhost:3000'),
   corsOrigins: (process.env.CORS_ORIGINS ?? 'http://localhost:3000')
     .split(',')
-    .map((s) => s.trim()),
+    .map((s) => ensureUrl(s.trim())),
 
   // JWT
   jwtSecret: required('JWT_SECRET', isProd ? undefined : 'dev-only-jwt-secret-change-me'),
@@ -25,9 +42,11 @@ export const config = {
 
   // AES-256-GCM data-encryption key (hex, 32 bytes). In production this is
   // delivered by AWS KMS / Secrets Manager, never a raw env literal.
-  dataEncryptionKey: required(
-    'DATA_ENCRYPTION_KEY',
-    isProd ? undefined : '6f1d0e9b2c4a5d7e8f0a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60'
+  dataEncryptionKey: normalizeKey(
+    required(
+      'DATA_ENCRYPTION_KEY',
+      isProd ? undefined : '6f1d0e9b2c4a5d7e8f0a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60'
+    )
   ),
   // HMAC key for searchable digests of IC numbers
   searchHmacKey: required(

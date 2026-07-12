@@ -3,7 +3,9 @@
 /**
  * API client with automatic token attachment and refresh-token rotation.
  */
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3005';
+// PaaS blueprints (e.g. Render fromService) may provide a bare hostname
+const raw = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3005';
+const API_URL = /^https?:\/\//.test(raw) ? raw : `https://${raw}`;
 
 export interface SessionUser {
   id: string;

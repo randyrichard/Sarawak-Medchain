@@ -12,6 +12,7 @@ RUN npm run build
 FROM node:20-alpine
 WORKDIR /app
 ENV NODE_ENV=production
+ENV HOSTNAME=0.0.0.0
 RUN addgroup -S emc && adduser -S emc -G emc
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static

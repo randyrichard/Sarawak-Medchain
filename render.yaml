@@ -1,0 +1,62 @@
+# Render Blueprint — deploys the complete e-MC platform in one click:
+#   PostgreSQL + API (Express/Prisma) + Web (Next.js)
+#
+# In the Render dashboard: New → Blueprint → select this repository → Apply.
+# Free-tier note: services sleep after idle (first request takes ~30-60 s),
+# and the free Postgres instance expires after 30 days — fine for a POC.
+
+databases:
+  - name: emc-db
+    plan: free
+    databaseName: emc
+    user: emc
+
+services:
+  - type: web
+    name: emc-api
+    runtime: docker
+    plan: free
+    rootDir: platform/api
+    dockerCommand: npm run start:deploy # runs prisma migrate deploy first
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: '3005'
+      - key: DATABASE_URL
+        fromDatabase:
+          name: emc-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATA_ENCRYPTION_KEY
+        generateValue: true # normalized to a 32-byte key via SHA-256 in config
+      - key: SEARCH_HMAC_KEY
+        generateValue: true
+      - key: PUBLIC_WEB_URL
+        fromService:
+          type: web
+          name: emc-web
+          property: host
+      - key: CORS_ORIGINS
+        fromService:
+          type: web
+          name: emc-web
+          property: host
+      - key: SEED_DEMO
+        value: 'true' # idempotent demo accounts (password: Emc-Demo-Pass1)
+      - key: CHAIN_ENABLED
+        value: 'false' # set true + add CHAIN_ISSUER_PRIVATE_KEY to anchor on Sepolia
+
+  - type: web
+    name: emc-web
+    runtime: docker
+    plan: free
+    rootDir: platform/web
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: emc-api
+          property: host

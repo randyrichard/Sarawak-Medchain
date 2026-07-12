@@ -1,119 +1,14 @@
 /**
- * Development / demo seed. Creates one account per role plus an approved
- * hospital and clinic, so every dashboard is explorable immediately.
+ * Development / demo seed — creates one account per role plus an approved
+ * hospital and clinic. All passwords: Emc-Demo-Pass1
  *
- *   All passwords: Emc-Demo-Pass1
+ * The actual seed logic lives in src/lib/seedDemo.ts so production platforms
+ * without shell access can run it at boot via SEED_DEMO=true.
  */
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
-import { encryptField, generateDoctorKeyPair, searchDigest } from '../src/lib/crypto.js';
+import { prisma } from '../src/lib/prisma.js';
+import { seedDemo } from '../src/lib/seedDemo.js';
 
-const prisma = new PrismaClient();
-const PASSWORD = 'Emc-Demo-Pass1';
-
-async function main() {
-  const passwordHash = await bcrypt.hash(PASSWORD, 12);
-
-  const hospital = await prisma.facility.upsert({
-    where: { registrationNo: 'KKM-HOSP-SWK-0001' },
-    update: {},
-    create: {
-      type: 'HOSPITAL',
-      name: 'Sarawak General Hospital',
-      registrationNo: 'KKM-HOSP-SWK-0001',
-      state: 'Sarawak',
-      district: 'Kuching',
-      address: 'Jalan Hospital, 93586 Kuching, Sarawak',
-      status: 'APPROVED',
-      approvedAt: new Date(),
-    },
-  });
-
-  const clinic = await prisma.facility.upsert({
-    where: { registrationNo: 'KKM-KLINIK-SWK-0042' },
-    update: {},
-    create: {
-      type: 'CLINIC',
-      name: 'Klinik Kesihatan Petra Jaya',
-      registrationNo: 'KKM-KLINIK-SWK-0042',
-      state: 'Sarawak',
-      district: 'Kuching',
-      address: 'Jalan Semarak, 93050 Petra Jaya, Kuching, Sarawak',
-      status: 'APPROVED',
-      approvedAt: new Date(),
-    },
-  });
-
-  const users: Array<{
-    email: string;
-    role: 'SUPER_ADMIN' | 'STATE_ADMIN' | 'HOSPITAL_ADMIN' | 'CLINIC_ADMIN' | 'EMPLOYER' | 'PATIENT';
-    fullName: string;
-    facilityId?: string;
-    state?: string;
-    ic?: string;
-  }> = [
-    { email: 'kkm.admin@emc.gov.my', role: 'SUPER_ADMIN', fullName: 'KKM National Administrator' },
-    { email: 'sarawak.admin@emc.gov.my', role: 'STATE_ADMIN', fullName: 'Sarawak State Health Administrator', state: 'Sarawak' },
-    { email: 'sgh.admin@emc.gov.my', role: 'HOSPITAL_ADMIN', fullName: 'SGH Administrator', facilityId: hospital.id, state: 'Sarawak' },
-    { email: 'klinik.admin@emc.gov.my', role: 'CLINIC_ADMIN', fullName: 'Klinik Petra Jaya Administrator', facilityId: clinic.id, state: 'Sarawak' },
-    { email: 'employer@demo.com.my', role: 'EMPLOYER', fullName: 'Borneo Timber Sdn Bhd (HR)' },
-    { email: 'patient@demo.com.my', role: 'PATIENT', fullName: 'Aisyah binti Rahman', ic: '990101-13-5678' },
-  ];
-
-  for (const u of users) {
-    await prisma.user.upsert({
-      where: { email: u.email },
-      update: {},
-      create: {
-        email: u.email,
-        passwordHash,
-        role: u.role,
-        fullName: u.fullName,
-        facilityId: u.facilityId,
-        state: u.state,
-        icEncrypted: u.ic ? encryptField(u.ic) : undefined,
-        icHash: u.ic ? searchDigest(u.ic) : undefined,
-      },
-    });
-  }
-
-  // Doctor with signing keypair
-  const doctorEmail = 'dr.tan@sgh.gov.my';
-  const existingDoctorUser = await prisma.user.findUnique({ where: { email: doctorEmail } });
-  if (!existingDoctorUser) {
-    const keys = generateDoctorKeyPair();
-    const doctorUser = await prisma.user.create({
-      data: {
-        email: doctorEmail,
-        passwordHash,
-        role: 'DOCTOR',
-        fullName: 'Dr. Tan Wei Ming',
-        facilityId: hospital.id,
-        state: 'Sarawak',
-        icEncrypted: encryptField('850505-13-1234'),
-        icHash: searchDigest('850505-13-1234'),
-      },
-    });
-    await prisma.doctor.create({
-      data: {
-        userId: doctorUser.id,
-        mmcNumber: 'MMC-45678',
-        specialty: 'General Medicine',
-        facilityId: hospital.id,
-        signingPublicKey: keys.publicKeyPem,
-        signingKeyEncrypted: keys.privateKeyEncrypted,
-      },
-    });
-  }
-
-  console.log('Seed complete. Login with any account below / password:', PASSWORD);
-  console.table([
-    ...users.map((u) => ({ role: u.role, email: u.email })),
-    { role: 'DOCTOR', email: doctorEmail },
-  ]);
-}
-
-main()
+seedDemo()
   .catch((e) => {
     console.error(e);
     process.exit(1);
