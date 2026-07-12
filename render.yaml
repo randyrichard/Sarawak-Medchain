@@ -34,16 +34,12 @@ services:
         generateValue: true # normalized to a 32-byte key via SHA-256 in config
       - key: SEARCH_HMAC_KEY
         generateValue: true
+      # Explicit URLs: fromService host returns the short hostname, which
+      # breaks browser CORS and the QR verification URLs.
       - key: PUBLIC_WEB_URL
-        fromService:
-          type: web
-          name: emc-web
-          property: host
+        value: https://emc-web-i0gf.onrender.com
       - key: CORS_ORIGINS
-        fromService:
-          type: web
-          name: emc-web
-          property: host
+        value: https://emc-web-i0gf.onrender.com
       - key: SEED_DEMO
         value: 'true' # idempotent demo accounts (password: Emc-Demo-Pass1)
       - key: CHAIN_ENABLED
@@ -56,7 +52,4 @@ services:
     rootDir: platform/web
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        fromService:
-          type: web
-          name: emc-api
-          property: host
+        value: https://emc-api-9qs9.onrender.com
