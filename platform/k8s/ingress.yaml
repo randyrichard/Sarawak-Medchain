@@ -1,0 +1,31 @@
+# ALB ingress (AWS Load Balancer Controller) with TLS via ACM.
+# Rate limiting and WAF rules are attached at the ALB/WAFv2 layer.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: emc
+  namespace: emc
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:REGION:ACCOUNT:certificate/CERT_ID
+    alb.ingress.kubernetes.io/wafv2-acl-arn: arn:aws:wafv2:REGION:ACCOUNT:regional/webacl/emc/ID
+spec:
+  rules:
+    - host: api.emc.gov.my
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: emc-api, port: { number: 80 } }
+    - host: emc.gov.my
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: emc-web, port: { number: 80 } }

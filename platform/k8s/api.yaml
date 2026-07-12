@@ -1,0 +1,73 @@
+# e-MC API — Deployment + Service + HPA
+# Secrets are expected from AWS Secrets Manager via the External Secrets
+# Operator (secret name: emc-api-secrets).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: emc-api
+  namespace: emc
+  labels: { app: emc-api }
+spec:
+  replicas: 3
+  selector:
+    matchLabels: { app: emc-api }
+  template:
+    metadata:
+      labels: { app: emc-api }
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/OWNER/emc-api:latest # replaced by CI with the release tag
+          ports:
+            - containerPort: 3005
+          envFrom:
+            - secretRef: { name: emc-api-secrets }
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: '3005'
+          resources:
+            requests: { cpu: 250m, memory: 256Mi }
+            limits: { cpu: '1', memory: 512Mi }
+          readinessProbe:
+            httpGet: { path: /readyz, port: 3005 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: 3005 }
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: emc-api
+  namespace: emc
+spec:
+  selector: { app: emc-api }
+  ports:
+    - port: 80
+      targetPort: 3005
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: emc-api
+  namespace: emc
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: emc-api
+  minReplicas: 3
+  maxReplicas: 30
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: { type: Utilization, averageUtilization: 65 }

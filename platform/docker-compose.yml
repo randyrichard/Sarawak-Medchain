@@ -1,0 +1,52 @@
+# Full local stack: PostgreSQL + API + Web
+#   docker compose up --build
+# then seed demo data:
+#   docker compose exec api npx prisma migrate deploy
+#   docker compose exec api npx tsx prisma/seed.ts
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: emc
+      POSTGRES_PASSWORD: emc_dev_password
+      POSTGRES_DB: emc
+    ports:
+      - '5432:5432'
+    volumes:
+      - emc-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U emc']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: ./api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3005
+      DATABASE_URL: postgresql://emc:emc_dev_password@db:5432/emc?schema=public
+      JWT_SECRET: local-compose-jwt-secret-change-in-production
+      DATA_ENCRYPTION_KEY: 6f1d0e9b2c4a5d7e8f0a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60
+      SEARCH_HMAC_KEY: local-compose-hmac-key
+      PUBLIC_WEB_URL: http://localhost:3000
+      CORS_ORIGINS: http://localhost:3000
+      CHAIN_ENABLED: 'false'
+    ports:
+      - '3005:3005'
+
+  web:
+    build:
+      context: ./web
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3005
+    depends_on:
+      - api
+    ports:
+      - '3000:3000'
+
+volumes:
+  emc-pgdata:

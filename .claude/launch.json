@@ -2,6 +2,12 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "emc-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "C:/Users/randyrichardd/Desktop/sarawak-medchain/platform/web"],
+      "port": 3000
+    },
+    {
       "name": "ai-chatbot",
       "runtimeExecutable": "node",
       "runtimeArgs": ["C:/Users/randyrichardd/Desktop/ai-chatbot/server.js"],

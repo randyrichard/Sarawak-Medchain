@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: emc-web
+  namespace: emc
+  labels: { app: emc-web }
+spec:
+  replicas: 3
+  selector:
+    matchLabels: { app: emc-web }
+  template:
+    metadata:
+      labels: { app: emc-web }
+    spec:
+      containers:
+        - name: web
+          image: ghcr.io/OWNER/emc-web:latest
+          ports:
+            - containerPort: 3000
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 256Mi }
+          readinessProbe:
+            httpGet: { path: /, port: 3000 }
+            initialDelaySeconds: 5
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: emc-web
+  namespace: emc
+spec:
+  selector: { app: emc-web }
+  ports:
+    - port: 80
+      targetPort: 3000
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: emc-web
+  namespace: emc
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: emc-web
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: { type: Utilization, averageUtilization: 65 }
