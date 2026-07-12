@@ -2,7 +2,7 @@
 
 /** Patient portal: view MC history, download PDFs, share verification links. */
 import { useEffect, useState } from 'react';
-import { Alert, Badge, Button, Card, statusTone, Table, Td } from '@/components/ui';
+import { Alert, Badge, Button, Card, PageLoading, statusTone, Table, Td } from '@/components/ui';
 import { QrModal } from '@/components/qr-modal';
 import { api, apiBlob } from '@/lib/api';
 
@@ -25,9 +25,13 @@ export default function PatientDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [qrTarget, setQrTarget] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    api<MC[]>('/api/v1/mcs').then(setMcs).catch((e) => setError(e.message));
+    api<MC[]>('/api/v1/mcs')
+      .then(setMcs)
+      .catch((e) => setError(e.message))
+      .finally(() => setLoaded(true));
   }, []);
 
   const download = async (mc: MC) => {
@@ -53,6 +57,7 @@ export default function PatientDashboard() {
   return (
     <div className="space-y-6">
       {error && <Alert tone="error">{error}</Alert>}
+      {!loaded && !error && <PageLoading />}
       <Card
         title="My medical certificates"
         description="Certificates issued to your IC number. Share the verification link with your employer — they see validity, never your diagnosis."

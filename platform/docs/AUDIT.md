@@ -72,7 +72,11 @@ Committee members should see these named, not discovered:
 6. **Token storage tradeoff**: the SPA keeps JWTs in localStorage (CSRF-immune,
    XSS-exposed, mitigated by CSP + React escaping). The alternative (httpOnly
    cookies + CSRF tokens) is a documented switch if KKM policy prefers it.
-7. **Dependency scanning**: add Dependabot + `npm audit` gate to CI.
+7. ~~Dependency scanning~~ **Done 2026-07-13**: Dependabot (weekly, both apps +
+   actions) and an `npm audit --omit=dev --audit-level=high` gate in CI; web
+   upgraded to Next 16 / React 19 clearing all framework advisories. One accepted
+   moderate finding remains: Next.js vendors an old postcss internally — it is a
+   build-time tool only and never executes in production traffic.
 8. **Penetration test**: an independent pen-test and MyGovCloud/CyberSecurity
    Malaysia assessment are prerequisites for government hosting.
 

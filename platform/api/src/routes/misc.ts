@@ -44,7 +44,7 @@ searchRouter.post(
     switch (type) {
       case 'mcNumber':
         mcs = await prisma.medicalCertificate.findMany({
-          where: { ...baseWhere, mcNumber: { contains: q.toUpperCase() } },
+          where: { ...baseWhere, mcNumber: { contains: q, mode: 'insensitive' } },
           include,
           take: 50,
         });

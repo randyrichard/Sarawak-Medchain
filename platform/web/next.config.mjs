@@ -5,9 +5,13 @@ const apiOrigin = process.env.NEXT_PUBLIC_API_URL
 // Content-Security-Policy: scripts only from this origin ('unsafe-inline'
 // is required by Next.js hydration), network calls only to this origin and
 // the API, images from this origin + data: (QR codes), nothing framed.
+const isDev = process.env.NODE_ENV === 'development';
+
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  // 'unsafe-eval' is required only by React dev-mode debugging; production
+  // stays strict — React never uses eval() in production builds.
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data:",
   `connect-src 'self' ${apiOrigin}`,
