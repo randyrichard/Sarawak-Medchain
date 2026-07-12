@@ -29,7 +29,16 @@ export function createApp(): express.Express {
 
   // Kubernetes probes
   app.get('/healthz', (_req, res) => {
-    res.json({ status: 'ok' });
+    res.json({
+      status: 'ok',
+      // Ops diagnostic: which anchoring mode this instance booted with.
+      // 'no-key' = CHAIN_ENABLED is true but the issuer key is missing.
+      chainAnchoring: !config.chain.enabled
+        ? 'disabled'
+        : config.chain.issuerPrivateKey
+          ? 'enabled'
+          : 'no-key',
+    });
   });
   app.get('/readyz', async (_req, res) => {
     try {
