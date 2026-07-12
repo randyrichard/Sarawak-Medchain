@@ -1,0 +1,399 @@
+// MedChain e-MC Platform — PostgreSQL schema
+//
+// Design principles:
+//  - PII (IC numbers, diagnosis) is stored AES-256-GCM encrypted; a keyed
+//    HMAC-SHA256 digest column (…Hash) supports exact-match search without
+//    ever indexing plaintext.
+//  - The blockchain stores ONLY the canonical keccak256 hash of an MC.
+//  - The audit log is an append-only hash chain: each entry commits to the
+//    previous entry's hash, so retroactive edits are detectable.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────────────
+
+enum Role {
+  SUPER_ADMIN // KKM national administrator
+  STATE_ADMIN // State health department
+  HOSPITAL_ADMIN
+  CLINIC_ADMIN
+  DOCTOR
+  EMPLOYER
+  PATIENT
+}
+
+enum UserStatus {
+  ACTIVE
+  PENDING // awaiting approval (facility admins, doctors)
+  SUSPENDED
+  DISABLED
+}
+
+enum FacilityType {
+  HOSPITAL
+  CLINIC
+}
+
+enum FacilityStatus {
+  PENDING // registered, awaiting KKM / state approval
+  APPROVED
+  SUSPENDED
+  REJECTED
+}
+
+enum DoctorStatus {
+  ACTIVE
+  SUSPENDED
+  INACTIVE // resigned / retired / registration lapsed
+}
+
+enum MCStatus {
+  ACTIVE
+  REVOKED
+  AMENDED // superseded by a corrected MC
+}
+
+enum VerificationResult {
+  VALID
+  INVALID // hash unknown to the system
+  REVOKED
+  EXPIRED
+  TAMPERED // record exists but stored data no longer matches the anchored hash
+}
+
+enum FraudAlertType {
+  DUPLICATE_MC // overlapping rest period for the same patient
+  VOLUME_ANOMALY // impossible issuance volume for one doctor
+  SUSPENDED_FACILITY
+  INACTIVE_DOCTOR
+  HASH_MISMATCH // tampering detected at verification time
+  INVALID_MMC
+  GEO_ANOMALY // logins from implausibly distant locations
+  RATE_ABUSE
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlertStatus {
+  OPEN
+  UNDER_REVIEW
+  CONFIRMED
+  DISMISSED
+}
+
+enum AuditAction {
+  LOGIN
+  LOGIN_FAILED
+  LOGOUT
+  TWO_FA_ENABLED
+  ISSUE_MC
+  REVOKE_MC
+  AMEND_MC
+  VERIFY_MC
+  DOWNLOAD_MC
+  SHARE_MC
+  REGISTER_FACILITY
+  APPROVE_FACILITY
+  REJECT_FACILITY
+  SUSPEND_FACILITY
+  REGISTER_DOCTOR
+  SUSPEND_DOCTOR
+  REINSTATE_DOCTOR
+  CREATE_USER
+  UPDATE_USER
+  CREATE_API_KEY
+  REVOKE_API_KEY
+  FRAUD_ALERT_RAISED
+  FRAUD_ALERT_REVIEWED
+}
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+  PUSH
+  IN_APP
+}
+
+// ─── Identity & access ──────────────────────────────────────────────────────
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String
+  role         Role
+  status       UserStatus @default(ACTIVE)
+  fullName     String
+  phone        String?
+  // Malaysian state (for STATE_ADMIN scoping and analytics)
+  state        String?
+
+  // Encrypted IC / passport (patients & doctors); HMAC digest for lookup
+  icEncrypted String?
+  icHash      String? @unique
+
+  // TOTP two-factor authentication
+  totpSecretEncrypted String?
+  totpEnabled         Boolean @default(false)
+
+  failedLoginCount Int       @default(0)
+  lockedUntil      DateTime?
+  lastLoginAt      DateTime?
+  lastLoginIp      String?
+  lastLoginCountry String?
+
+  facilityId String?
+  facility   Facility? @relation(fields: [facilityId], references: [id])
+
+  doctor        Doctor?
+  refreshTokens RefreshToken[]
+  apiKeys       ApiKey[]
+  notifications Notification[]
+  patientMCs    MedicalCertificate[] @relation("PatientUser")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role, status])
+  @@index([facilityId])
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  ip        String?
+  userAgent String?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// Employer HR-system integration keys (bulk verification API)
+model ApiKey {
+  id          String    @id @default(cuid())
+  ownerUserId String
+  owner       User      @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  name        String
+  keyHash     String    @unique
+  scopes      String[]  @default(["verify:read"])
+  lastUsedAt  DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([ownerUserId])
+}
+
+// ─── Healthcare registry ────────────────────────────────────────────────────
+
+model Facility {
+  id             String         @id @default(cuid())
+  type           FacilityType
+  name           String
+  registrationNo String         @unique // KKM / SSM registration number
+  state          String
+  district       String?
+  address        String
+  phone          String?
+  status         FacilityStatus @default(PENDING)
+  approvedById   String?
+  approvedAt     DateTime?
+  suspendedAt    DateTime?
+  suspendReason  String?
+
+  users   User[]
+  doctors Doctor[]
+  mcs     MedicalCertificate[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, state])
+  @@index([type, state])
+}
+
+model Doctor {
+  id        String       @id @default(cuid())
+  userId    String       @unique
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mmcNumber String       @unique // Malaysian Medical Council registration
+  specialty String?
+  status    DoctorStatus @default(ACTIVE)
+
+  facilityId String
+  facility   Facility @relation(fields: [facilityId], references: [id])
+
+  // Per-doctor Ed25519 signing keypair (PKI). Private key is AES-256-GCM
+  // encrypted at rest; in production the wrapping key lives in AWS KMS.
+  signingPublicKey    String // PEM (SPKI)
+  signingKeyEncrypted String // encrypted PKCS8 PEM
+
+  suspendedAt   DateTime?
+  suspendReason String?
+
+  mcs MedicalCertificate[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([facilityId, status])
+}
+
+// ─── Medical certificates ───────────────────────────────────────────────────
+
+model MedicalCertificate {
+  id       String @id @default(cuid())
+  mcNumber String @unique // human-readable, e.g. MC-2026-000123
+
+  // Patient identity. An MC can exist without a patient account (walk-in);
+  // patientUserId links it to a portal account when the IC matches.
+  patientName        String
+  patientIcEncrypted String
+  patientIcHash      String // HMAC digest — search key
+  patientUserId      String?
+  patientUser        User?   @relation("PatientUser", fields: [patientUserId], references: [id])
+
+  doctorId   String
+  doctor     Doctor   @relation(fields: [doctorId], references: [id])
+  facilityId String
+  facility   Facility @relation(fields: [facilityId], references: [id])
+
+  // Diagnosis is OPTIONAL, encrypted, never part of the canonical hash and
+  // never exposed through verification endpoints.
+  diagnosisEncrypted String?
+
+  restDays   Int
+  startDate  DateTime // first day of rest
+  endDate    DateTime // last day of rest (inclusive)
+  dateIssued DateTime @default(now())
+
+  // Integrity & PKI
+  canonicalHash String @unique // keccak256 over canonical fields (0x…)
+  signature     String // Ed25519 signature over canonicalHash, base64
+  signerKeyId   String // doctor.id at signing time (key lookup)
+
+  // Blockchain anchor (hash only — never patient data)
+  anchored       Boolean   @default(false)
+  chainTxHash    String?
+  chainBlock     Int?
+  chainTimestamp DateTime?
+
+  status         MCStatus  @default(ACTIVE)
+  revokedAt      DateTime?
+  revokedReason  String?
+  amendedFromId  String?              @unique // MC this one corrects
+  amendedFrom    MedicalCertificate?  @relation("Amendment", fields: [amendedFromId], references: [id])
+  amendedTo      MedicalCertificate?  @relation("Amendment")
+  amendReason    String?
+
+  verifications VerificationEvent[]
+  shareTokens   ShareToken[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([patientIcHash])
+  @@index([doctorId, dateIssued])
+  @@index([facilityId, dateIssued])
+  @@index([status])
+}
+
+// Patient-generated secure sharing links (time-limited)
+model ShareToken {
+  id        String             @id @default(cuid())
+  mcId      String
+  mc        MedicalCertificate @relation(fields: [mcId], references: [id], onDelete: Cascade)
+  tokenHash String             @unique
+  expiresAt DateTime
+  createdAt DateTime           @default(now())
+
+  @@index([mcId])
+}
+
+// Every verification attempt — the raw material for fraud analytics
+model VerificationEvent {
+  id             String              @id @default(cuid())
+  mcId           String?
+  mc             MedicalCertificate? @relation(fields: [mcId], references: [id])
+  hashQueried    String
+  result         VerificationResult
+  verifierUserId String?
+  verifierType   String? // employer | patient | public | api
+  ip             String?
+  userAgent      String?
+  country        String?
+  createdAt      DateTime            @default(now())
+
+  @@index([mcId])
+  @@index([result, createdAt])
+  @@index([hashQueried])
+}
+
+// ─── Fraud & audit ──────────────────────────────────────────────────────────
+
+model FraudAlert {
+  id         String         @id @default(cuid())
+  type       FraudAlertType
+  severity   AlertSeverity
+  status     AlertStatus    @default(OPEN)
+  mcId       String?
+  doctorId   String?
+  facilityId String?
+  userId     String?
+  details    Json
+  reviewedBy String?
+  reviewedAt DateTime?
+  createdAt  DateTime       @default(now())
+
+  @@index([status, severity])
+  @@index([type, createdAt])
+}
+
+// Append-only hash-chained audit trail. seq is a monotonic BIGSERIAL;
+// entryHash = SHA-256(seq | prevHash | actorId | action | entityId | metaJson | createdAt)
+model AuditLog {
+  seq        BigInt      @id @default(autoincrement())
+  actorId    String?
+  actorRole  Role?
+  action     AuditAction
+  entityType String?
+  entityId   String?
+  ip         String?
+  userAgent  String?
+  meta       Json?
+  prevHash   String
+  entryHash  String      @unique
+  createdAt  DateTime    @default(now())
+
+  @@index([actorId])
+  @@index([action, createdAt])
+  @@index([entityType, entityId])
+}
+
+model Notification {
+  id        String              @id @default(cuid())
+  userId    String
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel   NotificationChannel @default(IN_APP)
+  type      String // MC_ISSUED | MC_REVOKED | DOCTOR_SUSPENDED | VERIFICATION | …
+  title     String
+  body      String
+  readAt    DateTime?
+  createdAt DateTime            @default(now())
+
+  @@index([userId, readAt])
+}

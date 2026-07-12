@@ -57,3 +57,7 @@ Thumbs.db
 
 # Local Claude Code settings (may contain tokens) — never commit
 .claude/settings.local.json
+
+# e-MC platform build output
+platform/web/.next/
+platform/api/dist/
