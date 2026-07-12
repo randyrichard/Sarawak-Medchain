@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Bell, ShieldCheck } from 'lucide-react';
+import { Bell, KeyRound, ShieldCheck } from 'lucide-react';
 import { getSession, setSession, api, type Session } from '@/lib/api';
 import { Button } from '@/components/ui';
 import { ThemeToggle } from '@/components/providers';
@@ -54,7 +54,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-2 font-bold text-brand-700 dark:text-brand-400">
             <ShieldCheck className="h-6 w-6" aria-hidden />
-            <span className="hidden sm:inline">MedChain e-MC</span>
+            <span className="hidden sm:inline">Sarawak MedChain</span>
           </Link>
           <div className="text-center">
             <p className="text-sm font-semibold">{roleLabels[session.user.role]}</p>
@@ -97,6 +97,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 </div>
               )}
             </div>
+            <Link
+              href="/dashboard/security"
+              className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+              aria-label="Security settings"
+              title="Security settings (2FA)"
+            >
+              <KeyRound className="h-5 w-5" />
+            </Link>
             <ThemeToggle />
             <Button
               variant="ghost"

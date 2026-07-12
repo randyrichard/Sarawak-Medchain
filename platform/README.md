@@ -1,4 +1,4 @@
-# MedChain e-MC Platform
+# Sarawak MedChain — e-MC Platform
 
 National Digital Medical Certificate (e-MC) platform for Malaysia — built to make
 MC fraud cryptographically impossible. This is the enterprise redesign of the

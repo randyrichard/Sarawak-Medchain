@@ -5,8 +5,8 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 /** English / Bahasa Malaysia dictionary. Keys are grouped by screen. */
 const dict = {
   en: {
-    'app.name': 'MedChain e-MC',
-    'app.tagline': 'National Digital Medical Certificate Platform',
+    'app.name': 'Sarawak MedChain',
+    'app.tagline': 'National Digital Medical Certificate (e-MC) Platform',
     'nav.verify': 'Verify an MC',
     'nav.login': 'Log in',
     'nav.register': 'Register',
@@ -40,8 +40,8 @@ const dict = {
     'common.actions': 'Actions',
   },
   ms: {
-    'app.name': 'MedChain e-MC',
-    'app.tagline': 'Platform Sijil Cuti Sakit Digital Kebangsaan',
+    'app.name': 'Sarawak MedChain',
+    'app.tagline': 'Platform Sijil Cuti Sakit Digital (e-MC) Kebangsaan',
     'nav.verify': 'Sahkan MC',
     'nav.login': 'Log masuk',
     'nav.register': 'Daftar',

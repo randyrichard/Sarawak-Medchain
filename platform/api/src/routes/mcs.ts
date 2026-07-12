@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import QRCode from 'qrcode';
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler, clientIp, HttpError, validateBody } from '../middleware/common.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
@@ -173,6 +174,27 @@ mcRouter.get(
       .setHeader('Content-Type', 'application/pdf')
       .setHeader('Content-Disposition', `attachment; filename="${mc.mcNumber}.pdf"`)
       .send(pdf);
+  })
+);
+
+// ── On-screen QR (doctor or the MC's patient) ───────────────────────────────
+
+mcRouter.get(
+  '/:id/qr',
+  asyncHandler(async (req, res) => {
+    const mc = await prisma.medicalCertificate.findUnique({ where: { id: req.params.id } });
+    if (!mc) throw new HttpError(404, 'MC not found');
+    const user = req.user!;
+    const doctor =
+      user.role === 'DOCTOR'
+        ? await prisma.doctor.findUnique({ where: { userId: user.id } })
+        : null;
+    if (mc.patientUserId !== user.id && doctor?.id !== mc.doctorId) {
+      throw new HttpError(403, 'Not permitted to view this MC');
+    }
+    const url = verificationUrl(mc.canonicalHash);
+    const dataUrl = await QRCode.toDataURL(url, { width: 360, margin: 2 });
+    res.json({ mcNumber: mc.mcNumber, verificationUrl: url, qrDataUrl: dataUrl });
   })
 );
 

@@ -88,7 +88,7 @@ export default function HomePage() {
         </section>
 
         <footer className="border-t border-slate-200 py-10 text-center text-sm text-slate-500 dark:border-slate-800">
-          MedChain e-MC Platform — built for the Ministry of Health Malaysia (KKM) evaluation.
+          Sarawak MedChain e-MC Platform — built for the Ministry of Health Malaysia (KKM) evaluation.
         </footer>
       </main>
     </>

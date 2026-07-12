@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import QRCode from 'qrcode';
 import { authenticator } from 'otplib';
 import type { Role, User } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
@@ -197,16 +198,20 @@ export async function loginTwoFactor(
   return issueTokens(user, context.ip, context.userAgent);
 }
 
-export async function setupTwoFactor(userId: string): Promise<{ secret: string; otpauthUrl: string }> {
+export async function setupTwoFactor(
+  userId: string
+): Promise<{ secret: string; otpauthUrl: string; qrDataUrl: string }> {
   const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
   const secret = authenticator.generateSecret();
   await prisma.user.update({
     where: { id: userId },
     data: { totpSecretEncrypted: encryptField(secret), totpEnabled: false },
   });
+  const otpauthUrl = authenticator.keyuri(user.email, 'Sarawak MedChain', secret);
   return {
     secret,
-    otpauthUrl: authenticator.keyuri(user.email, 'MedChain e-MC', secret),
+    otpauthUrl,
+    qrDataUrl: await QRCode.toDataURL(otpauthUrl, { width: 240, margin: 2 }),
   };
 }
 

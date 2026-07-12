@@ -3,7 +3,7 @@ import './globals.css';
 import { Providers } from '@/components/providers';
 
 export const metadata: Metadata = {
-  title: 'MedChain e-MC — National Digital Medical Certificate Platform',
+  title: 'Sarawak MedChain — National Digital Medical Certificate (e-MC) Platform',
   description:
     'Digitally signed, blockchain-anchored medical certificates for Malaysia. Verify any MC in seconds.',
 };

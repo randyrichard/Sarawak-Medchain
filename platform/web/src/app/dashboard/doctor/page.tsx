@@ -3,6 +3,7 @@
 /** Doctor portal: issue digitally signed MCs, view history, revoke/amend. */
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Badge, Button, Card, Input, Label, statusTone, Table, Td } from '@/components/ui';
+import { QrModal } from '@/components/qr-modal';
 import { api, apiBlob } from '@/lib/api';
 
 interface MC {
@@ -36,6 +37,7 @@ export default function DoctorDashboard() {
   const [busy, setBusy] = useState(false);
   const [revokeTarget, setRevokeTarget] = useState<MC | null>(null);
   const [revokeReason, setRevokeReason] = useState('');
+  const [qrTarget, setQrTarget] = useState<MC | null>(null);
 
   const load = useCallback(() => {
     api<MC[]>('/api/v1/mcs').then(setMcs).catch((e) => setError(e.message));
@@ -183,6 +185,9 @@ export default function DoctorDashboard() {
               </Td>
               <Td>
                 <div className="flex flex-wrap gap-2">
+                  <Button variant="secondary" onClick={() => setQrTarget(mc)}>
+                    QR
+                  </Button>
                   <Button variant="outline" onClick={() => download(mc)}>
                     PDF
                   </Button>
@@ -207,6 +212,8 @@ export default function DoctorDashboard() {
           )}
         </Table>
       </Card>
+
+      {qrTarget && <QrModal mcId={qrTarget.id} onClose={() => setQrTarget(null)} />}
 
       {revokeTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal>

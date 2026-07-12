@@ -47,7 +47,7 @@ export async function renderMCPdf(mc: MCPdfData): Promise<Buffer> {
   // Header band
   doc.rect(0, 0, doc.page.width, 90).fill(teal);
   doc.fill('#ffffff').font('Helvetica-Bold').fontSize(20).text('DIGITAL MEDICAL CERTIFICATE', 50, 26);
-  doc.font('Helvetica').fontSize(10).text('Sijil Cuti Sakit Digital — MedChain e-MC Platform', 50, 52);
+  doc.font('Helvetica').fontSize(10).text('Sijil Cuti Sakit Digital — Sarawak MedChain e-MC Platform', 50, 52);
   doc.fontSize(9).text(`Certificate No: ${mc.mcNumber}`, 50, 68);
 
   // QR block (top right, below header)

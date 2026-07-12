@@ -3,6 +3,7 @@
 /** Patient portal: view MC history, download PDFs, share verification links. */
 import { useEffect, useState } from 'react';
 import { Alert, Badge, Button, Card, statusTone, Table, Td } from '@/components/ui';
+import { QrModal } from '@/components/qr-modal';
 import { api, apiBlob } from '@/lib/api';
 
 interface MC {
@@ -23,6 +24,7 @@ export default function PatientDashboard() {
   const [mcs, setMcs] = useState<MC[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [qrTarget, setQrTarget] = useState<string | null>(null);
 
   useEffect(() => {
     api<MC[]>('/api/v1/mcs').then(setMcs).catch((e) => setError(e.message));
@@ -69,10 +71,13 @@ export default function PatientDashboard() {
               </Td>
               <Td>
                 <div className="flex flex-wrap gap-2">
+                  <Button variant="secondary" onClick={() => setQrTarget(mc.id)}>
+                    Show QR
+                  </Button>
                   <Button variant="outline" onClick={() => download(mc)}>
                     Download PDF
                   </Button>
-                  <Button variant="secondary" onClick={() => share(mc)}>
+                  <Button variant="outline" onClick={() => share(mc)}>
                     {copied === mc.id ? 'Link copied ✓' : 'Share link'}
                   </Button>
                 </div>
@@ -88,6 +93,7 @@ export default function PatientDashboard() {
           )}
         </Table>
       </Card>
+      {qrTarget && <QrModal mcId={qrTarget} onClose={() => setQrTarget(null)} />}
     </div>
   );
 }
