@@ -67,25 +67,49 @@ async function rawFetch(path: string, init: RequestInit = {}, token?: string): P
   });
 }
 
-export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const session = getSession();
-  let res = await rawFetch(path, init, session?.accessToken);
+/**
+ * Single-flight refresh. Refresh tokens rotate on every use and the API
+ * treats reuse of a rotated token as theft (revoking every session), so
+ * concurrent 401s must NOT each fire their own refresh — they share one
+ * in-flight refresh and reuse its result.
+ */
+let refreshInFlight: Promise<Session | null> | null = null;
 
-  // Transparent refresh on expiry
-  if (res.status === 401 && session?.refreshToken) {
-    const refreshRes = await rawFetch('/api/v1/auth/refresh', {
-      method: 'POST',
-      body: JSON.stringify({ refreshToken: session.refreshToken }),
-    });
-    if (refreshRes.ok) {
-      const next = (await refreshRes.json()) as Session;
-      setSession(next);
-      res = await rawFetch(path, init, next.accessToken);
-    } else {
-      setSession(null);
-    }
+async function refreshSession(refreshToken: string): Promise<Session | null> {
+  if (!refreshInFlight) {
+    refreshInFlight = (async () => {
+      try {
+        const res = await rawFetch('/api/v1/auth/refresh', {
+          method: 'POST',
+          body: JSON.stringify({ refreshToken }),
+        });
+        if (!res.ok) {
+          setSession(null);
+          return null;
+        }
+        const next = (await res.json()) as Session;
+        setSession(next);
+        return next;
+      } finally {
+        refreshInFlight = null;
+      }
+    })();
   }
+  return refreshInFlight;
+}
 
+/** Fetch with one transparent refresh-and-retry on 401. */
+async function fetchWithRefresh(path: string, init: RequestInit = {}): Promise<Response> {
+  const session = getSession();
+  const res = await rawFetch(path, init, session?.accessToken);
+  if (res.status !== 401 || !session?.refreshToken) return res;
+  const next = await refreshSession(session.refreshToken);
+  if (!next) return res;
+  return rawFetch(path, init, next.accessToken);
+}
+
+export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const res = await fetchWithRefresh(path, init);
   const contentType = res.headers.get('content-type') ?? '';
   const body = contentType.includes('application/json') ? await res.json() : await res.text();
   if (!res.ok) {
@@ -95,8 +119,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export async function apiBlob(path: string): Promise<Blob> {
-  const session = getSession();
-  const res = await rawFetch(path, {}, session?.accessToken);
+  const res = await fetchWithRefresh(path, {});
   if (!res.ok) throw new ApiError(res.status, 'Download failed');
   return res.blob();
 }

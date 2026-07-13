@@ -1,11 +1,30 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
+import { AlertStatus, AuditAction, FacilityStatus } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler, clientIp, HttpError, validateBody } from '../middleware/common.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { audit, verifyAuditChain } from '../lib/audit.js';
 import { notify } from '../services/notifyService.js';
+
+/**
+ * Validate an optional enum-typed query parameter. An unknown value would
+ * otherwise reach Prisma and throw a validation error → 500; here it is a
+ * clean 400. Returns undefined when the parameter is absent.
+ */
+function enumParam<T extends Record<string, string>>(
+  raw: unknown,
+  enumObj: T,
+  name: string
+): T[keyof T] | undefined {
+  if (raw === undefined) return undefined;
+  const allowed = Object.values(enumObj);
+  if (typeof raw !== 'string' || !allowed.includes(raw)) {
+    throw new HttpError(400, `Invalid ${name}. Allowed: ${allowed.join(', ')}`);
+  }
+  return raw as T[keyof T];
+}
 
 /**
  * KKM (SUPER_ADMIN) and STATE_ADMIN endpoints. State admins are scoped to
@@ -25,11 +44,11 @@ function stateScope(req: { user?: { role: string; state: string | null } }) {
 adminRouter.get(
   '/facilities',
   asyncHandler(async (req, res) => {
-    const status = req.query.status as string | undefined;
+    const status = enumParam(req.query.status, FacilityStatus, 'status');
     const facilities = await prisma.facility.findMany({
       where: {
         ...stateScope(req),
-        ...(status ? { status: status as never } : {}),
+        ...(status ? { status } : {}),
       },
       orderBy: { createdAt: 'desc' },
       include: { _count: { select: { doctors: true, mcs: true } } },
@@ -156,8 +175,9 @@ adminRouter.post(
 adminRouter.get(
   '/fraud-alerts',
   asyncHandler(async (req, res) => {
+    const alertStatus = enumParam(req.query.status, AlertStatus, 'status');
     const alerts = await prisma.fraudAlert.findMany({
-      where: req.query.status ? { status: req.query.status as never } : {},
+      where: alertStatus ? { status: alertStatus } : {},
       orderBy: [{ severity: 'desc' }, { createdAt: 'desc' }],
       take: 200,
     });
@@ -190,10 +210,13 @@ adminRouter.post(
 adminRouter.get(
   '/audit',
   asyncHandler(async (req, res) => {
+    const parsedLimit = Number(req.query.limit ?? 100);
+    const limit = Number.isFinite(parsedLimit) ? Math.min(Math.max(parsedLimit, 1), 500) : 100;
+    const action = enumParam(req.query.action, AuditAction, 'action');
     const entries = await prisma.auditLog.findMany({
       orderBy: { seq: 'desc' },
-      take: Math.min(Number(req.query.limit ?? 100), 500),
-      ...(req.query.action ? { where: { action: req.query.action as never } } : {}),
+      take: limit,
+      ...(action ? { where: { action } } : {}),
     });
     res.json(
       entries.map((e) => ({

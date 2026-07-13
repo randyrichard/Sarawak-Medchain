@@ -92,29 +92,36 @@ export async function requireApiKey(
   res: Response,
   next: NextFunction
 ): Promise<void> {
-  const key = req.headers['x-api-key'];
-  if (typeof key !== 'string' || key.length < 20) {
-    res.status(401).json({ error: 'API key required (X-Api-Key header)' });
-    return;
+  // This is an async middleware used directly in the route chain, so its
+  // own rejections (e.g. a database error) must be forwarded to next(),
+  // not left as an unhandled promise rejection that hangs the request.
+  try {
+    const key = req.headers['x-api-key'];
+    if (typeof key !== 'string' || key.length < 20) {
+      res.status(401).json({ error: 'API key required (X-Api-Key header)' });
+      return;
+    }
+    const record = await prisma.apiKey.findUnique({
+      where: { keyHash: sha256Hex(key) },
+      include: { owner: { select: { id: true, role: true, status: true } } },
+    });
+    if (!record || record.revokedAt || record.owner.status !== 'ACTIVE') {
+      res.status(401).json({ error: 'Invalid API key' });
+      return;
+    }
+    await prisma.apiKey.update({
+      where: { id: record.id },
+      data: { lastUsedAt: new Date() },
+    });
+    req.user = {
+      id: record.owner.id,
+      role: record.owner.role,
+      facilityId: null,
+      state: null,
+      email: '',
+    };
+    next();
+  } catch (err) {
+    next(err);
   }
-  const record = await prisma.apiKey.findUnique({
-    where: { keyHash: sha256Hex(key) },
-    include: { owner: { select: { id: true, role: true, status: true } } },
-  });
-  if (!record || record.revokedAt || record.owner.status !== 'ACTIVE') {
-    res.status(401).json({ error: 'Invalid API key' });
-    return;
-  }
-  await prisma.apiKey.update({
-    where: { id: record.id },
-    data: { lastUsedAt: new Date() },
-  });
-  req.user = {
-    id: record.owner.id,
-    role: record.owner.role,
-    facilityId: null,
-    state: null,
-    email: '',
-  };
-  next();
 }
