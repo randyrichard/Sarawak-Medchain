@@ -3,7 +3,7 @@ import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { AlertStatus, AuditAction, FacilityStatus } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
-import { asyncHandler, clientIp, HttpError, validateBody } from '../middleware/common.js';
+import { asyncHandler, clientIp, HttpError, strongPassword, validateBody } from '../middleware/common.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { audit, verifyAuditChain } from '../lib/audit.js';
 import { notify } from '../services/notifyService.js';
@@ -141,7 +141,7 @@ adminRouter.post(
   validateBody(
     z.object({
       email: z.string().email(),
-      password: z.string().min(10),
+      password: strongPassword,
       fullName: z.string().min(2).max(120),
     })
   ),
@@ -153,6 +153,7 @@ adminRouter.post(
         email: req.body.email.toLowerCase(),
         passwordHash: await bcrypt.hash(req.body.password, 12),
         fullName: req.body.fullName,
+        mustChangePassword: true, // initial password set by KKM/state admin
         role: facility.type === 'HOSPITAL' ? 'HOSPITAL_ADMIN' : 'CLINIC_ADMIN',
         facilityId: facility.id,
         state: facility.state,

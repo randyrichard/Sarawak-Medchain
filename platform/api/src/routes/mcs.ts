@@ -78,13 +78,25 @@ mcRouter.get(
     } else {
       throw new HttpError(403, 'Use the search endpoints for administrative access');
     }
-    const mcs = await prisma.medicalCertificate.findMany({
+
+    // Cursor pagination (stable id-based) so a prolific issuer's history is
+    // fully reachable, not silently capped. `cursor` is the id of the last
+    // item from the previous page.
+    const pageSize = Math.min(Math.max(Number(req.query.take ?? 50) || 50, 1), 100);
+    const cursor = typeof req.query.cursor === 'string' ? req.query.cursor : undefined;
+    const rows = await prisma.medicalCertificate.findMany({
       where,
       orderBy: { dateIssued: 'desc' },
-      take: 200,
+      take: pageSize + 1, // fetch one extra to detect whether more exist
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       include: { doctor: { include: { user: true } }, facility: true },
     });
-    res.json(mcs.map((m) => toDto(m, { includeDiagnosis: user.role === 'DOCTOR' })));
+    const hasMore = rows.length > pageSize;
+    const page = hasMore ? rows.slice(0, pageSize) : rows;
+    res.json({
+      items: page.map((m) => toDto(m, { includeDiagnosis: user.role === 'DOCTOR' })),
+      nextCursor: hasMore ? page[page.length - 1]!.id : null,
+    });
   })
 );
 

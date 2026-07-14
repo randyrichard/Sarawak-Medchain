@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../lib/prisma.js';
-import { asyncHandler, HttpError, validateBody } from '../middleware/common.js';
+import { asyncHandler, HttpError, strongPassword, validateBody } from '../middleware/common.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { generateDoctorKeyPair, encryptField, searchDigest } from '../lib/crypto.js';
 import { audit } from '../lib/audit.js';
@@ -62,7 +62,7 @@ facilityRouter.get(
 
 const registerDoctorSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(10),
+  password: strongPassword,
   fullName: z.string().min(2).max(120),
   ic: z.string().min(6).max(20),
   mmcNumber: z.string().min(4).max(20),
@@ -100,6 +100,7 @@ facilityRouter.post(
           state: facility.state,
           icEncrypted: encryptField(req.body.ic),
           icHash: searchDigest(req.body.ic),
+          mustChangePassword: true, // initial password set by the facility admin
         },
       });
       return tx.doctor.create({

@@ -133,6 +133,17 @@ notificationRouter.get(
 );
 
 notificationRouter.post(
+  '/read-all',
+  asyncHandler(async (req, res) => {
+    const result = await prisma.notification.updateMany({
+      where: { userId: req.user!.id, readAt: null },
+      data: { readAt: new Date() },
+    });
+    res.json({ ok: true, marked: result.count });
+  })
+);
+
+notificationRouter.post(
   '/:id/read',
   asyncHandler(async (req, res) => {
     await prisma.notification.updateMany({

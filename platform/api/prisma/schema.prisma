@@ -148,6 +148,11 @@ model User {
   totpSecretEncrypted String?
   totpEnabled         Boolean @default(false)
 
+  // Set for admin-provisioned accounts (doctors, facility admins): the user
+  // must change the initial password chosen by their administrator before
+  // the account is fully usable.
+  mustChangePassword Boolean @default(false)
+
   failedLoginCount Int       @default(0)
   lockedUntil      DateTime?
   lastLoginAt      DateTime?

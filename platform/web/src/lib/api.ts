@@ -20,6 +20,7 @@ export interface SessionUser {
   fullName: string;
   email: string;
   facilityId: string | null;
+  mustChangePassword?: boolean;
 }
 
 const STORAGE_KEY = 'emc_session';

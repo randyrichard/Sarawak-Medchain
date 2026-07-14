@@ -29,8 +29,14 @@ const emptyForm = {
   startDate: new Date().toISOString().slice(0, 10),
 };
 
+interface McPage {
+  items: MC[];
+  nextCursor: string | null;
+}
+
 export default function DoctorDashboard() {
   const [mcs, setMcs] = useState<MC[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -40,8 +46,23 @@ export default function DoctorDashboard() {
   const [qrTarget, setQrTarget] = useState<MC | null>(null);
 
   const load = useCallback(() => {
-    api<MC[]>('/api/v1/mcs').then(setMcs).catch((e) => setError(e.message));
+    api<McPage>('/api/v1/mcs?take=25')
+      .then((p) => {
+        setMcs(p.items);
+        setNextCursor(p.nextCursor);
+      })
+      .catch((e) => setError(e.message));
   }, []);
+
+  const loadMore = useCallback(() => {
+    if (!nextCursor) return;
+    api<McPage>(`/api/v1/mcs?take=25&cursor=${nextCursor}`)
+      .then((p) => {
+        setMcs((prev) => [...prev, ...p.items]);
+        setNextCursor(p.nextCursor);
+      })
+      .catch((e) => setError(e.message));
+  }, [nextCursor]);
 
   useEffect(load, [load]);
 
@@ -211,6 +232,13 @@ export default function DoctorDashboard() {
             </tr>
           )}
         </Table>
+        {nextCursor && (
+          <div className="mt-4 text-center">
+            <Button variant="outline" onClick={loadMore}>
+              Load more
+            </Button>
+          </div>
+        )}
       </Card>
 
       {qrTarget && <QrModal mcId={qrTarget.id} onClose={() => setQrTarget(null)} />}

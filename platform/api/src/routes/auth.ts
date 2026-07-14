@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { asyncHandler, authLimiter, clientIp, validateBody } from '../middleware/common.js';
+import { asyncHandler, authLimiter, clientIp, strongPassword, validateBody } from '../middleware/common.js';
 import { requireAuth } from '../middleware/auth.js';
 import * as authService from '../services/authService.js';
 
@@ -10,7 +10,7 @@ authRouter.use(authLimiter);
 const registerSchema = z.object({
   role: z.enum(['PATIENT', 'EMPLOYER']),
   email: z.string().email(),
-  password: z.string().min(10, 'Password must be at least 10 characters'),
+  password: strongPassword,
   fullName: z.string().min(2).max(120),
   ic: z.string().min(6).max(20).optional(),
   phone: z.string().min(7).max(20).optional(),
@@ -68,6 +68,16 @@ authRouter.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     await authService.logout(req.user!.id, req.body?.refreshToken);
+    res.json({ ok: true });
+  })
+);
+
+authRouter.post(
+  '/change-password',
+  requireAuth,
+  validateBody(z.object({ currentPassword: z.string().min(1), newPassword: strongPassword })),
+  asyncHandler(async (req, res) => {
+    await authService.changePassword(req.user!.id, req.body.currentPassword, req.body.newPassword);
     res.json({ ok: true });
   })
 );

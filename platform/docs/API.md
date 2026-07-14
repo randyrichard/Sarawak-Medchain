@@ -15,8 +15,9 @@ Errors: `{ "error": string, "details"?: [...] }` with conventional status codes
 | POST | `/register` | public | Patient/employer self-registration → token pair |
 | POST | `/login` | public | Email+password → tokens, or `{requiresTwoFactor, twoFactorToken}` |
 | POST | `/login/2fa` | public | `{twoFactorToken, code}` → token pair |
-| POST | `/refresh` | public | Rotate refresh token → new pair |
+| POST | `/refresh` | public | Rotate refresh token → new pair (reuse of a rotated token revokes all sessions) |
 | POST | `/logout` | any | Revoke refresh token |
+| POST | `/change-password` | any | `{currentPassword, newPassword}` — verifies current, enforces complexity, revokes all other sessions |
 | POST | `/2fa/setup` | any | Generate TOTP secret + `otpauth://` URL |
 | POST | `/2fa/enable` | any | Confirm code, enable 2FA |
 
@@ -57,7 +58,7 @@ Example response:
 | Method | Path | Role | Description |
 |---|---|---|---|
 | POST | `/` | DOCTOR | Issue: fraud checks → canonical hash → Ed25519 sign → chain anchor → persist (422 with reasons if blocked) |
-| GET | `/` | DOCTOR / PATIENT | Own certificates (doctor sees diagnosis; patient does not receive other doctors' notes) |
+| GET | `/` | DOCTOR / PATIENT | Own certificates — cursor-paginated `{items, nextCursor}`; query `?take` (≤100) `?cursor` |
 | POST | `/:id/revoke` | DOCTOR (issuer) | `{reason}` — permanent, audited, patient notified |
 | POST | `/:id/amend` | DOCTOR (issuer) | `{reason, corrected:{…}}` — original → AMENDED, replacement issued & anchored |
 | GET | `/:id/pdf` | issuer / patient | Official PDF with QR, hash, chain anchor |
@@ -89,6 +90,6 @@ Example response:
 | Method | Path | Role | Description |
 |---|---|---|---|
 | POST | `/api/v1/search` | admins | `{type: mcNumber\|ic\|doctor\|mmc\|facility\|hash, q}` — scoped to role |
-| GET | `/api/v1/notifications` · POST `/:id/read` | any | In-app notification feed |
+| GET | `/api/v1/notifications` · POST `/:id/read` · POST `/read-all` | any | In-app notification feed; mark one or all read |
 | GET/POST | `/api/v1/api-keys` · POST `/:id/revoke` | EMPLOYER | HR integration keys (plaintext shown once) |
 | GET | `/healthz` · `/readyz` | none | Kubernetes probes |

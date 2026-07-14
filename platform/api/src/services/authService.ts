@@ -17,7 +17,14 @@ const LOCKOUT_MINUTES = 15;
 export interface TokenPair {
   accessToken: string;
   refreshToken: string;
-  user: { id: string; role: Role; fullName: string; email: string; facilityId: string | null };
+  user: {
+    id: string;
+    role: Role;
+    fullName: string;
+    email: string;
+    facilityId: string | null;
+    mustChangePassword: boolean;
+  };
 }
 
 async function issueTokens(user: User, ip?: string, userAgent?: string): Promise<TokenPair> {
@@ -46,8 +53,39 @@ async function issueTokens(user: User, ip?: string, userAgent?: string): Promise
       fullName: user.fullName,
       email: user.email,
       facilityId: user.facilityId,
+      mustChangePassword: user.mustChangePassword,
     },
   };
+}
+
+/**
+ * Change password. Verifies the current password, applies the new one, clears
+ * the must-change flag, and revokes all OTHER refresh-token sessions so a
+ * stolen session cannot survive a password change.
+ */
+export async function changePassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string
+): Promise<void> {
+  const user = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
+  const ok = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!ok) throw new HttpError(400, 'Current password is incorrect');
+  if (await bcrypt.compare(newPassword, user.passwordHash)) {
+    throw new HttpError(400, 'New password must be different from the current one');
+  }
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      passwordHash: await bcrypt.hash(newPassword, 12),
+      mustChangePassword: false,
+    },
+  });
+  await prisma.refreshToken.updateMany({
+    where: { userId, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
+  await audit({ actorId: userId, action: 'UPDATE_USER', entityType: 'User', entityId: userId, meta: { passwordChanged: true } });
 }
 
 /** Self-service registration — patients and employers only. All other roles

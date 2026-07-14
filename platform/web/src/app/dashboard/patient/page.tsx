@@ -20,19 +20,38 @@ interface MC {
   anchored: boolean;
 }
 
+interface McPage {
+  items: MC[];
+  nextCursor: string | null;
+}
+
 export default function PatientDashboard() {
   const [mcs, setMcs] = useState<MC[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [qrTarget, setQrTarget] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    api<MC[]>('/api/v1/mcs')
-      .then(setMcs)
+    api<McPage>('/api/v1/mcs?take=25')
+      .then((p) => {
+        setMcs(p.items);
+        setNextCursor(p.nextCursor);
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoaded(true));
   }, []);
+
+  const loadMore = () => {
+    if (!nextCursor) return;
+    api<McPage>(`/api/v1/mcs?take=25&cursor=${nextCursor}`)
+      .then((p) => {
+        setMcs((prev) => [...prev, ...p.items]);
+        setNextCursor(p.nextCursor);
+      })
+      .catch((e) => setError(e.message));
+  };
 
   const download = async (mc: MC) => {
     try {
@@ -97,6 +116,13 @@ export default function PatientDashboard() {
             </tr>
           )}
         </Table>
+        {nextCursor && (
+          <div className="mt-4 text-center">
+            <Button variant="outline" onClick={loadMore}>
+              Load more
+            </Button>
+          </div>
+        )}
       </Card>
       {qrTarget && <QrModal mcId={qrTarget} onClose={() => setQrTarget(null)} />}
     </div>

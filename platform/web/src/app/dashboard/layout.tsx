@@ -41,8 +41,18 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     }
     setLocal(s);
     setReady(true);
-    api<Notification[]>('/api/v1/notifications').then(setNotifications).catch(() => {});
+    const loadNotifications = () =>
+      api<Notification[]>('/api/v1/notifications').then(setNotifications).catch(() => {});
+    loadNotifications();
+    // Poll so newly issued/revoked MCs surface without a manual refresh
+    const timer = setInterval(loadNotifications, 60_000);
+    return () => clearInterval(timer);
   }, [router]);
+
+  const markAllRead = () => {
+    api('/api/v1/notifications/read-all', { method: 'POST' }).catch(() => {});
+    setNotifications((prev) => prev.map((n) => ({ ...n, readAt: n.readAt ?? new Date().toISOString() })));
+  };
 
   if (!ready || !session) return null;
 
@@ -76,6 +86,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               </button>
               {showNotifications && (
                 <div className="absolute right-0 mt-2 w-80 rounded-xl border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-slate-900">
+                  <div className="flex items-center justify-between px-2 py-1">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Notifications</span>
+                    {unread > 0 && (
+                      <button
+                        onClick={markAllRead}
+                        className="text-xs font-medium text-brand-700 hover:underline dark:text-brand-400"
+                      >
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
                   {notifications.length === 0 && (
                     <p className="p-4 text-center text-sm text-slate-400">No notifications</p>
                   )}
@@ -123,6 +144,21 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
+      {session.user.mustChangePassword && (
+        <div className="border-b border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40" role="alert">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2.5 text-sm text-amber-800 dark:text-amber-300">
+            <span>
+              Your account is using an initial password set by your administrator. Please change it now to secure your account.
+            </span>
+            <Link
+              href="/dashboard/security"
+              className="shrink-0 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700"
+            >
+              Change password
+            </Link>
+          </div>
+        </div>
+      )}
       <main className="mx-auto max-w-7xl px-4 py-8">{children}</main>
     </div>
   );

@@ -1,7 +1,20 @@
 import type { NextFunction, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
-import type { ZodSchema } from 'zod';
+import { z, type ZodSchema } from 'zod';
 import { config } from '../config.js';
+
+/**
+ * Password policy for a government system: min 10 chars with upper, lower and
+ * a digit. Reused by every place that accepts a password so the rule is
+ * defined once and can't drift between registration and provisioning.
+ */
+export const strongPassword = z
+  .string()
+  .min(10, 'Password must be at least 10 characters')
+  .max(200)
+  .refine((v) => /[a-z]/.test(v) && /[A-Z]/.test(v) && /[0-9]/.test(v), {
+    message: 'Password must include uppercase, lowercase and a number',
+  });
 
 /** Wrap async handlers so rejections reach the error middleware. */
 export function asyncHandler(
