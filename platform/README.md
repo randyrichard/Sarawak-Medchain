@@ -106,6 +106,7 @@ platform/
 - [Administrator guide](docs/ADMIN_GUIDE.md) · [User guide](docs/USER_GUIDE.md)
 - [Operations & disaster-recovery runbook](docs/OPERATIONS.md)
 - [Production-readiness & security audit](docs/AUDIT.md) · [KKM acceptance review](docs/ACCEPTANCE.md)
+- **Government proposal package**: [KKM PoC proposal](docs/proposal/PROPOSAL.md) · [Live demo runbook](docs/proposal/DEMO_SCRIPT.md)
 - Machine-readable API contract: `GET /api/v1/openapi.json` (import into Postman / Swagger)
 
 ## Tests
