@@ -20,6 +20,16 @@ export function registerProvider(
   providers[channel] = provider;
 }
 
+export function emailProviderConfigured(): boolean {
+  return !!providers.email;
+}
+
+/** Send a transactional email if a provider is configured (best-effort). */
+export async function deliverEmail(to: string, subject: string, body: string): Promise<void> {
+  if (!providers.email) return;
+  await providers.email.send(to, subject, body);
+}
+
 export async function notify(
   userId: string,
   type: string,

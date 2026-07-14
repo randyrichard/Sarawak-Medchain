@@ -119,10 +119,21 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   return body as T;
 }
 
-export async function apiBlob(path: string): Promise<Blob> {
-  const res = await fetchWithRefresh(path, {});
+export async function apiBlob(path: string, init: RequestInit = {}): Promise<Blob> {
+  const res = await fetchWithRefresh(path, init);
   if (!res.ok) throw new ApiError(res.status, 'Download failed');
   return res.blob();
+}
+
+/** Trigger a browser download of an authenticated endpoint's blob response. */
+export async function downloadFile(path: string, filename: string, init: RequestInit = {}): Promise<void> {
+  const blob = await apiBlob(path, init);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 export { API_URL };

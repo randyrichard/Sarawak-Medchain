@@ -58,6 +58,12 @@ export function clientIp(req: Request): string {
   return (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ?? req.ip ?? '';
 }
 
+/** Render rows to RFC-4180 CSV. Values are quoted and internal quotes doubled. */
+export function toCsv(headers: string[], rows: Array<Array<string | number | null | undefined>>): string {
+  const esc = (v: string | number | null | undefined) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  return [headers.map(esc).join(','), ...rows.map((r) => r.map(esc).join(','))].join('\r\n');
+}
+
 export const generalLimiter = rateLimit({
   windowMs: config.rateLimit.windowMs,
   limit: config.rateLimit.maxGeneral,

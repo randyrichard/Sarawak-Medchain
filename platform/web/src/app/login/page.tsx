@@ -105,7 +105,14 @@ export default function LoginPage() {
               {busy ? '…' : t('login.submit')}
             </Button>
           </form>
-          <p className="mt-4 text-center text-sm text-slate-500">
+          {!twoFactorToken && (
+            <p className="mt-4 text-center text-sm">
+              <Link href="/forgot-password" className="font-medium text-brand-700 hover:underline dark:text-brand-400">
+                Forgot your password?
+              </Link>
+            </p>
+          )}
+          <p className="mt-2 text-center text-sm text-slate-500">
             Patient or employer without an account?{' '}
             <Link href="/register" className="font-medium text-brand-700 hover:underline dark:text-brand-400">
               {t('nav.register')}

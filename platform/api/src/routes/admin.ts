@@ -3,7 +3,7 @@ import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { AlertStatus, AuditAction, FacilityStatus } from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
-import { asyncHandler, clientIp, HttpError, strongPassword, validateBody } from '../middleware/common.js';
+import { asyncHandler, clientIp, HttpError, strongPassword, toCsv, validateBody } from '../middleware/common.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { audit, verifyAuditChain } from '../lib/audit.js';
 import { notify } from '../services/notifyService.js';
@@ -225,6 +225,43 @@ adminRouter.get(
         seq: e.seq.toString(),
       }))
     );
+  })
+);
+
+// CSV export of the audit trail (auditors expect a portable export)
+adminRouter.get(
+  '/audit.csv',
+  asyncHandler(async (req, res) => {
+    const action = enumParam(req.query.action, AuditAction, 'action');
+    const entries = await prisma.auditLog.findMany({
+      orderBy: { seq: 'desc' },
+      take: 5000,
+      ...(action ? { where: { action } } : {}),
+    });
+    const csv = toCsv(
+      ['seq', 'timestamp', 'action', 'actorId', 'actorRole', 'entityType', 'entityId', 'ip'],
+      entries.map((e) => [
+        e.seq.toString(),
+        e.createdAt.toISOString(),
+        e.action,
+        e.actorId ?? '',
+        e.actorRole ?? '',
+        e.entityType ?? '',
+        e.entityId ?? '',
+        e.ip ?? '',
+      ])
+    );
+    await audit({
+      actorId: req.user!.id,
+      actorRole: req.user!.role,
+      action: 'DATA_EXPORT',
+      entityType: 'AuditLog',
+      meta: { export: 'audit.csv', rows: entries.length },
+    });
+    res
+      .setHeader('Content-Type', 'text/csv; charset=utf-8')
+      .setHeader('Content-Disposition', `attachment; filename="audit-${new Date().toISOString().slice(0, 10)}.csv"`)
+      .send(csv);
   })
 );
 

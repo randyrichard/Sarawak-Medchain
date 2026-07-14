@@ -73,6 +73,24 @@ authRouter.post(
 );
 
 authRouter.post(
+  '/forgot-password',
+  validateBody(z.object({ email: z.string().email() })),
+  asyncHandler(async (req, res) => {
+    const result = await authService.requestPasswordReset(req.body.email, { ip: clientIp(req) });
+    res.json(result);
+  })
+);
+
+authRouter.post(
+  '/reset-password',
+  validateBody(z.object({ token: z.string().min(10), newPassword: strongPassword })),
+  asyncHandler(async (req, res) => {
+    await authService.resetPassword(req.body.token, req.body.newPassword);
+    res.json({ ok: true });
+  })
+);
+
+authRouter.post(
   '/change-password',
   requireAuth,
   validateBody(z.object({ currentPassword: z.string().min(1), newPassword: strongPassword })),

@@ -18,6 +18,8 @@ Errors: `{ "error": string, "details"?: [...] }` with conventional status codes
 | POST | `/refresh` | public | Rotate refresh token → new pair (reuse of a rotated token revokes all sessions) |
 | POST | `/logout` | any | Revoke refresh token |
 | POST | `/change-password` | any | `{currentPassword, newPassword}` — verifies current, enforces complexity, revokes all other sessions |
+| POST | `/forgot-password` | public | `{email}` — begins account recovery; uniform response (no account enumeration) |
+| POST | `/reset-password` | public | `{token, newPassword}` — completes reset; revokes all sessions |
 | POST | `/2fa/setup` | any | Generate TOTP secret + `otpauth://` URL |
 | POST | `/2fa/enable` | any | Confirm code, enable 2FA |
 
@@ -73,6 +75,7 @@ Example response:
 | POST | `/facilities/:id/admins` | Provision hospital/clinic administrator accounts |
 | GET | `/fraud-alerts` · POST `/fraud-alerts/:id/review` | Fraud queue (`UNDER_REVIEW/CONFIRMED/DISMISSED`) |
 | GET | `/audit` | Tamper-evident audit trail (filter by action) |
+| GET | `/audit.csv` | Export the audit trail as CSV (logged as `DATA_EXPORT`) |
 | GET | `/audit/integrity` | SUPER_ADMIN: recompute the full hash chain |
 | GET | `/analytics` | Totals, daily issuance, verification outcomes, by-state heatmap data, top facilities |
 
@@ -90,6 +93,8 @@ Example response:
 | Method | Path | Role | Description |
 |---|---|---|---|
 | POST | `/api/v1/search` | admins | `{type: mcNumber\|ic\|doctor\|mmc\|facility\|hash, q}` — scoped to role |
+| POST | `/api/v1/search/csv` | admins | Same query, exported as CSV (logged as `DATA_EXPORT`) |
+| GET | `/api/v1/openapi.json` | public | Machine-readable OpenAPI 3.0 contract |
 | GET | `/api/v1/notifications` · POST `/:id/read` · POST `/read-all` | any | In-app notification feed; mark one or all read |
 | GET/POST | `/api/v1/api-keys` · POST `/:id/revoke` | EMPLOYER | HR integration keys (plaintext shown once) |
 | GET | `/healthz` · `/readyz` | none | Kubernetes probes |

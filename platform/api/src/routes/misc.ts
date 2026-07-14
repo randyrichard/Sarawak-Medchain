@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
-import { asyncHandler, HttpError, validateBody } from '../middleware/common.js';
-import { requireAuth, requireRole } from '../middleware/auth.js';
+import { asyncHandler, HttpError, toCsv, validateBody } from '../middleware/common.js';
+import { requireAuth, requireRole, type AuthUser } from '../middleware/auth.js';
 import { randomToken, searchDigest, sha256Hex } from '../lib/crypto.js';
 import { audit } from '../lib/audit.js';
 
@@ -18,100 +18,86 @@ const searchSchema = z.object({
   type: z.enum(['mcNumber', 'ic', 'doctor', 'mmc', 'facility', 'hash']),
   q: z.string().min(2).max(120),
 });
+type SearchInput = z.infer<typeof searchSchema>;
+
+/** Shared, role-scoped MC search used by both the JSON and CSV endpoints. */
+async function runSearch(user: AuthUser, { type, q }: SearchInput, take = 50) {
+  // Facility admins only see their own facility's records
+  const facilityScope =
+    user.role === 'HOSPITAL_ADMIN' || user.role === 'CLINIC_ADMIN'
+      ? { facilityId: user.facilityId ?? '__none__' }
+      : {};
+  const stateScope =
+    user.role === 'STATE_ADMIN' && user.state ? { facility: { state: user.state } } : {};
+  const include = {
+    doctor: { include: { user: { select: { fullName: true } } } },
+    facility: { select: { name: true, state: true } },
+  } as const;
+  const baseWhere = { ...facilityScope, ...stateScope };
+
+  const filterByType = {
+    mcNumber: { mcNumber: { contains: q, mode: 'insensitive' as const } },
+    ic: { patientIcHash: searchDigest(q) },
+    hash: { canonicalHash: q.toLowerCase().startsWith('0x') ? q.toLowerCase() : `0x${q.toLowerCase()}` },
+    doctor: { doctor: { user: { fullName: { contains: q, mode: 'insensitive' as const } } } },
+    mmc: { doctor: { mmcNumber: q } },
+    facility: { facility: { ...(stateScope.facility ?? {}), name: { contains: q, mode: 'insensitive' as const } } },
+  }[type];
+
+  const mcs = await prisma.medicalCertificate.findMany({
+    where: { ...baseWhere, ...filterByType },
+    include,
+    take,
+    orderBy: { dateIssued: 'desc' },
+  });
+  return mcs.map((m) => ({
+    id: m.id,
+    mcNumber: m.mcNumber,
+    patientName: m.patientName,
+    status: m.status,
+    dateIssued: m.dateIssued,
+    restDays: m.restDays,
+    doctorName: m.doctor.user.fullName,
+    mmcNumber: m.doctor.mmcNumber,
+    facilityName: m.facility.name,
+    state: m.facility.state,
+    canonicalHash: m.canonicalHash,
+    anchored: m.anchored,
+  }));
+}
 
 searchRouter.post(
   '/',
   validateBody(searchSchema),
   asyncHandler(async (req, res) => {
-    const { type, q } = req.body as z.infer<typeof searchSchema>;
-    const user = req.user!;
+    res.json(await runSearch(req.user!, req.body as SearchInput));
+  })
+);
 
-    // Facility admins only see their own facility's records
-    const facilityScope =
-      user.role === 'HOSPITAL_ADMIN' || user.role === 'CLINIC_ADMIN'
-        ? { facilityId: user.facilityId ?? '__none__' }
-        : {};
-    const stateScope =
-      user.role === 'STATE_ADMIN' && user.state ? { facility: { state: user.state } } : {};
-
-    const include = {
-      doctor: { include: { user: { select: { fullName: true } } } },
-      facility: { select: { name: true, state: true } },
-    } as const;
-
-    const baseWhere = { ...facilityScope, ...stateScope };
-    let mcs;
-    switch (type) {
-      case 'mcNumber':
-        mcs = await prisma.medicalCertificate.findMany({
-          where: { ...baseWhere, mcNumber: { contains: q, mode: 'insensitive' } },
-          include,
-          take: 50,
-        });
-        break;
-      case 'ic':
-        mcs = await prisma.medicalCertificate.findMany({
-          where: { ...baseWhere, patientIcHash: searchDigest(q) },
-          include,
-          take: 50,
-        });
-        break;
-      case 'hash':
-        mcs = await prisma.medicalCertificate.findMany({
-          where: {
-            ...baseWhere,
-            canonicalHash: q.toLowerCase().startsWith('0x') ? q.toLowerCase() : `0x${q.toLowerCase()}`,
-          },
-          include,
-          take: 50,
-        });
-        break;
-      case 'doctor':
-        mcs = await prisma.medicalCertificate.findMany({
-          where: {
-            ...baseWhere,
-            doctor: { user: { fullName: { contains: q, mode: 'insensitive' } } },
-          },
-          include,
-          take: 50,
-        });
-        break;
-      case 'mmc':
-        mcs = await prisma.medicalCertificate.findMany({
-          where: { ...baseWhere, doctor: { mmcNumber: q } },
-          include,
-          take: 50,
-        });
-        break;
-      case 'facility':
-        mcs = await prisma.medicalCertificate.findMany({
-          where: {
-            ...facilityScope,
-            ...stateScope,
-            facility: { ...(stateScope.facility ?? {}), name: { contains: q, mode: 'insensitive' } },
-          },
-          include,
-          take: 50,
-        });
-        break;
-    }
-
-    res.json(
-      (mcs ?? []).map((m) => ({
-        id: m.id,
-        mcNumber: m.mcNumber,
-        patientName: m.patientName,
-        status: m.status,
-        dateIssued: m.dateIssued,
-        restDays: m.restDays,
-        doctorName: m.doctor.user.fullName,
-        mmcNumber: m.doctor.mmcNumber,
-        facilityName: m.facility.name,
-        state: m.facility.state,
-        canonicalHash: m.canonicalHash,
-        anchored: m.anchored,
-      }))
+// CSV export of the same search (bounded higher for reporting)
+searchRouter.post(
+  '/csv',
+  validateBody(searchSchema),
+  asyncHandler(async (req, res) => {
+    const rows = await runSearch(req.user!, req.body as SearchInput, 5000);
+    const csv = toCsv(
+      ['mcNumber', 'patientName', 'status', 'dateIssued', 'restDays', 'doctorName', 'mmcNumber', 'facilityName', 'state', 'canonicalHash', 'anchored'],
+      rows.map((r) => [
+        r.mcNumber, r.patientName, r.status, r.dateIssued.toISOString(), r.restDays,
+        r.doctorName, r.mmcNumber, r.facilityName, r.state, r.canonicalHash, r.anchored ? 'yes' : 'no',
+      ])
     );
+    await audit({
+      actorId: req.user!.id,
+      actorRole: req.user!.role,
+      action: 'DATA_EXPORT',
+      entityType: 'MedicalCertificate',
+      meta: { export: 'search.csv', rows: rows.length },
+    });
+    res
+      .setHeader('Content-Type', 'text/csv; charset=utf-8')
+      .setHeader('Content-Disposition', `attachment; filename="mc-search-${new Date().toISOString().slice(0, 10)}.csv"`)
+      .send(csv);
   })
 );
 

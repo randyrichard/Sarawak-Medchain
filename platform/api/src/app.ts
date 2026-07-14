@@ -11,6 +11,7 @@ import { mcRouter } from './routes/mcs.js';
 import { adminRouter } from './routes/admin.js';
 import { facilityRouter } from './routes/facilities.js';
 import { apiKeyRouter, notificationRouter, searchRouter } from './routes/misc.js';
+import { openApiSpec } from './lib/openapi.js';
 
 export function createApp(): express.Express {
   const app = express();
@@ -47,6 +48,11 @@ export function createApp(): express.Express {
     } catch {
       res.status(503).json({ status: 'database unavailable' });
     }
+  });
+
+  // Machine-readable API contract (for Postman / Swagger / procurement review)
+  app.get('/api/v1/openapi.json', (_req, res) => {
+    res.json(openApiSpec());
   });
 
   app.use('/api/v1/auth', authRouter);

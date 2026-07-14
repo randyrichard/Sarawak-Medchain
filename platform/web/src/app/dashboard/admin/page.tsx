@@ -4,7 +4,7 @@
  *  facility approvals, fraud alerts, audit trail. */
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Badge, BarChart, Button, Card, PageLoading, Stat, statusTone, Table, Td } from '@/components/ui';
-import { api } from '@/lib/api';
+import { api, downloadFile } from '@/lib/api';
 
 interface Analytics {
   totals: {
@@ -253,7 +253,22 @@ export default function AdminDashboard() {
       )}
 
       {tab === 'audit' && (
-        <Card title="Immutable audit trail" description="Hash-chained: every entry commits to the previous one, so tampering is mathematically detectable.">
+        <Card
+          title="Immutable audit trail"
+          description="Hash-chained: every entry commits to the previous one, so tampering is mathematically detectable."
+          actions={
+            <Button
+              variant="outline"
+              onClick={() =>
+                downloadFile('/api/v1/admin/audit.csv', `audit-${new Date().toISOString().slice(0, 10)}.csv`).catch((e) =>
+                  setError((e as Error).message)
+                )
+              }
+            >
+              Export CSV
+            </Button>
+          }
+        >
           <Table headers={['#', 'Action', 'Actor', 'Entity', 'Timestamp']}>
             {auditEntries.map((e) => (
               <tr key={e.seq}>

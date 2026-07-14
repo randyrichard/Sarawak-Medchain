@@ -118,6 +118,7 @@ enum AuditAction {
   REVOKE_API_KEY
   FRAUD_ALERT_RAISED
   FRAUD_ALERT_REVIEWED
+  DATA_EXPORT
 }
 
 enum NotificationChannel {
@@ -164,6 +165,7 @@ model User {
 
   doctor        Doctor?
   refreshTokens RefreshToken[]
+  resetTokens   PasswordResetToken[]
   apiKeys       ApiKey[]
   notifications Notification[]
   patientMCs    MedicalCertificate[] @relation("PatientUser")
@@ -184,6 +186,19 @@ model RefreshToken {
   revokedAt DateTime?
   ip        String?
   userAgent String?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// Single-use password-reset tokens (only the SHA-256 hash is stored).
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
   createdAt DateTime  @default(now())
 
   @@index([userId])

@@ -103,6 +103,10 @@ platform/
 - [REST API reference](docs/API.md)
 - [Blockchain, verification & fraud workflows](docs/WORKFLOWS.md)
 - [Deployment: Docker, Kubernetes, AWS, CI/CD](docs/DEPLOYMENT.md)
+- [Administrator guide](docs/ADMIN_GUIDE.md) · [User guide](docs/USER_GUIDE.md)
+- [Operations & disaster-recovery runbook](docs/OPERATIONS.md)
+- [Production-readiness & security audit](docs/AUDIT.md) · [KKM acceptance review](docs/ACCEPTANCE.md)
+- Machine-readable API contract: `GET /api/v1/openapi.json` (import into Postman / Swagger)
 
 ## Tests
 

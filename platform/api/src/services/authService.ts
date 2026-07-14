@@ -10,6 +10,7 @@ import { audit } from '../lib/audit.js';
 import { HttpError } from '../middleware/common.js';
 import { checkLoginAnomaly } from './fraudService.js';
 import { config } from '../config.js';
+import { deliverEmail, emailProviderConfigured } from './notifyService.js';
 
 const MAX_FAILED_LOGINS = 5;
 const LOCKOUT_MINUTES = 15;
@@ -322,6 +323,73 @@ export async function refresh(
     data: { revokedAt: new Date() },
   });
   return issueTokens(stored.user, context.ip, context.userAgent);
+}
+
+/**
+ * Begin account recovery. Always resolves the same way regardless of whether
+ * the email exists (no account enumeration). When an email provider is
+ * configured the link is emailed; in demo deployments without a provider the
+ * one-time link is returned so recovery is demonstrable.
+ */
+export async function requestPasswordReset(
+  email: string,
+  context: { ip?: string }
+): Promise<{ delivered: 'email' | 'demo-link'; resetUrl?: string }> {
+  const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+  if (!user || user.status === 'DISABLED') {
+    // Uniform response — do not reveal whether the account exists.
+    return { delivered: emailProviderConfigured() ? 'email' : 'demo-link' };
+  }
+
+  const token = randomToken(48);
+  await prisma.passwordResetToken.create({
+    data: {
+      userId: user.id,
+      tokenHash: sha256Hex(token),
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
+    },
+  });
+  await audit({
+    actorId: user.id,
+    action: 'LOGIN_FAILED',
+    ip: context.ip,
+    meta: { event: 'password_reset_requested' },
+  });
+
+  const resetUrl = `${config.publicWebUrl}/reset-password?token=${token}`;
+  if (emailProviderConfigured()) {
+    await deliverEmail(
+      user.email,
+      'Sarawak MedChain — password reset',
+      `Reset your password using this link (valid for 1 hour): ${resetUrl}`
+    );
+    return { delivered: 'email' };
+  }
+  // Demo mode: surface the link so the flow is demonstrable end-to-end.
+  return { delivered: 'demo-link', resetUrl };
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<void> {
+  const record = await prisma.passwordResetToken.findUnique({
+    where: { tokenHash: sha256Hex(token) },
+  });
+  if (!record || record.usedAt || record.expiresAt < new Date()) {
+    throw new HttpError(400, 'This reset link is invalid or has expired');
+  }
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: record.userId },
+      data: { passwordHash: await bcrypt.hash(newPassword, 12), mustChangePassword: false, failedLoginCount: 0, lockedUntil: null },
+    }),
+    prisma.passwordResetToken.update({ where: { id: record.id }, data: { usedAt: new Date() } }),
+    // Invalidate every existing session and any other outstanding reset tokens
+    prisma.refreshToken.updateMany({ where: { userId: record.userId, revokedAt: null }, data: { revokedAt: new Date() } }),
+    prisma.passwordResetToken.updateMany({
+      where: { userId: record.userId, usedAt: null, id: { not: record.id } },
+      data: { usedAt: new Date() },
+    }),
+  ]);
+  await audit({ actorId: record.userId, action: 'UPDATE_USER', entityType: 'User', entityId: record.userId, meta: { passwordReset: true } });
 }
 
 export async function logout(userId: string, refreshToken?: string): Promise<void> {
