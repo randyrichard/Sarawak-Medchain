@@ -88,6 +88,8 @@ export default function VerifyResultPage() {
   const [error, setError] = useState<string | null>(null);
 
   const run = useCallback(async () => {
+    setError(null);
+    setOutcome(null);
     try {
       setOutcome(await api<VerifyOutcome>(`/api/v1/verify/${hash}`));
     } catch (e) {
@@ -103,7 +105,15 @@ export default function VerifyResultPage() {
     return (
       <>
         <SiteHeader />
-        <main className="mx-auto max-w-2xl px-4 py-16 text-center text-red-600">{error}</main>
+        <main className="mx-auto max-w-md px-4 py-16 text-center">
+          <p className="text-slate-700 dark:text-slate-300">{error}</p>
+          <button
+            onClick={run}
+            className="mt-6 rounded-lg bg-brand-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-800"
+          >
+            Try again
+          </button>
+        </main>
       </>
     );
   }

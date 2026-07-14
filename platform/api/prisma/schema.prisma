@@ -119,6 +119,7 @@ enum AuditAction {
   FRAUD_ALERT_RAISED
   FRAUD_ALERT_REVIEWED
   DATA_EXPORT
+  PASSWORD_RESET
 }
 
 enum NotificationChannel {

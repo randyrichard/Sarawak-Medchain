@@ -58,9 +58,24 @@ export function clientIp(req: Request): string {
   return (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ?? req.ip ?? '';
 }
 
-/** Render rows to RFC-4180 CSV. Values are quoted and internal quotes doubled. */
-export function toCsv(headers: string[], rows: Array<Array<string | number | null | undefined>>): string {
-  const esc = (v: string | number | null | undefined) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+/**
+ * Render rows to RFC-4180 CSV. Values are quoted and internal quotes doubled.
+ *
+ * CSV/formula-injection hardening: a spreadsheet treats a cell beginning with
+ * =, +, -, @, tab or CR as a formula, so a value like `=HYPERLINK(...)` from a
+ * user-controlled field (patient/facility name) would execute when an admin
+ * opens the export. Such cells are prefixed with a single quote so they are
+ * shown as literal text. (OWASP: CSV Injection.)
+ */
+export function toCsv(
+  headers: string[],
+  rows: Array<Array<string | number | null | undefined>>
+): string {
+  const esc = (v: string | number | null | undefined) => {
+    let s = String(v ?? '');
+    if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+    return `"${s.replace(/"/g, '""')}"`;
+  };
   return [headers.map(esc).join(','), ...rows.map((r) => r.map(esc).join(','))].join('\r\n');
 }
 

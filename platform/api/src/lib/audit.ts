@@ -83,29 +83,54 @@ export async function audit(entry: AuditEntryInput): Promise<void> {
   }
 }
 
-/** Recompute the chain and report the first broken link, if any. */
-export async function verifyAuditChain(): Promise<{ intact: boolean; brokenAtSeq?: string }> {
-  const entries = await prisma.auditLog.findMany({ orderBy: { seq: 'asc' } });
+/**
+ * Recompute the chain and report the first broken link, if any.
+ *
+ * Streams the log in bounded batches (cursor by seq) rather than loading every
+ * row into memory, so integrity verification stays O(1) in memory even when the
+ * audit log holds tens of millions of entries.
+ */
+export async function verifyAuditChain(): Promise<{
+  intact: boolean;
+  brokenAtSeq?: string;
+  checked: number;
+}> {
+  const BATCH = 5000;
   let prevHash = GENESIS_HASH;
-  for (const e of entries) {
-    if (e.prevHash !== prevHash) {
-      return { intact: false, brokenAtSeq: e.seq.toString() };
+  let cursorSeq: bigint | undefined;
+  let checked = 0;
+
+  for (;;) {
+    const entries = await prisma.auditLog.findMany({
+      orderBy: { seq: 'asc' },
+      take: BATCH,
+      ...(cursorSeq !== undefined ? { where: { seq: { gt: cursorSeq } } } : {}),
+    });
+    if (entries.length === 0) break;
+
+    for (const e of entries) {
+      if (e.prevHash !== prevHash) {
+        return { intact: false, brokenAtSeq: e.seq.toString(), checked };
+      }
+      const recomputed = sha256Hex(
+        [
+          e.prevHash,
+          e.actorId ?? '',
+          e.action,
+          e.entityType ?? '',
+          e.entityId ?? '',
+          stableStringify(e.meta ?? {}),
+          e.createdAt.toISOString(),
+        ].join('|')
+      );
+      if (recomputed !== e.entryHash) {
+        return { intact: false, brokenAtSeq: e.seq.toString(), checked };
+      }
+      prevHash = e.entryHash;
+      checked++;
+      cursorSeq = e.seq;
     }
-    const recomputed = sha256Hex(
-      [
-        e.prevHash,
-        e.actorId ?? '',
-        e.action,
-        e.entityType ?? '',
-        e.entityId ?? '',
-        stableStringify(e.meta ?? {}),
-        e.createdAt.toISOString(),
-      ].join('|')
-    );
-    if (recomputed !== e.entryHash) {
-      return { intact: false, brokenAtSeq: e.seq.toString() };
-    }
-    prevHash = e.entryHash;
+    if (entries.length < BATCH) break;
   }
-  return { intact: true };
+  return { intact: true, checked };
 }

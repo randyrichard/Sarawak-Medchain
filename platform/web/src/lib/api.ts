@@ -57,15 +57,30 @@ export class ApiError extends Error {
   }
 }
 
+// No request should hang forever — a slow/hung network on the employer's
+// phone must surface an error the user can retry, not an endless spinner.
+const REQUEST_TIMEOUT_MS = 20_000;
+
 async function rawFetch(path: string, init: RequestInit = {}, token?: string): Promise<Response> {
-  return fetch(`${API_URL}${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(init.headers ?? {}),
-    },
-  });
+  try {
+    return await fetch(`${API_URL}${path}`, {
+      ...init,
+      signal: init.signal ?? AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(init.headers ?? {}),
+      },
+    });
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'TimeoutError') {
+      throw new ApiError(0, 'The network is slow or unavailable. Please check your connection and try again.');
+    }
+    if (err instanceof TypeError) {
+      throw new ApiError(0, 'Could not reach the server. Please check your connection and try again.');
+    }
+    throw err;
+  }
 }
 
 /**

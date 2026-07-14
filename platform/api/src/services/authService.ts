@@ -351,9 +351,11 @@ export async function requestPasswordReset(
   });
   await audit({
     actorId: user.id,
-    action: 'LOGIN_FAILED',
+    action: 'PASSWORD_RESET',
+    entityType: 'User',
+    entityId: user.id,
     ip: context.ip,
-    meta: { event: 'password_reset_requested' },
+    meta: { stage: 'requested' },
   });
 
   const resetUrl = `${config.publicWebUrl}/reset-password?token=${token}`;
@@ -389,7 +391,7 @@ export async function resetPassword(token: string, newPassword: string): Promise
       data: { usedAt: new Date() },
     }),
   ]);
-  await audit({ actorId: record.userId, action: 'UPDATE_USER', entityType: 'User', entityId: record.userId, meta: { passwordReset: true } });
+  await audit({ actorId: record.userId, action: 'PASSWORD_RESET', entityType: 'User', entityId: record.userId, meta: { stage: 'completed' } });
 }
 
 export async function logout(userId: string, refreshToken?: string): Promise<void> {
