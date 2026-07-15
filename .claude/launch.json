@@ -20,6 +20,12 @@
       "port": 5173
     },
     {
+      "name": "safeops",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "C:/Users/randyrichardd/Desktop/sarawak-medchain/safeops"],
+      "port": 5180
+    },
+    {
       "name": "mc-audit-copilot",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--prefix", "C:/Users/randyrichardd/Desktop/mc-audit-copilot"],

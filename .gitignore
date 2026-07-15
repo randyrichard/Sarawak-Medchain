@@ -14,6 +14,8 @@ frontend/.env.local
 # Compilation output
 /dist
 frontend/dist
+safeops/dist
+*.tsbuildinfo
 
 # pnpm deploy output
 /bundle
