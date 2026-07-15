@@ -15,6 +15,7 @@ frontend/.env.local
 /dist
 frontend/dist
 safeops/dist
+safeops-platform/web/dist
 *.tsbuildinfo
 
 # pnpm deploy output
