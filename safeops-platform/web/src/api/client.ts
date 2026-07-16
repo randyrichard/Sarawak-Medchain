@@ -7,9 +7,11 @@ import type {
   ActivityEvent, AppNotification, Company, Department, Employee,
   Session, Site, Team, User,
 } from './types'
+import type { DashboardData } from './dashboard'
 import {
   ACTIVITY, COMPANIES, DEPARTMENTS, EMPLOYEES, NOTIFICATIONS, SITES, TEAMS, USERS,
 } from './mock/fixtures'
+import { buildDashboard } from './mock/dashboard'
 import { delay } from '@/lib/time'
 
 export interface ApiClient {
@@ -26,6 +28,9 @@ export interface ApiClient {
   listDepartments(siteIds: string[]): Promise<Department[]>
   listTeams(departmentIds: string[]): Promise<Team[]>
   listEmployees(companyId: string): Promise<Employee[]>
+
+  // dashboard
+  getDashboard(companyId: string, siteId: string | null, scopeLabel: string): Promise<DashboardData>
 
   // shell data
   listNotifications(): Promise<AppNotification[]>
@@ -129,6 +134,11 @@ class MockApiClient implements ApiClient {
   async listEmployees(companyId: string) {
     await delay(LATENCY())
     return EMPLOYEES.filter((e) => e.companyId === companyId)
+  }
+
+  async getDashboard(companyId: string, siteId: string | null, scopeLabel: string) {
+    await delay(650 + Math.random() * 350)
+    return buildDashboard(companyId, siteId, scopeLabel)
   }
 
   async listNotifications() {

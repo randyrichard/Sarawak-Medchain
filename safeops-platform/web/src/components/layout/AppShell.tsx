@@ -21,7 +21,7 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { to: '/', label: 'Home', icon: LayoutDashboard, capability: 'dashboard:view', end: true },
+  { to: '/', label: 'Mission Control', icon: LayoutDashboard, capability: 'dashboard:view', end: true },
   { to: '/incidents', label: 'Incidents', icon: ClipboardList, capability: 'incidents:manage', locked: 'Sprint 2' },
   { to: '/actions', label: 'Actions', icon: ListChecks, capability: 'actions:manage', locked: 'Sprint 2' },
   { to: '/analytics', label: 'Analytics', icon: LineChart, capability: 'analytics:view', locked: 'Sprint 3' },

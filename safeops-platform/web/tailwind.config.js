@@ -49,10 +49,15 @@ export default {
           from: { opacity: '0', transform: 'scale(0.97) translateY(4px)' },
           to: { opacity: '1', transform: 'scale(1) translateY(0)' },
         },
+        rise: {
+          from: { opacity: '0', transform: 'translateY(8px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 120ms ease-out',
         'scale-in': 'scale-in 140ms cubic-bezier(0.16, 1, 0.3, 1)',
+        rise: 'rise 320ms cubic-bezier(0.16, 1, 0.3, 1) both',
       },
     },
   },
