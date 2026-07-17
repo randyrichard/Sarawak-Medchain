@@ -20,9 +20,13 @@ export function NotificationMenu() {
 
   useEffect(() => {
     let cancelled = false
-    api.listNotifications().then((n) => !cancelled && setItems(n))
+    const load = () => api.listNotifications().then((n) => !cancelled && setItems(n))
+    load()
+    // light poll so workflow events (assignments, mentions, escalations) surface live
+    const timer = setInterval(load, 15_000)
     return () => {
       cancelled = true
+      clearInterval(timer)
     }
   }, [])
 

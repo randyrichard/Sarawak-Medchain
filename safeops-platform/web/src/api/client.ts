@@ -8,10 +8,15 @@ import type {
   Session, Site, Team, User,
 } from './types'
 import type { DashboardData } from './dashboard'
+import type {
+  Actor, AdvancePayload, FiveWhys, Incident, IncidentAction, IncidentAttachment,
+  IncidentFilters, NewIncidentInput, RcaCause,
+} from './incidents'
 import {
   ACTIVITY, COMPANIES, DEPARTMENTS, EMPLOYEES, NOTIFICATIONS, SITES, TEAMS, USERS,
 } from './mock/fixtures'
 import { buildDashboard } from './mock/dashboard'
+import { IncidentStore } from './mock/incidents'
 import { delay } from '@/lib/time'
 
 export interface ApiClient {
@@ -31,6 +36,18 @@ export interface ApiClient {
 
   // dashboard
   getDashboard(companyId: string, siteId: string | null, scopeLabel: string): Promise<DashboardData>
+
+  // incidents
+  listIncidents(companyId: string, filters: IncidentFilters): Promise<Incident[]>
+  getIncident(id: string): Promise<Incident>
+  createIncident(input: NewIncidentInput, actor: Actor): Promise<Incident>
+  advanceIncident(id: string, payload: AdvancePayload, actor: Actor): Promise<Incident>
+  saveIncidentRca(id: string, causes: RcaCause[], fiveWhys: FiveWhys, actor: Actor): Promise<Incident>
+  addIncidentAction(id: string, input: Pick<IncidentAction, 'title' | 'causeId' | 'owner' | 'dueDate' | 'priority' | 'evidenceRequired'>, actor: Actor): Promise<Incident>
+  updateIncidentAction(id: string, actionId: string, patch: { status?: IncidentAction['status']; evidenceNote?: string }, actor: Actor): Promise<Incident>
+  addIncidentComment(id: string, text: string, mentions: string[], actor: Actor): Promise<Incident>
+  addIncidentAttachment(id: string, att: Omit<IncidentAttachment, 'id' | 'at' | 'uploadedBy'>, actor: Actor): Promise<Incident>
+  archiveIncident(id: string, actor: Actor): Promise<void>
 
   // shell data
   listNotifications(): Promise<AppNotification[]>
@@ -55,11 +72,45 @@ export function decodeToken(token: string): { sub: string; exp: number } | null 
   }
 }
 
+const NOTIF_KEY = 'safeops.notifications.v1'
+
+function loadNotifications(): AppNotification[] {
+  try {
+    const raw = localStorage.getItem(NOTIF_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) return parsed
+    }
+  } catch {
+    /* fall through to seeds */
+  }
+  return NOTIFICATIONS.map((n) => ({ ...n }))
+}
+
 class MockApiClient implements ApiClient {
   // mutable copies so reset-password and read-state behave realistically
   private users = USERS.map((u) => ({ ...u }))
-  private notifications = NOTIFICATIONS.map((n) => ({ ...n }))
+  private notifications = loadNotifications()
   private resetTokens = new Map<string, { email: string; exp: number }>()
+  private incidents = new IncidentStore((kind, title, detail) => {
+    this.notifications.unshift({
+      id: `n-${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`,
+      kind,
+      title,
+      detail,
+      createdAt: new Date().toISOString(),
+      readAt: null,
+    })
+    this.persistNotifications()
+  })
+
+  private persistNotifications() {
+    try {
+      localStorage.setItem(NOTIF_KEY, JSON.stringify(this.notifications.slice(0, 100)))
+    } catch {
+      /* storage unavailable — in-memory still works */
+    }
+  }
 
   async login(email: string, password: string) {
     await delay(LATENCY())
@@ -138,7 +189,60 @@ class MockApiClient implements ApiClient {
 
   async getDashboard(companyId: string, siteId: string | null, scopeLabel: string) {
     await delay(650 + Math.random() * 350)
-    return buildDashboard(companyId, siteId, scopeLabel)
+    // Mission Control reflects the live incident store, not just static seeds
+    return buildDashboard(companyId, siteId, scopeLabel, this.incidents.liveStats(companyId, siteId))
+  }
+
+  // ── incidents ──────────────────────────────────────────────────────────────
+
+  async listIncidents(companyId: string, filters: IncidentFilters) {
+    await delay(LATENCY())
+    return this.incidents.list(companyId, filters)
+  }
+
+  async getIncident(id: string) {
+    await delay(LATENCY() / 2)
+    return this.incidents.get(id)
+  }
+
+  async createIncident(input: NewIncidentInput, actor: Actor) {
+    await delay(LATENCY())
+    return this.incidents.create(input, actor)
+  }
+
+  async advanceIncident(id: string, payload: AdvancePayload, actor: Actor) {
+    await delay(LATENCY() / 2)
+    return this.incidents.advance(id, payload, actor)
+  }
+
+  async saveIncidentRca(id: string, causes: RcaCause[], fiveWhys: FiveWhys, actor: Actor) {
+    await delay(LATENCY() / 2)
+    return this.incidents.saveRca(id, causes, fiveWhys, actor)
+  }
+
+  async addIncidentAction(id: string, input: Pick<IncidentAction, 'title' | 'causeId' | 'owner' | 'dueDate' | 'priority' | 'evidenceRequired'>, actor: Actor) {
+    await delay(LATENCY() / 2)
+    return this.incidents.addAction(id, input, actor)
+  }
+
+  async updateIncidentAction(id: string, actionId: string, patch: { status?: IncidentAction['status']; evidenceNote?: string }, actor: Actor) {
+    await delay(LATENCY() / 2)
+    return this.incidents.updateAction(id, actionId, patch, actor)
+  }
+
+  async addIncidentComment(id: string, text: string, mentions: string[], actor: Actor) {
+    await delay(LATENCY() / 3)
+    return this.incidents.addComment(id, text, mentions, actor)
+  }
+
+  async addIncidentAttachment(id: string, att: Omit<IncidentAttachment, 'id' | 'at' | 'uploadedBy'>, actor: Actor) {
+    await delay(LATENCY() / 2)
+    return this.incidents.addAttachment(id, att, actor)
+  }
+
+  async archiveIncident(id: string, actor: Actor) {
+    await delay(LATENCY() / 2)
+    this.incidents.archive(id, actor)
   }
 
   async listNotifications() {
@@ -150,12 +254,14 @@ class MockApiClient implements ApiClient {
     await delay(100)
     const n = this.notifications.find((x) => x.id === id)
     if (n && !n.readAt) n.readAt = new Date().toISOString()
+    this.persistNotifications()
   }
 
   async markAllNotificationsRead() {
     await delay(150)
     const at = new Date().toISOString()
     this.notifications.forEach((n) => (n.readAt = n.readAt ?? at))
+    this.persistNotifications()
   }
 
   async listActivity() {

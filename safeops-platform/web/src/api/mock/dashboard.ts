@@ -444,7 +444,31 @@ function buildLeaderboard(sites: SiteRisk[]): LeaderboardEntry[] {
   ]
 }
 
-export function buildDashboard(companyId: string, siteId: string | null, scopeLabel: string): DashboardData {
+/** Live counters from the incident store — Mission Control reflects reality. */
+export interface LiveIncidentStats {
+  openIncidents: number
+  highRisk: number
+  bySite: Map<string, number>
+  recent: { id: string; at: string; actor: string; action: string; incident: string; title: string }[]
+}
+
+const LIVE_VERB: Record<string, { verb: string; kind: TimelineEvent['kind'] }> = {
+  'Incident reported': { verb: 'reported', kind: 'incident_reported' },
+  'Initial assessment completed': { verb: 'completed the initial assessment for', kind: 'investigation_started' },
+  'Investigation started': { verb: 'started the investigation for', kind: 'investigation_started' },
+  'Corrective action assigned': { verb: 'assigned a corrective action on', kind: 'action_assigned' },
+  'Action completed': { verb: 'completed an action on', kind: 'action_completed' },
+  'Action verified': { verb: 'verified an action on', kind: 'action_completed' },
+  'Root cause approved': { verb: 'approved the root cause for', kind: 'action_completed' },
+  'Incident closed': { verb: 'closed', kind: 'action_completed' },
+}
+
+export function buildDashboard(
+  companyId: string,
+  siteId: string | null,
+  scopeLabel: string,
+  live?: LiveIncidentStats,
+): DashboardData {
   const inCompany = SEEDS.filter((s) => s.companyId === companyId)
   const seeds = siteId ? inCompany.filter((s) => s.id === siteId) : inCompany
   const scoped = seeds.length > 0 ? seeds : inCompany
@@ -463,15 +487,48 @@ export function buildDashboard(companyId: string, siteId: string | null, scopeLa
     (a) => !siteId || scoped.some((s) => a.target.toLowerCase().includes(s.short.toLowerCase())),
   )
 
+  const kpis = buildKpis(scoped, charts)
+  let mergedActivity = activity.length > 0 ? activity : (isBig ? ACTIVITY : KCS_ACTIVITY).slice(0, 3)
+
+  // Overlay live incident-store state so the dashboard updates as cases change
+  if (live) {
+    const shortOf = (id: string) => SEEDS.find((s) => s.id === id)?.short ?? id
+    const openKpi = kpis.find((k) => k.id === 'open-incidents')
+    if (openKpi) {
+      openKpi.value = String(live.openIncidents)
+      openKpi.tone = live.openIncidents === 0 ? 'good' : live.highRisk > 0 ? 'serious' : 'warning'
+      openKpi.breakdown = [...live.bySite.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([id, n]) => ({ label: shortOf(id), value: String(n) }))
+    }
+    const hrKpi = kpis.find((k) => k.id === 'high-risk')
+    if (hrKpi) {
+      hrKpi.value = String(live.highRisk)
+      hrKpi.tone = live.highRisk === 0 ? 'good' : 'critical'
+    }
+    const liveEvents: TimelineEvent[] = live.recent
+      .filter((r) => LIVE_VERB[r.action])
+      .map((r) => ({
+        id: `live-${r.id}`,
+        at: r.at,
+        kind: LIVE_VERB[r.action].kind,
+        actor: r.actor,
+        text: LIVE_VERB[r.action].verb,
+        target: `${r.incident} · ${r.title}`,
+      }))
+    mergedActivity = [...liveEvents, ...mergedActivity].slice(0, 8)
+  }
+
   return {
     scopeLabel,
     generatedAt: new Date().toISOString(),
-    kpis: buildKpis(scoped, charts),
+    kpis,
     priorities,
     sites,
     charts,
     leaderboard: buildLeaderboard(sites),
-    activity: activity.length > 0 ? activity : (isBig ? ACTIVITY : KCS_ACTIVITY).slice(0, 3),
+    activity: mergedActivity,
     insights,
     events,
   }

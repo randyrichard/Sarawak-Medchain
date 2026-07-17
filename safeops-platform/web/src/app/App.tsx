@@ -8,6 +8,9 @@ import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage'
 import { ResetPasswordPage } from '@/features/auth/pages/ResetPasswordPage'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
+import { IncidentsListPage } from '@/features/incidents/IncidentsListPage'
+import { ReportIncidentPage } from '@/features/incidents/ReportIncidentPage'
+import { IncidentDetailPage } from '@/features/incidents/IncidentDetailPage'
 import { NotificationsPage } from '@/features/notifications/NotificationsPage'
 import { OrganizationPage } from '@/features/org/OrganizationPage'
 import { AccountPage } from '@/features/account/AccountPage'
@@ -39,6 +42,30 @@ export default function App() {
                 }
               >
                 <Route path="/" element={<DashboardPage />} />
+                <Route
+                  path="/incidents"
+                  element={
+                    <RequireCapability capability="incidents:manage">
+                      <IncidentsListPage />
+                    </RequireCapability>
+                  }
+                />
+                <Route
+                  path="/incidents/new"
+                  element={
+                    <RequireCapability capability="reports:submit">
+                      <ReportIncidentPage />
+                    </RequireCapability>
+                  }
+                />
+                <Route
+                  path="/incidents/:id"
+                  element={
+                    <RequireCapability capability="incidents:manage">
+                      <IncidentDetailPage />
+                    </RequireCapability>
+                  }
+                />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route
                   path="/organization"
