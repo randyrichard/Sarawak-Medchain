@@ -77,22 +77,35 @@ export interface FiveWhys {
   rootStatement: string
 }
 
-export type ActionStatus = 'Open' | 'In Progress' | 'Completed' | 'Verified'
+export type ActionStatus = 'Open' | 'In Progress' | 'Completed' | 'Verified' | 'Cancelled'
 export type ActionPriority = 'High' | 'Medium' | 'Low'
 
 export interface IncidentAction {
   id: string
+  /** human reference (CA-…); assigned by the store */
+  code?: string
   title: string
+  description?: string
   causeId: string | null
   owner: string
+  reviewer?: string
   dueDate: string
   priority: ActionPriority
   status: ActionStatus
+  /** 0 | 25 | 50 | 75 | 100 */
+  progress?: number
   evidenceRequired: boolean
   evidenceNote?: string
+  createdAt?: string
+  startedAt?: string
   completedAt?: string
   verifiedBy?: string
   verifiedAt?: string
+  cancelledAt?: string
+  cancelReason?: string
+  notes?: { id: string; author: string; at: string; text: string; mentions: string[] }[]
+  /** per-action audit entries appended by CAPA mutations */
+  log?: { id: string; at: string; actor: string; action: string; detail?: string }[]
 }
 
 export interface IncidentComment {
@@ -168,6 +181,8 @@ export interface Incident {
 export interface Actor {
   name: string
   role: string // Role from types.ts; kept loose here to avoid a cycle
+  /** site scope from the membership; empty/undefined = org-wide */
+  siteIds?: string[]
 }
 
 export interface NewIncidentInput {

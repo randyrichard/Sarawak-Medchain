@@ -56,8 +56,12 @@ export const PEOPLE: string[] = [
 /** The acting user, as the API's permission checks expect it. */
 export function useActor(): Actor {
   const { user } = useAuth()
-  const { role } = useOrg()
-  return { name: user?.name ?? 'Unknown', role: role ?? 'employee' }
+  const { role, membership } = useOrg()
+  return {
+    name: user?.name ?? 'Unknown',
+    role: role ?? 'employee',
+    siteIds: membership?.siteIds ?? [],
+  }
 }
 
 /** Mock site datum coordinates for the GPS capture fallback. */

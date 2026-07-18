@@ -7,6 +7,7 @@ import AppShell from '@/components/layout/AppShell'
 import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage'
 import { ResetPasswordPage } from '@/features/auth/pages/ResetPasswordPage'
+import { ActionsPage } from '@/features/actions/ActionsPage'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { IncidentsListPage } from '@/features/incidents/IncidentsListPage'
 import { ReportIncidentPage } from '@/features/incidents/ReportIncidentPage'
@@ -63,6 +64,14 @@ export default function App() {
                   element={
                     <RequireCapability capability="incidents:manage">
                       <IncidentDetailPage />
+                    </RequireCapability>
+                  }
+                />
+                <Route
+                  path="/actions"
+                  element={
+                    <RequireCapability capability="dashboard:view">
+                      <ActionsPage />
                     </RequireCapability>
                   }
                 />

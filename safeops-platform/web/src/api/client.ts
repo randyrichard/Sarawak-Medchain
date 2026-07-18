@@ -12,6 +12,9 @@ import type {
   Actor, AdvancePayload, FiveWhys, Incident, IncidentAction, IncidentAttachment,
   IncidentFilters, NewIncidentInput, RcaCause,
 } from './incidents'
+import type {
+  CapaAnalytics, CapaFilters, CapaItem, CapaPatch, CapaStats, NewStandaloneAction,
+} from './capa'
 import {
   ACTIVITY, COMPANIES, DEPARTMENTS, EMPLOYEES, NOTIFICATIONS, SITES, TEAMS, USERS,
 } from './mock/fixtures'
@@ -48,6 +51,16 @@ export interface ApiClient {
   addIncidentComment(id: string, text: string, mentions: string[], actor: Actor): Promise<Incident>
   addIncidentAttachment(id: string, att: Omit<IncidentAttachment, 'id' | 'at' | 'uploadedBy'>, actor: Actor): Promise<Incident>
   archiveIncident(id: string, actor: Actor): Promise<void>
+
+  // corrective actions (CAPA)
+  listCapa(companyId: string, filters: CapaFilters, actor: Actor): Promise<CapaItem[]>
+  capaStats(companyId: string, actor: Actor): Promise<CapaStats>
+  getCapa(actionId: string): Promise<CapaItem>
+  addStandaloneAction(input: NewStandaloneAction, actor: Actor): Promise<CapaItem>
+  updateCapa(actionId: string, patch: CapaPatch, actor: Actor): Promise<CapaItem>
+  cancelCapa(actionId: string, reason: string, actor: Actor): Promise<CapaItem>
+  addCapaNote(actionId: string, text: string, mentions: string[], actor: Actor): Promise<CapaItem>
+  capaAnalytics(companyId: string): Promise<CapaAnalytics>
 
   // shell data
   listNotifications(): Promise<AppNotification[]>
@@ -243,6 +256,48 @@ class MockApiClient implements ApiClient {
   async archiveIncident(id: string, actor: Actor) {
     await delay(LATENCY() / 2)
     this.incidents.archive(id, actor)
+  }
+
+  // ── CAPA ───────────────────────────────────────────────────────────────────
+
+  async listCapa(companyId: string, filters: CapaFilters, actor: Actor) {
+    await delay(LATENCY())
+    return this.incidents.listCapa(companyId, filters, actor)
+  }
+
+  async capaStats(companyId: string, actor: Actor) {
+    await delay(LATENCY() / 2)
+    return this.incidents.capaStats(companyId, actor)
+  }
+
+  async getCapa(actionId: string) {
+    await delay(LATENCY() / 3)
+    return this.incidents.getCapa(actionId)
+  }
+
+  async addStandaloneAction(input: NewStandaloneAction, actor: Actor) {
+    await delay(LATENCY() / 2)
+    return this.incidents.addStandaloneAction(input, actor)
+  }
+
+  async updateCapa(actionId: string, patch: CapaPatch, actor: Actor) {
+    await delay(LATENCY() / 3)
+    return this.incidents.updateCapa(actionId, patch, actor)
+  }
+
+  async cancelCapa(actionId: string, reason: string, actor: Actor) {
+    await delay(LATENCY() / 3)
+    return this.incidents.cancelCapa(actionId, reason, actor)
+  }
+
+  async addCapaNote(actionId: string, text: string, mentions: string[], actor: Actor) {
+    await delay(LATENCY() / 3)
+    return this.incidents.addCapaNote(actionId, text, mentions, actor)
+  }
+
+  async capaAnalytics(companyId: string) {
+    await delay(LATENCY())
+    return this.incidents.capaAnalytics(companyId)
   }
 
   async listNotifications() {

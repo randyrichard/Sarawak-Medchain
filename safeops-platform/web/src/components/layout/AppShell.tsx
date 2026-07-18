@@ -23,7 +23,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { to: '/', label: 'Mission Control', icon: LayoutDashboard, capability: 'dashboard:view', end: true },
   { to: '/incidents', label: 'Incidents', icon: ClipboardList, capability: 'incidents:manage' },
-  { to: '/actions', label: 'Actions', icon: ListChecks, capability: 'actions:manage', locked: 'Sprint 2' },
+  { to: '/actions', label: 'Actions', icon: ListChecks, capability: 'dashboard:view' },
   { to: '/analytics', label: 'Analytics', icon: LineChart, capability: 'analytics:view', locked: 'Sprint 3' },
   { to: '/compliance', label: 'Compliance', icon: ShieldCheck, capability: 'compliance:manage', locked: 'Sprint 3' },
   { to: '/notifications', label: 'Notifications', icon: Bell, capability: 'dashboard:view' },

@@ -11,6 +11,10 @@ import type {
   IncidentFilters, IncidentStage, NewIncidentInput, RcaCause,
 } from '../incidents'
 import { INCIDENT_STAGES, STAGE_LABEL, TYPE_LABEL } from '../incidents'
+import type {
+  CapaAnalytics, CapaDerivedStatus, CapaFilters, CapaItem, CapaPatch, CapaStats,
+  CapaTimelineEntry, NewStandaloneAction,
+} from '../capa'
 
 // roles allowed to run investigations / edit cases
 const MANAGE_ROLES = ['admin', 'hse_manager', 'safety_officer']
@@ -31,9 +35,21 @@ const uid = () => `x${(++idCounter).toString(36)}${Date.now().toString(36).slice
 
 const STORAGE_KEY = 'safeops.incidents.v1'
 
+/** Standalone corrective actions (audit/inspection findings) carry their own context. */
+export type StandaloneAction = IncidentAction & {
+  companyId: string
+  siteId: string
+  department: string
+  rootCause?: string
+}
+
 export class IncidentStore {
   private incidents: Incident[] = []
+  private standalone: StandaloneAction[] = []
   private nextNumber = 2610
+  private nextActionCode = 910
+  /** reminder thresholds already notified, keyed `${actionId}:${tag}` */
+  private remindersSent: Record<string, true> = {}
   private notify: Notify
 
   constructor(notify: Notify) {
@@ -44,13 +60,25 @@ export class IncidentStore {
     if (stored) {
       this.incidents = stored.incidents
       this.nextNumber = stored.nextNumber
+      this.standalone = stored.standalone ?? buildStandaloneSeeds()
+      this.remindersSent = stored.remindersSent ?? {}
+      this.nextActionCode = stored.nextActionCode ?? 910
     } else {
       this.incidents = buildSeeds()
-      this.persist()
+      this.standalone = buildStandaloneSeeds()
     }
+    this.normalizeActions()
+    this.persist()
+    this.sweepReminders()
   }
 
-  private hydrate(): { incidents: Incident[]; nextNumber: number } | null {
+  private hydrate(): {
+    incidents: Incident[]
+    nextNumber: number
+    standalone?: StandaloneAction[]
+    remindersSent?: Record<string, true>
+    nextActionCode?: number
+  } | null {
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
       if (!raw) return null
@@ -63,10 +91,36 @@ export class IncidentStore {
 
   private persist() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ incidents: this.incidents, nextNumber: this.nextNumber }))
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          incidents: this.incidents,
+          nextNumber: this.nextNumber,
+          standalone: this.standalone,
+          remindersSent: this.remindersSent,
+          nextActionCode: this.nextActionCode,
+        }),
+      )
     } catch {
       // storage full/unavailable — the session still works in memory
     }
+  }
+
+  /** Backfill CAPA fields on actions persisted before Sprint 4. */
+  private normalizeActions() {
+    const norm = (a: IncidentAction, fallbackCreated: string) => {
+      if (!a.code) {
+        a.code = /^ca-[\w-]+$/i.test(a.id) ? a.id.toUpperCase() : `CA-${this.nextActionCode++}`
+      }
+      if (a.progress === undefined) {
+        a.progress = a.status === 'Verified' || a.status === 'Completed' ? 100 : a.status === 'In Progress' ? 50 : 0
+      }
+      a.notes = a.notes ?? []
+      a.log = a.log ?? []
+      a.createdAt = a.createdAt ?? fallbackCreated
+    }
+    this.incidents.forEach((i) => i.actions.forEach((a) => norm(a, i.reportedAt)))
+    this.standalone.forEach((a) => norm(a, a.createdAt ?? new Date().toISOString()))
   }
 
   // ── queries ────────────────────────────────────────────────────────────────
@@ -202,7 +256,9 @@ export class IncidentStore {
         if (uncovered.length > 0) {
           throw new ApiError('validation', `Every root cause needs at least one corrective action. Missing: ${uncovered.join('; ')}.`)
         }
-        const notDone = incident.actions.filter((a) => a.status !== 'Completed' && a.status !== 'Verified')
+        const notDone = incident.actions.filter(
+          (a) => a.status !== 'Completed' && a.status !== 'Verified' && a.status !== 'Cancelled',
+        )
         if (notDone.length > 0) {
           throw new ApiError('validation', `${notDone.length} corrective action(s) are not completed yet.`)
         }
@@ -221,7 +277,7 @@ export class IncidentStore {
         break
       }
       case 'closed': {
-        const unverified = incident.actions.filter((a) => a.status !== 'Verified')
+        const unverified = incident.actions.filter((a) => a.status !== 'Verified' && a.status !== 'Cancelled')
         if (unverified.length > 0) {
           throw new ApiError('validation', `${unverified.length} action(s) still need verification before closing.`)
         }
@@ -285,12 +341,15 @@ export class IncidentStore {
 
     if (patch.evidenceNote !== undefined) action.evidenceNote = patch.evidenceNote.trim() || undefined
 
+    if (action.status === 'Cancelled') throw new ApiError('validation', 'Cancelled actions are read-only.')
+
     if (patch.status && patch.status !== action.status) {
       if (patch.status === 'Completed') {
         if (action.evidenceRequired && !action.evidenceNote) {
           throw new ApiError('validation', 'This action requires completion evidence before it can be marked complete.')
         }
         action.completedAt = new Date().toISOString()
+        action.progress = 100
         this.log(incident, actor, 'Action completed', action.title)
       } else if (patch.status === 'Verified') {
         this.requireRole(actor, REVIEW_ROLES)
@@ -299,6 +358,10 @@ export class IncidentStore {
         action.verifiedAt = new Date().toISOString()
         this.log(incident, actor, 'Action verified', action.title)
       } else {
+        if (patch.status === 'In Progress') {
+          action.startedAt = action.startedAt ?? new Date().toISOString()
+          action.progress = Math.max(action.progress ?? 0, 25)
+        }
         this.log(incident, actor, `Action moved to ${patch.status}`, action.title)
       }
       action.status = patch.status
@@ -339,6 +402,404 @@ export class IncidentStore {
     this.persist()
   }
 
+  // ── CAPA: unified corrective-action model ──────────────────────────────────
+
+  /** Locate an action wherever it lives (embedded in an incident, or standalone). */
+  private findAction(actionId: string): { action: IncidentAction; incident: Incident | null; standalone: StandaloneAction | null } {
+    for (const incident of this.incidents) {
+      if (incident.archived) continue
+      const action = incident.actions.find((a) => a.id === actionId)
+      if (action) return { action, incident, standalone: null }
+    }
+    const sa = this.standalone.find((a) => a.id === actionId)
+    if (sa) return { action: sa, incident: null, standalone: sa }
+    throw new ApiError('not_found', 'Corrective action not found.')
+  }
+
+  private toCapa(action: IncidentAction, incident: Incident | null, sa: StandaloneAction | null): CapaItem {
+    const derived = deriveCapaStatus(action, incident)
+    const daysToDue = dayDiff(action.dueDate)
+    const timeline: CapaTimelineEntry[] = [
+      { id: `${action.id}-t0`, at: action.createdAt ?? '', actor: incident ? incident.investigator ?? 'System' : 'System', action: 'Action created', detail: incident ? `Raised from ${incident.number}` : 'Standalone finding' },
+      ...(action.startedAt ? [{ id: `${action.id}-t1`, at: action.startedAt, actor: action.owner, action: 'Work started' }] : []),
+      ...(action.completedAt ? [{ id: `${action.id}-t2`, at: action.completedAt, actor: action.owner, action: 'Marked completed', detail: action.evidenceNote }] : []),
+      ...(action.verifiedAt ? [{ id: `${action.id}-t3`, at: action.verifiedAt, actor: action.verifiedBy ?? '', action: 'Verification sign-off' }] : []),
+      ...(action.cancelledAt ? [{ id: `${action.id}-t4`, at: action.cancelledAt, actor: 'HSE', action: 'Cancelled', detail: action.cancelReason }] : []),
+      ...(action.log ?? []),
+    ].sort((a, b) => a.at.localeCompare(b.at))
+
+    return {
+      id: action.id,
+      code: action.code ?? action.id.toUpperCase(),
+      title: action.title,
+      description: action.description,
+      companyId: incident ? incident.companyId : sa!.companyId,
+      siteId: incident ? incident.siteId : sa!.siteId,
+      department: incident ? incident.department : sa!.department,
+      incidentId: incident ? incident.id : null,
+      incidentNumber: incident?.number,
+      incidentTitle: incident?.title,
+      rootCause: incident
+        ? incident.rca?.causes.find((c) => c.id === action.causeId)?.category
+        : sa?.rootCause,
+      owner: action.owner,
+      reviewer: action.reviewer,
+      priority: action.priority,
+      dueDate: action.dueDate,
+      createdAt: action.createdAt ?? '',
+      status: action.status,
+      derived,
+      overdue: isActionOverdue(action),
+      daysToDue,
+      progress: action.progress ?? 0,
+      evidenceRequired: action.evidenceRequired,
+      evidenceNote: action.evidenceNote,
+      startedAt: action.startedAt,
+      completedAt: action.completedAt,
+      verifiedBy: action.verifiedBy,
+      verifiedAt: action.verifiedAt,
+      cancelledAt: action.cancelledAt,
+      cancelReason: action.cancelReason,
+      notes: action.notes ?? [],
+      timeline,
+    }
+  }
+
+  private allCapa(companyId: string): CapaItem[] {
+    const items: CapaItem[] = []
+    for (const incident of this.incidents) {
+      if (incident.archived || incident.companyId !== companyId) continue
+      incident.actions.forEach((a) => items.push(this.toCapa(a, incident, null)))
+    }
+    this.standalone
+      .filter((a) => a.companyId === companyId)
+      .forEach((a) => items.push(this.toCapa(a, null, a)))
+    return items
+  }
+
+  /** Role-based data scoping per the CAPA permission model. */
+  private scopeCapa(items: CapaItem[], actor: Actor): CapaItem[] {
+    const orgWide = !actor.siteIds || actor.siteIds.length === 0
+    switch (actor.role) {
+      case 'admin':
+      case 'hse_manager':
+      case 'ceo':
+        return items
+      case 'safety_officer':
+      case 'supervisor':
+        return items.filter((i) => i.owner === actor.name || orgWide || actor.siteIds!.includes(i.siteId))
+      default: // employee: own actions only
+        return items.filter((i) => i.owner === actor.name)
+    }
+  }
+
+  listCapa(companyId: string, filters: CapaFilters, actor: Actor): CapaItem[] {
+    this.sweepReminders()
+    const q = filters.q?.trim().toLowerCase()
+    return this.scopeCapa(this.allCapa(companyId), actor)
+      .filter((i) => !filters.siteId || i.siteId === filters.siteId)
+      .filter((i) => !filters.owner || i.owner === filters.owner)
+      .filter((i) => !filters.priority || i.priority === filters.priority)
+      .filter((i) => matchesBucket(i, filters.bucket ?? 'all'))
+      .filter(
+        (i) =>
+          !q ||
+          [i.code, i.title, i.owner, i.department, i.incidentNumber ?? '', i.rootCause ?? '']
+            .join(' ')
+            .toLowerCase()
+            .includes(q),
+      )
+      .sort(
+        (a, b) =>
+          (a.derived === 'Cancelled' ? 1 : 0) - (b.derived === 'Cancelled' ? 1 : 0) ||
+          (b.overdue ? 1 : 0) - (a.overdue ? 1 : 0) ||
+          a.dueDate.localeCompare(b.dueDate),
+      )
+  }
+
+  capaStats(companyId: string, actor: Actor): CapaStats {
+    const items = this.scopeCapa(this.allCapa(companyId), actor)
+    const openStates: CapaDerivedStatus[] = ['Open', 'Assigned', 'In Progress', 'Waiting Verification']
+    const open = items.filter((i) => openStates.includes(i.derived))
+    const monthAgo = Date.now() - 30 * 86400_000
+    return {
+      open: open.length,
+      overdue: items.filter((i) => i.overdue).length,
+      completed30d: items.filter((i) => (i.verifiedAt ?? i.completedAt) && new Date(i.verifiedAt ?? i.completedAt!).getTime() > monthAgo && (i.derived === 'Verified' || i.derived === 'Closed')).length,
+      verificationPending: items.filter((i) => i.derived === 'Waiting Verification').length,
+      highPriority: open.filter((i) => i.priority === 'High').length,
+      dueToday: open.filter((i) => i.daysToDue === 0).length,
+    }
+  }
+
+  getCapa(actionId: string): CapaItem {
+    const { action, incident, standalone } = this.findAction(actionId)
+    return this.toCapa(action, incident, standalone)
+  }
+
+  addStandaloneAction(input: NewStandaloneAction, actor: Actor): CapaItem {
+    if (!MANAGE_ROLES.includes(actor.role)) {
+      throw new ApiError('forbidden', 'Only Safety Officers and above can raise corrective actions.')
+    }
+    if (!input.title.trim() || !input.owner.trim() || !input.dueDate) {
+      throw new ApiError('validation', 'Title, owner and due date are required.')
+    }
+    const now = new Date().toISOString()
+    const action: StandaloneAction = {
+      id: `sa-${Date.now().toString(36)}`,
+      code: `CA-${this.nextActionCode++}`,
+      title: input.title.trim(),
+      description: input.description?.trim() || undefined,
+      causeId: null,
+      owner: input.owner,
+      reviewer: input.reviewer,
+      dueDate: input.dueDate,
+      priority: input.priority,
+      status: 'Open',
+      progress: 0,
+      evidenceRequired: input.evidenceRequired,
+      createdAt: now,
+      notes: [],
+      log: [{ id: `l-${Date.now().toString(36)}`, at: now, actor: actor.name, action: 'Action created', detail: input.rootCause }],
+      companyId: input.companyId,
+      siteId: input.siteId,
+      department: input.department,
+      rootCause: input.rootCause,
+    }
+    this.standalone.unshift(action)
+    this.persist()
+    this.notify('action', `Corrective action assigned to ${input.owner}`, `${action.code} · ${action.title}, due ${input.dueDate}.`)
+    return this.toCapa(action, null, action)
+  }
+
+  updateCapa(actionId: string, patch: CapaPatch, actor: Actor): CapaItem {
+    const { action, incident, standalone } = this.findAction(actionId)
+    if (action.status === 'Cancelled') throw new ApiError('validation', 'Cancelled actions are read-only.')
+    const item = this.toCapa(action, incident, standalone)
+    if (!canMutateCapa(actor, item)) {
+      throw new ApiError('forbidden', 'You can only update actions assigned to you or within your site scope.')
+    }
+
+    const managementFields = ['owner', 'reviewer', 'dueDate', 'priority', 'description'] as const
+    if (managementFields.some((f) => patch[f] !== undefined) && !REVIEW_ROLES.includes(actor.role)) {
+      throw new ApiError('forbidden', 'Reassignment and schedule changes need an HSE Manager or Admin.')
+    }
+
+    const alog = (text: string, detail?: string) => {
+      action.log = action.log ?? []
+      action.log.push({ id: `l-${Date.now().toString(36)}${action.log.length}`, at: new Date().toISOString(), actor: actor.name, action: text, detail })
+      if (incident) this.log(incident, actor, text, `${action.code} · ${action.title}`)
+    }
+
+    if (patch.owner !== undefined && patch.owner !== action.owner) {
+      alog('Reassigned', `${action.owner || 'Unassigned'} → ${patch.owner}`)
+      action.owner = patch.owner
+      this.notify('action', `Corrective action assigned to ${patch.owner}`, `${action.code} · ${action.title}, due ${action.dueDate}.`)
+    }
+    if (patch.reviewer !== undefined) action.reviewer = patch.reviewer || undefined
+    if (patch.dueDate !== undefined && patch.dueDate !== action.dueDate) {
+      alog('Due date changed', `${action.dueDate} → ${patch.dueDate}`)
+      action.dueDate = patch.dueDate
+    }
+    if (patch.priority !== undefined) action.priority = patch.priority
+    if (patch.description !== undefined) action.description = patch.description.trim() || undefined
+    if (patch.evidenceNote !== undefined) action.evidenceNote = patch.evidenceNote.trim() || undefined
+
+    if (patch.progress !== undefined) {
+      const allowed = [0, 25, 50, 75, 100]
+      if (!allowed.includes(patch.progress)) throw new ApiError('validation', 'Progress moves in 25% steps.')
+      action.progress = patch.progress
+      if (patch.progress > 0 && action.status === 'Open') {
+        action.status = 'In Progress'
+        action.startedAt = action.startedAt ?? new Date().toISOString()
+      }
+      alog(`Progress updated to ${patch.progress}%`)
+    }
+
+    if (patch.status && patch.status !== action.status) {
+      switch (patch.status) {
+        case 'In Progress':
+          if (action.status !== 'Open' && action.status !== 'Completed') {
+            throw new ApiError('validation', 'Only open or sent-back actions can move to In Progress.')
+          }
+          if (action.status === 'Completed' && !REVIEW_ROLES.includes(actor.role)) {
+            throw new ApiError('forbidden', 'Sending a completed action back for rework needs an HSE Manager.')
+          }
+          action.startedAt = action.startedAt ?? new Date().toISOString()
+          action.progress = Math.max(action.progress ?? 0, 25)
+          if (action.status === 'Completed') {
+            action.completedAt = undefined
+            action.progress = 75
+            alog('Sent back for rework')
+          } else {
+            alog('Work started')
+          }
+          break
+        case 'Completed':
+          if (action.status !== 'Open' && action.status !== 'In Progress') {
+            throw new ApiError('validation', 'Only open or in-progress actions can be completed.')
+          }
+          if (action.evidenceRequired && !action.evidenceNote) {
+            throw new ApiError('validation', 'Completion evidence is required before this action can be marked complete.')
+          }
+          action.completedAt = new Date().toISOString()
+          action.progress = 100
+          alog('Marked completed', action.evidenceNote)
+          this.notify('action', `${action.code} awaits verification`, `${action.title} — completed by ${action.owner}.`)
+          break
+        case 'Verified':
+          if (action.status !== 'Completed') throw new ApiError('validation', 'Only completed actions can be verified.')
+          if (!canVerifyCapa(actor, item)) {
+            throw new ApiError('forbidden', 'Verification needs the assigned reviewer or an HSE Manager/Admin.')
+          }
+          action.verifiedBy = actor.name
+          action.verifiedAt = new Date().toISOString()
+          alog('Verification sign-off')
+          this.notify('action', `${action.code} verified`, `${action.title} — signed off by ${actor.name}.`)
+          break
+        case 'Open':
+          throw new ApiError('validation', 'Use "send back for rework" (In Progress) instead of reopening.')
+        case 'Cancelled':
+          throw new ApiError('validation', 'Use the cancel action, which records a reason.')
+      }
+      action.status = patch.status
+    }
+
+    if (incident) incident.version++
+    this.persist()
+    return this.toCapa(action, incident, standalone)
+  }
+
+  cancelCapa(actionId: string, reason: string, actor: Actor): CapaItem {
+    const { action, incident, standalone } = this.findAction(actionId)
+    if (!REVIEW_ROLES.includes(actor.role)) {
+      throw new ApiError('forbidden', 'Only an HSE Manager or Admin can cancel a corrective action.')
+    }
+    if (action.status === 'Verified') throw new ApiError('validation', 'Verified actions cannot be cancelled.')
+    if (!reason.trim()) throw new ApiError('validation', 'A cancellation reason is required.')
+    action.status = 'Cancelled'
+    action.cancelledAt = new Date().toISOString()
+    action.cancelReason = reason.trim()
+    action.log = action.log ?? []
+    action.log.push({ id: `l-${Date.now().toString(36)}`, at: action.cancelledAt, actor: actor.name, action: 'Cancelled', detail: reason.trim() })
+    if (incident) {
+      this.log(incident, actor, 'Corrective action cancelled', `${action.code} — ${reason.trim()}`)
+      incident.version++
+    }
+    this.persist()
+    this.notify('action', `${action.code} cancelled`, `${action.title} — ${reason.trim()}`)
+    return this.toCapa(action, incident, standalone)
+  }
+
+  addCapaNote(actionId: string, text: string, mentions: string[], actor: Actor): CapaItem {
+    const { action, incident, standalone } = this.findAction(actionId)
+    if (!text.trim()) throw new ApiError('validation', 'Comment cannot be empty.')
+    action.notes = action.notes ?? []
+    action.notes.push({ id: `n-${Date.now().toString(36)}`, author: actor.name, at: new Date().toISOString(), text: text.trim(), mentions })
+    mentions.forEach((m) => this.notify('action', `${actor.name} mentioned ${m} on ${action.code}`, text.trim().slice(0, 90)))
+    this.persist()
+    return this.toCapa(action, incident, standalone)
+  }
+
+  capaAnalytics(companyId: string): CapaAnalytics {
+    const items = this.allCapa(companyId).filter((i) => i.derived !== 'Cancelled')
+    const done = items.filter((i) => i.derived === 'Verified' || i.derived === 'Closed')
+    const completionRate = items.length ? Math.round((done.length / items.length) * 100) : 0
+
+    const closeDays = done
+      .filter((i) => i.createdAt && (i.verifiedAt ?? i.completedAt))
+      .map((i) => (new Date(i.verifiedAt ?? i.completedAt!).getTime() - new Date(i.createdAt).getTime()) / 86400_000)
+    const avgCloseDays = closeDays.length ? Math.round((closeDays.reduce((a, b) => a + b, 0) / closeDays.length) * 10) / 10 : null
+
+    const finished = items.filter((i) => i.completedAt)
+    const onTime = finished.filter((i) => i.completedAt!.slice(0, 10) <= i.dueDate)
+    const onTimeRate = finished.length ? Math.round((onTime.length / finished.length) * 100) : 0
+
+    const overdueBySite = new Map<string, number>()
+    const loadBySite = new Map<string, number>()
+    items.forEach((i) => {
+      if (i.overdue) overdueBySite.set(i.siteId, (overdueBySite.get(i.siteId) ?? 0) + 1)
+      if (['Open', 'Assigned', 'In Progress', 'Waiting Verification'].includes(i.derived)) {
+        loadBySite.set(i.siteId, (loadBySite.get(i.siteId) ?? 0) + 1)
+      }
+    })
+    const worst = [...overdueBySite.entries()].sort((a, b) => b[1] - a[1])[0]
+
+    const byDept = new Map<string, { done: number; onTime: number }>()
+    finished.forEach((i) => {
+      const d = byDept.get(i.department) ?? { done: 0, onTime: 0 }
+      d.done++
+      if (i.completedAt!.slice(0, 10) <= i.dueDate) d.onTime++
+      byDept.set(i.department, d)
+    })
+
+    const byOwnerMap = new Map<string, { open: number; overdue: number; completed: number }>()
+    items.forEach((i) => {
+      if (!i.owner) return
+      const o = byOwnerMap.get(i.owner) ?? { open: 0, overdue: 0, completed: 0 }
+      if (i.derived === 'Verified' || i.derived === 'Closed') o.completed++
+      else o.open++
+      if (i.overdue) o.overdue++
+      byOwnerMap.set(i.owner, o)
+    })
+
+    const months: { month: string; Completed: number; Created: number }[] = []
+    for (let m = 5; m >= 0; m--) {
+      const d = new Date()
+      d.setMonth(d.getMonth() - m)
+      const key = d.toISOString().slice(0, 7)
+      months.push({
+        month: d.toLocaleDateString('en-MY', { month: 'short' }),
+        Completed: items.filter((i) => (i.verifiedAt ?? i.completedAt ?? '').slice(0, 7) === key).length,
+        Created: items.filter((i) => i.createdAt.slice(0, 7) === key).length,
+      })
+    }
+
+    return {
+      completionRate,
+      avgCloseDays,
+      onTimeRate,
+      mostOverdueSite: worst ? { site: worst[0], count: worst[1] } : null,
+      bySite: [...loadBySite.entries()].map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value),
+      byDepartment: [...byDept.entries()]
+        .map(([name, v]) => ({ name, value: Math.round((v.onTime / v.done) * 100) }))
+        .sort((a, b) => b.value - a.value),
+      byOwner: [...byOwnerMap.entries()]
+        .map(([name, v]) => ({ name, ...v }))
+        .sort((a, b) => b.open + b.overdue * 2 - (a.open + a.overdue * 2))
+        .slice(0, 8),
+      monthlyCompletions: months,
+    }
+  }
+
+  /** Deterministic reminder + escalation sweep; each threshold fires once. */
+  private sweepReminders() {
+    const thresholds: { tag: string; test: (d: number) => boolean; title: (i: CapaItem) => string; detail: (i: CapaItem) => string }[] = [
+      { tag: 'd7', test: (d) => d === 7, title: (i) => `${i.code} due in 7 days`, detail: (i) => `${i.title} — owner ${i.owner}.` },
+      { tag: 'd3', test: (d) => d === 3, title: (i) => `${i.code} due in 3 days`, detail: (i) => `${i.title} — owner ${i.owner}.` },
+      { tag: 'd1', test: (d) => d === 1, title: (i) => `${i.code} due tomorrow`, detail: (i) => `${i.title} — owner ${i.owner}.` },
+      { tag: 'd0', test: (d) => d === 0, title: (i) => `${i.code} is due today`, detail: (i) => `${i.title} — owner ${i.owner}.` },
+      { tag: 'over', test: (d) => d < 0, title: (i) => `${i.code} is overdue`, detail: (i) => `${i.title} — ${Math.abs(i.daysToDue)} day(s) late.` },
+      { tag: 'esc1', test: (d) => d <= -3, title: (i) => `Escalated to site manager: ${i.code}`, detail: (i) => `${i.title} — 3+ days overdue at ${i.siteId.toUpperCase()}.` },
+      { tag: 'esc2', test: (d) => d <= -7, title: (i) => `Escalated to HSE Manager: ${i.code}`, detail: (i) => `${i.title} — 7+ days overdue. Intervention required.` },
+    ]
+    let changed = false
+    for (const companyId of ['big', 'kcs']) {
+      for (const item of this.allCapa(companyId)) {
+        if (!['Open', 'Assigned', 'In Progress'].includes(item.derived)) continue
+        for (const t of thresholds) {
+          const key = `${item.id}:${t.tag}`
+          if (!this.remindersSent[key] && t.test(item.daysToDue)) {
+            this.remindersSent[key] = true
+            this.notify('action', t.title(item), t.detail(item))
+            changed = true
+          }
+        }
+      }
+    }
+    if (changed) this.persist()
+  }
+
   // ── live stats for Mission Control ─────────────────────────────────────────
 
   liveStats(companyId: string, siteId: string | null) {
@@ -352,18 +813,28 @@ export class IncidentStore {
       .flatMap((i) => i.timeline.map((t) => ({ ...t, incident: i.number, title: i.title })))
       .sort((a, b) => b.at.localeCompare(a.at))
       .slice(0, 3)
+
+    const capa = this.allCapa(companyId).filter((a) => !siteId || a.siteId === siteId)
+    const overdueBySite = new Map<string, number>()
+    capa.filter((a) => a.overdue).forEach((a) => overdueBySite.set(a.siteId, (overdueBySite.get(a.siteId) ?? 0) + 1))
+
     return {
       openIncidents: open.length,
       highRisk: open.filter((i) => i.highRisk).length,
       bySite,
       recent,
+      overdueActions: capa.filter((a) => a.overdue).length,
+      verificationPending: capa.filter((a) => a.derived === 'Waiting Verification').length,
+      overdueActionsBySite: overdueBySite,
     }
   }
 
   // ── helpers ────────────────────────────────────────────────────────────────
 
   private causesWithoutActions(incident: Incident): string[] {
-    const covered = new Set(incident.actions.map((a) => a.causeId).filter(Boolean))
+    const covered = new Set(
+      incident.actions.filter((a) => a.status !== 'Cancelled').map((a) => a.causeId).filter(Boolean),
+    )
     return (incident.rca?.causes ?? []).filter((c) => !covered.has(c.id)).map((c) => c.category)
   }
 
@@ -403,6 +874,134 @@ function matchesStatus(i: Incident, status: NonNullable<IncidentFilters['status'
 
 function clone<T>(v: T): T {
   return JSON.parse(JSON.stringify(v))
+}
+
+// ─── CAPA helpers ────────────────────────────────────────────────────────────
+
+/** Whole days from today to the due date (negative = overdue). */
+function dayDiff(dueDate: string): number {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const due = new Date(dueDate + 'T00:00:00')
+  return Math.round((due.getTime() - today.getTime()) / 86400_000)
+}
+
+function isActionOverdue(a: IncidentAction): boolean {
+  if (a.status === 'Verified' || a.status === 'Cancelled' || a.status === 'Completed') return false
+  return dayDiff(a.dueDate) < 0
+}
+
+function deriveCapaStatus(a: IncidentAction, incident: Incident | null): CapaDerivedStatus {
+  if (a.status === 'Cancelled') return 'Cancelled'
+  if (a.status === 'Verified') return incident ? (incident.stage === 'closed' ? 'Closed' : 'Verified') : 'Closed'
+  if (a.status === 'Completed') return 'Waiting Verification'
+  if (a.status === 'In Progress') return 'In Progress'
+  return a.owner ? 'Assigned' : 'Open'
+}
+
+function matchesBucket(i: CapaItem, bucket: NonNullable<CapaFilters['bucket']>): boolean {
+  const openStates: CapaDerivedStatus[] = ['Open', 'Assigned', 'In Progress', 'Waiting Verification']
+  switch (bucket) {
+    case 'all': return i.derived !== 'Cancelled'
+    case 'open': return openStates.includes(i.derived)
+    case 'overdue': return i.overdue
+    case 'due_today': return i.daysToDue === 0 && openStates.includes(i.derived)
+    case 'verification': return i.derived === 'Waiting Verification'
+    case 'high_priority': return i.priority === 'High' && openStates.includes(i.derived)
+    case 'completed': return i.derived === 'Verified' || i.derived === 'Closed'
+    case 'cancelled': return i.derived === 'Cancelled'
+  }
+}
+
+function canMutateCapa(actor: Actor, item: CapaItem): boolean {
+  const orgWide = !actor.siteIds || actor.siteIds.length === 0
+  switch (actor.role) {
+    case 'admin':
+    case 'hse_manager':
+      return true
+    case 'safety_officer':
+    case 'supervisor':
+      return item.owner === actor.name || orgWide || actor.siteIds!.includes(item.siteId)
+    case 'employee':
+      return item.owner === actor.name
+    default:
+      return false
+  }
+}
+
+function canVerifyCapa(actor: Actor, item: CapaItem): boolean {
+  return REVIEW_ROLES.includes(actor.role) || (!!item.reviewer && item.reviewer === actor.name)
+}
+
+// ─── Standalone action seeds (audit & inspection findings) ───────────────────
+
+function buildStandaloneSeeds(): StandaloneAction[] {
+  const mk = (over: Partial<StandaloneAction> & Pick<StandaloneAction, 'id' | 'code' | 'title' | 'companyId' | 'siteId' | 'department' | 'owner' | 'dueDate' | 'priority' | 'status'>): StandaloneAction => ({
+    causeId: null,
+    evidenceRequired: true,
+    progress: over.status === 'Verified' ? 100 : over.status === 'In Progress' ? 50 : 0,
+    createdAt: daysAgo(10),
+    notes: [],
+    log: [],
+    reviewer: 'Marcus Tan',
+    ...over,
+  })
+
+  return [
+    mk({
+      id: 'sa-901', code: 'CA-901', title: 'Replace expired fire extinguishers — Block C racking',
+      description: 'Monthly inspection found 6 extinguishers past service date in Block C.',
+      companyId: 'big', siteId: 'sen', department: 'Warehouse', rootCause: 'Inspection finding',
+      owner: 'Grace Lim', dueDate: inDays(3), priority: 'Medium', status: 'In Progress', progress: 50,
+      createdAt: daysAgo(6), startedAt: daysAgo(4),
+    }),
+    mk({
+      id: 'sa-902', code: 'CA-902', title: 'CIMAH: revalidate safety report for compressor MOC',
+      description: 'Major audit finding — safety report does not reflect the export compressor modification.',
+      companyId: 'big', siteId: 'btu', department: 'HSE', rootCause: 'Audit finding (CIMAH)',
+      owner: 'Marcus Tan', reviewer: 'Randy Richard', dueDate: inDays(19), priority: 'High', status: 'Open', progress: 0,
+      createdAt: daysAgo(12),
+    }),
+    mk({
+      id: 'sa-903', code: 'CA-903', title: 'Repaint pedestrian walkway demarcation after resurfacing',
+      description: 'Resurfacing works removed walkway lines on the main production route.',
+      companyId: 'big', siteId: 'kch', department: 'Production', rootCause: 'Inspection finding',
+      owner: 'Sarah Wong', dueDate: inDays(-2), priority: 'High', status: 'In Progress', progress: 75,
+      createdAt: daysAgo(14), startedAt: daysAgo(9),
+    }),
+    mk({
+      id: 'sa-904', code: 'CA-904', title: 'Clear quarterly harness inspection backlog (Crew A & B)',
+      companyId: 'big', siteId: 'mri', department: 'Contractors', rootCause: 'Compliance schedule',
+      owner: 'Vincent Chai', dueDate: inDays(6), priority: 'Medium', status: 'Open', progress: 0,
+      createdAt: daysAgo(5),
+    }),
+    mk({
+      id: 'sa-905', code: 'CA-905', title: 'Update chemical register for new solvent line',
+      companyId: 'big', siteId: 'twu', department: 'Mill', rootCause: 'Management of change',
+      owner: 'Dayang Nurul', dueDate: inDays(0), priority: 'Medium', status: 'In Progress', progress: 25,
+      createdAt: daysAgo(8), startedAt: daysAgo(3), evidenceRequired: false,
+    }),
+    mk({
+      id: 'sa-906', code: 'CA-906', title: 'Relocate eyewash signage — inbound dock',
+      companyId: 'big', siteId: 'sen', department: 'Warehouse', rootCause: 'Duplicate entry',
+      owner: 'Grace Lim', dueDate: inDays(4), priority: 'Low', status: 'Cancelled', progress: 0,
+      createdAt: daysAgo(9), cancelledAt: daysAgo(7), cancelReason: 'Duplicate of CA-901 scope.',
+    }),
+    mk({
+      id: 'sa-907', code: 'CA-907', title: 'Renew hose reel annual service certificates',
+      companyId: 'big', siteId: 'sbu', department: 'Logistics', rootCause: 'Compliance schedule',
+      owner: 'Grace Lim', dueDate: inDays(-16), priority: 'Low', status: 'Verified', progress: 100,
+      createdAt: daysAgo(30), startedAt: daysAgo(25), completedAt: daysAgo(18),
+      verifiedBy: 'Marcus Tan', verifiedAt: daysAgo(17),
+      evidenceNote: 'Service certificates uploaded and filed against each reel.',
+    }),
+    mk({
+      id: 'sa-k90', code: 'CA-K90', title: 'Install task lighting for night pours — Zone B',
+      companyId: 'kcs', siteId: 'pjy', department: 'Civil Works', rootCause: 'Inspection finding',
+      owner: 'Azlan Mahmud', reviewer: 'Azlan Mahmud', dueDate: inDays(5), priority: 'Medium', status: 'In Progress', progress: 25,
+      createdAt: daysAgo(4), startedAt: daysAgo(2),
+    }),
+  ]
 }
 
 // ─── Seeds — the same narrative Mission Control tells ────────────────────────

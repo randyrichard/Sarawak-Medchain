@@ -450,6 +450,9 @@ export interface LiveIncidentStats {
   highRisk: number
   bySite: Map<string, number>
   recent: { id: string; at: string; actor: string; action: string; incident: string; title: string }[]
+  overdueActions: number
+  verificationPending: number
+  overdueActionsBySite: Map<string, number>
 }
 
 const LIVE_VERB: Record<string, { verb: string; kind: TimelineEvent['kind'] }> = {
@@ -506,6 +509,18 @@ export function buildDashboard(
     if (hrKpi) {
       hrKpi.value = String(live.highRisk)
       hrKpi.tone = live.highRisk === 0 ? 'good' : 'critical'
+    }
+    const odKpi = kpis.find((k) => k.id === 'overdue-actions')
+    if (odKpi) {
+      odKpi.value = String(live.overdueActions)
+      odKpi.tone = live.overdueActions === 0 ? 'good' : live.overdueActions >= 5 ? 'critical' : 'serious'
+      odKpi.breakdown = [...live.overdueActionsBySite.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([id, n]) => ({ label: shortOf(id), value: String(n) }))
+      if (live.verificationPending > 0) {
+        odKpi.breakdown.push({ label: 'Awaiting verification', value: String(live.verificationPending) })
+      }
     }
     const liveEvents: TimelineEvent[] = live.recent
       .filter((r) => LIVE_VERB[r.action])
