@@ -62,6 +62,15 @@ export const EMPLOYEES: Employee[] = [
   { id: 'e10', companyId: 'big', siteId: 'kch', departmentId: 'kch-whs', name: 'Melissa Bong', position: 'Store Keeper' },
   { id: 'e11', companyId: 'kcs', siteId: 'pjy', departmentId: 'pjy-civ', name: 'Azlan Mahmud', position: 'Site Agent' },
   { id: 'e12', companyId: 'kcs', siteId: 'smh', departmentId: 'smh-mep', name: 'Lau Tze Ming', position: 'M&E Supervisor' },
+  // Extended roster — gives the competency matrix realistic department cohorts
+  { id: 'e13', companyId: 'big', siteId: 'kch', departmentId: 'kch-prod', name: 'Rosli Ahmad', position: 'Machine Operator' },
+  { id: 'e14', companyId: 'big', siteId: 'kch', departmentId: 'kch-mnt', name: 'Kenny Lau', position: 'Maintenance Technician' },
+  { id: 'e15', companyId: 'big', siteId: 'sen', departmentId: 'sen-whs', name: 'Siti Aminah', position: 'Forklift Operator' },
+  { id: 'e16', companyId: 'big', siteId: 'sen', departmentId: 'sen-whs', name: 'Bong Chin Hui', position: 'Forklift Operator' },
+  { id: 'e17', companyId: 'big', siteId: 'btu', departmentId: 'btu-ops', name: 'Hafiz Rahman', position: 'Process Technician' },
+  { id: 'e18', companyId: 'big', siteId: 'btu', departmentId: 'btu-hse', name: 'Nurul Izzah', position: 'Emergency Response Lead' },
+  { id: 'e19', companyId: 'big', siteId: 'mri', departmentId: 'mri-ctr', name: 'Kumar Raj', position: 'Scaffolder' },
+  { id: 'e20', companyId: 'big', siteId: 'twu', departmentId: 'twu-mil', name: 'Lim Boon Keat', position: 'Mill Operator' },
 ]
 
 // Demo users — one per role. All share the demo password (see mock client).
