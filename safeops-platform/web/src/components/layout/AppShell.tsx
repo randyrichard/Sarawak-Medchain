@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import {
-  LayoutDashboard, ClipboardList, ListChecks, LineChart, ShieldCheck, Bell,
-  Building2, Menu, Palette, X, Lock,
+  LayoutDashboard, ClipboardList, ListChecks, GraduationCap, ShieldCheck, Bell,
+  Building2, Boxes, Menu, Palette, X, Lock, SlidersHorizontal,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useOrg } from '@/features/org/OrgContext'
@@ -24,10 +24,12 @@ const NAV: NavItem[] = [
   { to: '/', label: 'Mission Control', icon: LayoutDashboard, capability: 'dashboard:view', end: true },
   { to: '/incidents', label: 'Incidents', icon: ClipboardList, capability: 'incidents:manage' },
   { to: '/actions', label: 'Actions', icon: ListChecks, capability: 'dashboard:view' },
-  { to: '/analytics', label: 'Analytics', icon: LineChart, capability: 'analytics:view', locked: 'Sprint 3' },
-  { to: '/compliance', label: 'Compliance', icon: ShieldCheck, capability: 'compliance:manage', locked: 'Sprint 3' },
+  { to: '/assets', label: 'Assets', icon: Boxes, capability: 'dashboard:view' },
+  { to: '/audits', label: 'Compliance', icon: ShieldCheck, capability: 'dashboard:view' },
+  { to: '/training', label: 'Training', icon: GraduationCap, capability: 'dashboard:view' },
   { to: '/notifications', label: 'Notifications', icon: Bell, capability: 'dashboard:view' },
   { to: '/organization', label: 'Organization', icon: Building2, capability: 'org:view' },
+  { to: '/admin', label: 'Administration', icon: SlidersHorizontal, capability: 'settings:manage' },
   { to: '/design', label: 'Design System', icon: Palette, capability: 'dashboard:view' },
 ]
 

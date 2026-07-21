@@ -453,6 +453,17 @@ export interface LiveIncidentStats {
   overdueActions: number
   verificationPending: number
   overdueActionsBySite: Map<string, number>
+  overdueInspections: number
+  avgAssetHealth: number | null
+  auditReadiness: number
+  compliancePct: number
+  criticalFindings: number
+  upcomingAudits30d: number
+  openFindings: number
+  trainingCompliance: number
+  certsExpiring90: number
+  employeesTrainingOverdue: number
+  trainingDeptRankings: { name: string; value: number }[]
 }
 
 const LIVE_VERB: Record<string, { verb: string; kind: TimelineEvent['kind'] }> = {
@@ -522,6 +533,91 @@ export function buildDashboard(
         odKpi.breakdown.push({ label: 'Awaiting verification', value: String(live.verificationPending) })
       }
     }
+    // audit & compliance KPIs read live from the audit engine
+    const arKpi = kpis.find((k) => k.id === 'audit-readiness')
+    if (arKpi) {
+      arKpi.value = String(live.auditReadiness)
+      arKpi.tone = live.auditReadiness >= 90 ? 'good' : live.auditReadiness >= 78 ? 'warning' : 'serious'
+      arKpi.breakdown = [
+        { label: 'Compliance obligations met', value: `${live.compliancePct}%` },
+        { label: 'Open findings', value: String(live.openFindings) },
+        { label: 'Audits next 30 days', value: String(live.upcomingAudits30d) },
+      ]
+    }
+    const compKpi = kpis.find((k) => k.id === 'compliance')
+    if (compKpi) {
+      compKpi.value = String(live.compliancePct)
+      compKpi.tone = live.compliancePct >= 90 ? 'good' : live.compliancePct >= 80 ? 'warning' : 'serious'
+    }
+    const trainKpi = kpis.find((k) => k.id === 'training')
+    if (trainKpi) {
+      trainKpi.value = String(live.trainingCompliance)
+      trainKpi.tone = live.trainingCompliance >= 90 ? 'good' : live.trainingCompliance >= 80 ? 'warning' : 'serious'
+      trainKpi.breakdown = [
+        { label: 'Certificates expiring (90d)', value: String(live.certsExpiring90) },
+        { label: 'Employees overdue (mandatory)', value: String(live.employeesTrainingOverdue) },
+        ...live.trainingDeptRankings.slice(0, 2).map((d) => ({ label: `${d.name} (lowest)`, value: `${d.value}%` })),
+      ]
+    }
+
+    // overdue inspections surface as a live priority — the feed stays honest
+    if (live.overdueInspections > 0) {
+      priorities.unshift({
+        id: 'live-inspections',
+        kind: 'inspection',
+        priority: live.overdueInspections > 2 ? 'Critical' : 'High',
+        title: `${live.overdueInspections} asset inspection(s) overdue`,
+        owner: 'Asset owners',
+        siteId: '-',
+        site: 'Multiple sites',
+        department: 'Inspections',
+        due: new Date().toISOString().slice(0, 10),
+        dueLabel: 'act today',
+        overdue: true,
+        cta: 'Review',
+        detail: `Assets past their inspection due date${live.avgAssetHealth !== null ? ` — fleet health average ${live.avgAssetHealth}/100` : ''}. Overdue inspections are the leading indicator that defects go unfound.`,
+        recommended: 'Open the Assets module and clear the overdue queue — inspectors can complete each one in minutes from their phone.',
+      })
+    }
+
+    if (live.employeesTrainingOverdue > 0) {
+      priorities.push({
+        id: 'live-training-overdue',
+        kind: 'training',
+        priority: live.employeesTrainingOverdue > 3 ? 'High' : 'Medium',
+        title: `${live.employeesTrainingOverdue} employee(s) overdue on mandatory training`,
+        owner: 'Line supervisors',
+        siteId: '-',
+        site: 'See Training module',
+        department: 'Training',
+        due: new Date().toISOString().slice(0, 10),
+        dueLabel: 'schedule now',
+        overdue: true,
+        cta: 'Review',
+        detail: `Mandatory competencies have lapsed${live.certsExpiring90 > 0 ? `, and ${live.certsExpiring90} certificate(s) expire within 90 days` : ''}. Untrained workers on the tools is an audit and liability exposure.`,
+        recommended: 'Open Training → Competency Matrix, filter to the red cells, and schedule refresher sessions for the affected cohorts.',
+      })
+    }
+
+    if (live.criticalFindings > 0) {
+      priorities.unshift({
+        id: 'live-critical-findings',
+        kind: 'audit',
+        priority: 'Critical',
+        title: `${live.criticalFindings} critical audit finding(s) open`,
+        owner: 'Finding owners',
+        siteId: '-',
+        site: 'See Compliance module',
+        department: 'Audits',
+        due: new Date().toISOString().slice(0, 10),
+        dueLabel: 'act now',
+        overdue: true,
+        cta: 'Review',
+        detail: 'Critical non-conformities from recent audits with unverified corrective actions.',
+        recommended: 'Open Compliance → Findings and drive each linked action to verification — the audit cannot close until then.',
+      })
+    }
+
     const liveEvents: TimelineEvent[] = live.recent
       .filter((r) => LIVE_VERB[r.action])
       .map((r) => ({

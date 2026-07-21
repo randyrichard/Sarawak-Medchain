@@ -8,6 +8,10 @@ import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage'
 import { ResetPasswordPage } from '@/features/auth/pages/ResetPasswordPage'
 import { ActionsPage } from '@/features/actions/ActionsPage'
+import { AssetsPage } from '@/features/assets/AssetsPage'
+import { AuditsPage } from '@/features/audits/AuditsPage'
+import { TrainingPage } from '@/features/training/TrainingPage'
+import { AdminPage } from '@/features/admin/AdminPage'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { IncidentsListPage } from '@/features/incidents/IncidentsListPage'
 import { ReportIncidentPage } from '@/features/incidents/ReportIncidentPage'
@@ -72,6 +76,38 @@ export default function App() {
                   element={
                     <RequireCapability capability="dashboard:view">
                       <ActionsPage />
+                    </RequireCapability>
+                  }
+                />
+                <Route
+                  path="/assets"
+                  element={
+                    <RequireCapability capability="dashboard:view">
+                      <AssetsPage />
+                    </RequireCapability>
+                  }
+                />
+                <Route
+                  path="/audits"
+                  element={
+                    <RequireCapability capability="dashboard:view">
+                      <AuditsPage />
+                    </RequireCapability>
+                  }
+                />
+                <Route
+                  path="/training"
+                  element={
+                    <RequireCapability capability="dashboard:view">
+                      <TrainingPage />
+                    </RequireCapability>
+                  }
+                />
+                <Route
+                  path="/admin"
+                  element={
+                    <RequireCapability capability="settings:manage">
+                      <AdminPage />
                     </RequireCapability>
                   }
                 />

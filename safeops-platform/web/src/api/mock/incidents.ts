@@ -15,6 +15,30 @@ import type {
   CapaAnalytics, CapaDerivedStatus, CapaFilters, CapaItem, CapaPatch, CapaStats,
   CapaTimelineEntry, NewStandaloneAction,
 } from '../capa'
+import type {
+  Asset, AssetFilters, AssetStats, AssetView, CompleteInspectionInput, Inspection,
+  InspectionFilters, InspectionView, NewAssetInput,
+} from '../assets'
+import { FREQUENCY_DAYS } from '../assets'
+import { buildAssetSeeds, buildInspectionSeeds, CHECKLISTS } from './assets'
+import type {
+  Audit, AuditFilters, AuditFinding, AuditFindingView, AuditStats, AuditTemplate,
+  AuditView, CompleteAuditInput, ComplianceDocument, ComplianceObligation,
+  DocKind, NewAuditInput, ObligationView,
+} from '../audits'
+import { SEVERITY_DUE_DAYS } from '../audits'
+import { AUDIT_TEMPLATES, buildAuditSeeds, buildDocumentSeeds, buildObligationSeeds } from './audits'
+import type {
+  Certificate, CertificateView, CertVerification, CompetencyLevel, CompetencyStatus,
+  CompleteSessionInput, CourseView, EmployeeCompetency, EmployeeTrainingProfile, MatrixCell,
+  NewCourseInput, NewSessionInput, SessionAttendee, SessionFilters, SessionView, TrainingCourse,
+  TrainingFilters, TrainingMatrix, TrainingSession, TrainingStats,
+} from '../training'
+import {
+  buildCertificateSeeds, buildSessionSeeds, courseApplies, deptNameOf, requiredCoursesFor,
+  rosterFor, TRAINING_COURSES,
+} from './training'
+import { EMPLOYEES } from './fixtures'
 
 // roles allowed to run investigations / edit cases
 const MANAGE_ROLES = ['admin', 'hse_manager', 'safety_officer']
@@ -24,7 +48,7 @@ const REVIEW_ROLES = ['admin', 'hse_manager']
 const SEVERITY_RANK = { Critical: 0, Serious: 1, Moderate: 2, Minor: 3 } as const
 export const OVERDUE_AFTER_DAYS = 14
 
-type Notify = (kind: 'incident' | 'action', title: string, detail: string) => void
+type Notify = (kind: 'incident' | 'action' | 'audit' | 'system', title: string, detail: string) => void
 
 const hoursAgo = (h: number) => new Date(Date.now() - h * 3600_000).toISOString()
 const daysAgo = (d: number) => hoursAgo(d * 24)
@@ -41,15 +65,35 @@ export type StandaloneAction = IncidentAction & {
   siteId: string
   department: string
   rootCause?: string
+  /** set when the action was auto-created from a failed asset inspection */
+  assetId?: string
 }
 
 export class IncidentStore {
   private incidents: Incident[] = []
   private standalone: StandaloneAction[] = []
+  private assets: Asset[] = []
+  private inspections: Inspection[] = []
+  private audits: Audit[] = []
+  private obligations: ComplianceObligation[] = []
+  private documents: ComplianceDocument[] = []
+  private customTemplates: AuditTemplate[] = []
   private nextNumber = 2610
   private nextActionCode = 910
+  private nextAssetCode = 1101
+  private nextInspectionCode = 2080
+  private nextAuditCode = 3010
+  private nextFindingCode = 3110
+  private sessions: TrainingSession[] = []
+  private certificates: Certificate[] = []
+  private customCourses: TrainingCourse[] = []
+  private nextSessionCode = 505
+  private nextCertSeq = 2000
+  private nextCourseCode = 111
   /** reminder thresholds already notified, keyed `${actionId}:${tag}` */
   private remindersSent: Record<string, true> = {}
+  /** training expiry reminders already sent, keyed `${certId}:${tag}` */
+  private trainingRemindersSent: Record<string, true> = {}
   private notify: Notify
 
   constructor(notify: Notify) {
@@ -63,13 +107,123 @@ export class IncidentStore {
       this.standalone = stored.standalone ?? buildStandaloneSeeds()
       this.remindersSent = stored.remindersSent ?? {}
       this.nextActionCode = stored.nextActionCode ?? 910
+      if (stored.assets && stored.inspections) {
+        this.assets = stored.assets
+        this.inspections = stored.inspections
+      } else {
+        this.assets = buildAssetSeeds()
+        this.inspections = buildInspectionSeeds(this.assets)
+        this.ensureInspectionDefectSeeds()
+      }
+      this.nextAssetCode = stored.nextAssetCode ?? 1101
+      this.nextInspectionCode = stored.nextInspectionCode ?? 2080
+      if (stored.audits && stored.obligations && stored.documents) {
+        this.audits = stored.audits
+        this.obligations = stored.obligations
+        this.documents = stored.documents
+      } else {
+        this.audits = buildAuditSeeds()
+        this.obligations = buildObligationSeeds()
+        this.documents = buildDocumentSeeds()
+        this.ensureAuditFindingActionSeeds()
+      }
+      this.customTemplates = stored.customTemplates ?? []
+      this.nextAuditCode = stored.nextAuditCode ?? 3010
+      this.nextFindingCode = stored.nextFindingCode ?? 3110
+      if (stored.sessions && stored.certificates) {
+        this.sessions = stored.sessions
+        this.certificates = stored.certificates
+      } else {
+        this.sessions = buildSessionSeeds()
+        this.certificates = buildCertificateSeeds()
+      }
+      this.customCourses = stored.customCourses ?? []
+      this.trainingRemindersSent = stored.trainingRemindersSent ?? {}
+      this.nextSessionCode = stored.nextSessionCode ?? 505
+      this.nextCertSeq = stored.nextCertSeq ?? 2000
+      this.nextCourseCode = stored.nextCourseCode ?? 111
     } else {
       this.incidents = buildSeeds()
       this.standalone = buildStandaloneSeeds()
+      this.assets = buildAssetSeeds()
+      this.inspections = buildInspectionSeeds(this.assets)
+      this.ensureInspectionDefectSeeds()
+      this.audits = buildAuditSeeds()
+      this.obligations = buildObligationSeeds()
+      this.documents = buildDocumentSeeds()
+      this.ensureAuditFindingActionSeeds()
+      this.sessions = buildSessionSeeds()
+      this.certificates = buildCertificateSeeds()
     }
+    // audit seeds occupy literal codes CA-913..915 — never re-issue them
+    this.nextActionCode = Math.max(this.nextActionCode, 916)
     this.normalizeActions()
     this.persist()
     this.sweepReminders()
+  }
+
+  /** Seeded audit findings reference corrective actions — create them once. */
+  private ensureAuditFindingActionSeeds() {
+    if (this.standalone.some((a) => a.id === 'sa-aud-1')) return
+    const mk = (over: Partial<StandaloneAction> & Pick<StandaloneAction, 'id' | 'code' | 'title' | 'siteId' | 'department' | 'owner' | 'dueDate' | 'status' | 'rootCause'>): StandaloneAction => ({
+      causeId: null, priority: 'High', evidenceRequired: true, progress: 0,
+      companyId: 'big', reviewer: 'Marcus Tan',
+      createdAt: new Date(Date.now() - 2 * 86400_000).toISOString(), notes: [], log: [],
+      description: undefined, ...over,
+    })
+    this.standalone.unshift(
+      mk({
+        id: 'sa-aud-1', code: 'CA-913', title: 'Major finding: enforce gas-test entries at hot-work permit reissue',
+        siteId: 'kch', department: 'Site-wide', owner: 'Sarah Wong',
+        dueDate: new Date(Date.now() + 12 * 86400_000).toISOString().slice(0, 10),
+        status: 'In Progress', progress: 25, startedAt: new Date(Date.now() - 1 * 86400_000).toISOString(),
+        rootCause: 'Audit finding (AUD-3001)',
+      }),
+      mk({
+        id: 'sa-aud-2', code: 'CA-914', title: 'Minor finding: complete forklift refresher dates in training matrix',
+        siteId: 'kch', department: 'Site-wide', owner: 'Sarah Wong', priority: 'Medium',
+        dueDate: new Date(Date.now() + 5 * 86400_000).toISOString().slice(0, 10),
+        status: 'Completed', progress: 100, evidenceRequired: false,
+        completedAt: new Date(Date.now() - 0.5 * 86400_000).toISOString(),
+        rootCause: 'Audit finding (AUD-3001)',
+      }),
+      mk({
+        id: 'sa-aud-3', code: 'CA-915', title: 'Observation: complete shadow board labels at charging bay',
+        siteId: 'sen', department: 'Warehouse', owner: 'Grace Lim', priority: 'Low', evidenceRequired: false,
+        dueDate: new Date(Date.now() - 12 * 86400_000).toISOString().slice(0, 10),
+        status: 'Verified', progress: 100,
+        completedAt: new Date(Date.now() - 11 * 86400_000).toISOString(),
+        verifiedBy: 'Marcus Tan', verifiedAt: new Date(Date.now() - 9 * 86400_000).toISOString(),
+        rootCause: 'Audit finding (AUD-3006)',
+      }),
+    )
+  }
+
+  /** The seeded failed inspection (INS-2043) references two defect actions. */
+  private ensureInspectionDefectSeeds() {
+    if (this.standalone.some((a) => a.id === 'sa-insp-1')) return
+    const base = {
+      causeId: null, priority: 'High' as const, evidenceRequired: true,
+      companyId: 'big', siteId: 'twu', department: 'Mill', assetId: 'ast-1010',
+      rootCause: 'Inspection defect (INS-2043)', reviewer: 'Marcus Tan',
+      createdAt: new Date(Date.now() - 4 * 86400_000).toISOString(), notes: [], log: [],
+    }
+    this.standalone.unshift(
+      {
+        ...base, id: 'sa-insp-1', code: 'CA-908', owner: 'Dayang Nurul',
+        title: 'Replace perished coolant hose — standby genset',
+        description: 'Radiator-end hose weeping under load (found at INS-2043). Genset unavailable until replaced.',
+        dueDate: new Date(Date.now() + 3 * 86400_000).toISOString().slice(0, 10),
+        status: 'In Progress', progress: 50, startedAt: new Date(Date.now() - 2 * 86400_000).toISOString(),
+      },
+      {
+        ...base, id: 'sa-insp-2', code: 'CA-909', owner: 'Dayang Nurul',
+        title: 'Service battery terminals & retest cranking — genset',
+        description: 'Heavy corrosion on terminals; slow crank recorded at INS-2043.',
+        dueDate: new Date(Date.now() + 5 * 86400_000).toISOString().slice(0, 10),
+        status: 'Open', progress: 0,
+      },
+    )
   }
 
   private hydrate(): {
@@ -78,6 +232,23 @@ export class IncidentStore {
     standalone?: StandaloneAction[]
     remindersSent?: Record<string, true>
     nextActionCode?: number
+    assets?: Asset[]
+    inspections?: Inspection[]
+    nextAssetCode?: number
+    nextInspectionCode?: number
+    audits?: Audit[]
+    obligations?: ComplianceObligation[]
+    documents?: ComplianceDocument[]
+    customTemplates?: AuditTemplate[]
+    nextAuditCode?: number
+    nextFindingCode?: number
+    sessions?: TrainingSession[]
+    certificates?: Certificate[]
+    customCourses?: TrainingCourse[]
+    trainingRemindersSent?: Record<string, true>
+    nextSessionCode?: number
+    nextCertSeq?: number
+    nextCourseCode?: number
   } | null {
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
@@ -99,6 +270,23 @@ export class IncidentStore {
           standalone: this.standalone,
           remindersSent: this.remindersSent,
           nextActionCode: this.nextActionCode,
+          assets: this.assets,
+          inspections: this.inspections,
+          nextAssetCode: this.nextAssetCode,
+          nextInspectionCode: this.nextInspectionCode,
+          audits: this.audits,
+          obligations: this.obligations,
+          documents: this.documents,
+          customTemplates: this.customTemplates,
+          nextAuditCode: this.nextAuditCode,
+          nextFindingCode: this.nextFindingCode,
+          sessions: this.sessions,
+          certificates: this.certificates,
+          customCourses: this.customCourses,
+          trainingRemindersSent: this.trainingRemindersSent,
+          nextSessionCode: this.nextSessionCode,
+          nextCertSeq: this.nextCertSeq,
+          nextCourseCode: this.nextCourseCode,
         }),
       )
     } catch {
@@ -108,10 +296,14 @@ export class IncidentStore {
 
   /** Backfill CAPA fields on actions persisted before Sprint 4. */
   private normalizeActions() {
+    const seenCodes = new Set<string>()
     const norm = (a: IncidentAction, fallbackCreated: string) => {
       if (!a.code) {
         a.code = /^ca-[\w-]+$/i.test(a.id) ? a.id.toUpperCase() : `CA-${this.nextActionCode++}`
       }
+      // heal any historical display-code collisions
+      while (seenCodes.has(a.code)) a.code = `CA-${this.nextActionCode++}`
+      seenCodes.add(a.code)
       if (a.progress === undefined) {
         a.progress = a.status === 'Verified' || a.status === 'Completed' ? 100 : a.status === 'In Progress' ? 50 : 0
       }
@@ -772,6 +964,1161 @@ export class IncidentStore {
     }
   }
 
+  // ── Assets & inspections ───────────────────────────────────────────────────
+
+  private openDefectsFor(assetId: string): number {
+    return this.standalone.filter(
+      (a) => a.assetId === assetId && a.status !== 'Verified' && a.status !== 'Cancelled',
+    ).length
+  }
+
+  private lastCompletedInspection(assetId: string): Inspection | undefined {
+    return this.inspections
+      .filter((i) => i.assetId === assetId && i.status === 'Completed')
+      .sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''))[0]
+  }
+
+  private toAssetView(a: Asset): AssetView {
+    const openDefects = this.openDefectsFor(a.id)
+    const daysToDue = dayDiff(a.nextDueDate)
+    const active = a.status !== 'Retired'
+    const overdue = active && daysToDue < 0
+    const last = this.lastCompletedInspection(a.id)
+
+    const factors: { label: string; delta: number }[] = []
+    let health = 100
+    if (overdue) {
+      const penalty = Math.min(30, 10 + Math.abs(daysToDue) * 2)
+      health -= penalty
+      factors.push({ label: `Inspection ${Math.abs(daysToDue)}d overdue`, delta: -penalty })
+    }
+    if (openDefects > 0) {
+      const penalty = Math.min(30, openDefects * 15)
+      health -= penalty
+      factors.push({ label: `${openDefects} open defect(s)`, delta: -penalty })
+    }
+    if (last?.outcome === 'failed') {
+      health -= 15
+      factors.push({ label: 'Last inspection failed', delta: -15 })
+    }
+    if (a.status === 'Under Maintenance') {
+      health -= 10
+      factors.push({ label: 'Under maintenance', delta: -10 })
+    }
+    if (a.status === 'Out of Service') {
+      health -= 40
+      factors.push({ label: 'Out of service', delta: -40 })
+    }
+    health = Math.max(5, Math.min(100, health))
+    return {
+      ...a,
+      health,
+      risk: health >= 80 ? 'Low' : health >= 60 ? 'Medium' : 'High',
+      openDefects,
+      overdue,
+      daysToDue,
+      lastOutcome: last?.outcome,
+      healthFactors: factors,
+    }
+  }
+
+  listAssets(companyId: string, filters: AssetFilters): AssetView[] {
+    const q = filters.q?.trim().toLowerCase()
+    return this.assets
+      .filter((a) => a.companyId === companyId)
+      .map((a) => this.toAssetView(a))
+      .filter((a) => !filters.siteId || a.siteId === filters.siteId)
+      .filter((a) => !filters.category || a.category === filters.category)
+      .filter((a) => !filters.status || a.status === filters.status)
+      .filter((a) => {
+        switch (filters.bucket ?? 'all') {
+          case 'all': return true
+          case 'overdue': return a.overdue
+          case 'due_week': return !a.overdue && a.daysToDue <= 7 && a.status !== 'Retired'
+          case 'high_risk': return a.risk === 'High'
+          case 'defects': return a.openDefects > 0
+        }
+      })
+      .filter(
+        (a) =>
+          !q ||
+          [a.code, a.name, a.serialNumber, a.owner, a.department, a.location, a.manufacturer]
+            .join(' ')
+            .toLowerCase()
+            .includes(q),
+      )
+      .sort((a, b) => a.health - b.health || a.nextDueDate.localeCompare(b.nextDueDate))
+  }
+
+  getAssetProfile(idOrQr: string): { asset: AssetView; inspections: InspectionView[]; openActions: CapaItem[] } {
+    const asset = this.assets.find((a) => a.id === idOrQr || a.qrKey === idOrQr || a.code === idOrQr)
+    if (!asset) throw new ApiError('not_found', 'Asset not found — the QR label may be stale.')
+    const inspections = this.inspections
+      .filter((i) => i.assetId === asset.id)
+      .map((i) => this.toInspectionView(i))
+      .sort((a, b) => (b.completedAt ?? b.scheduledFor).localeCompare(a.completedAt ?? a.scheduledFor))
+    const openActions = this.standalone
+      .filter((a) => a.assetId === asset.id && a.status !== 'Verified' && a.status !== 'Cancelled')
+      .map((a) => this.toCapa(a, null, a))
+    return { asset: this.toAssetView(asset), inspections, openActions }
+  }
+
+  createAsset(input: NewAssetInput, actor: Actor): AssetView {
+    if (!MANAGE_ROLES.includes(actor.role)) throw new ApiError('forbidden', 'Only Safety Officers and above can register assets.')
+    if (!input.name.trim() || !input.serialNumber.trim() || !input.siteId || !input.owner) {
+      throw new ApiError('validation', 'Name, serial number, site and owner are required.')
+    }
+    const code = `AST-${this.nextAssetCode++}`
+    const nextDueDate = new Date(Date.now() + FREQUENCY_DAYS[input.frequency] * 86400_000).toISOString().slice(0, 10)
+    const asset: Asset = {
+      ...input,
+      id: code.toLowerCase(),
+      code,
+      qrKey: code,
+      status: 'In Service',
+      documents: [],
+      nextDueDate,
+    }
+    this.assets.unshift(asset)
+    this.scheduleInternal(asset, nextDueDate, input.owner)
+    this.persist()
+    this.notify('system', `Asset registered: ${code}`, `${asset.name} — first inspection scheduled ${nextDueDate}.`)
+    return this.toAssetView(asset)
+  }
+
+  private scheduleInternal(asset: Asset, date: string, inspector: string): Inspection {
+    const existing = this.inspections.find((i) => i.assetId === asset.id && i.status === 'Scheduled')
+    if (existing) {
+      existing.scheduledFor = date
+      existing.assignedTo = inspector
+      return existing
+    }
+    const insp: Inspection = {
+      id: `ins-${this.nextInspectionCode}`,
+      code: `INS-${this.nextInspectionCode++}`,
+      assetId: asset.id, companyId: asset.companyId, siteId: asset.siteId,
+      scheduledFor: date, assignedTo: inspector, status: 'Scheduled', actionIds: [],
+    }
+    this.inspections.push(insp)
+    return insp
+  }
+
+  scheduleInspection(assetId: string, date: string, inspector: string, actor: Actor): InspectionView {
+    if (!MANAGE_ROLES.includes(actor.role)) throw new ApiError('forbidden', 'Only Safety Officers and above can schedule inspections.')
+    const asset = this.assets.find((a) => a.id === assetId)
+    if (!asset) throw new ApiError('not_found', 'Asset not found.')
+    if (!date || !inspector) throw new ApiError('validation', 'Date and inspector are required.')
+    const insp = this.scheduleInternal(asset, date, inspector)
+    asset.nextDueDate = date
+    this.persist()
+    this.notify('system', `Inspection scheduled: ${asset.code}`, `${asset.name} on ${date} — inspector ${inspector}.`)
+    return this.toInspectionView(insp)
+  }
+
+  completeInspection(inspectionId: string, input: CompleteInspectionInput, actor: Actor): InspectionView {
+    const insp = this.inspections.find((i) => i.id === inspectionId)
+    if (!insp) throw new ApiError('not_found', 'Inspection not found.')
+    if (insp.status !== 'Scheduled') throw new ApiError('validation', 'This inspection is already completed.')
+    if (insp.assignedTo !== actor.name && !MANAGE_ROLES.includes(actor.role)) {
+      throw new ApiError('forbidden', 'Only the assigned inspector (or a Safety Officer and above) can complete this inspection.')
+    }
+    const asset = this.assets.find((a) => a.id === insp.assetId)!
+    const template = CHECKLISTS[asset.category]
+    if (input.answers.length !== template.length || input.answers.some((a) => !a.result)) {
+      throw new ApiError('validation', 'Every checklist item needs a Pass, Fail or N/A answer.')
+    }
+    const fails = input.answers.filter((a) => a.result === 'fail')
+    if (fails.some((f) => !f.comment?.trim())) {
+      throw new ApiError('validation', 'Each failed item needs a comment describing the defect.')
+    }
+    if (!input.signature.trim()) throw new ApiError('validation', 'A digital signature is required.')
+
+    const now = new Date().toISOString()
+    insp.status = 'Completed'
+    insp.completedAt = now
+    insp.completedBy = actor.name
+    insp.outcome = fails.length > 0 ? 'failed' : 'passed'
+    insp.answers = input.answers
+    insp.comments = input.comments?.trim() || undefined
+    insp.photoCount = input.photoCount
+    insp.gps = input.gps
+    insp.signature = input.signature.trim()
+
+    // failed items become corrective actions, automatically
+    for (const fail of fails) {
+      const due = new Date(Date.now() + 7 * 86400_000).toISOString().slice(0, 10)
+      const action: StandaloneAction = {
+        id: `sa-${Date.now().toString(36)}${this.nextActionCode}`,
+        code: `CA-${this.nextActionCode++}`,
+        title: `Defect: ${fail.label} — ${asset.name}`,
+        description: fail.comment?.trim(),
+        causeId: null,
+        owner: asset.owner,
+        reviewer: 'Marcus Tan',
+        dueDate: due,
+        priority: 'High',
+        status: 'Open',
+        progress: 0,
+        evidenceRequired: true,
+        createdAt: now,
+        notes: [],
+        log: [{ id: `l-${Date.now().toString(36)}`, at: now, actor: actor.name, action: 'Action created', detail: `Auto-created from failed inspection ${insp.code}` }],
+        companyId: asset.companyId,
+        siteId: asset.siteId,
+        department: asset.department,
+        rootCause: `Inspection defect (${insp.code})`,
+        assetId: asset.id,
+      }
+      this.standalone.unshift(action)
+      insp.actionIds.push(action.id)
+      this.notify('action', `Defect action ${action.code} assigned to ${asset.owner}`, `${fail.label} — ${asset.name}, due ${due}.`)
+    }
+
+    // roll the schedule forward so the asset can never fall off the calendar
+    asset.lastInspectedAt = now
+    asset.nextDueDate = new Date(Date.now() + FREQUENCY_DAYS[asset.frequency] * 86400_000).toISOString().slice(0, 10)
+    this.scheduleInternal(asset, asset.nextDueDate, insp.assignedTo)
+
+    this.persist()
+    this.notify(
+      insp.outcome === 'failed' ? 'action' : 'system',
+      `${insp.code} completed — ${insp.outcome === 'failed' ? `${fails.length} defect(s) found` : 'passed'}`,
+      `${asset.name} inspected by ${actor.name}. Next due ${asset.nextDueDate}.`,
+    )
+    return this.toInspectionView(insp)
+  }
+
+  private toInspectionView(i: Inspection): InspectionView {
+    const asset = this.assets.find((a) => a.id === i.assetId)!
+    const daysToDue = dayDiff(i.scheduledFor)
+    return {
+      ...i,
+      assetName: asset.name,
+      assetCode: asset.code,
+      category: asset.category,
+      department: asset.department,
+      overdue: i.status === 'Scheduled' && daysToDue < 0,
+      daysToDue,
+      actionCodes: i.actionIds.map((id) => this.standalone.find((a) => a.id === id)?.code ?? id.toUpperCase()),
+    }
+  }
+
+  listInspections(companyId: string, filters: InspectionFilters): InspectionView[] {
+    const q = filters.q?.trim().toLowerCase()
+    return this.inspections
+      .filter((i) => i.companyId === companyId && i.status !== 'Cancelled')
+      .map((i) => this.toInspectionView(i))
+      .filter((i) => !filters.siteId || i.siteId === filters.siteId)
+      .filter((i) => {
+        switch (filters.status ?? 'all') {
+          case 'all': return true
+          case 'scheduled': return i.status === 'Scheduled'
+          case 'overdue': return i.overdue
+          case 'completed': return i.status === 'Completed'
+          case 'failed': return i.outcome === 'failed'
+        }
+      })
+      .filter(
+        (i) => !q || [i.code, i.assetName, i.assetCode, i.assignedTo].join(' ').toLowerCase().includes(q),
+      )
+      .sort((a, b) => {
+        const rank = (x: InspectionView) => (x.overdue ? 0 : x.status === 'Scheduled' ? 1 : 2)
+        return rank(a) - rank(b) || (rank(a) === 2
+          ? (b.completedAt ?? '').localeCompare(a.completedAt ?? '')
+          : a.scheduledFor.localeCompare(b.scheduledFor))
+      })
+  }
+
+  assetStats(companyId: string): AssetStats {
+    const views = this.assets.filter((a) => a.companyId === companyId).map((a) => this.toAssetView(a))
+    const active = views.filter((a) => a.status !== 'Retired')
+    const overdueInspections = active.filter((a) => a.overdue).length
+    const bySite = new Map<string, number[]>()
+    active.forEach((a) => bySite.set(a.siteId, [...(bySite.get(a.siteId) ?? []), a.health]))
+
+    const months: { month: string; Completed: number; Failed: number }[] = []
+    for (let m = 5; m >= 0; m--) {
+      const d = new Date()
+      d.setMonth(d.getMonth() - m)
+      const key = d.toISOString().slice(0, 7)
+      const done = this.inspections.filter(
+        (i) => i.companyId === companyId && i.status === 'Completed' && (i.completedAt ?? '').slice(0, 7) === key,
+      )
+      months.push({
+        month: d.toLocaleDateString('en-MY', { month: 'short' }),
+        Completed: done.length,
+        Failed: done.filter((i) => i.outcome === 'failed').length,
+      })
+    }
+
+    return {
+      totalAssets: active.length,
+      complianceRate: active.length ? Math.round(((active.length - overdueInspections) / active.length) * 100) : 100,
+      overdueInspections,
+      dueThisWeek: active.filter((a) => !a.overdue && a.daysToDue <= 7).length,
+      openDefects: active.reduce((s, a) => s + a.openDefects, 0),
+      avgHealth: active.length ? Math.round(active.reduce((s, a) => s + a.health, 0) / active.length) : 0,
+      highestRisk: [...active].sort((a, b) => a.health - b.health).slice(0, 5)
+        .map((a) => ({ code: a.code, name: a.name, health: a.health, siteId: a.siteId })),
+      bySiteHealth: [...bySite.entries()]
+        .map(([name, hs]) => ({ name, value: Math.round(hs.reduce((s, h) => s + h, 0) / hs.length) }))
+        .sort((a, b) => a.value - b.value),
+      monthlyTrend: months,
+    }
+  }
+
+  // ── Audits & compliance ────────────────────────────────────────────────────
+
+  listTemplates(): AuditTemplate[] {
+    return [...AUDIT_TEMPLATES, ...this.customTemplates]
+  }
+
+  createTemplate(name: string, items: string[], actor: Actor): AuditTemplate {
+    this.requireRole(actor, REVIEW_ROLES)
+    const clean = items.map((t) => t.trim()).filter(Boolean)
+    if (!name.trim() || clean.length < 3) {
+      throw new ApiError('validation', 'A template needs a name and at least 3 checklist items.')
+    }
+    const tpl: AuditTemplate = {
+      id: `tpl-c-${Date.now().toString(36)}`,
+      name: name.trim(),
+      type: 'custom',
+      custom: true,
+      sections: [{ title: 'Checklist', items: clean.map((text, i) => ({ id: `x${i}`, text })) }],
+    }
+    this.customTemplates.push(tpl)
+    this.persist()
+    return tpl
+  }
+
+  private templateOf(audit: Audit): AuditTemplate {
+    return this.listTemplates().find((t) => t.id === audit.templateId) ?? AUDIT_TEMPLATES[0]
+  }
+
+  private actionStatusOf(actionId: string): IncidentAction['status'] | null {
+    try {
+      const { action } = this.findAction(actionId)
+      return action.status
+    } catch {
+      return null
+    }
+  }
+
+  private toFindingView(f: AuditFinding, audit: Audit): AuditFindingView {
+    const a = (() => {
+      try {
+        return this.findAction(f.actionId).action
+      } catch {
+        return null
+      }
+    })()
+    const st = a?.status
+    const status =
+      st === 'Verified' || st === 'Cancelled' ? 'Closed'
+      : st === 'Completed' ? 'Awaiting Verification'
+      : st === 'In Progress' ? 'Action In Progress'
+      : 'Open'
+    return {
+      ...f,
+      auditId: audit.id,
+      auditCode: audit.code,
+      auditTitle: audit.title,
+      siteId: audit.siteId,
+      department: audit.department,
+      status,
+      actionCode: a?.code ?? f.actionId.toUpperCase(),
+      actionOwner: a?.owner ?? '—',
+      actionDue: a?.dueDate ?? '—',
+      actionOverdue: a ? isActionOverdue(a) : false,
+    }
+  }
+
+  private toAuditView(a: Audit): AuditView {
+    const open = a.findings.filter((f) => {
+      const st = this.actionStatusOf(f.actionId)
+      return st !== 'Verified' && st !== 'Cancelled'
+    })
+    const daysToStart = dayDiff(a.scheduledFor)
+    return {
+      ...a,
+      templateName: this.templateOf(a).name,
+      openFindings: open.length,
+      criticalFindings: open.filter((f) => f.severity === 'Critical').length,
+      overdue: a.status === 'Planned' && daysToStart < 0,
+      daysToStart,
+    }
+  }
+
+  listAudits(companyId: string, filters: AuditFilters): AuditView[] {
+    const q = filters.q?.trim().toLowerCase()
+    return this.audits
+      .filter((a) => a.companyId === companyId)
+      .map((a) => this.toAuditView(a))
+      .filter((a) => !filters.siteId || a.siteId === filters.siteId)
+      .filter((a) => !filters.status || a.status === filters.status)
+      .filter((a) => !filters.type || a.type === filters.type)
+      .filter(
+        (a) => !q || [a.code, a.title, a.leadAuditor, a.department, ...a.team].join(' ').toLowerCase().includes(q),
+      )
+      .sort((a, b) => {
+        const rank = (x: AuditView) => (x.status === 'In Progress' ? 0 : x.status === 'Planned' ? 1 : x.status === 'Completed' ? 2 : 3)
+        return rank(a) - rank(b) || a.scheduledFor.localeCompare(b.scheduledFor)
+      })
+  }
+
+  getAuditDetail(id: string): { audit: AuditView; findings: AuditFindingView[]; template: AuditTemplate } {
+    const audit = this.audits.find((a) => a.id === id)
+    if (!audit) throw new ApiError('not_found', 'Audit not found.')
+    return {
+      audit: this.toAuditView(audit),
+      findings: audit.findings.map((f) => this.toFindingView(f, audit)),
+      template: this.templateOf(audit),
+    }
+  }
+
+  createAudit(input: NewAuditInput, actor: Actor): AuditView {
+    this.requireRole(actor, REVIEW_ROLES)
+    if (!input.title.trim() || !input.leadAuditor || !input.scheduledFor || !input.siteId) {
+      throw new ApiError('validation', 'Title, lead auditor, site and date are required.')
+    }
+    const audit: Audit = {
+      ...input,
+      id: `aud-${this.nextAuditCode}`,
+      code: `AUD-${this.nextAuditCode++}`,
+      status: 'Planned',
+      findings: [],
+      timeline: [{ id: `atl-${Date.now().toString(36)}`, at: new Date().toISOString(), actor: actor.name, action: 'Audit created', detail: input.title.trim() }],
+    }
+    this.audits.unshift(audit)
+    this.persist()
+    this.notify('audit', `Audit planned: ${audit.code}`, `${audit.title} — lead auditor ${audit.leadAuditor}, ${audit.scheduledFor}.`)
+    return this.toAuditView(audit)
+  }
+
+  private canRunAudit(audit: Audit, actor: Actor): boolean {
+    return (
+      REVIEW_ROLES.includes(actor.role) ||
+      audit.leadAuditor === actor.name ||
+      audit.team.includes(actor.name)
+    )
+  }
+
+  startAudit(id: string, actor: Actor): AuditView {
+    const audit = this.audits.find((a) => a.id === id)
+    if (!audit) throw new ApiError('not_found', 'Audit not found.')
+    if (audit.status !== 'Planned') throw new ApiError('validation', 'Only planned audits can be started.')
+    if (!this.canRunAudit(audit, actor)) {
+      throw new ApiError('forbidden', 'Only the audit team (or an HSE Manager/Admin) can start this audit.')
+    }
+    audit.status = 'In Progress'
+    audit.startedAt = new Date().toISOString()
+    audit.timeline.push({ id: `atl-${Date.now().toString(36)}`, at: audit.startedAt, actor: actor.name, action: 'Audit started' })
+    this.persist()
+    return this.toAuditView(audit)
+  }
+
+  completeAudit(id: string, input: CompleteAuditInput, actor: Actor): { audit: AuditView; findings: AuditFindingView[] } {
+    const audit = this.audits.find((a) => a.id === id)
+    if (!audit) throw new ApiError('not_found', 'Audit not found.')
+    if (audit.status !== 'In Progress') throw new ApiError('validation', 'Start the audit before completing it.')
+    if (!this.canRunAudit(audit, actor)) throw new ApiError('forbidden', 'Only the audit team can complete this audit.')
+
+    const template = this.templateOf(audit)
+    const totalItems = template.sections.reduce((s, sec) => s + sec.items.length, 0)
+    if (input.answers.length !== totalItems || input.answers.some((a) => !a.result)) {
+      throw new ApiError('validation', 'Every checklist item needs a Pass, Fail or N/A answer.')
+    }
+    const fails = input.answers.filter((a) => a.result === 'fail')
+    for (const f of fails) {
+      const fi = input.fails[f.itemId]
+      if (!fi || !fi.description.trim() || !fi.owner) {
+        throw new ApiError('validation', 'Each failed item needs a finding description and an action owner.')
+      }
+    }
+    if (!input.signature.trim()) throw new ApiError('validation', 'A digital signature is required.')
+
+    const now = new Date().toISOString()
+    const applicable = input.answers.filter((a) => a.result !== 'na')
+    audit.score = applicable.length
+      ? Math.round((applicable.filter((a) => a.result === 'pass').length / applicable.length) * 100)
+      : 100
+    audit.answers = input.answers
+    audit.signature = input.signature.trim()
+    audit.gps = input.gps
+    audit.completedAt = now
+    audit.status = 'Completed'
+
+    // every failed item → finding → auto-created corrective action
+    for (const f of fails) {
+      const fi = input.fails[f.itemId]!
+      const due = new Date(Date.now() + SEVERITY_DUE_DAYS[fi.severity] * 86400_000).toISOString().slice(0, 10)
+      const action: StandaloneAction = {
+        id: `sa-${Date.now().toString(36)}${this.nextActionCode}`,
+        code: `CA-${this.nextActionCode++}`,
+        title: `${fi.severity} finding: ${fi.description.trim().slice(0, 90)}`,
+        description: `${f.section} — "${f.text}". ${fi.description.trim()}`,
+        causeId: null,
+        owner: fi.owner,
+        reviewer: audit.leadAuditor,
+        dueDate: due,
+        priority: fi.severity === 'Critical' || fi.severity === 'Major' ? 'High' : fi.severity === 'Minor' ? 'Medium' : 'Low',
+        status: 'Open',
+        progress: 0,
+        evidenceRequired: fi.severity !== 'Observation',
+        createdAt: now,
+        notes: [],
+        log: [{ id: `l-${Date.now().toString(36)}`, at: now, actor: actor.name, action: 'Action created', detail: `Auto-created from audit finding (${audit.code})` }],
+        companyId: audit.companyId,
+        siteId: audit.siteId,
+        department: audit.department,
+        rootCause: `Audit finding (${audit.code})`,
+        assetId: fi.linkedAssetId,
+      }
+      this.standalone.unshift(action)
+
+      const finding: AuditFinding = {
+        id: `f-${Date.now().toString(36)}${this.nextFindingCode}`,
+        code: `F-${this.nextFindingCode++}`,
+        category: f.section,
+        description: fi.description.trim(),
+        severity: fi.severity,
+        photoCount: fi.photoCount,
+        linkedAssetId: fi.linkedAssetId,
+        actionId: action.id,
+        raisedBy: actor.name,
+        raisedAt: now,
+      }
+      audit.findings.push(finding)
+      audit.timeline.push({ id: `atl-${Date.now().toString(36)}${finding.code}`, at: now, actor: actor.name, action: 'Finding raised', detail: `${finding.code} · ${fi.severity} — ${fi.description.trim().slice(0, 60)}` })
+      audit.timeline.push({ id: `atl-${Date.now().toString(36)}${action.code}`, at: now, actor: 'System', action: 'Corrective action created', detail: `${action.code} → ${fi.owner}, due ${due}` })
+      this.notify('audit', `Audit finding ${finding.code} (${fi.severity})`, `${fi.description.trim().slice(0, 80)} — action ${action.code} assigned to ${fi.owner}.`)
+    }
+
+    audit.timeline.push({ id: `atl-${Date.now().toString(36)}done`, at: now, actor: actor.name, action: 'Audit completed', detail: `Score ${audit.score}% · ${fails.length} finding(s)` })
+    this.persist()
+    this.notify('audit', `${audit.code} completed — score ${audit.score}%`, `${audit.title}: ${fails.length} finding(s) raised.`)
+    return { audit: this.toAuditView(audit), findings: audit.findings.map((f) => this.toFindingView(f, audit)) }
+  }
+
+  closeAudit(id: string, actor: Actor): AuditView {
+    const audit = this.audits.find((a) => a.id === id)
+    if (!audit) throw new ApiError('not_found', 'Audit not found.')
+    this.requireRole(actor, REVIEW_ROLES)
+    if (audit.status !== 'Completed') throw new ApiError('validation', 'Only completed audits can be closed.')
+    const unresolved = audit.findings.filter((f) => {
+      const st = this.actionStatusOf(f.actionId)
+      return st !== 'Verified' && st !== 'Cancelled'
+    })
+    if (unresolved.length > 0) {
+      throw new ApiError('validation', `${unresolved.length} finding(s) still have unverified corrective actions.`)
+    }
+    audit.status = 'Closed'
+    audit.closedAt = new Date().toISOString()
+    audit.timeline.push({ id: `atl-${Date.now().toString(36)}close`, at: audit.closedAt, actor: actor.name, action: 'Audit closed', detail: 'All findings verified' })
+    this.persist()
+    this.notify('audit', `${audit.code} closed`, `${audit.title} — every finding verified and closed.`)
+    return this.toAuditView(audit)
+  }
+
+  listFindings(companyId: string, severity?: string): AuditFindingView[] {
+    return this.audits
+      .filter((a) => a.companyId === companyId)
+      .flatMap((a) => a.findings.map((f) => this.toFindingView(f, a)))
+      .filter((f) => !severity || f.severity === severity)
+      .sort((a, b) => {
+        const sev = { Critical: 0, Major: 1, Minor: 2, Observation: 3 }
+        const open = (x: AuditFindingView) => (x.status === 'Closed' ? 1 : 0)
+        return open(a) - open(b) || sev[a.severity] - sev[b.severity] || b.raisedAt.localeCompare(a.raisedAt)
+      })
+  }
+
+  listObligations(companyId: string): ObligationView[] {
+    return this.obligations
+      .filter((o) => o.companyId === companyId)
+      .map((o) => {
+        const daysToDue = dayDiff(o.nextDue)
+        return {
+          ...o,
+          daysToDue,
+          status: daysToDue < 0 ? 'Overdue' : daysToDue <= 30 ? 'Expiring Soon' : 'Compliant',
+        } as ObligationView
+      })
+      .sort((a, b) => a.daysToDue - b.daysToDue)
+  }
+
+  renewObligation(id: string, nextDue: string, note: string, actor: Actor): ObligationView {
+    this.requireRole(actor, REVIEW_ROLES)
+    const o = this.obligations.find((x) => x.id === id)
+    if (!o) throw new ApiError('not_found', 'Obligation not found.')
+    if (!nextDue) throw new ApiError('validation', 'A new due date is required.')
+    o.nextDue = nextDue
+    if (o.expiryDate) o.expiryDate = nextDue
+    o.lastRenewedAt = new Date().toISOString()
+    o.notes = note.trim() || o.notes
+    this.persist()
+    this.notify('audit', `Compliance renewed: ${o.requirement}`, `${o.regulation} — next due ${nextDue}.`)
+    const daysToDue = dayDiff(o.nextDue)
+    return { ...o, daysToDue, status: daysToDue < 0 ? 'Overdue' : daysToDue <= 30 ? 'Expiring Soon' : 'Compliant' }
+  }
+
+  listDocuments(companyId: string, q?: string, kind?: DocKind | ''): ComplianceDocument[] {
+    const query = q?.trim().toLowerCase()
+    return this.documents
+      .filter((d) => d.companyId === companyId)
+      .filter((d) => !kind || d.kind === kind)
+      .filter((d) => !query || [d.name, d.owner, d.version].join(' ').toLowerCase().includes(query))
+      .sort((a, b) => (a.status === 'Pending Approval' ? 0 : 1) - (b.status === 'Pending Approval' ? 0 : 1) || b.updatedAt.localeCompare(a.updatedAt))
+  }
+
+  addDocumentVersion(
+    docId: string | null,
+    input: { name: string; kind: DocKind; sizeKb: number; note: string; companyId: string; siteId: string | null },
+    actor: Actor,
+  ): ComplianceDocument {
+    if (!MANAGE_ROLES.includes(actor.role)) throw new ApiError('forbidden', 'Only Safety Officers and above can manage documents.')
+    const now = new Date().toISOString()
+    if (docId) {
+      const doc = this.documents.find((d) => d.id === docId)
+      if (!doc) throw new ApiError('not_found', 'Document not found.')
+      const parsed = parseFloat(doc.version)
+      doc.version = Number.isFinite(parsed) ? (Math.round((parsed + 0.1) * 10) / 10).toFixed(1) : now.slice(0, 10)
+      doc.status = 'Pending Approval'
+      doc.updatedAt = now
+      doc.sizeKb = input.sizeKb
+      doc.approvedBy = undefined
+      doc.approvedAt = undefined
+      doc.history.unshift({ version: doc.version, at: now, by: actor.name, note: input.note.trim() || 'New version uploaded' })
+      this.persist()
+      this.notify('system', `Document pending approval: ${doc.name}`, `v${doc.version} uploaded by ${actor.name}.`)
+      return { ...doc }
+    }
+    if (!input.name.trim()) throw new ApiError('validation', 'Document name is required.')
+    const doc: ComplianceDocument = {
+      id: `doc-${Date.now().toString(36)}`,
+      name: input.name.trim(),
+      kind: input.kind,
+      version: '1.0',
+      status: 'Pending Approval',
+      owner: actor.name,
+      companyId: input.companyId,
+      siteId: input.siteId,
+      sizeKb: input.sizeKb,
+      updatedAt: now,
+      history: [{ version: '1.0', at: now, by: actor.name, note: input.note.trim() || 'Initial upload' }],
+    }
+    this.documents.unshift(doc)
+    this.persist()
+    this.notify('system', `Document pending approval: ${doc.name}`, `v1.0 uploaded by ${actor.name}.`)
+    return { ...doc }
+  }
+
+  approveDocument(id: string, actor: Actor): ComplianceDocument {
+    this.requireRole(actor, REVIEW_ROLES)
+    const doc = this.documents.find((d) => d.id === id)
+    if (!doc) throw new ApiError('not_found', 'Document not found.')
+    if (doc.status !== 'Pending Approval') throw new ApiError('validation', 'Only documents pending approval can be approved.')
+    doc.status = 'Approved'
+    doc.approvedBy = actor.name
+    doc.approvedAt = new Date().toISOString()
+    this.persist()
+    this.notify('system', `Document approved: ${doc.name}`, `v${doc.version} approved by ${actor.name}.`)
+    return { ...doc }
+  }
+
+  auditStats(companyId: string): AuditStats {
+    const audits = this.audits.filter((a) => a.companyId === companyId)
+    const findings = this.listFindings(companyId)
+    const openFindings = findings.filter((f) => f.status !== 'Closed')
+    const obligations = this.listObligations(companyId)
+    const compliant = obligations.filter((o) => o.status === 'Compliant').length
+    const compliancePct = obligations.length ? Math.round((compliant / obligations.length) * 100) : 100
+    const scored = audits.filter((a) => a.score !== undefined)
+    const avgScore = scored.length ? Math.round(scored.reduce((s, a) => s + (a.score ?? 0), 0) / scored.length) : null
+    const closurePct = findings.length
+      ? Math.round((findings.filter((f) => f.status === 'Closed').length / findings.length) * 100)
+      : 100
+    const readiness = Math.round(0.4 * compliancePct + 0.3 * (avgScore ?? compliancePct) + 0.3 * closurePct)
+
+    const byCat = new Map<string, number>()
+    findings.forEach((f) => byCat.set(f.category, (byCat.get(f.category) ?? 0) + 1))
+    const bySite = new Map<string, number>()
+    const byDept = new Map<string, number>()
+    openFindings.forEach((f) => {
+      bySite.set(f.siteId, (bySite.get(f.siteId) ?? 0) + 1)
+      byDept.set(f.department, (byDept.get(f.department) ?? 0) + 1)
+    })
+
+    const months: { month: string; Audits: number; Findings: number }[] = []
+    for (let m = 5; m >= 0; m--) {
+      const d = new Date()
+      d.setMonth(d.getMonth() - m)
+      const key = d.toISOString().slice(0, 7)
+      months.push({
+        month: d.toLocaleDateString('en-MY', { month: 'short' }),
+        Audits: audits.filter((a) => (a.completedAt ?? '').slice(0, 7) === key).length,
+        Findings: findings.filter((f) => f.raisedAt.slice(0, 7) === key).length,
+      })
+    }
+
+    return {
+      upcoming30d: audits.filter((a) => a.status === 'Planned' && dayDiff(a.scheduledFor) <= 30).length,
+      openFindings: openFindings.length,
+      criticalFindings: openFindings.filter((f) => f.severity === 'Critical').length,
+      overdueFindingActions: openFindings.filter((f) => f.actionOverdue).length,
+      compliancePct,
+      avgScore,
+      readiness,
+      completedAudits: audits.filter((a) => a.status === 'Completed' || a.status === 'Closed').length,
+      findingsByCategory: [...byCat.entries()].map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value).slice(0, 6),
+      bySiteOpenFindings: [...bySite.entries()].map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value),
+      byDeptOpenFindings: [...byDept.entries()].map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value),
+      monthlyTrend: months,
+    }
+  }
+
+  // ── Training & competency ──────────────────────────────────────────────────
+
+  private allCourses(): TrainingCourse[] {
+    return [...TRAINING_COURSES, ...this.customCourses]
+  }
+  private courseById(id: string): TrainingCourse | undefined {
+    return this.allCourses().find((c) => c.id === id)
+  }
+
+  /** Latest (highest issueDate) certificate an employee holds for a course. */
+  private certFor(employeeId: string, courseId: string): Certificate | undefined {
+    return this.certificates
+      .filter((c) => c.employeeId === employeeId && c.courseId === courseId)
+      .sort((a, b) => b.issueDate.localeCompare(a.issueDate))[0]
+  }
+
+  /** IDs of the current (non-superseded) certificate per employee+course. A
+   *  renewal supersedes the prior cert, so counts never double-count. */
+  private currentCertIds(): Set<string> {
+    const latest = new Map<string, Certificate>()
+    for (const c of this.certificates) {
+      const key = `${c.employeeId}:${c.courseId}`
+      const prev = latest.get(key)
+      if (!prev || c.issueDate > prev.issueDate) latest.set(key, c)
+    }
+    return new Set([...latest.values()].map((c) => c.id))
+  }
+
+  private certStatus(cert: Certificate): { status: 'competent' | 'expiring' | 'expired'; days: number | null } {
+    if (cert.expiryDate === null) return { status: 'competent', days: null }
+    const days = dayDiff(cert.expiryDate)
+    return { status: days < 0 ? 'expired' : days <= 90 ? 'expiring' : 'competent', days }
+  }
+
+  private cellStatus(employeeId: string, course: TrainingCourse): MatrixCell {
+    const cert = this.certFor(employeeId, course.id)
+    if (!cert) return { courseId: course.id, status: 'missing' }
+    const { status } = this.certStatus(cert)
+    return { courseId: course.id, status, expiryDate: cert.expiryDate, certId: cert.id }
+  }
+
+  private levelOf(compliancePct: number, hasExpiredMandatory: boolean): CompetencyLevel {
+    if (hasExpiredMandatory) return 'At Risk'
+    if (compliancePct >= 100) return 'Fully Competent'
+    if (compliancePct >= 75) return 'Competent'
+    if (compliancePct >= 50) return 'Developing'
+    return 'At Risk'
+  }
+
+  private competencyFor(emp: { id: string; name: string; position: string; siteId: string; department: string }): EmployeeCompetency {
+    const required = requiredCoursesFor(emp.department)
+    const cells: Record<string, MatrixCell> = {}
+    let competent = 0
+    let expiring = 0
+    let gaps = 0
+    let hasExpiredMandatory = false
+    for (const course of required) {
+      const cell = this.cellStatus(emp.id, course)
+      cells[course.id] = cell
+      if (cell.status === 'competent') competent++
+      else if (cell.status === 'expiring') expiring++
+      else {
+        gaps++
+        if (course.mandatory) hasExpiredMandatory = true
+      }
+    }
+    const requiredCount = required.length
+    const compliancePct = requiredCount ? Math.round((competent / requiredCount) * 100) : 100
+    return {
+      employeeId: emp.id, name: emp.name, position: emp.position, siteId: emp.siteId, department: emp.department,
+      level: this.levelOf(compliancePct, hasExpiredMandatory),
+      compliancePct, requiredCount, competentCount: competent, expiringCount: expiring, gapCount: gaps,
+      hasExpiredMandatory, cells,
+    }
+  }
+
+  private scopeRoster(companyId: string, actor: Actor) {
+    const roster = rosterFor(companyId)
+    const orgWide = !actor.siteIds || actor.siteIds.length === 0
+    switch (actor.role) {
+      case 'admin':
+      case 'hse_manager':
+      case 'ceo':
+        return roster
+      case 'safety_officer':
+      case 'supervisor':
+        return orgWide ? roster : roster.filter((e) => actor.siteIds!.includes(e.siteId))
+      default: // employee — only self
+        return roster.filter((e) => e.name === actor.name)
+    }
+  }
+
+  listCourses(companyId: string): CourseView[] {
+    const roster = rosterFor(companyId)
+    return this.allCourses().map((course) => {
+      const required = roster.filter((e) => courseApplies(course, e.department))
+      const certified = required.filter((e) => {
+        const cell = this.cellStatus(e.id, course)
+        return cell.status === 'competent' || cell.status === 'expiring'
+      })
+      return {
+        ...course,
+        requiredEmployees: required.length,
+        certifiedEmployees: certified.length,
+        compliancePct: required.length ? Math.round((certified.length / required.length) * 100) : 100,
+        upcomingSessions: this.sessions.filter((s) => s.courseId === course.id && s.companyId === companyId && s.status === 'Scheduled').length,
+      }
+    })
+  }
+
+  createCourse(input: NewCourseInput, actor: Actor): CourseView {
+    this.requireRole(actor, ['admin', 'hse_manager'])
+    if (!input.name.trim() || input.durationHours <= 0) {
+      throw new ApiError('validation', 'Course name and a positive duration are required.')
+    }
+    const course: TrainingCourse = {
+      ...input,
+      id: `trn-c-${Date.now().toString(36)}`,
+      code: `TRN-${this.nextCourseCode++}`,
+      passMark: 80,
+      applies: input.applies.length ? input.applies : 'all',
+      custom: true,
+    }
+    this.customCourses.push(course)
+    this.persist()
+    this.notify('system', `Training course added: ${course.code}`, `${course.name} — ${course.mandatory ? 'mandatory' : 'optional'}, ${course.validityMonths ? `${course.validityMonths}-month validity` : 'no expiry'}.`)
+    return { ...course, requiredEmployees: 0, certifiedEmployees: 0, compliancePct: 100, upcomingSessions: 0 }
+  }
+
+  trainingMatrix(companyId: string, actor: Actor): TrainingMatrix {
+    const employees = this.scopeRoster(companyId, actor).map((e) => this.competencyFor(e))
+    const usedCourseIds = new Set<string>()
+    employees.forEach((e) => Object.keys(e.cells).forEach((id) => usedCourseIds.add(id)))
+    const courses = this.allCourses()
+      .filter((c) => usedCourseIds.has(c.id))
+      .map((c) => ({ id: c.id, code: c.code, name: c.name, mandatory: c.mandatory }))
+    return {
+      courses,
+      employees: employees.sort((a, b) => a.compliancePct - b.compliancePct || a.name.localeCompare(b.name)),
+    }
+  }
+
+  private toCertView(cert: Certificate): CertificateView {
+    const course = this.courseById(cert.courseId)
+    const emp = EMPLOYEES.find((e) => e.id === cert.employeeId)
+    const { status, days } = this.certStatus(cert)
+    return {
+      ...cert,
+      status,
+      daysToExpiry: days,
+      siteId: emp?.siteId ?? '-',
+      department: emp ? deptNameOf(emp.departmentId) : '-',
+      mandatory: course?.mandatory ?? false,
+    }
+  }
+
+  getEmployeeTraining(employeeId: string): EmployeeTrainingProfile {
+    const emp = rosterFor('big').concat(rosterFor('kcs')).find((e) => e.id === employeeId)
+    if (!emp) throw new ApiError('not_found', 'Employee not found.')
+    const competency = this.competencyFor(emp)
+    const required = requiredCoursesFor(emp.department).map((course) => {
+      const cert = this.certFor(emp.id, course.id)
+      return {
+        course,
+        status: competency.cells[course.id].status,
+        cert: cert ? this.toCertView(cert) : undefined,
+      }
+    })
+    const current = this.currentCertIds()
+    const certificates = this.certificates
+      .filter((c) => c.employeeId === employeeId && current.has(c.id))
+      .map((c) => this.toCertView(c))
+      .sort((a, b) => b.issueDate.localeCompare(a.issueDate))
+    const upcomingRenewals = certificates
+      .filter((c) => c.status === 'expiring' && c.daysToExpiry !== null)
+      .map((c) => ({ courseName: c.courseName, expiryDate: c.expiryDate!, daysToExpiry: c.daysToExpiry! }))
+      .sort((a, b) => a.daysToExpiry - b.daysToExpiry)
+    const enrolledSessions = this.sessions
+      .filter((s) => s.enrolled.includes(employeeId) && s.status === 'Scheduled')
+      .map((s) => this.toSessionView(s))
+    const history: EmployeeTrainingProfile['history'] = [
+      ...certificates.map((c) => ({ at: c.issueDate, kind: 'certified' as const, text: `Certified: ${c.courseName} (${c.number})` })),
+      ...certificates.filter((c) => c.status === 'expired').map((c) => ({ at: c.expiryDate!, kind: 'expired' as const, text: `Expired: ${c.courseName}` })),
+      ...enrolledSessions.map((s) => ({ at: s.scheduledFor, kind: 'enrolled' as const, text: `Enrolled: ${s.courseName} (${s.code})` })),
+    ].sort((a, b) => b.at.localeCompare(a.at))
+    return { competency, required, certificates, upcomingRenewals, enrolledSessions, history }
+  }
+
+  private toSessionView(s: TrainingSession): SessionView {
+    const daysToStart = dayDiff(s.scheduledFor)
+    return {
+      ...s,
+      enrolledCount: s.enrolled.length,
+      passedCount: (s.attendance ?? []).filter((a) => a.result === 'pass').length,
+      siteName: s.siteId.toUpperCase(),
+      daysToStart,
+      overdue: s.status === 'Scheduled' && daysToStart < 0,
+      seatsLeft: Math.max(0, s.maxParticipants - s.enrolled.length),
+    }
+  }
+
+  listSessions(companyId: string, filters: SessionFilters): SessionView[] {
+    const q = filters.q?.trim().toLowerCase()
+    return this.sessions
+      .filter((s) => s.companyId === companyId)
+      .map((s) => this.toSessionView(s))
+      .filter((s) => !filters.siteId || s.siteId === filters.siteId)
+      .filter((s) => {
+        switch (filters.status ?? 'all') {
+          case 'all': return true
+          case 'scheduled': return s.status === 'Scheduled'
+          case 'completed': return s.status === 'Completed'
+        }
+      })
+      .filter((s) => !q || [s.code, s.courseName, s.trainer, s.venue].join(' ').toLowerCase().includes(q))
+      .sort((a, b) => {
+        const rank = (x: SessionView) => (x.status === 'Scheduled' ? 0 : 1)
+        return rank(a) - rank(b) || (rank(a) === 0 ? a.scheduledFor.localeCompare(b.scheduledFor) : b.scheduledFor.localeCompare(a.scheduledFor))
+      })
+  }
+
+  createSession(input: NewSessionInput, actor: Actor): SessionView {
+    this.requireRole(actor, ['admin', 'hse_manager', 'safety_officer'])
+    const course = this.courseById(input.courseId)
+    if (!course) throw new ApiError('validation', 'Select a valid course.')
+    if (!input.trainer || !input.venue.trim() || !input.scheduledFor) {
+      throw new ApiError('validation', 'Trainer, venue and date are required.')
+    }
+    if (input.enrolled.length > input.maxParticipants) {
+      throw new ApiError('validation', `Enrolment exceeds the ${input.maxParticipants}-seat capacity.`)
+    }
+    const session: TrainingSession = {
+      id: `ses-${this.nextSessionCode}`,
+      code: `SES-${this.nextSessionCode++}`,
+      courseId: course.id, courseName: course.name,
+      trainer: input.trainer, venue: input.venue.trim(), mode: input.mode,
+      scheduledFor: input.scheduledFor, durationHours: course.durationHours,
+      maxParticipants: input.maxParticipants, companyId: input.companyId, siteId: input.siteId,
+      status: 'Scheduled', enrolled: [...new Set(input.enrolled)], certificatesIssued: [],
+    }
+    this.sessions.push(session)
+    this.persist()
+    this.notify('system', `Training session scheduled: ${session.code}`, `${course.name} on ${input.scheduledFor} — trainer ${input.trainer}, ${session.enrolled.length} enrolled.`)
+    return this.toSessionView(session)
+  }
+
+  enrollSession(sessionId: string, employeeIds: string[], actor: Actor): SessionView {
+    this.requireRole(actor, ['admin', 'hse_manager', 'safety_officer'])
+    const s = this.sessions.find((x) => x.id === sessionId)
+    if (!s) throw new ApiError('not_found', 'Session not found.')
+    if (s.status !== 'Scheduled') throw new ApiError('validation', 'Only scheduled sessions accept enrolment.')
+    const merged = [...new Set([...s.enrolled, ...employeeIds])]
+    if (merged.length > s.maxParticipants) throw new ApiError('validation', `That exceeds the ${s.maxParticipants}-seat capacity.`)
+    s.enrolled = merged
+    this.persist()
+    return this.toSessionView(s)
+  }
+
+  completeSession(sessionId: string, input: CompleteSessionInput, actor: Actor): { session: SessionView; certificates: CertificateView[] } {
+    const s = this.sessions.find((x) => x.id === sessionId)
+    if (!s) throw new ApiError('not_found', 'Session not found.')
+    if (s.status !== 'Scheduled') throw new ApiError('validation', 'This session is already completed.')
+    if (s.trainer !== actor.name && !['admin', 'hse_manager', 'safety_officer'].includes(actor.role)) {
+      throw new ApiError('forbidden', 'Only the trainer (or a Safety Officer and above) can close this session.')
+    }
+    if (!input.signature.trim()) throw new ApiError('validation', 'A trainer signature is required.')
+    if (input.attendance.length === 0) throw new ApiError('validation', 'Record attendance before completing.')
+    for (const a of input.attendance) {
+      if (a.present && a.result === null) {
+        throw new ApiError('validation', 'Every present attendee needs a Pass or Fail result.')
+      }
+    }
+
+    const course = this.courseById(s.courseId)!
+    const now = new Date().toISOString()
+    const issued: Certificate[] = []
+    for (const att of input.attendance) {
+      if (att.present && att.result === 'pass') {
+        // newly issued numbers live in the 2000+ range, clear of the ≤1999 seeds
+        const number = `CERT-2026-${String(this.nextCertSeq++).padStart(4, '0')}`
+        // supersede any prior cert for this employee+course by adding a newer one
+        const cert: Certificate = {
+          id: `cert-${att.employeeId}-${s.courseId}-${this.nextCertSeq}`,
+          number,
+          qrKey: number,
+          employeeId: att.employeeId,
+          employeeName: att.employeeName,
+          courseId: s.courseId,
+          courseName: s.courseName,
+          sessionId: s.id,
+          issueDate: now.slice(0, 10),
+          expiryDate: course.validityMonths
+            ? (() => { const d = new Date(); d.setMonth(d.getMonth() + course.validityMonths!); return d.toISOString().slice(0, 10) })()
+            : null,
+          issuedBy: actor.name,
+          score: att.score,
+        }
+        this.certificates.push(cert)
+        issued.push(cert)
+        s.certificatesIssued.push(cert.id)
+      }
+    }
+    s.status = 'Completed'
+    s.attendance = input.attendance
+    s.completedAt = now
+    s.completedBy = actor.name
+    s.signature = input.signature.trim()
+    this.persist()
+    this.notify('system', `${s.code} completed — ${issued.length} certificate(s) issued`, `${s.courseName}: ${input.attendance.filter((a) => a.present).length} attended, ${issued.length} passed.`)
+    return { session: this.toSessionView(s), certificates: issued.map((c) => this.toCertView(c)) }
+  }
+
+  listCertificates(companyId: string, filters: TrainingFilters, actor: Actor): CertificateView[] {
+    const scopedIds = new Set(this.scopeRoster(companyId, actor).map((e) => e.id))
+    const current = this.currentCertIds()
+    const q = filters.q?.trim().toLowerCase()
+    return this.certificates
+      .filter((c) => current.has(c.id))
+      .map((c) => this.toCertView(c))
+      .filter((c) => scopedIds.has(c.employeeId))
+      .filter((c) => !filters.siteId || c.siteId === filters.siteId)
+      .filter((c) => (filters.status ?? 'all') === 'all' || c.status === filters.status)
+      .filter((c) => !q || [c.number, c.employeeName, c.courseName].join(' ').toLowerCase().includes(q))
+      .sort((a, b) => {
+        const rank = { expired: 0, expiring: 1, competent: 2 }
+        return rank[a.status] - rank[b.status] || (a.daysToExpiry ?? 1e9) - (b.daysToExpiry ?? 1e9)
+      })
+  }
+
+  verifyCertificate(codeOrKey: string): CertVerification {
+    const key = codeOrKey.trim().toUpperCase()
+    const cert = this.certificates.find((c) => c.number.toUpperCase() === key || c.qrKey.toUpperCase() === key)
+    if (!cert) return { valid: false, reason: 'No certificate matches this code. It may be counterfeit or mistyped.' }
+    const view = this.toCertView(cert)
+    if (view.status === 'expired') return { valid: false, reason: `Certificate expired on ${cert.expiryDate}. Renewal required.`, certificate: view }
+    return { valid: true, reason: view.status === 'expiring' ? `Valid — expires in ${view.daysToExpiry} days.` : 'Valid and current.', certificate: view }
+  }
+
+  /** Manager escalation: turn a lapsed mandatory competency into a tracked CAPA action. */
+  raiseTrainingAction(employeeId: string, courseId: string, actor: Actor): CapaItem {
+    this.requireRole(actor, REVIEW_ROLES)
+    const emp = rosterFor('big').concat(rosterFor('kcs')).find((e) => e.id === employeeId)
+    const course = this.courseById(courseId)
+    if (!emp || !course) throw new ApiError('not_found', 'Employee or course not found.')
+    const now = new Date().toISOString()
+    const action: StandaloneAction = {
+      id: `sa-trn-${Date.now().toString(36)}`,
+      code: `CA-${this.nextActionCode++}`,
+      title: `Training lapse: ${emp.name} — ${course.name}`,
+      description: `${course.name} is a mandatory competency for ${emp.department} and has lapsed or is missing for ${emp.name}. Enrol and re-certify.`,
+      causeId: null,
+      owner: emp.department.includes('HSE') ? 'Marcus Tan' : emp.name,
+      reviewer: 'Marcus Tan',
+      dueDate: new Date(Date.now() + 21 * 86400_000).toISOString().slice(0, 10),
+      priority: 'High',
+      status: 'Open',
+      progress: 0,
+      evidenceRequired: true,
+      createdAt: now,
+      notes: [],
+      log: [{ id: `l-${Date.now().toString(36)}`, at: now, actor: actor.name, action: 'Action created', detail: `Raised from training competency gap` }],
+      companyId: EMPLOYEES.find((e) => e.id === employeeId)!.companyId,
+      siteId: emp.siteId,
+      department: emp.department,
+      rootCause: `Training lapse (${course.code})`,
+    }
+    this.standalone.unshift(action)
+    this.persist()
+    this.notify('action', `Corrective action ${action.code} raised`, `${emp.name} — ${course.name} competency lapse.`)
+    return this.toCapa(action, null, action)
+  }
+
+  trainingStats(companyId: string): TrainingStats {
+    const roster = rosterFor(companyId)
+    const comps = roster.map((e) => this.competencyFor(e))
+    const totalRequired = comps.reduce((s, c) => s + c.requiredCount, 0)
+    const totalCompetent = comps.reduce((s, c) => s + c.competentCount, 0)
+    const compliancePct = totalRequired ? Math.round((totalCompetent / totalRequired) * 100) : 100
+
+    // mandatory-only compliance
+    let mReq = 0
+    let mOk = 0
+    for (const e of roster) {
+      for (const course of requiredCoursesFor(e.department)) {
+        if (!course.mandatory) continue
+        mReq++
+        if (this.cellStatus(e.id, course).status === 'competent') mOk++
+      }
+    }
+    const mandatoryPct = mReq ? Math.round((mOk / mReq) * 100) : 100
+
+    const current = this.currentCertIds()
+    const certs = this.certificates
+      .filter((c) => current.has(c.id) && roster.some((e) => e.id === c.employeeId))
+      .map((c) => this.toCertView(c))
+    const expiring = (within: number) => certs.filter((c) => c.status === 'expiring' && c.daysToExpiry !== null && c.daysToExpiry <= within).length
+
+    // department & site training scores (compliance %)
+    const deptAgg = new Map<string, { req: number; ok: number }>()
+    const siteAgg = new Map<string, { req: number; ok: number }>()
+    comps.forEach((c) => {
+      const d = deptAgg.get(c.department) ?? { req: 0, ok: 0 }
+      d.req += c.requiredCount; d.ok += c.competentCount; deptAgg.set(c.department, d)
+      const s = siteAgg.get(c.siteId) ?? { req: 0, ok: 0 }
+      s.req += c.requiredCount; s.ok += c.competentCount; siteAgg.set(c.siteId, s)
+    })
+    const pct = (v: { req: number; ok: number }) => (v.req ? Math.round((v.ok / v.req) * 100) : 100)
+
+    // training hours delivered per month (present attendees × course hours)
+    const months: { month: string; Hours: number }[] = []
+    for (let m = 5; m >= 0; m--) {
+      const d = new Date(); d.setMonth(d.getMonth() - m)
+      const key = d.toISOString().slice(0, 7)
+      const hrs = this.sessions
+        .filter((s) => s.companyId === companyId && s.status === 'Completed' && (s.completedAt ?? '').slice(0, 7) === key)
+        .reduce((sum, s) => sum + s.durationHours * (s.attendance ?? []).filter((a) => a.present).length, 0)
+      months.push({ month: d.toLocaleDateString('en-MY', { month: 'short' }), Hours: hrs })
+    }
+
+    return {
+      compliancePct,
+      mandatoryPct,
+      totalEmployees: roster.length,
+      employeesTrained: comps.filter((c) => c.compliancePct >= 100).length,
+      employeesOverdue: comps.filter((c) => c.hasExpiredMandatory).length,
+      expiring30: expiring(30),
+      expiring60: expiring(60),
+      expiring90: expiring(90),
+      expired: certs.filter((c) => c.status === 'expired').length,
+      upcomingSessions: this.sessions.filter((s) => s.companyId === companyId && s.status === 'Scheduled').length,
+      trainingHoursMonth: months[months.length - 1]?.Hours ?? 0,
+      byDepartment: [...deptAgg.entries()].map(([name, v]) => ({ name, value: pct(v) })).sort((a, b) => a.value - b.value),
+      bySite: [...siteAgg.entries()].map(([name, v]) => ({ name: name.toUpperCase(), value: pct(v) })).sort((a, b) => a.value - b.value),
+      expiryBreakdown: [
+        { name: 'Expired', value: certs.filter((c) => c.status === 'expired').length },
+        { name: '≤30 days', value: expiring(30) },
+        { name: '31–60 days', value: expiring(60) - expiring(30) },
+        { name: '61–90 days', value: expiring(90) - expiring(60) },
+      ],
+      monthlyHours: months,
+    }
+  }
+
   /** Deterministic reminder + escalation sweep; each threshold fires once. */
   private sweepReminders() {
     const thresholds: { tag: string; test: (d: number) => boolean; title: (i: CapaItem) => string; detail: (i: CapaItem) => string }[] = [
@@ -797,7 +2144,38 @@ export class IncidentStore {
         }
       }
     }
+    if (this.sweepTrainingReminders()) changed = true
     if (changed) this.persist()
+  }
+
+  /** Certificate expiry reminders (90/60/30/7 days) + expired escalation. */
+  private sweepTrainingReminders(): boolean {
+    const bands: { tag: string; test: (d: number) => boolean; title: (c: CertificateView) => string }[] = [
+      { tag: 't90', test: (d) => d === 90, title: (c) => `${c.courseName} expires in 90 days — ${c.employeeName}` },
+      { tag: 't60', test: (d) => d === 60, title: (c) => `${c.courseName} expires in 60 days — ${c.employeeName}` },
+      { tag: 't30', test: (d) => d === 30, title: (c) => `${c.courseName} expires in 30 days — ${c.employeeName}` },
+      { tag: 't7', test: (d) => d === 7, title: (c) => `${c.courseName} expires in 7 days — ${c.employeeName}` },
+      { tag: 'texp', test: (d) => d < 0, title: (c) => `${c.mandatory ? 'MANDATORY training expired' : 'Certificate expired'}: ${c.employeeName} — ${c.courseName}` },
+    ]
+    let changed = false
+    const current = this.currentCertIds()
+    for (const cert of this.certificates) {
+      if (cert.expiryDate === null || !current.has(cert.id)) continue
+      const view = this.toCertView(cert)
+      if (view.daysToExpiry === null) continue
+      for (const b of bands) {
+        const key = `${cert.id}:${b.tag}`
+        if (!this.trainingRemindersSent[key] && b.test(view.daysToExpiry)) {
+          this.trainingRemindersSent[key] = true
+          this.notify(cert.expiryDate && view.daysToExpiry < 0 && view.mandatory ? 'action' : 'system', b.title(view),
+            view.daysToExpiry < 0
+              ? `${Math.abs(view.daysToExpiry)} day(s) overdue${view.mandatory ? ' — escalated to manager' : ''}.`
+              : `Renewal reminder — schedule a session for ${cert.courseName}.`)
+          changed = true
+        }
+      }
+    }
+    return changed
   }
 
   // ── live stats for Mission Control ─────────────────────────────────────────
@@ -818,6 +2196,13 @@ export class IncidentStore {
     const overdueBySite = new Map<string, number>()
     capa.filter((a) => a.overdue).forEach((a) => overdueBySite.set(a.siteId, (overdueBySite.get(a.siteId) ?? 0) + 1))
 
+    const scopedAssets = this.assets
+      .filter((a) => a.companyId === companyId && (!siteId || a.siteId === siteId) && a.status !== 'Retired')
+      .map((a) => this.toAssetView(a))
+
+    const astats = this.auditStats(companyId)
+    const tstats = this.trainingStats(companyId)
+
     return {
       openIncidents: open.length,
       highRisk: open.filter((i) => i.highRisk).length,
@@ -826,6 +2211,19 @@ export class IncidentStore {
       overdueActions: capa.filter((a) => a.overdue).length,
       verificationPending: capa.filter((a) => a.derived === 'Waiting Verification').length,
       overdueActionsBySite: overdueBySite,
+      overdueInspections: scopedAssets.filter((a) => a.overdue).length,
+      avgAssetHealth: scopedAssets.length
+        ? Math.round(scopedAssets.reduce((s, a) => s + a.health, 0) / scopedAssets.length)
+        : null,
+      auditReadiness: astats.readiness,
+      compliancePct: astats.compliancePct,
+      criticalFindings: astats.criticalFindings,
+      upcomingAudits30d: astats.upcoming30d,
+      openFindings: astats.openFindings,
+      trainingCompliance: tstats.compliancePct,
+      certsExpiring90: tstats.expiring90,
+      employeesTrainingOverdue: tstats.employeesOverdue,
+      trainingDeptRankings: tstats.byDepartment,
     }
   }
 
