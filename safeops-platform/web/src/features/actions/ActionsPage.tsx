@@ -78,6 +78,17 @@ export function ActionsPage() {
     [company, actor.name],
   )
 
+  // deep link from other modules (e.g. inspection defects): /actions?open=<id>
+  useEffect(() => {
+    const openParam = params.get('open')
+    if (openParam && items) {
+      setOpenId(openParam)
+      params.delete('open')
+      setParams(params, { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items])
+
   const openItem = useMemo(() => items?.find((i) => i.id === openId) ?? null, [items, openId])
   const readOnlyRole = role === 'ceo'
 
