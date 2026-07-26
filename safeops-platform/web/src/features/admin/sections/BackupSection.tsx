@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Archive, Database, DatabaseBackup, Download, History, RotateCcw, Save } from 'lucide-react'
+import { Archive, Database, DatabaseBackup, History, RotateCcw, Save } from 'lucide-react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import type { Backup, RetentionSettings } from '@/api/admin'

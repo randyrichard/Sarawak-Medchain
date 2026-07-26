@@ -77,7 +77,7 @@ export const EMPLOYEES: Employee[] = [
 export const USERS: (User & { password: string })[] = [
   {
     id: 'u-ceo', email: 'ceo@demo.safeops.app', name: 'Faridah Abdullah', title: 'Group Managing Director',
-    password: 'SafeOps#2026',
+    password: 'SafeOpsPlatform2026',
     memberships: [
       { companyId: 'big', role: 'ceo', siteIds: [] },
       { companyId: 'kcs', role: 'ceo', siteIds: [] },
@@ -85,7 +85,7 @@ export const USERS: (User & { password: string })[] = [
   },
   {
     id: 'u-admin', email: 'admin@demo.safeops.app', name: 'Randy Richard', title: 'Platform Administrator',
-    password: 'SafeOps#2026',
+    password: 'SafeOpsPlatform2026',
     memberships: [
       { companyId: 'big', role: 'admin', siteIds: [] },
       { companyId: 'kcs', role: 'admin', siteIds: [] },
@@ -93,22 +93,22 @@ export const USERS: (User & { password: string })[] = [
   },
   {
     id: 'u-hse', email: 'hse@demo.safeops.app', name: 'Marcus Tan', title: 'Group HSE Manager',
-    password: 'SafeOps#2026',
+    password: 'SafeOpsPlatform2026',
     memberships: [{ companyId: 'big', role: 'hse_manager', siteIds: [] }],
   },
   {
     id: 'u-so', email: 'officer@demo.safeops.app', name: 'Amirul Hassan', title: 'Site Safety Officer — Bintulu',
-    password: 'SafeOps#2026',
+    password: 'SafeOpsPlatform2026',
     memberships: [{ companyId: 'big', role: 'safety_officer', siteIds: ['btu'] }],
   },
   {
     id: 'u-sup', email: 'supervisor@demo.safeops.app', name: 'Ganesh Pillai', title: 'Maintenance Supervisor — Kuching',
-    password: 'SafeOps#2026',
+    password: 'SafeOpsPlatform2026',
     memberships: [{ companyId: 'big', role: 'supervisor', siteIds: ['kch'] }],
   },
   {
     id: 'u-emp', email: 'employee@demo.safeops.app', name: 'Melissa Bong', title: 'Store Keeper — Kuching',
-    password: 'SafeOps#2026',
+    password: 'SafeOpsPlatform2026',
     memberships: [{ companyId: 'big', role: 'employee', siteIds: ['kch'] }],
   },
 ]

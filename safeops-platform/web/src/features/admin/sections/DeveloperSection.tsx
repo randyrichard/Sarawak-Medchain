@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Check, Copy, KeyRound, Plus, Send, Trash2, Webhook as WebhookIcon } from 'lucide-react'
+import { Check, Copy, Plus, Send, Trash2, Webhook as WebhookIcon } from 'lucide-react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import type { ApiKey, RbacAction, Webhook } from '@/api/admin'

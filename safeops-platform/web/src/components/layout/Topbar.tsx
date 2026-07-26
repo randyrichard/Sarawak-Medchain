@@ -9,7 +9,7 @@ import { Avatar, Dropdown, DropdownItem, DropdownLabel, DropdownSeparator } from
 import { CompanySwitcher, SiteSwitcher } from './Switchers'
 import { NotificationMenu } from './NotificationMenu'
 
-export function Topbar({ onMenu, menuButton }: { onMenu: () => void; menuButton: ReactNode }) {
+export function Topbar({ menuButton }: { menuButton: ReactNode }) {
   const { theme, toggle } = useTheme()
   const { user, logout } = useAuth()
   const { role } = useOrg()

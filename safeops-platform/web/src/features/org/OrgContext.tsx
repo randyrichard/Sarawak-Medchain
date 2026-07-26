@@ -39,7 +39,9 @@ export function OrgProvider({ children }: { children: ReactNode }) {
     if (!user) return
     let cancelled = false
     setLoading(true)
-    api.listCompanies(user.id).then((list) => {
+    // Driven by the user's memberships rather than a fixture lookup by id: in backend
+    // mode the id is issued by the server and does not exist in the mock user list.
+    api.listCompaniesByIds(user.memberships.map((m) => m.companyId)).then((list) => {
       if (cancelled) return
       setCompanies(list)
       const stored = safeParse(localStorage.getItem(`${ACTIVE_KEY}.${user.id}`))

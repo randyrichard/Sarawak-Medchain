@@ -3,7 +3,7 @@ import { CheckCircle2, GitBranch, HelpCircle, Plus, Save, Trash2 } from 'lucide-
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import { RCA_CATEGORIES, type Incident, type RcaCategory, type RcaCause } from '@/api/incidents'
-import { Alert, Badge, Button, Select, Textarea } from '@/components/ui'
+import { Alert, Badge, Button, Textarea } from '@/components/ui'
 import { useActor } from '../lib'
 import { cn } from '@/lib/cn'
 

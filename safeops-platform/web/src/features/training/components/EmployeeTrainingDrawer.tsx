@@ -7,7 +7,7 @@ import { ApiError } from '@/api/types'
 import type { EmployeeTrainingProfile } from '@/api/training'
 import type { Actor } from '@/api/incidents'
 import { useOrg } from '@/features/org/OrgContext'
-import { useActor, fmtDate } from '@/features/incidents/lib'
+import { fmtDate } from '@/features/incidents/lib'
 import { Alert, Avatar, Badge, Button, Skeleton, StatusPill } from '@/components/ui'
 import { certStatusKind, COMPETENCY_META, LEVEL_META, printCertificate } from '../lib'
 import { cn } from '@/lib/cn'
@@ -22,7 +22,6 @@ export function EmployeeTrainingDrawer({
   onChanged: () => void
 }) {
   const { sites } = useOrg()
-  const me = useActor()
   const [profile, setProfile] = useState<EmployeeTrainingProfile | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -52,7 +51,7 @@ export function EmployeeTrainingDrawer({
     setBusy(courseId)
     setError(null)
     try {
-      const capa = await api.raiseTrainingAction(employeeId, courseId, me)
+      const capa = await api.raiseTrainingAction(employeeId, courseId, actor)
       setRaised((r) => ({ ...r, [courseId]: capa.id }))
       onChanged()
     } catch (e) {

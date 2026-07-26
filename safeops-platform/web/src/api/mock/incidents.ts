@@ -6,9 +6,10 @@
 // The real API keeps this exact contract; UI code never bypasses it.
 
 import { ApiError } from '../types'
+import { claimIsAuthentic } from './identity'
 import type {
   Actor, AdvancePayload, FiveWhys, Incident, IncidentAction, IncidentAttachment,
-  IncidentFilters, IncidentStage, NewIncidentInput, RcaCause,
+  IncidentFilters, NewIncidentInput, RcaCause,
 } from '../incidents'
 import { INCIDENT_STAGES, STAGE_LABEL, TYPE_LABEL } from '../incidents'
 import type {
@@ -29,9 +30,9 @@ import type {
 import { SEVERITY_DUE_DAYS } from '../audits'
 import { AUDIT_TEMPLATES, buildAuditSeeds, buildDocumentSeeds, buildObligationSeeds } from './audits'
 import type {
-  Certificate, CertificateView, CertVerification, CompetencyLevel, CompetencyStatus,
+  Certificate, CertificateView, CertVerification, CompetencyLevel,
   CompleteSessionInput, CourseView, EmployeeCompetency, EmployeeTrainingProfile, MatrixCell,
-  NewCourseInput, NewSessionInput, SessionAttendee, SessionFilters, SessionView, TrainingCourse,
+  NewCourseInput, NewSessionInput, SessionFilters, SessionView, TrainingCourse,
   TrainingFilters, TrainingMatrix, TrainingSession, TrainingStats,
 } from '../training'
 import {
@@ -586,7 +587,7 @@ export class IncidentStore {
   }
 
   archive(id: string, actor: Actor): void {
-    if (actor.role !== 'admin') throw new ApiError('forbidden', 'Only admins can archive incidents.')
+    if (this.authenticRole(actor) !== 'admin') throw new ApiError('forbidden', 'Only admins can archive incidents.')
     const incident = this.get(id)
     incident.archived = true
     this.log(incident, actor, 'Incident archived', 'Soft-deleted — recoverable by support')
@@ -672,7 +673,7 @@ export class IncidentStore {
   /** Role-based data scoping per the CAPA permission model. */
   private scopeCapa(items: CapaItem[], actor: Actor): CapaItem[] {
     const orgWide = !actor.siteIds || actor.siteIds.length === 0
-    switch (actor.role) {
+    switch (this.authenticRole(actor)) {
       case 'admin':
       case 'hse_manager':
       case 'ceo':
@@ -730,7 +731,7 @@ export class IncidentStore {
   }
 
   addStandaloneAction(input: NewStandaloneAction, actor: Actor): CapaItem {
-    if (!MANAGE_ROLES.includes(actor.role)) {
+    if (!MANAGE_ROLES.includes(this.authenticRole(actor))) {
       throw new ApiError('forbidden', 'Only Safety Officers and above can raise corrective actions.')
     }
     if (!input.title.trim() || !input.owner.trim() || !input.dueDate) {
@@ -773,7 +774,7 @@ export class IncidentStore {
     }
 
     const managementFields = ['owner', 'reviewer', 'dueDate', 'priority', 'description'] as const
-    if (managementFields.some((f) => patch[f] !== undefined) && !REVIEW_ROLES.includes(actor.role)) {
+    if (managementFields.some((f) => patch[f] !== undefined) && !REVIEW_ROLES.includes(this.authenticRole(actor))) {
       throw new ApiError('forbidden', 'Reassignment and schedule changes need an HSE Manager or Admin.')
     }
 
@@ -814,7 +815,7 @@ export class IncidentStore {
           if (action.status !== 'Open' && action.status !== 'Completed') {
             throw new ApiError('validation', 'Only open or sent-back actions can move to In Progress.')
           }
-          if (action.status === 'Completed' && !REVIEW_ROLES.includes(actor.role)) {
+          if (action.status === 'Completed' && !REVIEW_ROLES.includes(this.authenticRole(actor))) {
             throw new ApiError('forbidden', 'Sending a completed action back for rework needs an HSE Manager.')
           }
           action.startedAt = action.startedAt ?? new Date().toISOString()
@@ -864,7 +865,7 @@ export class IncidentStore {
 
   cancelCapa(actionId: string, reason: string, actor: Actor): CapaItem {
     const { action, incident, standalone } = this.findAction(actionId)
-    if (!REVIEW_ROLES.includes(actor.role)) {
+    if (!REVIEW_ROLES.includes(this.authenticRole(actor))) {
       throw new ApiError('forbidden', 'Only an HSE Manager or Admin can cancel a corrective action.')
     }
     if (action.status === 'Verified') throw new ApiError('validation', 'Verified actions cannot be cancelled.')
@@ -1064,7 +1065,7 @@ export class IncidentStore {
   }
 
   createAsset(input: NewAssetInput, actor: Actor): AssetView {
-    if (!MANAGE_ROLES.includes(actor.role)) throw new ApiError('forbidden', 'Only Safety Officers and above can register assets.')
+    if (!MANAGE_ROLES.includes(this.authenticRole(actor))) throw new ApiError('forbidden', 'Only Safety Officers and above can register assets.')
     if (!input.name.trim() || !input.serialNumber.trim() || !input.siteId || !input.owner) {
       throw new ApiError('validation', 'Name, serial number, site and owner are required.')
     }
@@ -1104,7 +1105,7 @@ export class IncidentStore {
   }
 
   scheduleInspection(assetId: string, date: string, inspector: string, actor: Actor): InspectionView {
-    if (!MANAGE_ROLES.includes(actor.role)) throw new ApiError('forbidden', 'Only Safety Officers and above can schedule inspections.')
+    if (!MANAGE_ROLES.includes(this.authenticRole(actor))) throw new ApiError('forbidden', 'Only Safety Officers and above can schedule inspections.')
     const asset = this.assets.find((a) => a.id === assetId)
     if (!asset) throw new ApiError('not_found', 'Asset not found.')
     if (!date || !inspector) throw new ApiError('validation', 'Date and inspector are required.')
@@ -1119,7 +1120,7 @@ export class IncidentStore {
     const insp = this.inspections.find((i) => i.id === inspectionId)
     if (!insp) throw new ApiError('not_found', 'Inspection not found.')
     if (insp.status !== 'Scheduled') throw new ApiError('validation', 'This inspection is already completed.')
-    if (insp.assignedTo !== actor.name && !MANAGE_ROLES.includes(actor.role)) {
+    if (insp.assignedTo !== actor.name && !MANAGE_ROLES.includes(this.authenticRole(actor))) {
       throw new ApiError('forbidden', 'Only the assigned inspector (or a Safety Officer and above) can complete this inspection.')
     }
     const asset = this.assets.find((a) => a.id === insp.assetId)!
@@ -1397,7 +1398,7 @@ export class IncidentStore {
 
   private canRunAudit(audit: Audit, actor: Actor): boolean {
     return (
-      REVIEW_ROLES.includes(actor.role) ||
+      REVIEW_ROLES.includes(this.authenticRole(actor)) ||
       audit.leadAuditor === actor.name ||
       audit.team.includes(actor.name)
     )
@@ -1575,7 +1576,7 @@ export class IncidentStore {
     input: { name: string; kind: DocKind; sizeKb: number; note: string; companyId: string; siteId: string | null },
     actor: Actor,
   ): ComplianceDocument {
-    if (!MANAGE_ROLES.includes(actor.role)) throw new ApiError('forbidden', 'Only Safety Officers and above can manage documents.')
+    if (!MANAGE_ROLES.includes(this.authenticRole(actor))) throw new ApiError('forbidden', 'Only Safety Officers and above can manage documents.')
     const now = new Date().toISOString()
     if (docId) {
       const doc = this.documents.find((d) => d.id === docId)
@@ -1755,7 +1756,7 @@ export class IncidentStore {
   private scopeRoster(companyId: string, actor: Actor) {
     const roster = rosterFor(companyId)
     const orgWide = !actor.siteIds || actor.siteIds.length === 0
-    switch (actor.role) {
+    switch (this.authenticRole(actor)) {
       case 'admin':
       case 'hse_manager':
       case 'ceo':
@@ -1938,7 +1939,7 @@ export class IncidentStore {
     const s = this.sessions.find((x) => x.id === sessionId)
     if (!s) throw new ApiError('not_found', 'Session not found.')
     if (s.status !== 'Scheduled') throw new ApiError('validation', 'This session is already completed.')
-    if (s.trainer !== actor.name && !['admin', 'hse_manager', 'safety_officer'].includes(actor.role)) {
+    if (s.trainer !== actor.name && !['admin', 'hse_manager', 'safety_officer'].includes(this.authenticRole(actor))) {
       throw new ApiError('forbidden', 'Only the trainer (or a Safety Officer and above) can close this session.')
     }
     if (!input.signature.trim()) throw new ApiError('validation', 'A trainer signature is required.')
@@ -2237,9 +2238,22 @@ export class IncidentStore {
   }
 
   private requireRole(actor: Actor, roles: string[]) {
-    if (!roles.includes(actor.role)) {
+    if (!roles.includes(this.authenticRole(actor))) {
       throw new ApiError('forbidden', 'Your role does not permit this step. Ask an HSE Manager or Admin.')
     }
+  }
+
+  /**
+   * The actor's role, verified against the authenticated session. A caller can
+   * pass any `actor` object, so a claimed role is only honoured when the signed-in
+   * user genuinely holds it — this blocks console-driven privilege escalation.
+   * Use this instead of reading `actor.role` directly in any security decision.
+   */
+  private authenticRole(actor: Actor): string {
+    if (!claimIsAuthentic(actor.role)) {
+      throw new ApiError('forbidden', 'Your session does not hold the claimed role.')
+    }
+    return actor.role
   }
 
   private log(incident: Incident, actor: Actor, action: string, detail?: string) {
@@ -2312,6 +2326,7 @@ function matchesBucket(i: CapaItem, bucket: NonNullable<CapaFilters['bucket']>):
 }
 
 function canMutateCapa(actor: Actor, item: CapaItem): boolean {
+  if (!claimIsAuthentic(actor.role)) return false
   const orgWide = !actor.siteIds || actor.siteIds.length === 0
   switch (actor.role) {
     case 'admin':
@@ -2328,6 +2343,7 @@ function canMutateCapa(actor: Actor, item: CapaItem): boolean {
 }
 
 function canVerifyCapa(actor: Actor, item: CapaItem): boolean {
+  if (!claimIsAuthentic(actor.role)) return false
   return REVIEW_ROLES.includes(actor.role) || (!!item.reviewer && item.reviewer === actor.name)
 }
 

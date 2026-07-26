@@ -30,7 +30,7 @@ then be thrown away. All Phase 1 deliverables are still delivered — on the ser
 
 `safeops-platform/api` — Express + TypeScript + Prisma + Postgres, mirroring `platform/api`.
 
-**Status: service complete and validated (38 tests). Web integration outstanding.**
+**Status: COMPLETE — validated end-to-end against real PostgreSQL 18.4 (67 tests).**
 
 - [x] Argon2id password hashing — OWASP params (19 MiB, t=2, p=1); native module verified on Windows
 - [x] Server-side credential verification — no password material reaches the client
@@ -41,12 +41,44 @@ then be thrown away. All Phase 1 deliverables are still delivered — on the ser
 - [x] Account lockout (5 failures / 15 min) + per-IP rate limiting
 - [x] All secrets in environment variables, validated at boot; `.env` gitignored
 - [x] Bonus: Helmet headers, bounded request bodies, correct 4xx mapping, health/readiness probes
-- [ ] **Web app talks to the API; mock mode behind a flag** ← remaining Phase 1 work
-- [ ] End-to-end validation against real Postgres (blocked: no Docker on the dev machine)
+- [x] **Web app talks to the API**; mock mode behind `VITE_API_BASE_URL`, with a loud
+      production guard so a tenant build can never silently fall back to in-browser auth
+- [x] Access token held in memory only; refresh token in an httpOnly cookie unreadable by JS
+- [x] No credential in localStorage/sessionStorage; a stale mock session is ignored outright
+- [x] End-to-end validation against real PostgreSQL 18.4 (via `embedded-postgres`, since
+      Docker needs admin rights this machine does not have — see "Local database" below)
 
-**Exit criteria:** forged-identity and offline-guessing attacks fail against the *server*; the
-web client holds no authority it can grant itself. *Partially met — the service satisfies this,
-but the web app has not yet been migrated onto it.*
+**Exit criteria: MET.** Forged identity fails against the server (tampered JWT → 401), offline
+guessing is bounded by Argon2id + lockout + rate limiting, and the web client holds no authority
+it can grant itself.
+
+### Local database
+
+Docker Desktop requires WSL2 and UAC elevation, neither available in the automated environment.
+`npm run db:start` runs the official PostgreSQL binaries as a normal user process instead — same
+engine and wire protocol, so behaviour validated locally holds on the Postgres in
+`docker-compose.yml`. Use Docker once installed:
+
+```bash
+wsl --install                                   # reboots
+winget install --id Docker.DockerDesktop -e
+docker compose -f safeops-platform/docker-compose.yml up -d db
+```
+
+### Bugs found and fixed during integration
+
+1. **Refresh-rotation race** — React StrictMode double-invokes effects, so session restore fired
+   two concurrent refreshes with the same single-use token. The second looked like a replay, the
+   server revoked the family (correctly), and the app logged itself out on every reload. Fixed by
+   collapsing concurrent refreshes into one in-flight request, which also covers multi-tab races,
+   without weakening reuse detection.
+2. **Empty sidebar for every user** — `OrgContext` resolved companies by looking the user up in a
+   mock fixture by id, but the backend issues its own ids. Now driven by server-issued memberships.
+3. **Escalation guard silently disabled** — `claimIsAuthentic()` read the localStorage session that
+   backend mode removes, so it fell through to its "no session" branch and permitted forged roles
+   again. Now sourced from the authenticated identity held in memory. Regression-tested.
+4. **Demo password below the server policy** — the seed uses a 19-character password; the web
+   quick-login constant and mock fixtures were still on the old 12-character-failing value.
 
 ## Phase 2 — Transport & request hardening
 
@@ -79,3 +111,4 @@ but the web app has not yet been migrated onto it.*
 | --- | --- | --- | --- |
 | 2026-07-24 | — (baseline audit) | 42/100 | No backend; unsigned tokens; plaintext passwords |
 | 2026-07-26 | Phase 1 (service built, not yet integrated) | 55/100 | Web app still runs on the mock client, so end users gain nothing until integration lands |
+| 2026-07-26 | **Phase 1 COMPLETE (integrated, E2E validated)** | **68/100** | Business data (incidents, CAPA, admin) still lives in browser localStorage with client-side authorization — only authentication is server-enforced |

@@ -9,10 +9,12 @@ import {
 import { loadSession } from '@/features/auth/session'
 
 export function AccountPage() {
-  const { user, logout } = useAuth()
-  const { membership, company } = useOrg()
+  const { user, logout, backend } = useAuth()
+  const { company } = useOrg()
   const [pwOpen, setPwOpen] = useState(false)
-  const session = loadSession()
+  // In backend mode the session lives in an httpOnly cookie that JavaScript cannot read —
+  // by design. Only the legacy mock path exposes an expiry to display.
+  const session = backend ? null : loadSession()
 
   if (!user) return null
 
@@ -75,7 +77,11 @@ export function AccountPage() {
                 <div>
                   <p className="font-medium text-ink">This browser</p>
                   <p className="text-2xs text-muted">
-                    {session ? `Signed in · expires ${new Date(session.expiresAt).toLocaleString()}` : 'Session state unavailable'}
+                    {backend
+                      ? 'Signed in · session held in a secure server-side cookie'
+                      : session
+                        ? `Signed in · expires ${new Date(session.expiresAt).toLocaleString()}`
+                        : 'Session state unavailable'}
                   </p>
                 </div>
               </div>

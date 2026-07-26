@@ -45,7 +45,25 @@ export function DataTable<T>({
             <tr
               key={rowKey(row)}
               onClick={onRowClick ? () => onRowClick(row) : undefined}
-              className={cn('border-b last:border-0', onRowClick && 'cursor-pointer hover:bg-accent-soft/40')}
+              // Keyboard operability for clickable rows (WCAG 2.1.1 / 2.4.7):
+              // focusable, Enter/Space activates, with a visible focus ring.
+              onKeyDown={
+                onRowClick
+                  ? (e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        onRowClick(row)
+                      }
+                    }
+                  : undefined
+              }
+              tabIndex={onRowClick ? 0 : undefined}
+              role={onRowClick ? 'button' : undefined}
+              className={cn(
+                'border-b last:border-0',
+                onRowClick &&
+                  'cursor-pointer hover:bg-accent-soft/40 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[color:var(--accent)]',
+              )}
             >
               {columns.map((c) => (
                 <td key={c.key} className={cn('px-4 py-3 text-sm text-ink-2 first:pl-5 last:pr-5', c.align === 'right' && 'text-right', c.visibility)}>

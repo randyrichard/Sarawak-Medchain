@@ -12,6 +12,7 @@ import type {
 } from '../admin'
 import { RBAC_MODULES } from '../admin'
 import { DEPARTMENTS, EMPLOYEES, SITES, USERS } from './fixtures'
+import { claimIsAuthentic } from './identity'
 
 type Notify = (kind: 'incident' | 'action' | 'audit' | 'system', title: string, detail: string) => void
 
@@ -325,6 +326,10 @@ export class AdminStore {
 
   private requireAdmin(actor: AdminActor) {
     if (actor.role !== 'admin') throw new ApiError('forbidden', 'This action requires an Administrator.')
+    // The claimed role is not trusted: verify it against the authenticated session.
+    if (!claimIsAuthentic(actor.role)) {
+      throw new ApiError('forbidden', 'Your session does not hold the Administrator role.')
+    }
   }
 
   // ── users ──────────────────────────────────────────────────────────────────
@@ -347,7 +352,7 @@ export class AdminStore {
     return u
   }
 
-  createUser(companyId: string, input: NewUserInput, actor: AdminActor): AdminUser {
+  createUser(_companyId: string, input: NewUserInput, actor: AdminActor): AdminUser {
     this.requireAdmin(actor)
     if (!input.name.trim() || !input.email.trim()) throw new ApiError('validation', 'Name and email are required.')
     if (this.s.users.some((u) => u.email.toLowerCase() === input.email.trim().toLowerCase())) {
@@ -409,7 +414,7 @@ export class AdminStore {
     return u
   }
 
-  bulkImportUsers(companyId: string, csv: string, actor: AdminActor): { created: number; skipped: number; errors: string[] } {
+  bulkImportUsers(_companyId: string, csv: string, actor: AdminActor): { created: number; skipped: number; errors: string[] } {
     this.requireAdmin(actor)
     const lines = csv.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
     if (lines.length === 0) throw new ApiError('validation', 'The file is empty.')

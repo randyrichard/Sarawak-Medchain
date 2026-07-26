@@ -1,26 +1,31 @@
+import { lazy } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { ThemeProvider } from './theme'
 import { AuthProvider } from '@/features/auth/AuthContext'
 import { OrgProvider } from '@/features/org/OrgContext'
 import { RequireAnonymous, RequireAuth, RequireCapability } from '@/features/auth/guards'
 import AppShell from '@/components/layout/AppShell'
+// Auth surface is the entry point — keep it eager so the login screen paints without a chunk fetch.
 import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage'
 import { ResetPasswordPage } from '@/features/auth/pages/ResetPasswordPage'
-import { ActionsPage } from '@/features/actions/ActionsPage'
-import { AssetsPage } from '@/features/assets/AssetsPage'
-import { AuditsPage } from '@/features/audits/AuditsPage'
-import { TrainingPage } from '@/features/training/TrainingPage'
-import { AdminPage } from '@/features/admin/AdminPage'
-import { DashboardPage } from '@/features/dashboard/DashboardPage'
-import { IncidentsListPage } from '@/features/incidents/IncidentsListPage'
-import { ReportIncidentPage } from '@/features/incidents/ReportIncidentPage'
-import { IncidentDetailPage } from '@/features/incidents/IncidentDetailPage'
-import { NotificationsPage } from '@/features/notifications/NotificationsPage'
-import { OrganizationPage } from '@/features/org/OrganizationPage'
-import { AccountPage } from '@/features/account/AccountPage'
-import { StyleguidePage } from '@/features/styleguide/StyleguidePage'
 import { NotFoundPage } from './pages/NotFoundPage'
+
+// Each business module is code-split into its own chunk, loaded on first visit.
+// The <Suspense> boundary lives in AppShell so the sidebar/topbar stay put while a page loads.
+const DashboardPage = lazy(() => import('@/features/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })))
+const IncidentsListPage = lazy(() => import('@/features/incidents/IncidentsListPage').then((m) => ({ default: m.IncidentsListPage })))
+const ReportIncidentPage = lazy(() => import('@/features/incidents/ReportIncidentPage').then((m) => ({ default: m.ReportIncidentPage })))
+const IncidentDetailPage = lazy(() => import('@/features/incidents/IncidentDetailPage').then((m) => ({ default: m.IncidentDetailPage })))
+const ActionsPage = lazy(() => import('@/features/actions/ActionsPage').then((m) => ({ default: m.ActionsPage })))
+const AssetsPage = lazy(() => import('@/features/assets/AssetsPage').then((m) => ({ default: m.AssetsPage })))
+const AuditsPage = lazy(() => import('@/features/audits/AuditsPage').then((m) => ({ default: m.AuditsPage })))
+const TrainingPage = lazy(() => import('@/features/training/TrainingPage').then((m) => ({ default: m.TrainingPage })))
+const AdminPage = lazy(() => import('@/features/admin/AdminPage').then((m) => ({ default: m.AdminPage })))
+const NotificationsPage = lazy(() => import('@/features/notifications/NotificationsPage').then((m) => ({ default: m.NotificationsPage })))
+const OrganizationPage = lazy(() => import('@/features/org/OrganizationPage').then((m) => ({ default: m.OrganizationPage })))
+const AccountPage = lazy(() => import('@/features/account/AccountPage').then((m) => ({ default: m.AccountPage })))
+const StyleguidePage = lazy(() => import('@/features/styleguide/StyleguidePage').then((m) => ({ default: m.StyleguidePage })))
 
 // Path routing (not hash): every view is a deep-linkable URL per the PRD.
 

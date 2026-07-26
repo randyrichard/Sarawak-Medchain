@@ -1,14 +1,15 @@
-import { useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { Suspense, useState } from 'react'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, ClipboardList, ListChecks, GraduationCap, ShieldCheck, Bell,
-  Building2, Boxes, Menu, Palette, X, Lock, SlidersHorizontal,
+  Building2, Boxes, Menu, X, Lock, SlidersHorizontal,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useOrg } from '@/features/org/OrgContext'
 import type { Capability } from '@/features/permissions/permissions'
+import { ErrorBoundary } from '@/app/ErrorBoundary'
 import { Topbar } from './Topbar'
-import { Badge } from '@/components/ui'
+import { Badge, FullPageSpinner } from '@/components/ui'
 
 interface NavItem {
   to: string
@@ -30,11 +31,11 @@ const NAV: NavItem[] = [
   { to: '/notifications', label: 'Notifications', icon: Bell, capability: 'dashboard:view' },
   { to: '/organization', label: 'Organization', icon: Building2, capability: 'org:view' },
   { to: '/admin', label: 'Administration', icon: SlidersHorizontal, capability: 'settings:manage' },
-  { to: '/design', label: 'Design System', icon: Palette, capability: 'dashboard:view' },
 ]
 
 export default function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const location = useLocation()
   return (
     <div className="flex h-full">
       {/* Desktop sidebar */}
@@ -61,7 +62,6 @@ export default function AppShell() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar
-          onMenu={() => setMobileOpen(true)}
           menuButton={
             <button
               onClick={() => setMobileOpen(true)}
@@ -74,7 +74,13 @@ export default function AppShell() {
         />
         <main className="min-w-0 flex-1 overflow-y-auto px-4 py-5 md:px-6 lg:px-7">
           <div className="mx-auto max-w-[1360px]">
-            <Outlet />
+            {/* Per-route boundary: a page crash shows a recoverable fallback here while the
+                shell stays usable. Keying by pathname clears the error on navigation. */}
+            <ErrorBoundary key={location.pathname} scope="This screen">
+              <Suspense fallback={<FullPageSpinner label="Loading…" />}>
+                <Outlet />
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </main>
       </div>

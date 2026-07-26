@@ -4,7 +4,7 @@ import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import type { AdvancePayload, Incident, IncidentSeverity, RiskRating } from '@/api/incidents'
 import { useOrg } from '@/features/org/OrgContext'
-import { Alert, Button, Card, CardBody, CardHeader, Checkbox, Dialog, Input, Select, Textarea } from '@/components/ui'
+import { Alert, Button, Card, CardBody, CardHeader, Checkbox, Dialog, Select, Textarea } from '@/components/ui'
 import { PEOPLE, useActor } from '../lib'
 
 const MANAGE = ['admin', 'hse_manager', 'safety_officer']

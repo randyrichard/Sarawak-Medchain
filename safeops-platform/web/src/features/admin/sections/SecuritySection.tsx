@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AlertOctagon, AlertTriangle, CheckCircle2, MapPin, ShieldCheck, Save } from 'lucide-react'
+import { AlertOctagon, AlertTriangle, CheckCircle2, MapPin, Save } from 'lucide-react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import type { LoginEvent, SecurityCenter, SecuritySettings } from '@/api/admin'

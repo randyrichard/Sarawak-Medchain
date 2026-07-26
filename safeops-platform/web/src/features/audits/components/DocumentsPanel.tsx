@@ -8,7 +8,6 @@ import { useOrg } from '@/features/org/OrgContext'
 import { useActor, fmtDateTime } from '@/features/incidents/lib'
 import { Alert, Avatar, Badge, Button, Card, Dialog, Skeleton, StatusPill } from '@/components/ui'
 import { isComplianceManager } from '../lib'
-import { cn } from '@/lib/cn'
 
 const STATUS_KIND = { Draft: 'info', 'Pending Approval': 'warning', Approved: 'good', Superseded: 'info' } as const
 

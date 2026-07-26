@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { LogIn } from 'lucide-react'
 import { useAuth } from '../AuthContext'
+import { safeInternalPath } from '../safeRedirect'
 import { ApiError, ROLE_LABEL, type Role } from '@/api/types'
 import { Alert, Button, Checkbox, Input } from '@/components/ui'
 import { AuthLayout } from './AuthLayout'
@@ -14,13 +15,15 @@ const DEMO_ACCOUNTS: { role: Role; email: string }[] = [
   { role: 'supervisor', email: 'supervisor@demo.safeops.app' },
   { role: 'employee', email: 'employee@demo.safeops.app' },
 ]
-const DEMO_PASSWORD = 'SafeOps#2026'
+// Must match the API seed (prisma/seed.ts). Length satisfies the server-side policy.
+const DEMO_PASSWORD = 'SafeOpsPlatform2026'
 
 export function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = (location.state as { from?: string } | null)?.from ?? '/'
+  // Sanitise the post-login destination — never trust a caller-supplied redirect target.
+  const from = safeInternalPath((location.state as { from?: string } | null)?.from)
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')

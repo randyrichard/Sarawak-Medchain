@@ -34,9 +34,10 @@ const MATRIX: Record<Role, Capability[]> = {
 
 export function can(role: Role | null | undefined, capability: Capability): boolean {
   if (!role) return false
-  return MATRIX[role].includes(capability)
+  // Fail closed on an unrecognised role (e.g. stale persisted state) rather than throwing.
+  return MATRIX[role]?.includes(capability) ?? false
 }
 
 export function capabilitiesOf(role: Role): Capability[] {
-  return [...MATRIX[role]]
+  return [...(MATRIX[role] ?? [])]
 }

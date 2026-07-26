@@ -7,7 +7,7 @@ import { ApiError } from '@/api/types'
 import type { CertificateView, SessionAttendee, SessionView } from '@/api/training'
 import { EMPLOYEES } from '@/api/mock/fixtures'
 import { useActor } from '@/features/incidents/lib'
-import { Alert, Avatar, Badge, Button, Checkbox, Input } from '@/components/ui'
+import { Alert, Avatar, Button, Checkbox, Input } from '@/components/ui'
 import { cn } from '@/lib/cn'
 
 interface Row {

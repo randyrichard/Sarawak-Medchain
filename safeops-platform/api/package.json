@@ -2,7 +2,7 @@
   "name": "@safeops/api",
   "version": "1.0.0",
   "private": true,
-  "description": "SafeOps API — authentication and authorization service",
+  "description": "SafeOps API \u2014 authentication and authorization service",
   "type": "module",
   "main": "dist/server.js",
   "scripts": {
@@ -17,7 +17,9 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "db:start": "tsx scripts/dev-db.ts start",
+    "db:stop": "tsx scripts/dev-db.ts stop"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.0.2",
@@ -37,6 +39,7 @@
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.9.0",
+    "embedded-postgres": "^18.4.0-beta.17",
     "prisma": "^5.22.0",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",

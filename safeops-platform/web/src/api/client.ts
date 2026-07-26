@@ -60,6 +60,8 @@ export interface ApiClient {
 
   // org
   listCompanies(userId: string): Promise<Company[]>
+  /** Companies for an explicit membership set — works for server-issued user ids. */
+  listCompaniesByIds(companyIds: string[]): Promise<Company[]>
   listSites(companyId: string): Promise<Site[]>
   listDepartments(siteIds: string[]): Promise<Department[]>
   listTeams(departmentIds: string[]): Promise<Team[]>
@@ -187,7 +189,6 @@ export interface ApiClient {
   listActivity(): Promise<ActivityEvent[]>
 }
 
-const SESSION_TTL_MS = 8 * 60 * 60 * 1000 // 8h
 const LATENCY = () => 250 + Math.random() * 400
 
 /** Unsigned demo token: base64(JSON). The real API issues signed JWTs. */
@@ -298,6 +299,12 @@ class MockApiClient implements ApiClient {
     const user = this.users.find((u) => u.id === userId)
     if (!user) return []
     const ids = new Set(user.memberships.map((m) => m.companyId))
+    return COMPANIES.filter((c) => ids.has(c.id))
+  }
+
+  async listCompaniesByIds(companyIds: string[]) {
+    await delay(LATENCY() / 2)
+    const ids = new Set(companyIds)
     return COMPANIES.filter((c) => ids.has(c.id))
   }
 
