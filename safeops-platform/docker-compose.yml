@@ -1,0 +1,22 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: safeops-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: safeops
+      POSTGRES_PASSWORD: safeops
+      POSTGRES_DB: safeops
+    # 5433 on the host to avoid colliding with a local Postgres on 5432.
+    ports:
+      - '5433:5432'
+    volumes:
+      - safeops_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U safeops -d safeops']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  safeops_pgdata:

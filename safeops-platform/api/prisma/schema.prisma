@@ -1,0 +1,110 @@
+// SafeOps API — authentication & authorization data model.
+// Security notes:
+//  - `passwordHash` stores an Argon2id digest. Plaintext passwords are never persisted or logged.
+//  - Refresh tokens are stored as SHA-256 hashes, never in cleartext, so a database leak does not
+//    hand an attacker usable sessions.
+//  - Lockout state lives here (server-side) so it cannot be cleared by the client.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ceo
+  admin
+  hse_manager
+  safety_officer
+  supervisor
+  employee
+}
+
+model User {
+  id           String  @id @default(cuid())
+  email        String  @unique
+  name         String
+  title        String?
+  /// Argon2id digest — never a plaintext or reversible value.
+  passwordHash String
+  status       String  @default("active") // active | invited | deactivated | locked
+
+  // ── Brute-force protection (server-authoritative) ──
+  failedLoginCount Int       @default(0)
+  lockedUntil      DateTime?
+  lastLoginAt      DateTime?
+
+  mustChangePassword Boolean @default(false)
+  mfaEnabled         Boolean @default(false)
+
+  memberships   Membership[]
+  refreshTokens RefreshToken[]
+  loginAttempts LoginAttempt[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+}
+
+/// A user's role within a company. Authorization is derived from these rows on the
+/// server — never from anything the client sends.
+model Membership {
+  id        String   @id @default(cuid())
+  userId    String
+  companyId String
+  role      Role
+  siteIds   String[] @default([])
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId])
+  @@index([userId])
+}
+
+/// One row per issued refresh token. Rotation replaces the row and links the successor,
+/// so replaying a consumed token is detectable (see `revokedReason = "reuse_detected"`).
+model RefreshToken {
+  id     String @id @default(cuid())
+  userId String
+  /// SHA-256 of the opaque token. The raw value exists only in the client's cookie.
+  tokenHash String @unique
+  /// Groups every token rotated from one login, so a whole session can be revoked at once.
+  familyId String
+
+  expiresAt     DateTime
+  revokedAt     DateTime?
+  revokedReason String?
+  replacedById  String?
+
+  userAgent String?
+  ip        String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([familyId])
+  @@index([tokenHash])
+}
+
+/// Immutable security event log for authentication. Append-only by convention in Phase 1;
+/// hash-chained for tamper evidence in Phase 3.
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  userId    String?
+  email     String
+  outcome   String // success | bad_password | unknown_user | locked_out | deactivated
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([email])
+  @@index([createdAt])
+}
