@@ -21,6 +21,7 @@ const ActionsPage = lazy(() => import('@/features/actions/ActionsPage').then((m)
 const AssetsPage = lazy(() => import('@/features/assets/AssetsPage').then((m) => ({ default: m.AssetsPage })))
 const AuditsPage = lazy(() => import('@/features/audits/AuditsPage').then((m) => ({ default: m.AuditsPage })))
 const TrainingPage = lazy(() => import('@/features/training/TrainingPage').then((m) => ({ default: m.TrainingPage })))
+const PermitsPage = lazy(() => import('@/features/permits/PermitsPage').then((m) => ({ default: m.PermitsPage })))
 const AdminPage = lazy(() => import('@/features/admin/AdminPage').then((m) => ({ default: m.AdminPage })))
 const NotificationsPage = lazy(() => import('@/features/notifications/NotificationsPage').then((m) => ({ default: m.NotificationsPage })))
 const OrganizationPage = lazy(() => import('@/features/org/OrganizationPage').then((m) => ({ default: m.OrganizationPage })))
@@ -105,6 +106,14 @@ export default function App() {
                   element={
                     <RequireCapability capability="dashboard:view">
                       <TrainingPage />
+                    </RequireCapability>
+                  }
+                />
+                <Route
+                  path="/permits"
+                  element={
+                    <RequireCapability capability="dashboard:view">
+                      <PermitsPage />
                     </RequireCapability>
                   }
                 />

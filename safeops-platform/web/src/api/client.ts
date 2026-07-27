@@ -38,6 +38,10 @@ import {
   ACTIVITY, COMPANIES, DEPARTMENTS, EMPLOYEES, NOTIFICATIONS, SITES, TEAMS, USERS,
 } from './mock/fixtures'
 import { buildDashboard } from './mock/dashboard'
+import { PermitStore } from './mock/permits'
+import type {
+  GasTest, IsolationPoint, NewPermitInput, PermitFilters, PermitStats, PermitView,
+} from './permits'
 import { IncidentStore } from './mock/incidents'
 import { AdminStore } from './mock/admin'
 import { delay } from '@/lib/time'
@@ -182,6 +186,24 @@ export interface ApiClient {
   adminCreateBackup(actor: AdminActor, note: string): Promise<{ backup: Backup; snapshot: string }>
   adminRestoreBackup(id: string, actor: AdminActor): Promise<void>
 
+  // ── permits to work ────────────────────────────────────────────────────────
+  listPermits(companyId: string, filters: PermitFilters): Promise<PermitView[]>
+  getPermit(id: string): Promise<PermitView>
+  permitStats(companyId: string, siteId: string | null): Promise<PermitStats>
+  createPermit(input: NewPermitInput, actor: Actor): Promise<PermitView>
+  submitPermit(id: string, actor: Actor): Promise<PermitView>
+  approvePermit(id: string, statement: string, actor: Actor): Promise<PermitView>
+  rejectPermit(id: string, reason: string, actor: Actor): Promise<PermitView>
+  activatePermit(id: string, actor: Actor): Promise<PermitView>
+  suspendPermit(id: string, reason: string, actor: Actor): Promise<PermitView>
+  resumePermit(id: string, actor: Actor): Promise<PermitView>
+  closePermit(id: string, input: { handbackConfirmed: boolean; statement: string }, actor: Actor): Promise<PermitView>
+  confirmPermitControl(permitId: string, controlId: string, confirmed: boolean, actor: Actor): Promise<PermitView>
+  addPermitGasTest(permitId: string, reading: Omit<GasTest, 'id' | 'testedAt' | 'testedBy' | 'pass'>, actor: Actor): Promise<PermitView>
+  addPermitIsolation(permitId: string, input: Pick<IsolationPoint, 'description' | 'tagId'>, actor: Actor): Promise<PermitView>
+  releasePermitIsolation(permitId: string, isolationId: string, actor: Actor): Promise<PermitView>
+  sweepPermitExpiry(): Promise<void>
+
   // shell data
   listNotifications(): Promise<AppNotification[]>
   markNotificationRead(id: string): Promise<void>
@@ -233,6 +255,7 @@ class MockApiClient implements ApiClient {
   }
   private incidents = new IncidentStore(this.pushNotification)
   private admin = new AdminStore(this.pushNotification)
+  private permits = new PermitStore(this.pushNotification)
 
   private persistNotifications() {
     try {
@@ -656,6 +679,25 @@ class MockApiClient implements ApiClient {
   async adminListBackups() { await delay(LATENCY() / 2); return this.admin.listBackups() }
   async adminCreateBackup(actor: AdminActor, note: string) { await delay(LATENCY()); return this.admin.createBackup(actor, note) }
   async adminRestoreBackup(id: string, actor: AdminActor) { await delay(LATENCY()); this.admin.restoreBackup(id, actor) }
+
+  // ── permits to work ────────────────────────────────────────────────────────
+
+  async listPermits(companyId: string, filters: PermitFilters) { await delay(LATENCY()); return this.permits.list(companyId, filters) }
+  async getPermit(id: string) { await delay(LATENCY() / 2); return this.permits.get(id) }
+  async permitStats(companyId: string, siteId: string | null) { await delay(LATENCY() / 2); return this.permits.stats(companyId, siteId) }
+  async createPermit(input: NewPermitInput, actor: Actor) { await delay(LATENCY()); return this.permits.create(input, actor) }
+  async submitPermit(id: string, actor: Actor) { await delay(LATENCY() / 2); return this.permits.submit(id, actor) }
+  async approvePermit(id: string, statement: string, actor: Actor) { await delay(LATENCY() / 2); return this.permits.approve(id, statement, actor) }
+  async rejectPermit(id: string, reason: string, actor: Actor) { await delay(LATENCY() / 2); return this.permits.reject(id, reason, actor) }
+  async activatePermit(id: string, actor: Actor) { await delay(LATENCY() / 3); return this.permits.activate(id, actor) }
+  async suspendPermit(id: string, reason: string, actor: Actor) { await delay(LATENCY() / 3); return this.permits.suspend(id, reason, actor) }
+  async resumePermit(id: string, actor: Actor) { await delay(LATENCY() / 3); return this.permits.resume(id, actor) }
+  async closePermit(id: string, input: { handbackConfirmed: boolean; statement: string }, actor: Actor) { await delay(LATENCY() / 2); return this.permits.close(id, input, actor) }
+  async confirmPermitControl(permitId: string, controlId: string, confirmed: boolean, actor: Actor) { await delay(120); return this.permits.confirmControl(permitId, controlId, confirmed, actor) }
+  async addPermitGasTest(permitId: string, reading: Omit<GasTest, 'id' | 'testedAt' | 'testedBy' | 'pass'>, actor: Actor) { await delay(LATENCY() / 2); return this.permits.addGasTest(permitId, reading, actor) }
+  async addPermitIsolation(permitId: string, input: Pick<IsolationPoint, 'description' | 'tagId'>, actor: Actor) { await delay(LATENCY() / 2); return this.permits.addIsolation(permitId, input, actor) }
+  async releasePermitIsolation(permitId: string, isolationId: string, actor: Actor) { await delay(LATENCY() / 2); return this.permits.releaseIsolation(permitId, isolationId, actor) }
+  async sweepPermitExpiry() { this.permits.sweepExpiring() }
 
   async listNotifications() {
     await delay(LATENCY())
