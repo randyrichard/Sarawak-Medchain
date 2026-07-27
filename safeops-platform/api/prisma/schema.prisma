@@ -170,8 +170,9 @@ enum IncidentStage {
 
 model Incident {
   id     String @id @default(cuid())
-  /// Human reference (INC-####). Unique so two concurrent reports cannot collide.
-  number String @unique
+  /// Human reference (INC-####). Unique per tenant, not globally: two companies each
+  /// run their own sequence and both legitimately have an INC-2601.
+  number String
 
   companyId String
   siteId    String
@@ -209,12 +210,16 @@ model Incident {
   /// Incremented on every mutation — lets the client detect a stale write.
   version  Int     @default(1)
 
-  events IncidentEvent[]
+  events      IncidentEvent[]
+  comments    IncidentComment[]
+  attachments IncidentAttachment[]
+  actions     CorrectiveAction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Composite indexes matching the actual list queries (company+stage, company+site).
+  @@unique([companyId, number])
   @@index([companyId, stage])
   @@index([companyId, siteId])
   @@index([companyId, type])
@@ -240,9 +245,104 @@ model IncidentEvent {
 /// INC numbering per-tenant and lets allocation happen inside a transaction, so
 /// two simultaneous reports cannot receive the same number.
 model Counter {
-  id        String @id
   companyId String
+  /// Sequence name within the tenant: "incident", "capa", ...
+  kind      String
   next      Int    @default(1)
 
-  @@unique([companyId, id])
+  // Composite primary key. A single-column @id would make the sequence name globally
+  // unique, so the first tenant to allocate "incident" would lock out every other one.
+  @@id([companyId, kind])
+}
+
+// ─── Incident collaboration & corrective actions ─────────────────────────────
+
+model IncidentComment {
+  id         String   @id @default(cuid())
+  incidentId String
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  body      String
+  author    String
+  authorId  String?
+  /// Names mentioned with @ — drives notification fan-out.
+  mentions  String[] @default([])
+  createdAt DateTime @default(now())
+
+  @@index([incidentId, createdAt])
+}
+
+model IncidentAttachment {
+  id         String   @id @default(cuid())
+  incidentId String
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  /// Original client filename, retained for display only — never used as a path.
+  originalName String
+  /// Server-generated name actually written to disk. Prevents path traversal and collisions.
+  storedName   String  @unique
+  mimeType     String
+  sizeBytes    Int
+  uploadedBy   String
+  uploadedById String?
+  createdAt    DateTime @default(now())
+
+  @@index([incidentId])
+}
+
+enum CapaStatus {
+  open
+  in_progress
+  completed
+  verified
+  cancelled
+}
+
+enum CapaPriority {
+  Low
+  Medium
+  High
+  Critical
+}
+
+/// Corrective and preventive action. The SAIL replacement: every item has an owner
+/// and a target completion date, and closure requires verification by a manager.
+model CorrectiveAction {
+  id         String   @id @default(cuid())
+  /// CA-#### — per tenant, same reasoning as Incident.number.
+  code       String
+  incidentId String
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  companyId String
+  siteId    String
+
+  title    String
+  detail   String       @default("")
+  owner    String
+  ownerId  String?
+  dueDate  DateTime
+  priority CapaPriority @default(Medium)
+  status   CapaStatus   @default(open)
+
+  /// Evidence the owner supplies when marking complete.
+  evidenceNote String?
+  completedAt  DateTime?
+
+  /// Verification is a separate act by a manager — completing is not closing.
+  verifiedBy String?
+  verifiedAt DateTime?
+
+  cancelledReason String?
+
+  version   Int      @default(1)
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, code])
+  @@index([companyId, status])
+  @@index([incidentId])
+  @@index([dueDate])
+  @@index([owner])
 }

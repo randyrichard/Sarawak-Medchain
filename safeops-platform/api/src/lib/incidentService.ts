@@ -121,7 +121,12 @@ export class IncidentService {
   async get(caller: Caller, id: string) {
     const incident = await this.db.incident.findUnique({
       where: { id },
-      include: { events: { orderBy: { at: 'desc' } } },
+      include: {
+        events: { orderBy: { at: 'desc' } },
+        comments: { orderBy: { createdAt: 'asc' } },
+        attachments: { orderBy: { createdAt: 'desc' } },
+        actions: { orderBy: { dueDate: 'asc' } },
+      },
     })
     if (!incident || incident.archived) {
       throw new IncidentError('not_found', 'Incident not found.', 404)
@@ -166,9 +171,9 @@ export class IncidentService {
 
     return this.db.$transaction(async (tx) => {
       const counter = await tx.counter.upsert({
-        where: { companyId_id: { companyId: input.companyId, id: 'incident' } },
+        where: { companyId_kind: { companyId: input.companyId, kind: 'incident' } },
         update: { next: { increment: 1 } },
-        create: { id: 'incident', companyId: input.companyId, next: 2601 },
+        create: { companyId: input.companyId, kind: 'incident', next: 2601 },
         select: { next: true },
       })
       const number = `INC-${counter.next}`
@@ -276,6 +281,214 @@ export class IncidentService {
 
       return updated
     })
+  }
+
+
+  // ── Comments ───────────────────────────────────────────────────────────────
+
+  /** Any member who can see the incident may comment; visibility is the access check. */
+  async addComment(caller: Caller, incidentId: string, body: string, mentions: string[] = []) {
+    const incident = await this.get(caller, incidentId)
+    if (!body?.trim()) throw new IncidentError('validation', 'A comment cannot be empty.')
+
+    const comment = await this.db.incidentComment.create({
+      data: {
+        incidentId: incident.id,
+        body: body.trim(),
+        author: caller.name,
+        authorId: caller.userId,
+        mentions,
+      },
+    })
+    await this.db.incidentEvent.create({
+      data: {
+        incidentId: incident.id,
+        action: 'Comment added',
+        detail: body.trim().slice(0, 140),
+        actor: caller.name,
+        actorRole: this.membership(caller, incident.companyId).role,
+      },
+    })
+    return comment
+  }
+
+  // ── Attachments ────────────────────────────────────────────────────────────
+
+  async addAttachment(caller: Caller, incidentId: string, file: {
+    originalName: string
+    storedName: string
+    mimeType: string
+    sizeBytes: number
+  }) {
+    const incident = await this.get(caller, incidentId)
+    const att = await this.db.incidentAttachment.create({
+      data: { incidentId: incident.id, ...file, uploadedBy: caller.name, uploadedById: caller.userId },
+    })
+    await this.db.incidentEvent.create({
+      data: {
+        incidentId: incident.id,
+        action: 'Evidence uploaded',
+        detail: file.originalName + ' (' + Math.round(file.sizeBytes / 1024) + ' KB)',
+        actor: caller.name,
+        actorRole: this.membership(caller, incident.companyId).role,
+      },
+    })
+    return att
+  }
+
+  /** Resolves an attachment only if the caller may see its parent incident. */
+  async getAttachment(caller: Caller, attachmentId: string) {
+    const att = await this.db.incidentAttachment.findUnique({ where: { id: attachmentId } })
+    if (!att) throw new IncidentError('not_found', 'Attachment not found.', 404)
+    await this.get(caller, att.incidentId) // throws 403/404 when not visible
+    return att
+  }
+
+  // ── Corrective actions (CAPA) ──────────────────────────────────────────────
+
+  async addAction(caller: Caller, incidentId: string, input: {
+    title: string
+    detail?: string
+    owner: string
+    dueDate: string
+    priority?: string
+  }) {
+    const incident = await this.get(caller, incidentId)
+    this.requireRole(caller, incident.companyId, MANAGE_ROLES)
+    if (!input.title?.trim()) throw new IncidentError('validation', 'An action title is required.')
+    if (!input.owner?.trim()) throw new IncidentError('validation', 'Every action needs an owner.')
+    const due = new Date(input.dueDate)
+    if (Number.isNaN(due.getTime())) {
+      throw new IncidentError('validation', 'A valid target completion date is required.')
+    }
+
+    return this.db.$transaction(async (tx) => {
+      const counter = await tx.counter.upsert({
+        where: { companyId_kind: { companyId: incident.companyId, kind: 'capa' } },
+        update: { next: { increment: 1 } },
+        create: { companyId: incident.companyId, kind: 'capa', next: 401 },
+        select: { next: true },
+      })
+      const action = await tx.correctiveAction.create({
+        data: {
+          code: 'CA-' + counter.next,
+          incidentId: incident.id,
+          companyId: incident.companyId,
+          siteId: incident.siteId,
+          title: input.title.trim(),
+          detail: input.detail?.trim() ?? '',
+          owner: input.owner.trim(),
+          dueDate: due,
+          priority: (input.priority ?? 'Medium') as never,
+          createdBy: caller.name,
+        },
+      })
+      await tx.incidentEvent.create({
+        data: {
+          incidentId: incident.id,
+          action: 'Corrective action raised',
+          detail: action.code + ' — ' + action.title + ' (owner ' + action.owner + ')',
+          actor: caller.name,
+          actorRole: this.membership(caller, incident.companyId).role,
+        },
+      })
+      return action
+    })
+  }
+
+  /**
+   * Progress update.
+   *
+   * The owner may move their own action forward and supply evidence. Verification is
+   * deliberately not self-service: only a manager can verify, so the person who did the
+   * work cannot also sign it off.
+   */
+  async updateAction(caller: Caller, actionId: string, patch: {
+    status?: string
+    evidenceNote?: string
+    dueDate?: string
+    expectedVersion?: number
+  }) {
+    const action = await this.db.correctiveAction.findUnique({ where: { id: actionId } })
+    if (!action) throw new IncidentError('not_found', 'Action not found.', 404)
+
+    const m = this.membership(caller, action.companyId)
+    const isOwner = action.owner === caller.name
+    const isManager = REVIEW_ROLES.includes(m.role)
+
+    if (!isOwner && !MANAGE_ROLES.includes(m.role)) {
+      throw new IncidentError('forbidden', 'You can only update actions assigned to you.', 403)
+    }
+    if (patch.status === 'verified' && !isManager) {
+      throw new IncidentError('forbidden', 'Verification requires an HSE Manager or Admin.', 403)
+    }
+    if (patch.status === 'cancelled' && !isManager) {
+      throw new IncidentError('forbidden', 'Cancelling an action requires an HSE Manager or Admin.', 403)
+    }
+    if (patch.status === 'completed' && !patch.evidenceNote?.trim() && !action.evidenceNote) {
+      throw new IncidentError('validation', 'Describe the evidence before marking this complete.')
+    }
+    if (patch.dueDate && !isManager) {
+      throw new IncidentError('forbidden', 'Changing the target date requires an HSE Manager or Admin.', 403)
+    }
+    if (patch.expectedVersion !== undefined && patch.expectedVersion !== action.version) {
+      throw new IncidentError('conflict', 'This action was updated by someone else. Reload to see the latest.', 409)
+    }
+
+    return this.db.$transaction(async (tx) => {
+      const updated = await tx.correctiveAction.update({
+        where: { id: actionId },
+        data: {
+          version: { increment: 1 },
+          ...(patch.status ? { status: patch.status as never } : {}),
+          ...(patch.evidenceNote ? { evidenceNote: patch.evidenceNote.trim() } : {}),
+          ...(patch.dueDate ? { dueDate: new Date(patch.dueDate) } : {}),
+          ...(patch.status === 'completed' ? { completedAt: new Date() } : {}),
+          ...(patch.status === 'verified' ? { verifiedBy: caller.name, verifiedAt: new Date() } : {}),
+        },
+      })
+      await tx.incidentEvent.create({
+        data: {
+          incidentId: action.incidentId,
+          action: patch.status ? 'Action ' + updated.code + ' -> ' + patch.status : 'Action ' + updated.code + ' updated',
+          detail: patch.evidenceNote?.slice(0, 140),
+          actor: caller.name,
+          actorRole: m.role,
+        },
+      })
+      return updated
+    })
+  }
+
+  /** Actions across the workspace — the SAIL list, scoped and paginated. */
+  async listActions(caller: Caller, companyId: string, opts: {
+    page: number; pageSize: number; status?: string; owner?: string; overdue?: boolean
+  }) {
+    const m = this.membership(caller, companyId)
+    const where: Prisma.CorrectiveActionWhereInput = {
+      companyId,
+      ...(opts.status ? { status: opts.status as never } : {}),
+      ...(opts.owner ? { owner: opts.owner } : {}),
+      ...(opts.overdue ? { dueDate: { lt: new Date() }, status: { in: ['open', 'in_progress'] } } : {}),
+      // Employees and supervisors see only what they own.
+      ...(['employee', 'supervisor'].includes(m.role) ? { owner: caller.name } : {}),
+    }
+    const [total, rows] = await this.db.$transaction([
+      this.db.correctiveAction.count({ where }),
+      this.db.correctiveAction.findMany({
+        where,
+        orderBy: [{ dueDate: 'asc' }],
+        skip: (opts.page - 1) * opts.pageSize,
+        take: opts.pageSize,
+      }),
+    ])
+    return {
+      rows,
+      total,
+      page: opts.page,
+      pageSize: opts.pageSize,
+      totalPages: Math.max(1, Math.ceil(total / opts.pageSize)),
+    }
   }
 
   /** Dashboard counters, computed in the database rather than by loading every row. */
