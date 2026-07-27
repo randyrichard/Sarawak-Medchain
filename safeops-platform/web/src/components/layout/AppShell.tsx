@@ -2,7 +2,7 @@ import { Suspense, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, ClipboardList, ListChecks, GraduationCap, ShieldCheck, Bell,
-  Building2, Boxes, Menu, X, Lock, SlidersHorizontal, HardHat,
+  Building2, Boxes, Menu, X, Lock, SlidersHorizontal, HardHat, ShieldAlert,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useOrg } from '@/features/org/OrgContext'
@@ -23,6 +23,9 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { to: '/', label: 'Mission Control', icon: LayoutDashboard, capability: 'dashboard:view', end: true },
+  // Near-miss capture sits in the nav because under-reporting is driven by friction and
+  // forgetting (customer research P1) — it has to be one tap from anywhere.
+  { to: '/near-miss', label: 'Report Near Miss', icon: ShieldAlert, capability: 'reports:submit' },
   { to: '/incidents', label: 'Incidents', icon: ClipboardList, capability: 'incidents:manage' },
   { to: '/actions', label: 'Actions', icon: ListChecks, capability: 'dashboard:view' },
   { to: '/assets', label: 'Assets', icon: Boxes, capability: 'dashboard:view' },

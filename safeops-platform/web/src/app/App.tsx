@@ -15,6 +15,7 @@ import { NotFoundPage } from './pages/NotFoundPage'
 // The <Suspense> boundary lives in AppShell so the sidebar/topbar stay put while a page loads.
 const DashboardPage = lazy(() => import('@/features/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })))
 const IncidentsListPage = lazy(() => import('@/features/incidents/IncidentsListPage').then((m) => ({ default: m.IncidentsListPage })))
+const ReportNearMissPage = lazy(() => import('@/features/incidents/ReportNearMissPage').then((m) => ({ default: m.ReportNearMissPage })))
 const ReportIncidentPage = lazy(() => import('@/features/incidents/ReportIncidentPage').then((m) => ({ default: m.ReportIncidentPage })))
 const IncidentDetailPage = lazy(() => import('@/features/incidents/IncidentDetailPage').then((m) => ({ default: m.IncidentDetailPage })))
 const ActionsPage = lazy(() => import('@/features/actions/ActionsPage').then((m) => ({ default: m.ActionsPage })))
@@ -58,6 +59,14 @@ export default function App() {
                   element={
                     <RequireCapability capability="incidents:manage">
                       <IncidentsListPage />
+                    </RequireCapability>
+                  }
+                />
+                <Route
+                  path="/near-miss"
+                  element={
+                    <RequireCapability capability="reports:submit">
+                      <ReportNearMissPage />
                     </RequireCapability>
                   }
                 />
