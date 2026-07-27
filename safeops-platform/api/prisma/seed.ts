@@ -18,7 +18,35 @@ const USERS: { email: string; name: string; title: string; role: Role; companies
   { email: 'employee@demo.safeops.app', name: 'Melissa Bong', title: 'Store Keeper — Kuching', role: 'employee', companies: ['big'] },
 ]
 
+
+const COMPANIES = [
+  { id: 'big', name: 'Borneo Industrial Group' },
+  { id: 'kcs', name: 'Kuching Construction Services' },
+]
+
+const SITES = [
+  { id: 'kch', companyId: 'big', name: 'Kuching Assembly Plant' },
+  { id: 'btu', companyId: 'big', name: 'Bintulu LNG Terminal' },
+  { id: 'mri', companyId: 'big', name: 'Miri Fabrication Yard' },
+  { id: 'sbu', companyId: 'big', name: 'Sibu Logistics Hub' },
+  { id: 'twu', companyId: 'big', name: 'Tawau Plantation Estate' },
+  { id: 'sen', companyId: 'big', name: 'Senari Warehouse Complex' },
+  { id: 'kcs-1', companyId: 'kcs', name: 'Kuching Central Project' },
+]
+
+async function seedOrg() {
+  for (const c of COMPANIES) {
+    await prisma.company.upsert({ where: { id: c.id }, update: { name: c.name }, create: c })
+  }
+  for (const s of SITES) {
+    await prisma.site.upsert({ where: { id: s.id }, update: { name: s.name }, create: s })
+  }
+  console.log(`Seeded ${COMPANIES.length} companies and ${SITES.length} sites.`)
+}
+
 async function main() {
+  await seedOrg()
+
   const passwordHash = await hashPassword(DEMO_PASSWORD)
 
   for (const u of USERS) {

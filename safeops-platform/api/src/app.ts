@@ -5,7 +5,9 @@ import helmet from 'helmet'
 import { env } from './env.js'
 import { prisma } from './lib/prisma.js'
 import { authRouter } from './routes/auth.js'
+import { incidentsRouter } from './routes/incidents.js'
 import { AuthError } from './lib/authService.js'
+import { IncidentError } from './lib/incidentService.js'
 
 export function createApp() {
   const app = express()
@@ -33,12 +35,13 @@ export function createApp() {
   })
 
   app.use('/auth', authRouter)
+  app.use('/incidents', incidentsRouter)
 
   app.use((_req, res) => res.status(404).json({ error: 'not_found' }))
 
   // Central error handler: clients get a stable code, details stay in the server log.
   app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    if (err instanceof AuthError) {
+    if (err instanceof AuthError || err instanceof IncidentError) {
       return res.status(err.status).json({ error: err.code, message: err.message })
     }
 

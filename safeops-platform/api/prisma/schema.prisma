@@ -68,12 +68,12 @@ model Membership {
 /// One row per issued refresh token. Rotation replaces the row and links the successor,
 /// so replaying a consumed token is detectable (see `revokedReason = "reuse_detected"`).
 model RefreshToken {
-  id     String @id @default(cuid())
-  userId String
+  id        String @id @default(cuid())
+  userId    String
   /// SHA-256 of the opaque token. The raw value exists only in the client's cookie.
   tokenHash String @unique
   /// Groups every token rotated from one login, so a whole session can be revoked at once.
-  familyId String
+  familyId  String
 
   expiresAt     DateTime
   revokedAt     DateTime?
@@ -107,4 +107,142 @@ model LoginAttempt {
 
   @@index([email])
   @@index([createdAt])
+}
+
+// ─── Organisation ────────────────────────────────────────────────────────────
+// Incidents are scoped by company and site, and RBAC narrows visibility by site,
+// so both must be real rows with foreign keys rather than client-side constants.
+
+model Company {
+  id        String     @id
+  name      String
+  plan      String     @default("enterprise")
+  sites     Site[]
+  incidents Incident[]
+  createdAt DateTime   @default(now())
+}
+
+model Site {
+  id        String     @id
+  companyId String
+  name      String
+  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  incidents Incident[]
+
+  @@index([companyId])
+}
+
+// ─── Incidents ───────────────────────────────────────────────────────────────
+
+enum IncidentType {
+  near_miss
+  first_aid
+  mtc
+  rwc
+  lti
+  fatality
+  property_damage
+  environmental
+  vehicle
+  fire
+  unsafe_act
+  unsafe_condition
+}
+
+enum IncidentSeverity {
+  Minor
+  Moderate
+  Serious
+  Critical
+}
+
+/// Investigation workflow. Ordered; transitions are validated server-side.
+enum IncidentStage {
+  reported
+  assessment
+  investigation
+  rca
+  actions
+  review
+  verification
+  closed
+}
+
+model Incident {
+  id     String @id @default(cuid())
+  /// Human reference (INC-####). Unique so two concurrent reports cannot collide.
+  number String @unique
+
+  companyId String
+  siteId    String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  site      Site    @relation(fields: [siteId], references: [id], onDelete: Restrict)
+
+  title       String
+  description String           @default("")
+  type        IncidentType
+  severity    IncidentSeverity
+  stage       IncidentStage    @default(reported)
+
+  department       String  @default("")
+  location         String
+  gps              String?
+  immediateActions String  @default("")
+
+  reporter     String
+  reporterId   String?
+  investigator String?
+
+  /// Set during assessment; drives the high-risk flag on Mission Control.
+  riskRating        String?
+  potentialSeverity IncidentSeverity?
+  highRisk          Boolean           @default(false)
+
+  findings  String?
+  closeNote String?
+
+  occurredAt DateTime
+  reportedAt DateTime  @default(now())
+  closedAt   DateTime?
+
+  archived Boolean @default(false)
+  /// Incremented on every mutation — lets the client detect a stale write.
+  version  Int     @default(1)
+
+  events IncidentEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Composite indexes matching the actual list queries (company+stage, company+site).
+  @@index([companyId, stage])
+  @@index([companyId, siteId])
+  @@index([companyId, type])
+  @@index([reportedAt])
+}
+
+/// Append-only audit trail for an incident. Never updated or deleted.
+model IncidentEvent {
+  id         String   @id @default(cuid())
+  incidentId String
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  action    String
+  detail    String?
+  actor     String
+  actorRole String?
+  at        DateTime @default(now())
+
+  @@index([incidentId, at])
+}
+
+/// Server-owned counter for human-readable references. A row per company keeps
+/// INC numbering per-tenant and lets allocation happen inside a transaction, so
+/// two simultaneous reports cannot receive the same number.
+model Counter {
+  id        String @id
+  companyId String
+  next      Int    @default(1)
+
+  @@unique([companyId, id])
 }
