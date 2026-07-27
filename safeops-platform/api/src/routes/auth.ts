@@ -44,6 +44,19 @@ const loginLimiter = rateLimit({
   message: { error: 'rate_limited', message: 'Too many attempts. Try again shortly.' },
 })
 
+/**
+ * Refresh is unauthenticated at the HTTP layer — it is gated only by the cookie — so it
+ * needs its own ceiling. The limit is looser than login because legitimate clients refresh
+ * on a timer and across tabs, but it still bounds token-guessing and replay storms.
+ */
+const refreshLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 120,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'rate_limited', message: 'Too many requests. Try again shortly.' },
+})
+
 const credentials = z.object({
   email: z.string().email().max(320),
   password: z.string().min(1).max(200),
@@ -65,7 +78,7 @@ authRouter.post('/login', loginLimiter, async (req, res, next) => {
   }
 })
 
-authRouter.post('/refresh', async (req, res, next) => {
+authRouter.post('/refresh', refreshLimiter, async (req, res, next) => {
   try {
     const raw = req.cookies?.[REFRESH_COOKIE]
     if (!raw) return res.status(401).json({ error: 'unauthenticated', message: 'Sign in required.' })

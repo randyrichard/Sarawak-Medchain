@@ -56,6 +56,12 @@ function makeDb() {
         return row
       },
     },
+    /**
+     * Runs the callback against the same in-memory store. This models the happy path only —
+     * it does not roll back, so it cannot prove atomicity. Real rollback behaviour is a
+     * property of Postgres and needs an integration test against a live database.
+     */
+    $transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn(db),
   }
 
   return { db: db as unknown as PrismaClient, users, memberships, refreshTokens, loginAttempts }

@@ -151,16 +151,37 @@ export class AuthService {
       throw new AuthError('invalid_refresh', 'Session is invalid. Please sign in again.')
     }
 
-    const session = await this.issueSession(user, ctx, existing.familyId)
-    const successor = await this.db.refreshToken.findUnique({
-      where: { tokenHash: hashRefreshToken(session.refreshToken) },
-    })
-    await this.db.refreshToken.update({
-      where: { id: existing.id },
-      data: { revokedAt: new Date(), revokedReason: 'rotated', replacedById: successor?.id },
+    // Issuing the successor and revoking its predecessor must be atomic. If the process
+    // died between the two writes, the consumed token would remain valid alongside the new
+    // one — two live tokens in a family that reuse detection assumes has exactly one.
+    const refreshToken = generateRefreshToken()
+    const memberships = await this.db.membership.findMany({ where: { userId: user.id } })
+
+    await this.db.$transaction(async (tx) => {
+      const successor = await tx.refreshToken.create({
+        data: {
+          userId: user.id,
+          tokenHash: hashRefreshToken(refreshToken),
+          familyId: existing.familyId,
+          expiresAt: refreshExpiry(),
+          ip: ctx.ip,
+          userAgent: ctx.userAgent,
+        },
+      })
+      await tx.refreshToken.update({
+        where: { id: existing.id },
+        data: { revokedAt: new Date(), revokedReason: 'rotated', replacedById: successor.id },
+      })
     })
 
-    return { ...session, user: this.publicUser(user) }
+    const { token: accessToken, expiresAt: accessExpiresAt } = signAccessToken({
+      sub: user.id,
+      email: user.email,
+      name: user.name,
+      roles: memberships.map((m) => ({ companyId: m.companyId, role: m.role, siteIds: m.siteIds })),
+    })
+
+    return { accessToken, accessExpiresAt, refreshToken, user: this.publicUser(user) }
   }
 
   /** Server-side revocation. Clearing the cookie alone would leave the token usable. */
