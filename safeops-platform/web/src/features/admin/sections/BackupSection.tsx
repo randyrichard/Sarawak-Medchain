@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Archive, Database, DatabaseBackup, History, RotateCcw, Save } from 'lucide-react'
 import { api } from '@/api/client'
+import { useOrg } from '@/features/org/OrgContext'
 import { ApiError } from '@/api/types'
 import type { Backup, RetentionSettings } from '@/api/admin'
 import {
@@ -11,6 +12,8 @@ import { timeAgo } from '@/lib/time'
 import { downloadJson, useAdminActor } from '../lib'
 
 export function BackupSection() {
+  const { company } = useOrg()
+  const companyId = company?.id ?? ''
   const actor = useAdminActor()
   const [backups, setBackups] = useState<Backup[] | null>(null)
   const [retention, setRetention] = useState<RetentionSettings | null>(null)
@@ -20,13 +23,13 @@ export function BackupSection() {
   const [restoreFor, setRestoreFor] = useState<Backup | null>(null)
   const [savingRetention, setSavingRetention] = useState(false)
 
-  const load = () => { api.adminListBackups().then(setBackups); api.adminGetRetention().then(setRetention) }
+  const load = () => { api.adminListBackups(companyId).then(setBackups); api.adminGetRetention(companyId).then(setRetention) }
   useEffect(() => { load() }, [])
 
   const createBackup = async () => {
     setBusy(true); setError(null)
     try {
-      const { backup, snapshot } = await api.adminCreateBackup(actor, 'Manual snapshot')
+      const { backup, snapshot } = await api.adminCreateBackup(companyId, actor, 'Manual snapshot')
       downloadJson(snapshot, `safeops-backup-${backup.id}.json`)
       setFlash('Backup created and downloaded — restorable from the list below.')
       setTimeout(() => setFlash(null), 3500)
@@ -39,7 +42,7 @@ export function BackupSection() {
   const restore = async () => {
     if (!restoreFor) return
     try {
-      await api.adminRestoreBackup(restoreFor.id, actor)
+      await api.adminRestoreBackup(companyId, restoreFor.id, actor)
       // a genuine restore rewrote localStorage — reload so every store rehydrates
       window.location.reload()
     } catch (e) {
@@ -53,7 +56,7 @@ export function BackupSection() {
     setSavingRetention(true)
     const next = { ...retention, ...patch }
     setRetention(next)
-    try { await api.adminUpdateRetention(patch, actor) } catch { /* revert not critical */ } finally { setSavingRetention(false) }
+    try { await api.adminUpdateRetention(companyId, patch, actor) } catch { /* revert not critical */ } finally { setSavingRetention(false) }
   }
 
   return (
@@ -83,7 +86,7 @@ export function BackupSection() {
               ))}
             </ul>
           )}
-          <p className="mt-3 flex items-center gap-1 text-2xs text-muted"><History size={11} /> A manual backup snapshots this tenant's live data and downloads a JSON copy. Restoring reloads that exact state.</p>
+          <p className="mt-3 flex items-center gap-1 text-2xs text-muted"><History size={11} /> A manual backup snapshots this tenant's live data and downloads a JSON copy. Restoring reinstates that state without removing anything created since.</p>
         </CardBody>
       </Card>
 
@@ -130,10 +133,10 @@ export function BackupSection() {
       </div>
 
       <Dialog open={restoreFor !== null} onClose={() => setRestoreFor(null)} title={`Restore "${restoreFor?.note}"?`}
-        description="This overwrites the current tenant data with the snapshot and reloads the app."
+        description="This reinstates the records in the snapshot and reloads the app."
         footer={<><Button variant="secondary" onClick={() => setRestoreFor(null)}>Cancel</Button><Button variant="danger" icon={<RotateCcw size={13} />} onClick={() => void restore()}>Restore snapshot</Button></>}>
         <Alert tone="warning">
-          Restoring reverts every module — incidents, actions, assets, audits, training and admin — to <span className="font-semibold">{restoreFor ? timeAgo(restoreFor.at) : ''}</span>. Create a fresh backup first if you want to keep the current state.
+          Records across every module — incidents, actions, assets, audits and training — are returned to their state at <span className="font-semibold">{restoreFor ? timeAgo(restoreFor.at) : ''}</span>, and anything deleted since is reinstated. Work created after the snapshot is left alone, and a snapshot of the current state is taken automatically first, so this is reversible.
         </Alert>
       </Dialog>
     </div>

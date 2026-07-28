@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Check, Plus, ShieldQuestion, Trash2 } from 'lucide-react'
 import { api } from '@/api/client'
+import { useOrg } from '@/features/org/OrgContext'
 import { ApiError } from '@/api/types'
 import type { RbacAction, RbacModule, RoleDef } from '@/api/admin'
 import { MODULE_LABEL, RBAC_ACTIONS, RBAC_MODULES } from '@/api/admin'
@@ -13,6 +14,8 @@ const ACTION_LABEL: Record<RbacAction, string> = {
 }
 
 export function RolesSection() {
+  const { company } = useOrg()
+  const companyId = company?.id ?? ''
   const actor = useAdminActor()
   const [roles, setRoles] = useState<RoleDef[] | null>(null)
   const [activeRole, setActiveRole] = useState<string>('hse_manager')
@@ -20,7 +23,7 @@ export function RolesSection() {
   const [newOpen, setNewOpen] = useState(false)
   const [saving, setSaving] = useState<string | null>(null)
 
-  const load = () => api.adminListRoles().then((r) => { setRoles(r); if (!r.find((x) => x.id === activeRole)) setActiveRole(r[0]?.id ?? '') })
+  const load = () => api.adminListRoles(companyId).then((r) => { setRoles(r); if (!r.find((x) => x.id === activeRole)) setActiveRole(r[0]?.id ?? '') })
   useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const role = useMemo(() => roles?.find((r) => r.id === activeRole), [roles, activeRole])
@@ -30,7 +33,7 @@ export function RolesSection() {
     setSaving(`${module}:${action}`)
     setError(null)
     try {
-      const updated = await api.adminToggleRolePermission(role.id, module, action, actor)
+      const updated = await api.adminToggleRolePermission(companyId, role.id, module, action, actor)
       setRoles((cur) => cur?.map((r) => (r.id === updated.id ? { ...updated, userCount: r.userCount } : r)) ?? null)
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Could not update permission.')
@@ -41,7 +44,7 @@ export function RolesSection() {
     if (!role) return
     setError(null)
     try {
-      await api.adminDeleteRole(role.id, actor)
+      await api.adminDeleteRole(companyId, role.id, actor)
       await load()
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Could not delete role.')
@@ -131,6 +134,8 @@ export function RolesSection() {
 }
 
 function NewRoleDialog({ open, roles, onClose, onCreated }: { open: boolean; roles: RoleDef[]; onClose: () => void; onCreated: (id: string) => void }) {
+  const { company } = useOrg()
+  const companyId = company?.id ?? ''
   const actor = useAdminActor()
   const [name, setName] = useState('')
   const [cloneFrom, setCloneFrom] = useState('safety_officer')
@@ -140,7 +145,7 @@ function NewRoleDialog({ open, roles, onClose, onCreated }: { open: boolean; rol
   const submit = async () => {
     setBusy(true); setError(null)
     try {
-      const role = await api.adminCreateRole(name, cloneFrom, actor)
+      const role = await api.adminCreateRole(companyId, name, cloneFrom, actor)
       setName('')
       onCreated(role.id)
     } catch (e) {

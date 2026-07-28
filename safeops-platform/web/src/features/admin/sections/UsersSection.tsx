@@ -16,6 +16,7 @@ import { downloadCsv, USER_STATUS_KIND, useAdminActor } from '../lib'
 
 export function UsersSection() {
   const { company, sites } = useOrg()
+  const companyId = company?.id ?? ''
   const actor = useAdminActor()
   const [users, setUsers] = useState<AdminUser[] | null>(null)
   const [roles, setRoles] = useState<RoleDef[]>([])
@@ -38,7 +39,7 @@ export function UsersSection() {
     return () => clearTimeout(t)
   }, [refresh, q])
 
-  useEffect(() => { api.adminListRoles().then(setRoles) }, [])
+  useEffect(() => { api.adminListRoles(companyId).then(setRoles) }, [])
 
   const roleName = useMemo(() => new Map(roles.map((r) => [r.id, r.name])), [roles])
 
@@ -124,15 +125,15 @@ export function UsersSection() {
                         align="end"
                         trigger={() => <button className="rounded-lg border p-1.5 text-ink-2 hover:bg-accent-soft" aria-label="User actions"><MoreHorizontal size={14} /></button>}
                       >
-                        <DropdownItem icon={<KeyRound size={14} />} onSelect={() => void run(() => api.adminResetPassword(u.id, actor), `Password reset sent to ${u.email}`)}>Send password reset</DropdownItem>
-                        <DropdownItem icon={<ShieldCheck size={14} />} onSelect={() => void run(() => api.adminToggleMfa(u.id, actor), u.mfaEnabled ? 'MFA disabled' : 'MFA enabled')}>{u.mfaEnabled ? 'Disable MFA' : 'Enable MFA'}</DropdownItem>
-                        <DropdownItem icon={<Play size={14} />} onSelect={() => void run(() => api.adminForcePasswordReset(u.id, actor), 'Reset forced at next login')}>Force reset at next login</DropdownItem>
+                        <DropdownItem icon={<KeyRound size={14} />} onSelect={() => void run(() => api.adminResetPassword(companyId, u.id, actor), `Password reset sent to ${u.email}`)}>Send password reset</DropdownItem>
+                        <DropdownItem icon={<ShieldCheck size={14} />} onSelect={() => void run(() => api.adminToggleMfa(companyId, u.id, actor), u.mfaEnabled ? 'MFA disabled' : 'MFA enabled')}>{u.mfaEnabled ? 'Disable MFA' : 'Enable MFA'}</DropdownItem>
+                        <DropdownItem icon={<Play size={14} />} onSelect={() => void run(() => api.adminForcePasswordReset(companyId, u.id, actor), 'Reset forced at next login')}>Force reset at next login</DropdownItem>
                         <DropdownSeparator />
-                        {u.status === 'locked' && <DropdownItem icon={<Play size={14} />} onSelect={() => void run(() => api.adminSetUserStatus(u.id, 'active', actor), 'Account unlocked')}>Unlock account</DropdownItem>}
+                        {u.status === 'locked' && <DropdownItem icon={<Play size={14} />} onSelect={() => void run(() => api.adminSetUserStatus(companyId, u.id, 'active', actor), 'Account unlocked')}>Unlock account</DropdownItem>}
                         {u.status !== 'deactivated' ? (
-                          <DropdownItem danger icon={<Ban size={14} />} onSelect={() => void run(() => api.adminSetUserStatus(u.id, 'deactivated', actor), `${u.name} deactivated`)}>Deactivate</DropdownItem>
+                          <DropdownItem danger icon={<Ban size={14} />} onSelect={() => void run(() => api.adminSetUserStatus(companyId, u.id, 'deactivated', actor), `${u.name} deactivated`)}>Deactivate</DropdownItem>
                         ) : (
-                          <DropdownItem icon={<Play size={14} />} onSelect={() => void run(() => api.adminSetUserStatus(u.id, 'active', actor), `${u.name} reactivated`)}>Reactivate</DropdownItem>
+                          <DropdownItem icon={<Play size={14} />} onSelect={() => void run(() => api.adminSetUserStatus(companyId, u.id, 'active', actor), `${u.name} reactivated`)}>Reactivate</DropdownItem>
                         )}
                       </Dropdown>
                     </td>
@@ -153,6 +154,8 @@ export function UsersSection() {
 }
 
 function UserDetailDrawer({ userId, roleName, onClose }: { userId: string | null; roleName: Map<string, string>; onClose: () => void }) {
+  const { company } = useOrg()
+  const companyId = company?.id ?? ''
   const [user, setUser] = useState<AdminUser | null>(null)
   const [devices, setDevices] = useState<UserDevice[]>([])
   const [logins, setLogins] = useState<LoginEvent[]>([])
@@ -160,9 +163,9 @@ function UserDetailDrawer({ userId, roleName, onClose }: { userId: string | null
   useEffect(() => {
     if (!userId) return
     setUser(null)
-    api.adminGetUser(userId).then(setUser)
-    api.adminUserDevices(userId).then(setDevices)
-    api.adminUserLoginHistory(userId).then(setLogins)
+    api.adminGetUser(companyId, userId).then(setUser)
+    api.adminUserDevices(companyId, userId).then(setDevices)
+    api.adminUserLoginHistory(companyId, userId).then(setLogins)
   }, [userId])
 
   if (!userId) return null

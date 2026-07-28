@@ -39,6 +39,9 @@ model User {
 
   mustChangePassword Boolean @default(false)
   mfaEnabled         Boolean @default(false)
+  /// Shown in the admin console's user list. Additive and nullable — authentication
+  /// does not read it, so every existing account is unaffected.
+  department         String?
 
   memberships   Membership[]
   refreshTokens RefreshToken[]
@@ -131,6 +134,16 @@ model Company {
   courses        TrainingCourse[]
   sessions       TrainingSession[]
   certificates   Certificate[]
+  roleDefs       RoleDefinition[]
+  adminAudit     AdminAuditEntry[]
+  apiKeys        ApiKey[]
+  webhooks       Webhook[]
+  connectors     ConnectorConfig[]
+  securityPolicy SecurityPolicy?
+  orgSettings    OrgSettings?
+  configItems    OrgConfigItem[]
+  retention      RetentionPolicy?
+  backups        Backup[]
   createdAt   DateTime   @default(now())
 }
 
@@ -1192,4 +1205,217 @@ model Certificate {
   @@index([employeeId, courseId, issueDate])
   @@index([companyId])
   @@index([expiryDate])
+}
+
+// ─── Administration ──────────────────────────────────────────────────────────
+// Governance, security and integrations. User lifecycle, roles and login history are
+// NOT modelled again here — they operate on the real User, Membership and LoginAttempt
+// tables above. An admin console that manages a parallel copy of the users manages
+// nothing, so everything below is the state that genuinely has nowhere else to live.
+
+/// A role's permission matrix, per tenant.
+///
+/// Note what this is and is not: the matrix is the console's declaration of what a role
+/// should be able to do. Service-layer authorisation still switches on Membership.role
+/// directly, so editing a cell here does not silently re-open an endpoint. Wiring the
+/// two together is a deliberate, separate change.
+model RoleDefinition {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  /// Matches Membership.role for the built-in roles; custom roles carry their own slug.
+  roleId      String
+  name        String
+  description String  @default("")
+  /// System roles cannot be deleted or reduced below their definition.
+  system      Boolean @default(false)
+  /// { module: action[] }
+  permissions Json
+
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, roleId])
+  @@index([companyId])
+}
+
+/// Append-only administrative trail. Never updated or deleted by the application;
+/// pruning is the retention policy's job, not a feature of the console.
+model AdminAuditEntry {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  actor     String
+  actorRole String  @default("")
+  action    String
+  /// mission_control | incidents | ... | auth | system
+  module    String
+  target    String  @default("")
+  ip        String  @default("")
+  device    String  @default("")
+  oldValue  String?
+  newValue  String?
+
+  at DateTime @default(now())
+
+  @@index([companyId, at])
+  @@index([companyId, module])
+}
+
+/// An issued API key.
+///
+/// Only a SHA-256 digest of the secret is stored — the same rule as RefreshToken. The
+/// plaintext is returned exactly once, at creation, and cannot be recovered afterwards,
+/// so a database leak does not hand an attacker working credentials.
+model ApiKey {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  name String
+  /// First characters of the key, shown so a human can tell two keys apart.
+  prefix    String
+  /// SHA-256 of the full secret. Never the secret itself.
+  tokenHash String  @unique
+  scopes    String[] @default([])
+
+  lastUsedAt DateTime?
+  callsToday Int       @default(0)
+  revoked    Boolean   @default(false)
+  revokedAt  DateTime?
+
+  createdBy String
+  createdAt DateTime @default(now())
+
+  @@index([companyId, revoked])
+}
+
+model Webhook {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  url    String
+  events String[] @default([])
+  active Boolean  @default(true)
+  /// SHA-256 of the signing secret, for the same reason as ApiKey.tokenHash.
+  secretHash String
+  /// Last four characters, so the console can show which secret is configured.
+  secretTail String @default("")
+
+  lastDeliveryAt     DateTime?
+  lastDeliveryStatus String?
+  lastDeliveryCode   Int?
+
+  createdBy String
+  createdAt DateTime @default(now())
+
+  @@index([companyId])
+}
+
+/// A third-party integration's connection state. Credentials supplied when connecting
+/// are stored as a digest, never in cleartext — the console only ever needs to show
+/// that a field is set, not what it is.
+model ConnectorConfig {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  connectorId String
+  connected   Boolean @default(false)
+  /// { fieldKey: "set" } — presence only, never the value.
+  configSet   Json?
+
+  connectedBy String?
+  connectedAt DateTime?
+  updatedAt   DateTime @updatedAt
+
+  @@unique([companyId, connectorId])
+}
+
+/// Password and session policy. One row per tenant.
+model SecurityPolicy {
+  companyId String  @id
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  passwordMinLength  Int     @default(10)
+  requireUppercase   Boolean @default(true)
+  requireNumber      Boolean @default(true)
+  requireSymbol      Boolean @default(false)
+  passwordExpiryDays Int     @default(90)
+  lockoutThreshold   Int     @default(5)
+  sessionTimeoutHours Int    @default(12)
+  mfaRequired        Boolean @default(false)
+
+  updatedAt DateTime @updatedAt
+}
+
+model OrgSettings {
+  companyId String  @id
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  displayName   String @default("")
+  legalName     String @default("")
+  industry      String @default("")
+  timezone      String @default("Asia/Kuching")
+  language      String @default("en-MY")
+  brandAccent   String @default("#2F6FED")
+  logoInitials  String @default("")
+
+  updatedAt DateTime @updatedAt
+}
+
+/// Job positions, shift patterns, holidays and business units.
+///
+/// One table rather than four: they are all small, free-shaped lists the console edits
+/// as rows, none is referenced by another model, and four near-identical tables would
+/// be four near-identical services.
+model OrgConfigItem {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  /// position | shift | holiday | unit
+  kind String
+  data Json
+
+  createdBy String
+  createdAt DateTime @default(now())
+
+  @@index([companyId, kind])
+}
+
+model RetentionPolicy {
+  companyId String  @id
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  auditLogDays        Int     @default(365)
+  backupCount         Int     @default(10)
+  closedIncidentYears Int     @default(7)
+  autoBackupDaily     Boolean @default(true)
+
+  updatedAt DateTime @updatedAt
+}
+
+/// A restore point. The snapshot is the tenant's own data, exported as JSON.
+model Backup {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  sizeKb     Int     @default(0)
+  by         String
+  /// manual | auto | pre_restore
+  type       String  @default("manual")
+  note       String  @default("")
+  restorable Boolean @default(true)
+  /// The exported payload. Null once pruned by the retention policy.
+  snapshot   Json?
+
+  at DateTime @default(now())
+
+  @@index([companyId, at])
 }

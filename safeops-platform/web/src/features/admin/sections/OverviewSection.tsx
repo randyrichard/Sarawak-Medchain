@@ -3,16 +3,19 @@ import {
   AlertTriangle, CheckCircle2, Cpu, Database, HardDrive, Info, RefreshCw, Users, Zap,
 } from 'lucide-react'
 import { api } from '@/api/client'
+import { useOrg } from '@/features/org/OrgContext'
 import type { SystemHealth } from '@/api/admin'
 import { Badge, Button, Card, CardBody, CardHeader, Skeleton, StatusPill } from '@/components/ui'
 import { timeAgo } from '@/lib/time'
 import { cn } from '@/lib/cn'
 
 export function OverviewSection() {
+  const { company } = useOrg()
+  const companyId = company?.id ?? ''
   const [health, setHealth] = useState<SystemHealth | null>(null)
   const [refreshing, setRefreshing] = useState(false)
 
-  const load = () => api.adminSystemHealth().then(setHealth)
+  const load = () => api.adminSystemHealth(companyId).then(setHealth)
   useEffect(() => {
     load()
     const t = setInterval(load, 20_000)

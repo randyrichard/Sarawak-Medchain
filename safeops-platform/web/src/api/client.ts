@@ -45,6 +45,7 @@ import { permitsApi } from './permitsApi'
 import { inspectionsApi } from './inspectionsApi'
 import { auditsApi } from './auditsApi'
 import { trainingApi } from './trainingApi'
+import { adminApi } from './adminApi'
 import type {
   GasTest, IsolationPoint, NewPermitInput, PermitFilters, PermitStats, PermitView,
 } from './permits'
@@ -145,54 +146,56 @@ export interface ApiClient {
   trainingStats(companyId: string): Promise<TrainingStats>
 
   // administration — users
+  // Every method carries the workspace: the console administers one tenant, and the
+  // server will not act on a company the caller cannot name.
   adminListUsers(companyId: string, filters: { q?: string; status?: string; role?: string }): Promise<AdminUser[]>
-  adminGetUser(id: string): Promise<AdminUser>
+  adminGetUser(companyId: string, id: string): Promise<AdminUser>
   adminCreateUser(companyId: string, input: NewUserInput, actor: AdminActor): Promise<AdminUser>
-  adminSetUserStatus(id: string, status: AdminUser['status'], actor: AdminActor): Promise<AdminUser>
-  adminResetPassword(id: string, actor: AdminActor): Promise<{ token: string }>
-  adminForcePasswordReset(id: string, actor: AdminActor): Promise<AdminUser>
-  adminToggleMfa(id: string, actor: AdminActor): Promise<AdminUser>
+  adminSetUserStatus(companyId: string, id: string, status: AdminUser['status'], actor: AdminActor): Promise<AdminUser>
+  adminResetPassword(companyId: string, id: string, actor: AdminActor): Promise<{ token: string }>
+  adminForcePasswordReset(companyId: string, id: string, actor: AdminActor): Promise<AdminUser>
+  adminToggleMfa(companyId: string, id: string, actor: AdminActor): Promise<AdminUser>
   adminBulkImport(companyId: string, csv: string, actor: AdminActor): Promise<{ created: number; skipped: number; errors: string[] }>
-  adminUserDevices(id: string): Promise<UserDevice[]>
-  adminUserLoginHistory(id: string): Promise<LoginEvent[]>
+  adminUserDevices(companyId: string, id: string): Promise<UserDevice[]>
+  adminUserLoginHistory(companyId: string, id: string): Promise<LoginEvent[]>
   // administration — RBAC
-  adminListRoles(): Promise<RoleDef[]>
-  adminToggleRolePermission(roleId: string, module: RbacModule, action: RbacAction, actor: AdminActor): Promise<RoleDef>
-  adminCreateRole(name: string, cloneFrom: string, actor: AdminActor): Promise<RoleDef>
-  adminDeleteRole(roleId: string, actor: AdminActor): Promise<void>
+  adminListRoles(companyId: string): Promise<RoleDef[]>
+  adminToggleRolePermission(companyId: string, roleId: string, module: RbacModule, action: RbacAction, actor: AdminActor): Promise<RoleDef>
+  adminCreateRole(companyId: string, name: string, cloneFrom: string, actor: AdminActor): Promise<RoleDef>
+  adminDeleteRole(companyId: string, roleId: string, actor: AdminActor): Promise<void>
   // administration — audit / security
-  adminListAudit(filters: AdminAuditFilters): Promise<AuditEntry[]>
-  adminGetSecurity(): Promise<SecuritySettings>
-  adminUpdateSecurity(patch: Partial<SecuritySettings>, actor: AdminActor): Promise<SecuritySettings>
-  adminLoginHistory(): Promise<LoginEvent[]>
+  adminListAudit(companyId: string, filters: AdminAuditFilters): Promise<AuditEntry[]>
+  adminGetSecurity(companyId: string): Promise<SecuritySettings>
+  adminUpdateSecurity(companyId: string, patch: Partial<SecuritySettings>, actor: AdminActor): Promise<SecuritySettings>
+  adminLoginHistory(companyId: string): Promise<LoginEvent[]>
   adminSecurityCenter(companyId: string): Promise<SecurityCenter>
   // administration — integrations & API
-  adminListConnectors(): Promise<Connector[]>
-  adminSetConnector(id: string, connected: boolean, config: Record<string, string> | undefined, actor: AdminActor): Promise<Connector>
-  adminListApiKeys(): Promise<ApiKey[]>
-  adminCreateApiKey(name: string, scopes: RbacAction[], actor: AdminActor): Promise<{ key: ApiKey; secret: string }>
-  adminRevokeApiKey(id: string, actor: AdminActor): Promise<ApiKey>
-  adminListWebhooks(): Promise<Webhook[]>
-  adminCreateWebhook(url: string, events: string[], actor: AdminActor): Promise<Webhook>
-  adminToggleWebhook(id: string, actor: AdminActor): Promise<Webhook>
-  adminTestWebhook(id: string, actor: AdminActor): Promise<Webhook>
-  adminApiUsage(): Promise<{ series: { label: string; calls: number; errors: number }[]; totalToday: number; errorRate: number }>
+  adminListConnectors(companyId: string): Promise<Connector[]>
+  adminSetConnector(companyId: string, id: string, connected: boolean, config: Record<string, string> | undefined, actor: AdminActor): Promise<Connector>
+  adminListApiKeys(companyId: string): Promise<ApiKey[]>
+  adminCreateApiKey(companyId: string, name: string, scopes: RbacAction[], actor: AdminActor): Promise<{ key: ApiKey; secret: string }>
+  adminRevokeApiKey(companyId: string, id: string, actor: AdminActor): Promise<ApiKey>
+  adminListWebhooks(companyId: string): Promise<Webhook[]>
+  adminCreateWebhook(companyId: string, url: string, events: string[], actor: AdminActor): Promise<Webhook>
+  adminToggleWebhook(companyId: string, id: string, actor: AdminActor): Promise<Webhook>
+  adminTestWebhook(companyId: string, id: string, actor: AdminActor): Promise<Webhook>
+  adminApiUsage(companyId: string): Promise<{ series: { label: string; calls: number; errors: number }[]; totalToday: number; errorRate: number }>
   // administration — org config
   adminGetOrgSettings(companyId: string): Promise<OrgSettings>
   adminUpdateOrgSettings(companyId: string, patch: Partial<OrgSettings>, actor: AdminActor): Promise<OrgSettings>
-  adminListPositions(): Promise<JobPosition[]>
-  adminListShifts(): Promise<ShiftPattern[]>
-  adminListHolidays(): Promise<Holiday[]>
-  adminListUnits(): Promise<BusinessUnit[]>
-  adminAddConfigItem(kind: 'position' | 'shift' | 'holiday' | 'unit', data: Record<string, string>, actor: AdminActor): Promise<void>
-  adminRemoveConfigItem(kind: 'position' | 'shift' | 'holiday' | 'unit', id: string, actor: AdminActor): Promise<void>
+  adminListPositions(companyId: string): Promise<JobPosition[]>
+  adminListShifts(companyId: string): Promise<ShiftPattern[]>
+  adminListHolidays(companyId: string): Promise<Holiday[]>
+  adminListUnits(companyId: string): Promise<BusinessUnit[]>
+  adminAddConfigItem(companyId: string, kind: 'position' | 'shift' | 'holiday' | 'unit', data: Record<string, string>, actor: AdminActor): Promise<void>
+  adminRemoveConfigItem(companyId: string, kind: 'position' | 'shift' | 'holiday' | 'unit', id: string, actor: AdminActor): Promise<void>
   // administration — health & backup
-  adminSystemHealth(): Promise<SystemHealth>
-  adminGetRetention(): Promise<RetentionSettings>
-  adminUpdateRetention(patch: Partial<RetentionSettings>, actor: AdminActor): Promise<RetentionSettings>
-  adminListBackups(): Promise<Backup[]>
-  adminCreateBackup(actor: AdminActor, note: string): Promise<{ backup: Backup; snapshot: string }>
-  adminRestoreBackup(id: string, actor: AdminActor): Promise<void>
+  adminSystemHealth(companyId: string): Promise<SystemHealth>
+  adminGetRetention(companyId: string): Promise<RetentionSettings>
+  adminUpdateRetention(companyId: string, patch: Partial<RetentionSettings>, actor: AdminActor): Promise<RetentionSettings>
+  adminListBackups(companyId: string): Promise<Backup[]>
+  adminCreateBackup(companyId: string, actor: AdminActor, note: string): Promise<{ backup: Backup; snapshot: string }>
+  adminRestoreBackup(companyId: string, id: string, actor: AdminActor): Promise<void>
 
   // ── permits to work ────────────────────────────────────────────────────────
   listPermits(companyId: string, filters: PermitFilters): Promise<PermitView[]>
@@ -296,6 +299,15 @@ const SERVER_AUDITS = isBackendConfigured()
  * the credential-free demo.
  */
 const SERVER_TRAINING = isBackendConfigured()
+
+/**
+ * True when the administration console is served by the API.
+ *
+ * User lifecycle, roles, devices and login history operate on the real authentication
+ * tables rather than a parallel copy, so an account deactivated here genuinely cannot
+ * sign in. The mock below is seed data for the credential-free demo.
+ */
+const SERVER_ADMIN = isBackendConfigured()
 
 
 
@@ -967,57 +979,212 @@ class MockApiClient implements ApiClient {
   }
 
   // ── administration ─────────────────────────────────────────────────────────
+  // Users, roles, devices and login history act on the real authentication tables, so
+  // deactivating an account here is the same act that stops the person signing in.
 
   async adminListUsers(companyId: string, filters: { q?: string; status?: string; role?: string }) {
+    if (SERVER_ADMIN) return adminApi.listUsers(companyId, filters)
     await delay(LATENCY()); return this.admin.listUsers(companyId, filters)
   }
-  async adminGetUser(id: string) { await delay(LATENCY() / 3); return this.admin.getUser(id) }
-  async adminCreateUser(companyId: string, input: NewUserInput, actor: AdminActor) { await delay(LATENCY() / 2); return this.admin.createUser(companyId, input, actor) }
-  async adminSetUserStatus(id: string, status: AdminUser['status'], actor: AdminActor) { await delay(LATENCY() / 3); return this.admin.setUserStatus(id, status, actor) }
-  async adminResetPassword(id: string, actor: AdminActor) { await delay(LATENCY() / 3); return this.admin.resetPassword(id, actor) }
-  async adminForcePasswordReset(id: string, actor: AdminActor) { await delay(LATENCY() / 3); return this.admin.forcePasswordReset(id, actor) }
-  async adminToggleMfa(id: string, actor: AdminActor) { await delay(LATENCY() / 3); return this.admin.toggleMfa(id, actor) }
-  async adminBulkImport(companyId: string, csv: string, actor: AdminActor) { await delay(LATENCY()); return this.admin.bulkImportUsers(companyId, csv, actor) }
-  async adminUserDevices(id: string) { await delay(LATENCY() / 3); return this.admin.getUserDevices(id) }
-  async adminUserLoginHistory(id: string) { await delay(LATENCY() / 3); return this.admin.getUserLoginHistory(id) }
+  async adminGetUser(companyId: string, id: string) {
+    if (SERVER_ADMIN) return adminApi.getUser(companyId, id)
+    await delay(LATENCY() / 3); return this.admin.getUser(id)
+  }
+  async adminCreateUser(companyId: string, input: NewUserInput, actor: AdminActor) {
+    if (SERVER_ADMIN) {
+      const u = await adminApi.createUser(companyId, input)
+      this.pushNotification('system',
+        input.sendInvite ? `Invitation sent to ${u.email}` : `User created: ${u.name}`,
+        `Role: ${u.role}.`)
+      return u
+    }
+    await delay(LATENCY() / 2); return this.admin.createUser(companyId, input, actor)
+  }
+  async adminSetUserStatus(companyId: string, id: string, status: AdminUser['status'], actor: AdminActor) {
+    if (SERVER_ADMIN) return adminApi.setUserStatus(companyId, id, status)
+    await delay(LATENCY() / 3); return this.admin.setUserStatus(id, status, actor)
+  }
+  async adminResetPassword(companyId: string, id: string, actor: AdminActor) {
+    if (SERVER_ADMIN) {
+      const r = await adminApi.resetPassword(companyId, id)
+      this.pushNotification('system', 'Password reset issued',
+        'Live sessions were revoked and a single-use link was generated.')
+      return r
+    }
+    await delay(LATENCY() / 3); return this.admin.resetPassword(id, actor)
+  }
+  async adminForcePasswordReset(companyId: string, id: string, actor: AdminActor) {
+    if (SERVER_ADMIN) return adminApi.forcePasswordReset(companyId, id)
+    await delay(LATENCY() / 3); return this.admin.forcePasswordReset(id, actor)
+  }
+  async adminToggleMfa(companyId: string, id: string, actor: AdminActor) {
+    if (SERVER_ADMIN) return adminApi.toggleMfa(companyId, id)
+    await delay(LATENCY() / 3); return this.admin.toggleMfa(id, actor)
+  }
+  async adminBulkImport(companyId: string, csv: string, actor: AdminActor) {
+    if (SERVER_ADMIN) {
+      const r = await adminApi.bulkImport(companyId, csv)
+      this.pushNotification('system', `Bulk import complete: ${r.created} users invited`,
+        `${r.skipped} duplicate(s) skipped.`)
+      return r
+    }
+    await delay(LATENCY()); return this.admin.bulkImportUsers(companyId, csv, actor)
+  }
+  async adminUserDevices(companyId: string, id: string) {
+    if (SERVER_ADMIN) return adminApi.userDevices(companyId, id)
+    await delay(LATENCY() / 3); return this.admin.getUserDevices(id)
+  }
+  async adminUserLoginHistory(companyId: string, id: string) {
+    if (SERVER_ADMIN) return adminApi.userLoginHistory(companyId, id)
+    await delay(LATENCY() / 3); return this.admin.getUserLoginHistory(id)
+  }
 
-  async adminListRoles() { await delay(LATENCY() / 2); return this.admin.listRoles() }
-  async adminToggleRolePermission(roleId: string, module: RbacModule, action: RbacAction, actor: AdminActor) { await delay(LATENCY() / 3); return this.admin.toggleRolePermission(roleId, module, action, actor) }
-  async adminCreateRole(name: string, cloneFrom: string, actor: AdminActor) { await delay(LATENCY() / 2); return this.admin.createRole(name, cloneFrom, actor) }
-  async adminDeleteRole(roleId: string, actor: AdminActor) { await delay(LATENCY() / 3); this.admin.deleteRole(roleId, actor) }
+  async adminListRoles(companyId: string) {
+    if (SERVER_ADMIN) return adminApi.listRoles(companyId)
+    await delay(LATENCY() / 2); return this.admin.listRoles()
+  }
+  async adminToggleRolePermission(companyId: string, roleId: string, module: RbacModule, action: RbacAction, actor: AdminActor) {
+    if (SERVER_ADMIN) return adminApi.toggleRolePermission(companyId, roleId, module, action)
+    await delay(LATENCY() / 3); return this.admin.toggleRolePermission(roleId, module, action, actor)
+  }
+  async adminCreateRole(companyId: string, name: string, cloneFrom: string, actor: AdminActor) {
+    if (SERVER_ADMIN) return adminApi.createRole(companyId, name, cloneFrom)
+    await delay(LATENCY() / 2); return this.admin.createRole(name, cloneFrom, actor)
+  }
+  async adminDeleteRole(companyId: string, roleId: string, actor: AdminActor) {
+    if (SERVER_ADMIN) return adminApi.deleteRole(companyId, roleId)
+    await delay(LATENCY() / 3); this.admin.deleteRole(roleId, actor)
+  }
 
-  async adminListAudit(filters: AdminAuditFilters) { await delay(LATENCY() / 2); return this.admin.listAudit(filters) }
-  async adminGetSecurity() { await delay(LATENCY() / 3); return this.admin.getSecurity() }
-  async adminUpdateSecurity(patch: Partial<SecuritySettings>, actor: AdminActor) { await delay(LATENCY() / 3); return this.admin.updateSecurity(patch, actor) }
-  async adminLoginHistory() { await delay(LATENCY() / 2); return this.admin.listLoginHistory() }
-  async adminSecurityCenter(companyId: string) { await delay(LATENCY() / 2); return this.admin.securityCenter(companyId) }
+  async adminListAudit(companyId: string, filters: AdminAuditFilters) {
+    if (SERVER_ADMIN) return adminApi.listAudit(companyId, filters)
+    await delay(LATENCY() / 2); return this.admin.listAudit(filters)
+  }
+  async adminGetSecurity(companyId: string) {
+    if (SERVER_ADMIN) return adminApi.getSecurity(companyId)
+    await delay(LATENCY() / 3); return this.admin.getSecurity()
+  }
+  async adminUpdateSecurity(companyId: string, patch: Partial<SecuritySettings>, actor: AdminActor) {
+    if (SERVER_ADMIN) return adminApi.updateSecurity(companyId, patch)
+    await delay(LATENCY() / 3); return this.admin.updateSecurity(patch, actor)
+  }
+  async adminLoginHistory(companyId: string) {
+    if (SERVER_ADMIN) return adminApi.loginHistory(companyId)
+    await delay(LATENCY() / 2); return this.admin.listLoginHistory()
+  }
+  async adminSecurityCenter(companyId: string) {
+    if (SERVER_ADMIN) return adminApi.securityCenter(companyId)
+    await delay(LATENCY() / 2); return this.admin.securityCenter(companyId)
+  }
 
-  async adminListConnectors() { await delay(LATENCY() / 2); return this.admin.listConnectors() }
-  async adminSetConnector(id: string, connected: boolean, config: Record<string, string> | undefined, actor: AdminActor) { await delay(LATENCY() / 2); return this.admin.setConnector(id, connected, config, actor) }
-  async adminListApiKeys() { await delay(LATENCY() / 2); return this.admin.listApiKeys() }
-  async adminCreateApiKey(name: string, scopes: RbacAction[], actor: AdminActor) { await delay(LATENCY() / 2); return this.admin.createApiKey(name, scopes, actor) }
-  async adminRevokeApiKey(id: string, actor: AdminActor) { await delay(LATENCY() / 3); return this.admin.revokeApiKey(id, actor) }
-  async adminListWebhooks() { await delay(LATENCY() / 2); return this.admin.listWebhooks() }
-  async adminCreateWebhook(url: string, events: string[], actor: AdminActor) { await delay(LATENCY() / 2); return this.admin.createWebhook(url, events, actor) }
-  async adminToggleWebhook(id: string, actor: AdminActor) { await delay(LATENCY() / 3); return this.admin.toggleWebhook(id, actor) }
-  async adminTestWebhook(id: string, actor: AdminActor) { await delay(LATENCY()); return this.admin.testWebhook(id, actor) }
-  async adminApiUsage() { await delay(LATENCY() / 2); return this.admin.apiUsage() }
+  async adminListConnectors(companyId: string) {
+    if (SERVER_ADMIN) return adminApi.listConnectors(companyId)
+    await delay(LATENCY() / 2); return this.admin.listConnectors()
+  }
+  async adminSetConnector(companyId: string, id: string, connected: boolean, config: Record<string, string> | undefined, actor: AdminActor) {
+    if (SERVER_ADMIN) return adminApi.setConnector(companyId, id, connected, config)
+    await delay(LATENCY() / 2); return this.admin.setConnector(id, connected, config, actor)
+  }
+  async adminListApiKeys(companyId: string) {
+    if (SERVER_ADMIN) return adminApi.listApiKeys(companyId)
+    await delay(LATENCY() / 2); return this.admin.listApiKeys()
+  }
+  async adminCreateApiKey(companyId: string, name: string, scopes: RbacAction[], actor: AdminActor) {
+    if (SERVER_ADMIN) return adminApi.createApiKey(companyId, name, scopes)
+    await delay(LATENCY() / 2); return this.admin.createApiKey(name, scopes, actor)
+  }
+  async adminRevokeApiKey(companyId: string, id: string, actor: AdminActor) {
+    if (SERVER_ADMIN) return adminApi.revokeApiKey(companyId, id)
+    await delay(LATENCY() / 3); return this.admin.revokeApiKey(id, actor)
+  }
+  async adminListWebhooks(companyId: string) {
+    if (SERVER_ADMIN) return adminApi.listWebhooks(companyId)
+    await delay(LATENCY() / 2); return this.admin.listWebhooks()
+  }
+  async adminCreateWebhook(companyId: string, url: string, events: string[], actor: AdminActor) {
+    if (SERVER_ADMIN) return adminApi.createWebhook(companyId, url, events)
+    await delay(LATENCY() / 2); return this.admin.createWebhook(url, events, actor)
+  }
+  async adminToggleWebhook(companyId: string, id: string, actor: AdminActor) {
+    if (SERVER_ADMIN) return adminApi.toggleWebhook(companyId, id)
+    await delay(LATENCY() / 3); return this.admin.toggleWebhook(id, actor)
+  }
+  async adminTestWebhook(companyId: string, id: string, actor: AdminActor) {
+    if (SERVER_ADMIN) return adminApi.testWebhook(companyId, id)
+    await delay(LATENCY()); return this.admin.testWebhook(id, actor)
+  }
+  async adminApiUsage(companyId: string) {
+    if (SERVER_ADMIN) return adminApi.apiUsage(companyId)
+    await delay(LATENCY() / 2); return this.admin.apiUsage()
+  }
 
-  async adminGetOrgSettings(companyId: string) { await delay(LATENCY() / 3); return this.admin.getOrgSettings(companyId) }
-  async adminUpdateOrgSettings(companyId: string, patch: Partial<OrgSettings>, actor: AdminActor) { await delay(LATENCY() / 3); return this.admin.updateOrgSettings(companyId, patch, actor) }
-  async adminListPositions() { await delay(LATENCY() / 3); return this.admin.listPositions() }
-  async adminListShifts() { await delay(LATENCY() / 3); return this.admin.listShifts() }
-  async adminListHolidays() { await delay(LATENCY() / 3); return this.admin.listHolidays() }
-  async adminListUnits() { await delay(LATENCY() / 3); return this.admin.listUnits() }
-  async adminAddConfigItem(kind: 'position' | 'shift' | 'holiday' | 'unit', data: Record<string, string>, actor: AdminActor) { await delay(LATENCY() / 3); this.admin.addConfigItem(kind, data, actor) }
-  async adminRemoveConfigItem(kind: 'position' | 'shift' | 'holiday' | 'unit', id: string, actor: AdminActor) { await delay(LATENCY() / 3); this.admin.removeConfigItem(kind, id, actor) }
+  async adminGetOrgSettings(companyId: string) {
+    if (SERVER_ADMIN) return adminApi.getOrgSettings(companyId)
+    await delay(LATENCY() / 3); return this.admin.getOrgSettings(companyId)
+  }
+  async adminUpdateOrgSettings(companyId: string, patch: Partial<OrgSettings>, actor: AdminActor) {
+    if (SERVER_ADMIN) return adminApi.updateOrgSettings(companyId, patch)
+    await delay(LATENCY() / 3); return this.admin.updateOrgSettings(companyId, patch, actor)
+  }
+  async adminListPositions(companyId: string) {
+    if (SERVER_ADMIN) return adminApi.listConfig<JobPosition>(companyId, 'position')
+    await delay(LATENCY() / 3); return this.admin.listPositions()
+  }
+  async adminListShifts(companyId: string) {
+    if (SERVER_ADMIN) return adminApi.listConfig<ShiftPattern>(companyId, 'shift')
+    await delay(LATENCY() / 3); return this.admin.listShifts()
+  }
+  async adminListHolidays(companyId: string) {
+    if (SERVER_ADMIN) return adminApi.listConfig<Holiday>(companyId, 'holiday')
+    await delay(LATENCY() / 3); return this.admin.listHolidays()
+  }
+  async adminListUnits(companyId: string) {
+    if (SERVER_ADMIN) return adminApi.listConfig<BusinessUnit>(companyId, 'unit')
+    await delay(LATENCY() / 3); return this.admin.listUnits()
+  }
+  async adminAddConfigItem(companyId: string, kind: 'position' | 'shift' | 'holiday' | 'unit', data: Record<string, string>, actor: AdminActor) {
+    if (SERVER_ADMIN) return adminApi.addConfigItem(companyId, kind, data)
+    await delay(LATENCY() / 3); this.admin.addConfigItem(kind, data, actor)
+  }
+  async adminRemoveConfigItem(companyId: string, kind: 'position' | 'shift' | 'holiday' | 'unit', id: string, actor: AdminActor) {
+    if (SERVER_ADMIN) return adminApi.removeConfigItem(companyId, kind, id)
+    await delay(LATENCY() / 3); this.admin.removeConfigItem(kind, id, actor)
+  }
 
-  async adminSystemHealth() { await delay(LATENCY() / 2); return this.admin.systemHealth() }
-  async adminGetRetention() { await delay(LATENCY() / 3); return this.admin.getRetention() }
-  async adminUpdateRetention(patch: Partial<RetentionSettings>, actor: AdminActor) { await delay(LATENCY() / 3); return this.admin.updateRetention(patch, actor) }
-  async adminListBackups() { await delay(LATENCY() / 2); return this.admin.listBackups() }
-  async adminCreateBackup(actor: AdminActor, note: string) { await delay(LATENCY()); return this.admin.createBackup(actor, note) }
-  async adminRestoreBackup(id: string, actor: AdminActor) { await delay(LATENCY()); this.admin.restoreBackup(id, actor) }
+  async adminSystemHealth(companyId: string) {
+    if (SERVER_ADMIN) return adminApi.systemHealth(companyId)
+    await delay(LATENCY() / 2); return this.admin.systemHealth()
+  }
+  async adminGetRetention(companyId: string) {
+    if (SERVER_ADMIN) return adminApi.getRetention(companyId)
+    await delay(LATENCY() / 3); return this.admin.getRetention()
+  }
+  async adminUpdateRetention(companyId: string, patch: Partial<RetentionSettings>, actor: AdminActor) {
+    if (SERVER_ADMIN) return adminApi.updateRetention(companyId, patch)
+    await delay(LATENCY() / 3); return this.admin.updateRetention(patch, actor)
+  }
+  async adminListBackups(companyId: string) {
+    if (SERVER_ADMIN) return adminApi.listBackups(companyId)
+    await delay(LATENCY() / 2); return this.admin.listBackups()
+  }
+  async adminCreateBackup(companyId: string, actor: AdminActor, note: string) {
+    if (SERVER_ADMIN) {
+      const r = await adminApi.createBackup(companyId, note)
+      this.pushNotification('system', 'Backup created',
+        `${r.backup.sizeKb} KB snapshot — restorable and downloadable.`)
+      return r
+    }
+    await delay(LATENCY()); return this.admin.createBackup(actor, note)
+  }
+  async adminRestoreBackup(companyId: string, id: string, actor: AdminActor) {
+    if (SERVER_ADMIN) {
+      const r = await adminApi.restoreBackup(companyId, id)
+      this.pushNotification('system', 'Restore complete',
+        `${r.restored} row(s) reinstated. A snapshot of the previous state was taken first.`)
+      return
+    }
+    await delay(LATENCY()); this.admin.restoreBackup(id, actor)
+  }
 
   // ── permits to work ────────────────────────────────────────────────────────
 

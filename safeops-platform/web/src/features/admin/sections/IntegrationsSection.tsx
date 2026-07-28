@@ -3,6 +3,7 @@ import {
   Boxes, Building, Cable, Database, KeyRound, MessageSquare, Plug, Users2,
 } from 'lucide-react'
 import { api } from '@/api/client'
+import { useOrg } from '@/features/org/OrgContext'
 import { ApiError } from '@/api/types'
 import type { Connector, ConnectorCategory } from '@/api/admin'
 import { Alert, Badge, Button, Card, Dialog, Input, Skeleton, StatusPill } from '@/components/ui'
@@ -19,12 +20,14 @@ const CAT_META: Record<ConnectorCategory, { label: string; icon: typeof Plug }> 
 }
 
 export function IntegrationsSection() {
+  const { company } = useOrg()
+  const companyId = company?.id ?? ''
   const actor = useAdminActor()
   const [connectors, setConnectors] = useState<Connector[] | null>(null)
   const [configFor, setConfigFor] = useState<Connector | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const load = () => api.adminListConnectors().then(setConnectors)
+  const load = () => api.adminListConnectors(companyId).then(setConnectors)
   useEffect(() => { load() }, [])
 
   const grouped = useMemo(() => {
@@ -35,7 +38,7 @@ export function IntegrationsSection() {
 
   const disconnect = async (c: Connector) => {
     setError(null)
-    try { await api.adminSetConnector(c.id, false, undefined, actor); load() }
+    try { await api.adminSetConnector(companyId, c.id, false, undefined, actor); load() }
     catch (e) { setError(e instanceof ApiError ? e.message : 'Failed.') }
   }
 
@@ -91,6 +94,8 @@ export function IntegrationsSection() {
 }
 
 function ConnectDialog({ connector, onClose, onConnected }: { connector: Connector | null; onClose: () => void; onConnected: () => void }) {
+  const { company } = useOrg()
+  const companyId = company?.id ?? ''
   const actor = useAdminActor()
   const [config, setConfig] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
@@ -103,7 +108,7 @@ function ConnectDialog({ connector, onClose, onConnected }: { connector: Connect
   const submit = async () => {
     setBusy(true); setError(null)
     try {
-      await api.adminSetConnector(connector.id, true, config, actor)
+      await api.adminSetConnector(companyId, connector.id, true, config, actor)
       onConnected()
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Could not connect.')

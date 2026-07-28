@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ArrowRight, Download, Search } from 'lucide-react'
 import { api } from '@/api/client'
+import { useOrg } from '@/features/org/OrgContext'
 import type { AuditEntry, RbacModule } from '@/api/admin'
 import { MODULE_LABEL, RBAC_MODULES } from '@/api/admin'
 import { Avatar, Badge, Button, Card, EmptyState, Skeleton } from '@/components/ui'
@@ -11,11 +12,13 @@ import { ScrollText } from 'lucide-react'
 const MODULE_TAG = (m: AuditEntry['module']) => (m === 'auth' ? 'Authentication' : m === 'system' ? 'System' : MODULE_LABEL[m as RbacModule])
 
 export function AuditLogSection() {
+  const { company } = useOrg()
+  const companyId = company?.id ?? ''
   const [rows, setRows] = useState<AuditEntry[] | null>(null)
   const [q, setQ] = useState('')
   const [module, setModule] = useState<string>('')
 
-  const load = useCallback(() => api.adminListAudit({ q, module: module as RbacModule | '' }).then(setRows), [q, module])
+  const load = useCallback(() => api.adminListAudit(companyId, { q, module: module as RbacModule | '' }).then(setRows), [q, module])
   useEffect(() => {
     setRows(null)
     const t = setTimeout(load, q ? 250 : 0)

@@ -42,7 +42,10 @@ function CenterPanel() {
 
   const tiles = [
     { label: 'MFA adoption', value: `${sc.mfaAdoptionPct}%`, tone: sc.mfaAdoptionPct >= 90 ? 'var(--good)' : 'var(--warning)', note: `${sc.mfaEnabledCount}/${sc.totalUsers} users` },
-    { label: 'Weak passwords', value: sc.weakPasswords, tone: sc.weakPasswords > 0 ? 'var(--critical)' : 'var(--good)', note: 'below policy' },
+    // Not "weak passwords": with Argon2id the server holds only a digest and genuinely
+    // cannot tell a weak password from a strong one — that is what the hashing is for.
+    // What it does know is which accounts an administrator has flagged for reset.
+    { label: 'Pending resets', value: sc.weakPasswords, tone: sc.weakPasswords > 0 ? 'var(--warning)' : 'var(--good)', note: 'must change at next sign-in' },
     { label: 'Inactive accounts', value: sc.inactiveUsers, tone: sc.inactiveUsers > 0 ? 'var(--warning)' : 'var(--good)', note: '60+ days idle' },
     { label: 'Suspicious logins', value: sc.suspiciousLogins, tone: sc.suspiciousLogins > 0 ? 'var(--critical)' : 'var(--good)', note: 'last 7 days' },
   ]
@@ -82,20 +85,22 @@ function CenterPanel() {
 }
 
 function PolicyPanel() {
+  const { company } = useOrg()
+  const companyId = company?.id ?? ''
   const actor = useAdminActor()
   const [s, setS] = useState<SecuritySettings | null>(null)
   const [busy, setBusy] = useState(false)
   const [flash, setFlash] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => { api.adminGetSecurity().then(setS) }, [])
+  useEffect(() => { api.adminGetSecurity(companyId).then(setS) }, [])
   if (!s) return <Card className="p-5"><Skeleton className="h-64 w-full" /></Card>
   const set = (p: Partial<SecuritySettings>) => setS({ ...s, ...p })
 
   const save = async () => {
     setBusy(true); setError(null)
     try {
-      await api.adminUpdateSecurity(s, actor)
+      await api.adminUpdateSecurity(companyId, s, actor)
       setFlash(true); setTimeout(() => setFlash(false), 2500)
     } catch (e) { setError(e instanceof ApiError ? e.message : 'Could not save.') } finally { setBusy(false) }
   }
@@ -135,8 +140,10 @@ function PolicyPanel() {
 }
 
 function LoginsPanel() {
+  const { company } = useOrg()
+  const companyId = company?.id ?? ''
   const [events, setEvents] = useState<LoginEvent[] | null>(null)
-  useEffect(() => { api.adminLoginHistory().then(setEvents) }, [])
+  useEffect(() => { api.adminLoginHistory(companyId).then(setEvents) }, [])
 
   const exportCsv = () => downloadCsv(
     ['Time', 'User', 'Email', 'Result', 'IP', 'Device', 'Location', 'Suspicious'],

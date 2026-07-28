@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Check, Copy, Plus, Send, Trash2, Webhook as WebhookIcon } from 'lucide-react'
 import { api } from '@/api/client'
+import { useOrg } from '@/features/org/OrgContext'
 import { ApiError } from '@/api/types'
 import type { ApiKey, RbacAction, Webhook } from '@/api/admin'
 import { RBAC_ACTIONS, WEBHOOK_EVENTS } from '@/api/admin'
@@ -34,17 +35,19 @@ export function DeveloperSection() {
 }
 
 function KeysPanel() {
+  const { company } = useOrg()
+  const companyId = company?.id ?? ''
   const actor = useAdminActor()
   const [keys, setKeys] = useState<ApiKey[] | null>(null)
   const [newOpen, setNewOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const load = () => api.adminListApiKeys().then(setKeys)
+  const load = () => api.adminListApiKeys(companyId).then(setKeys)
   useEffect(() => { load() }, [])
 
   const revoke = async (id: string) => {
     setError(null)
-    try { await api.adminRevokeApiKey(id, actor); load() }
+    try { await api.adminRevokeApiKey(companyId, id, actor); load() }
     catch (e) { setError(e instanceof ApiError ? e.message : 'Failed.') }
   }
 
@@ -99,6 +102,8 @@ function KeysPanel() {
 }
 
 function NewKeyDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
+  const { company } = useOrg()
+  const companyId = company?.id ?? ''
   const actor = useAdminActor()
   const [name, setName] = useState('')
   const [scopes, setScopes] = useState<RbacAction[]>(['view'])
@@ -112,7 +117,7 @@ function NewKeyDialog({ open, onClose, onCreated }: { open: boolean; onClose: ()
   const submit = async () => {
     setBusy(true); setError(null)
     try {
-      const { secret } = await api.adminCreateApiKey(name, scopes, actor)
+      const { secret } = await api.adminCreateApiKey(companyId, name, scopes, actor)
       setSecret(secret)
     } catch (e) { setError(e instanceof ApiError ? e.message : 'Failed.') } finally { setBusy(false) }
   }
@@ -152,12 +157,14 @@ function NewKeyDialog({ open, onClose, onCreated }: { open: boolean; onClose: ()
 }
 
 function WebhooksPanel() {
+  const { company } = useOrg()
+  const companyId = company?.id ?? ''
   const actor = useAdminActor()
   const [hooks, setHooks] = useState<Webhook[] | null>(null)
   const [newOpen, setNewOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const load = () => api.adminListWebhooks().then(setHooks)
+  const load = () => api.adminListWebhooks(companyId).then(setHooks)
   useEffect(() => { load() }, [])
 
   const act = async (fn: () => Promise<unknown>) => {
@@ -179,13 +186,13 @@ function WebhooksPanel() {
               <p className="flex items-center gap-2 font-mono text-sm text-ink"><WebhookIcon size={14} className="text-accent" /> {wh.url}</p>
               <div className="mt-1.5 flex flex-wrap gap-1">{wh.events.map((e) => <Badge key={e} tone="neutral">{e}</Badge>)}</div>
             </div>
-            <Switch checked={wh.active} onChange={() => void act(() => api.adminToggleWebhook(wh.id, actor))} />
+            <Switch checked={wh.active} onChange={() => void act(() => api.adminToggleWebhook(companyId, wh.id, actor))} />
           </div>
           <div className="mt-2.5 flex items-center justify-between border-t pt-2.5 text-2xs text-muted">
             <span>Secret {wh.secretMasked}
               {wh.lastDelivery && <> · last delivery <span className={wh.lastDelivery.status === 'success' ? 'text-good' : 'text-critical'}>{wh.lastDelivery.code}</span> {timeAgo(wh.lastDelivery.at)}</>}
             </span>
-            <Button size="sm" variant="ghost" icon={<Send size={11} />} onClick={() => void act(() => api.adminTestWebhook(wh.id, actor))}>Send test</Button>
+            <Button size="sm" variant="ghost" icon={<Send size={11} />} onClick={() => void act(() => api.adminTestWebhook(companyId, wh.id, actor))}>Send test</Button>
           </div>
         </Card>
       ))}
@@ -195,6 +202,8 @@ function WebhooksPanel() {
 }
 
 function NewWebhookDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
+  const { company } = useOrg()
+  const companyId = company?.id ?? ''
   const actor = useAdminActor()
   const [url, setUrl] = useState('')
   const [events, setEvents] = useState<string[]>([])
@@ -204,7 +213,7 @@ function NewWebhookDialog({ open, onClose, onCreated }: { open: boolean; onClose
 
   const submit = async () => {
     setBusy(true); setError(null)
-    try { await api.adminCreateWebhook(url, events, actor); setUrl(''); setEvents([]); onCreated() }
+    try { await api.adminCreateWebhook(companyId, url, events, actor); setUrl(''); setEvents([]); onCreated() }
     catch (e) { setError(e instanceof ApiError ? e.message : 'Failed.') } finally { setBusy(false) }
   }
 
@@ -226,8 +235,10 @@ function NewWebhookDialog({ open, onClose, onCreated }: { open: boolean; onClose
 }
 
 function UsagePanel() {
+  const { company } = useOrg()
+  const companyId = company?.id ?? ''
   const [usage, setUsage] = useState<Awaited<ReturnType<typeof api.adminApiUsage>> | null>(null)
-  useEffect(() => { api.adminApiUsage().then(setUsage) }, [])
+  useEffect(() => { api.adminApiUsage(companyId).then(setUsage) }, [])
   if (!usage) return <Card className="p-5"><Skeleton className="h-56 w-full" /></Card>
   const max = Math.max(...usage.series.map((p) => p.calls))
   return (

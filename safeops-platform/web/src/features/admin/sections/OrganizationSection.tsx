@@ -109,11 +109,13 @@ function ProfilePanel({ companyId }: { companyId: string }) {
 }
 
 function StructurePanel({ sites }: { sites: { id: string; short: string; name: string; city: string; headcount: number }[] }) {
+  const { company } = useOrg()
+  const companyId = company?.id ?? ''
   const [units, setUnits] = useState<BusinessUnit[] | null>(null)
   const actor = useAdminActor()
   const [addOpen, setAddOpen] = useState(false)
 
-  const load = () => api.adminListUnits().then(setUnits)
+  const load = () => api.adminListUnits(companyId).then(setUnits)
   useEffect(() => { load() }, [])
 
   return (
@@ -144,7 +146,7 @@ function StructurePanel({ sites }: { sites: { id: string; short: string; name: s
                 <p className="text-sm font-medium text-ink">{u.name}</p>
                 <p className="flex items-center gap-1 text-2xs text-muted"><Avatar name={u.lead} size={13} /> {u.lead} · {u.sites} site(s)</p>
               </div>
-              <button onClick={() => void api.adminRemoveConfigItem('unit', u.id, actor).then(load)} className="rounded p-1 text-muted hover:text-critical" aria-label="Remove"><Trash2 size={13} /></button>
+              <button onClick={() => void api.adminRemoveConfigItem(companyId, 'unit', u.id, actor).then(load)} className="rounded p-1 text-muted hover:text-critical" aria-label="Remove"><Trash2 size={13} /></button>
             </div>
           ))}
         </CardBody>
@@ -156,10 +158,12 @@ function StructurePanel({ sites }: { sites: { id: string; short: string; name: s
 }
 
 function PositionsPanel() {
+  const { company } = useOrg()
+  const companyId = company?.id ?? ''
   const [items, setItems] = useState<JobPosition[] | null>(null)
   const actor = useAdminActor()
   const [addOpen, setAddOpen] = useState(false)
-  const load = () => api.adminListPositions().then(setItems)
+  const load = () => api.adminListPositions(companyId).then(setItems)
   useEffect(() => { load() }, [])
   return (
     <Card>
@@ -169,7 +173,7 @@ function PositionsPanel() {
           <div key={p.id} className="flex items-center gap-3 rounded-lg border px-3.5 py-2.5">
             <div className="min-w-0 flex-1"><p className="text-sm font-medium text-ink">{p.title}</p><p className="text-2xs text-muted">{p.department}</p></div>
             <Badge tone="neutral">{p.headcount} est.</Badge>
-            <button onClick={() => void api.adminRemoveConfigItem('position', p.id, actor).then(load)} className="rounded p-1 text-muted hover:text-critical" aria-label="Remove"><Trash2 size={13} /></button>
+            <button onClick={() => void api.adminRemoveConfigItem(companyId, 'position', p.id, actor).then(load)} className="rounded p-1 text-muted hover:text-critical" aria-label="Remove"><Trash2 size={13} /></button>
           </div>
         ))}
       </CardBody>
@@ -179,10 +183,12 @@ function PositionsPanel() {
 }
 
 function ShiftsPanel() {
+  const { company } = useOrg()
+  const companyId = company?.id ?? ''
   const [items, setItems] = useState<ShiftPattern[] | null>(null)
   const actor = useAdminActor()
   const [addOpen, setAddOpen] = useState(false)
-  const load = () => api.adminListShifts().then(setItems)
+  const load = () => api.adminListShifts(companyId).then(setItems)
   useEffect(() => { load() }, [])
   return (
     <Card>
@@ -192,7 +198,7 @@ function ShiftsPanel() {
           <div key={sp.id} className="flex items-center gap-3 rounded-lg border px-3.5 py-2.5">
             <Clock size={15} className="text-accent" />
             <div className="min-w-0 flex-1"><p className="text-sm font-medium text-ink">{sp.name}</p><p className="text-2xs text-muted">{sp.start}–{sp.end} · {sp.days}</p></div>
-            <button onClick={() => void api.adminRemoveConfigItem('shift', sp.id, actor).then(load)} className="rounded p-1 text-muted hover:text-critical" aria-label="Remove"><Trash2 size={13} /></button>
+            <button onClick={() => void api.adminRemoveConfigItem(companyId, 'shift', sp.id, actor).then(load)} className="rounded p-1 text-muted hover:text-critical" aria-label="Remove"><Trash2 size={13} /></button>
           </div>
         ))}
       </CardBody>
@@ -202,10 +208,12 @@ function ShiftsPanel() {
 }
 
 function HolidaysPanel() {
+  const { company } = useOrg()
+  const companyId = company?.id ?? ''
   const [items, setItems] = useState<Holiday[] | null>(null)
   const actor = useAdminActor()
   const [addOpen, setAddOpen] = useState(false)
-  const load = () => api.adminListHolidays().then(setItems)
+  const load = () => api.adminListHolidays(companyId).then(setItems)
   useEffect(() => { load() }, [])
   return (
     <Card>
@@ -216,7 +224,7 @@ function HolidaysPanel() {
             <CalendarDays size={15} className="text-accent" />
             <div className="min-w-0 flex-1"><p className="text-sm font-medium text-ink">{h.name}</p><p className="text-2xs text-muted">{h.date}</p></div>
             <Badge tone="neutral">{h.scope}</Badge>
-            <button onClick={() => void api.adminRemoveConfigItem('holiday', h.id, actor).then(load)} className="rounded p-1 text-muted hover:text-critical" aria-label="Remove"><Trash2 size={13} /></button>
+            <button onClick={() => void api.adminRemoveConfigItem(companyId, 'holiday', h.id, actor).then(load)} className="rounded p-1 text-muted hover:text-critical" aria-label="Remove"><Trash2 size={13} /></button>
           </div>
         ))}
       </CardBody>
@@ -235,6 +243,8 @@ function AddItemDialog({
   onClose: () => void
   onAdded: () => void
 }) {
+  const { company } = useOrg()
+  const companyId = company?.id ?? ''
   const actor = useAdminActor()
   const [data, setData] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
@@ -243,7 +253,7 @@ function AddItemDialog({
   const submit = async () => {
     setBusy(true); setError(null)
     try {
-      await api.adminAddConfigItem(kind, data, actor)
+      await api.adminAddConfigItem(companyId, kind, data, actor)
       setData({})
       onAdded()
     } catch (e) {
