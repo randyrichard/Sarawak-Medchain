@@ -8,9 +8,11 @@ import { authRouter } from './routes/auth.js'
 import { incidentsRouter } from './routes/incidents.js'
 import { incidentExtrasRouter } from './routes/incidentExtras.js'
 import { permitsRouter } from './routes/permits.js'
+import { inspectionsRouter } from './routes/inspections.js'
 import { AuthError } from './lib/authService.js'
 import { IncidentError } from './lib/incidentService.js'
 import { PermitError } from './lib/permitService.js'
+import { InspectionError } from './lib/inspectionService.js'
 
 export function createApp() {
   const app = express()
@@ -42,12 +44,18 @@ export function createApp() {
   app.use('/incidents', incidentExtrasRouter)
   app.use('/incidents', incidentsRouter)
   app.use('/permits', permitsRouter)
+  app.use('/assets', inspectionsRouter)
 
   app.use((_req, res) => res.status(404).json({ error: 'not_found' }))
 
   // Central error handler: clients get a stable code, details stay in the server log.
   app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    if (err instanceof AuthError || err instanceof IncidentError || err instanceof PermitError) {
+    if (
+      err instanceof AuthError ||
+      err instanceof IncidentError ||
+      err instanceof PermitError ||
+      err instanceof InspectionError
+    ) {
       return res.status(err.status).json({ error: err.code, message: err.message })
     }
 

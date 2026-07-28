@@ -42,6 +42,7 @@ import { incidentsApi } from './incidentsApi'
 import { isBackendConfigured } from './authApi'
 import { PermitStore } from './mock/permits'
 import { permitsApi } from './permitsApi'
+import { inspectionsApi } from './inspectionsApi'
 import type {
   GasTest, IsolationPoint, NewPermitInput, PermitFilters, PermitStats, PermitView,
 } from './permits'
@@ -265,6 +266,14 @@ const SERVER_INCIDENTS = isBackendConfigured()
  * credential-free demo only, and it dies with the tab.
  */
 const SERVER_PERMITS = isBackendConfigured()
+
+/**
+ * True when assets and inspections are served by the API.
+ *
+ * Health scores, checklist validation and the defect actions raised from a failure are
+ * all computed on the server. The mock below is seed data for the credential-free demo.
+ */
+const SERVER_INSPECTIONS = isBackendConfigured()
 
 
 
@@ -647,36 +656,64 @@ class MockApiClient implements ApiClient {
   // ── assets & inspections ───────────────────────────────────────────────────
 
   async listAssets(companyId: string, filters: AssetFilters) {
+    if (SERVER_INSPECTIONS) return inspectionsApi.listAssets(companyId, filters)
     await delay(LATENCY())
     return this.incidents.listAssets(companyId, filters)
   }
 
   async getAssetProfile(idOrQr: string) {
+    if (SERVER_INSPECTIONS) return inspectionsApi.getAssetProfile(idOrQr)
     await delay(LATENCY() / 2)
     return this.incidents.getAssetProfile(idOrQr)
   }
 
   async createAsset(input: NewAssetInput, actor: Actor) {
+    if (SERVER_INSPECTIONS) {
+      const a = await inspectionsApi.createAsset(input)
+      this.pushNotification('system', `Asset registered: ${a.code}`,
+        `${a.name} — first inspection scheduled ${a.nextDueDate}.`)
+      return a
+    }
     await delay(LATENCY() / 2)
     return this.incidents.createAsset(input, actor)
   }
 
   async scheduleInspection(assetId: string, date: string, inspector: string, actor: Actor) {
+    if (SERVER_INSPECTIONS) {
+      const i = await inspectionsApi.scheduleInspection(assetId, date, inspector)
+      this.pushNotification('system', `Inspection scheduled: ${i.assetCode}`,
+        `${i.assetName} on ${i.scheduledFor} — inspector ${inspector}.`)
+      return i
+    }
     await delay(LATENCY() / 2)
     return this.incidents.scheduleInspection(assetId, date, inspector, actor)
   }
 
   async completeInspection(inspectionId: string, input: CompleteInspectionInput, actor: Actor) {
+    if (SERVER_INSPECTIONS) {
+      const i = await inspectionsApi.completeInspection(inspectionId, input)
+      const defects = i.actionCodes.length
+      // Announced from the authoritative response: the server decides pass or fail and
+      // how many defect actions it raised, not the answers that were sent.
+      this.pushNotification(
+        i.outcome === 'failed' ? 'action' : 'system',
+        `${i.code} completed — ${i.outcome === 'failed' ? `${defects} defect(s) found` : 'passed'}`,
+        `${i.assetName} inspected by ${actor.name}.`,
+      )
+      return i
+    }
     await delay(LATENCY() / 2)
     return this.incidents.completeInspection(inspectionId, input, actor)
   }
 
   async listInspections(companyId: string, filters: InspectionFilters) {
+    if (SERVER_INSPECTIONS) return inspectionsApi.listInspections(companyId, filters)
     await delay(LATENCY())
     return this.incidents.listInspections(companyId, filters)
   }
 
   async assetStats(companyId: string) {
+    if (SERVER_INSPECTIONS) return inspectionsApi.assetStats(companyId)
     await delay(LATENCY() / 2)
     return this.incidents.assetStats(companyId)
   }

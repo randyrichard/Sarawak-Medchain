@@ -117,21 +117,25 @@ model Company {
   id        String     @id
   name      String
   plan      String     @default("enterprise")
-  sites     Site[]
-  incidents Incident[]
-  actions   CorrectiveAction[]
-  permits   Permit[]
-  createdAt DateTime   @default(now())
+  sites       Site[]
+  incidents   Incident[]
+  actions     CorrectiveAction[]
+  permits     Permit[]
+  assets      Asset[]
+  inspections Inspection[]
+  createdAt   DateTime   @default(now())
 }
 
 model Site {
   id        String     @id
   companyId String
   name      String
-  company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  incidents Incident[]
-  actions   CorrectiveAction[]
-  permits   Permit[]
+  company     Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  incidents   Incident[]
+  actions     CorrectiveAction[]
+  permits     Permit[]
+  assets      Asset[]
+  inspections Inspection[]
 
   @@index([companyId])
 }
@@ -378,6 +382,15 @@ model CorrectiveAction {
 
   cancelledReason String?
 
+  /// Set when an inspection failure raised this action. Both are additive and nullable:
+  /// every existing action keeps `null` and behaves exactly as before. They exist because
+  /// an asset's open-defect count and an inspection's action list are two different
+  /// questions, and deriving either one from the other loses rows.
+  assetId      String?
+  asset        Asset?      @relation(fields: [assetId], references: [id], onDelete: SetNull)
+  inspectionId String?
+  inspection   Inspection? @relation(fields: [inspectionId], references: [id], onDelete: SetNull)
+
   notes CapaNote[]
 
   version   Int      @default(1)
@@ -394,6 +407,8 @@ model CorrectiveAction {
   @@index([incidentId])
   @@index([dueDate])
   @@index([owner])
+  @@index([assetId])
+  @@index([inspectionId])
 }
 
 // ─── Permit to Work ──────────────────────────────────────────────────────────
@@ -579,4 +594,159 @@ model PermitEvent {
   at        DateTime @default(now())
 
   @@index([permitId, at])
+}
+
+// ─── Assets & Inspections ────────────────────────────────────────────────────
+// Assets are inspected on a schedule. A failed checklist item is not a note — it
+// becomes a corrective action with an owner and a due date, because a defect nobody
+// is accountable for is a defect that stays on the plant.
+
+enum AssetCategory {
+  fire_extinguisher
+  forklift
+  ladder
+  scaffolding
+  machinery
+  electrical_panel
+  emergency_lighting
+  first_aid_kit
+  ppe
+  vehicle
+  pressure_vessel
+  custom
+}
+
+enum AssetStatus {
+  in_service
+  under_maintenance
+  out_of_service
+  retired
+}
+
+enum InspectionFrequency {
+  daily
+  weekly
+  monthly
+  quarterly
+  annual
+}
+
+enum InspectionStatus {
+  scheduled
+  completed
+  cancelled
+}
+
+enum InspectionOutcome {
+  passed
+  failed
+}
+
+model Asset {
+  id String @id @default(cuid())
+  /// Human reference (AST-####). Per tenant, same reasoning as Incident.number.
+  code String
+  /// Payload printed on the QR label. Separate from `code` so a label can be reissued
+  /// without renumbering the asset, and so a stale label resolves to a clear 404.
+  qrKey String
+
+  companyId String
+  siteId    String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  site      Site    @relation(fields: [siteId], references: [id], onDelete: Restrict)
+
+  name           String
+  category       AssetCategory
+  customCategory String?
+  serialNumber   String
+  manufacturer   String        @default("")
+  model          String        @default("")
+
+  purchaseDate   DateTime?
+  commissionDate DateTime?
+  warrantyUntil  DateTime?
+
+  department String @default("")
+  owner      String
+  location   String @default("")
+
+  status    AssetStatus         @default(in_service)
+  frequency InspectionFrequency
+
+  lastInspectedAt DateTime?
+  /// Date the next inspection falls due. Rolled forward on completion so an asset can
+  /// never drop off the calendar by being inspected.
+  nextDueDate     DateTime
+
+  documents   AssetDocument[]
+  inspections Inspection[]
+  actions     CorrectiveAction[]
+
+  version   Int      @default(1)
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, code])
+  @@unique([companyId, qrKey])
+  @@index([companyId, status])
+  @@index([companyId, siteId])
+  @@index([companyId, category])
+  // The register sorts and filters on what is due, so this is the hot path.
+  @@index([nextDueDate])
+}
+
+model AssetDocument {
+  id      String @id @default(cuid())
+  assetId String
+  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  name String
+  kind String @default("pdf") // pdf | image | certificate
+
+  createdAt DateTime @default(now())
+
+  @@index([assetId])
+}
+
+model Inspection {
+  id String @id @default(cuid())
+  /// Human reference (INS-####). Per tenant.
+  code String
+
+  assetId   String
+  asset     Asset   @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  siteId    String
+  site      Site    @relation(fields: [siteId], references: [id], onDelete: Restrict)
+
+  scheduledFor DateTime
+  assignedTo   String
+  status       InspectionStatus @default(scheduled)
+
+  completedAt DateTime?
+  completedBy String?
+  outcome     InspectionOutcome?
+
+  /// The completed checklist: [{ itemId, label, result, comment?, measurement? }].
+  /// Stored whole because it is written once at completion and always read as a unit —
+  /// it is the record of what was checked, not a table anyone queries across.
+  answers Json?
+
+  comments   String?
+  photoCount Int     @default(0)
+  gps        String?
+  signature  String?
+
+  /// Defects raised from this inspection.
+  actions CorrectiveAction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, code])
+  @@index([companyId, status])
+  @@index([assetId, scheduledFor])
+  @@index([scheduledFor])
 }
