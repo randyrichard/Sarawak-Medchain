@@ -104,7 +104,11 @@ export interface ActivityEvent {
 
 export class ApiError extends Error {
   constructor(
-    public code: 'invalid_credentials' | 'invalid_token' | 'expired_token' | 'not_found' | 'forbidden' | 'validation',
+    public code:
+      | 'invalid_credentials' | 'invalid_token' | 'expired_token'
+      | 'not_found' | 'forbidden' | 'validation'
+      // transport-level, raised by the HTTP client rather than the server
+      | 'network' | 'unauthenticated' | 'conflict' | 'request_failed',
     message: string,
   ) {
     super(message)
