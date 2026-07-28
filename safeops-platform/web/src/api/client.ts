@@ -41,6 +41,7 @@ import { buildDashboard } from './mock/dashboard'
 import { incidentsApi } from './incidentsApi'
 import { isBackendConfigured } from './authApi'
 import { PermitStore } from './mock/permits'
+import { permitsApi } from './permitsApi'
 import type {
   GasTest, IsolationPoint, NewPermitInput, PermitFilters, PermitStats, PermitView,
 } from './permits'
@@ -204,7 +205,8 @@ export interface ApiClient {
   addPermitGasTest(permitId: string, reading: Omit<GasTest, 'id' | 'testedAt' | 'testedBy' | 'pass'>, actor: Actor): Promise<PermitView>
   addPermitIsolation(permitId: string, input: Pick<IsolationPoint, 'description' | 'tagId'>, actor: Actor): Promise<PermitView>
   releasePermitIsolation(permitId: string, isolationId: string, actor: Actor): Promise<PermitView>
-  sweepPermitExpiry(): Promise<void>
+  /** Raises the expiry warnings. Scoped to a workspace — the server answers per tenant. */
+  sweepPermitExpiry(companyId: string): Promise<void>
 
   // shell data
   listNotifications(): Promise<AppNotification[]>
@@ -230,6 +232,10 @@ export function decodeToken(token: string): { sub: string; exp: number } | null 
 
 const NOTIF_KEY = 'safeops.notifications.v1'
 
+/** "14:35" — the time a permit lapses, as a supervisor reads it off the board. */
+const fmtClock = (iso: string) =>
+  new Date(iso).toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' })
+
 function loadNotifications(): AppNotification[] {
   try {
     const raw = localStorage.getItem(NOTIF_KEY)
@@ -249,6 +255,16 @@ function loadNotifications(): AppNotification[] {
  * The mock path is retained only so the credential-free static demo still runs.
  */
 const SERVER_INCIDENTS = isBackendConfigured()
+
+/**
+ * True when permits are served by the API rather than the in-memory mock.
+ *
+ * Permits are no longer persisted in the browser at all: a permit board restored from
+ * localStorage can disagree with the plant, and a permit that says "active" when the
+ * database says "suspended" is worse than no board. The mock below is seed data for the
+ * credential-free demo only, and it dies with the tab.
+ */
+const SERVER_PERMITS = isBackendConfigured()
 
 
 
@@ -334,6 +350,8 @@ class MockApiClient implements ApiClient {
   private incidents = new IncidentStore(this.pushNotification)
   private admin = new AdminStore(this.pushNotification)
   private permits = new PermitStore(this.pushNotification)
+  /** Permits already warned about, so the 30-second board refresh does not re-alert. */
+  private permitReminders = new Set<string>()
 
   private persistNotifications() {
     try {
@@ -857,22 +875,140 @@ class MockApiClient implements ApiClient {
 
   // ── permits to work ────────────────────────────────────────────────────────
 
-  async listPermits(companyId: string, filters: PermitFilters) { await delay(LATENCY()); return this.permits.list(companyId, filters) }
-  async getPermit(id: string) { await delay(LATENCY() / 2); return this.permits.get(id) }
-  async permitStats(companyId: string, siteId: string | null) { await delay(LATENCY() / 2); return this.permits.stats(companyId, siteId) }
-  async createPermit(input: NewPermitInput, actor: Actor) { await delay(LATENCY()); return this.permits.create(input, actor) }
-  async submitPermit(id: string, actor: Actor) { await delay(LATENCY() / 2); return this.permits.submit(id, actor) }
-  async approvePermit(id: string, statement: string, actor: Actor) { await delay(LATENCY() / 2); return this.permits.approve(id, statement, actor) }
-  async rejectPermit(id: string, reason: string, actor: Actor) { await delay(LATENCY() / 2); return this.permits.reject(id, reason, actor) }
-  async activatePermit(id: string, actor: Actor) { await delay(LATENCY() / 3); return this.permits.activate(id, actor) }
-  async suspendPermit(id: string, reason: string, actor: Actor) { await delay(LATENCY() / 3); return this.permits.suspend(id, reason, actor) }
-  async resumePermit(id: string, actor: Actor) { await delay(LATENCY() / 3); return this.permits.resume(id, actor) }
-  async closePermit(id: string, input: { handbackConfirmed: boolean; statement: string }, actor: Actor) { await delay(LATENCY() / 2); return this.permits.close(id, input, actor) }
-  async confirmPermitControl(permitId: string, controlId: string, confirmed: boolean, actor: Actor) { await delay(120); return this.permits.confirmControl(permitId, controlId, confirmed, actor) }
-  async addPermitGasTest(permitId: string, reading: Omit<GasTest, 'id' | 'testedAt' | 'testedBy' | 'pass'>, actor: Actor) { await delay(LATENCY() / 2); return this.permits.addGasTest(permitId, reading, actor) }
-  async addPermitIsolation(permitId: string, input: Pick<IsolationPoint, 'description' | 'tagId'>, actor: Actor) { await delay(LATENCY() / 2); return this.permits.addIsolation(permitId, input, actor) }
-  async releasePermitIsolation(permitId: string, isolationId: string, actor: Actor) { await delay(LATENCY() / 2); return this.permits.releaseIsolation(permitId, isolationId, actor) }
-  async sweepPermitExpiry() { this.permits.sweepExpiring() }
+  async listPermits(companyId: string, filters: PermitFilters) {
+    if (SERVER_PERMITS) return permitsApi.list(companyId, filters)
+    await delay(LATENCY()); return this.permits.list(companyId, filters)
+  }
+
+  async getPermit(id: string) {
+    if (SERVER_PERMITS) return permitsApi.get(id)
+    await delay(LATENCY() / 2); return this.permits.get(id)
+  }
+
+  async permitStats(companyId: string, siteId: string | null) {
+    if (SERVER_PERMITS) return permitsApi.stats(companyId, siteId)
+    await delay(LATENCY() / 2); return this.permits.stats(companyId, siteId)
+  }
+
+  async createPermit(input: NewPermitInput, actor: Actor) {
+    if (SERVER_PERMITS) return permitsApi.create(input)
+    await delay(LATENCY()); return this.permits.create(input, actor)
+  }
+
+  async submitPermit(id: string, actor: Actor) {
+    if (SERVER_PERMITS) {
+      const p = await permitsApi.submit(id)
+      this.pushNotification('system', `Permit ${p.code} awaiting approval`, `${p.typeLabel} — ${p.location}`)
+      return p
+    }
+    await delay(LATENCY() / 2); return this.permits.submit(id, actor)
+  }
+
+  async approvePermit(id: string, statement: string, actor: Actor) {
+    if (SERVER_PERMITS) {
+      const p = await permitsApi.approve(id, statement)
+      this.pushNotification('system', `Permit ${p.code} issued`,
+        `${p.typeLabel} at ${p.location}. Valid until ${fmtClock(p.validTo)}.`)
+      return p
+    }
+    await delay(LATENCY() / 2); return this.permits.approve(id, statement, actor)
+  }
+
+  async rejectPermit(id: string, reason: string, actor: Actor) {
+    if (SERVER_PERMITS) {
+      const p = await permitsApi.reject(id, reason)
+      this.pushNotification('system', `Permit ${p.code} rejected`, reason)
+      return p
+    }
+    await delay(LATENCY() / 2); return this.permits.reject(id, reason, actor)
+  }
+
+  async activatePermit(id: string, actor: Actor) {
+    if (SERVER_PERMITS) return permitsApi.activate(id)
+    await delay(LATENCY() / 3); return this.permits.activate(id, actor)
+  }
+
+  async suspendPermit(id: string, reason: string, actor: Actor) {
+    if (SERVER_PERMITS) {
+      const p = await permitsApi.suspend(id, reason)
+      this.pushNotification('incident', `Permit ${p.code} suspended`, `${reason} — work must stop immediately.`)
+      return p
+    }
+    await delay(LATENCY() / 3); return this.permits.suspend(id, reason, actor)
+  }
+
+  async resumePermit(id: string, actor: Actor) {
+    if (SERVER_PERMITS) return permitsApi.resume(id)
+    await delay(LATENCY() / 3); return this.permits.resume(id, actor)
+  }
+
+  async closePermit(id: string, input: { handbackConfirmed: boolean; statement: string }, actor: Actor) {
+    if (SERVER_PERMITS) return permitsApi.close(id, input)
+    await delay(LATENCY() / 2); return this.permits.close(id, input, actor)
+  }
+
+  async confirmPermitControl(permitId: string, controlId: string, confirmed: boolean, actor: Actor) {
+    if (SERVER_PERMITS) return permitsApi.confirmControl(permitId, controlId, confirmed)
+    await delay(120); return this.permits.confirmControl(permitId, controlId, confirmed, actor)
+  }
+
+  async addPermitGasTest(permitId: string, reading: Omit<GasTest, 'id' | 'testedAt' | 'testedBy' | 'pass'>, actor: Actor) {
+    if (SERVER_PERMITS) {
+      const p = await permitsApi.addGasTest(permitId, reading)
+      // The server suspends live work on a failed reading. Announce it from the
+      // authoritative response rather than predicting it from the numbers sent.
+      const latest = p.gasTests[p.gasTests.length - 1]
+      if (latest && !latest.pass && p.status === 'suspended') {
+        this.pushNotification('incident', `Permit ${p.code} suspended — gas test failed`,
+          'Atmosphere outside safe limits. Evacuate and re-test.')
+      }
+      return p
+    }
+    await delay(LATENCY() / 2); return this.permits.addGasTest(permitId, reading, actor)
+  }
+
+  async addPermitIsolation(permitId: string, input: Pick<IsolationPoint, 'description' | 'tagId'>, actor: Actor) {
+    if (SERVER_PERMITS) return permitsApi.addIsolation(permitId, input)
+    await delay(LATENCY() / 2); return this.permits.addIsolation(permitId, input, actor)
+  }
+
+  async releasePermitIsolation(permitId: string, isolationId: string, actor: Actor) {
+    if (SERVER_PERMITS) return permitsApi.releaseIsolation(permitId, isolationId)
+    await delay(LATENCY() / 2); return this.permits.releaseIsolation(permitId, isolationId, actor)
+  }
+
+  /**
+   * Expiry sweep. The server decides what is lapsing; this only raises the alert, once
+   * per permit per state, so a board left open on a wall does not re-notify every 30s.
+   */
+  async sweepPermitExpiry(companyId: string) {
+    if (!SERVER_PERMITS) {
+      this.permits.sweepExpiring()
+      return
+    }
+    if (!companyId) return
+
+    const { warning, expired } = await permitsApi.expiring(companyId)
+
+    const once = (key: string, fn: () => void) => {
+      if (this.permitReminders.has(key)) return
+      this.permitReminders.add(key)
+      fn()
+    }
+
+    for (const p of warning) {
+      once(`${p.id}:warn`, () => this.pushNotification(
+        'action', `Permit ${p.code} expires within the hour`,
+        `${p.typeLabel} at ${p.location}. Extend or close before ${fmtClock(p.validTo)}.`,
+      ))
+    }
+    for (const p of expired) {
+      once(`${p.id}:expired`, () => this.pushNotification(
+        'incident', `Permit ${p.code} has EXPIRED with work open`,
+        `${p.applicant} at ${p.location}. Work must stop until the permit is renewed.`,
+      ))
+    }
+  }
 
   async listNotifications() {
     await delay(LATENCY())

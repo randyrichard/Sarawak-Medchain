@@ -120,6 +120,7 @@ model Company {
   sites     Site[]
   incidents Incident[]
   actions   CorrectiveAction[]
+  permits   Permit[]
   createdAt DateTime   @default(now())
 }
 
@@ -130,6 +131,7 @@ model Site {
   company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
   incidents Incident[]
   actions   CorrectiveAction[]
+  permits   Permit[]
 
   @@index([companyId])
 }
@@ -385,7 +387,196 @@ model CorrectiveAction {
 
   @@unique([companyId, code])
   @@index([companyId, status])
+  // Restored, not added: the standalone_actions migration created this index and a later
+  // schema edit dropped the declaration without a migration. The register filters by
+  // source, so leaving the drift in place makes the next `migrate dev` delete a live index.
+  @@index([companyId, source])
   @@index([incidentId])
   @@index([dueDate])
   @@index([owner])
+}
+
+// ─── Permit to Work ──────────────────────────────────────────────────────────
+// A permit authorises high-risk work for a bounded window. Every gate that makes it a
+// control rather than a form — confirmed precautions, a passing gas test, released
+// isolations, a handback signature — is enforced in permitService, not in the client.
+
+enum PermitType {
+  hot_work
+  confined_space
+  working_at_height
+  electrical_isolation
+  excavation
+  lifting_operation
+  line_breaking
+  radiography
+}
+
+/// Stored lifecycle states only.
+///
+/// `expired` is deliberately absent: it is not a state anyone writes, it is what an
+/// approved or active permit *becomes* once the clock passes `validTo`. Storing it would
+/// need a job to keep the column true, and any window where that job had not run would
+/// report expired work as live — exactly the failure the permit exists to prevent.
+/// The service derives it on read instead, so it is correct the instant it happens.
+enum PermitStatus {
+  draft
+  submitted
+  approved
+  active
+  suspended
+  closed
+  rejected
+}
+
+enum PermitSignatureRole {
+  applicant
+  approver
+  closer
+}
+
+model Permit {
+  id String @id @default(cuid())
+  /// Human reference (PTW-####). Per tenant, same reasoning as Incident.number.
+  code String
+
+  companyId String
+  siteId    String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  site      Site    @relation(fields: [siteId], references: [id], onDelete: Restrict)
+
+  type        PermitType
+  title       String
+  description String     @default("")
+  department  String     @default("")
+  location    String
+
+  applicant   String
+  contractor  String?
+  workerCount Int    @default(1)
+
+  /// Authorised window. The permit is only a permit between these two instants; the
+  /// maximum span allowed depends on the type (see PERMIT_MAX_HOURS).
+  validFrom DateTime
+  validTo   DateTime
+
+  status PermitStatus @default(draft)
+
+  approver        String?
+  approvedAt      DateTime?
+  rejectionReason String?
+  suspendedReason String?
+
+  closedBy String?
+  closedAt DateTime?
+  /// Site handed back clean, tools removed, isolations released.
+  handbackConfirmed Boolean @default(false)
+
+  /// Set when an incident occurred under this permit.
+  linkedIncidentId String?
+
+  controls   PermitControl[]
+  isolations IsolationPoint[]
+  gasTests   GasTest[]
+  signatures PermitSignature[]
+  timeline   PermitEvent[]
+
+  version   Int      @default(1)
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, code])
+  @@index([companyId, status])
+  @@index([companyId, siteId])
+  @@index([companyId, type])
+  // The board is ordered by urgency and the expiry sweep asks "what lapses next",
+  // so validTo is the column both hot paths sort and filter on.
+  @@index([validTo])
+}
+
+/// A precaution the issuer confirms on site. Required ones block issue until confirmed.
+model PermitControl {
+  id       String @id @default(cuid())
+  permitId String
+  permit   Permit @relation(fields: [permitId], references: [id], onDelete: Cascade)
+
+  /// Checklist order for the type. Rows would otherwise come back unordered, and a
+  /// precaution list that reshuffles between reads is not one anyone can work down.
+  position Int
+  label    String
+  required Boolean @default(true)
+
+  confirmed   Boolean   @default(false)
+  confirmedBy String?
+  confirmedAt DateTime?
+  note        String?
+
+  @@index([permitId, position])
+}
+
+/// An energy source locked out and tagged. A permit cannot close while one is still applied.
+model IsolationPoint {
+  id       String @id @default(cuid())
+  permitId String
+  permit   Permit @relation(fields: [permitId], references: [id], onDelete: Cascade)
+
+  description String
+  /// The physical lock/tag identifier, e.g. "LOTO-4471".
+  tagId       String
+  isolatedBy  String?
+  isolatedAt  DateTime?
+  removedBy   String?
+  removedAt   DateTime?
+
+  @@index([permitId])
+}
+
+/// Atmospheric readings. `pass` is computed server-side from GAS_LIMITS and stored, so
+/// the verdict a permit was issued on stays readable even if the limits are later revised.
+model GasTest {
+  id       String @id @default(cuid())
+  permitId String
+  permit   Permit @relation(fields: [permitId], references: [id], onDelete: Cascade)
+
+  testedAt DateTime @default(now())
+  testedBy String
+
+  oxygenPct Float
+  lelPct    Float
+  h2sPpm    Float
+  coPpm     Float
+  pass      Boolean
+  note      String?
+
+  @@index([permitId, testedAt])
+}
+
+/// Who signed what, and the statement they signed. Append-only.
+model PermitSignature {
+  id       String @id @default(cuid())
+  permitId String
+  permit   Permit @relation(fields: [permitId], references: [id], onDelete: Cascade)
+
+  role      PermitSignatureRole
+  name      String
+  signedAt  DateTime            @default(now())
+  statement String
+
+  @@index([permitId, signedAt])
+}
+
+/// Append-only audit trail for a permit. Never updated or deleted.
+model PermitEvent {
+  id       String @id @default(cuid())
+  permitId String
+  permit   Permit @relation(fields: [permitId], references: [id], onDelete: Cascade)
+
+  action    String
+  detail    String?
+  actor     String
+  actorRole String?
+  at        DateTime @default(now())
+
+  @@index([permitId, at])
 }

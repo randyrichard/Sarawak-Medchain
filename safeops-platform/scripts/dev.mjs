@@ -197,6 +197,12 @@ async function startDb() {
     password: 'safeops',
     port: DB_PORT,
     persistent: true, // the volume survives restarts — verification state is preserved
+    // initdb inherits the host locale, so on a Windows machine the cluster lands on
+    // WIN1252 while the Postgres in docker-compose.yml is UTF8. That divergence is
+    // invisible until something stores a character Latin-1 has no room for — a subscript,
+    // a degree sign, a name outside the Western European set — and then dev rejects text
+    // production accepts. Pinning the encoding here keeps the two the same.
+    initdbFlags: ['--encoding=UTF8', '--locale=C'],
   })
   if (!alreadyInitialised) {
     try { await pg.initialise() } catch { /* raced with another start */ }

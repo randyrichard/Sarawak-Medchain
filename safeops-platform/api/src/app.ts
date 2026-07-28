@@ -7,8 +7,10 @@ import { prisma } from './lib/prisma.js'
 import { authRouter } from './routes/auth.js'
 import { incidentsRouter } from './routes/incidents.js'
 import { incidentExtrasRouter } from './routes/incidentExtras.js'
+import { permitsRouter } from './routes/permits.js'
 import { AuthError } from './lib/authService.js'
 import { IncidentError } from './lib/incidentService.js'
+import { PermitError } from './lib/permitService.js'
 
 export function createApp() {
   const app = express()
@@ -39,12 +41,13 @@ export function createApp() {
   // Mounted first: its literal paths would otherwise be captured by /incidents/:id
   app.use('/incidents', incidentExtrasRouter)
   app.use('/incidents', incidentsRouter)
+  app.use('/permits', permitsRouter)
 
   app.use((_req, res) => res.status(404).json({ error: 'not_found' }))
 
   // Central error handler: clients get a stable code, details stay in the server log.
   app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    if (err instanceof AuthError || err instanceof IncidentError) {
+    if (err instanceof AuthError || err instanceof IncidentError || err instanceof PermitError) {
       return res.status(err.status).json({ error: err.code, message: err.message })
     }
 

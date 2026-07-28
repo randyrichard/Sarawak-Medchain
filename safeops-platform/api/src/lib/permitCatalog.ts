@@ -1,14 +1,19 @@
-// ─── Permit to Work domain ───────────────────────────────────────────────────
-// A permit authorises high-risk work for a bounded window. The control that matters
-// is the sequence: nobody starts until an approver has signed, and the permit closes
-// only when the site is handed back. Expiring permits are the live safety risk, so
-// they drive the board's ordering and the reminder sweep.
+// ─── Permit catalogue ────────────────────────────────────────────────────────
+// The precautions, duration limits and atmospheric thresholds that make a permit a
+// control rather than a form.
+//
+// This is the authoritative copy. `web/src/api/permits.ts` carries the same values so
+// the request dialog can preview the checklist and warn about an over-long window before
+// a round trip, but the client copy is advisory only: every rule below is re-checked here
+// before a permit is issued, so a tampered client changes what the user sees and nothing
+// about what the server allows.
+
+import type { PermitType } from '@prisma/client'
 
 export const PERMIT_TYPES = [
   'hot_work', 'confined_space', 'working_at_height', 'electrical_isolation',
   'excavation', 'lifting_operation', 'line_breaking', 'radiography',
-] as const
-export type PermitType = (typeof PERMIT_TYPES)[number]
+] as const satisfies readonly PermitType[]
 
 export const PERMIT_TYPE_LABEL: Record<PermitType, string> = {
   hot_work: 'Hot Work',
@@ -19,6 +24,17 @@ export const PERMIT_TYPE_LABEL: Record<PermitType, string> = {
   lifting_operation: 'Lifting Operation',
   line_breaking: 'Line Breaking',
   radiography: 'Radiography',
+}
+
+export const PERMIT_STATUS_LABEL: Record<string, string> = {
+  draft: 'Draft',
+  submitted: 'Awaiting Approval',
+  approved: 'Approved — Not Started',
+  active: 'Work In Progress',
+  suspended: 'Suspended',
+  closed: 'Closed',
+  rejected: 'Rejected',
+  expired: 'Expired',
 }
 
 /** Maximum validity in hours per type — a permit must never outlive its risk assessment. */
@@ -34,167 +50,8 @@ export const PERMIT_MAX_HOURS: Record<PermitType, number> = {
 }
 
 /**
- * Lifecycle. `draft → submitted → approved → active → closed`, with `rejected`,
- * `suspended` and `expired` as off-ramps. Work is legal only in `active`.
- */
-export type PermitStatus =
-  | 'draft' | 'submitted' | 'approved' | 'active'
-  | 'suspended' | 'closed' | 'rejected' | 'expired'
-
-export const PERMIT_STATUS_LABEL: Record<PermitStatus, string> = {
-  draft: 'Draft',
-  submitted: 'Awaiting Approval',
-  approved: 'Approved — Not Started',
-  active: 'Work In Progress',
-  suspended: 'Suspended',
-  closed: 'Closed',
-  rejected: 'Rejected',
-  expired: 'Expired',
-}
-
-/** A control that must be confirmed before the permit can be issued. */
-export interface PermitControl {
-  id: string
-  label: string
-  /** Some controls are advisory; required ones block issue until confirmed. */
-  required: boolean
-  confirmed: boolean
-  confirmedBy?: string
-  confirmedAt?: string
-  note?: string
-}
-
-/** An energy source locked out and tagged before work starts. */
-export interface IsolationPoint {
-  id: string
-  description: string
-  /** e.g. "LOTO-4471" — the physical lock/tag identifier. */
-  tagId: string
-  isolatedBy?: string
-  isolatedAt?: string
-  removedBy?: string
-  removedAt?: string
-}
-
-/** Atmospheric test readings — confined space and hot work depend on these. */
-export interface GasTest {
-  id: string
-  testedAt: string
-  testedBy: string
-  oxygenPct: number
-  lelPct: number
-  h2sPpm: number
-  coPpm: number
-  pass: boolean
-  note?: string
-}
-
-export interface PermitSignature {
-  role: 'applicant' | 'approver' | 'closer'
-  name: string
-  signedAt: string
-  statement: string
-}
-
-export interface PermitEvent {
-  id: string
-  at: string
-  actor: string
-  action: string
-  detail?: string
-}
-
-export interface Permit {
-  id: string
-  code: string // PTW-####
-  type: PermitType
-  title: string
-  description: string
-
-  companyId: string
-  siteId: string
-  department: string
-  location: string
-
-  /** Who is doing the work. */
-  applicant: string
-  contractor?: string
-  workerCount: number
-
-  /** Requested window. */
-  validFrom: string // ISO
-  validTo: string // ISO
-
-  status: PermitStatus
-  controls: PermitControl[]
-  isolations: IsolationPoint[]
-  gasTests: GasTest[]
-
-  approver?: string
-  approvedAt?: string
-  rejectionReason?: string
-  suspendedReason?: string
-
-  closedBy?: string
-  closedAt?: string
-  /** Site handed back clean, tools removed, isolations released. */
-  handbackConfirmed?: boolean
-
-  signatures: PermitSignature[]
-  timeline: PermitEvent[]
-
-  /** Set when a linked incident occurred under this permit. */
-  linkedIncidentId?: string
-  createdAt: string
-}
-
-/** Board/list view with the derived fields the UI needs. */
-export interface PermitView extends Permit {
-  /** Hours until validTo. Negative when overdue. */
-  hoursRemaining: number
-  /** True when active and inside the final hour — the operational alarm state. */
-  expiringSoon: boolean
-  /** Required controls still unconfirmed. */
-  outstandingControls: number
-  typeLabel: string
-  statusLabel: string
-}
-
-export interface PermitFilters {
-  q?: string
-  siteId?: string | null
-  type?: PermitType | ''
-  status?: PermitStatus | 'all' | 'live'
-}
-
-export interface PermitStats {
-  activeNow: number
-  awaitingApproval: number
-  expiringWithin2h: number
-  expiredOpen: number
-  closedThisMonth: number
-  byType: { type: PermitType; label: string; active: number }[]
-}
-
-export interface NewPermitInput {
-  type: PermitType
-  title: string
-  description: string
-  companyId: string
-  siteId: string
-  department: string
-  location: string
-  applicant: string
-  contractor?: string
-  workerCount: number
-  validFrom: string
-  validTo: string
-}
-
-/**
  * Control checklists per permit type. These are the standard precautions a permit
- * issuer confirms on site — they are what makes the permit a control rather than
- * a form. Required items block issue.
+ * issuer confirms on site. Required items block issue.
  */
 export const PERMIT_CONTROLS: Record<PermitType, { label: string; required: boolean }[]> = {
   hot_work: [
@@ -208,6 +65,10 @@ export const PERMIT_CONTROLS: Record<PermitType, { label: string; required: bool
   ],
   confined_space: [
     { label: 'Space isolated, drained, purged and ventilated', required: true },
+    // Subscripts are avoided in stored text on purpose. This string is written to the
+    // database, and a Postgres cluster initialised under a Windows locale lands on
+    // WIN1252, which has no U+2082 — the notation gas detectors and paper permits print
+    // is "O2"/"H2S" anyway, so nothing is lost by matching them.
     { label: 'Atmospheric test passed — O2 19.5–23.5%, LEL <10%, H2S <10ppm', required: true },
     { label: 'Continuous gas monitoring in place', required: true },
     { label: 'Standby attendant posted at entry point', required: true },
@@ -267,10 +128,10 @@ export const PERMIT_CONTROLS: Record<PermitType, { label: string; required: bool
 /** Types where a gas test is a precondition of issue. */
 export const GAS_TEST_REQUIRED: PermitType[] = ['hot_work', 'confined_space', 'line_breaking']
 
-/** Types where isolation points must be recorded. */
+/** Types where isolation points must be recorded before issue. */
 export const ISOLATION_REQUIRED: PermitType[] = ['electrical_isolation', 'line_breaking', 'confined_space']
 
-/** Gas-test acceptance limits — the same thresholds referenced in the control text. */
+/** Gas-test acceptance limits — the same thresholds quoted in the control text. */
 export const GAS_LIMITS = {
   oxygenMin: 19.5,
   oxygenMax: 23.5,
@@ -279,7 +140,9 @@ export const GAS_LIMITS = {
   coMax: 35,
 }
 
-export function gasTestPasses(t: Pick<GasTest, 'oxygenPct' | 'lelPct' | 'h2sPpm' | 'coPpm'>): boolean {
+export function gasTestPasses(t: {
+  oxygenPct: number; lelPct: number; h2sPpm: number; coPpm: number
+}): boolean {
   return (
     t.oxygenPct >= GAS_LIMITS.oxygenMin &&
     t.oxygenPct <= GAS_LIMITS.oxygenMax &&

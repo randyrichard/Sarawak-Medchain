@@ -43,7 +43,7 @@ export function PermitsPage() {
   const refresh = useCallback(() => {
     if (!company) return
     // Fire the expiry sweep on every load so warnings land even without a background job.
-    void api.sweepPermitExpiry()
+    void api.sweepPermitExpiry(company.id)
     api.listPermits(company.id, { q, siteId: site?.id, type, status }).then(setRows)
     api.permitStats(company.id, site?.id ?? null).then(setStats)
   }, [company, site?.id, q, type, status])

@@ -8,7 +8,15 @@ import {
 } from '../permits'
 import { claimIsAuthentic } from './identity'
 
-const STORAGE_KEY = 'safeops.permits.v1'
+/**
+ * In-memory seed board for the credential-free demo. PostgreSQL is the source of truth
+ * for permits (see permitsApi); this exists only so the no-backend build still has a
+ * Permits page to show, and it holds nothing between reloads.
+ *
+ * It used to persist to localStorage under `safeops.permits.v1`. That is gone on purpose:
+ * a permit board rebuilt from a browser cache can disagree with the plant, and one that
+ * reads "active" while the database says "suspended" is more dangerous than no board.
+ */
 
 /** Issuing authority: who may approve, suspend and close a permit. */
 const ISSUER_ROLES = ['admin', 'hse_manager', 'safety_officer']
@@ -148,27 +156,14 @@ export class PermitStore {
   private remindersSent: Record<string, true> = {}
 
   constructor(private notify: (kind: 'system' | 'action' | 'incident', title: string, detail: string) => void) {
-    const restored = this.hydrate()
-    this.permits = restored?.permits ?? seed()
-    this.nextCode = restored?.nextCode ?? 4406
-  }
-
-  private hydrate(): { permits: Permit[]; nextCode: number } | null {
+    this.permits = seed()
+    this.nextCode = 4406
+    // Clear the retired store from browsers that still carry it, so a stale board
+    // cannot reappear if this file is ever pointed at localStorage again.
     try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (!raw) return null
-      const parsed = JSON.parse(raw)
-      return Array.isArray(parsed?.permits) && typeof parsed?.nextCode === 'number' ? parsed : null
+      localStorage.removeItem('safeops.permits.v1')
     } catch {
-      return null
-    }
-  }
-
-  private persist() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ permits: this.permits, nextCode: this.nextCode }))
-    } catch {
-      /* over quota — session still works in memory */
+      /* storage unavailable — nothing to clear */
     }
   }
 
@@ -293,7 +288,6 @@ export class PermitStore {
     }
     this.log(permit, actor, 'Permit created')
     this.permits.unshift(permit)
-    this.persist()
     return this.toView(permit)
   }
 
@@ -309,7 +303,6 @@ export class PermitStore {
     })
     this.log(p, actor, 'Submitted for approval')
     this.notify('system', `Permit ${p.code} awaiting approval`, `${PERMIT_TYPE_LABEL[p.type]} — ${p.location}`)
-    this.persist()
     return this.toView(p)
   }
 
@@ -342,7 +335,6 @@ export class PermitStore {
     p.signatures.push({ role: 'approver', name: actor.name, signedAt: now(), statement: statement || 'Controls verified on site. Permit issued.' })
     this.log(p, actor, 'Approved', statement || undefined)
     this.notify('system', `Permit ${p.code} issued`, `${PERMIT_TYPE_LABEL[p.type]} at ${p.location}. Valid until ${new Date(p.validTo).toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' })}.`)
-    this.persist()
     return this.toView(p)
   }
 
@@ -356,7 +348,6 @@ export class PermitStore {
     p.rejectionReason = reason
     this.log(p, actor, 'Rejected', reason)
     this.notify('system', `Permit ${p.code} rejected`, reason)
-    this.persist()
     return this.toView(p)
   }
 
@@ -369,7 +360,6 @@ export class PermitStore {
 
     p.status = 'active'
     this.log(p, actor, 'Work started')
-    this.persist()
     return this.toView(p)
   }
 
@@ -383,7 +373,6 @@ export class PermitStore {
     p.suspendedReason = reason
     this.log(p, actor, 'Suspended', reason)
     this.notify('incident', `Permit ${p.code} suspended`, `${reason} — work must stop immediately.`)
-    this.persist()
     return this.toView(p)
   }
 
@@ -396,7 +385,6 @@ export class PermitStore {
     p.status = 'active'
     p.suspendedReason = undefined
     this.log(p, actor, 'Resumed')
-    this.persist()
     return this.toView(p)
   }
 
@@ -421,7 +409,6 @@ export class PermitStore {
     p.handbackConfirmed = true
     p.signatures.push({ role: 'closer', name: actor.name, signedAt: now(), statement: input.statement || 'Site handed back, area clear.' })
     this.log(p, actor, 'Closed', input.statement || undefined)
-    this.persist()
     return this.toView(p)
   }
 
@@ -435,7 +422,6 @@ export class PermitStore {
     c.confirmed = confirmed
     c.confirmedBy = confirmed ? actor.name : undefined
     c.confirmedAt = confirmed ? now() : undefined
-    this.persist()
     return this.toView(p)
   }
 
@@ -453,7 +439,6 @@ export class PermitStore {
       p.suspendedReason = 'Gas test failed — atmosphere outside safe limits.'
       this.notify('incident', `Permit ${p.code} suspended — gas test failed`, 'Atmosphere outside safe limits. Evacuate and re-test.')
     }
-    this.persist()
     return this.toView(p)
   }
 
@@ -462,7 +447,6 @@ export class PermitStore {
     const p = this.find(permitId)
     p.isolations.push({ ...input, id: uid('iso'), isolatedBy: actor.name, isolatedAt: now() })
     this.log(p, actor, 'Isolation applied', `${input.tagId} — ${input.description}`)
-    this.persist()
     return this.toView(p)
   }
 
@@ -475,7 +459,6 @@ export class PermitStore {
     iso.removedBy = actor.name
     iso.removedAt = now()
     this.log(p, actor, 'Isolation released', iso.tagId)
-    this.persist()
     return this.toView(p)
   }
 
@@ -485,7 +468,6 @@ export class PermitStore {
    * time bound. Idempotent, so repeated calls do not spam.
    */
   sweepExpiring(): void {
-    let changed = false
     for (const p of this.permits) {
       if (p.status !== 'active' && p.status !== 'approved') continue
       const hours = (new Date(p.validTo).getTime() - Date.now()) / 3600_000
@@ -493,7 +475,6 @@ export class PermitStore {
       const warnKey = `${p.id}:warn`
       if (hours > 0 && hours <= 1 && !this.remindersSent[warnKey]) {
         this.remindersSent[warnKey] = true
-        changed = true
         this.notify('action', `Permit ${p.code} expires within the hour`,
           `${PERMIT_TYPE_LABEL[p.type]} at ${p.location}. Extend or close before ${new Date(p.validTo).toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' })}.`)
       }
@@ -501,11 +482,9 @@ export class PermitStore {
       const expKey = `${p.id}:expired`
       if (hours <= 0 && !this.remindersSent[expKey]) {
         this.remindersSent[expKey] = true
-        changed = true
         this.notify('incident', `Permit ${p.code} has EXPIRED with work open`,
           `${p.applicant} at ${p.location}. Work must stop until the permit is renewed.`)
       }
     }
-    if (changed) this.persist()
   }
 }
