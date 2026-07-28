@@ -38,6 +38,8 @@ import {
   ACTIVITY, COMPANIES, DEPARTMENTS, EMPLOYEES, NOTIFICATIONS, SITES, TEAMS, USERS,
 } from './mock/fixtures'
 import { buildDashboard } from './mock/dashboard'
+import { incidentsApi } from './incidentsApi'
+import { isBackendConfigured } from './authApi'
 import { PermitStore } from './mock/permits'
 import type {
   GasTest, IsolationPoint, NewPermitInput, PermitFilters, PermitStats, PermitView,
@@ -241,6 +243,82 @@ function loadNotifications(): AppNotification[] {
   return NOTIFICATIONS.map((n) => ({ ...n }))
 }
 
+
+/**
+ * True when the incident vertical is served by the API rather than the mock store.
+ * The mock path is retained only so the credential-free static demo still runs.
+ */
+const SERVER_INCIDENTS = isBackendConfigured()
+
+
+
+/**
+ * Server corrective action → CapaItem.
+ *
+ * The register renders derived state (overdue, days-to-due, progress) that the server
+ * does not store because it is a pure function of status and due date. Deriving it here,
+ * in one place, keeps a single source of truth for the underlying facts while the view
+ * model stays what the existing screens already expect.
+ */
+function toCapaItem(a: IncidentAction & { companyId?: string; siteId?: string; incidentId?: string | null }): CapaItem {
+  const daysToDue = Math.ceil((new Date(a.dueDate).getTime() - Date.now()) / 86400_000)
+  const isOpen = a.status === 'Open' || a.status === 'In Progress'
+  // 'Overdue' is not a derived status — it is the separate `overdue` boolean below.
+  const derived: CapaItem['derived'] =
+    a.status === 'Verified' ? 'Verified'
+      : a.status === 'Cancelled' ? 'Cancelled'
+      : a.status === 'Completed' ? 'Waiting Verification'
+      : a.status === 'In Progress' ? 'In Progress'
+      : a.owner ? 'Assigned'
+      : 'Open'
+  return {
+    id: a.id,
+    code: a.code ?? '',
+    title: a.title,
+    companyId: a.companyId ?? '',
+    siteId: a.siteId ?? '',
+    department: '',
+    incidentId: a.incidentId ?? null,
+    owner: a.owner,
+    priority: a.priority,
+    dueDate: a.dueDate,
+    createdAt: a.createdAt ?? a.dueDate,
+    status: a.status,
+    derived,
+    overdue: isOpen && daysToDue < 0,
+    daysToDue,
+    progress: a.status === 'Open' ? 0 : a.status === 'In Progress' ? 50 : 100,
+    evidenceRequired: true,
+    evidenceNote: a.evidenceNote,
+    verifiedBy: a.verifiedBy,
+    verifiedAt: a.verifiedAt,
+    completedAt: a.completedAt,
+    notes: a.notes ?? [],
+  } as CapaItem
+}
+
+/** Applies the register's client-side filters to server rows. */
+function filterCapa(rows: CapaItem[], f: CapaFilters): CapaItem[] {
+  const q = f.q?.trim().toLowerCase()
+  return rows
+    .filter((r) => !f.siteId || r.siteId === f.siteId)
+    .filter((r) => !f.owner || r.owner === f.owner)
+    .filter((r) => !f.priority || r.priority === f.priority)
+    .filter((r) => {
+      switch (f.bucket) {
+        case 'open': return r.status === 'Open' || r.status === 'In Progress'
+        case 'overdue': return r.overdue
+        case 'due_today': return r.daysToDue === 0 && !r.overdue
+        case 'verification': return r.derived === 'Waiting Verification'
+        case 'high_priority': return r.priority === 'High'
+        case 'completed': return r.derived === 'Closed'
+        case 'cancelled': return r.derived === 'Cancelled'
+        default: return true
+      }
+    })
+    .filter((r) => !q || [r.code, r.title, r.owner].join(' ').toLowerCase().includes(q))
+}
+
 class MockApiClient implements ApiClient {
   // mutable copies so reset-password and read-state behave realistically
   private users = USERS.map((u) => ({ ...u }))
@@ -352,34 +430,73 @@ class MockApiClient implements ApiClient {
   }
 
   async getDashboard(companyId: string, siteId: string | null, scopeLabel: string) {
+    const live = this.incidents.liveStats(companyId, siteId)
+    if (SERVER_INCIDENTS) {
+      // Incident and action counters come from Postgres. The asset, audit and training
+      // figures still come from the mock store because those modules are not migrated —
+      // they are left untouched rather than silently blended with real numbers.
+      const s = await incidentsApi.stats(companyId, siteId)
+      return buildDashboard(companyId, siteId, scopeLabel, {
+        ...live,
+        openIncidents: s.open,
+        highRisk: s.highRisk,
+        overdueActions: s.overdueActions,
+        verificationPending: s.awaitingVerification,
+      })
+    }
     await delay(650 + Math.random() * 350)
-    // Mission Control reflects the live incident store, not just static seeds
-    return buildDashboard(companyId, siteId, scopeLabel, this.incidents.liveStats(companyId, siteId))
+    return buildDashboard(companyId, siteId, scopeLabel, live)
   }
 
   // ── incidents ──────────────────────────────────────────────────────────────
 
   async listIncidents(companyId: string, filters: IncidentFilters) {
+    if (SERVER_INCIDENTS) {
+      // pageSize 100 covers the pilot's volume; the list UI is not yet paginated.
+      const page = await incidentsApi.list(companyId, { ...filters, pageSize: 100 })
+      return page.rows
+    }
     await delay(LATENCY())
     return this.incidents.list(companyId, filters)
   }
 
   async getIncident(id: string) {
+    if (SERVER_INCIDENTS) return incidentsApi.get(id)
     await delay(LATENCY() / 2)
     return this.incidents.get(id)
   }
 
   async createIncident(input: NewIncidentInput, actor: Actor) {
+    if (SERVER_INCIDENTS) {
+      return incidentsApi.create({
+        companyId: input.companyId, siteId: input.siteId, title: input.title,
+        description: input.description, type: input.type, severity: input.severity,
+        department: input.department, location: input.location, gps: input.gps,
+        immediateActions: input.immediateActions, occurredAt: input.occurredAt,
+      })
+    }
     await delay(LATENCY())
     return this.incidents.create(input, actor)
   }
 
   async advanceIncident(id: string, payload: AdvancePayload, actor: Actor) {
+    if (SERVER_INCIDENTS) {
+      const p = payload as unknown as Record<string, string | undefined>
+      return incidentsApi.advance(id, {
+        to: String(p.to),
+        note: p.note ?? p.reviewNote ?? p.closeNote,
+        investigator: p.investigator,
+        findings: p.findings,
+        riskRating: p.riskRating,
+        potentialSeverity: p.potentialSeverity,
+      })
+    }
     await delay(LATENCY() / 2)
     return this.incidents.advance(id, payload, actor)
   }
 
   async saveIncidentRca(id: string, causes: RcaCause[], fiveWhys: FiveWhys, actor: Actor) {
+    if (SERVER_INCIDENTS) return incidentsApi.saveRca(id, causes, fiveWhys)
     await delay(LATENCY() / 2)
     return this.incidents.saveRca(id, causes, fiveWhys, actor)
   }
@@ -395,7 +512,11 @@ class MockApiClient implements ApiClient {
   }
 
   async addIncidentComment(id: string, text: string, mentions: string[], actor: Actor) {
-    await delay(LATENCY() / 3)
+    if (SERVER_INCIDENTS) {
+      await incidentsApi.addComment(id, text, mentions)
+      return incidentsApi.get(id) // re-read so the caller sees the authoritative row
+    }
+    await delay(LATENCY() / 2)
     return this.incidents.addComment(id, text, mentions, actor)
   }
 
@@ -405,43 +526,97 @@ class MockApiClient implements ApiClient {
   }
 
   async archiveIncident(id: string, actor: Actor) {
+    if (SERVER_INCIDENTS) return incidentsApi.archive(id)
     await delay(LATENCY() / 2)
     this.incidents.archive(id, actor)
   }
 
   // ── CAPA ───────────────────────────────────────────────────────────────────
 
+  private async serverCapa(companyId: string): Promise<CapaItem[]> {
+    const page = await incidentsApi.listActions(companyId, { pageSize: 100 })
+    return page.rows.map((r) => toCapaItem({ ...r, companyId }))
+  }
+
   async listCapa(companyId: string, filters: CapaFilters, actor: Actor) {
+    if (SERVER_INCIDENTS) return filterCapa(await this.serverCapa(companyId), filters)
     await delay(LATENCY())
     return this.incidents.listCapa(companyId, filters, actor)
   }
 
   async capaStats(companyId: string, actor: Actor) {
+    if (SERVER_INCIDENTS) {
+      const s = await incidentsApi.stats(companyId)
+      const rows = await this.serverCapa(companyId)
+      return {
+        open: s.openActions,
+        overdue: s.overdueActions,
+        verificationPending: s.awaitingVerification,
+        completed30d: rows.filter((r) =>
+          r.completedAt && Date.now() - new Date(r.completedAt).getTime() < 30 * 86400_000).length,
+        highPriority: rows.filter((r) =>
+          r.priority === 'High' &&
+          (r.status === 'Open' || r.status === 'In Progress')).length,
+        dueToday: rows.filter((r) => r.daysToDue === 0 && !r.overdue).length,
+      }
+    }
     await delay(LATENCY() / 2)
     return this.incidents.capaStats(companyId, actor)
   }
 
   async getCapa(actionId: string) {
+    if (SERVER_INCIDENTS) {
+      const a = await incidentsApi.getAction(actionId)
+      return toCapaItem({
+        ...a,
+        status: ({ open: 'Open', in_progress: 'In Progress', completed: 'Completed', verified: 'Verified', cancelled: 'Cancelled' } as Record<string, CapaItem['status']>)[a.status] ?? 'Open',
+        evidenceNote: a.evidenceNote ?? undefined,
+        verifiedBy: a.verifiedBy ?? undefined,
+        verifiedAt: a.verifiedAt ?? undefined,
+        completedAt: a.completedAt ?? undefined,
+        notes: (a.notes ?? []).map((n) => ({ id: n.id, author: n.author, at: n.createdAt, text: n.body, mentions: n.mentions })),
+      } as never)
+    }
     await delay(LATENCY() / 3)
     return this.incidents.getCapa(actionId)
   }
 
   async addStandaloneAction(input: NewStandaloneAction, actor: Actor) {
+    if (SERVER_INCIDENTS) {
+      const a = await incidentsApi.addStandaloneAction({
+        companyId: input.companyId, siteId: input.siteId, title: input.title,
+        owner: input.owner, dueDate: input.dueDate, priority: input.priority, source: 'manual',
+      })
+      return toCapaItem({ ...a, companyId: input.companyId, siteId: input.siteId })
+    }
     await delay(LATENCY() / 2)
     return this.incidents.addStandaloneAction(input, actor)
   }
 
   async updateCapa(actionId: string, patch: CapaPatch, actor: Actor) {
+    if (SERVER_INCIDENTS) {
+      const a = await incidentsApi.updateAction(actionId, {
+        status: patch.status, evidenceNote: patch.evidenceNote, dueDate: patch.dueDate,
+      })
+      return toCapaItem(a)
+    }
     await delay(LATENCY() / 3)
     return this.incidents.updateCapa(actionId, patch, actor)
   }
 
   async cancelCapa(actionId: string, reason: string, actor: Actor) {
+    if (SERVER_INCIDENTS) {
+      return toCapaItem(await incidentsApi.updateAction(actionId, { status: 'Cancelled', evidenceNote: reason }))
+    }
     await delay(LATENCY() / 3)
     return this.incidents.cancelCapa(actionId, reason, actor)
   }
 
   async addCapaNote(actionId: string, text: string, mentions: string[], actor: Actor) {
+    if (SERVER_INCIDENTS) {
+      await incidentsApi.addActionNote(actionId, text, mentions)
+      return this.getCapa(actionId) // re-read so the caller sees the authoritative row
+    }
     await delay(LATENCY() / 3)
     return this.incidents.addCapaNote(actionId, text, mentions, actor)
   }

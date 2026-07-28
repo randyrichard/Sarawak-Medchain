@@ -223,13 +223,6 @@ incidentExtrasRouter.get('/actions/analytics', async (req, res, next) => {
   }
 })
 
-incidentExtrasRouter.get('/actions/:actionId', async (req, res, next) => {
-  try {
-    res.json(await svc.getAction(callerOf(req), req.params.actionId))
-  } catch (e) {
-    next(e)
-  }
-})
 
 incidentExtrasRouter.post('/actions/:actionId/notes', async (req, res, next) => {
   try {
@@ -289,6 +282,19 @@ incidentExtrasRouter.get('/actions/list', async (req, res, next) => {
     }
     const { companyId, ...opts } = parsed.data
     res.json(await svc.listActions(callerOf(req), companyId, opts))
+  } catch (e) {
+    next(e)
+  }
+})
+
+/**
+ * Registered last on purpose. Express matches routes in declaration order, so this
+ * parameterised path must come after the literal /actions/list and /actions/analytics
+ * or it captures them and treats "list" as an action id.
+ */
+incidentExtrasRouter.get('/actions/:actionId', async (req, res, next) => {
+  try {
+    res.json(await svc.getAction(callerOf(req), req.params.actionId))
   } catch (e) {
     next(e)
   }
