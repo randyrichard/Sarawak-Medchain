@@ -43,6 +43,7 @@ import { isBackendConfigured } from './authApi'
 import { PermitStore } from './mock/permits'
 import { permitsApi } from './permitsApi'
 import { inspectionsApi } from './inspectionsApi'
+import { auditsApi } from './auditsApi'
 import type {
   GasTest, IsolationPoint, NewPermitInput, PermitFilters, PermitStats, PermitView,
 } from './permits'
@@ -110,8 +111,9 @@ export interface ApiClient {
   assetStats(companyId: string): Promise<AssetStats>
 
   // audits & compliance
-  listAuditTemplates(): Promise<AuditTemplate[]>
-  createAuditTemplate(name: string, items: string[], actor: Actor): Promise<AuditTemplate>
+  /** Built-in templates plus the workspace's own, so both need the tenant. */
+  listAuditTemplates(companyId: string): Promise<AuditTemplate[]>
+  createAuditTemplate(companyId: string, name: string, items: string[], actor: Actor): Promise<AuditTemplate>
   listAudits(companyId: string, filters: AuditFilters): Promise<AuditView[]>
   getAuditDetail(id: string): Promise<{ audit: AuditView; findings: AuditFindingView[]; template: AuditTemplate }>
   createAudit(input: NewAuditInput, actor: Actor): Promise<AuditView>
@@ -274,6 +276,15 @@ const SERVER_PERMITS = isBackendConfigured()
  * all computed on the server. The mock below is seed data for the credential-free demo.
  */
 const SERVER_INSPECTIONS = isBackendConfigured()
+
+/**
+ * True when audits and the compliance register are served by the API.
+ *
+ * Scoring, the corrective action every finding raises, and the rule that an audit cannot
+ * close over an unverified action all live on the server. The mock below is seed data for
+ * the credential-free demo.
+ */
+const SERVER_AUDITS = isBackendConfigured()
 
 
 
@@ -720,77 +731,128 @@ class MockApiClient implements ApiClient {
 
   // ── audits & compliance ────────────────────────────────────────────────────
 
-  async listAuditTemplates() {
+  async listAuditTemplates(companyId: string) {
+    if (SERVER_AUDITS) return auditsApi.listTemplates(companyId)
     await delay(LATENCY() / 3)
     return this.incidents.listTemplates()
   }
 
-  async createAuditTemplate(name: string, items: string[], actor: Actor) {
+  async createAuditTemplate(companyId: string, name: string, items: string[], actor: Actor) {
+    if (SERVER_AUDITS) return auditsApi.createTemplate(companyId, name, items)
     await delay(LATENCY() / 2)
     return this.incidents.createTemplate(name, items, actor)
   }
 
   async listAudits(companyId: string, filters: AuditFilters) {
+    if (SERVER_AUDITS) return auditsApi.listAudits(companyId, filters)
     await delay(LATENCY())
     return this.incidents.listAudits(companyId, filters)
   }
 
   async getAuditDetail(id: string) {
+    if (SERVER_AUDITS) return auditsApi.getAuditDetail(id)
     await delay(LATENCY() / 2)
     return this.incidents.getAuditDetail(id)
   }
 
   async createAudit(input: NewAuditInput, actor: Actor) {
+    if (SERVER_AUDITS) {
+      const a = await auditsApi.createAudit(input)
+      this.pushNotification('audit', `Audit planned: ${a.code}`,
+        `${a.title} — lead auditor ${a.leadAuditor}, ${a.scheduledFor}.`)
+      return a
+    }
     await delay(LATENCY() / 2)
     return this.incidents.createAudit(input, actor)
   }
 
   async startAudit(id: string, actor: Actor) {
+    if (SERVER_AUDITS) return auditsApi.startAudit(id)
     await delay(LATENCY() / 3)
     return this.incidents.startAudit(id, actor)
   }
 
   async completeAudit(id: string, input: CompleteAuditInput, actor: Actor) {
+    if (SERVER_AUDITS) {
+      const r = await auditsApi.completeAudit(id, input)
+      // Announced from the authoritative response: the server decides the score and how
+      // many findings it raised, not the answers that were sent.
+      for (const f of r.findings.filter((x) => x.status !== 'Closed')) {
+        this.pushNotification('audit', `Audit finding ${f.code} (${f.severity})`,
+          `${f.description.slice(0, 80)} — action ${f.actionCode} assigned to ${f.actionOwner}.`)
+      }
+      this.pushNotification('audit', `${r.audit.code} completed — score ${r.audit.score}%`,
+        `${r.audit.title}: ${r.findings.length} finding(s) raised.`)
+      return r
+    }
     await delay(LATENCY() / 2)
     return this.incidents.completeAudit(id, input, actor)
   }
 
   async closeAudit(id: string, actor: Actor) {
+    if (SERVER_AUDITS) {
+      const a = await auditsApi.closeAudit(id)
+      this.pushNotification('audit', `${a.code} closed`,
+        `${a.title} — every finding verified and closed.`)
+      return a
+    }
     await delay(LATENCY() / 3)
     return this.incidents.closeAudit(id, actor)
   }
 
   async listFindings(companyId: string, severity?: string) {
+    if (SERVER_AUDITS) return auditsApi.listFindings(companyId, severity)
     await delay(LATENCY() / 2)
     return this.incidents.listFindings(companyId, severity)
   }
 
   async listObligations(companyId: string) {
+    if (SERVER_AUDITS) return auditsApi.listObligations(companyId)
     await delay(LATENCY() / 2)
     return this.incidents.listObligations(companyId)
   }
 
   async renewObligation(id: string, nextDue: string, note: string, actor: Actor) {
+    if (SERVER_AUDITS) {
+      const o = await auditsApi.renewObligation(id, nextDue, note)
+      this.pushNotification('audit', `Compliance renewed: ${o.requirement}`,
+        `${o.regulation} — next due ${o.nextDue}.`)
+      return o
+    }
     await delay(LATENCY() / 3)
     return this.incidents.renewObligation(id, nextDue, note, actor)
   }
 
   async listDocuments(companyId: string, q?: string, kind?: DocKind | '') {
+    if (SERVER_AUDITS) return auditsApi.listDocuments(companyId, q, kind)
     await delay(LATENCY() / 2)
     return this.incidents.listDocuments(companyId, q, kind)
   }
 
   async addDocumentVersion(docId: string | null, input: { name: string; kind: DocKind; sizeKb: number; note: string; companyId: string; siteId: string | null }, actor: Actor) {
+    if (SERVER_AUDITS) {
+      const d = await auditsApi.addDocumentVersion(docId, input)
+      this.pushNotification('system', `Document pending approval: ${d.name}`,
+        `v${d.version} uploaded by ${actor.name}.`)
+      return d
+    }
     await delay(LATENCY() / 2)
     return this.incidents.addDocumentVersion(docId, input, actor)
   }
 
   async approveDocument(id: string, actor: Actor) {
+    if (SERVER_AUDITS) {
+      const d = await auditsApi.approveDocument(id)
+      this.pushNotification('system', `Document approved: ${d.name}`,
+        `v${d.version} approved by ${actor.name}.`)
+      return d
+    }
     await delay(LATENCY() / 3)
     return this.incidents.approveDocument(id, actor)
   }
 
   async auditStats(companyId: string) {
+    if (SERVER_AUDITS) return auditsApi.auditStats(companyId)
     await delay(LATENCY() / 2)
     return this.incidents.auditStats(companyId)
   }

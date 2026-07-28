@@ -31,19 +31,20 @@ export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; o
   const [tplItems, setTplItems] = useState('')
 
   useEffect(() => {
-    if (open) void api.listAuditTemplates().then((t) => {
+    if (open && company) void api.listAuditTemplates(company.id).then((t) => {
       setTemplates(t)
       if (!templateId && t.length) setTemplateId(t[0].id)
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open])
+  }, [open, company?.id])
 
   const createTemplate = async () => {
+    if (!company) return
     setBusy(true)
     setError(null)
     try {
-      const tpl = await api.createAuditTemplate(tplName, tplItems.split('\n'), actor)
-      const list = await api.listAuditTemplates()
+      const tpl = await api.createAuditTemplate(company.id, tplName, tplItems.split('\n'), actor)
+      const list = await api.listAuditTemplates(company.id)
       setTemplates(list)
       setTemplateId(tpl.id)
       setTplMode(false)

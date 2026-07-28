@@ -123,6 +123,10 @@ model Company {
   permits     Permit[]
   assets      Asset[]
   inspections Inspection[]
+  audits      Audit[]
+  auditTemplates AuditTemplate[]
+  obligations    ComplianceObligation[]
+  documents      ComplianceDocument[]
   createdAt   DateTime   @default(now())
 }
 
@@ -136,6 +140,9 @@ model Site {
   permits     Permit[]
   assets      Asset[]
   inspections Inspection[]
+  audits      Audit[]
+  obligations ComplianceObligation[]
+  documents   ComplianceDocument[]
 
   @@index([companyId])
 }
@@ -390,6 +397,10 @@ model CorrectiveAction {
   asset        Asset?      @relation(fields: [assetId], references: [id], onDelete: SetNull)
   inspectionId String?
   inspection   Inspection? @relation(fields: [inspectionId], references: [id], onDelete: SetNull)
+
+  /// Back-reference only — the foreign key lives on AuditFinding, so this adds no column
+  /// to CorrectiveAction and every existing action is unaffected.
+  finding AuditFinding?
 
   notes CapaNote[]
 
@@ -749,4 +760,243 @@ model Inspection {
   @@index([companyId, status])
   @@index([assetId, scheduledFor])
   @@index([scheduledFor])
+}
+
+// ─── Audits & Compliance ─────────────────────────────────────────────────────
+// An audit runs a checklist template. A failed item becomes a finding, and every
+// finding raises a corrective action with an owner and a date. The audit cannot close
+// until each of those actions is verified — that is what makes the register evidence
+// rather than a report, and it is enforced in auditService, not in the client.
+
+enum AuditType {
+  internal
+  external
+  dosh
+  iso45001
+  customer
+  contractor
+  supplier
+  environmental
+  quality
+  custom
+}
+
+enum AuditStatus {
+  planned
+  in_progress
+  completed
+  closed
+}
+
+enum AuditPriority {
+  High
+  Medium
+  Low
+}
+
+enum FindingSeverity {
+  Critical
+  Major
+  Minor
+  Observation
+}
+
+enum DocKind {
+  policy
+  sop
+  certificate
+  inspection_report
+  permit
+  training_record
+  audit_report
+}
+
+enum DocStatus {
+  Draft
+  PendingApproval
+  Approved
+  Superseded
+}
+
+/// A tenant-authored checklist. The built-in templates live in auditCatalog.ts and are
+/// available to everyone; only custom ones are rows, which is why companyId is required
+/// here — a template someone wrote belongs to the workspace that wrote it.
+model AuditTemplate {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  name String
+  type AuditType @default(custom)
+  /// [{ title, items: [{ id, text, guidance? }] }]
+  sections Json
+
+  createdBy String
+  createdAt DateTime @default(now())
+
+  @@index([companyId])
+}
+
+model Audit {
+  id String @id @default(cuid())
+  /// Human reference (AUD-####). Per tenant.
+  code String
+
+  companyId String
+  siteId    String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  site      Site    @relation(fields: [siteId], references: [id], onDelete: Restrict)
+
+  title      String
+  type       AuditType
+  customType String?
+  department String   @default("")
+
+  leadAuditor String
+  team        String[] @default([])
+  /// Either a built-in catalogue id or an AuditTemplate row id. Not a foreign key
+  /// because the built-ins are not rows; the service resolves both.
+  templateId  String
+
+  scheduledFor DateTime
+  durationDays Int           @default(1)
+  priority     AuditPriority @default(Medium)
+  status       AuditStatus   @default(planned)
+
+  startedAt   DateTime?
+  completedAt DateTime?
+  closedAt    DateTime?
+
+  /// Percentage of applicable items that passed. N/A answers are excluded, so a
+  /// checklist half of which does not apply is not scored as half-failed.
+  score     Int?
+  /// [{ itemId, section, text, result, comment?, photoCount? }]
+  answers   Json?
+  signature String?
+  gps       String?
+
+  findings AuditFinding[]
+  timeline AuditEvent[]
+
+  version   Int      @default(1)
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, code])
+  @@index([companyId, status])
+  @@index([companyId, siteId])
+  @@index([companyId, type])
+  @@index([scheduledFor])
+}
+
+model AuditFinding {
+  id String @id @default(cuid())
+  /// Human reference (F-####). Per tenant.
+  code String
+
+  auditId String
+  audit   Audit  @relation(fields: [auditId], references: [id], onDelete: Cascade)
+
+  /// The checklist section the failure came from.
+  category    String
+  description String
+  severity    FindingSeverity
+
+  evidenceNote     String?
+  photoCount       Int     @default(0)
+  linkedAssetId    String?
+  linkedIncidentId String?
+
+  /// The corrective action raised for this finding. One-to-one: a finding without an
+  /// owned action is a note, and the audit cannot close on notes.
+  actionId String           @unique
+  action   CorrectiveAction @relation(fields: [actionId], references: [id], onDelete: Cascade)
+
+  raisedBy String
+  raisedAt DateTime @default(now())
+
+  @@index([auditId])
+}
+
+/// Append-only audit trail for an audit. Never updated or deleted.
+model AuditEvent {
+  id      String @id @default(cuid())
+  auditId String
+  audit   Audit  @relation(fields: [auditId], references: [id], onDelete: Cascade)
+
+  action    String
+  detail    String?
+  actor     String
+  actorRole String?
+  at        DateTime @default(now())
+
+  @@index([auditId, at])
+}
+
+/// A statutory or contractual obligation with a renewal date. Status is derived from
+/// nextDue on read, for the same reason permit expiry is.
+model ComplianceObligation {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  /// Null means organisation-wide rather than tied to one site.
+  siteId    String?
+  site      Site?   @relation(fields: [siteId], references: [id], onDelete: SetNull)
+
+  regulation  String
+  requirement String
+  responsible String
+
+  nextDue       DateTime
+  expiryDate    DateTime?
+  evidenceDoc   String?
+  notes         String?
+  lastRenewedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId, nextDue])
+}
+
+model ComplianceDocument {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  siteId    String?
+  site      Site?   @relation(fields: [siteId], references: [id], onDelete: SetNull)
+
+  name    String
+  kind    DocKind
+  version String    @default("1.0")
+  status  DocStatus @default(PendingApproval)
+  owner   String
+  sizeKb  Int       @default(0)
+
+  approvedBy String?
+  approvedAt DateTime?
+
+  versions DocumentVersion[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId, status])
+  @@index([companyId, kind])
+}
+
+/// One row per uploaded revision. Append-only: superseding a version records a new row
+/// rather than overwriting, so the approval history of a controlled document survives.
+model DocumentVersion {
+  id         String             @id @default(cuid())
+  documentId String
+  document   ComplianceDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  version String
+  note    String @default("")
+  by      String
+  at      DateTime @default(now())
+
+  @@index([documentId, at])
 }
