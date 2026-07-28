@@ -1,0 +1,16 @@
+{
+  "name": "@safeops/platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SafeOps platform — development orchestrator for the api and web workspaces",
+  "type": "module",
+  "scripts": {
+    "setup": "npm install --prefix api && npm install --prefix web",
+    "dev": "node scripts/dev.mjs start",
+    "dev:check": "node scripts/dev.mjs check",
+    "dev:stop": "node scripts/dev.mjs stop",
+    "keygen": "npm run keygen --prefix api",
+    "test": "npm test --prefix api && npm test --prefix web",
+    "build": "npm run build --prefix api && npm run build --prefix web"
+  }
+}
