@@ -44,6 +44,7 @@ import { PermitStore } from './mock/permits'
 import { permitsApi } from './permitsApi'
 import { inspectionsApi } from './inspectionsApi'
 import { auditsApi } from './auditsApi'
+import { trainingApi } from './trainingApi'
 import type {
   GasTest, IsolationPoint, NewPermitInput, PermitFilters, PermitStats, PermitView,
 } from './permits'
@@ -130,7 +131,8 @@ export interface ApiClient {
 
   // training & competency
   listCourses(companyId: string): Promise<CourseView[]>
-  createCourse(input: NewCourseInput, actor: Actor): Promise<CourseView>
+  /** Courses belong to a workspace, so the tenant is explicit rather than implied. */
+  createCourse(companyId: string, input: NewCourseInput, actor: Actor): Promise<CourseView>
   trainingMatrix(companyId: string, actor: Actor): Promise<TrainingMatrix>
   getEmployeeTraining(employeeId: string): Promise<EmployeeTrainingProfile>
   listSessions(companyId: string, filters: SessionFilters): Promise<SessionView[]>
@@ -285,6 +287,15 @@ const SERVER_INSPECTIONS = isBackendConfigured()
  * the credential-free demo.
  */
 const SERVER_AUDITS = isBackendConfigured()
+
+/**
+ * True when training and competency are served by the API.
+ *
+ * Competency is derived on the server from real certificates, so the matrix, the expiry
+ * bands and every compliance figure come from one place. The mock below is seed data for
+ * the credential-free demo.
+ */
+const SERVER_TRAINING = isBackendConfigured()
 
 
 
@@ -860,61 +871,97 @@ class MockApiClient implements ApiClient {
   // ── training & competency ──────────────────────────────────────────────────
 
   async listCourses(companyId: string) {
+    if (SERVER_TRAINING) return trainingApi.listCourses(companyId)
     await delay(LATENCY() / 2)
     return this.incidents.listCourses(companyId)
   }
 
-  async createCourse(input: NewCourseInput, actor: Actor) {
+  async createCourse(companyId: string, input: NewCourseInput, actor: Actor) {
+    if (SERVER_TRAINING) {
+      const c = await trainingApi.createCourse(companyId, input)
+      this.pushNotification('system', `Training course added: ${c.code}`,
+        `${c.name} — ${c.mandatory ? 'mandatory' : 'optional'}, ` +
+        `${c.validityMonths ? `${c.validityMonths}-month validity` : 'no expiry'}.`)
+      return c
+    }
     await delay(LATENCY() / 2)
     return this.incidents.createCourse(input, actor)
   }
 
   async trainingMatrix(companyId: string, actor: Actor) {
+    if (SERVER_TRAINING) return trainingApi.matrix(companyId)
     await delay(LATENCY())
     return this.incidents.trainingMatrix(companyId, actor)
   }
 
   async getEmployeeTraining(employeeId: string) {
+    if (SERVER_TRAINING) return trainingApi.employeeProfile(employeeId)
     await delay(LATENCY() / 2)
     return this.incidents.getEmployeeTraining(employeeId)
   }
 
   async listSessions(companyId: string, filters: SessionFilters) {
+    if (SERVER_TRAINING) return trainingApi.listSessions(companyId, filters)
     await delay(LATENCY())
     return this.incidents.listSessions(companyId, filters)
   }
 
   async createSession(input: NewSessionInput, actor: Actor) {
+    if (SERVER_TRAINING) {
+      const s = await trainingApi.createSession(input)
+      this.pushNotification('system', `Training session scheduled: ${s.code}`,
+        `${s.courseName} on ${s.scheduledFor} — trainer ${s.trainer}, ${s.enrolledCount} enrolled.`)
+      return s
+    }
     await delay(LATENCY() / 2)
     return this.incidents.createSession(input, actor)
   }
 
   async enrollSession(sessionId: string, employeeIds: string[], actor: Actor) {
+    if (SERVER_TRAINING) return trainingApi.enrollSession(sessionId, employeeIds)
     await delay(LATENCY() / 3)
     return this.incidents.enrollSession(sessionId, employeeIds, actor)
   }
 
   async completeSession(sessionId: string, input: CompleteSessionInput, actor: Actor) {
+    if (SERVER_TRAINING) {
+      const r = await trainingApi.completeSession(sessionId, input)
+      // Announced from the authoritative response: the server decides who passed and
+      // therefore how many certificates exist.
+      const attended = r.session.attendance?.filter((a) => a.present).length ?? 0
+      this.pushNotification('system',
+        `${r.session.code} completed — ${r.certificates.length} certificate(s) issued`,
+        `${r.session.courseName}: ${attended} attended, ${r.certificates.length} passed.`)
+      return r
+    }
     await delay(LATENCY() / 2)
     return this.incidents.completeSession(sessionId, input, actor)
   }
 
   async listCertificates(companyId: string, filters: TrainingFilters, actor: Actor) {
+    if (SERVER_TRAINING) return trainingApi.listCertificates(companyId, filters)
     await delay(LATENCY() / 2)
     return this.incidents.listCertificates(companyId, filters, actor)
   }
 
   async verifyCertificate(codeOrKey: string) {
+    if (SERVER_TRAINING) return trainingApi.verifyCertificate(codeOrKey)
     await delay(LATENCY() / 3)
     return this.incidents.verifyCertificate(codeOrKey)
   }
 
   async raiseTrainingAction(employeeId: string, courseId: string, actor: Actor) {
+    if (SERVER_TRAINING) {
+      const a = await trainingApi.raiseTrainingAction(employeeId, courseId)
+      this.pushNotification('action', `Corrective action ${a.code} raised`, a.title)
+      return a
+    }
     await delay(LATENCY() / 2)
     return this.incidents.raiseTrainingAction(employeeId, courseId, actor)
   }
 
   async trainingStats(companyId: string) {
+    if (SERVER_TRAINING) return trainingApi.stats(companyId)
     await delay(LATENCY() / 2)
     return this.incidents.trainingStats(companyId)
   }

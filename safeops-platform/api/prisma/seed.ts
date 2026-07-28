@@ -32,6 +32,39 @@ const SITES = [
   { id: 'twu', companyId: 'big', name: 'Tawau Plantation Estate' },
   { id: 'sen', companyId: 'big', name: 'Senari Warehouse Complex' },
   { id: 'kcs-1', companyId: 'kcs', name: 'Kuching Central Project' },
+  { id: 'pjy', companyId: 'kcs', name: 'Petra Jaya Township Project' },
+  { id: 'smh', companyId: 'kcs', name: 'Samalaju Plant Expansion' },
+]
+
+/**
+ * The workforce. Training hangs off real people, so the roster is seeded rather than
+ * living in the browser. `department` is the resolved name because course applicability
+ * matches on it — departments become their own table with the organisation migration.
+ */
+const EMPLOYEES: {
+  id: string; companyId: string; siteId: string; departmentId: string
+  department: string; name: string; position: string
+}[] = [
+  { id: 'e01', companyId: 'big', siteId: 'kch', departmentId: 'kch-prod', department: 'Production', name: 'Sarah Wong', position: 'Production Supervisor' },
+  { id: 'e02', companyId: 'big', siteId: 'kch', departmentId: 'kch-prod', department: 'Production', name: 'Jason Ngu', position: 'Shift Supervisor' },
+  { id: 'e03', companyId: 'big', siteId: 'kch', departmentId: 'kch-mnt', department: 'Maintenance', name: 'Ganesh Pillai', position: 'Maintenance Supervisor' },
+  { id: 'e04', companyId: 'big', siteId: 'btu', departmentId: 'btu-ops', department: 'Field Operations', name: 'Rashid Karim', position: 'Loading Master' },
+  { id: 'e05', companyId: 'big', siteId: 'btu', departmentId: 'btu-mnt', department: 'Maintenance', name: 'Faizal Omar', position: 'Rotating Equipment Engineer' },
+  { id: 'e06', companyId: 'big', siteId: 'btu', departmentId: 'btu-hse', department: 'HSE', name: 'Amirul Hassan', position: 'Site Safety Officer' },
+  { id: 'e07', companyId: 'big', siteId: 'mri', departmentId: 'mri-ctr', department: 'Contractors', name: 'Vincent Chai', position: 'Contracts HSE Coordinator' },
+  { id: 'e08', companyId: 'big', siteId: 'twu', departmentId: 'twu-fld', department: 'Field Operations', name: 'Dayang Nurul', position: 'Estate Safety Officer' },
+  { id: 'e09', companyId: 'big', siteId: 'sen', departmentId: 'sen-whs', department: 'Warehouse', name: 'Grace Lim', position: 'Warehouse Safety Officer' },
+  { id: 'e10', companyId: 'big', siteId: 'kch', departmentId: 'kch-whs', department: 'Warehouse & Stores', name: 'Melissa Bong', position: 'Store Keeper' },
+  { id: 'e11', companyId: 'kcs', siteId: 'pjy', departmentId: 'pjy-civ', department: 'Civil Works', name: 'Azlan Mahmud', position: 'Site Agent' },
+  { id: 'e12', companyId: 'kcs', siteId: 'smh', departmentId: 'smh-mep', department: 'M&E Installation', name: 'Lau Tze Ming', position: 'M&E Supervisor' },
+  { id: 'e13', companyId: 'big', siteId: 'kch', departmentId: 'kch-prod', department: 'Production', name: 'Rosli Ahmad', position: 'Machine Operator' },
+  { id: 'e14', companyId: 'big', siteId: 'kch', departmentId: 'kch-mnt', department: 'Maintenance', name: 'Kenny Lau', position: 'Maintenance Technician' },
+  { id: 'e15', companyId: 'big', siteId: 'sen', departmentId: 'sen-whs', department: 'Warehouse', name: 'Siti Aminah', position: 'Forklift Operator' },
+  { id: 'e16', companyId: 'big', siteId: 'sen', departmentId: 'sen-whs', department: 'Warehouse', name: 'Bong Chin Hui', position: 'Forklift Operator' },
+  { id: 'e17', companyId: 'big', siteId: 'btu', departmentId: 'btu-ops', department: 'Field Operations', name: 'Hafiz Rahman', position: 'Process Technician' },
+  { id: 'e18', companyId: 'big', siteId: 'btu', departmentId: 'btu-hse', department: 'HSE', name: 'Nurul Izzah', position: 'Emergency Response Lead' },
+  { id: 'e19', companyId: 'big', siteId: 'mri', departmentId: 'mri-ctr', department: 'Contractors', name: 'Kumar Raj', position: 'Scaffolder' },
+  { id: 'e20', companyId: 'big', siteId: 'twu', departmentId: 'twu-mil', department: 'Mill', name: 'Lim Boon Keat', position: 'Mill Operator' },
 ]
 
 async function seedOrg() {
@@ -41,7 +74,16 @@ async function seedOrg() {
   for (const s of SITES) {
     await prisma.site.upsert({ where: { id: s.id }, update: { name: s.name }, create: s })
   }
-  console.log(`Seeded ${COMPANIES.length} companies and ${SITES.length} sites.`)
+  for (const e of EMPLOYEES) {
+    await prisma.employee.upsert({
+      where: { id: e.id },
+      update: { name: e.name, position: e.position, department: e.department, siteId: e.siteId },
+      create: e,
+    })
+  }
+  console.log(
+    `Seeded ${COMPANIES.length} companies, ${SITES.length} sites and ${EMPLOYEES.length} employees.`,
+  )
 }
 
 async function main() {

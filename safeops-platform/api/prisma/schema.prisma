@@ -127,6 +127,10 @@ model Company {
   auditTemplates AuditTemplate[]
   obligations    ComplianceObligation[]
   documents      ComplianceDocument[]
+  employees      Employee[]
+  courses        TrainingCourse[]
+  sessions       TrainingSession[]
+  certificates   Certificate[]
   createdAt   DateTime   @default(now())
 }
 
@@ -143,6 +147,8 @@ model Site {
   audits      Audit[]
   obligations ComplianceObligation[]
   documents   ComplianceDocument[]
+  employees   Employee[]
+  sessions    TrainingSession[]
 
   @@index([companyId])
 }
@@ -999,4 +1005,191 @@ model DocumentVersion {
   at      DateTime @default(now())
 
   @@index([documentId, at])
+}
+
+// ─── Training & Competency ───────────────────────────────────────────────────
+// Courses define what competency looks like; sessions deliver it; certificates carry
+// an expiry. The matrix and every compliance figure are derived from certificates on
+// read — a stored "competent" flag is a flag that is wrong the day a cert lapses.
+
+enum CourseCategory {
+  induction
+  safety
+  equipment
+  emergency
+  health
+  environmental
+  custom
+}
+
+enum DeliveryMode {
+  online
+  physical
+}
+
+enum SessionStatus {
+  scheduled
+  completed
+  cancelled
+}
+
+enum AttendanceResult {
+  pass
+  fail
+}
+
+/// The workforce. Training hangs off real people, so this is a table rather than a
+/// client-side fixture. Departments arrive with the organisation migration; until then
+/// the resolved department name is carried here, which is what course applicability
+/// actually matches on.
+model Employee {
+  id        String  @id @default(cuid())
+  companyId String
+  siteId    String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  site      Site    @relation(fields: [siteId], references: [id], onDelete: Restrict)
+
+  /// Retained for the organisation migration; not yet a foreign key.
+  departmentId String?
+  department   String  @default("")
+  teamId       String?
+
+  name     String
+  position String  @default("")
+  email    String?
+  active   Boolean @default(true)
+
+  enrolments   SessionEnrolment[]
+  certificates Certificate[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([companyId, siteId])
+  @@index([name])
+}
+
+/// A tenant-authored course. The standard catalogue lives in trainingCatalog.ts and is
+/// available to everyone, same arrangement as the audit templates.
+model TrainingCourse {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  code        String
+  name        String
+  category    CourseCategory @default(custom)
+  description String         @default("")
+
+  mandatory Boolean @default(false)
+  /// Null means a one-time competency that never expires.
+  validityMonths Int?
+  durationHours  Float   @default(1)
+  deliveryModes  DeliveryMode[] @default([])
+  competency     String  @default("")
+  passMark       Int     @default(80)
+  /// Department keywords the course applies to. Empty means the whole workforce.
+  applies        String[] @default([])
+
+  createdBy String
+  createdAt DateTime @default(now())
+
+  @@unique([companyId, code])
+  @@index([companyId])
+}
+
+model TrainingSession {
+  id String @id @default(cuid())
+  /// Human reference (SES-###). Per tenant.
+  code String
+
+  companyId String
+  siteId    String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  site      Site    @relation(fields: [siteId], references: [id], onDelete: Restrict)
+
+  /// Either a catalogue id or a TrainingCourse row id — the service resolves both, so
+  /// this is not a foreign key.
+  courseId   String
+  courseName String
+
+  trainer         String
+  venue           String       @default("")
+  mode            DeliveryMode @default(physical)
+  scheduledFor    DateTime
+  durationHours   Float        @default(1)
+  maxParticipants Int          @default(20)
+
+  status      SessionStatus @default(scheduled)
+  signature   String?
+  completedAt DateTime?
+  completedBy String?
+
+  enrolments   SessionEnrolment[]
+  certificates Certificate[]
+
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, code])
+  @@index([companyId, status])
+  @@index([scheduledFor])
+}
+
+/// One row per seat. Carries the enrolment before the session and the attendance
+/// afterwards, so a seat booked and a seat sat are the same record.
+model SessionEnrolment {
+  id         String          @id @default(cuid())
+  sessionId  String
+  session    TrainingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  employeeId String
+  employee   Employee        @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  present Boolean           @default(false)
+  result  AttendanceResult?
+  score   Int?
+
+  createdAt DateTime @default(now())
+
+  // One seat per person per session — enrolling twice is a mistake, not two seats.
+  @@unique([sessionId, employeeId])
+  @@index([employeeId])
+}
+
+/// Proof of competency, with an expiry taken from the course validity at issue.
+/// A renewal is a new row; the current certificate for an employee and course is the
+/// most recently issued one, derived on read so a renewal supersedes automatically.
+model Certificate {
+  id String @id @default(cuid())
+  /// CERT-YYYY-####. Unique across the deployment because it is quoted externally and
+  /// verified by anyone holding the number.
+  number String @unique
+  /// Payload behind the printed QR code.
+  qrKey  String @unique
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  courseId   String
+  courseName String
+
+  sessionId String?
+  session   TrainingSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  issueDate  DateTime
+  /// Null for a competency with no expiry.
+  expiryDate DateTime?
+  issuedBy   String
+  score      Int?
+  docName    String?
+
+  createdAt DateTime @default(now())
+
+  @@index([employeeId, courseId, issueDate])
+  @@index([companyId])
+  @@index([expiryDate])
 }

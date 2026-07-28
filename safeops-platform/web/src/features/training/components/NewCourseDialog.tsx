@@ -4,6 +4,7 @@ import { ApiError } from '@/api/types'
 import type { CourseCategory, DeliveryMode } from '@/api/training'
 import { CATEGORY_LABEL } from '@/api/training'
 import { useActor } from '@/features/incidents/lib'
+import { useOrg } from '@/features/org/OrgContext'
 import { Alert, Button, Checkbox, Dialog, Input, Select, Textarea } from '@/components/ui'
 
 const CATEGORIES: CourseCategory[] = ['induction', 'safety', 'equipment', 'emergency', 'health', 'environmental', 'custom']
@@ -11,6 +12,7 @@ const DEPT_KEYWORDS = ['Production', 'Maintenance', 'Warehouse', 'Logistics', 'F
 
 export function NewCourseDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
   const actor = useActor()
+  const { company } = useOrg()
   const [name, setName] = useState('')
   const [category, setCategory] = useState<CourseCategory>('safety')
   const [description, setDescription] = useState('')
@@ -27,10 +29,12 @@ export function NewCourseDialog({ open, onClose, onCreated }: { open: boolean; o
   const toggleApplies = (k: string) => setApplies((cur) => (cur.includes(k) ? cur.filter((x) => x !== k) : [...cur, k]))
 
   const submit = async () => {
+    if (!company) return
     setBusy(true)
     setError(null)
     try {
       await api.createCourse(
+        company.id,
         {
           name, category, description, mandatory,
           validityMonths: validityMonths ? Number(validityMonths) : null,

@@ -10,11 +10,13 @@ import { incidentExtrasRouter } from './routes/incidentExtras.js'
 import { permitsRouter } from './routes/permits.js'
 import { inspectionsRouter } from './routes/inspections.js'
 import { auditsRouter } from './routes/audits.js'
+import { trainingRouter } from './routes/training.js'
 import { AuthError } from './lib/authService.js'
 import { IncidentError } from './lib/incidentService.js'
 import { PermitError } from './lib/permitService.js'
 import { InspectionError } from './lib/inspectionService.js'
 import { AuditError } from './lib/auditService.js'
+import { TrainingError } from './lib/trainingService.js'
 
 export function createApp() {
   const app = express()
@@ -48,6 +50,7 @@ export function createApp() {
   app.use('/permits', permitsRouter)
   app.use('/assets', inspectionsRouter)
   app.use('/audits', auditsRouter)
+  app.use('/training', trainingRouter)
 
   app.use((_req, res) => res.status(404).json({ error: 'not_found' }))
 
@@ -58,7 +61,8 @@ export function createApp() {
       err instanceof IncidentError ||
       err instanceof PermitError ||
       err instanceof InspectionError ||
-      err instanceof AuditError
+      err instanceof AuditError ||
+      err instanceof TrainingError
     ) {
       return res.status(err.status).json({ error: err.code, message: err.message })
     }
