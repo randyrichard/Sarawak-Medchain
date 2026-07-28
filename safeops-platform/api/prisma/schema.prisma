@@ -204,6 +204,13 @@ model Incident {
   findings  String?
   closeNote String?
 
+  /// Contributing causes: [{ id, category, description }]
+  rcaCauses     Json?
+  /// Five Whys: { problem, whys: string[], rootStatement }
+  rcaFiveWhys   Json?
+  rcaApprovedBy String?
+  rcaApprovedAt DateTime?
+
   occurredAt DateTime
   reportedAt DateTime  @default(now())
   closedAt   DateTime?
@@ -292,6 +299,20 @@ model IncidentAttachment {
   @@index([incidentId])
 }
 
+model CapaNote {
+  id       String           @id @default(cuid())
+  actionId String
+  action   CorrectiveAction @relation(fields: [actionId], references: [id], onDelete: Cascade)
+
+  body      String
+  author    String
+  authorId  String?
+  mentions  String[] @default([])
+  createdAt DateTime @default(now())
+
+  @@index([actionId, createdAt])
+}
+
 enum CapaSource {
   incident
   audit
@@ -354,6 +375,8 @@ model CorrectiveAction {
   verifiedAt DateTime?
 
   cancelledReason String?
+
+  notes CapaNote[]
 
   version   Int      @default(1)
   createdBy String

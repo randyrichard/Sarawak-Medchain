@@ -165,6 +165,85 @@ incidentExtrasRouter.patch('/actions/:actionId', async (req, res, next) => {
   }
 })
 
+
+// ── Root cause analysis ──────────────────────────────────────────────────────
+
+const rcaBody = z.object({
+  causes: z.array(z.object({
+    id: z.string().max(120),
+    category: z.string().max(120),
+    description: z.string().min(1).max(2000),
+  })).max(50),
+  fiveWhys: z.object({
+    problem: z.string().max(2000),
+    whys: z.array(z.string().max(2000)).max(10),
+    rootStatement: z.string().max(2000),
+  }),
+})
+
+incidentExtrasRouter.put('/:id/rca', async (req, res, next) => {
+  try {
+    const parsed = rcaBody.safeParse(req.body)
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'validation', message: 'Invalid root cause payload.' })
+    }
+    res.json(await svc.saveRca(callerOf(req), req.params.id, parsed.data))
+  } catch (e) {
+    next(e)
+  }
+})
+
+incidentExtrasRouter.post('/:id/rca/approve', async (req, res, next) => {
+  try {
+    res.json(await svc.approveRca(callerOf(req), req.params.id))
+  } catch (e) {
+    next(e)
+  }
+})
+
+// ── Archive ──────────────────────────────────────────────────────────────────
+
+incidentExtrasRouter.post('/:id/archive', async (req, res, next) => {
+  try {
+    res.json(await svc.archive(callerOf(req), req.params.id))
+  } catch (e) {
+    next(e)
+  }
+})
+
+// ── Action notes & analytics ─────────────────────────────────────────────────
+
+incidentExtrasRouter.get('/actions/analytics', async (req, res, next) => {
+  try {
+    const companyId = String(req.query.companyId ?? '')
+    if (!companyId) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
+    res.json(await svc.actionAnalytics(callerOf(req), companyId))
+  } catch (e) {
+    next(e)
+  }
+})
+
+incidentExtrasRouter.get('/actions/:actionId', async (req, res, next) => {
+  try {
+    res.json(await svc.getAction(callerOf(req), req.params.actionId))
+  } catch (e) {
+    next(e)
+  }
+})
+
+incidentExtrasRouter.post('/actions/:actionId/notes', async (req, res, next) => {
+  try {
+    const parsed = commentBody.safeParse(req.body)
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'validation', message: 'A note body is required.' })
+    }
+    const n = await svc.addActionNote(callerOf(req), req.params.actionId, parsed.data.body, parsed.data.mentions ?? [])
+    res.status(201).json(n)
+  } catch (e) {
+    next(e)
+  }
+})
+
 const standaloneBody = z.object({
   companyId: z.string().min(1),
   siteId: z.string().min(1),

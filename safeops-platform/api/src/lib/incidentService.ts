@@ -552,6 +552,180 @@ export class IncidentService {
     }
   }
 
+
+  // ── Root cause analysis ────────────────────────────────────────────────────
+
+  /**
+   * Saves the RCA. Editable while the investigation is at the `rca` stage and not yet
+   * approved — once a manager approves it the analysis is the basis of the corrective
+   * actions and must not move underneath them.
+   */
+  async saveRca(caller: Caller, id: string, input: {
+    causes: { id: string; category: string; description: string }[]
+    fiveWhys: { problem: string; whys: string[]; rootStatement: string }
+  }) {
+    const incident = await this.get(caller, id)
+    const m = this.requireRole(caller, incident.companyId, MANAGE_ROLES)
+
+    if (incident.rcaApprovedBy) {
+      throw new IncidentError('validation', 'This analysis has been approved and is locked.')
+    }
+    if (!Array.isArray(input.causes)) {
+      throw new IncidentError('validation', 'Contributing causes are required.')
+    }
+
+    const updated = await this.db.$transaction(async (tx) => {
+      const inc = await tx.incident.update({
+        where: { id },
+        data: {
+          rcaCauses: input.causes as never,
+          rcaFiveWhys: input.fiveWhys as never,
+          version: { increment: 1 },
+        },
+      })
+      await tx.incidentEvent.create({
+        data: {
+          incidentId: id,
+          action: 'Root cause analysis saved',
+          detail: `${input.causes.length} contributing cause(s)`,
+          actor: caller.name,
+          actorRole: m.role,
+        },
+      })
+      return inc
+    })
+    return updated
+  }
+
+  /** Approval locks the analysis. Manager-only, and it must have real content. */
+  async approveRca(caller: Caller, id: string) {
+    const incident = await this.get(caller, id)
+    const m = this.requireRole(caller, incident.companyId, REVIEW_ROLES)
+
+    const causes = (incident.rcaCauses ?? []) as unknown[]
+    const whys = incident.rcaFiveWhys as { rootStatement?: string } | null
+    if (!Array.isArray(causes) || causes.length === 0) {
+      throw new IncidentError('validation', 'Record at least one contributing cause before approving.')
+    }
+    if (!whys?.rootStatement?.trim()) {
+      throw new IncidentError('validation', 'A root cause statement is required before approving.')
+    }
+
+    return this.db.$transaction(async (tx) => {
+      const inc = await tx.incident.update({
+        where: { id },
+        data: { rcaApprovedBy: caller.name, rcaApprovedAt: new Date(), version: { increment: 1 } },
+      })
+      await tx.incidentEvent.create({
+        data: {
+          incidentId: id,
+          action: 'Root cause analysis approved',
+          actor: caller.name,
+          actorRole: m.role,
+        },
+      })
+      return inc
+    })
+  }
+
+  // ── Archive ────────────────────────────────────────────────────────────────
+
+  /**
+   * Soft delete. Records are never physically removed — a safety register that can be
+   * erased is not a register — so the row is hidden from lists and marked in the trail.
+   */
+  async archive(caller: Caller, id: string) {
+    const incident = await this.get(caller, id)
+    const m = this.requireRole(caller, incident.companyId, REVIEW_ROLES)
+
+    return this.db.$transaction(async (tx) => {
+      const inc = await tx.incident.update({
+        where: { id },
+        data: { archived: true, version: { increment: 1 } },
+      })
+      await tx.incidentEvent.create({
+        data: { incidentId: id, action: 'Incident archived', actor: caller.name, actorRole: m.role },
+      })
+      return inc
+    })
+  }
+
+  // ── Corrective action notes ────────────────────────────────────────────────
+
+  async addActionNote(caller: Caller, actionId: string, body: string, mentions: string[] = []) {
+    const action = await this.db.correctiveAction.findUnique({ where: { id: actionId } })
+    if (!action) throw new IncidentError('not_found', 'Action not found.', 404)
+    this.membership(caller, action.companyId)
+    if (!body?.trim()) throw new IncidentError('validation', 'A note cannot be empty.')
+
+    return this.db.capaNote.create({
+      data: {
+        actionId,
+        body: body.trim(),
+        author: caller.name,
+        authorId: caller.userId,
+        mentions,
+      },
+    })
+  }
+
+  async getAction(caller: Caller, actionId: string) {
+    const action = await this.db.correctiveAction.findUnique({
+      where: { id: actionId },
+      include: { notes: { orderBy: { createdAt: 'asc' } } },
+    })
+    if (!action) throw new IncidentError('not_found', 'Action not found.', 404)
+    this.membership(caller, action.companyId)
+    return action
+  }
+
+  // ── Action analytics ───────────────────────────────────────────────────────
+
+  /** Counts by status, priority and source, plus overdue and average days to close. */
+  async actionAnalytics(caller: Caller, companyId: string) {
+    const m = this.membership(caller, companyId)
+    const scope = ['employee', 'supervisor'].includes(m.role) ? { owner: caller.name } : {}
+    const where = { companyId, ...scope }
+
+    const [byStatus, byPriority, bySource, overdue, closed] = await this.db.$transaction([
+      this.db.correctiveAction.groupBy({ by: ['status'], where, _count: { _all: true }, orderBy: undefined }),
+      this.db.correctiveAction.groupBy({ by: ['priority'], where, _count: { _all: true }, orderBy: undefined }),
+      this.db.correctiveAction.groupBy({ by: ['source'], where, _count: { _all: true }, orderBy: undefined }),
+      this.db.correctiveAction.count({
+        where: { ...where, status: { in: ['open', 'in_progress'] }, dueDate: { lt: new Date() } },
+      }),
+      this.db.correctiveAction.findMany({
+        where: { ...where, completedAt: { not: null } },
+        select: { createdAt: true, completedAt: true },
+        take: 500,
+      }),
+    ])
+
+    const days = closed
+      .filter((a) => a.completedAt)
+      .map((a) => (a.completedAt!.getTime() - a.createdAt.getTime()) / 86400_000)
+    const avgDaysToComplete = days.length
+      ? Math.round((days.reduce((x, y) => x + y, 0) / days.length) * 10) / 10
+      : null
+
+    // Prisma's groupBy result type is conditional on the _count shape; narrow locally
+    // rather than thread the generic through, which buys nothing at one call site.
+    const shape = (rows: unknown[], key: string) =>
+      (rows as Record<string, { _all: number } | undefined>[]).map((r) => ({
+        key: String((r as unknown as Record<string, unknown>)[key]),
+        count: (r as { _count?: { _all: number } })._count?._all ?? 0,
+      }))
+
+    return {
+      byStatus: shape(byStatus, 'status'),
+      byPriority: shape(byPriority, 'priority'),
+      bySource: shape(bySource, 'source'),
+      overdue,
+      avgDaysToComplete,
+      totalClosed: closed.length,
+    }
+  }
+
   /** Dashboard counters, computed in the database rather than by loading every row. */
   async stats(caller: Caller, companyId: string, siteId?: string) {
     this.membership(caller, companyId)

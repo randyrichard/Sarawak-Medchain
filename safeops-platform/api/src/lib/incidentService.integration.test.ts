@@ -257,6 +257,81 @@ d('IncidentService — integration (real Postgres)', () => {
     })).rejects.toThrow()
   })
 
+
+  it('saves and locks a root cause analysis', async () => {
+    const inc = await svc.create(officer, newIncident('RCA flow'))
+    const saved = await svc.saveRca(manager, inc.id, {
+      causes: [{ id: 'c1', category: 'Unsafe Condition', description: 'Guard removed for cleaning.' }],
+      fiveWhys: { problem: 'Guard missing', whys: ['Removed', 'Not refitted'], rootStatement: 'No refit check in the cleaning SOP.' },
+    })
+    expect((saved.rcaCauses as unknown[]).length).toBe(1)
+
+    const approved = await svc.approveRca(manager, inc.id)
+    expect(approved.rcaApprovedBy).toBe(manager.name)
+
+    // Approval locks it — the analysis underpins the corrective actions.
+    await expect(svc.saveRca(manager, inc.id, {
+      causes: [], fiveWhys: { problem: 'x', whys: [], rootStatement: 'y' },
+    })).rejects.toMatchObject({ code: 'validation' })
+  })
+
+  it('refuses to approve an empty analysis', async () => {
+    const inc = await svc.create(officer, newIncident('Empty RCA'))
+    await expect(svc.approveRca(manager, inc.id)).rejects.toMatchObject({ code: 'validation' })
+
+    await svc.saveRca(manager, inc.id, {
+      causes: [{ id: 'c1', category: 'X', description: 'Something' }],
+      fiveWhys: { problem: 'p', whys: [], rootStatement: '' },
+    })
+    // Causes present but no root statement — still not approvable.
+    await expect(svc.approveRca(manager, inc.id)).rejects.toMatchObject({ code: 'validation' })
+  })
+
+  it('blocks an employee from writing an RCA', async () => {
+    const inc = await svc.create(employee, newIncident('RCA rbac'))
+    await expect(svc.saveRca(employee, inc.id, {
+      causes: [], fiveWhys: { problem: '', whys: [], rootStatement: '' },
+    })).rejects.toMatchObject({ status: 403 })
+  })
+
+  it('archives an incident without deleting it, and hides it from lists', async () => {
+    const inc = await svc.create(officer, newIncident('To archive'))
+    const before = await svc.list(manager, { companyId: COMPANY, page: 1, pageSize: 100 })
+    await svc.archive(manager, inc.id)
+    const after = await svc.list(manager, { companyId: COMPANY, page: 1, pageSize: 100 })
+
+    expect(after.total).toBe(before.total - 1)
+    // Soft delete: the row and its trail survive.
+    expect(await db.incident.count({ where: { id: inc.id } })).toBe(1)
+    expect(await db.incidentEvent.count({ where: { incidentId: inc.id } })).toBeGreaterThan(0)
+  })
+
+  it('records notes against a corrective action', async () => {
+    const inc = await svc.create(officer, newIncident('CAPA notes'))
+    const a = await svc.addAction(manager, inc.id, {
+      title: 'Refit guard', owner: employee.name,
+      dueDate: new Date(Date.now() + 86400000).toISOString(),
+    })
+    await svc.addActionNote(manager, a.id, 'Parts ordered.', ['ITest Employee'])
+    await svc.addActionNote(employee, a.id, 'Fitted this morning.')
+
+    const full = await svc.getAction(manager, a.id)
+    expect(full.notes).toHaveLength(2)
+    expect(full.notes[0].author).toBe(manager.name)
+    expect(full.notes[0].mentions).toContain('ITest Employee')
+  })
+
+  it('produces action analytics grouped by status, priority and source', async () => {
+    const stats = await svc.actionAnalytics(manager, COMPANY)
+    expect(Array.isArray(stats.byStatus)).toBe(true)
+    expect(stats.byStatus.every((r) => typeof r.count === 'number')).toBe(true)
+    expect(typeof stats.overdue).toBe('number')
+    const summed = stats.byStatus.reduce((n, r) => n + r.count, 0)
+    const bySource = stats.bySource.reduce((n, r) => n + r.count, 0)
+    // Every action appears exactly once in each grouping.
+    expect(summed).toBe(bySource)
+  })
+
   it('computes dashboard statistics in the database', async () => {
     const stats = await svc.stats(manager, COMPANY)
     expect(stats.total).toBeGreaterThan(0)
