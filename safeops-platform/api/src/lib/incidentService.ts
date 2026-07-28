@@ -447,28 +447,89 @@ export class IncidentService {
           ...(patch.status === 'verified' ? { verifiedBy: caller.name, verifiedAt: new Date() } : {}),
         },
       })
-      await tx.incidentEvent.create({
+      // The audit event hangs off the parent investigation. A standalone action has no
+      // parent, so it currently has no trail of its own — tracked as debt (M1.1 note):
+      // an ActionEvent table is needed before standalone actions are audit-complete.
+      if (action.incidentId) {
+        await tx.incidentEvent.create({
+          data: {
+            incidentId: action.incidentId,
+            action: patch.status ? 'Action ' + updated.code + ' -> ' + patch.status : 'Action ' + updated.code + ' updated',
+            detail: patch.evidenceNote?.slice(0, 140),
+            actor: caller.name,
+            actorRole: m.role,
+          },
+        })
+      }
+      return updated
+    })
+  }
+
+
+  /**
+   * Raises an action with no parent investigation — an audit finding, a failed
+   * inspection, or a manual entry. Shares the CA-#### sequence with incident-derived
+   * actions so the register reads as one continuous list.
+   */
+  async createStandaloneAction(caller: Caller, input: {
+    companyId: string
+    siteId: string
+    title: string
+    detail?: string
+    owner: string
+    dueDate: string
+    priority?: string
+    source?: string
+  }) {
+    this.requireRole(caller, input.companyId, MANAGE_ROLES)
+    if (!input.title?.trim()) throw new IncidentError('validation', 'An action title is required.')
+    if (!input.owner?.trim()) throw new IncidentError('validation', 'Every action needs an owner.')
+    const due = new Date(input.dueDate)
+    if (Number.isNaN(due.getTime())) {
+      throw new IncidentError('validation', 'A valid target completion date is required.')
+    }
+
+    const site = await this.db.site.findFirst({
+      where: { id: input.siteId, companyId: input.companyId },
+      select: { id: true },
+    })
+    if (!site) throw new IncidentError('validation', 'Unknown site for this workspace.')
+
+    return this.db.$transaction(async (tx) => {
+      const counter = await tx.counter.upsert({
+        where: { companyId_kind: { companyId: input.companyId, kind: 'capa' } },
+        update: { next: { increment: 1 } },
+        create: { companyId: input.companyId, kind: 'capa', next: 401 },
+        select: { next: true },
+      })
+      return tx.correctiveAction.create({
         data: {
-          incidentId: action.incidentId,
-          action: patch.status ? 'Action ' + updated.code + ' -> ' + patch.status : 'Action ' + updated.code + ' updated',
-          detail: patch.evidenceNote?.slice(0, 140),
-          actor: caller.name,
-          actorRole: m.role,
+          code: 'CA-' + counter.next,
+          incidentId: null,
+          source: (input.source ?? 'manual') as never,
+          companyId: input.companyId,
+          siteId: input.siteId,
+          title: input.title.trim(),
+          detail: input.detail?.trim() ?? '',
+          owner: input.owner.trim(),
+          dueDate: due,
+          priority: (input.priority ?? 'Medium') as never,
+          createdBy: caller.name,
         },
       })
-      return updated
     })
   }
 
   /** Actions across the workspace — the SAIL list, scoped and paginated. */
   async listActions(caller: Caller, companyId: string, opts: {
-    page: number; pageSize: number; status?: string; owner?: string; overdue?: boolean
+    page: number; pageSize: number; status?: string; owner?: string; overdue?: boolean; source?: string
   }) {
     const m = this.membership(caller, companyId)
     const where: Prisma.CorrectiveActionWhereInput = {
       companyId,
       ...(opts.status ? { status: opts.status as never } : {}),
       ...(opts.owner ? { owner: opts.owner } : {}),
+      ...(opts.source ? { source: opts.source as never } : {}),
       ...(opts.overdue ? { dueDate: { lt: new Date() }, status: { in: ['open', 'in_progress'] } } : {}),
       // Employees and supervisors see only what they own.
       ...(['employee', 'supervisor'].includes(m.role) ? { owner: caller.name } : {}),

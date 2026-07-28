@@ -165,6 +165,33 @@ incidentExtrasRouter.patch('/actions/:actionId', async (req, res, next) => {
   }
 })
 
+const standaloneBody = z.object({
+  companyId: z.string().min(1),
+  siteId: z.string().min(1),
+  title: z.string().min(1).max(300),
+  detail: z.string().max(5000).optional(),
+  owner: z.string().min(1).max(200),
+  dueDate: z.string().min(1),
+  priority: z.enum(['Low', 'Medium', 'High', 'Critical']).optional(),
+  source: z.enum(['audit', 'inspection', 'manual', 'training']).optional(),
+})
+
+/** Action raised outside an investigation. Mounted before /:id to stay reachable. */
+incidentExtrasRouter.post('/actions', async (req, res, next) => {
+  try {
+    const parsed = standaloneBody.safeParse(req.body)
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: 'validation',
+        message: parsed.error.issues[0]?.message ?? 'Invalid action payload.',
+      })
+    }
+    res.status(201).json(await svc.createStandaloneAction(callerOf(req), parsed.data))
+  } catch (e) {
+    next(e)
+  }
+})
+
 const actionsQuery = z.object({
   companyId: z.string().min(1),
   page: z.coerce.number().int().positive().default(1),
@@ -172,6 +199,7 @@ const actionsQuery = z.object({
   status: z.string().optional(),
   owner: z.string().optional(),
   overdue: z.coerce.boolean().optional(),
+  source: z.string().optional(),
 })
 
 incidentExtrasRouter.get('/actions/list', async (req, res, next) => {

@@ -52,6 +52,7 @@ d('IncidentService — integration (real Postgres)', () => {
 
   afterAll(async () => {
     // Cascades remove incidents, events, comments, attachments and actions with the company.
+    await db.correctiveAction.deleteMany({ where: { companyId: COMPANY } })
     await db.company.deleteMany({ where: { id: COMPANY } })
     await db.counter.deleteMany({ where: { companyId: COMPANY } })
     await db.$disconnect()
@@ -161,6 +162,99 @@ d('IncidentService — integration (real Postgres)', () => {
 
     expect(await db.incidentComment.count({ where: { incidentId: inc.id } })).toBe(0)
     expect(await db.incidentEvent.count({ where: { incidentId: inc.id } })).toBe(0)
+  })
+
+
+  it('raises an action with no parent investigation (audit/inspection origin)', async () => {
+    const a = await svc.createStandaloneAction(manager, {
+      companyId: COMPANY, siteId: SITE,
+      title: 'Replace worn sling — audit finding',
+      owner: employee.name,
+      dueDate: new Date(Date.now() + 86400000).toISOString(),
+      source: 'audit',
+    })
+    expect(a.incidentId).toBeNull()
+    expect(a.source).toBe('audit')
+    expect(a.code).toMatch(/^CA-\d+$/)
+  })
+
+  it('lists incident-derived and standalone actions as one register', async () => {
+    const inc = await svc.create(officer, newIncident('Register union'))
+    await svc.addAction(manager, inc.id, {
+      title: 'From investigation', owner: employee.name,
+      dueDate: new Date(Date.now() + 86400000).toISOString(),
+    })
+    await svc.createStandaloneAction(manager, {
+      companyId: COMPANY, siteId: SITE, title: 'From inspection', owner: employee.name,
+      dueDate: new Date(Date.now() + 86400000).toISOString(), source: 'inspection',
+    })
+
+    const all = await svc.listActions(manager, COMPANY, { page: 1, pageSize: 100 })
+    const sources = new Set(all.rows.map((r) => r.source))
+    expect(sources.has('incident')).toBe(true)
+    expect(sources.has('inspection')).toBe(true)
+
+    const onlyInspection = await svc.listActions(manager, COMPANY, { page: 1, pageSize: 100, source: 'inspection' })
+    expect(onlyInspection.rows.every((r) => r.source === 'inspection')).toBe(true)
+    expect(onlyInspection.total).toBeLessThan(all.total)
+  })
+
+  it('updating a standalone action does not attempt an incident audit event', async () => {
+    const a = await svc.createStandaloneAction(manager, {
+      companyId: COMPANY, siteId: SITE, title: 'Standalone update', owner: employee.name,
+      dueDate: new Date(Date.now() + 86400000).toISOString(), source: 'manual',
+    })
+    const done = await svc.updateAction(employee, a.id, {
+      status: 'completed', evidenceNote: 'Done and photographed.',
+    })
+    expect(done.status).toBe('completed')
+    expect(done.incidentId).toBeNull()
+  })
+
+  it('requires a manage role to raise a standalone action', async () => {
+    await expect(svc.createStandaloneAction(employee, {
+      companyId: COMPANY, siteId: SITE, title: 'Not allowed', owner: employee.name,
+      dueDate: new Date(Date.now() + 86400000).toISOString(),
+    })).rejects.toMatchObject({ status: 403 })
+  })
+
+  it('rejects a standalone action for a site outside the workspace', async () => {
+    await expect(svc.createStandaloneAction(manager, {
+      companyId: COMPANY, siteId: 'no-such-site', title: 'Bad site', owner: employee.name,
+      dueDate: new Date(Date.now() + 86400000).toISOString(),
+    })).rejects.toMatchObject({ code: 'validation' })
+  })
+
+
+  it('cascades standalone actions when the tenant is deleted (no orphans)', async () => {
+    // Regression: CorrectiveAction.companyId was a bare string, so an action with no
+    // parent incident survived company deletion and later collided on its CA number.
+    const TMP = 'itest-cascade-co'
+    await db.company.create({ data: { id: TMP, name: 'Cascade Co' } })
+    await db.site.create({ data: { id: 'itest-cascade-site', companyId: TMP, name: 'S' } })
+    const tmpMgr: Caller = {
+      userId: 'x', name: 'Cascade Mgr',
+      roles: [{ companyId: TMP, role: 'hse_manager', siteIds: [] }],
+    }
+    const a = await svc.createStandaloneAction(tmpMgr, {
+      companyId: TMP, siteId: 'itest-cascade-site', title: 'Orphan check',
+      owner: 'Someone', dueDate: new Date(Date.now() + 86400000).toISOString(), source: 'manual',
+    })
+    expect(a.incidentId).toBeNull()
+
+    await db.company.delete({ where: { id: TMP } })
+    await db.counter.deleteMany({ where: { companyId: TMP } })
+
+    expect(await db.correctiveAction.count({ where: { id: a.id } })).toBe(0)
+  })
+
+  it('refuses an action referencing a company that does not exist', async () => {
+    await expect(db.correctiveAction.create({
+      data: {
+        code: 'CA-ghost', companyId: 'no-such-company', siteId: SITE,
+        title: 'Ghost', owner: 'X', dueDate: new Date(), createdBy: 'X',
+      },
+    })).rejects.toThrow()
   })
 
   it('computes dashboard statistics in the database', async () => {

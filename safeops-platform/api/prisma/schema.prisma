@@ -119,6 +119,7 @@ model Company {
   plan      String     @default("enterprise")
   sites     Site[]
   incidents Incident[]
+  actions   CorrectiveAction[]
   createdAt DateTime   @default(now())
 }
 
@@ -128,6 +129,7 @@ model Site {
   name      String
   company   Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
   incidents Incident[]
+  actions   CorrectiveAction[]
 
   @@index([companyId])
 }
@@ -290,6 +292,14 @@ model IncidentAttachment {
   @@index([incidentId])
 }
 
+enum CapaSource {
+  incident
+  audit
+  inspection
+  manual
+  training
+}
+
 enum CapaStatus {
   open
   in_progress
@@ -310,12 +320,22 @@ enum CapaPriority {
 model CorrectiveAction {
   id         String   @id @default(cuid())
   /// CA-#### — per tenant, same reasoning as Incident.number.
-  code       String
-  incidentId String
-  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  code String
+  /// Null for actions raised outside an investigation — an audit finding, an inspection
+  /// failure, or a manual entry. The Actions register (SAIL) is the union of both, so
+  /// this must be optional or those items have nowhere to live.
+  incidentId String?
+  incident   Incident? @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  /// Where the action came from, for filtering and reporting.
+  source     CapaSource @default(incident)
 
+  // Real foreign keys, not bare strings. Without them a standalone action (incidentId
+  // null) has no cascade path, so deleting a tenant orphans its safety records, and
+  // nothing stops an action being written against a company that does not exist.
   companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
   siteId    String
+  site      Site    @relation(fields: [siteId], references: [id], onDelete: Restrict)
 
   title    String
   detail   String       @default("")
