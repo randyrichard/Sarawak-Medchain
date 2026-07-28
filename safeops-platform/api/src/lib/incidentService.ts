@@ -565,15 +565,40 @@ export class IncidentService {
     monthStart.setDate(1)
     monthStart.setHours(0, 0, 0, 0)
 
-    const [open, highRisk, nearMissMonth, closed, total] = await this.db.$transaction([
-      this.db.incident.count({ where: { ...base, stage: { not: 'closed' } } }),
-      this.db.incident.count({ where: { ...base, highRisk: true, stage: { not: 'closed' } } }),
-      this.db.incident.count({ where: { ...base, type: 'near_miss', reportedAt: { gte: monthStart } } }),
-      this.db.incident.count({ where: { ...base, stage: 'closed' } }),
-      this.db.incident.count({ where: base }),
-    ])
+    // Actions are scoped by company/site directly; they are not all incident-derived.
+    const actionBase = {
+      companyId,
+      ...(siteId ? { siteId } : {}),
+      ...(['employee', 'supervisor'].includes(this.membership(caller, companyId).role)
+        ? { owner: caller.name }
+        : {}),
+    }
+    const OPEN_ACTION: Prisma.EnumCapaStatusFilter = { in: ['open', 'in_progress'] }
 
-    return { open, highRisk, nearMissThisMonth: nearMissMonth, closed, total }
+    const [open, highRisk, nearMissMonth, closed, total, openActions, overdueActions, awaitingVerification] =
+      await this.db.$transaction([
+        this.db.incident.count({ where: { ...base, stage: { not: 'closed' } } }),
+        this.db.incident.count({ where: { ...base, highRisk: true, stage: { not: 'closed' } } }),
+        this.db.incident.count({ where: { ...base, type: 'near_miss', reportedAt: { gte: monthStart } } }),
+        this.db.incident.count({ where: { ...base, stage: 'closed' } }),
+        this.db.incident.count({ where: base }),
+        this.db.correctiveAction.count({ where: { ...actionBase, status: OPEN_ACTION } }),
+        this.db.correctiveAction.count({
+          where: { ...actionBase, status: OPEN_ACTION, dueDate: { lt: new Date() } },
+        }),
+        this.db.correctiveAction.count({ where: { ...actionBase, status: 'completed' } }),
+      ])
+
+    return {
+      open,
+      highRisk,
+      nearMissThisMonth: nearMissMonth,
+      closed,
+      total,
+      openActions,
+      overdueActions,
+      awaitingVerification,
+    }
   }
 }
 

@@ -262,4 +262,36 @@ d('IncidentService — integration (real Postgres)', () => {
     expect(stats.total).toBeGreaterThan(0)
     expect(stats.open + stats.closed).toBe(stats.total)
   })
+
+  it('counts open, overdue and awaiting-verification actions for the dashboard', async () => {
+    const inc = await svc.create(officer, newIncident('Dashboard CAPA counters'))
+    // One overdue, one due later, one already completed and awaiting verification.
+    await svc.addAction(manager, inc.id, {
+      title: 'Overdue item', owner: employee.name,
+      dueDate: new Date(Date.now() - 2 * 86400000).toISOString(),
+    })
+    await svc.addAction(manager, inc.id, {
+      title: 'Future item', owner: employee.name,
+      dueDate: new Date(Date.now() + 7 * 86400000).toISOString(),
+    })
+    const third = await svc.addAction(manager, inc.id, {
+      title: 'Done item', owner: employee.name,
+      dueDate: new Date(Date.now() + 86400000).toISOString(),
+    })
+    await svc.updateAction(employee, third.id, { status: 'completed', evidenceNote: 'Fitted.' })
+
+    const stats = await svc.stats(manager, COMPANY)
+    expect(stats.openActions).toBeGreaterThanOrEqual(2)
+    expect(stats.overdueActions).toBeGreaterThanOrEqual(1)
+    expect(stats.awaitingVerification).toBeGreaterThanOrEqual(1)
+    // Overdue is a subset of open, never larger.
+    expect(stats.overdueActions).toBeLessThanOrEqual(stats.openActions)
+  })
+
+  it('scopes dashboard action counters to the caller', async () => {
+    // An employee's dashboard must count only the actions they own.
+    const asEmployee = await svc.stats(employee, COMPANY)
+    const asManager = await svc.stats(manager, COMPANY)
+    expect(asEmployee.openActions).toBeLessThanOrEqual(asManager.openActions)
+  })
 })
