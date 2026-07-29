@@ -81,6 +81,9 @@ export interface LeaderboardEntry {
 export type TimelineKind =
   | 'incident_reported' | 'investigation_started' | 'action_assigned'
   | 'action_completed' | 'audit_created' | 'training_completed'
+  // Permits and inspections are live modules with their own trails, so the feed can
+  // report them rather than forcing them into a neighbouring kind.
+  | 'permit_issued' | 'inspection_completed'
 
 export interface TimelineEvent {
   id: string

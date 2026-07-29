@@ -1,5 +1,6 @@
 import {
   ClipboardList, SearchCheck, ListChecks, CheckCircle2, CalendarClock, GraduationCap,
+  HardHat, Wrench,
 } from 'lucide-react'
 import type { TimelineEvent, TimelineKind } from '@/api/dashboard'
 import { Card, CardHeader, SkeletonRows } from '@/components/ui'
@@ -12,7 +13,16 @@ const KIND: Record<TimelineKind, { icon: typeof ClipboardList; color: string }> 
   action_completed: { icon: CheckCircle2, color: 'var(--good)' },
   audit_created: { icon: CalendarClock, color: 'var(--s5)' },
   training_completed: { icon: GraduationCap, color: 'var(--s2)' },
+  permit_issued: { icon: HardHat, color: 'var(--s4)' },
+  inspection_completed: { icon: Wrench, color: 'var(--s8)' },
 }
+
+/**
+ * Falls back rather than throwing. The feed is assembled from every module's trail, so a
+ * kind added server-side before the client knows about it should degrade to a generic
+ * row — not take down Mission Control.
+ */
+const kindOf = (k: TimelineKind) => KIND[k] ?? { icon: ClipboardList, color: 'var(--muted)' }
 
 export function ActivityTimeline({
   events, loading, className,
@@ -30,7 +40,7 @@ export function ActivityTimeline({
         ) : (
           <ol className="relative space-y-4 before:absolute before:bottom-1 before:left-[13px] before:top-1 before:w-px before:bg-grid">
             {events.map((event) => {
-              const meta = KIND[event.kind]
+              const meta = kindOf(event.kind)
               const Icon = meta.icon
               return (
                 <li key={event.id} className="relative flex gap-3 pl-0.5">

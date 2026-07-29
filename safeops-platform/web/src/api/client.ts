@@ -48,6 +48,7 @@ import { trainingApi } from './trainingApi'
 import { adminApi } from './adminApi'
 import { orgApi } from './orgApi'
 import { notificationsApi } from './notificationsApi'
+import { activityApi } from './activityApi'
 import type {
   GasTest, IsolationPoint, NewPermitInput, PermitFilters, PermitStats, PermitView,
 } from './permits'
@@ -223,7 +224,8 @@ export interface ApiClient {
   listNotifications(companyId: string): Promise<AppNotification[]>
   markNotificationRead(companyId: string, id: string): Promise<void>
   markAllNotificationsRead(companyId: string): Promise<void>
-  listActivity(): Promise<ActivityEvent[]>
+  /** Activity belongs to a workspace, so the feed names the one it is showing. */
+  listActivity(companyId: string, siteId?: string | null): Promise<ActivityEvent[]>
 }
 
 const LATENCY = () => 250 + Math.random() * 400
@@ -330,6 +332,14 @@ const SERVER_ORG = isBackendConfigured()
  * better end state and a deliberate separate change.
  */
 const SERVER_NOTIFICATIONS = isBackendConfigured()
+
+/**
+ * True when the activity feed is served by the API.
+ *
+ * The feed stores nothing — the server merges the append-only trails each module
+ * already keeps — so it describes records that genuinely exist.
+ */
+const SERVER_ACTIVITY = isBackendConfigured()
 
 
 
@@ -551,14 +561,20 @@ class MockApiClient implements ApiClient {
       // Incident and action counters come from Postgres. The asset, audit and training
       // figures still come from the mock store because those modules are not migrated —
       // they are left untouched rather than silently blended with real numbers.
-      const s = await incidentsApi.stats(companyId, siteId)
-      return buildDashboard(companyId, siteId, scopeLabel, {
+      const [s, activity] = await Promise.all([
+        incidentsApi.stats(companyId, siteId),
+        // The timeline comes from the modules' own trails rather than the fixture, so it
+        // cannot describe records the database does not contain.
+        activityApi.timeline(companyId, siteId).catch(() => []),
+      ])
+      const dash = buildDashboard(companyId, siteId, scopeLabel, {
         ...live,
         openIncidents: s.open,
         highRisk: s.highRisk,
         overdueActions: s.overdueActions,
         verificationPending: s.awaitingVerification,
       })
+      return { ...dash, activity }
     }
     await delay(650 + Math.random() * 350)
     return buildDashboard(companyId, siteId, scopeLabel, live)
@@ -1401,7 +1417,8 @@ class MockApiClient implements ApiClient {
     this.persistNotifications()
   }
 
-  async listActivity() {
+  async listActivity(companyId: string, siteId?: string | null) {
+    if (SERVER_ACTIVITY) return companyId ? activityApi.events(companyId, siteId) : []
     await delay(LATENCY())
     return [...ACTIVITY]
   }
