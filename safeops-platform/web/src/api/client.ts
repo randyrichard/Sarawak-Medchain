@@ -47,6 +47,7 @@ import { auditsApi } from './auditsApi'
 import { trainingApi } from './trainingApi'
 import { adminApi } from './adminApi'
 import { orgApi } from './orgApi'
+import { notificationsApi } from './notificationsApi'
 import type {
   GasTest, IsolationPoint, NewPermitInput, PermitFilters, PermitStats, PermitView,
 } from './permits'
@@ -218,9 +219,10 @@ export interface ApiClient {
   sweepPermitExpiry(companyId: string): Promise<void>
 
   // shell data
-  listNotifications(): Promise<AppNotification[]>
-  markNotificationRead(id: string): Promise<void>
-  markAllNotificationsRead(): Promise<void>
+  /** Notifications belong to a workspace, so the bell names the one it is showing. */
+  listNotifications(companyId: string): Promise<AppNotification[]>
+  markNotificationRead(companyId: string, id: string): Promise<void>
+  markAllNotificationsRead(companyId: string): Promise<void>
   listActivity(): Promise<ActivityEvent[]>
 }
 
@@ -319,6 +321,16 @@ const SERVER_ADMIN = isBackendConfigured()
  */
 const SERVER_ORG = isBackendConfigured()
 
+/**
+ * True when the notification bell is served by the API.
+ *
+ * Notifications are addressed to the workspace and read state is per person, which
+ * the single-browser store could not express. They are still raised by the client
+ * after an authoritative response; emitting them inside each module's service is the
+ * better end state and a deliberate separate change.
+ */
+const SERVER_NOTIFICATIONS = isBackendConfigured()
+
 
 
 /**
@@ -393,16 +405,38 @@ class MockApiClient implements ApiClient {
   private users = USERS.map((u) => ({ ...u }))
   private notifications = loadNotifications()
   private resetTokens = new Map<string, { email: string; exp: number }>()
-  private pushNotification = (kind: AppNotification['kind'], title: string, detail: string) => {
+  /**
+   * Raises a workspace notification.
+   *
+   * The workspace is named explicitly, taken from the authoritative response that
+   * prompted the alert — a person can belong to more than one, so there is no current
+   * tenant to infer. Server-side it is fire-and-forget: a bell that fails to ring must
+   * not fail the action that rang it.
+   */
+  private pushNotification = (
+    companyId: string, kind: AppNotification['kind'], title: string, detail: string,
+  ) => {
+    if (SERVER_NOTIFICATIONS) {
+      if (companyId) void notificationsApi.create(companyId, { kind, title, detail }).catch(() => {})
+      return
+    }
     this.notifications.unshift({
       id: `n-${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`,
       kind, title, detail, createdAt: new Date().toISOString(), readAt: null,
     })
     this.persistNotifications()
   }
-  private incidents = new IncidentStore(this.pushNotification)
-  private admin = new AdminStore(this.pushNotification)
-  private permits = new PermitStore(this.pushNotification)
+  /**
+   * The demo stores predate workspace-addressed notifications and take a three-argument
+   * notifier. They only run with no backend configured, where the workspace is unused,
+   * so the adapter supplies an empty one rather than inventing a tenant.
+   */
+  private demoNotify = (kind: AppNotification['kind'], title: string, detail: string) =>
+    this.pushNotification('', kind, title, detail)
+
+  private incidents = new IncidentStore(this.demoNotify)
+  private admin = new AdminStore(this.demoNotify)
+  private permits = new PermitStore(this.demoNotify)
   /** Permits already warned about, so the 30-second board refresh does not re-alert. */
   private permitReminders = new Set<string>()
 
@@ -725,7 +759,7 @@ class MockApiClient implements ApiClient {
   async createAsset(input: NewAssetInput, actor: Actor) {
     if (SERVER_INSPECTIONS) {
       const a = await inspectionsApi.createAsset(input)
-      this.pushNotification('system', `Asset registered: ${a.code}`,
+      this.pushNotification(a.companyId, 'system', `Asset registered: ${a.code}`,
         `${a.name} — first inspection scheduled ${a.nextDueDate}.`)
       return a
     }
@@ -736,7 +770,7 @@ class MockApiClient implements ApiClient {
   async scheduleInspection(assetId: string, date: string, inspector: string, actor: Actor) {
     if (SERVER_INSPECTIONS) {
       const i = await inspectionsApi.scheduleInspection(assetId, date, inspector)
-      this.pushNotification('system', `Inspection scheduled: ${i.assetCode}`,
+      this.pushNotification(i.companyId, 'system', `Inspection scheduled: ${i.assetCode}`,
         `${i.assetName} on ${i.scheduledFor} — inspector ${inspector}.`)
       return i
     }
@@ -751,6 +785,7 @@ class MockApiClient implements ApiClient {
       // Announced from the authoritative response: the server decides pass or fail and
       // how many defect actions it raised, not the answers that were sent.
       this.pushNotification(
+        i.companyId,
         i.outcome === 'failed' ? 'action' : 'system',
         `${i.code} completed — ${i.outcome === 'failed' ? `${defects} defect(s) found` : 'passed'}`,
         `${i.assetName} inspected by ${actor.name}.`,
@@ -802,7 +837,7 @@ class MockApiClient implements ApiClient {
   async createAudit(input: NewAuditInput, actor: Actor) {
     if (SERVER_AUDITS) {
       const a = await auditsApi.createAudit(input)
-      this.pushNotification('audit', `Audit planned: ${a.code}`,
+      this.pushNotification(a.companyId, 'audit', `Audit planned: ${a.code}`,
         `${a.title} — lead auditor ${a.leadAuditor}, ${a.scheduledFor}.`)
       return a
     }
@@ -822,10 +857,10 @@ class MockApiClient implements ApiClient {
       // Announced from the authoritative response: the server decides the score and how
       // many findings it raised, not the answers that were sent.
       for (const f of r.findings.filter((x) => x.status !== 'Closed')) {
-        this.pushNotification('audit', `Audit finding ${f.code} (${f.severity})`,
+        this.pushNotification(r.audit.companyId, 'audit', `Audit finding ${f.code} (${f.severity})`,
           `${f.description.slice(0, 80)} — action ${f.actionCode} assigned to ${f.actionOwner}.`)
       }
-      this.pushNotification('audit', `${r.audit.code} completed — score ${r.audit.score}%`,
+      this.pushNotification(r.audit.companyId, 'audit', `${r.audit.code} completed — score ${r.audit.score}%`,
         `${r.audit.title}: ${r.findings.length} finding(s) raised.`)
       return r
     }
@@ -836,7 +871,7 @@ class MockApiClient implements ApiClient {
   async closeAudit(id: string, actor: Actor) {
     if (SERVER_AUDITS) {
       const a = await auditsApi.closeAudit(id)
-      this.pushNotification('audit', `${a.code} closed`,
+      this.pushNotification(a.companyId, 'audit', `${a.code} closed`,
         `${a.title} — every finding verified and closed.`)
       return a
     }
@@ -859,7 +894,7 @@ class MockApiClient implements ApiClient {
   async renewObligation(id: string, nextDue: string, note: string, actor: Actor) {
     if (SERVER_AUDITS) {
       const o = await auditsApi.renewObligation(id, nextDue, note)
-      this.pushNotification('audit', `Compliance renewed: ${o.requirement}`,
+      this.pushNotification(o.companyId, 'audit', `Compliance renewed: ${o.requirement}`,
         `${o.regulation} — next due ${o.nextDue}.`)
       return o
     }
@@ -876,7 +911,7 @@ class MockApiClient implements ApiClient {
   async addDocumentVersion(docId: string | null, input: { name: string; kind: DocKind; sizeKb: number; note: string; companyId: string; siteId: string | null }, actor: Actor) {
     if (SERVER_AUDITS) {
       const d = await auditsApi.addDocumentVersion(docId, input)
-      this.pushNotification('system', `Document pending approval: ${d.name}`,
+      this.pushNotification(d.companyId, 'system', `Document pending approval: ${d.name}`,
         `v${d.version} uploaded by ${actor.name}.`)
       return d
     }
@@ -887,7 +922,7 @@ class MockApiClient implements ApiClient {
   async approveDocument(id: string, actor: Actor) {
     if (SERVER_AUDITS) {
       const d = await auditsApi.approveDocument(id)
-      this.pushNotification('system', `Document approved: ${d.name}`,
+      this.pushNotification(d.companyId, 'system', `Document approved: ${d.name}`,
         `v${d.version} approved by ${actor.name}.`)
       return d
     }
@@ -912,7 +947,7 @@ class MockApiClient implements ApiClient {
   async createCourse(companyId: string, input: NewCourseInput, actor: Actor) {
     if (SERVER_TRAINING) {
       const c = await trainingApi.createCourse(companyId, input)
-      this.pushNotification('system', `Training course added: ${c.code}`,
+      this.pushNotification(companyId, 'system', `Training course added: ${c.code}`,
         `${c.name} — ${c.mandatory ? 'mandatory' : 'optional'}, ` +
         `${c.validityMonths ? `${c.validityMonths}-month validity` : 'no expiry'}.`)
       return c
@@ -942,7 +977,7 @@ class MockApiClient implements ApiClient {
   async createSession(input: NewSessionInput, actor: Actor) {
     if (SERVER_TRAINING) {
       const s = await trainingApi.createSession(input)
-      this.pushNotification('system', `Training session scheduled: ${s.code}`,
+      this.pushNotification(s.companyId, 'system', `Training session scheduled: ${s.code}`,
         `${s.courseName} on ${s.scheduledFor} — trainer ${s.trainer}, ${s.enrolledCount} enrolled.`)
       return s
     }
@@ -962,7 +997,7 @@ class MockApiClient implements ApiClient {
       // Announced from the authoritative response: the server decides who passed and
       // therefore how many certificates exist.
       const attended = r.session.attendance?.filter((a) => a.present).length ?? 0
-      this.pushNotification('system',
+      this.pushNotification(r.session.companyId, 'system',
         `${r.session.code} completed — ${r.certificates.length} certificate(s) issued`,
         `${r.session.courseName}: ${attended} attended, ${r.certificates.length} passed.`)
       return r
@@ -986,7 +1021,7 @@ class MockApiClient implements ApiClient {
   async raiseTrainingAction(employeeId: string, courseId: string, actor: Actor) {
     if (SERVER_TRAINING) {
       const a = await trainingApi.raiseTrainingAction(employeeId, courseId)
-      this.pushNotification('action', `Corrective action ${a.code} raised`, a.title)
+      this.pushNotification(a.companyId, 'action', `Corrective action ${a.code} raised`, a.title)
       return a
     }
     await delay(LATENCY() / 2)
@@ -1014,7 +1049,7 @@ class MockApiClient implements ApiClient {
   async adminCreateUser(companyId: string, input: NewUserInput, actor: AdminActor) {
     if (SERVER_ADMIN) {
       const u = await adminApi.createUser(companyId, input)
-      this.pushNotification('system',
+      this.pushNotification(companyId, 'system',
         input.sendInvite ? `Invitation sent to ${u.email}` : `User created: ${u.name}`,
         `Role: ${u.role}.`)
       return u
@@ -1028,7 +1063,7 @@ class MockApiClient implements ApiClient {
   async adminResetPassword(companyId: string, id: string, actor: AdminActor) {
     if (SERVER_ADMIN) {
       const r = await adminApi.resetPassword(companyId, id)
-      this.pushNotification('system', 'Password reset issued',
+      this.pushNotification(companyId, 'system', 'Password reset issued',
         'Live sessions were revoked and a single-use link was generated.')
       return r
     }
@@ -1045,7 +1080,7 @@ class MockApiClient implements ApiClient {
   async adminBulkImport(companyId: string, csv: string, actor: AdminActor) {
     if (SERVER_ADMIN) {
       const r = await adminApi.bulkImport(companyId, csv)
-      this.pushNotification('system', `Bulk import complete: ${r.created} users invited`,
+      this.pushNotification(companyId, 'system', `Bulk import complete: ${r.created} users invited`,
         `${r.skipped} duplicate(s) skipped.`)
       return r
     }
@@ -1191,7 +1226,7 @@ class MockApiClient implements ApiClient {
   async adminCreateBackup(companyId: string, actor: AdminActor, note: string) {
     if (SERVER_ADMIN) {
       const r = await adminApi.createBackup(companyId, note)
-      this.pushNotification('system', 'Backup created',
+      this.pushNotification(companyId, 'system', 'Backup created',
         `${r.backup.sizeKb} KB snapshot — restorable and downloadable.`)
       return r
     }
@@ -1200,7 +1235,7 @@ class MockApiClient implements ApiClient {
   async adminRestoreBackup(companyId: string, id: string, actor: AdminActor) {
     if (SERVER_ADMIN) {
       const r = await adminApi.restoreBackup(companyId, id)
-      this.pushNotification('system', 'Restore complete',
+      this.pushNotification(companyId, 'system', 'Restore complete',
         `${r.restored} row(s) reinstated. A snapshot of the previous state was taken first.`)
       return
     }
@@ -1232,7 +1267,7 @@ class MockApiClient implements ApiClient {
   async submitPermit(id: string, actor: Actor) {
     if (SERVER_PERMITS) {
       const p = await permitsApi.submit(id)
-      this.pushNotification('system', `Permit ${p.code} awaiting approval`, `${p.typeLabel} — ${p.location}`)
+      this.pushNotification(p.companyId, 'system', `Permit ${p.code} awaiting approval`, `${p.typeLabel} — ${p.location}`)
       return p
     }
     await delay(LATENCY() / 2); return this.permits.submit(id, actor)
@@ -1241,7 +1276,7 @@ class MockApiClient implements ApiClient {
   async approvePermit(id: string, statement: string, actor: Actor) {
     if (SERVER_PERMITS) {
       const p = await permitsApi.approve(id, statement)
-      this.pushNotification('system', `Permit ${p.code} issued`,
+      this.pushNotification(p.companyId, 'system', `Permit ${p.code} issued`,
         `${p.typeLabel} at ${p.location}. Valid until ${fmtClock(p.validTo)}.`)
       return p
     }
@@ -1251,7 +1286,7 @@ class MockApiClient implements ApiClient {
   async rejectPermit(id: string, reason: string, actor: Actor) {
     if (SERVER_PERMITS) {
       const p = await permitsApi.reject(id, reason)
-      this.pushNotification('system', `Permit ${p.code} rejected`, reason)
+      this.pushNotification(p.companyId, 'system', `Permit ${p.code} rejected`, reason)
       return p
     }
     await delay(LATENCY() / 2); return this.permits.reject(id, reason, actor)
@@ -1265,7 +1300,7 @@ class MockApiClient implements ApiClient {
   async suspendPermit(id: string, reason: string, actor: Actor) {
     if (SERVER_PERMITS) {
       const p = await permitsApi.suspend(id, reason)
-      this.pushNotification('incident', `Permit ${p.code} suspended`, `${reason} — work must stop immediately.`)
+      this.pushNotification(p.companyId, 'incident', `Permit ${p.code} suspended`, `${reason} — work must stop immediately.`)
       return p
     }
     await delay(LATENCY() / 3); return this.permits.suspend(id, reason, actor)
@@ -1293,7 +1328,7 @@ class MockApiClient implements ApiClient {
       // authoritative response rather than predicting it from the numbers sent.
       const latest = p.gasTests[p.gasTests.length - 1]
       if (latest && !latest.pass && p.status === 'suspended') {
-        this.pushNotification('incident', `Permit ${p.code} suspended — gas test failed`,
+        this.pushNotification(p.companyId, 'incident', `Permit ${p.code} suspended — gas test failed`,
           'Atmosphere outside safe limits. Evacuate and re-test.')
       }
       return p
@@ -1332,31 +1367,34 @@ class MockApiClient implements ApiClient {
 
     for (const p of warning) {
       once(`${p.id}:warn`, () => this.pushNotification(
-        'action', `Permit ${p.code} expires within the hour`,
+        companyId, 'action', `Permit ${p.code} expires within the hour`,
         `${p.typeLabel} at ${p.location}. Extend or close before ${fmtClock(p.validTo)}.`,
       ))
     }
     for (const p of expired) {
       once(`${p.id}:expired`, () => this.pushNotification(
-        'incident', `Permit ${p.code} has EXPIRED with work open`,
+        companyId, 'incident', `Permit ${p.code} has EXPIRED with work open`,
         `${p.applicant} at ${p.location}. Work must stop until the permit is renewed.`,
       ))
     }
   }
 
-  async listNotifications() {
+  async listNotifications(companyId: string) {
+    if (SERVER_NOTIFICATIONS) return companyId ? notificationsApi.list(companyId) : []
     await delay(LATENCY())
     return [...this.notifications]
   }
 
-  async markNotificationRead(id: string) {
+  async markNotificationRead(companyId: string, id: string) {
+    if (SERVER_NOTIFICATIONS) return notificationsApi.markRead(companyId, id)
     await delay(100)
     const n = this.notifications.find((x) => x.id === id)
     if (n && !n.readAt) n.readAt = new Date().toISOString()
     this.persistNotifications()
   }
 
-  async markAllNotificationsRead() {
+  async markAllNotificationsRead(companyId: string) {
+    if (SERVER_NOTIFICATIONS) return notificationsApi.markAllRead(companyId)
     await delay(150)
     const at = new Date().toISOString()
     this.notifications.forEach((n) => (n.readAt = n.readAt ?? at))

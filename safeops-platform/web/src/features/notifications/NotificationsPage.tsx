@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Bell, CheckCheck, ClipboardList, ListChecks, Megaphone, ShieldCheck } from 'lucide-react'
 import { api } from '@/api/client'
+import { useOrg } from '@/features/org/OrgContext'
 import type { AppNotification, NotificationKind } from '@/api/types'
 import { timeAgo } from '@/lib/time'
 import {
@@ -18,16 +19,18 @@ const KIND_META: Record<NotificationKind, { icon: typeof Bell; label: string }> 
 type Filter = 'all' | 'unread' | NotificationKind
 
 export function NotificationsPage() {
+  const { company } = useOrg()
+  const companyId = company?.id ?? ''
   const [items, setItems] = useState<AppNotification[] | null>(null)
   const [filter, setFilter] = useState<Filter>('all')
 
   useEffect(() => {
     let cancelled = false
-    api.listNotifications().then((n) => !cancelled && setItems(n))
+    api.listNotifications(companyId).then((n) => !cancelled && setItems(n))
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [companyId])
 
   const unread = items?.filter((n) => !n.readAt).length ?? 0
 
@@ -51,12 +54,12 @@ export function NotificationsPage() {
   }, [items, filter])
 
   const markAll = async () => {
-    await api.markAllNotificationsRead()
+    await api.markAllNotificationsRead(companyId)
     setItems((cur) => cur?.map((n) => ({ ...n, readAt: n.readAt ?? new Date().toISOString() })) ?? null)
   }
 
   const markOne = async (id: string) => {
-    await api.markNotificationRead(id)
+    await api.markNotificationRead(companyId, id)
     setItems((cur) => cur?.map((n) => (n.id === id ? { ...n, readAt: n.readAt ?? new Date().toISOString() } : n)) ?? null)
   }
 

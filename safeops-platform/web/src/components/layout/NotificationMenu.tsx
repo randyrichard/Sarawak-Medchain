@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bell, ClipboardList, ListChecks, ShieldCheck, Megaphone, CheckCheck } from 'lucide-react'
 import { api } from '@/api/client'
+import { useOrg } from '@/features/org/OrgContext'
 import type { AppNotification, NotificationKind } from '@/api/types'
 import { timeAgo } from '@/lib/time'
 import { Dropdown, DropdownItem, DropdownSeparator, SkeletonRows } from '@/components/ui'
@@ -15,12 +16,14 @@ const KIND_ICON: Record<NotificationKind, typeof Bell> = {
 }
 
 export function NotificationMenu() {
+  const { company } = useOrg()
+  const companyId = company?.id ?? ''
   const [items, setItems] = useState<AppNotification[] | null>(null)
   const navigate = useNavigate()
 
   useEffect(() => {
     let cancelled = false
-    const load = () => api.listNotifications().then((n) => !cancelled && setItems(n))
+    const load = () => api.listNotifications(companyId).then((n) => !cancelled && setItems(n))
     load()
     // light poll so workflow events (assignments, mentions, escalations) surface live
     const timer = setInterval(load, 15_000)
@@ -28,12 +31,12 @@ export function NotificationMenu() {
       cancelled = true
       clearInterval(timer)
     }
-  }, [])
+  }, [companyId])
 
   const unread = items?.filter((n) => !n.readAt).length ?? 0
 
   const markAll = async () => {
-    await api.markAllNotificationsRead()
+    await api.markAllNotificationsRead(companyId)
     setItems((cur) => cur?.map((n) => ({ ...n, readAt: n.readAt ?? new Date().toISOString() })) ?? null)
   }
 
@@ -72,7 +75,7 @@ export function NotificationMenu() {
               <DropdownItem
                 key={n.id}
                 onSelect={() => {
-                  void api.markNotificationRead(n.id)
+                  void api.markNotificationRead(companyId, n.id)
                   setItems((cur) => cur?.map((x) => (x.id === n.id ? { ...x, readAt: x.readAt ?? new Date().toISOString() } : x)) ?? null)
                   navigate('/notifications')
                 }}
