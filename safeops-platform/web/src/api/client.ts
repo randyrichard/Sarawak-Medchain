@@ -46,6 +46,7 @@ import { inspectionsApi } from './inspectionsApi'
 import { auditsApi } from './auditsApi'
 import { trainingApi } from './trainingApi'
 import { adminApi } from './adminApi'
+import { orgApi } from './orgApi'
 import type {
   GasTest, IsolationPoint, NewPermitInput, PermitFilters, PermitStats, PermitView,
 } from './permits'
@@ -309,6 +310,15 @@ const SERVER_TRAINING = isBackendConfigured()
  */
 const SERVER_ADMIN = isBackendConfigured()
 
+/**
+ * True when the organisation tree is served by the API.
+ *
+ * Companies, sites, departments and teams are the rows every other module is scoped
+ * by, so the shell reads the structure it filters against rather than a fixture that
+ * could drift from it. The mock below is seed data for the credential-free demo.
+ */
+const SERVER_ORG = isBackendConfigured()
+
 
 
 /**
@@ -457,6 +467,8 @@ class MockApiClient implements ApiClient {
   }
 
   async listCompanies(userId: string) {
+    // The server derives the list from the verified session, so the id is not sent.
+    if (SERVER_ORG) return orgApi.listCompanies()
     await delay(LATENCY() / 2)
     const user = this.users.find((u) => u.id === userId)
     if (!user) return []
@@ -465,22 +477,31 @@ class MockApiClient implements ApiClient {
   }
 
   async listCompaniesByIds(companyIds: string[]) {
+    if (SERVER_ORG) {
+      // Still filtered by what the session holds; the requested ids only narrow it.
+      const mine = await orgApi.listCompanies()
+      const ids = new Set(companyIds)
+      return ids.size > 0 ? mine.filter((c) => ids.has(c.id)) : mine
+    }
     await delay(LATENCY() / 2)
     const ids = new Set(companyIds)
     return COMPANIES.filter((c) => ids.has(c.id))
   }
 
   async listSites(companyId: string) {
+    if (SERVER_ORG) return orgApi.listSites(companyId)
     await delay(LATENCY() / 2)
     return SITES.filter((s) => s.companyId === companyId)
   }
 
   async listDepartments(siteIds: string[]) {
+    if (SERVER_ORG) return orgApi.listDepartments(siteIds)
     await delay(LATENCY() / 2)
     return DEPARTMENTS.filter((d) => siteIds.includes(d.siteId))
   }
 
   async listTeams(departmentIds: string[]) {
+    if (SERVER_ORG) return orgApi.listTeams(departmentIds)
     await delay(LATENCY() / 2)
     return TEAMS.filter((t) => departmentIds.includes(t.departmentId))
   }

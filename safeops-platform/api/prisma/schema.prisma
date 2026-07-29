@@ -120,6 +120,10 @@ model Company {
   id        String     @id
   name      String
   plan      String     @default("enterprise")
+  /// Shown in the company switcher. Additive: every existing row keeps a sensible
+  /// default and nothing that reads Company today is affected.
+  industry     String @default("")
+  logoInitials String @default("")
   sites       Site[]
   incidents   Incident[]
   actions     CorrectiveAction[]
@@ -151,6 +155,11 @@ model Site {
   id        String     @id
   companyId String
   name      String
+  /// Display fields for the organisation tree. Additive, with defaults.
+  short     String  @default("")
+  city      String  @default("")
+  timezone  String  @default("Asia/Kuching")
+  headcount Int     @default(0)
   company     Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
   incidents   Incident[]
   actions     CorrectiveAction[]
@@ -162,8 +171,38 @@ model Site {
   documents   ComplianceDocument[]
   employees   Employee[]
   sessions    TrainingSession[]
+  departments Department[]
 
   @@index([companyId])
+}
+
+/// A department within a site. Employees carry the resolved department name for course
+/// applicability; this is the structure the organisation tree renders and the place a
+/// rename belongs.
+model Department {
+  id     String @id
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  name  String
+  teams Team[]
+
+  createdAt DateTime @default(now())
+
+  @@index([siteId])
+}
+
+model Team {
+  id           String     @id
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  name String
+  lead String @default("")
+
+  createdAt DateTime @default(now())
+
+  @@index([departmentId])
 }
 
 // ─── Incidents ───────────────────────────────────────────────────────────────

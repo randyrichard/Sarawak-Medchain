@@ -20,20 +20,48 @@ const USERS: { email: string; name: string; title: string; role: Role; companies
 
 
 const COMPANIES = [
-  { id: 'big', name: 'Borneo Industrial Group' },
-  { id: 'kcs', name: 'Kuching Construction Services' },
+  { id: 'big', name: 'Borneo Industrial Group', industry: 'Diversified Industrial', plan: 'enterprise', logoInitials: 'BI' },
+  { id: 'kcs', name: 'Kenyalang Construction Sdn Bhd', industry: 'Construction', plan: 'standard', logoInitials: 'KC' },
 ]
 
 const SITES = [
-  { id: 'kch', companyId: 'big', name: 'Kuching Assembly Plant' },
-  { id: 'btu', companyId: 'big', name: 'Bintulu LNG Terminal' },
-  { id: 'mri', companyId: 'big', name: 'Miri Fabrication Yard' },
-  { id: 'sbu', companyId: 'big', name: 'Sibu Logistics Hub' },
-  { id: 'twu', companyId: 'big', name: 'Tawau Plantation Estate' },
-  { id: 'sen', companyId: 'big', name: 'Senari Warehouse Complex' },
-  { id: 'kcs-1', companyId: 'kcs', name: 'Kuching Central Project' },
-  { id: 'pjy', companyId: 'kcs', name: 'Petra Jaya Township Project' },
-  { id: 'smh', companyId: 'kcs', name: 'Samalaju Plant Expansion' },
+  { id: 'kch', companyId: 'big', name: 'Kuching Assembly Plant', short: 'Kuching', city: 'Kuching', timezone: 'Asia/Kuching', headcount: 1240 },
+  { id: 'btu', companyId: 'big', name: 'Bintulu LNG Terminal', short: 'Bintulu', city: 'Bintulu', timezone: 'Asia/Kuching', headcount: 860 },
+  { id: 'mri', companyId: 'big', name: 'Miri Fabrication Yard', short: 'Miri', city: 'Miri', timezone: 'Asia/Kuching', headcount: 620 },
+  { id: 'sbu', companyId: 'big', name: 'Sibu Logistics Hub', short: 'Sibu', city: 'Sibu', timezone: 'Asia/Kuching', headcount: 430 },
+  { id: 'twu', companyId: 'big', name: 'Tawau Plantation Estate', short: 'Tawau', city: 'Tawau', timezone: 'Asia/Kuching', headcount: 980 },
+  { id: 'sen', companyId: 'big', name: 'Senari Warehouse Complex', short: 'Senari', city: 'Kuching', timezone: 'Asia/Kuching', headcount: 310 },
+  { id: 'kcs-1', companyId: 'kcs', name: 'Kuching Central Project', short: 'Central', city: 'Kuching', timezone: 'Asia/Kuching', headcount: 220 },
+  { id: 'pjy', companyId: 'kcs', name: 'Petra Jaya Township Project', short: 'Petra Jaya', city: 'Kuching', timezone: 'Asia/Kuching', headcount: 480 },
+  { id: 'smh', companyId: 'kcs', name: 'Samalaju Plant Expansion', short: 'Samalaju', city: 'Bintulu', timezone: 'Asia/Kuching', headcount: 350 },
+]
+
+const DEPARTMENTS = [
+  { id: 'kch-prod', siteId: 'kch', name: 'Production' },
+  { id: 'kch-mnt', siteId: 'kch', name: 'Maintenance' },
+  { id: 'kch-whs', siteId: 'kch', name: 'Warehouse & Stores' },
+  { id: 'btu-ops', siteId: 'btu', name: 'Field Operations' },
+  { id: 'btu-mnt', siteId: 'btu', name: 'Maintenance' },
+  { id: 'btu-hse', siteId: 'btu', name: 'HSE' },
+  { id: 'mri-fab', siteId: 'mri', name: 'Fabrication' },
+  { id: 'mri-ctr', siteId: 'mri', name: 'Contractors' },
+  { id: 'sbu-log', siteId: 'sbu', name: 'Logistics & Transport' },
+  { id: 'twu-fld', siteId: 'twu', name: 'Field Operations' },
+  { id: 'twu-mil', siteId: 'twu', name: 'Mill' },
+  { id: 'sen-whs', siteId: 'sen', name: 'Warehouse' },
+  { id: 'pjy-civ', siteId: 'pjy', name: 'Civil Works' },
+  { id: 'smh-mep', siteId: 'smh', name: 'M&E Installation' },
+]
+
+const TEAMS = [
+  { id: 't1', departmentId: 'kch-prod', name: 'Line 1 (Day)', lead: 'Sarah Wong' },
+  { id: 't2', departmentId: 'kch-prod', name: 'Line 2 (Night)', lead: 'Jason Ngu' },
+  { id: 't3', departmentId: 'kch-mnt', name: 'Mechanical', lead: 'Ganesh Pillai' },
+  { id: 't4', departmentId: 'btu-ops', name: 'Jetty & Loading', lead: 'Rashid Karim' },
+  { id: 't5', departmentId: 'btu-mnt', name: 'Rotating Equipment', lead: 'Faizal Omar' },
+  { id: 't6', departmentId: 'mri-ctr', name: 'Scaffolding Crew A', lead: 'Vincent Chai' },
+  { id: 't7', departmentId: 'twu-fld', name: 'Harvest Block 12-16', lead: 'Dayang Nurul' },
+  { id: 't8', departmentId: 'sen-whs', name: 'Inbound Shift', lead: 'Grace Lim' },
 ]
 
 /**
@@ -69,10 +97,16 @@ const EMPLOYEES: {
 
 async function seedOrg() {
   for (const c of COMPANIES) {
-    await prisma.company.upsert({ where: { id: c.id }, update: { name: c.name }, create: c })
+    await prisma.company.upsert({ where: { id: c.id }, update: c, create: c })
   }
   for (const s of SITES) {
-    await prisma.site.upsert({ where: { id: s.id }, update: { name: s.name }, create: s })
+    await prisma.site.upsert({ where: { id: s.id }, update: s, create: s })
+  }
+  for (const d of DEPARTMENTS) {
+    await prisma.department.upsert({ where: { id: d.id }, update: { name: d.name }, create: d })
+  }
+  for (const t of TEAMS) {
+    await prisma.team.upsert({ where: { id: t.id }, update: { name: t.name, lead: t.lead }, create: t })
   }
   for (const e of EMPLOYEES) {
     await prisma.employee.upsert({
@@ -82,7 +116,8 @@ async function seedOrg() {
     })
   }
   console.log(
-    `Seeded ${COMPANIES.length} companies, ${SITES.length} sites and ${EMPLOYEES.length} employees.`,
+    `Seeded ${COMPANIES.length} companies, ${SITES.length} sites, ${DEPARTMENTS.length} departments, ` +
+      `${TEAMS.length} teams and ${EMPLOYEES.length} employees.`,
   )
 }
 
