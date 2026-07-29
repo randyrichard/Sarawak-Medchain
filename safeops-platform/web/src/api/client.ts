@@ -38,8 +38,9 @@ import {
   ACTIVITY, COMPANIES, DEPARTMENTS, EMPLOYEES, NOTIFICATIONS, SITES, TEAMS, USERS,
 } from './mock/fixtures'
 import { buildDashboard } from './mock/dashboard'
+import { buildInsights, buildPriorities } from './priorities'
 import { incidentsApi } from './incidentsApi'
-import { isBackendConfigured } from './authApi'
+import { assertRealAuth, isBackendConfigured } from './authApi'
 import { PermitStore } from './mock/permits'
 import { permitsApi } from './permitsApi'
 import { inspectionsApi } from './inspectionsApi'
@@ -93,7 +94,11 @@ export interface ApiClient {
   addIncidentAction(id: string, input: Pick<IncidentAction, 'title' | 'causeId' | 'owner' | 'dueDate' | 'priority' | 'evidenceRequired'>, actor: Actor): Promise<Incident>
   updateIncidentAction(id: string, actionId: string, patch: { status?: IncidentAction['status']; evidenceNote?: string }, actor: Actor): Promise<Incident>
   addIncidentComment(id: string, text: string, mentions: string[], actor: Actor): Promise<Incident>
-  addIncidentAttachment(id: string, att: Omit<IncidentAttachment, 'id' | 'at' | 'uploadedBy'>, actor: Actor): Promise<Incident>
+  /**
+   * Evidence upload. The File is passed through so the server stores the real bytes;
+   * the metadata argument is what the demo path uses when there is no backend.
+   */
+  addIncidentAttachment(id: string, att: Omit<IncidentAttachment, 'id' | 'at' | 'uploadedBy'>, actor: Actor, file?: File): Promise<Incident>
   archiveIncident(id: string, actor: Actor): Promise<void>
 
   // corrective actions (CAPA)
@@ -459,6 +464,8 @@ class MockApiClient implements ApiClient {
   }
 
   async login(email: string, password: string) {
+    // Fails closed rather than silently accepting a bundled demo password.
+    assertRealAuth()
     await delay(LATENCY())
     const user = this.users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase())
     if (!user || user.password !== password) {
@@ -558,23 +565,101 @@ class MockApiClient implements ApiClient {
   async getDashboard(companyId: string, siteId: string | null, scopeLabel: string) {
     const live = this.incidents.liveStats(companyId, siteId)
     if (SERVER_INCIDENTS) {
-      // Incident and action counters come from Postgres. The asset, audit and training
-      // figures still come from the mock store because those modules are not migrated —
-      // they are left untouched rather than silently blended with real numbers.
-      const [s, activity] = await Promise.all([
+      // Mission Control must agree with the module a click away. Every figure the
+      // dashboard overlay accepts is taken from the module that owns it, so a headline
+      // number and the page behind it cannot contradict each other. A failed module read
+      // falls back to the illustrative figure rather than blanking the tile.
+      const [s, activity, audit, training, assets] = await Promise.all([
         incidentsApi.stats(companyId, siteId),
-        // The timeline comes from the modules' own trails rather than the fixture, so it
-        // cannot describe records the database does not contain.
         activityApi.timeline(companyId, siteId).catch(() => []),
+        auditsApi.auditStats(companyId).catch(() => null),
+        trainingApi.stats(companyId).catch(() => null),
+        inspectionsApi.assetStats(companyId, siteId).catch(() => null),
       ])
+
+      // The rows behind the priority queue. Fetched separately from the counters above
+      // because a queue needs records a user can open, not totals.
+      const [actions, openIncidents, expiringPermits, overdueAssets] = await Promise.all([
+        this.serverCapa(companyId).catch((): CapaItem[] => []),
+        incidentsApi.list(companyId, { pageSize: 50 }).then((p) => p.rows).catch(() => []),
+        permitsApi.expiring(companyId).then((e) => e.warning).catch(() => []),
+        inspectionsApi.listAssets(companyId, { bucket: 'overdue' }).catch(() => []),
+      ])
+
+      // Per-site tallies, counted from the rows themselves. Without these the site map and
+      // the KPI tooltips keep their seeded numbers while the headline shows the real one —
+      // so a card can read "1 overdue" for the company and "5 overdue" for one of its sites.
+      const openBySite = new Map<string, number>()
+      const highRiskBySite = new Map<string, number>()
+      for (const i of openIncidents) {
+        if (i.stage === 'closed') continue
+        openBySite.set(i.siteId, (openBySite.get(i.siteId) ?? 0) + 1)
+        if (i.highRisk) highRiskBySite.set(i.siteId, (highRiskBySite.get(i.siteId) ?? 0) + 1)
+      }
+      const overdueBySite = new Map<string, number>()
+      for (const a of actions) {
+        if (a.overdue) overdueBySite.set(a.siteId, (overdueBySite.get(a.siteId) ?? 0) + 1)
+      }
+
       const dash = buildDashboard(companyId, siteId, scopeLabel, {
         ...live,
         openIncidents: s.open,
         highRisk: s.highRisk,
+        nearMissThisMonth: s.nearMissThisMonth,
         overdueActions: s.overdueActions,
+        bySite: openBySite,
+        overdueActionsBySite: overdueBySite,
+        highRiskBySite,
         verificationPending: s.awaitingVerification,
+        ...(audit
+          ? {
+              auditReadiness: audit.readiness,
+              compliancePct: audit.compliancePct,
+              criticalFindings: audit.criticalFindings,
+              upcomingAudits30d: audit.upcoming30d,
+              openFindings: audit.openFindings,
+            }
+          : {}),
+        ...(training
+          ? {
+              trainingCompliance: training.compliancePct,
+              certsExpiring90: training.expiring90,
+              employeesTrainingOverdue: training.employeesOverdue,
+              trainingDeptRankings: training.byDepartment,
+            }
+          : {}),
+        ...(assets
+          ? { overdueInspections: assets.overdueInspections, avgAssetHealth: assets.avgHealth }
+          : {}),
       })
-      return { ...dash, activity }
+
+      const siteName = (id: string) => SITES.find((x) => x.id === id)?.short ?? id
+      const atSite = <T extends { siteId: string }>(rows: T[]) =>
+        siteId ? rows.filter((r) => r.siteId === siteId) : rows
+
+      const priorities = buildPriorities({
+        siteName,
+        overdueActions: atSite(actions.filter((a) => a.overdue)).slice(0, 6),
+        highRiskIncidents: atSite(openIncidents.filter((i) => i.highRisk && i.stage !== 'closed')).slice(0, 4),
+        expiringPermits,
+        overdueAssets: atSite(overdueAssets),
+        training: training ? { expiring90: training.expiring90, employeesOverdue: training.employeesOverdue } : null,
+        audit: audit
+          ? { openFindings: audit.openFindings, criticalFindings: audit.criticalFindings, upcoming30d: audit.upcoming30d }
+          : null,
+      })
+
+      const insights = buildInsights({
+        incidents: atSite(openIncidents),
+        actions: atSite(actions),
+        overdueAssets: atSite(overdueAssets),
+        siteName,
+        training: training ? { expiring90: training.expiring90, employeesOverdue: training.employeesOverdue } : null,
+      })
+
+      // An empty insights list means the workspace is quiet, not that the panel is broken.
+      // The seeded copy is only kept when there is genuinely nothing to compute from.
+      return { ...dash, activity, priorities, ...(insights.length > 0 ? { insights } : {}) }
     }
     await delay(650 + Math.random() * 350)
     return buildDashboard(companyId, siteId, scopeLabel, live)
@@ -634,11 +719,21 @@ class MockApiClient implements ApiClient {
   }
 
   async addIncidentAction(id: string, input: Pick<IncidentAction, 'title' | 'causeId' | 'owner' | 'dueDate' | 'priority' | 'evidenceRequired'>, actor: Actor) {
+    if (SERVER_INCIDENTS) {
+      await incidentsApi.addAction(id, {
+        title: input.title, owner: input.owner, dueDate: input.dueDate, priority: input.priority,
+      })
+      return incidentsApi.get(id) // re-read so the caller sees the authoritative row
+    }
     await delay(LATENCY() / 2)
     return this.incidents.addAction(id, input, actor)
   }
 
   async updateIncidentAction(id: string, actionId: string, patch: { status?: IncidentAction['status']; evidenceNote?: string }, actor: Actor) {
+    if (SERVER_INCIDENTS) {
+      await incidentsApi.updateAction(actionId, patch)
+      return incidentsApi.get(id)
+    }
     await delay(LATENCY() / 2)
     return this.incidents.updateAction(id, actionId, patch, actor)
   }
@@ -652,7 +747,11 @@ class MockApiClient implements ApiClient {
     return this.incidents.addComment(id, text, mentions, actor)
   }
 
-  async addIncidentAttachment(id: string, att: Omit<IncidentAttachment, 'id' | 'at' | 'uploadedBy'>, actor: Actor) {
+  async addIncidentAttachment(id: string, att: Omit<IncidentAttachment, 'id' | 'at' | 'uploadedBy'>, actor: Actor, file?: File) {
+    if (SERVER_INCIDENTS && file) {
+      await incidentsApi.uploadAttachments(id, [file])
+      return incidentsApi.get(id)
+    }
     await delay(LATENCY() / 2)
     return this.incidents.addAttachment(id, att, actor)
   }
@@ -667,7 +766,7 @@ class MockApiClient implements ApiClient {
 
   private async serverCapa(companyId: string): Promise<CapaItem[]> {
     const page = await incidentsApi.listActions(companyId, { pageSize: 100 })
-    return page.rows.map((r) => toCapaItem({ ...r, companyId }))
+    return page.rows.map((r) => toCapaItem(r))
   }
 
   async listCapa(companyId: string, filters: CapaFilters, actor: Actor) {
@@ -754,6 +853,19 @@ class MockApiClient implements ApiClient {
   }
 
   async capaAnalytics(companyId: string) {
+    if (SERVER_INCIDENTS) {
+      const a = await incidentsApi.actionAnalytics(companyId)
+      const mock = this.incidents.capaAnalytics(companyId)
+      // Real counts where the server has them; the trend/ranking panels keep their
+      // illustrative shape until the analytics endpoint reports them.
+      return {
+        ...mock,
+        completionRate: a.totalClosed + a.overdue > 0
+          ? Math.round((a.totalClosed / (a.totalClosed + a.overdue)) * 100)
+          : mock.completionRate,
+        avgCloseDays: a.avgDaysToComplete ?? mock.avgCloseDays,
+      }
+    }
     await delay(LATENCY())
     return this.incidents.capaAnalytics(companyId)
   }

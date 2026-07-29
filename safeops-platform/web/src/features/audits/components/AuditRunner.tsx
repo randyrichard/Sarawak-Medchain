@@ -6,7 +6,7 @@ import { ApiError } from '@/api/types'
 import type {
   AuditAnswer, AuditAnswerResult, AuditTemplate, AuditView, FailInput, FindingSeverity,
 } from '@/api/audits'
-import { useActor, PEOPLE, SITE_COORDS } from '@/features/incidents/lib'
+import { useActor, usePeople, SITE_COORDS } from '@/features/incidents/lib'
 import { Alert, Badge, Button, Checkbox, Input } from '@/components/ui'
 import { cn } from '@/lib/cn'
 
@@ -30,6 +30,7 @@ export function AuditRunner({
   onCompleted: () => void
 }) {
   const actor = useActor()
+  const people = usePeople()
   const draftKey = `safeops.auditDraft.${audit.id}`
   const [draft, setDraft] = useState<DraftState>({ answers: {}, fails: {}, signature: '', gps: '' })
   const [attested, setAttested] = useState(false)
@@ -216,7 +217,7 @@ export function AuditRunner({
                               aria-label="Action owner"
                             >
                               <option value="" disabled>Action owner…</option>
-                              {PEOPLE.map((p) => <option key={p}>{p}</option>)}
+                              {people.map((p) => <option key={p}>{p}</option>)}
                             </select>
                           </div>
                           <button

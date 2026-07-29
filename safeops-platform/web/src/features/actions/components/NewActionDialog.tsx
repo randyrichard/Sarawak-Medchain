@@ -3,13 +3,14 @@ import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import type { ActionPriority } from '@/api/incidents'
 import { useOrg } from '@/features/org/OrgContext'
-import { PEOPLE, useActor } from '@/features/incidents/lib'
+import { usePeople, useActor } from '@/features/incidents/lib'
 import { Alert, Button, Checkbox, Dialog, Input, Select, Textarea } from '@/components/ui'
 
 /** Standalone corrective action (audit finding, inspection, MOC…). */
 export function NewActionDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
   const { company, sites } = useOrg()
   const actor = useActor()
+  const people = usePeople()
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -76,11 +77,11 @@ export function NewActionDialog({ open, onClose, onCreated }: { open: boolean; o
         <div className="grid grid-cols-2 gap-3">
           <Select label="Owner" required value={owner} onChange={(e) => setOwner(e.target.value)}>
             <option value="" disabled>Select…</option>
-            {PEOPLE.map((p) => <option key={p}>{p}</option>)}
+            {people.map((p) => <option key={p}>{p}</option>)}
           </Select>
           <Select label="Reviewer" value={reviewer} onChange={(e) => setReviewer(e.target.value)} hint="Verifies completion evidence.">
             <option value="">HSE Manager (default)</option>
-            {PEOPLE.map((p) => <option key={p}>{p}</option>)}
+            {people.map((p) => <option key={p}>{p}</option>)}
           </Select>
         </div>
         <div className="grid grid-cols-2 items-end gap-3">

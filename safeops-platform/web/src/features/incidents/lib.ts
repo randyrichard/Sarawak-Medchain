@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import {
   AlertTriangle, Ambulance, Car, CloudRain, Flame, HardHat, HeartPulse,
   Leaf, ShieldAlert, Skull, Stethoscope, Wrench, type LucideIcon,
@@ -48,10 +49,27 @@ export const fmtDateTime = (iso: string) =>
 export const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString('en-MY', { day: '2-digit', month: 'short', year: 'numeric' })
 
-/** People available for assignment/mentions (org directory + platform users). */
-export const PEOPLE: string[] = [
-  ...new Set([...USERS.map((u) => u.name), ...EMPLOYEES.map((e) => e.name)]),
-].sort()
+/**
+ * People available for assignment and @-mentions, scoped to the workspace in view.
+ *
+ * This was a module constant spanning every company in the fixture set, so Borneo's
+ * "assign owner" dropdown offered Kenyalang's site agent. The server stores an owner as
+ * free text, so nothing leaked *out* of a tenant — but a buyer who opens that dropdown
+ * and reads a competitor's staff list will not wait for the explanation.
+ */
+export function usePeople(): string[] {
+  const companyId = useOrg().company?.id ?? ''
+  return useMemo(
+    () =>
+      [
+        ...new Set([
+          ...USERS.filter((u) => u.memberships.some((m) => m.companyId === companyId)).map((u) => u.name),
+          ...EMPLOYEES.filter((e) => e.companyId === companyId).map((e) => e.name),
+        ]),
+      ].sort(),
+    [companyId],
+  )
+}
 
 /** The acting user, as the API's permission checks expect it. */
 export function useActor(): Actor {

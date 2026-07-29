@@ -355,7 +355,19 @@ export const incidentsApi = {
     overdue?: boolean; source?: string
   } = {}) {
     const data = await request<Page<ServerAction>>(`/incidents/actions/list?${qs({ companyId, ...opts })}`)
-    return { ...data, rows: data.rows.map(toAction) }
+    // The register is company-wide, so an action has to carry where it belongs. `toAction`
+    // returns the incident-scoped shape, which has no room for it — every row would land
+    // in the list with no site, and the site filter would match nothing.
+    return {
+      ...data,
+      rows: data.rows.map((r) => ({
+        ...toAction(r),
+        companyId: r.companyId,
+        siteId: r.siteId,
+        incidentId: r.incidentId,
+        source: r.source,
+      })),
+    }
   },
 
   async actionAnalytics(companyId: string) {

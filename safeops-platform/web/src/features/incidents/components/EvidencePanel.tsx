@@ -40,6 +40,7 @@ export function EvidencePanel({ incident, onUpdate }: { incident: Incident; onUp
         incident.id,
         { name: f.name, kind: kindOf(f.name), sizeKb: Math.max(1, Math.round(f.size / 1024)) },
         actor,
+        f,
       )
     }
     onUpdate(latest)

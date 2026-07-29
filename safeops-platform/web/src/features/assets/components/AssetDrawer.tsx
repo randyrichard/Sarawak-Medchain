@@ -8,7 +8,7 @@ import type { AssetView, InspectionView } from '@/api/assets'
 import { CATEGORY_LABEL, FREQUENCY_LABEL } from '@/api/assets'
 import type { CapaItem } from '@/api/capa'
 import { useActor, fmtDate, fmtDateTime } from '@/features/incidents/lib'
-import { PEOPLE } from '@/features/incidents/lib'
+import { usePeople } from '@/features/incidents/lib'
 import { Alert, Avatar, Badge, Button, Dialog, Input, Select, Skeleton, StatusPill } from '@/components/ui'
 import { CATEGORY_ICON, healthColor, RISK_PILL } from '../lib'
 import { QrBlock } from './QrBlock'
@@ -30,6 +30,7 @@ export function AssetDrawer({
   onChanged: () => void
 }) {
   const actor = useActor()
+  const people = usePeople()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [missing, setMissing] = useState(false)
   const [scheduleOpen, setScheduleOpen] = useState(false)
@@ -263,7 +264,7 @@ export function AssetDrawer({
           {error && <Alert tone="critical">{error}</Alert>}
           <Input label="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           <Select label="Inspector" value={inspector} onChange={(e) => setInspector(e.target.value)} hint="They're notified immediately.">
-            {PEOPLE.map((p) => <option key={p}>{p}</option>)}
+            {people.map((p) => <option key={p}>{p}</option>)}
           </Select>
         </div>
       </Dialog>

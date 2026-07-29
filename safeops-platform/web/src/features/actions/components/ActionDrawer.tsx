@@ -13,7 +13,7 @@ import {
 } from '@/components/ui'
 import { timeAgo } from '@/lib/time'
 import { fmtDateTime } from '@/features/incidents/lib'
-import { PEOPLE } from '@/features/incidents/lib'
+import { usePeople } from '@/features/incidents/lib'
 import { ProgressLine } from './ProgressLine'
 import { canEditItem, canVerifyItem, DERIVED_META, dueLabel, isManager } from '../lib'
 import { cn } from '@/lib/cn'
@@ -27,6 +27,7 @@ export function ActionDrawer({
   onClose: () => void
   onChanged: (item: CapaItem) => void
 }) {
+  const people = usePeople()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [completeOpen, setCompleteOpen] = useState(false)
@@ -272,7 +273,7 @@ export function ActionDrawer({
                     aria-label="Mention someone"
                   >
                     <option value="">Mention…</option>
-                    {PEOPLE.map((p) => <option key={p}>{p}</option>)}
+                    {people.map((p) => <option key={p}>{p}</option>)}
                   </select>
                 </span>
                 <Button size="sm" icon={<Send size={11} />} loading={busy} disabled={!comment.trim()} onClick={() => void postComment()}>
@@ -366,11 +367,11 @@ export function ActionDrawer({
           {error && <Alert tone="critical">{error}</Alert>}
           <div className="grid grid-cols-2 gap-3">
             <Select label="Owner" value={owner} onChange={(e) => setOwner(e.target.value)}>
-              {PEOPLE.map((p) => <option key={p}>{p}</option>)}
+              {people.map((p) => <option key={p}>{p}</option>)}
             </Select>
             <Select label="Reviewer" value={reviewer} onChange={(e) => setReviewer(e.target.value)}>
               <option value="">None</option>
-              {PEOPLE.map((p) => <option key={p}>{p}</option>)}
+              {people.map((p) => <option key={p}>{p}</option>)}
             </Select>
           </div>
           <div className="grid grid-cols-2 gap-3">

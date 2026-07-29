@@ -7,7 +7,7 @@ import { useOrg } from '@/features/org/OrgContext'
 import {
   Alert, Avatar, Badge, Button, Checkbox, Dialog, EmptyState, Input, Select, StatusPill, Textarea,
 } from '@/components/ui'
-import { PEOPLE, useActor } from '../lib'
+import { usePeople, useActor } from '../lib'
 import { ListChecks } from 'lucide-react'
 
 const statusKind = (s: IncidentAction['status']) =>
@@ -15,6 +15,7 @@ const statusKind = (s: IncidentAction['status']) =>
 
 export function ActionsPanel({ incident, onUpdate }: { incident: Incident; onUpdate: (i: Incident) => void }) {
   const actor = useActor()
+  const people = usePeople()
   const { role } = useOrg()
   const canManage = ['admin', 'hse_manager', 'safety_officer'].includes(role ?? '')
   const canVerify = ['admin', 'hse_manager'].includes(role ?? '')
@@ -176,7 +177,7 @@ export function ActionsPanel({ incident, onUpdate }: { incident: Incident; onUpd
           <div className="grid grid-cols-2 gap-3">
             <Select label="Owner" required value={owner} onChange={(e) => setOwner(e.target.value)}>
               <option value="" disabled>Select…</option>
-              {PEOPLE.map((p) => <option key={p}>{p}</option>)}
+              {people.map((p) => <option key={p}>{p}</option>)}
             </Select>
             <Input label="Due date" required type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
           </div>

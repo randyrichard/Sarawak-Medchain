@@ -4,12 +4,13 @@ import { ApiError } from '@/api/types'
 import type { AuditPriority, AuditTemplate, AuditType } from '@/api/audits'
 import { AUDIT_TYPES, AUDIT_TYPE_LABEL } from '@/api/audits'
 import { useOrg } from '@/features/org/OrgContext'
-import { PEOPLE, useActor } from '@/features/incidents/lib'
+import { usePeople, useActor } from '@/features/incidents/lib'
 import { Alert, Badge, Button, Dialog, Input, Select, Textarea } from '@/components/ui'
 
 export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
   const { company, sites } = useOrg()
   const actor = useActor()
+  const people = usePeople()
 
   const [templates, setTemplates] = useState<AuditTemplate[]>([])
   const [title, setTitle] = useState('')
@@ -123,13 +124,13 @@ export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; o
               <Input label="Department" value={department} onChange={(e) => setDepartment(e.target.value)} />
               <Select label="Lead auditor" required value={leadAuditor} onChange={(e) => setLeadAuditor(e.target.value)}>
                 <option value="" disabled>Select…</option>
-                {PEOPLE.map((p) => <option key={p}>{p}</option>)}
+                {people.map((p) => <option key={p}>{p}</option>)}
               </Select>
             </div>
             <div>
               <p className="mb-1.5 text-xs font-semibold text-ink-2">Audit team (optional)</p>
               <div className="flex flex-wrap gap-1.5">
-                {PEOPLE.filter((p) => p !== leadAuditor).slice(0, 10).map((p) => (
+                {people.filter((p) => p !== leadAuditor).slice(0, 10).map((p) => (
                   <button key={p} onClick={() => toggleTeam(p)}
                     className="rounded-full border px-2.5 py-1 text-2xs font-medium transition-colors"
                     style={team.includes(p) ? { borderColor: 'var(--accent)', background: 'var(--accent-soft)' } : undefined}>

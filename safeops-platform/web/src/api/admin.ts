@@ -215,7 +215,8 @@ export interface BackgroundJob {
   id: string
   name: string
   schedule: string
-  lastRun: string
+  /** Null until the job has actually run. There is no scheduler in the pilot build. */
+  lastRun: string | null
   status: 'ok' | 'running' | 'failed'
   detail: string
 }

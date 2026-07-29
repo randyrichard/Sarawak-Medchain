@@ -10,7 +10,7 @@ import {
 } from '@/components/ui'
 import { ProgressLine } from './ProgressLine'
 import { canEditItem, DERIVED_META, dueLabel, exportCsv, isManager } from '../lib'
-import { PEOPLE } from '@/features/incidents/lib'
+import { usePeople } from '@/features/incidents/lib'
 import { cn } from '@/lib/cn'
 
 type SortKey = 'due' | 'priority' | 'status' | 'owner' | 'site'
@@ -28,6 +28,7 @@ export function ActionsTable({
   onOpen: (id: string) => void
   onChanged: () => void
 }) {
+  const people = usePeople()
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'due', dir: 1 })
   const [group, setGroup] = useState<GroupKey>('none')
   const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -222,7 +223,7 @@ export function ActionsTable({
       >
         <Select label="New owner" value={newOwner} onChange={(e) => setNewOwner(e.target.value)} hint="Each owner is notified.">
           <option value="" disabled>Select…</option>
-          {PEOPLE.map((p) => <option key={p}>{p}</option>)}
+          {people.map((p) => <option key={p}>{p}</option>)}
         </Select>
       </Dialog>
     </>

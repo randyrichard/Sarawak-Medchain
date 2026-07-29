@@ -3,12 +3,13 @@ import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import { ASSET_CATEGORIES, CATEGORY_LABEL, type AssetCategory, type InspectionFrequency, FREQUENCY_LABEL } from '@/api/assets'
 import { useOrg } from '@/features/org/OrgContext'
-import { PEOPLE, useActor } from '@/features/incidents/lib'
+import { usePeople, useActor } from '@/features/incidents/lib'
 import { Alert, Button, Dialog, Input, Select } from '@/components/ui'
 
 export function NewAssetDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
   const { company, sites } = useOrg()
   const actor = useActor()
+  const people = usePeople()
 
   const [name, setName] = useState('')
   const [category, setCategory] = useState<AssetCategory>('machinery')
@@ -94,7 +95,7 @@ export function NewAssetDialog({ open, onClose, onCreated }: { open: boolean; on
           <Input label="Department" required value={department} onChange={(e) => setDepartment(e.target.value)} />
           <Select label="Owner" required value={owner} onChange={(e) => setOwner(e.target.value)} hint="Becomes the default inspector.">
             <option value="" disabled>Select…</option>
-            {PEOPLE.map((p) => <option key={p}>{p}</option>)}
+            {people.map((p) => <option key={p}>{p}</option>)}
           </Select>
         </div>
         <Input label="Exact location" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g. Compressor room, bay 2" />

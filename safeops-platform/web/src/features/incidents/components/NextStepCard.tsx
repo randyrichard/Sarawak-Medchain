@@ -5,7 +5,7 @@ import { ApiError } from '@/api/types'
 import type { AdvancePayload, Incident, IncidentSeverity, RiskRating } from '@/api/incidents'
 import { useOrg } from '@/features/org/OrgContext'
 import { Alert, Button, Card, CardBody, CardHeader, Checkbox, Dialog, Select, Textarea } from '@/components/ui'
-import { PEOPLE, useActor } from '../lib'
+import { usePeople, useActor } from '../lib'
 
 const MANAGE = ['admin', 'hse_manager', 'safety_officer']
 const REVIEW = ['admin', 'hse_manager']
@@ -13,6 +13,7 @@ const REVIEW = ['admin', 'hse_manager']
 /** Contextual "what this case needs next" card — one primary action per stage. */
 export function NextStepCard({ incident, onUpdate }: { incident: Incident; onUpdate: (i: Incident) => void }) {
   const actor = useActor()
+  const people = usePeople()
   const { role } = useOrg()
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -142,7 +143,7 @@ export function NextStepCard({ incident, onUpdate }: { incident: Incident; onUpd
           {incident.stage === 'assessment' && (
             <Select label="Lead investigator" required value={investigator} onChange={(e) => setInvestigator(e.target.value)} hint="They'll be notified immediately.">
               <option value="" disabled>Select…</option>
-              {PEOPLE.map((p) => <option key={p}>{p}</option>)}
+              {people.map((p) => <option key={p}>{p}</option>)}
             </Select>
           )}
           {incident.stage === 'investigation' && (

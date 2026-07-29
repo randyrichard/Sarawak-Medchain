@@ -5,11 +5,12 @@ import { ApiError } from '@/api/types'
 import type { Incident } from '@/api/incidents'
 import { Alert, Avatar, Badge, Button, EmptyState } from '@/components/ui'
 import { timeAgo } from '@/lib/time'
-import { PEOPLE, useActor } from '../lib'
+import { usePeople, useActor } from '../lib'
 
 /** Internal HSE discussion: mentions notify the mentioned user. */
 export function CommentsPanel({ incident, onUpdate }: { incident: Incident; onUpdate: (i: Incident) => void }) {
   const actor = useActor()
+  const people = usePeople()
   const [text, setText] = useState('')
   const [mentions, setMentions] = useState<string[]>([])
   const [busy, setBusy] = useState(false)
@@ -91,7 +92,7 @@ export function CommentsPanel({ incident, onUpdate }: { incident: Incident; onUp
               aria-label="Mention someone"
             >
               <option value="">Mention…</option>
-              {PEOPLE.map((p) => <option key={p}>{p}</option>)}
+              {people.map((p) => <option key={p}>{p}</option>)}
             </select>
             {mentions.filter((m) => text.includes(`@${m}`)).map((m) => (
               <Badge key={m} tone="accent">@{m}</Badge>

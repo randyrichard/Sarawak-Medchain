@@ -18,6 +18,9 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "seed": "tsx prisma/seed.ts",
+    "demo": "tsx prisma/demo.ts",
+    "demo:reset": "tsx prisma/demo.ts --reset",
+    "demo:tidy": "tsx prisma/demo.ts --tidy",
     "db:start": "tsx scripts/dev-db.ts start",
     "db:stop": "tsx scripts/dev-db.ts stop"
   },

@@ -6,7 +6,7 @@ import {
   PERMIT_CONTROLS, PERMIT_MAX_HOURS, PERMIT_TYPES, PERMIT_TYPE_LABEL, type PermitType,
 } from '@/api/permits'
 import { useOrg } from '@/features/org/OrgContext'
-import { PEOPLE } from '@/features/incidents/lib'
+import { usePeople } from '@/features/incidents/lib'
 import { Alert, Button, Dialog, Input, Select, Textarea } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { PERMIT_TYPE_COLOR } from '../lib'
@@ -33,6 +33,7 @@ export function NewPermitDialog({
   onCreated: (id: string) => void
 }) {
   const { company, site, sites } = useOrg()
+  const people = usePeople()
   const [type, setType] = useState<PermitType>('hot_work')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -128,7 +129,7 @@ export function NewPermitDialog({
           <Input label="Exact location" required value={location} onChange={(e) => setLocation(e.target.value)}
             placeholder="e.g. Jetty 2, loading arm 3" />
           <Select label="Applicant" value={applicant} onChange={(e) => setApplicant(e.target.value)}>
-            {PEOPLE.map((p) => <option key={p}>{p}</option>)}
+            {people.map((p) => <option key={p}>{p}</option>)}
           </Select>
           <Input label="Contractor (if any)" value={contractor} onChange={(e) => setContractor(e.target.value)} />
           <Input label="Number of workers" inputMode="numeric" value={workerCount}

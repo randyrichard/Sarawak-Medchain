@@ -448,6 +448,10 @@ function buildLeaderboard(sites: SiteRisk[]): LeaderboardEntry[] {
 export interface LiveIncidentStats {
   openIncidents: number
   highRisk: number
+  /** Real count for the current month; absent in mock mode, where the seed supplies it. */
+  nearMissThisMonth?: number
+  /** Real high-risk incidents per site; absent in mock mode. */
+  highRiskBySite?: Map<string, number>
   bySite: Map<string, number>
   recent: { id: string; at: string; actor: string; action: string; incident: string; title: string }[]
   overdueActions: number
@@ -507,6 +511,17 @@ export function buildDashboard(
   // Overlay live incident-store state so the dashboard updates as cases change
   if (live) {
     const shortOf = (id: string) => SEEDS.find((s) => s.id === id)?.short ?? id
+
+    // The site map carries per-site open/overdue counts of its own. Left seeded while the
+    // headline KPIs read live, a single screen can claim one overdue action for the company
+    // and five for one of its sites — so the map takes the same numbers as the tiles.
+    if (live.highRiskBySite) {
+      for (const s of sites) {
+        s.openIncidents = live.bySite.get(s.id) ?? 0
+        s.overdueActions = live.overdueActionsBySite.get(s.id) ?? 0
+        s.highRisk = live.highRiskBySite.get(s.id) ?? 0
+      }
+    }
     const openKpi = kpis.find((k) => k.id === 'open-incidents')
     if (openKpi) {
       openKpi.value = String(live.openIncidents)
@@ -533,6 +548,23 @@ export function buildDashboard(
         odKpi.breakdown.push({ label: 'Awaiting verification', value: String(live.verificationPending) })
       }
     }
+    // Near misses: the headline is the real count for the month. The 12-month spark stays
+    // illustrative — there is no history endpoint yet — but it is rebased so its last
+    // point lands on the real figure. A tile whose number and curve disagree reads as a
+    // bug, and a customer is right to think so.
+    const nmKpi = kpis.find((k) => k.id === 'near-misses')
+    if (nmKpi && live.nearMissThisMonth !== undefined) {
+      const actual = live.nearMissThisMonth
+      const offset = actual - nmKpi.spark[nmKpi.spark.length - 1]
+      nmKpi.spark = nmKpi.spark.map((v) => Math.max(0, v + offset))
+      nmKpi.delta = actual - nmKpi.spark[nmKpi.spark.length - 2]
+      nmKpi.value = String(actual)
+      nmKpi.tone = nmKpi.delta >= 0 ? 'good' : 'warning'
+      // The per-site split came from the same seeds as the old headline, so it would now
+      // add to more than the total. Better no breakdown than one that does not reconcile.
+      nmKpi.breakdown = []
+    }
+
     // audit & compliance KPIs read live from the audit engine
     const arKpi = kpis.find((k) => k.id === 'audit-readiness')
     if (arKpi) {

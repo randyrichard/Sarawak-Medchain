@@ -130,8 +130,8 @@ export function PriorityPanel({
               <p className="mt-1 text-sm leading-relaxed text-ink">{open.recommended}</p>
             </div>
             <p className="text-2xs text-muted">
-              Full workflow actions (assign, escalate, verify) connect when the Incidents and Actions modules ship.
-              "Mark as handled" clears it from today's list.
+              Every item here is a live record — open the module to assign, escalate or verify it.
+              "Mark as handled" only clears it from today's list; it changes nothing in the record.
             </p>
           </div>
         )}

@@ -5,7 +5,7 @@ import { api } from '@/api/client'
 import type { CapaFilters, CapaItem, CapaStats } from '@/api/capa'
 import type { ActionPriority } from '@/api/incidents'
 import { useOrg } from '@/features/org/OrgContext'
-import { useActor, PEOPLE } from '@/features/incidents/lib'
+import { useActor, usePeople } from '@/features/incidents/lib'
 import { Badge, Button, Card, PageHeader, Skeleton, Tabs, type TabItem } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { isManager } from './lib'
@@ -31,6 +31,7 @@ const KPI_DEFS: { key: keyof CapaStats; label: string; bucket: Bucket; tone: (n:
 export function ActionsPage() {
   const { company, role, sites, site } = useOrg()
   const actor = useActor()
+  const people = usePeople()
   const [params, setParams] = useSearchParams()
 
   const [view, setView] = useState<View>((params.get('view') as View) || 'board')
@@ -158,7 +159,7 @@ export function ActionsPage() {
         </div>
         <select value={owner} onChange={(e) => setOwner(e.target.value)} className="h-9 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none" aria-label="Filter by owner">
           <option value="">All owners</option>
-          {PEOPLE.map((p) => <option key={p}>{p}</option>)}
+          {people.map((p) => <option key={p}>{p}</option>)}
         </select>
         <select value={priority} onChange={(e) => setPriority(e.target.value as ActionPriority | '')} className="h-9 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none" aria-label="Filter by priority">
           <option value="">All priorities</option>

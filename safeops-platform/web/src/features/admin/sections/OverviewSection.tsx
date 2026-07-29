@@ -61,8 +61,16 @@ export function OverviewSection() {
                   <p className="text-sm font-medium text-ink">{j.name}</p>
                   <p className="text-2xs text-muted">{j.detail} · {j.schedule}</p>
                 </div>
-                <span className="text-2xs text-muted">ran {timeAgo(j.lastRun)}</span>
-                <StatusPill kind={j.status === 'ok' ? 'good' : j.status === 'running' ? 'info' : 'critical'} label={j.status === 'ok' ? 'OK' : j.status === 'running' ? 'Running' : 'Failed'} />
+                {/* A job with no lastRun has never run — there is no scheduler in this
+                    build. Formatting null as a date gave "ran 20663d ago", and a green
+                    OK beside it claimed a worker was healthy that had never started. */}
+                <span className="text-2xs text-muted">
+                  {j.lastRun ? `ran ${timeAgo(j.lastRun)}` : 'not yet run'}
+                </span>
+                <StatusPill
+                  kind={!j.lastRun ? 'info' : j.status === 'ok' ? 'good' : j.status === 'running' ? 'info' : 'critical'}
+                  label={!j.lastRun ? 'Scheduled' : j.status === 'ok' ? 'OK' : j.status === 'running' ? 'Running' : 'Failed'}
+                />
               </div>
             ))}
           </CardBody>

@@ -4,13 +4,14 @@ import { ApiError } from '@/api/types'
 import type { CourseView, DeliveryMode } from '@/api/training'
 import type { Employee } from '@/api/types'
 import { useOrg } from '@/features/org/OrgContext'
-import { PEOPLE, useActor } from '@/features/incidents/lib'
+import { usePeople, useActor } from '@/features/incidents/lib'
 import { Alert, Avatar, Badge, Button, Dialog, Input, Select } from '@/components/ui'
 import { cn } from '@/lib/cn'
 
 export function NewSessionDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
   const { company, sites } = useOrg()
   const actor = useActor()
+  const people = usePeople()
 
   const [courses, setCourses] = useState<CourseView[]>([])
   const [employees, setEmployees] = useState<Employee[]>([])
@@ -79,7 +80,7 @@ export function NewSessionDialog({ open, onClose, onCreated }: { open: boolean; 
         <div className="grid grid-cols-2 gap-3">
           <Select label="Trainer" required value={trainer} onChange={(e) => setTrainer(e.target.value)}>
             <option value="" disabled>Select…</option>
-            {PEOPLE.map((p) => <option key={p}>{p}</option>)}
+            {people.map((p) => <option key={p}>{p}</option>)}
             <option>MRC Trainer</option>
           </Select>
           <Select label="Delivery" value={mode} onChange={(e) => setMode(e.target.value as DeliveryMode)}>

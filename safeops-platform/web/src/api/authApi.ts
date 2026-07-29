@@ -23,12 +23,30 @@ export const isBackendConfigured = () => API_BASE_URL.length > 0
  * in the browser and keeps a forgeable session in localStorage. Shipping a production build
  * without VITE_API_BASE_URL would silently fall back to it, so say so loudly.
  */
-if (import.meta.env.PROD && !isBackendConfigured()) {
+export const MOCK_AUTH_IN_PROD = import.meta.env.PROD && !isBackendConfigured()
+
+if (MOCK_AUTH_IN_PROD) {
   // eslint-disable-next-line no-console
   console.error(
     '[SafeOps] SECURITY: no VITE_API_BASE_URL in a production build — authentication has ' +
       'fallen back to the in-browser mock. This build must not be used by a tenant.',
   )
+}
+
+/**
+ * Refuses mock authentication in a production build.
+ *
+ * A warning in the console is not a control: a build shipped without VITE_API_BASE_URL
+ * would still let anyone sign in with a demo password compiled into the bundle. Failing
+ * closed turns a silent security hole into an obvious misconfiguration.
+ */
+export function assertRealAuth(): void {
+  if (MOCK_AUTH_IN_PROD) {
+    throw new ApiError(
+      'misconfigured',
+      'This build has no API configured, so it cannot sign anyone in. Set VITE_API_BASE_URL and rebuild.',
+    )
+  }
 }
 
 let accessToken: string | null = null

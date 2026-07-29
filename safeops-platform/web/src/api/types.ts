@@ -108,7 +108,9 @@ export class ApiError extends Error {
       | 'invalid_credentials' | 'invalid_token' | 'expired_token'
       | 'not_found' | 'forbidden' | 'validation'
       // transport-level, raised by the HTTP client rather than the server
-      | 'network' | 'unauthenticated' | 'conflict' | 'request_failed',
+      | 'network' | 'unauthenticated' | 'conflict' | 'request_failed'
+      // the build itself is wrong — no API configured, so nothing can be trusted
+      | 'misconfigured',
     message: string,
   ) {
     super(message)
