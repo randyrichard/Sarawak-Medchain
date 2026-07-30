@@ -2,6 +2,7 @@
 // The ONLY seam between UI and data. Sprint 1 ships MockApiClient; the real
 // HTTP client (Sprint 2+) implements the same interface and swaps in here.
 
+import { drainRows } from './paging'
 import { ApiError } from './types'
 import type {
   ActivityEvent, AppNotification, Company, Department, Employee,
@@ -669,9 +670,7 @@ class MockApiClient implements ApiClient {
 
   async listIncidents(companyId: string, filters: IncidentFilters) {
     if (SERVER_INCIDENTS) {
-      // pageSize 100 covers the pilot's volume; the list UI is not yet paginated.
-      const page = await incidentsApi.list(companyId, { ...filters, pageSize: 100 })
-      return page.rows
+      return drainRows((page, pageSize) => incidentsApi.list(companyId, { ...filters, page, pageSize }))
     }
     await delay(LATENCY())
     return this.incidents.list(companyId, filters)
@@ -765,8 +764,9 @@ class MockApiClient implements ApiClient {
   // ── CAPA ───────────────────────────────────────────────────────────────────
 
   private async serverCapa(companyId: string): Promise<CapaItem[]> {
-    const page = await incidentsApi.listActions(companyId, { pageSize: 100 })
-    return page.rows.map((r) => toCapaItem(r))
+    const rows = await drainRows((page, pageSize) =>
+      incidentsApi.listActions(companyId, { page, pageSize }))
+    return rows.map((r) => toCapaItem(r))
   }
 
   async listCapa(companyId: string, filters: CapaFilters, actor: Actor) {

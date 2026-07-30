@@ -1,3 +1,4 @@
+import { drainRows } from './paging'
 import { request, qs } from './http'
 import type {
   GasTest, IsolationPoint, NewPermitInput, PermitControl, PermitEvent, PermitFilters,
@@ -157,16 +158,25 @@ export interface ExpiringPermit {
 }
 
 export const permitsApi = {
-  async list(companyId: string, filters: PermitFilters & { pageSize?: number } = {}): Promise<PermitView[]> {
+  /** One page, with the server's true total — the input `drain` needs. */
+  async listPage(
+    companyId: string, filters: PermitFilters = {}, page = 1, pageSize = 100,
+  ): Promise<{ rows: PermitView[]; total: number }> {
     const data = await request<Page<ServerPermit>>(`/permits?${qs({
       companyId,
       q: filters.q,
       siteId: filters.siteId ?? undefined,
       type: filters.type || undefined,
       status: filters.status,
-      pageSize: filters.pageSize ?? 100,
+      page,
+      pageSize,
     })}`)
-    return data.rows.map(toPermit)
+    return { rows: data.rows.map(toPermit), total: data.total }
+  },
+
+  /** Every permit matching the filter, not just the first page. See `paging.ts`. */
+  async list(companyId: string, filters: PermitFilters = {}): Promise<PermitView[]> {
+    return drainRows((page, pageSize) => this.listPage(companyId, filters, page, pageSize))
   },
 
   async get(id: string): Promise<PermitView> {

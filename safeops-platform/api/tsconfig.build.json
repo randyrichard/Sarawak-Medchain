@@ -1,0 +1,15 @@
+{
+  // What ships. Only `src` is compiled, so the emitted tree is rooted there and
+  // `dist/server.js` is where package.json says it is.
+  //
+  // The wider tsconfig.json still type-checks scripts and prisma — those are developer
+  // tools and seeds, and they should not compile into the deployed image, but a mistake
+  // in them should still fail `npm run typecheck`.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "noEmit": false
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.integration.test.ts"]
+}

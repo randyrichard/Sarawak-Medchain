@@ -7,6 +7,13 @@
  *
  *   BASE=http://localhost:4001 tsx scripts/truncation-probe.ts
  */
+export {}
+
+interface Page {
+  rows?: unknown[]
+  total?: number
+}
+
 const BASE = process.env.BASE ?? 'http://localhost:4001'
 const COMPANY = 'big'
 
@@ -16,33 +23,35 @@ const res = await fetch(`${BASE}/auth/login`, {
   body: JSON.stringify({ email: 'admin@demo.safeops.app', password: 'SafeOpsPlatform2026' }),
 })
 if (!res.ok) throw new Error(`login failed: ${res.status}`)
-const { accessToken } = await res.json()
+const { accessToken } = (await res.json()) as { accessToken: string }
 const auth = { Authorization: `Bearer ${accessToken}` }
 
 const get = async (path: string) => {
   const r = await fetch(`${BASE}${path}`, { headers: auth })
-  return { status: r.status, body: await r.json() }
+  return { status: r.status, body: (await r.json()) as Page }
 }
 
 console.log('\nendpoint                     asked  returned  total  truncated')
 console.log('─'.repeat(64))
 
-for (const [name, path] of [
+const cases: [string, string][] = [
   ['incidents', `/incidents?companyId=${COMPANY}&pageSize=100`],
   ['incidents (max+1)', `/incidents?companyId=${COMPANY}&pageSize=101`],
   ['actions', `/incidents/actions/list?companyId=${COMPANY}&pageSize=100`],
   ['permits', `/permits?companyId=${COMPANY}&pageSize=100`],
   ['assets', `/assets?companyId=${COMPANY}&pageSize=100`],
   ['audits', `/audits?companyId=${COMPANY}&pageSize=100`],
-] as const) {
+]
+
+for (const [name, path] of cases) {
   const { status, body } = await get(path)
   if (status !== 200) {
     console.log(`${name.padEnd(28)} → HTTP ${status} ${JSON.stringify(body).slice(0, 60)}`)
     continue
   }
-  const rows = body.rows?.length ?? (Array.isArray(body) ? body.length : 0)
-  const total = body.total ?? '?'
-  const truncated = typeof total === 'number' && rows < total
+  const rows = body.rows?.length ?? 0
+  const total = body.total ?? 0
+  const truncated = rows < total
   console.log(
     `${name.padEnd(28)} ${String(100).padStart(5)} ${String(rows).padStart(9)} ${String(total).padStart(6)}` +
     `   ${truncated ? `YES — ${total - rows} unreachable` : 'no'}`,

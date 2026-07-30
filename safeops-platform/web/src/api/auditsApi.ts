@@ -1,3 +1,4 @@
+import { drainRows } from './paging'
 import { request, qs } from './http'
 import type {
   Audit, AuditAnswer, AuditFilters, AuditFinding, AuditFindingView, AuditPriority,
@@ -246,16 +247,25 @@ export const auditsApi = {
     })
   },
 
-  async listAudits(companyId: string, filters: AuditFilters = {}): Promise<AuditView[]> {
+  /** One page, with the server's true total — the input `drain` needs. */
+  async listAuditsPage(
+    companyId: string, filters: AuditFilters = {}, page = 1, pageSize = 200,
+  ): Promise<{ rows: AuditView[]; total: number }> {
     const data = await request<Page<ServerAudit>>(`/audits?${qs({
       companyId,
       q: filters.q,
       siteId: filters.siteId,
       status: filters.status ? STATUS_TO_SERVER[filters.status] : undefined,
       type: filters.type || undefined,
-      pageSize: 200,
+      page,
+      pageSize,
     })}`)
-    return data.rows.map(toAudit)
+    return { rows: data.rows.map(toAudit), total: data.total }
+  },
+
+  /** Every audit matching the filter, not just the first page. See `paging.ts`. */
+  async listAudits(companyId: string, filters: AuditFilters = {}): Promise<AuditView[]> {
+    return drainRows((page, pageSize) => this.listAuditsPage(companyId, filters, page, pageSize))
   },
 
   async getAuditDetail(id: string) {

@@ -2,6 +2,7 @@ import express from 'express'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import helmet from 'helmet'
+import rateLimit from 'express-rate-limit'
 import { env } from './env.js'
 import { prisma } from './lib/prisma.js'
 import { authRouter } from './routes/auth.js'
@@ -39,6 +40,50 @@ export function createApp() {
   // Bounded body size: an unbounded parser is a trivial memory-exhaustion vector.
   app.use(express.json({ limit: '100kb' }))
   app.use(cookieParser())
+
+  /**
+   * Request log.
+   *
+   * One line per request with the actor, so "it failed this morning" is answerable. The
+   * user id comes from the verified token rather than anything the client sent, and no
+   * body, query string or header is logged — those carry the customer's safety data and
+   * their session.
+   */
+  app.use((req, res, next) => {
+    const started = Date.now()
+    res.on('finish', () => {
+      // eslint-disable-next-line no-console
+      console.log(JSON.stringify({
+        t: new Date().toISOString(),
+        method: req.method,
+        path: req.route?.path ? req.baseUrl + req.route.path : req.path,
+        status: res.statusCode,
+        ms: Date.now() - started,
+        user: req.auth?.sub ?? null,
+        ip: req.ip,
+      }))
+    })
+    next()
+  })
+
+  /**
+   * A ceiling, not a throttle.
+   *
+   * Every module endpoint requires a session, so this is not an authentication control —
+   * it stops one careless or compromised account exhausting the connection pool for every
+   * other tenant. The limit is far above what any interactive use produces: the dashboard,
+   * the heaviest screen, issues nine requests, and draining a large list issues at most
+   * forty. Health checks are exempt so an orchestrator can never be rate-limited into
+   * declaring the service dead.
+   */
+  app.use(rateLimit({
+    windowMs: 60_000,
+    limit: 600,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    skip: (req) => req.path.startsWith('/health'),
+    message: { error: 'rate_limited', message: 'Too many requests. Slow down and try again shortly.' },
+  }))
 
   app.get('/health', (_req, res) => res.json({ status: 'ok', uptime: process.uptime() }))
 

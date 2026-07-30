@@ -25,7 +25,7 @@ async function login(): Promise<string> {
     body: JSON.stringify({ email: EMAIL, password: PASSWORD }),
   })
   if (!res.ok) throw new Error(`login failed: ${res.status} ${await res.text()}`)
-  return (await res.json()).accessToken
+  return ((await res.json()) as { accessToken: string }).accessToken
 }
 
 const ENDPOINTS: { name: string; path: string }[] = [

@@ -27,6 +27,16 @@ const schema = z.object({
 
   CORS_ORIGINS: z.string().default('http://localhost:5181'),
   COOKIE_DOMAIN: z.string().optional(),
+
+  // The reminder and escalation sweeps run inside the API process. Set to "false" on
+  // every instance but one if the API is ever scaled out, so a sweep is not duplicated.
+  SCHEDULER_ENABLED: z.enum(['true', 'false']).default('true'),
+  SCHEDULER_INTERVAL_MIN: z.coerce.number().int().positive().max(1440).default(15),
+
+  // Where incident evidence is written. This MUST be a persistent volume in production:
+  // the default is inside the working directory, which a container platform discards on
+  // every redeploy, taking the photographs attached to safety investigations with it.
+  UPLOAD_DIR: z.string().default('uploads'),
 })
 
 const parsed = schema.safeParse(process.env)
@@ -53,6 +63,7 @@ function decodeKey(b64: string, label: string): string {
 export const env = {
   ...raw,
   isProd: raw.NODE_ENV === 'production',
+  schedulerEnabled: raw.SCHEDULER_ENABLED === 'true' && raw.NODE_ENV !== 'test',
   jwtPrivateKey: decodeKey(raw.JWT_PRIVATE_KEY_B64, 'JWT_PRIVATE_KEY_B64'),
   jwtPublicKey: decodeKey(raw.JWT_PUBLIC_KEY_B64, 'JWT_PUBLIC_KEY_B64'),
   corsOrigins: raw.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean),

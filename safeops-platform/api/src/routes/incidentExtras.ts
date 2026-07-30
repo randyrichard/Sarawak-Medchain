@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto'
 import { join, resolve } from 'node:path'
-import { existsSync, mkdirSync } from 'node:fs'
+import { accessSync, constants, existsSync, mkdirSync } from 'node:fs'
 import { Router } from 'express'
 import multer from 'multer'
 import { z } from 'zod'
+import { env } from '../env.js'
 import { prisma } from '../lib/prisma.js'
 import { IncidentService, type Caller } from '../lib/incidentService.js'
 import { requireAuth } from '../middleware/requireAuth.js'
@@ -19,8 +20,29 @@ function callerOf(req: { auth?: { sub: string; name: string; roles: unknown } })
 
 // ── File upload ──────────────────────────────────────────────────────────────
 
-const UPLOAD_DIR = resolve(process.cwd(), 'uploads')
+/**
+ * Where evidence is stored.
+ *
+ * Configurable so production can point it at a mounted volume. Left at its default it
+ * lives inside the working directory, which a container platform discards on redeploy —
+ * the attachment rows would survive and the photographs behind them would not, which is
+ * a silent loss of the evidence a customer is least able to recreate.
+ *
+ * Writability is checked at boot rather than at the first upload: a mount that is missing
+ * or read-only should stop the process, not surprise someone mid-investigation.
+ */
+const UPLOAD_DIR = resolve(process.cwd(), env.UPLOAD_DIR)
 if (!existsSync(UPLOAD_DIR)) mkdirSync(UPLOAD_DIR, { recursive: true })
+try {
+  accessSync(UPLOAD_DIR, constants.W_OK)
+} catch {
+  // eslint-disable-next-line no-console
+  console.error(
+    `\nUPLOAD_DIR is not writable: ${UPLOAD_DIR}\n` +
+    'Incident evidence cannot be stored. Check the volume mount and its permissions.\n',
+  )
+  process.exit(1)
+}
 
 /**
  * Evidence photos and documents only. The allow-list is deliberately narrow: anything

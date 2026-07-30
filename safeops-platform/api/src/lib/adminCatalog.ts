@@ -183,9 +183,18 @@ export const WEBHOOK_EVENTS = [
 ]
 
 /** Background jobs the platform runs. Described here; their state is observed, not stored. */
+/**
+ * What the platform runs on a schedule.
+ *
+ * These descriptions are read by a customer deciding whether to trust the system, so they
+ * state what actually happens. j1 and j2 are the sweeps in `scheduler.ts` and report a
+ * real last-run time. j3 has no implementation and says so rather than showing a green
+ * tick. j4 writes a restore point into the database — useful for undoing a bad import,
+ * and not a substitute for `pg_dump` to storage off this host.
+ */
 export const BACKGROUND_JOBS = [
-  { id: 'j1', name: 'Reminder & escalation sweep', schedule: 'Every 15 min', detail: 'CAPA + training + inspection reminders' },
-  { id: 'j2', name: 'Certificate expiry scan', schedule: 'Daily 01:00', detail: 'Training certificate expiry bands' },
-  { id: 'j3', name: 'Score snapshot', schedule: 'Monthly', detail: 'Safety & compliance score freeze' },
-  { id: 'j4', name: 'Scheduled backup', schedule: 'Daily 02:00', detail: 'Snapshot to encrypted storage' },
+  { id: 'j1', name: 'Reminder & escalation sweep', schedule: 'Every 15 min', detail: 'Action reminders, escalations and overdue inspections' },
+  { id: 'j2', name: 'Certificate expiry scan', schedule: 'Every 15 min', detail: 'Competency expiry bands at 90/60/30/7 days' },
+  { id: 'j3', name: 'Score snapshot', schedule: 'Not scheduled', detail: 'Monthly score freeze — not yet implemented' },
+  { id: 'j4', name: 'Workspace restore point', schedule: 'On demand', detail: 'In-database snapshot; disaster recovery uses pg_dump' },
 ]

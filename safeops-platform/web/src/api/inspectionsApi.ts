@@ -1,3 +1,4 @@
+import { drainRows } from './paging'
 import { request, qs } from './http'
 import type {
   Asset, AssetCategory, AssetFilters, AssetStats, AssetStatus, AssetView, ChecklistAnswer,
@@ -225,7 +226,10 @@ function toOpenAction(a: ServerAction): CapaItem {
 }
 
 export const inspectionsApi = {
-  async listAssets(companyId: string, filters: AssetFilters = {}): Promise<AssetView[]> {
+  /** One page, with the server's true total — the input `drain` needs. */
+  async listAssetsPage(
+    companyId: string, filters: AssetFilters = {}, page = 1, pageSize = 200,
+  ): Promise<{ rows: AssetView[]; total: number }> {
     const data = await request<Page<ServerAsset>>(`/assets?${qs({
       companyId,
       q: filters.q,
@@ -233,9 +237,15 @@ export const inspectionsApi = {
       category: filters.category || undefined,
       status: filters.status ? STATUS_TO_SERVER[filters.status] : undefined,
       bucket: filters.bucket && filters.bucket !== 'all' ? filters.bucket : undefined,
-      pageSize: 200,
+      page,
+      pageSize,
     })}`)
-    return data.rows.map(toAsset)
+    return { rows: data.rows.map(toAsset), total: data.total }
+  },
+
+  /** Every asset matching the filter, not just the first page. See `paging.ts`. */
+  async listAssets(companyId: string, filters: AssetFilters = {}): Promise<AssetView[]> {
+    return drainRows((page, pageSize) => this.listAssetsPage(companyId, filters, page, pageSize))
   },
 
   async getAssetProfile(idOrQr: string) {

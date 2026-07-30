@@ -67,7 +67,7 @@ const check = (name: string, r: { count: number; rows: number }) => {
 
 check('incidents.list', await probe('incidents.list', () => incidents.list(caller, { companyId: COMPANY, page: 1, pageSize: 100 })))
 check('incidents.listActions', await probe('incidents.listActions', () => incidents.listActions(caller, COMPANY, { page: 1, pageSize: 100 })))
-await probe('incidents.stats', () => incidents.stats(caller, COMPANY, null))
+await probe('incidents.stats', () => incidents.stats(caller, COMPANY))
 check('permits.list', await probe('permits.list', () => permits.list(caller, { companyId: COMPANY, page: 1, pageSize: 100 })))
 check('assets.list', await probe('assets.list', () => inspections.listAssets(caller, { companyId: COMPANY, page: 1, pageSize: 100 })))
 await probe('assets.stats', () => inspections.assetStats(caller, COMPANY, null))

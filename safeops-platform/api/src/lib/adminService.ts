@@ -1,3 +1,4 @@
+import { getLastRuns } from './scheduler.js'
 import { createHash, randomBytes } from 'node:crypto'
 import { Prisma } from '@prisma/client'
 import type { PrismaClient, Role } from '@prisma/client'
@@ -1158,9 +1159,12 @@ export class AdminService {
 
     const storageUsedKb = await this.tenantSizeKb(companyId)
 
+    // The sweeps report when this process last completed them; the backup job reports the
+    // newest snapshot. A job with no last-run has genuinely not run, and says so.
+    const sweeps = getLastRuns()
     const jobs = BACKGROUND_JOBS.map((j) => ({
       ...j,
-      lastRun: j.id === 'j4' ? (lastBackup?.at.toISOString() ?? null) : null,
+      lastRun: j.id === 'j4' ? (lastBackup?.at.toISOString() ?? null) : (sweeps[j.id] ?? null),
       status: j.id === 'j4' && !retention.autoBackupDaily ? 'failed' : 'ok',
     }))
 
