@@ -1,0 +1,78 @@
+# SafeOps reverse proxy — Caddy.
+#
+# Recommended over the nginx config beside this file unless you already run nginx. Caddy
+# obtains and renews certificates automatically, redirects HTTP to HTTPS by default, and
+# sets sane TLS defaults — three things that are easy to get subtly wrong by hand.
+#
+#   caddy run --config deploy/Caddyfile
+#   caddy validate --config deploy/Caddyfile
+#
+# Replace the two hostnames. They MUST share a registrable domain: the refresh cookie is
+# SameSite=Strict, so app.safeops.example and api.safeops.example work, and a pair on
+# different registrable domains will silently fail to keep anyone signed in.
+
+{
+	# Where Let's Encrypt sends expiry warnings. Set it.
+	email ops@safeops.example
+}
+
+# ── Web app ──────────────────────────────────────────────────────────────────
+app.safeops.example {
+	encode zstd gzip
+
+	# HSTS. Caddy already redirects HTTP→HTTPS; this stops the first request of a later
+	# visit going out in the clear at all. Do not add preload until you are certain every
+	# subdomain is HTTPS — it is difficult to undo.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options    "nosniff"
+		X-Frame-Options           "DENY"
+		Referrer-Policy           "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	reverse_proxy safeops-web:8080 {
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Real-IP {remote_host}
+	}
+}
+
+# ── API ──────────────────────────────────────────────────────────────────────
+api.safeops.example {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options    "nosniff"
+		-Server
+	}
+
+	# CORS is the API's own decision — it holds the allow-list and must be the one to
+	# refuse an unknown origin. Adding CORS headers here would either duplicate them or
+	# override a deliberate refusal, so nothing is set.
+
+	reverse_proxy safeops-api:4000 {
+		# The API sets `trust proxy`, so this is what makes req.ip the real client rather
+		# than this proxy. Per-IP rate limiting depends on it: without these headers every
+		# user shares one bucket.
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Real-IP {remote_host}
+
+		# Health checks decide whether traffic is sent here at all, so they use the
+		# readiness endpoint, which reports on the database rather than just the process.
+		health_uri /health/ready
+		health_interval 10s
+		health_timeout 5s
+
+		# Uploads are capped at 10 MB per file, five files per request.
+		transport http {
+			read_timeout 60s
+			write_timeout 60s
+		}
+	}
+
+	request_body {
+		max_size 60MB
+	}
+}

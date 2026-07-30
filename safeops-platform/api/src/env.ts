@@ -33,6 +33,18 @@ const schema = z.object({
   SCHEDULER_ENABLED: z.enum(['true', 'false']).default('true'),
   SCHEDULER_INTERVAL_MIN: z.coerce.number().int().positive().max(1440).default(15),
 
+  /**
+   * Requests per minute per client IP, across every endpoint except health.
+   *
+   * Sized for a whole office, not one person. A customer behind corporate NAT presents as
+   * a single IP, so this budget is shared by everyone there: at 600 a forty-person site
+   * loading a nine-request dashboard a few times a minute would throttle itself. The
+   * ceiling exists to stop one compromised account exhausting the connection pool, not to
+   * pace normal use, so it is set well above what people generate and is tunable for
+   * customers whose traffic shape surprises us.
+   */
+  RATE_LIMIT_PER_MIN: z.coerce.number().int().positive().max(100_000).default(3000),
+
   // Where incident evidence is written. This MUST be a persistent volume in production:
   // the default is inside the working directory, which a container platform discards on
   // every redeploy, taking the photographs attached to safety investigations with it.

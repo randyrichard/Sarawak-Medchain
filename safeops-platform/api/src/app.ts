@@ -76,14 +76,17 @@ export function createApp() {
    *
    * Every module endpoint requires a session, so this is not an authentication control —
    * it stops one careless or compromised account exhausting the connection pool for every
-   * other tenant. The limit is far above what any interactive use produces: the dashboard,
-   * the heaviest screen, issues nine requests, and draining a large list issues at most
-   * forty. Health checks are exempt so an orchestrator can never be rate-limited into
-   * declaring the service dead.
+   * other tenant.
+   *
+   * The budget is per IP, and a customer behind corporate NAT is one IP. It therefore has
+   * to accommodate a whole site, not one person: the dashboard alone issues nine requests
+   * and draining a large list issues up to forty, so a busy forty-person office generates
+   * far more than a single user's share. Health checks are exempt so an orchestrator can
+   * never be rate-limited into declaring the service dead.
    */
   app.use(rateLimit({
     windowMs: 60_000,
-    limit: 600,
+    limit: env.RATE_LIMIT_PER_MIN,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     skip: (req) => req.path.startsWith('/health'),
