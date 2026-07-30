@@ -250,7 +250,7 @@ export class IncidentService {
       )
     }
 
-    return this.db.$transaction(async (tx) => {
+    await this.db.$transaction(async (tx) => {
       const updated = await tx.incident.update({
         where: { id },
         data: {
@@ -281,6 +281,13 @@ export class IncidentService {
 
       return updated
     })
+
+    // Re-read with relations. The transaction returns the bare row, and the detail screen
+    // renders whatever it is handed — so returning it directly made a case's corrective
+    // actions, comments and attachments vanish from the screen on every stage change. The
+    // rows were never touched, but "my actions disappeared" is indistinguishable from data
+    // loss to the person watching.
+    return this.get(caller, id)
   }
 
 
@@ -574,7 +581,7 @@ export class IncidentService {
       throw new IncidentError('validation', 'Contributing causes are required.')
     }
 
-    const updated = await this.db.$transaction(async (tx) => {
+    await this.db.$transaction(async (tx) => {
       const inc = await tx.incident.update({
         where: { id },
         data: {
@@ -594,7 +601,9 @@ export class IncidentService {
       })
       return inc
     })
-    return updated
+    // Same reasoning as `advance`: the screen renders what this returns, and the bare row
+    // carries no actions, comments or attachments.
+    return this.get(caller, id)
   }
 
   /** Approval locks the analysis. Manager-only, and it must have real content. */
@@ -611,8 +620,8 @@ export class IncidentService {
       throw new IncidentError('validation', 'A root cause statement is required before approving.')
     }
 
-    return this.db.$transaction(async (tx) => {
-      const inc = await tx.incident.update({
+    await this.db.$transaction(async (tx) => {
+      await tx.incident.update({
         where: { id },
         data: { rcaApprovedBy: caller.name, rcaApprovedAt: new Date(), version: { increment: 1 } },
       })
@@ -624,8 +633,8 @@ export class IncidentService {
           actorRole: m.role,
         },
       })
-      return inc
     })
+    return this.get(caller, id)
   }
 
   // ── Archive ────────────────────────────────────────────────────────────────

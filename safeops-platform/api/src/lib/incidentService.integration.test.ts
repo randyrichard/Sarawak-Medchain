@@ -369,4 +369,47 @@ d('IncidentService — integration (real Postgres)', () => {
     const asManager = await svc.stats(manager, COMPANY)
     expect(asEmployee.openActions).toBeLessThanOrEqual(asManager.openActions)
   })
+
+  /**
+   * Found by walking the incident lifecycle in a browser: after every stage change the
+   * corrective actions vanished from the case. The rows were untouched — the mutators
+   * returned the bare updated row, with no relations, and the detail screen renders
+   * exactly what it is handed. Indistinguishable from data loss to the person watching.
+   */
+  it('returns the full case, not a bare row, after every mutation', async () => {
+    const inc = await svc.create(officer, newIncident('Relation-preservation check'))
+    await svc.addAction(officer, inc.id, {
+      title: 'Action that must survive a stage change',
+      owner: 'ITest Officer',
+      dueDate: new Date(Date.now() + 7 * 86400_000).toISOString().slice(0, 10),
+      priority: 'High',
+    })
+    await svc.addComment(officer, inc.id, 'A comment that must survive too.')
+
+    const withRelations = await svc.get(officer, inc.id)
+    expect(withRelations.actions).toHaveLength(1)
+    expect(withRelations.comments).toHaveLength(1)
+
+    const advanced = await svc.advance(manager, inc.id, {
+      to: 'assessment', riskRating: 'Medium', potentialSeverity: 'Minor',
+    })
+    expect(advanced.stage).toBe('assessment')
+    expect(advanced.actions).toHaveLength(1)
+    expect(advanced.comments).toHaveLength(1)
+    expect(advanced.events.length).toBeGreaterThan(0)
+
+    const saved = await svc.saveRca(
+      manager, inc.id,
+      {
+        causes: [{ id: 'c1', category: 'Procedure Failure', description: 'No standard.' }],
+        fiveWhys: { problem: 'p', whys: ['w'], rootStatement: 'Systemic gap.' },
+      },
+    )
+    expect(saved.actions).toHaveLength(1)
+
+    const approved = await svc.approveRca(manager, inc.id)
+    expect(approved.rcaApprovedBy).toBeTruthy()
+    expect(approved.actions).toHaveLength(1)
+    expect(approved.comments).toHaveLength(1)
+  })
 })
