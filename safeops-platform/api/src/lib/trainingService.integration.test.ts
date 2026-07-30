@@ -539,7 +539,7 @@ d('TrainingService — integration (real Postgres)', () => {
 
     // And each number still resolves to exactly one certificate.
     const v = await svc.verifyCertificate(theirResult.certificates[0].number)
-    expect(v.certificate?.employeeId).toBe(otherEmp)
+    expect(v.certificate?.number).toBe(theirResult.certificates[0].number)
   })
 
   // ── Certificate register & verification ────────────────────────────────────
@@ -561,13 +561,30 @@ d('TrainingService — integration (real Postgres)', () => {
     expect(asSupervisor.every((c) => c.siteId === SITE)).toBe(true)
   })
 
+  it('returns only what the printed certificate shows', async () => {
+    // This endpoint answers without a session, and certificate numbers are sequential.
+    // Returning the full row made every tenant's workforce directory — names, emails,
+    // sites, departments and internal ids — enumerable by anyone who could count.
+    const cert = await issueCert(mike, INDUCTION.id, { expiresInDays: 200 })
+    const v = await svc.verifyCertificate(cert.number)
+
+    expect(Object.keys(v.certificate ?? {}).sort()).toEqual([
+      'courseName', 'daysToExpiry', 'expiryDate', 'holder',
+      'issueDate', 'issuedBy', 'number', 'status',
+    ])
+    const serialised = JSON.stringify(v)
+    for (const leaked of [COMPANY, cert.id, mike, 'siteId', 'department', 'email']) {
+      expect(serialised).not.toContain(leaked)
+    }
+  })
+
   it('verifies a certificate by number or QR key without a session', async () => {
     const cert = await issueCert(mike, INDUCTION.id, { expiresInDays: 400 })
 
     for (const key of [cert.number, cert.qrKey, cert.number.toLowerCase()]) {
       const v = await svc.verifyCertificate(key)
       expect(v.valid).toBe(true)
-      expect(v.certificate?.id).toBe(cert.id)
+      expect(v.certificate?.number).toBe(cert.number)
     }
 
     const missing = await svc.verifyCertificate('CERT-9999-0001')

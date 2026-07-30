@@ -817,11 +817,35 @@ export class TrainingService {
 
     const courses = await this.allCourses(cert.companyId)
     const view = this.toCertView(cert, cert.employee, courses)
+
+    /**
+     * Only what is printed on the certificate.
+     *
+     * This endpoint is deliberately unauthenticated, and the internal view carries far
+     * more than the document does: the employee's email and database id, the tenant id,
+     * the site and department they work in, and the row's own metadata. Certificate
+     * numbers are sequential, so returning that made the whole workforce directory of
+     * every tenant enumerable by anyone who could count.
+     *
+     * An inspector holding the printed certificate already has everything below. They
+     * have no business receiving the rest.
+     */
+    const publicView = {
+      number: view.number,
+      holder: view.employeeName,
+      courseName: view.courseName,
+      issueDate: view.issueDate,
+      expiryDate: view.expiryDate,
+      issuedBy: view.issuedBy,
+      status: view.status,
+      daysToExpiry: view.daysToExpiry,
+    }
+
     if (view.status === 'expired') {
       return {
         valid: false,
         reason: `Certificate expired on ${cert.expiryDate!.toISOString().slice(0, 10)}. Renewal required.`,
-        certificate: view,
+        certificate: publicView,
       }
     }
     return {
@@ -829,7 +853,7 @@ export class TrainingService {
       reason: view.status === 'expiring'
         ? `Valid — expires in ${view.daysToExpiry} days.`
         : 'Valid and current.',
-      certificate: view,
+      certificate: publicView,
     }
   }
 

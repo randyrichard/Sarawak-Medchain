@@ -293,16 +293,15 @@ export const trainingApi = {
     return rows.map(toCertificate)
   },
 
-  /** Public — no session required, the same as scanning the printed QR code. */
+  /**
+   * Public — no session required, the same as reading the printed certificate.
+   *
+   * The response carries only what the document shows. It is not a `CertificateView`
+   * and must not be widened into one: this endpoint answers to anyone, and certificate
+   * numbers are sequential.
+   */
   async verifyCertificate(codeOrKey: string): Promise<CertVerification> {
-    const v = await request<{
-      valid: boolean; reason: string; certificate?: ServerCert
-    }>(`/training/verify?${qs({ code: codeOrKey })}`)
-    return {
-      valid: v.valid,
-      reason: v.reason,
-      certificate: v.certificate ? toCertificate(v.certificate) : undefined,
-    }
+    return request<CertVerification>(`/training/verify?${qs({ code: codeOrKey })}`)
   },
 
   async raiseTrainingAction(employeeId: string, courseId: string): Promise<CapaItem> {

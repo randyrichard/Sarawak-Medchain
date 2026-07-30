@@ -181,10 +181,29 @@ export interface CompleteSessionInput {
   signature: string
 }
 
+/**
+ * What a certificate check returns.
+ *
+ * Deliberately narrower than `CertificateView`. The verification endpoint is
+ * unauthenticated so that an inspector or a client holding the printed document can
+ * confirm it, which means the response must contain only what the document itself
+ * shows — not the holder's email, their site and department, or any internal id.
+ */
+export interface VerifiedCertificate {
+  number: string
+  holder: string
+  courseName: string
+  issueDate: string
+  expiryDate: string | null
+  issuedBy: string
+  status: CertificateView['status']
+  daysToExpiry: number | null
+}
+
 export interface CertVerification {
   valid: boolean
   reason: string
-  certificate?: CertificateView
+  certificate?: VerifiedCertificate
 }
 
 export interface TrainingFilters {

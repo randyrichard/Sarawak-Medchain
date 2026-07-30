@@ -2011,8 +2011,21 @@ export class IncidentStore {
     const cert = this.certificates.find((c) => c.number.toUpperCase() === key || c.qrKey.toUpperCase() === key)
     if (!cert) return { valid: false, reason: 'No certificate matches this code. It may be counterfeit or mistyped.' }
     const view = this.toCertView(cert)
-    if (view.status === 'expired') return { valid: false, reason: `Certificate expired on ${cert.expiryDate}. Renewal required.`, certificate: view }
-    return { valid: true, reason: view.status === 'expiring' ? `Valid — expires in ${view.daysToExpiry} days.` : 'Valid and current.', certificate: view }
+    // Narrowed to what the printed document shows, matching the public endpoint. The mock
+    // has no security boundary of its own, but a shape that diverges from the server's is
+    // a shape the screens will eventually be written against.
+    const publicView = {
+      number: view.number,
+      holder: view.employeeName,
+      courseName: view.courseName,
+      issueDate: view.issueDate,
+      expiryDate: view.expiryDate,
+      issuedBy: view.issuedBy,
+      status: view.status,
+      daysToExpiry: view.daysToExpiry,
+    }
+    if (view.status === 'expired') return { valid: false, reason: `Certificate expired on ${cert.expiryDate}. Renewal required.`, certificate: publicView }
+    return { valid: true, reason: view.status === 'expiring' ? `Valid — expires in ${view.daysToExpiry} days.` : 'Valid and current.', certificate: publicView }
   }
 
   /** Manager escalation: turn a lapsed mandatory competency into a tracked CAPA action. */

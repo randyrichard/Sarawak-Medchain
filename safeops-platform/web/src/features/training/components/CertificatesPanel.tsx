@@ -144,18 +144,16 @@ export function CertificatesPanel({
               <p className="mt-1 text-xs leading-relaxed text-ink-2">{verifyResult.reason}</p>
               {verifyResult.certificate && (
                 <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 border-t pt-2.5 text-xs">
-                  <div><dt className="text-muted">Holder</dt><dd className="font-semibold text-ink">{verifyResult.certificate.employeeName}</dd></div>
+                  {/* Only what the printed document shows. The verification endpoint is
+                      public, so its response deliberately excludes the holder's site,
+                      department and email — see VerifiedCertificate. */}
+                  <div><dt className="text-muted">Number</dt><dd className="font-mono text-ink">{verifyResult.certificate.number}</dd></div>
+                  <div><dt className="text-muted">Holder</dt><dd className="font-semibold text-ink">{verifyResult.certificate.holder}</dd></div>
                   <div><dt className="text-muted">Course</dt><dd className="font-semibold text-ink">{verifyResult.certificate.courseName}</dd></div>
                   <div><dt className="text-muted">Issued</dt><dd className="text-ink-2">{verifyResult.certificate.issueDate}</dd></div>
                   <div><dt className="text-muted">Expires</dt><dd className="text-ink-2">{verifyResult.certificate.expiryDate ?? 'No expiry'}</dd></div>
                   <div><dt className="text-muted">Issued by</dt><dd className="text-ink-2">{verifyResult.certificate.issuedBy}</dd></div>
-                  <div><dt className="text-muted">Site</dt><dd className="text-ink-2">{verifyResult.certificate.siteId}</dd></div>
                 </dl>
-              )}
-              {verifyResult.certificate && verifyResult.valid && (
-                <Button size="sm" variant="secondary" className="mt-3" icon={<Printer size={12} />} onClick={() => printCertificate(verifyResult.certificate!, siteName(verifyResult.certificate!.siteId))}>
-                  Print certificate
-                </Button>
               )}
             </div>
           )}
