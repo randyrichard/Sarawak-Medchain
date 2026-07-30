@@ -138,6 +138,17 @@ export function BackupSection() {
         <Alert tone="warning">
           Records across every module — incidents, actions, assets, audits and training — are returned to their state at <span className="font-semibold">{restoreFor ? timeAgo(restoreFor.at) : ''}</span>, and anything deleted since is reinstated. Work created after the snapshot is left alone, and a snapshot of the current state is taken automatically first, so this is reversible.
         </Alert>
+        {/* Measured, not estimated: a drill against 12 incidents and 6 permits restored
+            every parent record and left 11 incident timeline entries and 20 permit
+            precautions behind. An operator who believes this is a full recovery will find
+            out at the worst moment, so the limit is stated where the decision is made. */}
+        <Alert tone="critical" className="mt-2">
+          <span className="font-semibold">This restores records, not their history.</span> Incident
+          timelines, permit precaution checklists, gas tests, isolations and comments are not in
+          the snapshot — a restored permit comes back without the controls that were signed off
+          on it. Use this to undo a bad import, not to recover from data loss. Full recovery is a{' '}
+          <span className="font-mono">pg_dump</span> restore — see BACKUP.md.
+        </Alert>
       </Dialog>
     </div>
   )

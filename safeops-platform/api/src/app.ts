@@ -51,12 +51,17 @@ export function createApp() {
    */
   app.use((req, res, next) => {
     const started = Date.now()
+    // Captured now, not in the finish handler. Express rewrites `req.url` to be relative
+    // to the mount point while a router handles the request, so reading it later reported
+    // `/admin/health` as `/health` — an operations log that says a health check returned
+    // 403 sends whoever reads it somewhere the problem is not.
+    const path = req.originalUrl.split('?')[0]
     res.on('finish', () => {
       // eslint-disable-next-line no-console
       console.log(JSON.stringify({
         t: new Date().toISOString(),
         method: req.method,
-        path: req.route?.path ? req.baseUrl + req.route.path : req.path,
+        path,
         status: res.statusCode,
         ms: Date.now() - started,
         user: req.auth?.sub ?? null,
@@ -136,6 +141,21 @@ export function createApp() {
     }
     if (type === 'entity.parse.failed') {
       return res.status(400).json({ error: 'malformed_json', message: 'Request body is not valid JSON.' })
+    }
+
+    // A database that is down is not a bug in the request. Observed during a real outage:
+    // every call returned 500, which tells a proxy the response is final and tells a
+    // monitor the application is broken. 503 says "unavailable, try again", which is what
+    // is actually true and what lets a load balancer and an operator behave correctly.
+    const name = (err as { name?: string })?.name ?? ''
+    if (name === 'PrismaClientInitializationError' || name === 'PrismaClientRustPanicError') {
+      // eslint-disable-next-line no-console
+      console.error('[safeops-api] database unavailable:', err)
+      res.setHeader('Retry-After', '5')
+      return res.status(503).json({
+        error: 'unavailable',
+        message: 'The service is temporarily unavailable. Please try again shortly.',
+      })
     }
 
     // eslint-disable-next-line no-console
