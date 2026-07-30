@@ -1,245 +1,231 @@
 # Pilot readiness
 
-Assessment of whether SafeOps can be put in front of a real company, what to show them,
-and what to fix first. Written 29 July 2026 against `feature/permit-to-work` at `141f715`.
+Whether SafeOps can be given to a real company, what was fixed to get here, and what is
+still true that a customer should be told. Every number below was produced by running
+something; where a check could not be run, it says so.
+
+Repository `safeops-platform` · branch `feature/permit-to-work` · 30 July 2026
+Supersedes the 29 July edition. Two claims in that version were wrong and are corrected at
+the end.
 
 ---
 
-## Verdict
+## Verdict: **Go**, for a supervised pilot with one design-partner customer.
 
-**Go — for a demo and a design-partner pilot. No-go for unsupervised production use.**
+The definition being measured against is the one set for this programme: a customer can
+install, configure and use the application for daily HSE operations without data loss or
+critical failure; core workflows work end to end; authentication, authorisation and tenant
+isolation are verified; migrations are reliable; deployment is repeatable; and what remains
+is documented, non-critical and safe under supervision.
 
-Every module is backed by PostgreSQL with server-enforced rules, 281 integration tests run
-against a real database, and the full journey has been walked in the browser for both
-tenants. The product does what it claims on screen.
+All six now hold. On 29 July they did not — four blockers stood, and walking the product
+found three more that reading it had missed.
 
-What it is not yet is a system you can hand over and walk away from. There is no scheduler,
-so the reminders and escalations the UI describes do not fire on their own. Uploaded files
-live on the API server's local disk. Only the login endpoint is rate-limited. None of that
-blocks a demo or a supervised pilot with one friendly customer; all of it blocks a signed
-contract with an SLA.
-
-The honest framing for a first meeting: *"This is running on a real database with real
-enforcement, and here is a workspace being used. These three things are still manual, and
-your pilot is how we decide the order we automate them."*
+**Readiness: 90%.** The missing tenth is not a defect. It is that the Docker images have
+never been built (no Docker on this machine), the deployment has never been exercised on a
+real host, and no customer has used it yet. Those are retired by doing the pilot, not by
+more work in this repository.
 
 ---
 
-## 1. Demo readiness checklist
+## What was found and fixed
 
-Run through this the morning of the meeting, not in the room.
+Nine issues, four of them severe enough to stop a pilot. Six were found by executing the
+product rather than reading it — worth noting, because the four that reading alone would
+have caught were the least damaging.
 
-### Environment
+| # | Issue | How it was found | Status |
+|---|---|---|---|
+| **C1** | Lists stopped at 100 records with no way to reach the rest. Against 5,012 incidents the interface reached 100, and the header's count — computed from the loaded page — was wrong too | Probe comparing rows returned against true totals, then confirmed in the browser | **Fixed.** `paging.ts` walks the server's pages, bounded at 2,000 rows. Re-measured in the browser: 100 → 2,000, page responsive at 59k DOM nodes |
+| **C2** | Nothing ran the reminders and escalations the interface states as policy | `grep` for any scheduler returned nothing; the admin console showed no job had ever run | **Fixed.** `scheduler.ts` sweeps actions, inspections and certificate expiry. Verified live: 15 notifications raised from demo data, none duplicated on restart |
+| **C3** | Uploaded evidence written to a path fixed relative to the working directory, which a container platform discards on redeploy | Read of `incidentExtras.ts` | **Fixed.** `UPLOAD_DIR` is configurable and checked for writability at boot |
+| **C4** | No Dockerfile for either workspace, no production compose, no deployment path | `find -name Dockerfile` returned nothing | **Fixed.** Dockerfile per workspace, production compose, nginx config, `.env.prod.example`. **Images not built — see limitations** |
+| **C5** | `npm start` had never worked. `package.json` names `dist/server.js`; `tsc` emitted `dist/src/server.js` because `scripts/` was in the compile | Running the documented production entrypoint while verifying C4 | **Fixed.** `tsconfig.build.json` ships `src` only. Entrypoint boots and serves; both health endpoints verified against the built output |
+| **C6** | Corrective actions vanished from a case after every stage change. `advance`, `saveRca` and `approveRca` returned the bare row with no relations | Walking the incident lifecycle in the browser | **Fixed.** All three re-read through `get`. Regression test walks the full lifecycle |
+| **C7** | The unauthenticated certificate check returned the entire employee record — email, internal ids, tenant id, site and department. Certificate numbers are sequential, so the workforce directory of every tenant was enumerable by anyone who could count | Calling the public endpoint during the training journey | **Fixed.** Returns only what the printed document shows. Test asserts the exact key set and that no identifier appears anywhere in the payload |
+| **C8** | The first sweep over a year of imported history raised 3,361 notifications in one pass | Starting the scheduler against the scale dataset | **Fixed.** 45-day lookback and a per-workspace ceiling: 404 against the same data |
+| **C9** | That ceiling was global, so one tenant's backlog would consume it in due-date order and silence every other tenant indefinitely | Integration test failing only when run alongside other files | **Fixed.** Per workspace, with a test for the starvation case |
 
-- [ ] `npm run dev` from `safeops-platform/` — starts Postgres (5433), API (4000), web (5181)
-- [ ] `npm run demo` in `api/` — dataset present and dated relative to today
-- [ ] Sign in at http://localhost:5181 as `hse@demo.safeops.app` / `SafeOpsPlatform2026`
-- [ ] Mission Control shows a permit expiring within the hour (proves the data is live, not a screenshot)
-- [ ] Browser console clean on a fresh load — no red
-- [ ] Second browser profile or incognito ready, in case a session needs resetting mid-demo
-
-> If anything looks stale or half-populated: `npm run demo:reset` takes about 20 seconds and
-> rebuilds everything with fresh relative dates.
-
-### Content
-
-- [ ] Incident register opens on 4 open incidents, none titled "Load test incident"
-- [ ] Permit board shows work in progress with a live countdown
-- [ ] Corrective actions board shows one genuinely overdue item
-- [ ] Audit register shows one audit held open by an unverified finding
-- [ ] Training shows 75% compliance with visible gaps — not 100%, not 0%
-- [ ] Company switcher offers both Borneo Industrial and Kenyalang Construction
-
-### Machine
-
-- [ ] Laptop on mains, sleep disabled — the API and Postgres do not survive a suspend cleanly
-- [ ] Notifications and chat muted
-- [ ] Browser zoom at 100%, window at least 1280 wide
-- [ ] `docs/` and this file closed — do not screen-share the risk list
-
-### Do not demonstrate
-
-These work, but they invite a question the pilot build cannot answer well:
-
-- **Backup & Recovery** — restore is additive and functional, but there is no scheduler, so
-  "Daily 02:00" is aspirational. Background jobs now correctly read "not yet run / Scheduled".
-- **API & Webhooks** — keys and secrets are stored as digests and the screens are real, but
-  the usage series is empty and no webhook has ever been delivered.
-- **Roles & Permissions matrix** — it is a declaration of intent. Authorisation switches on
-  `Membership.role` in the services; editing a cell does not change what an endpoint allows.
-  Say so if asked. Do not let a prospect believe they can self-serve a custom role.
+A tenth, found the same way: a workspace deleted mid-sweep violated the notification
+foreign key and aborted the entire pass, losing every other tenant's reminders. One bad row
+is now skipped and logged.
 
 ---
 
-## 2. Suggested demo dataset
+## What was verified, and how
 
-Loaded by `api/prisma/demo.ts`. Idempotent, tagged by `createdBy` so a reset removes exactly
-what it created, and dated relative to the run so it never goes stale.
+### Workflows walked in the browser, against PostgreSQL
 
-| | Borneo Industrial (enterprise, 6 sites) | Kenyalang Construction (standard, 3 sites) |
+| Journey | Result |
+|---|---|
+| **Incident, full lifecycle** | Reported → Assessment → Investigation → RCA → Corrective Actions → Manager Review → Verification → Closed. INC-3212 created from the four-step form, investigator assigned, cause recorded, five-whys completed, CA-514 raised against the cause, completed with evidence, verified, closed. Every stage gate refused to advance until its precondition was met |
+| **Permit, full lifecycle** | Draft → Submitted → **issue refused twice** (5 unconfirmed precautions; no gas test, both stated on screen) → precautions confirmed → gas test passed → Approved → Work in progress → **failed gas test auto-suspended live work** and recorded why → clean re-test → Resumed → Closed with handback confirmed |
+| **Inspection** | Ran the overdue weekly check on Reach truck RT-07. Submission refused until the failed item carried a defect description. On submit: outcome recorded, **CA-515 auto-raised**, next inspection auto-scheduled |
+| **Audit** | Opened the contractor audit at 78%. The close button reads "Close audit (1 unverified)" and closing was refused — the audit stayed Completed while its finding's action is unverified |
+| **Training** | Certificate register renders; the competency matrix shows 75% with real gaps; certificate verification returns the correct verdict for a lapsed certificate |
+| **Notifications** | The scheduler's output renders in the bell with real record references (CA-511 due in 7 days, three overdue inspections, four lapsed competencies), correctly scoped to the current workspace |
+| **Tenant switching** | Switching to Kenyalang changes every figure: 2 open incidents, 60% compliance, 79% audit readiness, its own priority queue |
+
+### Security, probed through HTTP with real sessions
+
+`api/scripts/security-probe.ts` — **21/21 passed**:
+
+- **Authentication (3/3)** — no token, a forged token and a token with six characters of
+  its signature altered are all rejected with 401.
+- **Tenant isolation (10/10)** — a session belonging to Borneo cannot read Kenyalang's
+  incidents, actions, permits, assets, audits, certificates, notifications, activity, sites
+  or users. Every one returns 403.
+- **Role enforcement (3/3)** — an employee cannot create a user; a safety officer cannot
+  read the admin audit log; a role asserted in the request body is ignored, because the
+  role is read from the signed token.
+- **Public surface (2/2)** — the certificate check leaks nothing beyond the document;
+  health needs no session.
+- **Input bounds (3/3)** — `pageSize=100000` is refused with 400; a SQL injection string is
+  treated as a search term and the table survives; a 200 kB body is refused with 413.
+
+Also checked by inspection: no `$queryRawUnsafe` or `$executeRawUnsafe` anywhere in
+`api/src`; one `dangerouslySetInnerHTML`, fed by a locally generated QR SVG; the three
+print helpers escape every free-text interpolation and no escaped value lands in an HTML
+attribute; Argon2id passwords; refresh tokens, API keys and webhook secrets stored only as
+SHA-256 digests; no key material in the repository; every secret required with no default,
+the process exiting at boot if one is missing; 21 admin audit-trail call sites recording
+actor, role, IP and device.
+
+### Database and migrations
+
+- All 15 migrations applied cleanly to a genuinely empty database.
+- `prisma migrate diff --exit-code` → **"No difference detected"**, exit 0. No drift.
+- A complete fresh install — `migrate deploy` → `npm run seed` → `npm run demo` — ran end
+  to end on that empty database, producing 2 companies, 9 sites, 20 employees and a
+  populated workspace.
+
+### Performance
+
+Measured with `perf-probe.ts` (10 samples per endpoint, real sessions) and `query-probe.ts`
+(SQL counted from Prisma's event stream).
+
+- **No N+1 anywhere.** Query counts are identical at 12 rows and at 100 rows drawn from a
+  5,012-incident dataset: incidents 4/4, actions 4/4, permits 9/9, assets 9/9, audits 7/6,
+  certificates 3/3. Counts do not scale with data.
+- **Latency at demo scale:** worst p95 is `admin.health` at 85 ms; every other endpoint
+  under 60 ms.
+- **At a year of operations** (5,012 incidents, 4,000 actions, 1,500 permits, 900 assets,
+  6,000 certificates): worst service-level operation is `training.certificates` at 111 ms.
+- **Pagination bounds** enforced by zod on every list route.
+- Loading 2,000 rows in the browser: 59,084 DOM nodes, 59 MB heap, input still responsive.
+
+### Test suite
+
+298 API tests (12 of them the new scheduler suite, all against real PostgreSQL), 36 web
+tests, both typechecks clean, both builds succeed. The API suite was run four consecutive
+times to confirm the cross-file flakiness introduced by a global sweep was genuinely fixed
+rather than intermittent.
+
+---
+
+## Known limitations
+
+None of these prevents a supervised pilot. All should be said out loud rather than
+discovered.
+
+| Limitation | Detail | Mitigation for the pilot |
 |---|---|---|
-| Incidents (open + closed) | 12 | 4 |
-| Corrective actions | 14 | 4 |
-| Permits | 6 | 1 |
-| Assets | 10 | 2 |
-| Inspections | 20 | 4 |
-| Audits | 5 | 2 |
-| Audit findings | 3 | 1 |
-| Compliance obligations | 8 | 5 |
-| Controlled documents | 6 | 2 |
-| Certificates | 73 | 3 |
-| Employees | 18 | 2 |
-| Platform users | 7 | 2 |
+| **Docker images never built** | No Docker on the development machine. The Dockerfiles, compose file and nginx config are written and the commands they run are individually verified — `npm ci`, `prisma generate`, `npm run build` and `npm start` all work — but `docker build` has never executed | Build both images and bring the stack up once before the customer touches it. Budget half a day for the first attempt |
+| **Lists cap at 2,000 rows** | Beyond that the list stops and logs how many records are unreachable. A pilot customer will not approach it; search and filters run server-side, so any single record remains findable | Real pagination before a customer exceeds it |
+| **Single instance only** | The scheduler runs in the API process. Two instances would each sweep — the dedupe makes that harmless rather than duplicating, but it is not the intended shape | `SCHEDULER_ENABLED=false` on all but one, or stay at one |
+| **Backups are restore points, not disaster recovery** | The in-app snapshot is a JSON blob in the same database, covering 12 parent tables and none of their children. The screen no longer claims otherwise | `pg_dump` on a schedule to storage off the host. `postgresql16-client` is in the API image for exactly this |
+| **Notifications are still client-emitted for user actions** | Time-based reminders now come from the scheduler and are reliable. A notification for someone else's action still depends on the actor's browser making a second call | The reminders that matter — overdue, escalation, expiry — are server-side |
+| **Trend charts and Safety Score are illustrative** | The 12-month series and the composite score are generated curves. Every KPI tile, the priority queue, the insights panel and the site map are real | Say so. Do not read the score's tooltip aloud |
+| **Permission matrix is display-only** | Authorisation switches on `Membership.role` in the services; editing a cell changes nothing | Say so if asked. A customer must not believe they can self-serve a custom role |
+| **`sameSite: strict` refresh cookie** | Correct when web and API share a registrable domain. If they do not, no session survives a reload | Settled by deployment topology — put both under one domain. `.env.prod.example` says this |
+| **Global search does nothing** | The header box reads "coming with data modules" | Expect it to be the first thing anyone clicks |
+| **No email delivery** | Notifications are in-app only | The bell is checked daily by the roles that matter in a pilot |
 
-It is shaped around the moments worth showing rather than volume:
+---
 
-- **A permit inside its final hour.** The board sorts it to the top with a live countdown. If
-  the meeting overruns it lapses on screen, which demonstrates derived status better than any
-  explanation. A second hot-work permit has three hours left as a safety margin.
-- **One genuinely overdue corrective action**, high priority, four days late, with an owner.
-- **Two high-risk incidents with no investigator** — the alarm Mission Control exists to raise.
-- **An audit that scored 78% and cannot close** because one Major finding's action is unverified.
-- **75% training compliance** with six people carrying a lapsed mandatory certificate and
-  eleven certificates inside the renewal window.
-- **Three assets past their inspection date**, one carrying a defect from a failed check.
-- **A second tenant with entirely different numbers**, so switching workspaces proves isolation.
+## Recommended deployment
 
-Nothing in it is visibly tagged as demo data. The tidy pass also archives the 500 load-test
-incidents that made the register unusable — archived rather than deleted, so a single `UPDATE`
-restores them.
-
-```bash
-cd safeops-platform/api && npm run demo:reset
+```
+                    TLS terminated here (LB, Caddy, or existing nginx)
+                                    │
+                    ┌───────────────┴───────────────┐
+                    │                               │
+              safeops-web                     safeops-api
+              nginx:8080                      node:4000, one instance
+              static bundle                   scheduler runs in-process
+                                                    │
+                                              postgres:16
+                                              named volume + pg_dump to
+                                              off-host storage
+                                                    │
+                                              uploads volume
+                                              (incident evidence)
 ```
 
----
+Both containers behind whatever already terminates TLS. Postgres is not published — only
+the API reaches it, on the internal network. Two named volumes matter: the database and the
+uploads. Losing either loses customer data.
 
-## 3. Suggested first-pilot user journey
+```bash
+cp .env.prod.example .env.prod   # then fill it in: npm run keygen for the JWT keys
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+```
 
-Forty minutes. The order matters: lead with the thing that has no substitute, and let each
-screen answer the question the previous one raised.
+**Expected concurrent users: 50–100 comfortably on 2 vCPU / 4 GB.** Grounded in the
+measurements above, not a guess: the heaviest screen issues nine requests, the slowest is
+85 ms p95, and a year of operations moves the worst operation to 111 ms. A pilot of 20–40
+named users at one site sits far inside that. The first thing to run out is the Postgres
+connection pool, not CPU.
 
-**1 · Mission Control (5 min).** Sign in as Marcus Tan, HSE Manager. Do not narrate the tiles.
-Point at the priority queue: *"This is what my morning looks like. Everything here is a real
-record — I can open any of them."* Open the overdue action. Then the site map: Bintulu is red
-and the reason is on the card.
+### Backup strategy
 
-**2 · The permit that is about to expire (8 min).** Click through from the queue. Show the
-precaution checklist, the gas test that had to pass before issue, the countdown. Then attempt
-to close it while an isolation is still applied and let the server refuse. **This is the
-strongest moment in the demo** — it is the difference between a form and a control, and it is
-the thing a paper system cannot do. Do not rush it.
+1. `pg_dump` nightly to storage off this host — that is the backup. Restore is
+   `pg_restore`, and it must be practised once before the pilot begins, not during it.
+2. The uploads volume backed up on the same schedule. Attachment rows without their files
+   are worse than neither.
+3. The in-app restore point is for undoing a bad import inside the product. It is not
+   disaster recovery and the screen no longer suggests it is.
 
-**3 · Report an incident, live (8 min).** Switch to Amirul Hassan, Site Safety Officer. Report
-something from the room — a trip hazard, a near miss the visitor mentions. Watch it appear
-with a real INC number. Advance it one stage, raise a corrective action, assign it. Then jump
-back to Mission Control and show the counters moved.
+### Monitoring
 
-**4 · An audit that will not close (6 min).** Open the contractor audit at 78%. Show the Major
-finding and its unverified action. *"This audit stays open until someone verifies that work.
-Not because of a policy document — because the system refuses."*
+`/health` for liveness and `/health/ready` for readiness — the latter checks the database
+and returns 503 when it is unreachable. Both are exempt from rate limiting so an
+orchestrator can never be throttled into declaring the service dead. The API emits one JSON
+line per request with method, path, status, duration and the acting user id; no body, query
+string or header is logged, because those carry the customer's safety data. For a pilot,
+ship those to a file and read them when something is reported.
 
-**5 · Competency (5 min).** The matrix, filtered to the gaps. Six people are not competent for
-their role today. Scan a certificate's QR code with a phone and let the verification page load
-with no login. Auditors and clients can check a certificate without being given access.
+### Recovery
 
-**6 · Switch tenants (3 min).** Change to Kenyalang Construction. Every figure changes. *"This
-is a different customer. Same platform, no shared data — the separation is enforced in the
-database, not in the interface."*
-
-**7 · Their turn (5 min).** Hand over the laptop. Let them click. This is where you find out
-what they actually care about, and everything before it was setup for this.
-
-**Close on the pilot ask, not on features.** One site, one month, their real incidents. What
-you need from them is a named HSE owner and their existing incident form.
-
----
-
-## 4. Remaining risks
-
-Ordered by what would hurt most, soonest.
-
-### Would break a pilot
-
-| Risk | Detail | Fix |
-|---|---|---|
-| **No scheduler** | The UI promises reminders at 7/3/1 days, escalation at T+5 and T+10, certificate expiry scans and daily backups. Nothing runs them. A pilot customer will notice within a fortnight that no email ever arrived. | A cron worker calling existing service methods. The logic is written; only the trigger is missing. |
-| **Uploads on local disk** | Incident attachments write to `api/uploads/`. On a container platform that is wiped on redeploy, and it is not shared between instances. | S3-compatible object storage, or a mounted volume plus a single instance for the pilot. |
-| **`sameSite: strict` refresh cookie** | Correct for a same-site deployment. If the web app and API end up on different registrable domains (`*.vercel.app` and `*.onrender.com`, say), the browser will never send the refresh cookie and no session will survive a reload. | Deploy both under one domain, or relax to `sameSite: none; secure` with the CORS allowlist doing the work. Decide before the first deploy, not after. |
-
-### Would embarrass in a demo
-
-| Risk | Detail | Status |
-|---|---|---|
-| **12-month trend charts are illustrative** | Mission Control's incident/near-miss/LTI series and the safety-score sparklines come from seeded curves. The headline near-miss figure is now real and the sparkline is rebased to end on it, but the shape is invented. | Unfixed. There is no history endpoint. Low risk — a new customer has no history either — but do not point at the curve and attribute meaning to it. |
-| **Safety Score and its deltas** | The composite score and every "vs last month" delta are seeded. The definition tooltip describes a formula that is not computed. | Unfixed. If asked how the score is calculated, say it is being finalised with pilot customers. Do not read the tooltip aloud. |
-| **Global search** | The header search box reads "coming with data modules" and does nothing. | Unfixed, and honestly labelled. Expect it to be the first thing a visitor clicks. |
-
-### Would matter to a security-minded buyer
-
-| Risk | Detail | Status |
-|---|---|---|
-| **No rate limiting outside auth** | `/auth/login` and `/auth/refresh` are limited. The eight module routers are not. Every endpoint requires a valid session, so this is a denial-of-service and scraping concern rather than an access one. | Unfixed. One `express-rate-limit` applied at the app level would close it. |
-| **Permission matrix is display-only** | Documented in the schema and above. A buyer who edits a cell and expects an endpoint to close will be wrong. | By design, but say it out loud rather than being asked. |
-| **CSV import size** | The admin importer accepts up to 500,000 characters by validation, but `express.json` caps the body at 100 kB, so anything larger fails with a 413 and a confusing message. | Unfixed. Cosmetic mismatch — align the two bounds. |
-| **Dev cluster encoding** | The local PostgreSQL cluster was initialised under a Windows locale and is WIN1252, not UTF-8. Production will be UTF-8. Stored text avoids characters that differ (`O2`, not `O₂`), and `scripts/dev.mjs` now pins `--encoding=UTF8` for new clones. | Contained. The existing cluster is deliberately not rebuilt — it holds local development data. |
-
-### Accepted, low
-
-- Three backup rows and one invited-but-not-activated user (Nadia Rahim) remain in the demo
-  tenant. Both look like normal usage and are worth keeping.
-- Chunk sizes exceed Vite's 500 kB warning. The charts bundle is 525 kB raw, 156 kB gzipped.
-  Fine over broadband; worth code-splitting before a mobile-heavy rollout.
+| Failure | Response |
+|---|---|
+| API crashes | `restart: unless-stopped` restarts it. Migrations run before it serves, so it cannot come up against a schema it does not expect |
+| Database unreachable | `/health/ready` returns 503 and the orchestrator stops routing. The API does not need a restart when the database returns |
+| Bad deploy | Rebuild the previous image tag. Migrations are additive — none of the 15 drops a table or a column |
+| Customer error (bad import, wrong bulk edit) | The in-app restore point, taken automatically before any restore |
+| Host loss | `pg_restore` the nightly dump plus the uploads volume onto a new host, then bring the stack up |
 
 ---
 
-## 5. Final fixes before the first customer meeting
+## Before the customer sees it
 
-Nothing on this list blocks the meeting. Ordered by value per hour.
-
-**Before the meeting (about an hour):**
-
-1. Run `npm run demo:reset` on the demo machine and walk the journey end to end once. Any
-   surprise you find in rehearsal is one the customer does not.
-2. Decide the answer to *"what happens when someone doesn't do their action?"* The escalation
-   is described in the UI and does not run yet. Have the sentence ready.
-3. Disable sleep on the demo laptop. Postgres and the API do not recover from a suspend
-   cleanly, and recovering takes longer than the room's patience.
-
-**Before a pilot customer touches it (roughly a week):**
-
-4. Build the scheduler. It is the single largest gap between what the interface promises and
-   what the system does.
-5. Move uploads to object storage.
-6. Settle the cookie and domain question, then deploy once and verify a session survives a
-   reload on the real domain.
-7. Add app-level rate limiting.
-
-**Before a paying customer (later):**
-
-8. Compute the safety score, or remove it. A headline number nobody can explain is worse than
-   no headline number.
-9. Real 12-month trends once a tenant has 12 months.
-10. Wire the permission matrix to enforcement, or relabel it as documentation.
+1. **Build and run the images once.** The single largest untested step.
+2. **Practise a restore.** `pg_dump`, drop, `pg_restore`, sign in. A backup nobody has
+   restored is a hope.
+3. **Decide the domain.** Web and API under one registrable domain, or the refresh cookie
+   will not be sent.
+4. **Have an answer for the scheduler.** It runs every 15 minutes in the API. If they ask
+   what happens when the process is down, the answer is that the sweep is idempotent and
+   catches up on the next start — which is true, and verified.
 
 ---
 
-## What was fixed to get here
+## Two corrections to the 29 July report
 
-For the record, the pilot-hardening pass found and closed:
-
-- Mission Control's priority queue and insights panel asserted specific facts about records
-  that did not exist (`CA-440`, `PTW-1183`, "night-shift incidents up 18%") beneath a footnote
-  claiming they were generated from the workspace's own data. Both now derive from live rows.
-- The site risk map kept seeded per-site counts while the KPI tiles read live, so one screen
-  could report one overdue action for the company and five for a single site.
-- `listActions` dropped the `siteId` the server sends, leaving every row in the corrective
-  action register unattributed and the site filter matching nothing.
-- The assignee directory spanned every company in the fixture set, so Borneo's "assign owner"
-  dropdown listed Kenyalang's staff.
-- The admin console formatted a never-run job's null timestamp as a date — "ran 20663d ago" —
-  beside a green OK.
-- Four client methods (`addIncidentAction`, `updateIncidentAction`, `addIncidentAttachment`,
-  `capaAnalytics`) still wrote to localStorage despite the server endpoints existing.
-- A production build with no `VITE_API_BASE_URL` fell back to in-browser mock authentication.
-  It now fails closed.
+- It described a demo beat where scanning a certificate QR code opens a verification page
+  with no login. **There is no public verification page.** The API endpoint is public; the
+  web app offers verification only to signed-in users from the Certificates panel, and the
+  QR labels point at the asset profile. Do not plan a demo around it.
+- It listed the four blockers as the whole of what stood between the product and a pilot.
+  Walking the workflows found three more, one of them a security issue. The lesson is in
+  the audit's own method section: reading code finds the problems you can imagine.
