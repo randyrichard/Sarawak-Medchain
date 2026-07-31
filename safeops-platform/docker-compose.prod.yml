@@ -12,10 +12,30 @@
 # load balancer, Caddy, or an nginx you already run. Rolling a certificate story into a
 # pilot compose file is how you end up debugging ACME instead of the product.
 
+# Every service uses this. Docker's json-file driver is unbounded by default: the API
+# writes one line per request, so a busy day or a retry storm fills the disk, and a full
+# disk stops PostgreSQL. Three files of 20 MB caps each service at 60 MB.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: '20m'
+    max-file: '3'
+
 services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
+    logging: *logging
+    # max_connections must exceed what every API instance's pool can ask for, plus room
+    # for pg_dump and a psql session during an incident. See connection_limit below.
+    command:
+      - postgres
+      - -c
+      - max_connections=100
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - log_min_duration_statement=1000
     environment:
       POSTGRES_USER: ${POSTGRES_USER:?set POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
@@ -39,13 +59,19 @@ services:
       context: .
       dockerfile: api/Dockerfile
     restart: unless-stopped
+    logging: *logging
     depends_on:
       db:
         condition: service_healthy
     environment:
       NODE_ENV: production
       PORT: 4000
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-safeops}?schema=public
+      # connection_limit is explicit on purpose. Prisma otherwise sizes the pool from the
+      # host's CPU count (cores × 2 + 1), so the same image quietly opens 17 connections on
+      # an 8-core box and 65 on a 32-core one — enough for two instances to exhaust
+      # PostgreSQL's 100 and lock everyone out. pool_timeout bounds how long a request
+      # waits for a free connection instead of hanging.
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-safeops}?schema=public&connection_limit=${DB_POOL_SIZE:-20}&pool_timeout=15
       JWT_PRIVATE_KEY_B64: ${JWT_PRIVATE_KEY_B64:?run npm run keygen}
       JWT_PUBLIC_KEY_B64: ${JWT_PUBLIC_KEY_B64:?run npm run keygen}
       CORS_ORIGINS: ${CORS_ORIGINS:?set the web origin}
@@ -54,6 +80,7 @@ services:
       REFRESH_TOKEN_TTL_DAYS: ${REFRESH_TOKEN_TTL_DAYS:-30}
       SCHEDULER_ENABLED: 'true'
       SCHEDULER_INTERVAL_MIN: ${SCHEDULER_INTERVAL_MIN:-15}
+      RATE_LIMIT_PER_MIN: ${RATE_LIMIT_PER_MIN:-3000}
       UPLOAD_DIR: /data/uploads
     volumes:
       - safeops_uploads:/data/uploads
@@ -67,6 +94,7 @@ services:
       args:
         # Baked into the bundle at build time, so changing it requires a rebuild.
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:?set the API URL the browser will call}
+    logging: *logging
     restart: unless-stopped
     depends_on:
       - api

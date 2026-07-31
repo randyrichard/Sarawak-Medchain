@@ -38,6 +38,15 @@ const login = async (email: string) => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password: PW }),
   })
+  if (r.status === 429) {
+    console.error(
+      `\nCannot start: the login throttle is exhausted (20 attempts per 15 minutes per IP).\n` +
+      `That is the limiter working, not a finding — but the probe cannot run behind it.\n` +
+      `Restart the API to clear the in-memory counter, then re-run:\n` +
+      `  docker compose -f docker-compose.prod.yml restart api\n`,
+    )
+    process.exit(1)
+  }
   if (!r.ok) throw new Error(`login ${email}: ${r.status}`)
   return {
     token: ((await r.json()) as { accessToken: string }).accessToken,
@@ -305,13 +314,27 @@ console.log('\n─── Stored XSS ───')
 }
 
 // ── Report ───────────────────────────────────────────────────────────────────
-const failed = results.filter((r) => !r.pass)
+//
+// A check that could not run is excluded from the denominator rather than counted as a
+// pass. Reporting "18/18 repelled" when two never executed is the exact failure this
+// probe exists to catch elsewhere, and the headline is the part anyone actually reads.
+const skipped = results.filter((r) => r.untested)
+const executed = results.filter((r) => !r.untested)
+const failed = executed.filter((r) => !r.pass)
 const bySeverity = (s: Result['severity']) => failed.filter((f) => f.severity === s)
 
 console.log('\n' + '─'.repeat(78))
-console.log(`${results.length - failed.length}/${results.length} attacks repelled`)
+console.log(`${executed.length - failed.length}/${executed.length} attacks repelled`)
+
+if (skipped.length) {
+  console.log(`\n${skipped.length} CHECK(S) DID NOT RUN — this is not a pass:`)
+  for (const s of skipped) console.log(`  ${s.name}  (${s.detail})`)
+}
 for (const s of ['critical', 'high', 'medium'] as const) {
   const f = bySeverity(s)
   if (f.length) console.log(`${s.toUpperCase()}: ${f.map((x) => `${x.name} (${x.detail})`).join(' · ')}`)
 }
-if (failed.length) process.exitCode = 1
+
+// A skipped check is not a failure, but it is not a clean run either — exit non-zero so a
+// deploy script cannot treat an incomplete probe as a green light.
+if (failed.length || skipped.length) process.exitCode = 1
