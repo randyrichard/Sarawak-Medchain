@@ -43,13 +43,14 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [remember, setRemember] = useState(true)
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     setBusy(true)
     setError(null)
     try {
-      await login(email, password)
+      await login(email, password, remember)
       navigate(await destination(from), { replace: true })
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong. Try again.')
@@ -85,7 +86,11 @@ export function LoginPage() {
           value={password} onChange={(e) => setPassword(e.target.value)} required
         />
         <div className="flex items-center justify-between">
-          <Checkbox label="Keep me signed in" defaultChecked />
+          <Checkbox
+            label="Keep me signed in"
+            checked={remember}
+            onChange={(e) => setRemember(e.target.checked)}
+          />
           <Link to="/forgot-password" className="text-xs font-semibold text-accent hover:underline">
             Forgot password?
           </Link>

@@ -13,7 +13,8 @@ type Status = 'restoring' | 'anonymous' | 'authenticated'
 interface AuthValue {
   status: Status
   user: User | null
-  login: (email: string, password: string) => Promise<void>
+  /** `rememberMe` false makes the refresh cookie last only as long as the browser is open. */
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>
   logout: () => Promise<void>
   /** True when authentication is served by the real API rather than the mock client. */
   backend: boolean
@@ -74,11 +75,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => { cancelled = true }
   }, [])
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string, rememberMe = true) => {
     // Whoever was signed in before, their cached preferences must not leak into this session.
     clearPreferences()
     if (BACKEND) {
-      const u = await authApi.login(email, password)
+      const u = await authApi.login(email, password, rememberMe)
       markFreshLogin()
       setUser(u)
       setAuthenticatedRoles(u.memberships.map((m) => m.role))

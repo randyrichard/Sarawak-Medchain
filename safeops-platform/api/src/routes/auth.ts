@@ -16,14 +16,17 @@ const REFRESH_COOKIE = 'safeops_rt'
  * an XSS bug then cannot exfiltrate a long-lived session. `sameSite: strict` keeps it
  * off cross-site requests, and `secure` is required once served over HTTPS.
  */
-function refreshCookieOptions() {
+function refreshCookieOptions(remember = true) {
   return {
     httpOnly: true,
     secure: env.isProd,
     sameSite: 'strict' as const,
     path: '/auth',
     domain: env.COOKIE_DOMAIN,
-    maxAge: env.REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000,
+    // Without "keep me signed in" the cookie is omitted a maxAge, making it a session
+    // cookie the browser drops when it closes. That is the point of the choice on a
+    // shared site-office machine, so it must reach the cookie rather than being decoration.
+    ...(remember ? { maxAge: env.REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000 } : {}),
   }
 }
 
@@ -60,6 +63,8 @@ const refreshLimiter = rateLimit({
 const credentials = z.object({
   email: z.string().email().max(320),
   password: z.string().min(1).max(200),
+  // Absent means "keep me signed in", which is what the login form defaults to.
+  rememberMe: z.boolean().optional(),
 })
 
 authRouter.post('/login', loginLimiter, async (req, res, next) => {
@@ -71,7 +76,7 @@ authRouter.post('/login', loginLimiter, async (req, res, next) => {
     const { accessToken, accessExpiresAt, refreshToken, user } = await auth.login(
       parsed.data.email, parsed.data.password, ctxOf(req),
     )
-    res.cookie(REFRESH_COOKIE, refreshToken, refreshCookieOptions())
+    res.cookie(REFRESH_COOKIE, refreshToken, refreshCookieOptions(parsed.data.rememberMe ?? true))
     res.json({ accessToken, accessExpiresAt, user })
   } catch (e) {
     next(e)

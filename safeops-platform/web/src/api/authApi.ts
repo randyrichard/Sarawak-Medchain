@@ -128,10 +128,10 @@ function toUser(payload: AuthPayload['user'], roles: Membership[]): User {
 }
 
 export const authApi = {
-  async login(email: string, password: string): Promise<User> {
+  async login(email: string, password: string, rememberMe = true): Promise<User> {
     const data = await request<AuthPayload>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, rememberMe }),
     })
     setAccessToken(data.accessToken, data.accessExpiresAt)
     // Roles are never taken from the login response body — they are read back from the

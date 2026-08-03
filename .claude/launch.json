@@ -20,13 +20,19 @@
       "port": 5173
     },
     {
-      "name": "safeops-app",
+      "name": "safeops",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "C:/Users/randyrichardd/Desktop/sarawak-medchain/safeops-platform"],
+      "port": 5181
+    },
+    {
+      "name": "safeops-web-only",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--prefix", "C:/Users/randyrichardd/Desktop/sarawak-medchain/safeops-platform/web"],
       "port": 5181
     },
     {
-      "name": "safeops",
+      "name": "safeops-legacy-prototype",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--prefix", "C:/Users/randyrichardd/Desktop/sarawak-medchain/safeops"],
       "port": 5180
