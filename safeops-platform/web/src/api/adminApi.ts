@@ -130,8 +130,9 @@ export const adminApi = {
     }))
   },
 
+  /** The raw token is returned once and never again — the server stores only its digest. */
   async resetPassword(companyId: string, id: string) {
-    return request<{ token: string }>(`/admin/users/${id}/reset-password`, {
+    return request<{ token: string; expiresInMinutes: number }>(`/admin/users/${id}/reset-password`, {
       method: 'POST', body: JSON.stringify({ companyId }),
     })
   },

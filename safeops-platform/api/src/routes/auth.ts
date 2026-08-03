@@ -4,9 +4,11 @@ import { z } from 'zod'
 import { env } from '../env.js'
 import { prisma } from '../lib/prisma.js'
 import { AuthError, AuthService, type RequestContext } from '../lib/authService.js'
+import { AccountService } from '../lib/accountService.js'
 import { requireAuth } from '../middleware/requireAuth.js'
 
 const auth = new AuthService(prisma)
+const account = new AccountService(prisma)
 export const authRouter = Router()
 
 const REFRESH_COOKIE = 'safeops_rt'
@@ -103,6 +105,47 @@ authRouter.post('/logout', async (req, res, next) => {
     await auth.logout(req.cookies?.[REFRESH_COOKIE], req.body?.allDevices === true)
     res.clearCookie(REFRESH_COOKIE, { ...refreshCookieOptions(), maxAge: undefined })
     res.status(204).end()
+  } catch (e) {
+    next(e)
+  }
+})
+
+/**
+ * Reset redemption is unauthenticated by necessity — the whole point is that the caller
+ * cannot sign in. The token is the only credential, so this is throttled harder than
+ * login: an attacker here is guessing a 32-byte value, and the limit removes any
+ * remaining value in trying.
+ */
+const resetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 15,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'rate_limited', message: 'Too many attempts. Try again shortly.' },
+})
+
+const resetBody = z.object({
+  token: z.string().min(10).max(200),
+  newPassword: z.string().min(1).max(200),
+})
+
+authRouter.post('/reset-password', resetLimiter, async (req, res, next) => {
+  try {
+    const parsed = resetBody.safeParse(req.body)
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'validation', message: 'A reset token and new password are required.' })
+    }
+    await account.redeemPasswordReset(parsed.data.token, parsed.data.newPassword)
+    res.status(204).end()
+  } catch (e) {
+    next(e)
+  }
+})
+
+/** Lets the reset page tell the user a link is dead before they type a password twice. */
+authRouter.get('/reset-password/:token', resetLimiter, async (req, res, next) => {
+  try {
+    res.json({ valid: await account.isResetTokenValid(req.params.token) })
   } catch (e) {
     next(e)
   }

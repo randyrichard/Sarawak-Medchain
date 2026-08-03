@@ -120,7 +120,7 @@ export function NotificationsPage() {
       </Card>
 
       <p className="mt-3 text-2xs text-muted">
-        Delivery preferences (email digests, quiet hours, escalation ladders) activate with the notification engine in Sprint 2.
+        Notifications are raised in-app as permits, inspections and actions fall due.
       </p>
     </>
   )

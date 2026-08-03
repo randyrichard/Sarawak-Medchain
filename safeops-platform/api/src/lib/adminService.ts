@@ -9,6 +9,7 @@ import {
   BACKGROUND_JOBS, CONNECTORS, MODULE_LABEL, RBAC_ACTIONS, RBAC_MODULES, SYSTEM_ROLES,
   type PermissionMatrix, type RbacAction, type RbacModule,
 } from './adminCatalog.js'
+import { generateResetToken, hashResetToken, resetTokenExpiry, RESET_TOKEN_TTL_MIN } from './tokens.js'
 
 export class AdminError extends Error {
   constructor(public code: string, message: string, public status = 400) {
@@ -301,23 +302,48 @@ export class AdminService {
    * existing password is invalidated by requiring a change, but is not replaced with
    * anything the administrator knows.
    */
+  /**
+   * Issues a single-use reset link for another user.
+   *
+   * The returned token is the only time the raw value exists — the row stores its digest
+   * — so the caller must hand it over immediately. It previously returned a random string
+   * that was never persisted, which meant the "single-use link" in the admin console was
+   * decorative and a user who had forgotten their password had no way back in at all.
+   */
   async resetPassword(caller: Caller, companyId: string, ctx: AdminContext, id: string) {
     this.requireAdmin(caller, companyId)
     const target = await this.getUser(caller, companyId, id)
 
-    await this.db.user.update({
-      where: { id },
-      data: { mustChangePassword: true },
-    })
-    // Revoking live sessions is the point of a reset — otherwise a compromised session
-    // survives the very action taken to stop it.
-    await this.db.refreshToken.updateMany({
-      where: { userId: id, revokedAt: null },
-      data: { revokedAt: new Date(), revokedReason: 'admin_password_reset' },
+    const token = generateResetToken()
+
+    await this.db.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id },
+        data: { mustChangePassword: true },
+      })
+      // Revoking live sessions is the point of a reset — otherwise a compromised session
+      // survives the very action taken to stop it.
+      await tx.refreshToken.updateMany({
+        where: { userId: id, revokedAt: null },
+        data: { revokedAt: new Date(), revokedReason: 'admin_password_reset' },
+      })
+      // Supersede any earlier link, so issuing a new one invalidates the old.
+      await tx.passwordResetToken.updateMany({
+        where: { userId: id, usedAt: null },
+        data: { usedAt: new Date() },
+      })
+      await tx.passwordResetToken.create({
+        data: {
+          userId: id,
+          tokenHash: hashResetToken(token),
+          expiresAt: resetTokenExpiry(),
+          issuedBy: caller.userId,
+        },
+      })
     })
 
-    await this.log(caller, companyId, ctx, 'Sent password reset', 'admin', target.email)
-    return { token: randomBytes(16).toString('base64url') }
+    await this.log(caller, companyId, ctx, 'Issued password reset link', 'admin', target.email)
+    return { token, expiresInMinutes: RESET_TOKEN_TTL_MIN }
   }
 
   async forcePasswordReset(caller: Caller, companyId: string, ctx: AdminContext, id: string) {
@@ -645,11 +671,7 @@ export class AdminService {
       const cfg = byId.get(spec.id)
       return {
         ...spec,
-        status: spec.status === 'coming_soon'
-          ? 'coming_soon'
-          : cfg?.connected
-            ? 'connected'
-            : 'available',
+        status: cfg?.connected ? 'connected' : 'available',
         connectedAt: cfg?.connectedAt ?? null,
         connectedBy: cfg?.connectedBy ?? null,
         // Presence only — the console needs to know a secret is set, never what it is.
@@ -672,9 +694,6 @@ export class AdminService {
     this.requireAdmin(caller, companyId)
     const spec = CONNECTORS.find((c) => c.id === connectorId)
     if (!spec) throw new AdminError('not_found', 'Unknown integration.', 404)
-    if (spec.status === 'coming_soon') {
-      throw new AdminError('validation', 'This integration is not available yet.')
-    }
 
     if (connected) {
       const missing = spec.fields.filter((f) => !config?.[f.key]?.trim())

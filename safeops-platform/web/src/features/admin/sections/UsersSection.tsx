@@ -27,6 +27,9 @@ export function UsersSection() {
   const [detailId, setDetailId] = useState<string | null>(null)
   const [newOpen, setNewOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
+  // The raw reset token exists exactly once, in this response. If the admin closes the
+  // dialog without copying it, it is gone and they must issue another.
+  const [resetLink, setResetLink] = useState<{ email: string; url: string; minutes: number } | null>(null)
 
   const refresh = useCallback(() => {
     if (!company) return
@@ -51,6 +54,27 @@ export function UsersSection() {
       if (msg) { setFlash(msg); setTimeout(() => setFlash(null), 2500) }
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Action failed.')
+    }
+  }
+
+  /**
+   * Issues a reset link and shows it once.
+   *
+   * There is no email transport yet, so the admin passes the link on themselves. Saying
+   * "reset sent" while sending nothing is how the previous version left users stranded.
+   */
+  const issueReset = async (u: AdminUser) => {
+    setError(null)
+    try {
+      const { token, expiresInMinutes } = await api.adminResetPassword(companyId, u.id, actor)
+      setResetLink({
+        email: u.email,
+        url: `${window.location.origin}/reset-password?token=${token}`,
+        minutes: expiresInMinutes,
+      })
+      refresh()
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Could not issue a reset link.')
     }
   }
 
@@ -125,7 +149,7 @@ export function UsersSection() {
                         align="end"
                         trigger={() => <button className="rounded-lg border p-1.5 text-ink-2 hover:bg-accent-soft" aria-label="User actions"><MoreHorizontal size={14} /></button>}
                       >
-                        <DropdownItem icon={<KeyRound size={14} />} onSelect={() => void run(() => api.adminResetPassword(companyId, u.id, actor), `Password reset sent to ${u.email}`)}>Send password reset</DropdownItem>
+                        <DropdownItem icon={<KeyRound size={14} />} onSelect={() => void issueReset(u)}>Issue reset link</DropdownItem>
                         <DropdownItem icon={<ShieldCheck size={14} />} onSelect={() => void run(() => api.adminToggleMfa(companyId, u.id, actor), u.mfaEnabled ? 'MFA disabled' : 'MFA enabled')}>{u.mfaEnabled ? 'Disable MFA' : 'Enable MFA'}</DropdownItem>
                         <DropdownItem icon={<Play size={14} />} onSelect={() => void run(() => api.adminForcePasswordReset(companyId, u.id, actor), 'Reset forced at next login')}>Force reset at next login</DropdownItem>
                         <DropdownSeparator />
@@ -149,7 +173,63 @@ export function UsersSection() {
       <UserDetailDrawer userId={detailId} roleName={roleName} onClose={() => setDetailId(null)} />
       <NewUserDialog open={newOpen} roles={roles} sites={sites} onClose={() => setNewOpen(false)} onCreated={() => { setNewOpen(false); refresh(); setFlash('User created'); setTimeout(() => setFlash(null), 2500) }} />
       <BulkImportDialog open={importOpen} onClose={() => setImportOpen(false)} onDone={(r) => { setImportOpen(false); refresh(); setFlash(`${r.created} user(s) imported, ${r.skipped} skipped`); setTimeout(() => setFlash(null), 3000) }} />
+      <ResetLinkDialog link={resetLink} onClose={() => setResetLink(null)} />
     </div>
+  )
+}
+
+/**
+ * Shows a freshly issued reset link.
+ *
+ * Shown once and never retrievable: the server keeps only the digest, so there is no
+ * screen that can show it again. The copy button matters more than it looks — the token
+ * is 43 characters and retyping it by hand is how a locked-out user stays locked out.
+ */
+function ResetLinkDialog({
+  link, onClose,
+}: { link: { email: string; url: string; minutes: number } | null; onClose: () => void }) {
+  const [copied, setCopied] = useState(false)
+
+  const copy = async () => {
+    if (!link) return
+    try {
+      await navigator.clipboard.writeText(link.url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // Clipboard access can be refused; the link is on screen to select manually.
+      setCopied(false)
+    }
+  }
+
+  return (
+    <Dialog
+      open={!!link}
+      onClose={onClose}
+      title="Reset link issued"
+      description={link ? `Give this to ${link.email}. It works once and expires in ${link.minutes} minutes.` : undefined}
+      footer={<Button onClick={onClose}>Done</Button>}
+    >
+      {link && (
+        <div className="space-y-3">
+          <div className="rounded-lg border bg-page px-3 py-2">
+            <p className="break-all font-mono text-2xs text-ink-2">{link.url}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="secondary" onClick={() => void copy()}>
+              {copied ? 'Copied' : 'Copy link'}
+            </Button>
+            <span className="text-2xs text-muted">
+              Their existing sessions have been signed out.
+            </span>
+          </div>
+          <Alert tone="warning">
+            This is the only time the link is shown. Close this dialog and it cannot be
+            retrieved — you would need to issue a new one.
+          </Alert>
+        </div>
+      )}
+    </Dialog>
   )
 }
 

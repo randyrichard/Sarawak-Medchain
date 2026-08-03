@@ -65,3 +65,28 @@ export function refreshExpiry(): Date {
 export function newFamilyId(): string {
   return randomUUID()
 }
+
+/**
+ * Password reset links.
+ *
+ * Same shape as refresh tokens — opaque, random, stored only as a digest — because a
+ * reset link is a bearer credential that hands over an account. 32 bytes keeps it
+ * unguessable while staying short enough to paste into a chat message.
+ */
+export function generateResetToken(): string {
+  return randomBytes(32).toString('base64url')
+}
+
+export function hashResetToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex')
+}
+
+/**
+ * Deliberately short. The link travels out of band — WhatsApp, a phone call, a note —
+ * and every minute it stays valid is a minute it can be found by someone else.
+ */
+export const RESET_TOKEN_TTL_MIN = 30
+
+export function resetTokenExpiry(): Date {
+  return new Date(Date.now() + RESET_TOKEN_TTL_MIN * 60 * 1000)
+}

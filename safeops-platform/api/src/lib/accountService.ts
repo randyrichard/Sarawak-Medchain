@@ -8,7 +8,7 @@
 import { Prisma } from '@prisma/client'
 import type { PrismaClient } from '@prisma/client'
 import { hashPassword, validatePasswordStrength, verifyPassword } from './password.js'
-import { hashRefreshToken } from './tokens.js'
+import { hashRefreshToken, hashResetToken } from './tokens.js'
 
 export class AccountError extends Error {
   constructor(public code: string, message: string, public status = 400) {
@@ -191,5 +191,94 @@ export class AccountService {
     })
 
     return { revokedSessions: count }
+  }
+
+  // ── Password reset ─────────────────────────────────────────────────────────
+
+  /**
+   * Redeems an administrator-issued reset link.
+   *
+   * This is the only path back in for someone who has forgotten their password, so it is
+   * also the most attractive thing on the service to attack. The protections that matter:
+   *
+   *  - The token is looked up by SHA-256 digest. The raw value exists only in the link,
+   *    so a database dump yields nothing redeemable.
+   *  - Single-use and short-lived, checked in the same transaction that consumes it, so
+   *    two simultaneous redemptions cannot both succeed.
+   *  - Every session is revoked. Someone resetting a forgotten password may be locked out
+   *    *because* an attacker took the account; leaving those sessions alive defeats it.
+   *  - One message for expired, used, and unknown tokens: distinguishing them tells an
+   *    attacker which guesses were once real.
+   */
+  async redeemPasswordReset(rawToken: string, newPassword: string): Promise<void> {
+    const weak = validatePasswordStrength(newPassword)
+    if (weak) throw new AccountError('validation', weak)
+
+    const record = await this.db.passwordResetToken.findUnique({
+      where: { tokenHash: hashResetToken(rawToken) },
+      select: {
+        id: true, userId: true, usedAt: true, expiresAt: true,
+        user: { select: { status: true } },
+      },
+    })
+
+    const invalid = () =>
+      new AccountError('invalid_token', 'This reset link is invalid, expired or already used.', 400)
+
+    if (!record || record.usedAt || record.expiresAt.getTime() < Date.now()) throw invalid()
+    // A deactivated account must not be revivable by a link issued before it was disabled.
+    if (record.user.status === 'deactivated') throw invalid()
+
+    const passwordHash = await hashPassword(newPassword)
+
+    await this.db.$transaction(async (tx) => {
+      // Consume by id AND unused, so a concurrent redemption of the same link updates
+      // zero rows and is rejected rather than silently setting the password twice.
+      const consumed = await tx.passwordResetToken.updateMany({
+        where: { id: record.id, usedAt: null },
+        data: { usedAt: new Date() },
+      })
+      if (consumed.count === 0) throw invalid()
+
+      await tx.user.update({
+        where: { id: record.userId },
+        data: {
+          passwordHash,
+          mustChangePassword: false,
+          failedLoginCount: 0,
+          lockedUntil: null,
+          // A reset is how a locked-out user gets back in; leaving them locked would
+          // make the link useless to the very person it was issued for.
+          status: 'active',
+        },
+      })
+
+      await tx.refreshToken.updateMany({
+        where: { userId: record.userId, revokedAt: null },
+        data: { revokedAt: new Date(), revokedReason: 'password_reset' },
+      })
+
+      // Any other outstanding link for this account is now stale.
+      await tx.passwordResetToken.updateMany({
+        where: { userId: record.userId, usedAt: null },
+        data: { usedAt: new Date() },
+      })
+    })
+  }
+
+  /**
+   * Whether a link is still redeemable, so the page can say so before the user types a
+   * new password twice. Deliberately returns nothing but a boolean — echoing the account
+   * it belongs to would turn a guessed token into an email-address oracle.
+   */
+  async isResetTokenValid(rawToken: string): Promise<boolean> {
+    const record = await this.db.passwordResetToken.findUnique({
+      where: { tokenHash: hashResetToken(rawToken) },
+      select: { usedAt: true, expiresAt: true, user: { select: { status: true } } },
+    })
+    return !!record
+      && !record.usedAt
+      && record.expiresAt.getTime() > Date.now()
+      && record.user.status !== 'deactivated'
   }
 }

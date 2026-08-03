@@ -166,6 +166,23 @@ export const authApi = {
     }
   },
 
+  /**
+   * Redeems an administrator-issued reset link. Unauthenticated by design — the caller
+   * is someone who cannot sign in, and the token is the only credential.
+   */
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    await request<void>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, newPassword }),
+    })
+  },
+
+  /** Whether a link is still redeemable. Returns nothing about the account behind it. */
+  async checkResetToken(token: string): Promise<boolean> {
+    const r = await request<{ valid: boolean }>(`/auth/reset-password/${encodeURIComponent(token)}`)
+    return r.valid
+  },
+
   /** True when the access token is absent or within 60s of expiry. */
   needsRefresh(): boolean {
     return !accessToken || Date.now() > accessExpiresAt - 60_000

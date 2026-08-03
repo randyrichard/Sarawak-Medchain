@@ -158,8 +158,6 @@ function buildConnectors(): Connector[] {
       config: { channel: '#hse-alerts' }, connectedAt: daysAgo(45), connectedBy: 'Randy Richard' },
     { id: 'teams', name: 'Microsoft Teams', category: 'communication', status: 'available', description: 'Post alerts and digests to Teams channels via connectors.', capability: 'Alert routing',
       fields: [{ key: 'webhook', label: 'Channel webhook URL', placeholder: 'https://outlook.office.com/webhook/…', secret: true }] },
-    { id: 'sap', name: 'SAP', category: 'erp', status: 'coming_soon', description: 'Sync assets, work orders and cost centres with SAP PM.', capability: 'Asset & work-order sync', fields: [] },
-    { id: 'oracle', name: 'Oracle', category: 'erp', status: 'coming_soon', description: 'Bi-directional master data with Oracle EBS / Fusion.', capability: 'Master data sync', fields: [] },
     { id: 'hr', name: 'HR System (Workday / SuccessFactors)', category: 'hr', status: 'available', description: 'Import the workforce roster and keep org structure in sync.', capability: 'Employee sync',
       fields: [{ key: 'endpoint', label: 'API endpoint', placeholder: 'https://…' }, { key: 'token', label: 'API token', placeholder: '••••••••', secret: true }] },
     { id: 'rest', name: 'REST API', category: 'developer', status: 'connected', description: 'Programmatic access to every module via signed API keys.', capability: 'Full platform API',
@@ -385,15 +383,15 @@ export class AdminStore {
     return u
   }
 
-  resetPassword(id: string, actor: AdminActor): { token: string } {
+  resetPassword(id: string, actor: AdminActor): { token: string; expiresInMinutes: number } {
     this.requireAdmin(actor)
     const u = this.getUser(id)
     u.forcePasswordReset = true
     u.weakPassword = false
-    this.log(actor, 'Sent password reset', 'admin', u.email)
-    this.notify('system', `Password reset sent to ${u.email}`, 'A single-use reset link is valid for 15 minutes.')
+    this.log(actor, 'Issued password reset link', 'admin', u.email)
+    this.notify('system', `Reset link issued for ${u.email}`, 'Single-use, valid for 30 minutes.')
     this.persist()
-    return { token: Math.random().toString(36).slice(2, 10) }
+    return { token: Math.random().toString(36).slice(2, 10), expiresInMinutes: 30 }
   }
 
   forcePasswordReset(id: string, actor: AdminActor): AdminUser {
@@ -535,7 +533,6 @@ export class AdminStore {
     this.requireAdmin(actor)
     const c = this.s.connectors.find((x) => x.id === id)
     if (!c) throw new ApiError('not_found', 'Connector not found.')
-    if (c.status === 'coming_soon') throw new ApiError('validation', 'This connector is not yet available.')
     c.status = connected ? 'connected' : 'available'
     if (connected) { c.config = config ?? c.config ?? {}; c.connectedAt = now(); c.connectedBy = actor.name }
     else { c.connectedAt = undefined }

@@ -59,7 +59,10 @@ export function AccountPage() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-medium text-ink">Password</p>
-                  <p className="text-2xs text-muted">Minimum 10 characters, checked against breach lists</p>
+                  {/* States the policy the server actually enforces — see validatePasswordStrength. */}
+                  <p className="text-2xs text-muted">
+                    At least 12 characters, with an uppercase letter and a number
+                  </p>
                 </div>
                 <Button variant="secondary" size="sm" icon={<KeyRound size={13} />} onClick={() => setPwOpen(true)}>
                   Change
@@ -68,9 +71,10 @@ export function AccountPage() {
               <div className="flex items-center justify-between gap-3 border-t pt-3">
                 <div>
                   <p className="text-sm font-medium text-ink">Two-factor authentication</p>
-                  <p className="text-2xs text-muted">TOTP app support arrives with the real auth service</p>
+                  <p className="text-2xs text-muted">
+                    Enabled per account by your workspace administrator
+                  </p>
                 </div>
-                <Badge tone="neutral">Sprint 2</Badge>
               </div>
             </CardBody>
           </Card>

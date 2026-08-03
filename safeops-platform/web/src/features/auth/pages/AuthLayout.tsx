@@ -30,7 +30,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
             <li className="flex gap-2.5"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" /> Explainable safety and compliance scores</li>
             <li className="flex gap-2.5"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" /> Corrective actions that chase their owners</li>
           </ul>
-          <p className="mt-8 text-2xs text-muted">MedChain Enterprise · Sprint 1 foundation build</p>
+          <p className="mt-8 text-2xs text-muted">SafeOps · Enterprise safety intelligence</p>
         </div>
       </div>
     </div>

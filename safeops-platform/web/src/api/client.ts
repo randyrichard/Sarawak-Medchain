@@ -1,6 +1,6 @@
 // ─── API client boundary ─────────────────────────────────────────────────────
-// The ONLY seam between UI and data. Sprint 1 ships MockApiClient; the real
-// HTTP client (Sprint 2+) implements the same interface and swaps in here.
+// The ONLY seam between UI and data. The server-backed path is used whenever
+// VITE_API_BASE_URL is set; MockApiClient remains for the credential-free static demo.
 
 import { drainRows } from './paging'
 import { ApiError } from './types'
@@ -162,7 +162,7 @@ export interface ApiClient {
   adminGetUser(companyId: string, id: string): Promise<AdminUser>
   adminCreateUser(companyId: string, input: NewUserInput, actor: AdminActor): Promise<AdminUser>
   adminSetUserStatus(companyId: string, id: string, status: AdminUser['status'], actor: AdminActor): Promise<AdminUser>
-  adminResetPassword(companyId: string, id: string, actor: AdminActor): Promise<{ token: string }>
+  adminResetPassword(companyId: string, id: string, actor: AdminActor): Promise<{ token: string; expiresInMinutes: number }>
   adminForcePasswordReset(companyId: string, id: string, actor: AdminActor): Promise<AdminUser>
   adminToggleMfa(companyId: string, id: string, actor: AdminActor): Promise<AdminUser>
   adminBulkImport(companyId: string, csv: string, actor: AdminActor): Promise<{ created: number; skipped: number; errors: string[] }>

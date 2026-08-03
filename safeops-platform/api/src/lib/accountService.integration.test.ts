@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import { PrismaClient } from '@prisma/client'
 import { AccountError, AccountService } from './accountService.js'
 import { hashPassword, verifyPassword } from './password.js'
-import { hashRefreshToken } from './tokens.js'
+import { hashRefreshToken, hashResetToken } from './tokens.js'
 
 /**
  * Integration tests — these run against a REAL PostgreSQL database, not a fake.
@@ -221,5 +221,126 @@ d('AccountService — integration (real Postgres)', () => {
       data: { preferences: { landingPage: '/nowhere', defaultSiteId: 42 } },
     })
     expect(await svc.getPreferences(userId)).toEqual({ landingPage: '/', defaultSiteId: null })
+  })
+
+  // ── Password reset ─────────────────────────────────────────────────────────
+
+  /**
+   * A reset link is the one credential that hands over an account without the password,
+   * so these tests are mostly about what must NOT work.
+   */
+  describe('password reset', () => {
+    const RESET = 'ResetPassw0rdOk!'
+
+    /** Issues a link directly, as adminService does. Returns the raw token. */
+    async function issue(opts: { expiresAt?: Date; userId?: string } = {}) {
+      const raw = `reset-${Math.random().toString(36).slice(2)}-${Date.now()}`
+      await db.passwordResetToken.create({
+        data: {
+          userId: opts.userId ?? userId,
+          tokenHash: hashResetToken(raw),
+          expiresAt: opts.expiresAt ?? new Date(Date.now() + 30 * 60_000),
+          issuedBy: 'itest-admin',
+        },
+      })
+      return raw
+    }
+
+    it('sets a new password and reports the link valid beforehand', async () => {
+      const raw = await issue()
+      expect(await svc.isResetTokenValid(raw)).toBe(true)
+
+      await svc.redeemPasswordReset(raw, RESET)
+
+      const after = await db.user.findUniqueOrThrow({ where: { id: userId } })
+      expect(await verifyPassword(after.passwordHash, RESET)).toBe(true)
+      expect(await verifyPassword(after.passwordHash, CURRENT)).toBe(false)
+    })
+
+    it('cannot be redeemed twice', async () => {
+      const raw = await issue()
+      await svc.redeemPasswordReset(raw, RESET)
+
+      await expect(svc.redeemPasswordReset(raw, 'AnotherPassw0rd!')).rejects.toThrow(AccountError)
+      expect(await svc.isResetTokenValid(raw)).toBe(false)
+
+      // The first redemption stands; the second changed nothing.
+      const after = await db.user.findUniqueOrThrow({ where: { id: userId } })
+      expect(await verifyPassword(after.passwordHash, RESET)).toBe(true)
+    })
+
+    it('rejects an expired link', async () => {
+      const raw = await issue({ expiresAt: new Date(Date.now() - 60_000) })
+      expect(await svc.isResetTokenValid(raw)).toBe(false)
+      await expect(svc.redeemPasswordReset(raw, RESET)).rejects.toThrow(AccountError)
+
+      const after = await db.user.findUniqueOrThrow({ where: { id: userId } })
+      expect(await verifyPassword(after.passwordHash, CURRENT)).toBe(true)
+    })
+
+    it('rejects an unknown token', async () => {
+      expect(await svc.isResetTokenValid('never-issued-at-all')).toBe(false)
+      await expect(svc.redeemPasswordReset('never-issued-at-all', RESET))
+        .rejects.toThrow(AccountError)
+    })
+
+    it('enforces the password policy', async () => {
+      const raw = await issue()
+      await expect(svc.redeemPasswordReset(raw, 'short')).rejects.toThrow(/at least 12/i)
+      // A rejected password must not burn the link.
+      expect(await svc.isResetTokenValid(raw)).toBe(true)
+    })
+
+    it('signs out every existing session', async () => {
+      await makeSession(userId, 'fam-1')
+      await makeSession(userId, 'fam-2')
+      const raw = await issue()
+
+      await svc.redeemPasswordReset(raw, RESET)
+
+      const live = await db.refreshToken.count({ where: { userId, revokedAt: null } })
+      expect(live).toBe(0)
+    })
+
+    it('clears a forced reset and the lockout counters', async () => {
+      await db.user.update({
+        where: { id: userId },
+        data: { mustChangePassword: true, failedLoginCount: 5, lockedUntil: new Date(Date.now() + 3600_000) },
+      })
+      const raw = await issue()
+
+      await svc.redeemPasswordReset(raw, RESET)
+
+      const after = await db.user.findUniqueOrThrow({ where: { id: userId } })
+      expect(after.mustChangePassword).toBe(false)
+      expect(after.failedLoginCount).toBe(0)
+      expect(after.lockedUntil).toBeNull()
+    })
+
+    it('invalidates other outstanding links for the same account', async () => {
+      const older = await issue()
+      const newer = await issue()
+
+      await svc.redeemPasswordReset(newer, RESET)
+
+      expect(await svc.isResetTokenValid(older)).toBe(false)
+      await expect(svc.redeemPasswordReset(older, 'YetAnotherPass1!')).rejects.toThrow(AccountError)
+    })
+
+    it('refuses a link belonging to a deactivated account', async () => {
+      const raw = await issue()
+      await db.user.update({ where: { id: userId }, data: { status: 'deactivated' } })
+
+      expect(await svc.isResetTokenValid(raw)).toBe(false)
+      await expect(svc.redeemPasswordReset(raw, RESET)).rejects.toThrow(AccountError)
+    })
+
+    it('stores only a digest, never the raw token', async () => {
+      const raw = await issue()
+      const rows = await db.passwordResetToken.findMany({ where: { userId } })
+      expect(rows).toHaveLength(1)
+      expect(rows[0].tokenHash).not.toBe(raw)
+      expect(rows[0].tokenHash).toBe(hashResetToken(raw))
+    })
   })
 })

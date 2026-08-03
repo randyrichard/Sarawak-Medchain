@@ -128,7 +128,11 @@ export interface ConnectorSpec {
   name: string
   category: 'identity' | 'communication' | 'erp' | 'hr' | 'developer' | 'data'
   description: string
-  status: 'available' | 'coming_soon'
+  /**
+   * Only connectors that can actually be configured are listed. A directory advertising
+   * integrations that do not exist is a promise the product cannot keep at pilot.
+   */
+  status: 'available'
   fields: { key: string; label: string; placeholder: string; secret?: boolean }[]
 }
 
@@ -157,16 +161,6 @@ export const CONNECTORS: ConnectorSpec[] = [
     fields: [
       { key: 'webhookUrl', label: 'Connector webhook URL', placeholder: 'https://outlook.office.com/webhook/...', secret: true },
     ],
-  },
-  {
-    id: 'sap', name: 'SAP', category: 'erp', status: 'coming_soon',
-    description: 'Sync assets and work orders with plant maintenance.',
-    fields: [],
-  },
-  {
-    id: 'workday', name: 'Workday', category: 'hr', status: 'coming_soon',
-    description: 'Keep the employee roster and org structure in step with HR.',
-    fields: [],
   },
   {
     id: 'powerbi', name: 'Power BI', category: 'data', status: 'available',

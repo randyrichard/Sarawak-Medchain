@@ -62,9 +62,9 @@ export function IntegrationsSection() {
                 <Card key={c.id} className="flex flex-col p-4">
                   <div className="flex items-start justify-between">
                     <p className="text-sm font-semibold text-ink">{c.name}</p>
-                    {c.status === 'connected' ? <StatusPill kind="good" label="Connected" />
-                      : c.status === 'available' ? <Badge tone="neutral">Available</Badge>
-                      : <Badge tone="neutral">Coming soon</Badge>}
+                    {c.status === 'connected'
+                      ? <StatusPill kind="good" label="Connected" />
+                      : <Badge tone="neutral">Available</Badge>}
                   </div>
                   <p className="mt-1.5 flex-1 text-2xs leading-relaxed text-muted">{c.description}</p>
                   <p className="mt-2 text-2xs font-medium text-ink-2">{c.capability}</p>

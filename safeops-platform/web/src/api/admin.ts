@@ -99,7 +99,7 @@ export interface AuditFilters {
 
 // ─── Integrations ────────────────────────────────────────────────────────────
 
-export type ConnectorStatus = 'connected' | 'available' | 'coming_soon'
+export type ConnectorStatus = 'connected' | 'available'
 export type ConnectorCategory = 'identity' | 'communication' | 'erp' | 'hr' | 'developer' | 'data'
 
 export interface ConnectorField {

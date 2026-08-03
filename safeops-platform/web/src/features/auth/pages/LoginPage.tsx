@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { LogIn } from 'lucide-react'
 import { useAuth } from '../AuthContext'
 import { safeInternalPath } from '../safeRedirect'
@@ -91,9 +91,15 @@ export function LoginPage() {
             checked={remember}
             onChange={(e) => setRemember(e.target.checked)}
           />
-          <Link to="/forgot-password" className="text-xs font-semibold text-accent hover:underline">
-            Forgot password?
-          </Link>
+          {/*
+            Recovery is administrator-issued: an admin creates a single-use link from the
+            user console and passes it on. Self-service arrives with email delivery — until
+            then a "Forgot password?" link would lead nowhere, which is worse than saying
+            plainly who can help.
+          */}
+          <span className="text-xs text-muted">
+            Forgot it? Ask your workspace admin.
+          </span>
         </div>
         <Button type="submit" size="lg" loading={busy} icon={<LogIn size={15} />} className="w-full">
           Sign in

@@ -356,7 +356,9 @@ d('AdminService — integration (real Postgres)', () => {
     expect(actions).toContain('Invited user')
     expect(actions).toContain('Created user')
     expect(actions).toContain('Deactivated user')
-    expect(actions).toContain('Sent password reset')
+    // "Issued" rather than "Sent": there is no email transport, the admin passes the
+    // link on themselves, and the trail should say what actually happened.
+    expect(actions).toContain('Issued password reset link')
 
     // Newest first, and filterable.
     const times = entries.map((e) => e.at.getTime())
@@ -457,8 +459,20 @@ d('AdminService — integration (real Postgres)', () => {
 
     const off = await svc.setConnector(admin, COMPANY, ctx, 'slack', false)
     expect(off.status).toBe('available')
+    // The directory lists only connectors that can actually be configured, so anything
+    // else is simply unknown rather than "not available yet".
     await expect(svc.setConnector(admin, COMPANY, ctx, 'sap', true, {}))
-      .rejects.toMatchObject({ code: 'validation' })
+      .rejects.toMatchObject({ code: 'not_found' })
+  })
+
+  it('advertises no integration that cannot be connected', async () => {
+    const list = await svc.listConnectors(admin, COMPANY)
+    expect(list.length).toBeGreaterThan(0)
+    for (const c of list) {
+      expect(['connected', 'available']).toContain(c.status)
+      // An available connector with no fields could never be configured.
+      if (c.status === 'available') expect(c.fields.length).toBeGreaterThan(0)
+    }
   })
 
   // ── Security ───────────────────────────────────────────────────────────────

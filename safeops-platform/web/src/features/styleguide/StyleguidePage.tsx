@@ -16,7 +16,7 @@ export function StyleguidePage() {
       <PageHeader
         title="Design System"
         subtitle="One design language. Components consume tokens; pages consume components; nobody hardcodes hex."
-        right={<Badge tone="accent">v1 · Sprint 1</Badge>}
+        right={<Badge tone="accent">v1</Badge>}
       />
       <div className="space-y-4">
         <TokensSection />
