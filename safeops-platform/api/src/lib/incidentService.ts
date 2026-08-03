@@ -27,13 +27,69 @@ export interface ListParams {
   type?: string
   severity?: string
   stage?: string
-  status?: 'open' | 'closed' | 'high_risk' | 'all'
+  status?: IncidentStatusFilter
   siteId?: string
+}
+
+/**
+ * The status chips on the incident register.
+ *
+ * These are views over stage and age, not stored values. All seven must be understood
+ * here: an unknown one used to fail validation at the route and the list silently came
+ * back empty, which read as "the filter is broken" rather than "the server rejected it".
+ */
+export const INCIDENT_STATUS_FILTERS = [
+  'all', 'open', 'closed', 'high_risk', 'investigating', 'awaiting_review', 'overdue',
+] as const
+export type IncidentStatusFilter = (typeof INCIDENT_STATUS_FILTERS)[number]
+
+/** An open incident older than this reads as overdue. Matches the register's chip label. */
+export const OVERDUE_AFTER_DAYS = 14
+
+/**
+ * Today at UTC midnight — the boundary an action's due date is measured against.
+ *
+ * Due dates are date-only, stored at UTC midnight. Comparing them with `now` makes
+ * everything due today overdue from one second past midnight, which is why the Overdue
+ * chip and the Overdue list disagreed by exactly the actions due today.
+ */
+function startOfToday(): Date {
+  const n = new Date()
+  return new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate()))
 }
 
 const ORDERED_STAGES = [
   'reported', 'assessment', 'investigation', 'rca', 'actions', 'review', 'verification', 'closed',
 ] as const
+
+/**
+ * Stage groupings behind two of the chips. "Investigating" covers the evidence-gathering
+ * stages and "awaiting review" the two sign-off stages, so a case sitting with a reviewer
+ * is not reported as still under investigation.
+ */
+const INVESTIGATING_STAGES = ['investigation', 'rca'] as const
+const AWAITING_REVIEW_STAGES = ['review', 'verification'] as const
+
+/**
+ * Translates a status chip into a WHERE clause.
+ *
+ * Every chip except "all" narrows to something, so a filter the server does not
+ * understand can never quietly behave like "show everything".
+ */
+function statusWhere(status: IncidentStatusFilter | undefined): Prisma.IncidentWhereInput {
+  switch (status) {
+    case 'open': return { stage: { not: 'closed' } }
+    case 'closed': return { stage: 'closed' }
+    case 'high_risk': return { highRisk: true, stage: { not: 'closed' } }
+    case 'investigating': return { stage: { in: INVESTIGATING_STAGES as never } }
+    case 'awaiting_review': return { stage: { in: AWAITING_REVIEW_STAGES as never } }
+    case 'overdue': return {
+      stage: { not: 'closed' },
+      reportedAt: { lt: new Date(Date.now() - OVERDUE_AFTER_DAYS * 86400_000) },
+    }
+    default: return {}
+  }
+}
 
 export class IncidentService {
   constructor(private db: PrismaClient) {}
@@ -83,9 +139,7 @@ export class IncidentService {
       ...(p.type ? { type: p.type as never } : {}),
       ...(p.severity ? { severity: p.severity as never } : {}),
       ...(p.stage ? { stage: p.stage as never } : {}),
-      ...(p.status === 'open' ? { stage: { not: 'closed' } } : {}),
-      ...(p.status === 'closed' ? { stage: 'closed' } : {}),
-      ...(p.status === 'high_risk' ? { highRisk: true, stage: { not: 'closed' } } : {}),
+      ...statusWhere(p.status),
       ...(p.q
         ? {
             OR: [
@@ -537,7 +591,7 @@ export class IncidentService {
       ...(opts.status ? { status: opts.status as never } : {}),
       ...(opts.owner ? { owner: opts.owner } : {}),
       ...(opts.source ? { source: opts.source as never } : {}),
-      ...(opts.overdue ? { dueDate: { lt: new Date() }, status: { in: ['open', 'in_progress'] } } : {}),
+      ...(opts.overdue ? { dueDate: { lt: startOfToday() }, status: { in: ['open', 'in_progress'] } } : {}),
       // Employees and supervisors see only what they own.
       ...(['employee', 'supervisor'].includes(m.role) ? { owner: caller.name } : {}),
     }
@@ -701,7 +755,7 @@ export class IncidentService {
       this.db.correctiveAction.groupBy({ by: ['priority'], where, _count: { _all: true }, orderBy: undefined }),
       this.db.correctiveAction.groupBy({ by: ['source'], where, _count: { _all: true }, orderBy: undefined }),
       this.db.correctiveAction.count({
-        where: { ...where, status: { in: ['open', 'in_progress'] }, dueDate: { lt: new Date() } },
+        where: { ...where, status: { in: ['open', 'in_progress'] }, dueDate: { lt: startOfToday() } },
       }),
       this.db.correctiveAction.findMany({
         where: { ...where, completedAt: { not: null } },
@@ -767,7 +821,7 @@ export class IncidentService {
         this.db.incident.count({ where: base }),
         this.db.correctiveAction.count({ where: { ...actionBase, status: OPEN_ACTION } }),
         this.db.correctiveAction.count({
-          where: { ...actionBase, status: OPEN_ACTION, dueDate: { lt: new Date() } },
+          where: { ...actionBase, status: OPEN_ACTION, dueDate: { lt: startOfToday() } },
         }),
         this.db.correctiveAction.count({ where: { ...actionBase, status: 'completed' } }),
       ])

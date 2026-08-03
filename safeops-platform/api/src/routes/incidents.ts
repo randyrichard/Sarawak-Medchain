@@ -1,7 +1,9 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
-import { IncidentError, IncidentService, type Caller } from '../lib/incidentService.js'
+import {
+  INCIDENT_STATUS_FILTERS, IncidentError, IncidentService, type Caller,
+} from '../lib/incidentService.js'
 import { requireAuth } from '../middleware/requireAuth.js'
 
 const svc = new IncidentService(prisma)
@@ -26,7 +28,7 @@ const listQuery = z.object({
   type: z.string().optional(),
   severity: z.string().optional(),
   stage: z.string().optional(),
-  status: z.enum(['open', 'closed', 'high_risk', 'all']).optional(),
+  status: z.enum(INCIDENT_STATUS_FILTERS).optional(),
   siteId: z.string().optional(),
 })
 

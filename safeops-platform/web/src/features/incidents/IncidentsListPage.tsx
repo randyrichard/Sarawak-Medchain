@@ -7,7 +7,7 @@ import { INCIDENT_TYPES, STAGE_LABEL, TYPE_LABEL } from '@/api/incidents'
 import { OVERDUE_AFTER_DAYS } from '@/api/mock/incidents'
 import { useOrg } from '@/features/org/OrgContext'
 import {
-  Badge, Button, Card, DataTable, EmptyState, PageHeader, Skeleton, StatusPill, type Column,
+  Alert, Badge, Button, Card, DataTable, EmptyState, PageHeader, Skeleton, StatusPill, type Column,
 } from '@/components/ui'
 import { daysOpen, severityKind, STAGE_COLOR, TYPE_ICON } from './lib'
 import { cn } from '@/lib/cn'
@@ -33,15 +33,24 @@ export function IncidentsListPage() {
   const [severity, setSeverity] = useState<IncidentSeverity | ''>((params.get('severity') as IncidentSeverity) || '')
 
   const [rows, setRows] = useState<Incident[] | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!company) return
     let cancelled = false
     setRows(null)
+    setError(null)
     const t = setTimeout(() => {
       api
         .listIncidents(company.id, { q, siteId: site?.id, type, severity, status })
         .then((list) => !cancelled && setRows(list))
+        // Without this a rejected request left rows null forever and the register read as
+        // an empty result — a broken filter and a genuinely empty one looked identical.
+        .catch(() => {
+          if (cancelled) return
+          setRows([])
+          setError('Could not load incidents. Check your connection and try again.')
+        })
     }, q ? 250 : 0) // debounce typing
     return () => {
       cancelled = true
@@ -196,6 +205,8 @@ export function IncidentsListPage() {
           </button>
         ))}
       </div>
+
+      {error && <Alert tone="critical" className="mb-3">{error}</Alert>}
 
       <Card>
         {rows === null ? (

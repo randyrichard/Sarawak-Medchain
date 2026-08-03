@@ -14,7 +14,8 @@ import type {
   IncidentFilters, NewIncidentInput, RcaCause,
 } from './incidents'
 import type {
-  CapaAnalytics, CapaFilters, CapaItem, CapaPatch, CapaStats, NewStandaloneAction,
+  CapaAnalytics, CapaFilters, CapaItem, CapaPatch, CapaStats, CapaTimelineEntry,
+  NewStandaloneAction,
 } from './capa'
 import type {
   AssetFilters, AssetStats, AssetView, CompleteInspectionInput, InspectionFilters,
@@ -358,7 +359,13 @@ const SERVER_ACTIVITY = isBackendConfigured()
  * model stays what the existing screens already expect.
  */
 function toCapaItem(a: IncidentAction & { companyId?: string; siteId?: string; incidentId?: string | null }): CapaItem {
-  const daysToDue = Math.ceil((new Date(a.dueDate).getTime() - Date.now()) / 86400_000)
+  // Due dates are date-only. Measuring both ends from UTC midnight keeps "due today" out
+  // of "overdue" — comparing against the current time would make it overdue all day.
+  const due = new Date(a.dueDate)
+  const dueMidnight = Date.UTC(due.getUTCFullYear(), due.getUTCMonth(), due.getUTCDate())
+  const now = new Date()
+  const todayMidnight = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  const daysToDue = Math.round((dueMidnight - todayMidnight) / 86400_000)
   const isOpen = a.status === 'Open' || a.status === 'In Progress'
   // 'Overdue' is not a derived status — it is the separate `overdue` boolean below.
   const derived: CapaItem['derived'] =
@@ -391,26 +398,61 @@ function toCapaItem(a: IncidentAction & { companyId?: string; siteId?: string; i
     verifiedAt: a.verifiedAt,
     completedAt: a.completedAt,
     notes: a.notes ?? [],
-  } as CapaItem
+    timeline: capaTimeline(a),
+  }
 }
 
-/** Applies the register's client-side filters to server rows. */
+/**
+ * The action's history, rebuilt from the timestamps the server stores.
+ *
+ * The drawer renders this unconditionally. It was never populated on the server path, so
+ * opening any action threw on `undefined.map` and the whole register hit the error
+ * boundary — which is why the status flow looked broken rather than merely bare.
+ */
+function capaTimeline(a: IncidentAction & { createdAt?: string }): CapaTimelineEntry[] {
+  const entries: CapaTimelineEntry[] = []
+  const add = (at: string | undefined, actor: string, action: string, detail?: string) => {
+    if (at) entries.push({ id: `${a.id}-${action}`, at, actor, action, detail })
+  }
+  add(a.createdAt, a.owner || 'System', 'Action raised', a.title)
+  add(a.completedAt, a.owner || 'Owner', 'Marked complete', a.evidenceNote || undefined)
+  add(a.verifiedAt, a.verifiedBy || 'Verifier', 'Verified')
+  for (const n of a.notes ?? []) add(n.at, n.author, 'Note added', n.text)
+  return entries.sort((x, y) => x.at.localeCompare(y.at))
+}
+
+/** An action still being worked — the same set the server counts as open. */
+const isOpenAction = (r: CapaItem) => r.status === 'Open' || r.status === 'In Progress'
+
+/**
+ * Applies the register's client-side filters to server rows.
+ *
+ * Each case must agree with the matching counter in `capaStats`, because the two are
+ * shown side by side: the chip is the count and clicking it is the list. Where they
+ * disagreed the register looked broken — "Completed (30d)" tested a derived status the
+ * server mapping never produces, so the bucket was empty however many were completed.
+ */
 function filterCapa(rows: CapaItem[], f: CapaFilters): CapaItem[] {
   const q = f.q?.trim().toLowerCase()
+  const THIRTY_DAYS = 30 * 86400_000
   return rows
     .filter((r) => !f.siteId || r.siteId === f.siteId)
     .filter((r) => !f.owner || r.owner === f.owner)
     .filter((r) => !f.priority || r.priority === f.priority)
     .filter((r) => {
       switch (f.bucket) {
-        case 'open': return r.status === 'Open' || r.status === 'In Progress'
+        case 'open': return isOpenAction(r)
         case 'overdue': return r.overdue
         case 'due_today': return r.daysToDue === 0 && !r.overdue
         case 'verification': return r.derived === 'Waiting Verification'
-        case 'high_priority': return r.priority === 'High'
-        case 'completed': return r.derived === 'Closed'
+        // Both restricted to open work: a closed high-priority action is not something
+        // the register is asking anyone to go and do.
+        case 'high_priority': return r.priority === 'High' && isOpenAction(r)
+        case 'completed':
+          return !!r.completedAt && Date.now() - new Date(r.completedAt).getTime() < THIRTY_DAYS
         case 'cancelled': return r.derived === 'Cancelled'
-        default: return true
+        // "All" means every live action; a cancelled one has been withdrawn.
+        default: return r.derived !== 'Cancelled'
       }
     })
     .filter((r) => !q || [r.code, r.title, r.owner].join(' ').toLowerCase().includes(q))

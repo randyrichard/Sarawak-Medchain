@@ -412,4 +412,99 @@ d('IncidentService — integration (real Postgres)', () => {
     expect(approved.actions).toHaveLength(1)
     expect(approved.comments).toHaveLength(1)
   })
+
+  /**
+   * The register's status chips.
+   *
+   * Three of these were accepted by the UI but not by the server, so the request failed
+   * validation and the list rendered empty — indistinguishable from "nothing matches".
+   * These tests pin each chip to the rows it must select.
+   */
+  describe('status filters', () => {
+    const STATUS_SITE = 'itest-status-site'
+    let ids: Record<string, string> = {}
+
+    beforeAll(async () => {
+      await db.site.upsert({
+        where: { id: STATUS_SITE },
+        update: {},
+        create: { id: STATUS_SITE, companyId: COMPANY, name: 'ITest Status Site' },
+      })
+
+      // One incident parked at each stage the chips care about, plus an old open one and
+      // a fresh one, so every filter has both a row that matches and rows that must not.
+      const make = async (key: string, stage: string, daysOld: number, highRisk = false) => {
+        const inc = await svc.create(manager, {
+          ...newIncident(`Status filter ${key}`),
+          siteId: STATUS_SITE,
+        } as never)
+        await db.incident.update({
+          where: { id: inc.id },
+          data: {
+            stage: stage as never,
+            highRisk,
+            reportedAt: new Date(Date.now() - daysOld * 86400_000),
+          },
+        })
+        ids[key] = inc.id
+      }
+
+      await make('investigation', 'investigation', 1)
+      await make('rca', 'rca', 2)
+      await make('review', 'review', 3)
+      await make('verification', 'verification', 4)
+      await make('fresh', 'reported', 1)
+      await make('stale', 'assessment', 40)
+      await make('closedOld', 'closed', 60)
+      await make('risky', 'reported', 1, true)
+    })
+
+    const listIds = async (status: string) => {
+      const res = await svc.list(manager, {
+        companyId: COMPANY, siteId: STATUS_SITE, page: 1, pageSize: 100, status: status as never,
+      })
+      return res.rows.map((r) => r.id)
+    }
+
+    it('investigating covers the evidence-gathering stages only', async () => {
+      const got = await listIds('investigating')
+      expect(got).toContain(ids.investigation)
+      expect(got).toContain(ids.rca)
+      expect(got).not.toContain(ids.review)
+      expect(got).not.toContain(ids.fresh)
+      expect(got).toHaveLength(2)
+    })
+
+    it('awaiting_review covers the sign-off stages only', async () => {
+      const got = await listIds('awaiting_review')
+      expect(got).toContain(ids.review)
+      expect(got).toContain(ids.verification)
+      expect(got).not.toContain(ids.investigation)
+      expect(got).toHaveLength(2)
+    })
+
+    it('overdue selects open incidents past the threshold and excludes closed ones', async () => {
+      const got = await listIds('overdue')
+      expect(got).toContain(ids.stale)
+      // Old but closed — closing an incident settles it, however long it took.
+      expect(got).not.toContain(ids.closedOld)
+      expect(got).not.toContain(ids.fresh)
+      expect(got).toHaveLength(1)
+    })
+
+    it('high_risk excludes closed incidents', async () => {
+      const got = await listIds('high_risk')
+      expect(got).toContain(ids.risky)
+      expect(got).not.toContain(ids.fresh)
+    })
+
+    it('open and closed partition the register', async () => {
+      const [open, closed, all] = await Promise.all([
+        listIds('open'), listIds('closed'), listIds('all'),
+      ])
+      expect(open).not.toContain(ids.closedOld)
+      expect(closed).toEqual([ids.closedOld])
+      expect(open.length + closed.length).toBe(all.length)
+    })
+  })
 })
