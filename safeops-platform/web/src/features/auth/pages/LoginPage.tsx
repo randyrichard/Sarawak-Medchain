@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { LogIn } from 'lucide-react'
 import { useAuth } from '../AuthContext'
 import { safeInternalPath } from '../safeRedirect'
+import { loadPreferences } from '@/features/account/preferences'
 import { ApiError, ROLE_LABEL, type Role } from '@/api/types'
 import { Alert, Button, Checkbox, Input } from '@/components/ui'
 import { AuthLayout } from './AuthLayout'
@@ -17,6 +18,19 @@ const DEMO_ACCOUNTS: { role: Role; email: string }[] = [
 ]
 // Must match the API seed (prisma/seed.ts). Length satisfies the server-side policy.
 const DEMO_PASSWORD = 'SafeOpsPlatform2026'
+
+/**
+ * Where to land after signing in.
+ *
+ * A deep link the user was bounced off wins — they asked for that page. Only when they
+ * came to the login screen directly does their landing-page preference decide. Both go
+ * through the open-redirect guard.
+ */
+async function destination(from: string): Promise<string> {
+  if (from !== '/') return from
+  const { landingPage } = await loadPreferences()
+  return safeInternalPath(landingPage)
+}
 
 export function LoginPage() {
   const { login } = useAuth()
@@ -36,7 +50,7 @@ export function LoginPage() {
     setError(null)
     try {
       await login(email, password)
-      navigate(from, { replace: true })
+      navigate(await destination(from), { replace: true })
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong. Try again.')
       setBusy(false)
@@ -48,7 +62,7 @@ export function LoginPage() {
     setError(null)
     try {
       await login(demoEmail, DEMO_PASSWORD)
-      navigate(from, { replace: true })
+      navigate(await destination(from), { replace: true })
     } catch {
       setError('Demo login failed.')
       setBusy(false)

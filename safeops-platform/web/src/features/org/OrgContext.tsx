@@ -4,6 +4,7 @@ import {
 import { api } from '@/api/client'
 import type { Company, Membership, Role, Site } from '@/api/types'
 import { useAuth } from '@/features/auth/AuthContext'
+import { loadPreferences, takeFreshLogin } from '@/features/account/preferences'
 import { can, type Capability } from '@/features/permissions/permissions'
 
 // Active company + site scope. The user's role is PER COMPANY (memberships),
@@ -41,13 +42,19 @@ export function OrgProvider({ children }: { children: ReactNode }) {
     setLoading(true)
     // Driven by the user's memberships rather than a fixture lookup by id: in backend
     // mode the id is issued by the server and does not exist in the mock user list.
-    api.listCompaniesByIds(user.memberships.map((m) => m.companyId)).then((list) => {
+    Promise.all([
+      api.listCompaniesByIds(user.memberships.map((m) => m.companyId)),
+      loadPreferences(),
+    ]).then(([list, prefs]) => {
       if (cancelled) return
       setCompanies(list)
       const stored = safeParse(localStorage.getItem(`${ACTIVE_KEY}.${user.id}`))
       const initial = list.find((c) => c.id === stored?.companyId) ?? list[0] ?? null
       setCompanyId(initial?.id ?? null)
-      setSiteId(stored?.companyId === initial?.id ? (stored?.siteId ?? null) : null)
+      // A fresh sign-in starts at the user's default site; a reload keeps whatever site
+      // they switched to. The site effect below validates the id against what they may see.
+      const restored = stored?.companyId === initial?.id ? (stored?.siteId ?? null) : null
+      setSiteId(takeFreshLogin() ? prefs.defaultSiteId : restored)
     })
     return () => {
       cancelled = true

@@ -5,6 +5,7 @@ import { api } from '@/api/client'
 import { authApi, isBackendConfigured } from '@/api/authApi'
 import { setAuthenticatedRoles } from '@/api/mock/identity'
 import type { User } from '@/api/types'
+import { clearPreferences, markFreshLogin } from '@/features/account/preferences'
 import { clearSession, loadSession, saveSession } from './session'
 
 type Status = 'restoring' | 'anonymous' | 'authenticated'
@@ -74,8 +75,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = useCallback(async (email: string, password: string) => {
+    // Whoever was signed in before, their cached preferences must not leak into this session.
+    clearPreferences()
     if (BACKEND) {
       const u = await authApi.login(email, password)
+      markFreshLogin()
       setUser(u)
       setAuthenticatedRoles(u.memberships.map((m) => m.role))
       setStatus('authenticated')
@@ -83,12 +87,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const { session, user: u } = await api.login(email, password)
     saveSession(session)
+    markFreshLogin()
     setUser(u)
     setAuthenticatedRoles(u.memberships.map((m) => m.role))
     setStatus('authenticated')
   }, [])
 
   const logout = useCallback(async () => {
+    clearPreferences()
     if (BACKEND) {
       // Revoke server-side first; clearing local state alone would leave the session live.
       await authApi.logout().catch(() => {})

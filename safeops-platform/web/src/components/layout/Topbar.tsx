@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Moon, Sun, Search, LogOut, UserRound, Settings, ShieldQuestion } from 'lucide-react'
+import { Moon, Sun, LogOut, UserRound, Settings, ShieldQuestion } from 'lucide-react'
 import { useTheme } from '@/app/theme'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useOrg } from '@/features/org/OrgContext'
@@ -8,6 +8,7 @@ import { ROLE_LABEL } from '@/api/types'
 import { Avatar, Dropdown, DropdownItem, DropdownLabel, DropdownSeparator } from '@/components/ui'
 import { CompanySwitcher, SiteSwitcher } from './Switchers'
 import { NotificationMenu } from './NotificationMenu'
+import { GlobalSearch } from './GlobalSearch'
 
 export function Topbar({ menuButton }: { menuButton: ReactNode }) {
   const { theme, toggle } = useTheme()
@@ -27,15 +28,7 @@ export function Topbar({ menuButton }: { menuButton: ReactNode }) {
       </div>
 
       <div className="ml-auto flex items-center gap-1.5 md:gap-2">
-        <div className="hidden items-center gap-2 rounded-lg border bg-page px-3 py-1.5 xl:flex">
-          <Search size={14} className="text-muted" />
-          <input
-            placeholder="Search…  (coming with data modules)"
-            disabled
-            className="w-52 cursor-not-allowed bg-transparent text-sm text-ink outline-none placeholder:text-muted"
-          />
-          <kbd className="rounded border px-1.5 text-2xs text-muted">⌘K</kbd>
-        </div>
+        <GlobalSearch />
 
         <NotificationMenu />
 
@@ -68,7 +61,7 @@ export function Topbar({ menuButton }: { menuButton: ReactNode }) {
           <DropdownItem icon={<UserRound size={15} />} onSelect={() => navigate('/account')}>
             My account
           </DropdownItem>
-          <DropdownItem icon={<Settings size={15} />} onSelect={() => navigate('/account')}>
+          <DropdownItem icon={<Settings size={15} />} onSelect={() => navigate('/account#preferences')}>
             Preferences
           </DropdownItem>
           <DropdownItem icon={<ShieldQuestion size={15} />} onSelect={() => navigate('/design')}>

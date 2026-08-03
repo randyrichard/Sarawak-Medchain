@@ -43,6 +43,16 @@ model User {
   /// does not read it, so every existing account is unaffected.
   department         String?
 
+  /// Per-user settings that should follow the person between devices:
+  /// { landingPage?: string, defaultSiteId?: string | null }.
+  ///
+  /// Stored as JSON rather than columns because these are read and written whole, by one
+  /// screen, and a new preference should not need a migration. Theme is deliberately NOT
+  /// here — it belongs to the device, and round-tripping it through the server would make
+  /// a dark-mode toggle wait on the network. Nullable, so every existing account keeps
+  /// the defaults without a backfill.
+  preferences        Json?
+
   memberships   Membership[]
   refreshTokens RefreshToken[]
   loginAttempts LoginAttempt[]
