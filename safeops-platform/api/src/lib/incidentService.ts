@@ -39,7 +39,7 @@ export interface ListParams {
  * back empty, which read as "the filter is broken" rather than "the server rejected it".
  */
 export const INCIDENT_STATUS_FILTERS = [
-  'all', 'open', 'closed', 'high_risk', 'investigating', 'awaiting_review', 'overdue',
+  'all', 'open', 'closed', 'high_risk', 'investigating', 'awaiting_review', 'overdue', 'archived',
 ] as const
 export type IncidentStatusFilter = (typeof INCIDENT_STATUS_FILTERS)[number]
 
@@ -87,6 +87,8 @@ function statusWhere(status: IncidentStatusFilter | undefined): Prisma.IncidentW
       stage: { not: 'closed' },
       reportedAt: { lt: new Date(Date.now() - OVERDUE_AFTER_DAYS * 86400_000) },
     }
+    // The archived flag is applied on the base where clause, so this chip adds nothing.
+    case 'archived': return {}
     default: return {}
   }
 }
@@ -133,7 +135,11 @@ export class IncidentService {
 
     const where: Prisma.IncidentWhereInput = {
       companyId: p.companyId,
-      archived: false,
+      // Archived rows are hidden from every other view, and visible only when explicitly
+      // asked for. Archiving is reversible bookkeeping, not deletion, so the register has
+      // to be able to show what was archived — otherwise the audit trail points at rows
+      // nobody can reach.
+      archived: p.status === 'archived',
       ...this.scopeWhere(caller, p.companyId),
       ...(p.siteId ? { siteId: p.siteId } : {}),
       ...(p.type ? { type: p.type as never } : {}),
@@ -489,6 +495,21 @@ export class IncidentService {
     if (patch.status === 'completed' && !patch.evidenceNote?.trim() && !action.evidenceNote) {
       throw new IncidentError('validation', 'Describe the evidence before marking this complete.')
     }
+
+    /*
+     * Reopening a settled action.
+     *
+     * Verification can be wrong — the evidence looked right and the guard is still off. The
+     * alternative to reopening is raising a duplicate, which loses the history of the first
+     * attempt and quietly double-counts the work in every report. Restricted to managers,
+     * because it undoes a manager's sign-off, and the sign-off fields are cleared so a
+     * reopened action cannot show as verified while sitting open.
+     */
+    const isReopening = ['open', 'in_progress'].includes(patch.status ?? '')
+      && ['verified', 'completed', 'cancelled'].includes(action.status)
+    if (isReopening && !isManager) {
+      throw new IncidentError('forbidden', 'Reopening a settled action requires an HSE Manager or Admin.', 403)
+    }
     if (patch.dueDate && !isManager) {
       throw new IncidentError('forbidden', 'Changing the target date requires an HSE Manager or Admin.', 403)
     }
@@ -506,6 +527,11 @@ export class IncidentService {
           ...(patch.dueDate ? { dueDate: new Date(patch.dueDate) } : {}),
           ...(patch.status === 'completed' ? { completedAt: new Date() } : {}),
           ...(patch.status === 'verified' ? { verifiedBy: caller.name, verifiedAt: new Date() } : {}),
+          // A reopened action is genuinely unfinished again: clear the sign-off and the
+          // completion stamp so it cannot read as verified while it sits open.
+          ...(isReopening
+            ? { verifiedBy: null, verifiedAt: null, completedAt: null }
+            : {}),
         },
       })
       // The audit event hangs off the parent investigation. A standalone action has no

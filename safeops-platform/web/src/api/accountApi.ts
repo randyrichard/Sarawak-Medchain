@@ -28,7 +28,9 @@ export interface UserPreferences {
   defaultSiteId: string | null
 }
 
-export type SearchKind = 'incident' | 'action' | 'permit' | 'asset' | 'audit' | 'certificate'
+export type SearchKind =
+  | 'incident' | 'action' | 'permit' | 'asset' | 'audit' | 'certificate'
+  | 'employee' | 'user' | 'company' | 'auditlog'
 
 export interface SearchHit {
   kind: SearchKind

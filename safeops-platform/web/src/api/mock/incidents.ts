@@ -321,7 +321,8 @@ export class IncidentStore {
   list(companyId: string, filters: IncidentFilters): Incident[] {
     const q = filters.q?.trim().toLowerCase()
     return this.incidents
-      .filter((i) => i.companyId === companyId && !i.archived)
+      // Archived rows appear only when asked for by name, matching the server.
+      .filter((i) => i.companyId === companyId && i.archived === (filters.status === 'archived'))
       .filter((i) => !filters.siteId || i.siteId === filters.siteId)
       .filter((i) => !filters.type || i.type === filters.type)
       .filter((i) => !filters.severity || i.severity === filters.severity)
@@ -2294,6 +2295,9 @@ function matchesStatus(i: Incident, status: NonNullable<IncidentFilters['status'
     case 'high_risk': return i.stage !== 'closed' && i.highRisk
     case 'awaiting_review': return i.stage === 'review' || i.stage === 'verification'
     case 'investigating': return i.stage === 'investigation' || i.stage === 'rca'
+    // The store filters archived rows out before this runs, so reaching here means the
+    // caller asked for them explicitly and every remaining row qualifies.
+    case 'archived': return true
   }
 }
 

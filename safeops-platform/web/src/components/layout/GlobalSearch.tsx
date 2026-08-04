@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Search, Loader2, ClipboardList, ListChecks, HardHat, Wrench, CalendarClock, GraduationCap,
+  UserRound, ShieldCheck, Building2, ScrollText,
 } from 'lucide-react'
 import { searchApi, type SearchHit, type SearchKind } from '@/api/accountApi'
 import { useOrg } from '@/features/org/OrgContext'
@@ -15,6 +16,10 @@ const KIND_ICON: Record<SearchKind, typeof ClipboardList> = {
   asset: Wrench,
   audit: CalendarClock,
   certificate: GraduationCap,
+  employee: UserRound,
+  user: ShieldCheck,
+  company: Building2,
+  auditlog: ScrollText,
 }
 
 const KIND_LABEL: Record<SearchKind, string> = {
@@ -24,6 +29,30 @@ const KIND_LABEL: Record<SearchKind, string> = {
   asset: 'Asset',
   audit: 'Audit',
   certificate: 'Certificate',
+  employee: 'Employee',
+  user: 'User account',
+  company: 'Workspace',
+  auditlog: 'Audit log',
+}
+
+/**
+ * Marks the matched span so the eye lands on why a row came back.
+ *
+ * The query is used as a literal, never as a pattern: a user typing "INC-2604 (draft)"
+ * would otherwise blow up `RegExp` on the bracket.
+ */
+function Highlight({ text, query }: { text: string; query: string }) {
+  const q = query.trim()
+  if (!q) return <>{text}</>
+  const at = text.toLowerCase().indexOf(q.toLowerCase())
+  if (at === -1) return <>{text}</>
+  return (
+    <>
+      {text.slice(0, at)}
+      <mark className="rounded-sm bg-accent-soft px-0.5 text-ink">{text.slice(at, at + q.length)}</mark>
+      {text.slice(at + q.length)}
+    </>
+  )
 }
 
 /** Below this the server returns nothing, so there is no point asking. */
@@ -183,10 +212,14 @@ export function GlobalSearch() {
                       <Icon size={14} className="mt-0.5 shrink-0 text-muted" />
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2">
-                          <span className="font-mono text-2xs text-muted">{hit.code}</span>
+                          <span className="font-mono text-2xs text-muted">
+                            <Highlight text={hit.code} query={query} />
+                          </span>
                           <span className="text-2xs text-muted">{KIND_LABEL[hit.kind]}</span>
                         </span>
-                        <span className="block truncate text-sm text-ink">{hit.title}</span>
+                        <span className="block truncate text-sm text-ink">
+                          <Highlight text={hit.title} query={query} />
+                        </span>
                         <span className="block truncate text-2xs text-muted">{hit.detail}</span>
                       </span>
                     </button>

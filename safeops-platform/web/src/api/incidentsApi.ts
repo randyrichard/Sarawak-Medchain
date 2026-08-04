@@ -27,6 +27,8 @@ interface ServerIncident {
   number: string
   companyId: string
   siteId: string
+  /** Present on every row; only ever true when the archived filter asked for it. */
+  archived?: boolean
   title: string
   description: string
   type: Incident['type']
@@ -133,7 +135,9 @@ export function toIncident(s: ServerIncident): Incident {
     reporter: s.reporter,
     investigator: s.investigator ?? undefined,
     highRisk: s.highRisk,
-    archived: false, // archived rows are excluded server-side; a mapped row is always live
+    // The server decides which rows come back — excluded by default, returned only when
+    // the archived filter asks for them — so a mapped row reflects the query that fetched it.
+    archived: s.archived ?? false,
     peopleInvolved: [],
     witnesses: [],
     // Assessment is a nested object in the UI type, flat columns on the server.

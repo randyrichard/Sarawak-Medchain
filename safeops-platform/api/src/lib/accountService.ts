@@ -48,8 +48,52 @@ function normalise(raw: unknown): UserPreferences {
   return { landingPage: landing, defaultSiteId: site }
 }
 
+/** Where an account event is written, and what it is called in the trail. */
+interface AuditContext {
+  ip?: string
+  device?: string
+}
+
 export class AccountService {
   constructor(private db: PrismaClient) {}
+
+  /**
+   * Writes an account event to the audit trail.
+   *
+   * Recorded against every workspace the user belongs to, because each one's administrator
+   * is accountable for that user's account security and should not have to know which
+   * other tenants the person happens to be in. Most people have exactly one membership, so
+   * this is one row in practice.
+   *
+   * Never throws: an audit write failing must not stop a user changing their password.
+   * A password that did not rotate is a worse outcome than a trail entry that is missing,
+   * and the entry not appearing is itself visible.
+   */
+  private async log(
+    userId: string, action: string, ctx: AuditContext = {}, target = '',
+  ): Promise<void> {
+    try {
+      const user = await this.db.user.findUnique({
+        where: { id: userId },
+        select: { name: true, email: true, memberships: { select: { companyId: true, role: true } } },
+      })
+      if (!user || user.memberships.length === 0) return
+      await this.db.adminAuditEntry.createMany({
+        data: user.memberships.map((m) => ({
+          companyId: m.companyId,
+          actor: user.name,
+          actorRole: m.role,
+          action,
+          module: 'auth',
+          target: target || user.email,
+          ip: ctx.ip ?? '',
+          device: ctx.device ?? '',
+        })),
+      })
+    } catch {
+      // Deliberately swallowed — see above.
+    }
+  }
 
   // ── Preferences ────────────────────────────────────────────────────────────
 
@@ -110,6 +154,7 @@ export class AccountService {
       where: { id: userId },
       data: { preferences: { ...next } as Prisma.InputJsonObject },
     })
+    await this.log(userId, 'Updated preferences')
     return next
   }
 
@@ -190,6 +235,7 @@ export class AccountService {
       })
     })
 
+    await this.log(userId, 'Changed own password')
     return { revokedSessions: count }
   }
 
@@ -264,6 +310,10 @@ export class AccountService {
         data: { usedAt: new Date() },
       })
     })
+
+    // A successful reset is a security event in its own right: it is how an account
+    // changes hands legitimately, and how it would change hands illegitimately.
+    await this.log(record.userId, 'Redeemed a password reset link')
   }
 
   /**

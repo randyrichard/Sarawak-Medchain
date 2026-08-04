@@ -207,6 +207,7 @@ export interface NewIncidentInput {
 
 export type IncidentStatusFilter =
   | 'all' | 'open' | 'closed' | 'overdue' | 'high_risk' | 'awaiting_review' | 'investigating'
+  | 'archived'
 
 export interface IncidentFilters {
   q?: string

@@ -168,8 +168,8 @@ export function ActionDrawer({
             )}
           </div>
 
-          {/* Workflow actions */}
-          {!readOnly && item.derived !== 'Cancelled' && (
+          {/* Workflow actions. Cancelled is included so a manager can still reopen it. */}
+          {!readOnly && (
             <div className="flex flex-wrap gap-2">
               {editable && (item.derived === 'Open' || item.derived === 'Assigned') && (
                 <Button size="sm" icon={<Play size={12} />} loading={busy}
@@ -203,6 +203,17 @@ export function ActionDrawer({
                     Cancel…
                   </Button>
                 </>
+              )}
+              {/*
+                Verification can be wrong — the evidence read well and the guard is still
+                off. Reopening keeps one record of the whole attempt; raising a duplicate
+                would lose the first one's history and double-count the work in reports.
+              */}
+              {manager && ['Verified', 'Closed', 'Cancelled'].includes(item.derived) && (
+                <Button size="sm" variant="secondary" icon={<Undo2 size={12} />} loading={busy}
+                  onClick={() => void run(() => api.updateCapa(item.id, { status: 'In Progress' }, actor))}>
+                  Reopen
+                </Button>
               )}
               {item.derived === 'Waiting Verification' && !verifier && (
                 <p className="w-full text-2xs text-muted">Awaiting sign-off by {item.reviewer ?? 'an HSE Manager'} — verification comments land in the timeline.</p>

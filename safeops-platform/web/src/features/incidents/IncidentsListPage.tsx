@@ -20,6 +20,7 @@ const STATUS_CHIPS: { value: IncidentStatusFilter; label: string }[] = [
   { value: 'high_risk', label: 'High risk' },
   { value: 'overdue', label: `Overdue (> ${OVERDUE_AFTER_DAYS}d)` },
   { value: 'closed', label: 'Closed' },
+  { value: 'archived', label: 'Archived' },
 ]
 
 export function IncidentsListPage() {

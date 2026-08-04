@@ -142,6 +142,63 @@ d('IncidentService — integration (real Postgres)', () => {
     expect(verified.verifiedBy).toBe(manager.name)
   })
 
+  /**
+   * Reopening a settled action. A verification can be wrong, and the alternative — raising
+   * a duplicate — loses the first attempt's history and double-counts the work.
+   */
+  describe('reopening a settled action', () => {
+    async function verifiedAction() {
+      const inc = await svc.create(officer, newIncident('Reopen case'))
+      const action = await svc.addAction(manager, inc.id, {
+        title: 'Fit interlock', owner: employee.name,
+        dueDate: new Date(Date.now() + 86400000).toISOString(),
+      })
+      await svc.updateAction(employee, action.id, {
+        status: 'completed', evidenceNote: 'Interlock fitted.',
+      })
+      return svc.updateAction(manager, action.id, { status: 'verified' })
+    }
+
+    it('clears the sign-off so it cannot read as verified while open', async () => {
+      const v = await verifiedAction()
+      expect(v.verifiedBy).toBeTruthy()
+
+      const reopened = await svc.updateAction(manager, v.id, { status: 'in_progress' })
+      expect(reopened.status).toBe('in_progress')
+      expect(reopened.verifiedBy).toBeNull()
+      expect(reopened.verifiedAt).toBeNull()
+      expect(reopened.completedAt).toBeNull()
+    })
+
+    it('is refused to the owner — it undoes a manager sign-off', async () => {
+      const v = await verifiedAction()
+      await expect(svc.updateAction(employee, v.id, { status: 'in_progress' }))
+        .rejects.toMatchObject({ status: 403 })
+    })
+
+    it('can be re-verified after the work is redone', async () => {
+      const v = await verifiedAction()
+      await svc.updateAction(manager, v.id, { status: 'in_progress' })
+      await svc.updateAction(employee, v.id, {
+        status: 'completed', evidenceNote: 'Interlock refitted and function-tested.',
+      })
+      const again = await svc.updateAction(manager, v.id, { status: 'verified' })
+      expect(again.status).toBe('verified')
+      expect(again.verifiedBy).toBe(manager.name)
+    })
+
+    it('reopens a cancelled action too', async () => {
+      const inc = await svc.create(officer, newIncident('Cancelled reopen'))
+      const action = await svc.addAction(manager, inc.id, {
+        title: 'Replace sign', owner: employee.name,
+        dueDate: new Date(Date.now() + 86400000).toISOString(),
+      })
+      await svc.updateAction(manager, action.id, { status: 'cancelled' })
+      const reopened = await svc.updateAction(manager, action.id, { status: 'open' })
+      expect(reopened.status).toBe('open')
+    })
+  })
+
   it('writes an append-only audit event for every mutation', async () => {
     const inc = await svc.create(officer, newIncident('Audit trail'))
     await svc.addComment(manager, inc.id, 'Reviewed on site.')
@@ -496,6 +553,20 @@ d('IncidentService — integration (real Postgres)', () => {
       const got = await listIds('high_risk')
       expect(got).toContain(ids.risky)
       expect(got).not.toContain(ids.fresh)
+    })
+
+    it('hides archived incidents everywhere except the archived chip', async () => {
+      const inc = await svc.create(manager, {
+        ...newIncident('To be archived'), siteId: STATUS_SITE,
+      } as never)
+      await svc.archive(manager, inc.id)
+
+      for (const status of ['all', 'open', 'investigating', 'awaiting_review', 'overdue', 'closed']) {
+        expect(await listIds(status)).not.toContain(inc.id)
+      }
+      // ...and is reachable when asked for by name, so the audit trail does not point at
+      // a row nobody can open.
+      expect(await listIds('archived')).toContain(inc.id)
     })
 
     it('open and closed partition the register', async () => {

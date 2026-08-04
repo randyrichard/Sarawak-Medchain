@@ -22,6 +22,19 @@ export class SearchError extends Error {
 
 export type SearchKind =
   | 'incident' | 'action' | 'permit' | 'asset' | 'audit' | 'certificate'
+  | 'employee' | 'user' | 'company' | 'auditlog'
+
+/**
+ * Registers only an administrator may search.
+ *
+ * The people-shaped ones are the reason: an employee directory and the admin audit trail
+ * answer "who works here" and "who did what", which is exactly what someone probing a
+ * tenant wants. Everyone keeps the operational registers.
+ */
+const ADMIN_ONLY_KINDS: SearchKind[] = ['user', 'auditlog']
+
+/** Roles that may see the directory of colleagues. Employees see only their own records. */
+const DIRECTORY_ROLES = ['admin', 'hse_manager', 'safety_officer', 'ceo', 'supervisor']
 
 export interface SearchHit {
   kind: SearchKind
@@ -117,6 +130,8 @@ export class SearchService {
       }),
     ])
 
+    const people = await this.searchPeople(caller, companyId, like, q)
+
     const hits: SearchHit[] = [
       ...incidents.map((r): SearchHit => ({
         kind: 'incident', id: r.id, code: r.number, title: r.title,
@@ -148,6 +163,7 @@ export class SearchService {
         detail: `${r.employee?.name ?? 'Unknown'}${r.expiryDate ? ` · expires ${r.expiryDate.toISOString().slice(0, 10)}` : ''}`,
         href: `/training?cert=${r.id}`,
       })),
+      ...people,
     ]
 
     // An exact reference match is almost always what was wanted, so it goes first
@@ -159,4 +175,93 @@ export class SearchService {
       return aExact - bExact
     })
   }
+
+  /**
+   * The people-and-governance half of search: the employee directory, the user accounts,
+   * the workspaces the caller belongs to, and the admin audit trail.
+   *
+   * Split out because these are gated differently from the operational registers. A
+   * supervisor should be able to find a colleague to assign an action to; only an
+   * administrator should be able to enumerate login accounts or read the audit trail.
+   */
+  private async searchPeople(
+    caller: Caller, companyId: string, like: { contains: string; mode: 'insensitive' }, q: string,
+  ): Promise<SearchHit[]> {
+    const m = this.membership(caller, companyId)
+    const isAdmin = m.role === 'admin'
+    const canSeeDirectory = DIRECTORY_ROLES.includes(m.role)
+    const siteScope = m.siteIds.length > 0 ? { siteId: { in: m.siteIds } } : {}
+
+    const [employees, users, companies, auditLog] = await Promise.all([
+      canSeeDirectory
+        ? this.db.employee.findMany({
+            where: { companyId, ...siteScope, OR: [{ name: like }, { email: like }, { position: like }] },
+            select: { id: true, name: true, email: true, position: true, department: true, siteId: true, active: true },
+            orderBy: { name: 'asc' },
+            take: PER_KIND,
+          })
+        : Promise.resolve([]),
+
+      isAdmin
+        ? this.db.user.findMany({
+            // Only accounts with a membership of THIS workspace. Without that clause a
+            // search box becomes a directory of every user on the installation.
+            where: {
+              memberships: { some: { companyId } },
+              OR: [{ name: like }, { email: like }],
+            },
+            select: { id: true, name: true, email: true, status: true },
+            orderBy: { name: 'asc' },
+            take: PER_KIND,
+          })
+        : Promise.resolve([]),
+
+      // Restricted to workspaces the caller is actually a member of.
+      this.db.company.findMany({
+        where: {
+          id: { in: caller.roles.map((r) => r.companyId) },
+          OR: [{ name: like }, { id: like }],
+        },
+        select: { id: true, name: true },
+        take: PER_KIND,
+      }),
+
+      isAdmin
+        ? this.db.adminAuditEntry.findMany({
+            where: { companyId, OR: [{ action: like }, { target: like }, { actor: like }] },
+            select: { id: true, action: true, actor: true, target: true, at: true },
+            orderBy: { at: 'desc' },
+            take: PER_KIND,
+          })
+        : Promise.resolve([]),
+    ])
+
+    return [
+      ...employees.map((r): SearchHit => ({
+        // Employees have no reference number of their own; the work email is what a
+        // colleague would actually recognise them by.
+        kind: 'employee', id: r.id, code: r.email ?? r.name, title: r.name,
+        detail: [r.position, r.department, r.siteId.toUpperCase(), r.active ? null : 'inactive']
+          .filter(Boolean).join(' · '),
+        href: `/training?employee=${r.id}`,
+      })),
+      ...users.map((r): SearchHit => ({
+        kind: 'user', id: r.id, code: r.email, title: r.name,
+        detail: `${r.status} · account`,
+        href: `/admin?s=users&open=${r.id}`,
+      })),
+      ...companies.map((r): SearchHit => ({
+        kind: 'company', id: r.id, code: r.id.toUpperCase(), title: r.name,
+        detail: 'workspace',
+        href: `/admin?s=workspace`,
+      })),
+      ...auditLog.map((r): SearchHit => ({
+        kind: 'auditlog', id: r.id, code: r.at.toISOString().slice(0, 10), title: r.action,
+        detail: [r.actor, r.target].filter(Boolean).join(' → '),
+        href: `/admin?s=audit&q=${encodeURIComponent(q)}`,
+      })),
+    ]
+  }
 }
+
+export { ADMIN_ONLY_KINDS }
