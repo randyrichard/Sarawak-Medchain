@@ -5,7 +5,7 @@ import type { Prisma, PrismaClient, PermitStatus, PermitType, Role } from '@pris
 import { type Caller } from './incidentService.js'
 import {
   GAS_LIMITS, GAS_TEST_REQUIRED, ISOLATION_REQUIRED, PERMIT_CONTROLS, PERMIT_MAX_HOURS,
-  PERMIT_STATUS_LABEL, PERMIT_TYPES, PERMIT_TYPE_LABEL, gasTestPasses,
+  PERMIT_STATUS_LABEL, PERMIT_TYPES, PERMIT_TYPE_LABEL, gasTestPasses, activationBlockers,
 } from './permitCatalog.js'
 
 /**
@@ -259,7 +259,13 @@ export class PermitService {
 
     const base: Prisma.PermitWhereInput = { companyId, ...(siteId ? { siteId } : {}) }
 
-    const [activeNow, awaitingApproval, expiringWithin2h, expiredOpen, closedThisMonth, byType] =
+    const startOfDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+    const endOfDay = new Date(startOfDay.getTime() + 86400_000 - 1)
+
+    const [
+      activeNow, awaitingApproval, expiringWithin2h, expiredOpen, closedThisMonth, byType,
+      awaitingReview, suspended, startingToday, expiringToday, insideConfinedSpace,
+    ] =
       await this.db.$transaction([
         this.db.permit.count({ where: { ...base, status: 'active', validTo: { gte: now } } }),
         this.db.permit.count({ where: { ...base, status: 'submitted' } }),
@@ -276,6 +282,26 @@ export class PermitService {
           _count: { _all: true },
           orderBy: undefined,
         }),
+        // Anywhere in the approval chain, not just at submission: a permit parked with
+        // HSE is as stalled as one nobody has looked at.
+        this.db.permit.count({
+          where: { ...base, status: { in: ['submitted', 'supervisor_review', 'hse_review', 'area_authority'] } },
+        }),
+        this.db.permit.count({ where: { ...base, status: 'suspended' } }),
+        this.db.permit.count({
+          where: { ...base, validFrom: { gte: startOfDay, lte: endOfDay } },
+        }),
+        this.db.permit.count({
+          where: { ...base, status: 'active', validTo: { gte: startOfDay, lte: endOfDay } },
+        }),
+        // People signed in to a confined space right now. The question asked first in an
+        // evacuation, and the reason entry and exit are timestamped rather than counted.
+        this.db.permitAttendee.count({
+          where: {
+            enteredAt: { not: null }, exitedAt: null,
+            permit: { ...base, type: 'confined_space', status: 'active' },
+          },
+        }),
       ])
 
     // Prisma's groupBy result type is conditional on the _count shape; narrow locally.
@@ -287,6 +313,11 @@ export class PermitService {
     return {
       activeNow,
       awaitingApproval,
+      awaitingReview,
+      suspended,
+      startingToday,
+      expiringToday,
+      insideConfinedSpace,
       expiringWithin2h,
       expiredOpen,
       closedThisMonth,
@@ -537,6 +568,29 @@ export class PermitService {
     }
     if (permit.status !== 'approved') {
       throw new PermitError('validation', 'The permit must be approved before work starts.')
+    }
+
+    /*
+     * The activation gate.
+     *
+     * Re-checked here rather than trusted from the screen, because this is the moment the
+     * work actually begins. A toolbox talk nobody attended and PPE nobody confirmed are
+     * the two findings that turn up after the event, so both are refusals.
+     */
+    const [attendees, unacknowledged] = await Promise.all([
+      this.db.permitAttendee.count({ where: { permitId: id } }),
+      this.db.permitAttendee.count({ where: { permitId: id, toolboxAckAt: null } }),
+    ])
+    const blockers = activationBlockers({
+      status: permit.status,
+      toolboxAt: permit.toolboxAt,
+      requiredPpe: permit.requiredPpe,
+      ppeAcknowledgedAt: permit.ppeAcknowledgedAt,
+      attendees,
+      unacknowledged,
+    })
+    if (blockers.length > 0) {
+      throw new PermitError('validation', blockers[0])
     }
 
     await this.db.$transaction([

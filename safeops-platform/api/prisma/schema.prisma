@@ -609,8 +609,15 @@ model Permit {
   /// PPE the issuer requires for this job, beyond site-standard.
   requiredPpe String[] @default([])
 
-  attendees  PermitAttendee[]
-  extensions PermitExtension[]
+  /// Mandatory PPE acknowledged by the issuer at activation. Recorded rather than
+  /// assumed: "the harness was on the list" and "the harness was checked" differ.
+  ppeAcknowledgedAt DateTime?
+  ppeAcknowledgedBy String?
+
+  attendees   PermitAttendee[]
+  extensions  PermitExtension[]
+  jsaSteps    PermitJsaStep[]
+  attachments PermitAttachment[]
 
   /// Authorised window. The permit is only a permit between these two instants; the
   /// maximum span allowed depends on the type (see PERMIT_MAX_HOURS).
@@ -1309,9 +1316,78 @@ model PermitAttendee {
   enteredAt DateTime?
   exitedAt  DateTime?
 
+  /// Signed the toolbox talk. A permit cannot go active until everyone named has, which
+  /// is the difference between a briefing that happened and one that was minuted.
+  toolboxAckAt DateTime?
+
   @@index([permitId])
   @@index([employeeId])
   @@index([contractorWorkerId])
+}
+
+/// One line of a job safety analysis.
+///
+/// Rows rather than a prose field, because a JSA is only useful if each hazard has a
+/// named control and a named person: free text produces "usual precautions apply", which
+/// is what an investigation finds when nobody can say who was responsible for what.
+///
+/// Versioned at the permit level — editing any row bumps the permit version and writes a
+/// timeline entry, so a JSA cannot be quietly rewritten after an incident.
+model PermitJsaStep {
+  id       String @id @default(cuid())
+  permitId String
+  permit   Permit @relation(fields: [permitId], references: [id], onDelete: Cascade)
+
+  /// Display order. The sequence of the job, not a priority.
+  sequence Int    @default(0)
+
+  step        String @default("")
+  hazard      String
+  risk        String @default("")
+  control     String
+  responsible String @default("")
+  /// Risk remaining once the control is in place. The number an approver actually judges.
+  residualRisk String @default("")
+
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([permitId])
+}
+
+/// A document attached to a permit.
+///
+/// Same storage contract as incident evidence: the file is written to UPLOAD_DIR under a
+/// server-generated name, and the original filename is kept for display only so it can
+/// never be used as a path.
+model PermitAttachment {
+  id       String @id @default(cuid())
+  permitId String
+  permit   Permit @relation(fields: [permitId], references: [id], onDelete: Cascade)
+
+  /// What the document is, so a permit pack can be assembled and checked for gaps.
+  kind PermitAttachmentKind @default(other)
+
+  originalName String
+  storedName   String @unique
+  mimeType     String
+  sizeBytes    Int
+  uploadedBy   String
+  uploadedById String?
+
+  createdAt DateTime @default(now())
+
+  @@index([permitId])
+}
+
+enum PermitAttachmentKind {
+  method_statement
+  jsa
+  gas_test_sheet
+  isolation_certificate
+  photo
+  other
 }
 
 /// A permit extension.

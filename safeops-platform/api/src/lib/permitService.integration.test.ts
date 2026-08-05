@@ -81,6 +81,27 @@ const PASSING_GAS = { oxygenPct: 20.9, lelPct: 0, h2sPpm: 0, coPpm: 2 }
 const FAILING_GAS = { oxygenPct: 17.2, lelPct: 24, h2sPpm: 15, coPpm: 5 }
 
 /** Drives a permit to `active`, satisfying whatever its type requires on the way. */
+/**
+ * Satisfies the activation gate: a permit cannot go active with nobody named on it and
+ * no toolbox talk held. Added when that gate was introduced — these tests are about what
+ * happens *after* a permit is live, so they need a live permit rather than a reason to
+ * assert the gate, which has its own suite.
+ */
+async function satisfyActivationGate(permitId: string) {
+  const worker = await db.employee.create({
+    data: {
+      companyId: COMPANY, siteId: SITE,
+      employeeNo: `EMP-PTW-${Math.random().toString(36).slice(2, 8)}`,
+      name: 'Gate Worker', medicalExpiry: new Date(Date.now() + 200 * 86400_000),
+    },
+  })
+  const attendee = await db.permitAttendee.create({
+    data: { permitId, employeeId: worker.id, nameAtAssignment: worker.name, addedBy: 'ITest' },
+  })
+  await db.permit.update({ where: { id: permitId }, data: { toolboxAt: new Date(), toolboxBy: 'ITest' } })
+  await db.permitAttendee.update({ where: { id: attendee.id }, data: { toolboxAckAt: new Date() } })
+}
+
 async function makeActive(over: Parameters<typeof newPermit>[0] = {}) {
   const p = await svc.create(officer, newPermit(over))
   await confirmAllControls(officer, p.id)
@@ -90,6 +111,7 @@ async function makeActive(over: Parameters<typeof newPermit>[0] = {}) {
   }
   await svc.submit(employee, p.id)
   await svc.approve(officer, p.id, 'Controls verified.')
+  await satisfyActivationGate(p.id)
   return svc.activate(officer, p.id)
 }
 
@@ -309,6 +331,7 @@ d('PermitService — integration (real Postgres)', () => {
     })
     await svc.submit(officer, p.id)
     await svc.approve(officer, p.id, '')
+    await satisfyActivationGate(p.id)
     await svc.activate(officer, p.id)
 
     await expect(svc.close(officer, p.id, { handbackConfirmed: true, statement: 'Done.' }))
@@ -365,6 +388,7 @@ d('PermitService — integration (real Postgres)', () => {
     expect(issued.status).toBe('approved')
 
     // Starting work is not an issuing act — the crew doing the job may do it.
+    await satisfyActivationGate(p.id)
     const active = await svc.activate(employee, p.id)
     expect(active.status).toBe('active')
 
@@ -385,6 +409,7 @@ d('PermitService — integration (real Postgres)', () => {
     await expect(svc.reject(officer, p.id, '   ')).rejects.toMatchObject({ code: 'validation' })
 
     await svc.approve(officer, p.id, '')
+    await satisfyActivationGate(p.id)
     await svc.activate(officer, p.id)
     await expect(svc.suspend(officer, p.id, '')).rejects.toMatchObject({ code: 'validation' })
   })
@@ -661,6 +686,7 @@ d('PermitService — integration (real Postgres)', () => {
     await confirmAllControls(officer, p.id)
     await svc.submit(employee, p.id)
     await svc.approve(officer, p.id, 'Walked the job.')
+    await satisfyActivationGate(p.id)
     await svc.activate(employee, p.id)
     await svc.suspend(manager, p.id, 'Lightning within 8km.')
     await svc.resume(officer, p.id)

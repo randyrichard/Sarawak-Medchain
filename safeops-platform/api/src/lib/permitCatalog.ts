@@ -195,3 +195,41 @@ export function gasTestPasses(t: {
     t.coPpm < GAS_LIMITS.coMax
   )
 }
+
+/**
+ * Everything that must be true before a permit can go active, as sentences.
+ *
+ * Lives here rather than in either service because both need it: the review service
+ * shows it on the permit so the issuer can see what is left, and the permit service
+ * re-checks it at activation so it cannot be talked past. A pure function of the facts,
+ * with no database access, so the two can never disagree.
+ */
+export function activationBlockers(p: {
+  status: string
+  toolboxAt: Date | null
+  requiredPpe: string[]
+  ppeAcknowledgedAt: Date | null
+  attendees: number
+  unacknowledged: number
+}): string[] {
+  const out: string[] = []
+  if (p.status !== 'approved') out.push('The permit has not completed the approval chain.')
+  if (p.attendees === 0) out.push('Nobody is named on this permit.')
+  if (!p.toolboxAt) out.push('The toolbox talk has not been recorded.')
+  else if (p.unacknowledged > 0) {
+    out.push(`${p.unacknowledged} of the people named have not acknowledged the toolbox talk.`)
+  }
+  if (p.requiredPpe.length > 0 && !p.ppeAcknowledgedAt) {
+    out.push('Mandatory PPE has not been acknowledged by the issuer.')
+  }
+  return out
+}
+
+/**
+ * Selectable PPE. A picked list rather than free text, so "harness" and "Harness" are
+ * the same requirement and a permit pack can be checked for completeness.
+ */
+export const PPE_OPTIONS = [
+  'Helmet', 'Safety Shoes', 'Gloves', 'Face Shield', 'Respirator', 'Harness',
+  'Life Jacket', 'Gas Detector', 'SCBA', 'Hearing Protection', 'Other',
+] as const

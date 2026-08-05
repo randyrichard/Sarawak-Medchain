@@ -3,12 +3,14 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
 import { PermitError, PermitService } from '../lib/permitService.js'
 import { PermitPeopleService } from '../lib/permitPeople.js'
+import { PermitReviewService } from '../lib/permitReview.js'
 import type { Caller } from '../lib/incidentService.js'
 import { PERMIT_TYPES } from '../lib/permitCatalog.js'
 import { requireAuth } from '../middleware/requireAuth.js'
 
 const svc = new PermitService(prisma)
 const people = new PermitPeopleService(prisma)
+const review = new PermitReviewService(prisma)
 export const permitsRouter = Router()
 
 // Identity always comes from the verified token, never from the request body.
@@ -367,6 +369,150 @@ permitsRouter.post('/:id/extensions', async (req, res, next) => {
 permitsRouter.post('/extensions/:extensionId/approve', async (req, res, next) => {
   try {
     res.json(await svc.approveExtension(callerOf(req), req.params.extensionId))
+  } catch (e) {
+    next(e)
+  }
+})
+
+// ── Review chain ─────────────────────────────────────────────────────────────
+
+function ctxOf(req: { ip?: string; headers: Record<string, unknown> }) {
+  return { ip: req.ip, device: String(req.headers['user-agent'] ?? '').slice(0, 300) }
+}
+
+permitsRouter.get('/:id/review', async (req, res, next) => {
+  try {
+    res.json(await review.status(callerOf(req), req.params.id))
+  } catch (e) {
+    next(e)
+  }
+})
+
+/**
+ * Advance one stage. Deliberately takes no target stage: the chain decides what comes
+ * next, so a client cannot name `approved` from `submitted` and skip both reviews.
+ */
+permitsRouter.post('/:id/review/advance', async (req, res, next) => {
+  try {
+    const parsed = z.object({ statement: z.string().min(1).max(2000) }).safeParse(req.body)
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'validation', message: 'Record what you checked before signing.' })
+    }
+    res.json(await review.advance(callerOf(req), req.params.id, parsed.data.statement, ctxOf(req)))
+  } catch (e) {
+    next(e)
+  }
+})
+
+permitsRouter.post('/:id/review/return', async (req, res, next) => {
+  try {
+    const parsed = z.object({ reason: z.string().min(1).max(2000) }).safeParse(req.body)
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'validation', message: 'Say what has to change.' })
+    }
+    res.json(await review.returnToApplicant(callerOf(req), req.params.id, parsed.data.reason, ctxOf(req)))
+  } catch (e) {
+    next(e)
+  }
+})
+
+// ── Toolbox ──────────────────────────────────────────────────────────────────
+
+permitsRouter.post('/:id/toolbox', async (req, res, next) => {
+  try {
+    const parsed = z.object({
+      heldAt: z.string().datetime().optional(),
+      supervisor: z.string().max(160).optional(),
+    }).safeParse(req.body ?? {})
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'validation', message: 'Invalid toolbox payload.' })
+    }
+    res.json(await review.recordToolbox(callerOf(req), req.params.id, parsed.data, ctxOf(req)))
+  } catch (e) {
+    next(e)
+  }
+})
+
+permitsRouter.post('/people/:attendeeId/toolbox-ack', async (req, res, next) => {
+  try {
+    res.json(await review.acknowledgeToolbox(callerOf(req), req.params.attendeeId, ctxOf(req)))
+  } catch (e) {
+    next(e)
+  }
+})
+
+// ── PPE ──────────────────────────────────────────────────────────────────────
+
+permitsRouter.put('/:id/ppe', async (req, res, next) => {
+  try {
+    const parsed = z.object({ items: z.array(z.string().max(60)).max(30) }).safeParse(req.body)
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'validation', message: 'Send the PPE list as an array.' })
+    }
+    res.json(await review.setRequiredPpe(callerOf(req), req.params.id, parsed.data.items, ctxOf(req)))
+  } catch (e) {
+    next(e)
+  }
+})
+
+permitsRouter.post('/:id/ppe/acknowledge', async (req, res, next) => {
+  try {
+    res.json(await review.acknowledgePpe(callerOf(req), req.params.id, ctxOf(req)))
+  } catch (e) {
+    next(e)
+  }
+})
+
+// ── JSA ──────────────────────────────────────────────────────────────────────
+
+const jsaBody = z.object({
+  step: z.string().max(300).optional(),
+  hazard: z.string().min(1).max(500),
+  risk: z.string().max(200).optional(),
+  control: z.string().min(1).max(1000),
+  responsible: z.string().max(160).optional(),
+  residualRisk: z.string().max(200).optional(),
+})
+
+permitsRouter.get('/:id/jsa', async (req, res, next) => {
+  try {
+    res.json({ rows: await review.listJsa(callerOf(req), req.params.id) })
+  } catch (e) {
+    next(e)
+  }
+})
+
+permitsRouter.post('/:id/jsa', async (req, res, next) => {
+  try {
+    const parsed = jsaBody.safeParse(req.body)
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: 'validation',
+        message: parsed.error.issues[0]?.message ?? 'A hazard and a control are required.',
+      })
+    }
+    res.status(201).json(await review.addJsaStep(callerOf(req), req.params.id, parsed.data, ctxOf(req)))
+  } catch (e) {
+    next(e)
+  }
+})
+
+permitsRouter.patch('/jsa/:stepId', async (req, res, next) => {
+  try {
+    const parsed = jsaBody.partial().safeParse(req.body)
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'validation', message: 'Invalid JSA payload.' })
+    }
+    res.json(await review.updateJsaStep(callerOf(req), req.params.stepId, parsed.data, ctxOf(req)))
+  } catch (e) {
+    next(e)
+  }
+})
+
+permitsRouter.delete('/jsa/:stepId', async (req, res, next) => {
+  try {
+    await review.removeJsaStep(callerOf(req), req.params.stepId, ctxOf(req))
+    res.status(204).end()
   } catch (e) {
     next(e)
   }

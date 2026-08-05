@@ -446,9 +446,86 @@ export class Scheduler {
     return raised
   }
 
+  /**
+   * Permits: sitting unapproved, ending today, or overrun.
+   *
+   * A permit is the shortest-lived thing the scheduler watches — hours, not months — so
+   * this sweep is about the working day rather than a renewal calendar. An approval
+   * request nobody has picked up is chased because the crew is standing at the desk; an
+   * overrun permit is chased because work is happening under an authority that lapsed.
+   */
+  async sweepPermits(now = new Date()): Promise<number> {
+    const budget = new Budget()
+    let raised = 0
+
+    const endOfDay = new Date(now)
+    endOfDay.setUTCHours(23, 59, 59, 999)
+    const floor = new Date(now.getTime() - LOOKBACK_DAYS * DAY)
+
+    // Awaiting a signature. Every stage of the chain counts: a permit parked with HSE is
+    // as stalled as one parked at submission.
+    const waiting = await this.db.permit.findMany({
+      where: {
+        status: { in: ['submitted', 'supervisor_review', 'hse_review', 'area_authority'] },
+        validFrom: { gte: floor },
+      },
+      select: { id: true, companyId: true, code: true, title: true, status: true, validFrom: true },
+      take: 2000,
+    })
+    for (const p of waiting) {
+      if (budget.exhausted(p.companyId)) continue
+      if (await this.raise(
+        budget, p.companyId, 'system',
+        `${p.code} is waiting for approval`,
+        `${p.title} — currently at ${p.status.replace(/_/g, ' ')}. Work is due to start ${p.validFrom.toISOString().slice(0, 16).replace('T', ' ')}.`,
+        `/permits?permit=${p.id}&awaiting=${p.status}`,
+      )) raised++
+    }
+
+    // Ending today, and overrun. Both are keyed on the date so a permit extended into
+    // tomorrow raises a fresh notification rather than reusing today's.
+    const ending = await this.db.permit.findMany({
+      where: { status: 'active', validTo: { gte: floor, lte: endOfDay } },
+      select: { id: true, companyId: true, code: true, title: true, validTo: true },
+      take: 2000,
+    })
+    for (const p of ending) {
+      if (budget.exhausted(p.companyId)) continue
+      const overrun = p.validTo < now
+      const on = p.validTo.toISOString().slice(0, 10)
+      if (await this.raise(
+        budget, p.companyId, 'system',
+        overrun ? `${p.code} has overrun its permit` : `${p.code} expires today`,
+        overrun
+          ? `${p.title} — the authority lapsed at ${p.validTo.toISOString().slice(11, 16)}. Stop work, or extend and re-approve.`
+          : `${p.title} — valid until ${p.validTo.toISOString().slice(11, 16)}. Close it or request an extension.`,
+        `/permits?permit=${p.id}&${overrun ? 'overdue' : 'expiring'}=${on}`,
+      )) raised++
+    }
+
+    // Suspended work, which stays stopped until somebody resumes it.
+    const suspended = await this.db.permit.findMany({
+      where: { status: 'suspended', validTo: { gte: floor } },
+      select: { id: true, companyId: true, code: true, title: true, suspendedReason: true },
+      take: 1000,
+    })
+    for (const p of suspended) {
+      if (budget.exhausted(p.companyId)) continue
+      if (await this.raise(
+        budget, p.companyId, 'system',
+        `${p.code} is suspended`,
+        `${p.title} — ${p.suspendedReason ?? 'no reason recorded'}. Work stays stopped until it is resumed.`,
+        `/permits?permit=${p.id}&suspended=1`,
+      )) raised++
+    }
+
+    return raised
+  }
+
   /** One full pass. Safe to call directly; that is how the tests drive it. */
   async runOnce(now = new Date()): Promise<{
-    actions: number; inspections: number; certificates: number; medicals: number; contractors: number
+    actions: number; inspections: number; certificates: number; medicals: number
+    contractors: number; permits: number
   }> {
     const actions = await this.sweepActions(now)
     const inspections = await this.sweepInspections(now)
@@ -457,9 +534,10 @@ export class Scheduler {
     const certificates = await this.sweepCertificates(now)
     const medicals = await this.sweepMedicals(now)
     const contractors = await this.sweepContractors(now)
+    const permits = await this.sweepPermits(now)
     lastRuns.set('j2', new Date().toISOString())
 
-    return { actions, inspections, certificates, medicals, contractors }
+    return { actions, inspections, certificates, medicals, contractors, permits }
   }
 
   /**
@@ -475,13 +553,13 @@ export class Scheduler {
         const n = await this.runOnce()
         // Every sweep counted: a total that silently omits one makes a flood from that
         // sweep invisible in the logs, which is exactly when you need to see it.
-        const total = n.actions + n.inspections + n.certificates + n.medicals + n.contractors
+        const total = n.actions + n.inspections + n.certificates + n.medicals + n.contractors + n.permits
         if (total > 0) {
           // eslint-disable-next-line no-console
           console.log(
             `[safeops-scheduler] raised ${total} notification(s): ` +
             `${n.actions} action, ${n.inspections} inspection, ${n.certificates} certificate, ` +
-            `${n.medicals} medical, ${n.contractors} contractor`,
+            `${n.medicals} medical, ${n.contractors} contractor, ${n.permits} permit`,
           )
         }
       } catch (err) {
