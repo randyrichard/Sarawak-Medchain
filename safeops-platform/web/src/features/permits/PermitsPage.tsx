@@ -65,11 +65,39 @@ export function PermitsPage() {
     setParams(params, { replace: true })
   }
 
+  /*
+   * The permit office's board. Ordered by how urgently each number changes what someone
+   * does: work happening now, people inside a vessel, then what is stuck or about to
+   * lapse, then the day's shape.
+   */
   const KPIS = useMemo(() => [
-    { label: 'Work in progress', value: stats?.activeNow, tone: undefined },
-    { label: 'Awaiting approval', value: stats?.awaitingApproval, tone: stats && stats.awaitingApproval > 0 ? 'var(--warning)' : undefined },
-    { label: 'Expiring ≤2h', value: stats?.expiringWithin2h, tone: stats && stats.expiringWithin2h > 0 ? 'var(--warning)' : 'var(--good)' },
-    { label: 'Expired, still open', value: stats?.expiredOpen, tone: stats && stats.expiredOpen > 0 ? 'var(--critical)' : 'var(--good)' },
+    { label: 'Active permits', value: stats?.activeNow, tone: undefined },
+    {
+      label: 'Inside confined space',
+      value: stats?.insideConfinedSpace,
+      tone: stats && stats.insideConfinedSpace > 0 ? 'var(--accent)' : undefined,
+    },
+    {
+      label: 'Awaiting review',
+      value: stats?.awaitingReview,
+      tone: stats && stats.awaitingReview > 0 ? 'var(--warning)' : undefined,
+    },
+    {
+      label: 'Expiring today',
+      value: stats?.expiringToday,
+      tone: stats && stats.expiringToday > 0 ? 'var(--warning)' : 'var(--good)',
+    },
+    {
+      label: 'Expired, still open',
+      value: stats?.expiredOpen,
+      tone: stats && stats.expiredOpen > 0 ? 'var(--critical)' : 'var(--good)',
+    },
+    {
+      label: 'Suspended',
+      value: stats?.suspended,
+      tone: stats && stats.suspended > 0 ? 'var(--critical)' : 'var(--good)',
+    },
+    { label: 'Starting today', value: stats?.startingToday, tone: undefined },
     { label: 'Closed this month', value: stats?.closedThisMonth, tone: undefined },
   ], [stats])
 
@@ -83,8 +111,8 @@ export function PermitsPage() {
         right={<Button icon={<Plus size={15} />} onClick={() => setNewOpen(true)}>Request permit</Button>}
       />
 
-      {/* KPI strip — 2 up on phones, 5 across on desktop */}
-      <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+      {/* Widget row — 2 up on phones, 4 across on desktop */}
+      <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-4">
         {KPIS.map((k, i) => (
           <Card key={k.label} className="animate-rise px-4 py-3">
             <p className="text-2xs font-semibold text-ink-2" style={{ animationDelay: `${i * 35}ms` }}>{k.label}</p>

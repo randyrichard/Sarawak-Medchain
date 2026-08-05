@@ -46,6 +46,11 @@ interface ServerPermit {
   closedBy: string | null
   closedAt: string | null
   handbackConfirmed: boolean
+  toolboxAt: string | null
+  toolboxBy: string | null
+  requiredPpe: string[]
+  ppeAcknowledgedAt: string | null
+  ppeAcknowledgedBy: string | null
   linkedIncidentId: string | null
   version: number
   createdBy: string
@@ -130,6 +135,11 @@ export function toPermit(s: ServerPermit): PermitView {
     closedBy: nu(s.closedBy),
     closedAt: nu(s.closedAt),
     handbackConfirmed: s.handbackConfirmed,
+    toolboxAt: s.toolboxAt ?? null,
+    toolboxBy: s.toolboxBy ?? null,
+    requiredPpe: s.requiredPpe ?? [],
+    ppeAcknowledgedAt: s.ppeAcknowledgedAt ?? null,
+    ppeAcknowledgedBy: s.ppeAcknowledgedBy ?? null,
     signatures: s.signatures.map<PermitSignature>((g) => ({
       role: g.role, name: g.name, signedAt: g.signedAt, statement: g.statement,
     })),

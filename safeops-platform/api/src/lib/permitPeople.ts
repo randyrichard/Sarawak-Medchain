@@ -56,6 +56,8 @@ export interface AttendeeView {
   enteredAt: Date | null
   exitedAt: Date | null
   inside: boolean
+  /** Signed the toolbox talk. Null until they have. */
+  toolboxAckAt: Date | null
 }
 
 export class PermitPeopleService {
@@ -230,6 +232,7 @@ export class PermitPeopleService {
     nameAtAssignment: string
     enteredAt: Date | null
     exitedAt: Date | null
+    toolboxAckAt: Date | null
     employee: { id: string; name: string; employeeNo: string } | null
     contractorWorker: { id: string; name: string; workerNo: string } | null
   }): AttendeeView {
@@ -246,6 +249,7 @@ export class PermitPeopleService {
       enteredAt: r.enteredAt,
       exitedAt: r.exitedAt,
       inside: !!r.enteredAt && !r.exitedAt,
+      toolboxAckAt: r.toolboxAckAt,
     }
   }
 

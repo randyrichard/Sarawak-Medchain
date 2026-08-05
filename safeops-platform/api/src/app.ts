@@ -9,6 +9,7 @@ import { authRouter } from './routes/auth.js'
 import { incidentsRouter } from './routes/incidents.js'
 import { incidentExtrasRouter } from './routes/incidentExtras.js'
 import { permitsRouter } from './routes/permits.js'
+import { permitAttachmentsRouter } from './routes/permitAttachments.js'
 import { inspectionsRouter } from './routes/inspections.js'
 import { auditsRouter } from './routes/audits.js'
 import { trainingRouter } from './routes/training.js'
@@ -116,6 +117,7 @@ export function createApp() {
   // Mounted first: its literal paths would otherwise be captured by /incidents/:id
   app.use('/incidents', incidentExtrasRouter)
   app.use('/incidents', incidentsRouter)
+  app.use('/permits', permitAttachmentsRouter)
   app.use('/permits', permitsRouter)
   app.use('/assets', inspectionsRouter)
   app.use('/audits', auditsRouter)

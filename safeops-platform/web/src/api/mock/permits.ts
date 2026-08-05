@@ -249,9 +249,28 @@ export class PermitStore {
       .map((p) => this.toView(p))
 
     const monthAgo = Date.now() - 30 * 86400_000
+    // Day boundaries in the viewer's own timezone: "starting today" is a question about
+    // the shift someone is standing in, not about UTC.
+    const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0)
+    const dayEnd = new Date(dayStart.getTime() + 86400_000 - 1)
+    const within = (iso: string | undefined) => {
+      if (!iso) return false
+      const t = new Date(iso).getTime()
+      return t >= dayStart.getTime() && t <= dayEnd.getTime()
+    }
+    const REVIEWING = ['submitted', 'supervisor_review', 'hse_review', 'area_authority']
+
     return {
       activeNow: all.filter((p) => p.status === 'active').length,
       awaitingApproval: all.filter((p) => p.status === 'submitted').length,
+      awaitingReview: all.filter((p) => REVIEWING.includes(p.status)).length,
+      suspended: all.filter((p) => p.status === 'suspended').length,
+      startingToday: all.filter((p) => within(p.validFrom)).length,
+      expiringToday: all.filter((p) => p.status === 'active' && within(p.validTo)).length,
+      // The mock store has no attendee entry log, so nobody is ever recorded as inside.
+      // Reporting zero is honest; inventing a number here would make the credential-free
+      // demo disagree with the product.
+      insideConfinedSpace: 0,
       expiringWithin2h: all.filter((p) => p.status === 'active' && p.hoursRemaining > 0 && p.hoursRemaining <= 2).length,
       expiredOpen: all.filter((p) => p.status === 'expired').length,
       closedThisMonth: all.filter((p) => p.status === 'closed' && p.closedAt && new Date(p.closedAt).getTime() > monthAgo).length,

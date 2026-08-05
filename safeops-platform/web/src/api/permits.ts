@@ -100,6 +100,8 @@ export interface PermitEvent {
   id: string
   at: string
   actor: string
+  /** The actor's role at the time. Optional: older rows predate it. */
+  actorRole?: string
   action: string
   detail?: string
 }
@@ -140,6 +142,14 @@ export interface Permit {
   /** Site handed back clean, tools removed, isolations released. */
   handbackConfirmed?: boolean
 
+  /** Pre-start briefing. Null until it has been held. */
+  toolboxAt?: string | null
+  toolboxBy?: string | null
+  /** Mandatory PPE, and the issuer's confirmation that it is actually on site. */
+  requiredPpe?: string[]
+  ppeAcknowledgedAt?: string | null
+  ppeAcknowledgedBy?: string | null
+
   signatures: PermitSignature[]
   timeline: PermitEvent[]
 
@@ -171,6 +181,13 @@ export interface PermitStats {
   activeNow: number
   awaitingApproval: number
   expiringWithin2h: number
+  /** Anywhere in the approval chain, not just at submission. */
+  awaitingReview: number
+  suspended: number
+  startingToday: number
+  expiringToday: number
+  /** People signed in to a confined space right now. */
+  insideConfinedSpace: number
   expiredOpen: number
   closedThisMonth: number
   byType: { type: PermitType; label: string; active: number }[]

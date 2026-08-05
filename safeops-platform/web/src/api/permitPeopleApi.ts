@@ -27,6 +27,8 @@ export interface PermitAttendee {
   reference: string
   enteredAt: string | null
   exitedAt: string | null
+  /** Signed the toolbox talk. Null until they have. */
+  toolboxAckAt: string | null
   /** In the work area right now. What makes vessel occupancy answerable. */
   inside: boolean
 }

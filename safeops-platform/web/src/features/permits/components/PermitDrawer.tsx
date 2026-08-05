@@ -1,13 +1,21 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  Check, Clock, FlaskConical, History, Lock, PenLine, Printer, ShieldAlert, Unlock, X,
+  Check, Clock, FlaskConical, Lock, PenLine, Printer, ShieldAlert, Unlock, X, Users,
 } from 'lucide-react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import type { Actor } from '@/api/incidents'
 import { GAS_LIMITS, GAS_TEST_REQUIRED, ISOLATION_REQUIRED, type PermitView } from '@/api/permits'
 import { PermitPeoplePanel } from './PermitPeoplePanel'
+import { ReviewChain } from './ReviewChain'
+import { ToolboxDialog } from './ToolboxDialog'
+import { JsaTable } from './JsaTable'
+import { PpeChecklist } from './PpeChecklist'
+import { AttachmentsPanel } from './AttachmentsPanel'
+import { PermitTimeline } from './PermitTimeline'
+import { permitWorkflowApi, type ReviewStatus } from '@/api/permitWorkflowApi'
+import { permitPeopleApi, type PermitExtension } from '@/api/permitPeopleApi'
 import { Alert, Badge, Button, Checkbox, Input, StatusPill, Textarea } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { PERMIT_STATUS_KIND, formatRemaining, fmtTime, fmtWindow, remainingTone } from '../lib'
@@ -31,10 +39,17 @@ export function PermitDrawer({
   const [handback, setHandback] = useState(false)
   const [gas, setGas] = useState({ oxygenPct: '20.9', lelPct: '0', h2sPpm: '0', coPpm: '0' })
   const [iso, setIso] = useState({ description: '', tagId: '' })
+  const [review, setReview] = useState<ReviewStatus | null>(null)
+  const [extensions, setExtensions] = useState<PermitExtension[]>([])
+  const [toolboxOpen, setToolboxOpen] = useState(false)
 
   const load = useCallback(() => {
     if (!permitId) return
     api.getPermit(permitId).then(setPermit).catch(() => setPermit(null))
+    // The review status carries the activation gate, which changes on almost every
+    // action in this drawer, so it is refreshed alongside the permit rather than once.
+    permitWorkflowApi.review(permitId).then(setReview).catch(() => setReview(null))
+    permitPeopleApi.listExtensions(permitId).then(setExtensions).catch(() => setExtensions([]))
   }, [permitId])
 
   useEffect(() => {
@@ -217,12 +232,73 @@ export function PermitDrawer({
             </section>
           )}
 
+          {/* Approval chain — where the permit is and who is holding it. */}
+          <ReviewChain
+            permit={permit}
+            review={review}
+            busy={busy}
+            onAdvance={async (statement) => {
+              await permitWorkflowApi.advance(permit.id, statement)
+              load(); onChanged()
+            }}
+            onReturn={async (reason) => {
+              await permitWorkflowApi.returnToApplicant(permit.id, reason)
+              load(); onChanged()
+            }}
+          />
+
+          {/* What still stands between this permit and work starting. */}
+          {review && review.activationBlockers.length > 0 && permit.status === 'approved' && (
+            <Alert tone="warning" title="Not ready to start">
+              <ul className="mt-1 space-y-0.5">
+                {review.activationBlockers.map((b) => <li key={b}>· {b}</li>)}
+              </ul>
+            </Alert>
+          )}
+
+          {/* Toolbox talk */}
+          <section>
+            <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
+              <Users size={12} /> Toolbox talk
+            </p>
+            <div className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5">
+              <div className="min-w-0">
+                {permit.toolboxAt ? (
+                  <>
+                    <p className="text-sm text-ink">Held {new Date(permit.toolboxAt).toLocaleString()}</p>
+                    <p className="text-2xs text-muted">Led by {permit.toolboxBy ?? 'not recorded'}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-ink-2">Not yet held</p>
+                    <p className="text-2xs text-muted">Work cannot start until everyone named has acknowledged it.</p>
+                  </>
+                )}
+              </div>
+              <Button size="sm" variant="secondary" onClick={() => setToolboxOpen(true)}>
+                {permit.toolboxAt ? 'View' : 'Record'}
+              </Button>
+            </div>
+          </section>
+
           {/* People named on the permit, and who is currently inside the work area. */}
           <PermitPeoplePanel
             permitId={permit.id}
             permitStatus={permit.status}
             canEdit={open}
             onChanged={onChanged}
+          />
+
+          <JsaTable permitId={permit.id} canEdit={open} onChanged={() => { load(); onChanged() }} />
+
+          <PpeChecklist
+            permitId={permit.id}
+            required={permit.requiredPpe ?? []}
+            acknowledgedAt={permit.ppeAcknowledgedAt ?? null}
+            acknowledgedBy={permit.ppeAcknowledgedBy ?? null}
+            canEdit={open}
+            canAcknowledge={issuer && open}
+            onChanged={() => { load(); onChanged() }}
           />
 
           {/* Isolations */}
@@ -299,20 +375,40 @@ export function PermitDrawer({
           )}
 
           {/* Timeline */}
-          <section>
-            <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-              <History size={12} /> Audit trail
-            </p>
-            <ul className="space-y-1.5">
-              {permit.timeline.map((e) => (
-                <li key={e.id} className="border-l-2 pl-3 text-2xs" style={{ borderColor: 'var(--grid)' }}>
-                  <span className="font-semibold text-ink">{e.action}</span>
-                  <span className="text-muted"> · {e.actor} · {fmtWindow(e.at)}</span>
-                  {e.detail && <p className="text-ink-2">{e.detail}</p>}
-                </li>
-              ))}
-            </ul>
-          </section>
+          <AttachmentsPanel permitId={permit.id} canEdit={open} onChanged={() => { load(); onChanged() }} />
+
+          {/* Extension history — how long this job was actually authorised for, and who
+              kept extending it. */}
+          {extensions.length > 0 && (
+            <section>
+              <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
+                <Clock size={12} /> Extensions ({extensions.length})
+              </p>
+              <ul className="space-y-1.5">
+                {extensions.map((x) => (
+                  <li key={x.id} className="rounded-lg border px-3 py-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm text-ink">
+                        Until {new Date(x.newValidTo).toLocaleString()}
+                      </p>
+                      <Badge tone={x.approvedAt ? 'good' : 'warning'}>
+                        {x.approvedAt ? 'Approved' : 'Pending'}
+                      </Badge>
+                    </div>
+                    <p className="mt-0.5 text-2xs text-muted">
+                      was {new Date(x.previousValidTo).toLocaleString()} · requested by {x.requestedBy}
+                      {x.approvedBy && <span> · approved by {x.approvedBy}</span>}
+                    </p>
+                    <p className="mt-1 rounded-lg bg-sunken px-2.5 py-1.5 text-2xs leading-relaxed text-ink-2">
+                      {x.reason}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          <PermitTimeline permit={permit} />
         </div>
 
         {/* Stage actions — one primary decision per state */}
@@ -387,6 +483,15 @@ export function PermitDrawer({
           )}
         </div>
       </aside>
+    <ToolboxDialog
+      open={toolboxOpen}
+      permitId={permit.id}
+      toolboxAt={permit.toolboxAt ?? null}
+      toolboxBy={permit.toolboxBy ?? null}
+      canManage={open}
+      onClose={() => setToolboxOpen(false)}
+      onChanged={() => { load(); onChanged() }}
+    />
     </div>,
     document.body,
   )
