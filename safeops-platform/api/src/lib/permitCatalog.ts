@@ -13,6 +13,7 @@ import type { PermitType } from '@prisma/client'
 export const PERMIT_TYPES = [
   'hot_work', 'confined_space', 'working_at_height', 'electrical_isolation',
   'excavation', 'lifting_operation', 'line_breaking', 'radiography',
+  'loto', 'cold_work', 'pressure_testing', 'vehicle_entry',
 ] as const satisfies readonly PermitType[]
 
 export const PERMIT_TYPE_LABEL: Record<PermitType, string> = {
@@ -24,11 +25,19 @@ export const PERMIT_TYPE_LABEL: Record<PermitType, string> = {
   lifting_operation: 'Lifting Operation',
   line_breaking: 'Line Breaking',
   radiography: 'Radiography',
+  loto: 'Lockout / Tagout Isolation',
+  cold_work: 'Cold Work',
+  pressure_testing: 'Pressure Testing',
+  vehicle_entry: 'Vehicle Entry',
 }
 
 export const PERMIT_STATUS_LABEL: Record<string, string> = {
   draft: 'Draft',
   submitted: 'Awaiting Approval',
+  supervisor_review: 'With Supervisor',
+  hse_review: 'With HSE',
+  area_authority: 'With Area Authority',
+  archived: 'Archived',
   approved: 'Approved — Not Started',
   active: 'Work In Progress',
   suspended: 'Suspended',
@@ -47,6 +56,12 @@ export const PERMIT_MAX_HOURS: Record<PermitType, number> = {
   lifting_operation: 12,
   line_breaking: 8,
   radiography: 12,
+  // A LOTO isolation often spans a shutdown; cold work and vehicle entry carry the least
+  // acute risk and so get the longest windows.
+  loto: 24,
+  cold_work: 24,
+  pressure_testing: 12,
+  vehicle_entry: 24,
 }
 
 /**
@@ -122,6 +137,35 @@ export const PERMIT_CONTROLS: Record<PermitType, { label: string; required: bool
     { label: 'Source accounted for before and after exposure', required: true },
     { label: 'Adjacent work suspended during exposure', required: true },
     { label: 'Notification issued to all affected departments', required: false },
+  ],
+  loto: [
+    { label: 'Energy sources identified and listed', required: true },
+    { label: 'Isolation devices applied and locked', required: true },
+    { label: 'Personal lock and tag applied by each worker', required: true },
+    { label: 'Stored energy released (springs, hydraulics, capacitors)', required: true },
+    { label: 'Zero-energy state verified by try-start', required: true },
+    { label: 'Isolation register updated', required: false },
+  ],
+  cold_work: [
+    { label: 'Work area inspected and access controlled', required: true },
+    { label: 'Adjacent operations notified', required: true },
+    { label: 'No ignition sources introduced', required: true },
+    { label: 'Housekeeping and egress routes clear', required: false },
+  ],
+  pressure_testing: [
+    { label: 'Test pressure and medium agreed and recorded', required: true },
+    { label: 'Exclusion zone established and signed', required: true },
+    { label: 'Relief device set below vessel rating', required: true },
+    { label: 'Test equipment calibration in date', required: true },
+    { label: 'Nobody in line with blind flanges or caps', required: true },
+    { label: 'Depressurisation procedure agreed before start', required: false },
+  ],
+  vehicle_entry: [
+    { label: 'Driver competency and licence verified', required: true },
+    { label: 'Vehicle inspection completed and defect-free', required: true },
+    { label: 'Spark arrestor fitted where required', required: true },
+    { label: 'Route agreed and pedestrian segregation in place', required: true },
+    { label: 'Banksman assigned for reversing', required: false },
   ],
 }
 

@@ -7,6 +7,7 @@ import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import type { Actor } from '@/api/incidents'
 import { GAS_LIMITS, GAS_TEST_REQUIRED, ISOLATION_REQUIRED, type PermitView } from '@/api/permits'
+import { PermitPeoplePanel } from './PermitPeoplePanel'
 import { Alert, Badge, Button, Checkbox, Input, StatusPill, Textarea } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { PERMIT_STATUS_KIND, formatRemaining, fmtTime, fmtWindow, remainingTone } from '../lib'
@@ -215,6 +216,14 @@ export function PermitDrawer({
               )}
             </section>
           )}
+
+          {/* People named on the permit, and who is currently inside the work area. */}
+          <PermitPeoplePanel
+            permitId={permit.id}
+            permitStatus={permit.status}
+            canEdit={open}
+            onChanged={onChanged}
+          />
 
           {/* Isolations */}
           {needsIso && (

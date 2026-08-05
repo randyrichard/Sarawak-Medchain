@@ -534,6 +534,12 @@ enum PermitType {
   lifting_operation
   line_breaking
   radiography
+  // Added later. Enum values are append-only in Postgres, so the original eight keep
+  // their positions and no existing permit changes meaning.
+  loto
+  cold_work
+  pressure_testing
+  vehicle_entry
 }
 
 /// Stored lifecycle states only.
@@ -551,6 +557,13 @@ enum PermitStatus {
   suspended
   closed
   rejected
+  /// The approval chain between submission and approval. A permit sits with the
+  /// supervisor, then HSE, then the area authority who actually owns the plant.
+  supervisor_review
+  hse_review
+  area_authority
+  /// Archived: closed and filed. Excluded from every live view, kept for the record.
+  archived
 }
 
 enum PermitSignatureRole {
@@ -576,8 +589,28 @@ model Permit {
   location    String
 
   applicant   String
+  /// Legacy free-text contractor name. Superseded by contractorCompanyId; retained so
+  /// permits raised before the contractor register existed still read correctly.
   contractor  String?
+  /// The engaged firm. Validated at assignment: a suspended contractor cannot be named.
+  contractorCompanyId String?
+  contractorCompany   ContractorCompany? @relation(fields: [contractorCompanyId], references: [id], onDelete: SetNull)
   workerCount Int    @default(1)
+
+  /// Pre-start briefing. A permit issued without one is the single most common finding
+  /// in a post-incident review, so it is recorded rather than assumed.
+  toolboxAt DateTime?
+  toolboxBy String?
+
+  /// Job safety analysis / risk assessment reference and sign-off.
+  jsaReference String?
+  jsaConfirmed Boolean @default(false)
+
+  /// PPE the issuer requires for this job, beyond site-standard.
+  requiredPpe String[] @default([])
+
+  attendees  PermitAttendee[]
+  extensions PermitExtension[]
 
   /// Authorised window. The permit is only a permit between these two instants; the
   /// maximum span allowed depends on the type (see PERMIT_MAX_HOURS).
@@ -1168,6 +1201,7 @@ model Employee {
 
   enrolments        SessionEnrolment[]
   certificates      Certificate[]
+  permitAttendances PermitAttendee[]
   emergencyContacts EmergencyContact[]
   ppeIssues         PpeIssue[]
 
@@ -1233,6 +1267,76 @@ model PpeIssue {
   @@index([companyId, replaceDue])
 }
 
+/// What someone is on a permit to do.
+enum PermitAttendeeRole {
+  /// Named in charge of the work on the ground.
+  supervisor
+  /// Accepts the permit from the issuer.
+  receiver
+  /// Doing the work.
+  worker
+  /// Watches the entry point on a confined space. Never counted as inside.
+  standby
+  gas_tester
+}
+
+/// A person named on a permit.
+///
+/// Exactly one of employeeId or contractorWorkerId is set — the permit does not care
+/// whose payroll someone is on, but the register they came from decides which fitness
+/// rules apply. Names are never free text here: a typo used to mean an unfit person
+/// could be written onto a hot work permit and nothing would notice.
+model PermitAttendee {
+  id       String @id @default(cuid())
+  permitId String
+  permit   Permit @relation(fields: [permitId], references: [id], onDelete: Cascade)
+
+  employeeId String?
+  employee   Employee? @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+
+  contractorWorkerId String?
+  contractorWorker   ContractorWorker? @relation(fields: [contractorWorkerId], references: [id], onDelete: Restrict)
+
+  role PermitAttendeeRole @default(worker)
+
+  /// Snapshot of the name at assignment, so a closed permit still reads correctly even
+  /// if the person is later renamed or removed from the register.
+  nameAtAssignment String
+  addedBy          String
+  addedAt          DateTime @default(now())
+
+  /// Confined space entry tracking. Null until they go in, cleared when they come out.
+  enteredAt DateTime?
+  exitedAt  DateTime?
+
+  @@index([permitId])
+  @@index([employeeId])
+  @@index([contractorWorkerId])
+}
+
+/// A permit extension.
+///
+/// Kept as history rather than overwriting validTo, because "how long was this job
+/// actually authorised for, and who kept extending it" is the question asked when the
+/// job overruns into a shift nobody planned for.
+model PermitExtension {
+  id       String @id @default(cuid())
+  permitId String
+  permit   Permit @relation(fields: [permitId], references: [id], onDelete: Cascade)
+
+  previousValidTo DateTime
+  newValidTo      DateTime
+  reason          String
+
+  requestedBy String
+  requestedAt DateTime  @default(now())
+  approvedBy  String?
+  approvedAt  DateTime?
+  rejectedReason String?
+
+  @@index([permitId])
+}
+
 // ─── Contractors ─────────────────────────────────────────────────────────────
 
 enum ContractorStatus {
@@ -1268,6 +1372,7 @@ model ContractorCompany {
   status ContractorStatus @default(active)
 
   workers ContractorWorker[]
+  permits Permit[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1319,6 +1424,7 @@ model ContractorWorker {
   active Boolean @default(true)
 
   certificates ContractorCertificate[]
+  permitAttendances PermitAttendee[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

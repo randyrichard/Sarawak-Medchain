@@ -2,11 +2,13 @@ import { Router } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
 import { PermitError, PermitService } from '../lib/permitService.js'
+import { PermitPeopleService } from '../lib/permitPeople.js'
 import type { Caller } from '../lib/incidentService.js'
 import { PERMIT_TYPES } from '../lib/permitCatalog.js'
 import { requireAuth } from '../middleware/requireAuth.js'
 
 const svc = new PermitService(prisma)
+const people = new PermitPeopleService(prisma)
 export const permitsRouter = Router()
 
 // Identity always comes from the verified token, never from the request body.
@@ -23,6 +25,7 @@ const PERMIT_TYPE = z.enum(PERMIT_TYPES)
 const STATUS_FILTER = z.enum([
   'draft', 'submitted', 'approved', 'active', 'suspended', 'closed', 'rejected',
   'expired', 'live', 'all',
+  'supervisor_review', 'hse_review', 'area_authority', 'archived',
 ])
 
 const listQuery = z.object({
@@ -271,3 +274,100 @@ permitsRouter.post('/:id/isolations/:isolationId/release', async (req, res, next
 })
 
 export { PermitError }
+
+// ── People on the permit ─────────────────────────────────────────────────────
+
+const attendeeBody = z.object({
+  employeeId: z.string().min(1).optional(),
+  contractorWorkerId: z.string().min(1).optional(),
+  role: z.enum(['supervisor', 'receiver', 'worker', 'standby', 'gas_tester']).optional(),
+})
+
+permitsRouter.get('/:id/people', async (req, res, next) => {
+  try {
+    res.json({ rows: await people.list(callerOf(req), req.params.id) })
+  } catch (e) {
+    next(e)
+  }
+})
+
+permitsRouter.post('/:id/people', async (req, res, next) => {
+  try {
+    const parsed = attendeeBody.safeParse(req.body)
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'validation', message: 'Name an employee or a contractor worker.' })
+    }
+    res.status(201).json(await people.add(callerOf(req), req.params.id, parsed.data))
+  } catch (e) {
+    next(e)
+  }
+})
+
+permitsRouter.delete('/people/:attendeeId', async (req, res, next) => {
+  try {
+    await people.remove(callerOf(req), req.params.attendeeId)
+    res.status(204).end()
+  } catch (e) {
+    next(e)
+  }
+})
+
+/** Sign in and out of the work area, so occupancy is a query rather than a headcount. */
+permitsRouter.post('/people/:attendeeId/entry', async (req, res, next) => {
+  try {
+    const parsed = z.object({ inside: z.boolean() }).safeParse(req.body)
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'validation', message: 'inside must be true or false.' })
+    }
+    res.json(await people.setInside(callerOf(req), req.params.attendeeId, parsed.data.inside))
+  } catch (e) {
+    next(e)
+  }
+})
+
+/** Who may be named, and why anyone may not — drives the picker at the permit desk. */
+permitsRouter.get('/:id/eligible', async (req, res, next) => {
+  try {
+    res.json({ rows: await people.eligible(callerOf(req), req.params.id) })
+  } catch (e) {
+    next(e)
+  }
+})
+
+// ── Extensions ───────────────────────────────────────────────────────────────
+
+permitsRouter.get('/:id/extensions', async (req, res, next) => {
+  try {
+    res.json({ rows: await svc.listExtensions(callerOf(req), req.params.id) })
+  } catch (e) {
+    next(e)
+  }
+})
+
+permitsRouter.post('/:id/extensions', async (req, res, next) => {
+  try {
+    const parsed = z.object({
+      newValidTo: z.string().datetime(),
+      reason: z.string().min(3).max(1000),
+    }).safeParse(req.body)
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: 'validation',
+        message: parsed.error.issues[0]?.message ?? 'A new end time and a reason are required.',
+      })
+    }
+    res.status(201).json(await svc.requestExtension(
+      callerOf(req), req.params.id, parsed.data.newValidTo, parsed.data.reason,
+    ))
+  } catch (e) {
+    next(e)
+  }
+})
+
+permitsRouter.post('/extensions/:extensionId/approve', async (req, res, next) => {
+  try {
+    res.json(await svc.approveExtension(callerOf(req), req.params.extensionId))
+  } catch (e) {
+    next(e)
+  }
+})

@@ -804,6 +804,116 @@ export class PermitService {
 
     return this.get(caller, permitId)
   }
+
+  // ── Extensions ─────────────────────────────────────────────────────────────
+
+  async listExtensions(caller: Caller, permitId: string) {
+    await this.load(caller, permitId)
+    return this.db.permitExtension.findMany({
+      where: { permitId },
+      orderBy: { requestedAt: 'desc' },
+    })
+  }
+
+  /**
+   * Ask for more time.
+   *
+   * Recorded as a request rather than applied directly, because "the job overran and
+   * somebody quietly moved the end time" is exactly the pattern a permit exists to stop.
+   * The window is still bounded by the type's maximum measured from the original start:
+   * an eight-hour confined space entry cannot become a thirty-hour one by extending it
+   * four times.
+   */
+  async requestExtension(caller: Caller, permitId: string, newValidTo: string, reason: string) {
+    const { permit, membership } = await this.load(caller, permitId)
+
+    const effective = this.effectiveStatus(permit)
+    if (!['active', 'approved', 'expired'].includes(effective)) {
+      throw new PermitError('validation', `A ${effective} permit cannot be extended.`)
+    }
+
+    const next = new Date(newValidTo)
+    if (Number.isNaN(next.getTime())) throw new PermitError('validation', 'That is not a valid date and time.')
+    if (next <= permit.validTo) {
+      throw new PermitError('validation', 'An extension has to move the end time later than it is now.')
+    }
+
+    const maxHours = PERMIT_MAX_HOURS[permit.type]
+    const totalHours = (next.getTime() - permit.validFrom.getTime()) / 3600_000
+    if (totalHours > maxHours) {
+      throw new PermitError(
+        'validation',
+        `A ${PERMIT_TYPE_LABEL[permit.type]} permit cannot run more than ${maxHours} hours in total. Raise a new permit.`,
+      )
+    }
+
+    const pending = await this.db.permitExtension.findFirst({
+      where: { permitId, approvedAt: null, rejectedReason: null },
+      select: { id: true },
+    })
+    if (pending) throw new PermitError('validation', 'An extension request is already awaiting approval.')
+
+    const [created] = await this.db.$transaction([
+      this.db.permitExtension.create({
+        data: {
+          permitId,
+          previousValidTo: permit.validTo,
+          newValidTo: next,
+          reason: reason.trim(),
+          requestedBy: caller.name,
+        },
+      }),
+      this.db.permitEvent.create({
+        data: {
+          permitId,
+          action: 'Extension requested',
+          detail: `until ${next.toISOString().slice(0, 16).replace('T', ' ')} — ${reason.trim()}`,
+          actor: caller.name,
+          actorRole: membership.role,
+        },
+      }),
+    ])
+    return created
+  }
+
+  /** Approving an extension is what actually moves the permit's end time. */
+  async approveExtension(caller: Caller, extensionId: string) {
+    const ext = await this.db.permitExtension.findUnique({
+      where: { id: extensionId },
+      include: { permit: { select: { id: true, companyId: true, code: true, validTo: true } } },
+    })
+    if (!ext) throw new PermitError('not_found', 'Extension request not found.', 404)
+    // Same authority that issues a permit extends one — it is the same decision.
+    const m = this.requireIssuer(caller, ext.permit.companyId)
+    if (ext.approvedAt) throw new PermitError('validation', 'That extension has already been approved.')
+    if (ext.requestedBy === caller.name) {
+      throw new PermitError('validation', 'An extension must be approved by someone other than the requester.')
+    }
+
+    await this.db.$transaction([
+      this.db.permitExtension.update({
+        where: { id: extensionId },
+        data: { approvedBy: caller.name, approvedAt: new Date() },
+      }),
+      this.db.permit.update({
+        where: { id: ext.permit.id },
+        // An extension revives an expired permit: the work is authorised again, so the
+        // status has to say so rather than leaving it reading expired.
+        data: { validTo: ext.newValidTo, status: 'active', version: { increment: 1 } },
+      }),
+      this.db.permitEvent.create({
+        data: {
+          permitId: ext.permit.id,
+          action: 'Extension approved',
+          detail: `now valid until ${ext.newValidTo.toISOString().slice(0, 16).replace('T', ' ')}`,
+          actor: caller.name,
+          actorRole: m.role,
+        },
+      }),
+    ])
+
+    return this.get(caller, ext.permit.id)
+  }
 }
 
 export { GAS_LIMITS }
