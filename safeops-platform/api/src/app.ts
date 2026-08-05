@@ -19,6 +19,7 @@ import { activityRouter } from './routes/activity.js'
 import { accountRouter } from './routes/account.js'
 import { searchRouter } from './routes/search.js'
 import { employeesRouter } from './routes/employees.js'
+import { contractorsRouter } from './routes/contractors.js'
 import { AuthError } from './lib/authService.js'
 import { IncidentError } from './lib/incidentService.js'
 import { PermitError } from './lib/permitService.js'
@@ -32,6 +33,7 @@ import { ActivityError } from './lib/activityService.js'
 import { AccountError } from './lib/accountService.js'
 import { SearchError } from './lib/searchService.js'
 import { EmployeeError } from './lib/employeeService.js'
+import { ContractorError } from './lib/contractorService.js'
 
 export function createApp() {
   const app = express()
@@ -125,6 +127,7 @@ export function createApp() {
   app.use('/account', accountRouter)
   app.use('/search', searchRouter)
   app.use('/employees', employeesRouter)
+  app.use('/contractors', contractorsRouter)
 
   app.use((_req, res) => res.status(404).json({ error: 'not_found' }))
 
@@ -143,7 +146,8 @@ export function createApp() {
       err instanceof ActivityError ||
       err instanceof AccountError ||
       err instanceof SearchError ||
-      err instanceof EmployeeError
+      err instanceof EmployeeError ||
+      err instanceof ContractorError
     ) {
       return res.status(err.status).json({ error: err.code, message: err.message })
     }

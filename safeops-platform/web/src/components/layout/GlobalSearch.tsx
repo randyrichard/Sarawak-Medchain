@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Search, Loader2, ClipboardList, ListChecks, HardHat, Wrench, CalendarClock, GraduationCap,
-  UserRound, ShieldCheck, Building2, ScrollText,
+  UserRound, ShieldCheck, Building2, ScrollText, HardHat as HardHatIcon, Truck,
 } from 'lucide-react'
 import { searchApi, type SearchHit, type SearchKind } from '@/api/accountApi'
 import { useOrg } from '@/features/org/OrgContext'
@@ -20,6 +20,8 @@ const KIND_ICON: Record<SearchKind, typeof ClipboardList> = {
   user: ShieldCheck,
   company: Building2,
   auditlog: ScrollText,
+  contractor: Truck,
+  contractorWorker: HardHatIcon,
 }
 
 const KIND_LABEL: Record<SearchKind, string> = {
@@ -33,6 +35,8 @@ const KIND_LABEL: Record<SearchKind, string> = {
   user: 'User account',
   company: 'Workspace',
   auditlog: 'Audit log',
+  contractor: 'Contractor',
+  contractorWorker: 'Contractor worker',
 }
 
 /**

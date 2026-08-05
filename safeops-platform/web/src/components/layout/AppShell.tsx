@@ -33,6 +33,7 @@ const NAV: NavItem[] = [
   { to: '/audits', label: 'Compliance', icon: ShieldCheck, capability: 'dashboard:view' },
   { to: '/training', label: 'Training', icon: GraduationCap, capability: 'dashboard:view' },
   { to: '/employees', label: 'Workforce', icon: Users, capability: 'dashboard:view' },
+  { to: '/contractors', label: 'Contractors', icon: HardHat, capability: 'dashboard:view' },
   { to: '/notifications', label: 'Notifications', icon: Bell, capability: 'dashboard:view' },
   { to: '/organization', label: 'Organization', icon: Building2, capability: 'org:view' },
   { to: '/admin', label: 'Administration', icon: SlidersHorizontal, capability: 'settings:manage' },

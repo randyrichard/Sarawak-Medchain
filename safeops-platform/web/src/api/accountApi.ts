@@ -31,6 +31,7 @@ export interface UserPreferences {
 export type SearchKind =
   | 'incident' | 'action' | 'permit' | 'asset' | 'audit' | 'certificate'
   | 'employee' | 'user' | 'company' | 'auditlog'
+  | 'contractor' | 'contractorWorker'
 
 export interface SearchHit {
   kind: SearchKind

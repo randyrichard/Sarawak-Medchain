@@ -23,6 +23,7 @@ export class SearchError extends Error {
 export type SearchKind =
   | 'incident' | 'action' | 'permit' | 'asset' | 'audit' | 'certificate'
   | 'employee' | 'user' | 'company' | 'auditlog'
+  | 'contractor' | 'contractorWorker'
 
 /**
  * Registers only an administrator may search.
@@ -192,7 +193,7 @@ export class SearchService {
     const canSeeDirectory = DIRECTORY_ROLES.includes(m.role)
     const siteScope = m.siteIds.length > 0 ? { siteId: { in: m.siteIds } } : {}
 
-    const [employees, users, companies, auditLog] = await Promise.all([
+    const [employees, users, companies, auditLog, contractors, contractorWorkers] = await Promise.all([
       canSeeDirectory
         ? this.db.employee.findMany({
             where: {
@@ -240,6 +241,35 @@ export class SearchService {
             take: PER_KIND,
           })
         : Promise.resolve([]),
+
+      // Contractors are workspace-wide rather than site-scoped: the firm is engaged by
+      // the tenant, not by one site.
+      this.db.contractorCompany.findMany({
+        where: {
+          companyId,
+          OR: [{ name: like }, { code: like }, { registrationNumber: like }, { contactPerson: like }],
+        },
+        select: { id: true, code: true, name: true, status: true, insuranceExpiry: true },
+        orderBy: { name: 'asc' },
+        take: PER_KIND,
+      }),
+
+      // Their workers are site-scoped, same as anyone else standing on a site.
+      canSeeDirectory
+        ? this.db.contractorWorker.findMany({
+            where: {
+              companyId, ...siteScope,
+              OR: [{ name: like }, { workerNo: like }, { icPassport: like }, { position: like }],
+            },
+            select: {
+              id: true, workerNo: true, name: true, position: true, siteId: true,
+              onSite: true, active: true,
+              contractorCompany: { select: { name: true } },
+            },
+            orderBy: { name: 'asc' },
+            take: PER_KIND,
+          })
+        : Promise.resolve([]),
     ])
 
     return [
@@ -265,6 +295,22 @@ export class SearchService {
         kind: 'auditlog', id: r.id, code: r.at.toISOString().slice(0, 10), title: r.action,
         detail: [r.actor, r.target].filter(Boolean).join(' → '),
         href: `/admin?s=audit&q=${encodeURIComponent(q)}`,
+      })),
+      ...contractors.map((r): SearchHit => ({
+        kind: 'contractor', id: r.id, code: r.code, title: r.name,
+        detail: [
+          r.status === 'suspended' ? 'suspended' : 'active',
+          r.insuranceExpiry ? `insured to ${r.insuranceExpiry.toISOString().slice(0, 10)}` : 'no insurance on file',
+        ].join(' · '),
+        href: `/contractors?contractor=${r.id}`,
+      })),
+      ...contractorWorkers.map((r): SearchHit => ({
+        kind: 'contractorWorker', id: r.id, code: r.workerNo, title: r.name,
+        detail: [
+          r.contractorCompany.name, r.position, r.siteId.toUpperCase(),
+          r.onSite ? 'on site' : null, r.active ? null : 'deregistered',
+        ].filter(Boolean).join(' · '),
+        href: `/contractors?worker=${r.id}`,
       })),
     ]
   }

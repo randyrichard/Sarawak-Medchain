@@ -171,6 +171,8 @@ model Company {
   documents      ComplianceDocument[]
   employees      Employee[]
   ppeIssues      PpeIssue[]
+  contractors    ContractorCompany[]
+  contractorWorkers ContractorWorker[]
   courses        TrainingCourse[]
   sessions       TrainingSession[]
   certificates   Certificate[]
@@ -207,6 +209,7 @@ model Site {
   obligations ComplianceObligation[]
   documents   ComplianceDocument[]
   employees   Employee[]
+  contractorWorkers ContractorWorker[]
   sessions    TrainingSession[]
   departments Department[]
 
@@ -1228,6 +1231,126 @@ model PpeIssue {
 
   @@index([employeeId])
   @@index([companyId, replaceDue])
+}
+
+// ─── Contractors ─────────────────────────────────────────────────────────────
+
+enum ContractorStatus {
+  active
+  suspended
+}
+
+/// A contracting firm working on the tenant's sites.
+///
+/// Separate from Company, which is the tenant itself: a contractor has no login, no
+/// workspace and no data of its own here. What it has is an insurance certificate that
+/// expires, and that expiry is the reason this table exists — an uninsured contractor on
+/// site is the tenant's liability, not the contractor's.
+model ContractorCompany {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  /// CON-#### per tenant. Quoted on permits and gate passes.
+  code String
+
+  name               String
+  /// Companies Commission registration (SSM in Malaysia). Blank until supplied.
+  registrationNumber String @default("")
+  contactPerson      String @default("")
+  phone              String @default("")
+  email              String?
+  address            String @default("")
+
+  /// Public liability / workmen's compensation expiry. The date that stops them working.
+  insuranceExpiry DateTime?
+
+  status ContractorStatus @default(active)
+
+  workers ContractorWorker[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, code])
+  @@index([companyId])
+  @@index([companyId, insuranceExpiry])
+}
+
+/// An individual working for a contractor on one of the tenant's sites.
+///
+/// Deliberately not an Employee: they are not on the payroll, their competencies are
+/// evidenced by the contractor rather than issued here, and they come and go. What they
+/// share with an employee is that an expired medical or induction bars them from site.
+model ContractorWorker {
+  id                  String            @id @default(cuid())
+  companyId           String
+  company             Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contractorCompanyId String
+  contractorCompany   ContractorCompany @relation(fields: [contractorCompanyId], references: [id], onDelete: Cascade)
+
+  siteId String
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Restrict)
+
+  /// CW-#### per tenant.
+  workerNo String
+
+  name String
+  /// National ID or passport. The only identifier a contractor worker reliably carries,
+  /// and what a gate check is done against.
+  icPassport String @default("")
+  position   String @default("")
+
+  /// Fitness to work, same bar as an employee's.
+  medicalExpiry DateTime?
+  /// Site induction. Lapses far more often than a medical because it is annual and
+  /// nobody schedules it.
+  inductionExpiry DateTime?
+
+  emergencyName     String  @default("")
+  emergencyPhone    String  @default("")
+  emergencyRelation String  @default("")
+
+  /// Gate state. Set by check-in and cleared by check-out, so "who is on site right now"
+  /// is a query rather than a paper book in a cabin.
+  onSite       Boolean   @default(false)
+  checkedInAt  DateTime?
+
+  active Boolean @default(true)
+
+  certificates ContractorCertificate[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, workerNo])
+  @@index([companyId])
+  @@index([contractorCompanyId])
+  @@index([companyId, medicalExpiry])
+  @@index([companyId, inductionExpiry])
+  @@index([companyId, onSite])
+}
+
+/// Competency evidence supplied by the contractor.
+///
+/// Not a Certificate: that model is proof this tenant trained someone and carries a
+/// verifiable number. This is a scan of somebody else's paperwork, trusted only as far
+/// as the expiry date written on it.
+model ContractorCertificate {
+  id       String           @id @default(cuid())
+  workerId String
+  worker   ContractorWorker @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  name       String
+  issuedBy   String    @default("")
+  issueDate  DateTime?
+  expiryDate DateTime?
+  reference  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workerId])
 }
 
 /// A tenant-authored course. The standard catalogue lives in trainingCatalog.ts and is

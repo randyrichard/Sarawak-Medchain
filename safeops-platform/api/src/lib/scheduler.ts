@@ -47,6 +47,13 @@ const CERT_EXPIRY_DAYS = [90, 60, 30, 7]
 const MEDICAL_EXPIRY_DAYS = [60, 30, 14, 7]
 
 /**
+ * Days before expiry at which contractor medicals, inductions and insurance are chased.
+ * Matches what the customer specified, and the tenant has no other visibility of these
+ * dates — nobody's HR system is tracking a subcontractor's induction.
+ */
+const CONTRACTOR_EXPIRY_DAYS = [30, 14, 7]
+
+/**
  * How far back a sweep will look.
  *
  * Measured against a year of imported history, the first sweep raised 3,361 notifications
@@ -348,9 +355,100 @@ export class Scheduler {
     return raised
   }
 
+  /**
+   * Contractor compliance: worker medicals, site inductions and the firm's insurance.
+   *
+   * Chased harder than an employee's equivalents because the client organisation has no
+   * other visibility of them — nobody in the tenant's HR system is tracking a
+   * subcontractor's induction date, so if this sweep does not raise it, the first anyone
+   * hears is a worker turned away at the gate on the morning of a shutdown.
+   */
+  async sweepContractors(now = new Date()): Promise<number> {
+    const horizon = new Date(now.getTime() + Math.max(...CONTRACTOR_EXPIRY_DAYS) * DAY)
+    const floor = new Date(now.getTime() - LOOKBACK_DAYS * DAY)
+    const budget = new Budget()
+    let raised = 0
+
+    const workers = await this.db.contractorWorker.findMany({
+      where: {
+        active: true,
+        OR: [
+          { medicalExpiry: { not: null, lte: horizon, gte: floor } },
+          { inductionExpiry: { not: null, lte: horizon, gte: floor } },
+        ],
+      },
+      select: {
+        id: true, companyId: true, name: true, workerNo: true,
+        medicalExpiry: true, inductionExpiry: true,
+        contractorCompany: { select: { name: true } },
+      },
+      take: 5000,
+    })
+
+    for (const w of workers) {
+      for (const [label, date] of [
+        ['Medical', w.medicalExpiry],
+        ['Site induction', w.inductionExpiry],
+      ] as const) {
+        if (!date || budget.exhausted(w.companyId)) continue
+        const days = daysBetween(date, now)
+        const on = date.toISOString().slice(0, 10)
+        const who = `${w.name} (${w.workerNo}, ${w.contractorCompany.name})`
+
+        if (days < 0) {
+          if (await this.raise(
+            budget, w.companyId, 'system',
+            `${label} expired — ${w.name}`,
+            `${who}. ${label} lapsed on ${on}; they cannot be admitted to site.`,
+            `/contractors?worker=${w.id}&${label === 'Medical' ? 'medical' : 'induction'}=expired`,
+          )) raised++
+          continue
+        }
+        if (!CONTRACTOR_EXPIRY_DAYS.includes(days)) continue
+        if (await this.raise(
+          budget, w.companyId, 'system',
+          `${label} expires in ${days} days — ${w.name}`,
+          `${who}. ${label} lapses on ${on}.`,
+          `/contractors?worker=${w.id}&expiring=${label === 'Medical' ? 'medical' : 'induction'}-${days}`,
+        )) raised++
+      }
+    }
+
+    const firms = await this.db.contractorCompany.findMany({
+      where: { status: 'active', insuranceExpiry: { not: null, lte: horizon, gte: floor } },
+      select: { id: true, companyId: true, name: true, code: true, insuranceExpiry: true },
+      take: 5000,
+    })
+
+    for (const f of firms) {
+      if (!f.insuranceExpiry || budget.exhausted(f.companyId)) continue
+      const days = daysBetween(f.insuranceExpiry, now)
+      const on = f.insuranceExpiry.toISOString().slice(0, 10)
+
+      if (days < 0) {
+        if (await this.raise(
+          budget, f.companyId, 'system',
+          `Contractor insurance expired — ${f.name}`,
+          `${f.code} insurance lapsed on ${on}. An uninsured contractor on site is your liability.`,
+          `/contractors?contractor=${f.id}&insurance=expired`,
+        )) raised++
+        continue
+      }
+      if (!CONTRACTOR_EXPIRY_DAYS.includes(days)) continue
+      if (await this.raise(
+        budget, f.companyId, 'system',
+        `Contractor insurance expires in ${days} days — ${f.name}`,
+        `${f.code} insurance lapses on ${on}. Ask for the renewal certificate.`,
+        `/contractors?contractor=${f.id}&expiring=${days}`,
+      )) raised++
+    }
+
+    return raised
+  }
+
   /** One full pass. Safe to call directly; that is how the tests drive it. */
   async runOnce(now = new Date()): Promise<{
-    actions: number; inspections: number; certificates: number; medicals: number
+    actions: number; inspections: number; certificates: number; medicals: number; contractors: number
   }> {
     const actions = await this.sweepActions(now)
     const inspections = await this.sweepInspections(now)
@@ -358,9 +456,10 @@ export class Scheduler {
 
     const certificates = await this.sweepCertificates(now)
     const medicals = await this.sweepMedicals(now)
+    const contractors = await this.sweepContractors(now)
     lastRuns.set('j2', new Date().toISOString())
 
-    return { actions, inspections, certificates, medicals }
+    return { actions, inspections, certificates, medicals, contractors }
   }
 
   /**
@@ -374,12 +473,15 @@ export class Scheduler {
       this.running = true
       try {
         const n = await this.runOnce()
-        const total = n.actions + n.inspections + n.certificates
+        // Every sweep counted: a total that silently omits one makes a flood from that
+        // sweep invisible in the logs, which is exactly when you need to see it.
+        const total = n.actions + n.inspections + n.certificates + n.medicals + n.contractors
         if (total > 0) {
           // eslint-disable-next-line no-console
           console.log(
             `[safeops-scheduler] raised ${total} notification(s): ` +
-            `${n.actions} action, ${n.inspections} inspection, ${n.certificates} certificate`,
+            `${n.actions} action, ${n.inspections} inspection, ${n.certificates} certificate, ` +
+            `${n.medicals} medical, ${n.contractors} contractor`,
           )
         }
       } catch (err) {
