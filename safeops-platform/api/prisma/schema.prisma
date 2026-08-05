@@ -170,6 +170,7 @@ model Company {
   obligations    ComplianceObligation[]
   documents      ComplianceDocument[]
   employees      Employee[]
+  ppeIssues      PpeIssue[]
   courses        TrainingCourse[]
   sessions       TrainingSession[]
   certificates   Certificate[]
@@ -1142,20 +1143,91 @@ model Employee {
   department   String  @default("")
   teamId       String?
 
+  /// EMP-#### per company. People are referred to by this on permits, toolbox talks and
+  /// medical records, so it has to be stable and quotable rather than an internal id.
+  employeeNo String @default("")
+
   name     String
   position String  @default("")
   email    String?
+  phone    String?
   active   Boolean @default(true)
 
-  enrolments   SessionEnrolment[]
-  certificates Certificate[]
+  hireDate DateTime?
+
+  /// Fitness-to-work certificate expiry. This is the field that stops someone being
+  /// allowed on a job: an expired medical is a legal bar on confined space, working at
+  /// height and most hot work, so it is queried and reminded on, not filed away.
+  medicalExpiry DateTime?
+  bloodGroup    String?
+  /// Restrictions a supervisor must know about — "no working at height", "wears glasses".
+  medicalNotes  String?
+
+  enrolments        SessionEnrolment[]
+  certificates      Certificate[]
+  emergencyContacts EmergencyContact[]
+  ppeIssues         PpeIssue[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([companyId, employeeNo])
   @@index([companyId])
   @@index([companyId, siteId])
   @@index([name])
+  @@index([companyId, medicalExpiry])
+}
+
+/// Who to call when someone is hurt. A separate table rather than two columns because
+/// the real answer is often "spouse, and the site clinic", and a next-of-kin list that
+/// only holds one name is the sort of gap nobody notices until the day it matters.
+model EmergencyContact {
+  id         String   @id @default(cuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  name         String
+  relationship String @default("")
+  phone        String
+  altPhone     String?
+  /// The one to ring first. Exactly one per employee is kept primary by the service.
+  isPrimary    Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([employeeId])
+}
+
+/// Personal protective equipment issued to a person.
+///
+/// Tracked per issue rather than as a checkbox on the employee because the auditable
+/// question is "when was this harness last replaced and who signed for it", and because
+/// a replacement is a new issue, not an edit of the old one.
+model PpeIssue {
+  id         String   @id @default(cuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  item String
+  size String @default("")
+  /// Serial or asset tag where the item carries one — harnesses and respirators do.
+  serialNumber String?
+
+  issuedAt   DateTime  @default(now())
+  issuedBy   String
+  /// When it is due for replacement. Null for items with no service life.
+  replaceDue DateTime?
+  returnedAt DateTime?
+  notes      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([employeeId])
+  @@index([companyId, replaceDue])
 }
 
 /// A tenant-authored course. The standard catalogue lives in trainingCatalog.ts and is

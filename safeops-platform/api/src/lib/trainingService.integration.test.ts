@@ -68,7 +68,7 @@ async function makeEmployee(
   const row = await db.employee.upsert({
     where: { id },
     update: { name, department, companyId, siteId },
-    create: { id, name, department, companyId, siteId, position: 'Technician' },
+    create: { id, employeeNo: `EMP-${id}`, name, department, companyId, siteId, position: 'Technician' },
   })
   return row.id
 }
@@ -754,7 +754,7 @@ d('TrainingService — integration (real Postgres)', () => {
 
   it('refuses an employee referencing a company that does not exist', async () => {
     await expect(db.employee.create({
-      data: { id: 'ghost', companyId: 'no-such-company', siteId: SITE, name: 'Ghost', department: 'X' },
+      data: { id: 'ghost', employeeNo: 'EMP-GHOST', companyId: 'no-such-company', siteId: SITE, name: 'Ghost', department: 'X' },
     })).rejects.toThrow()
   })
 })

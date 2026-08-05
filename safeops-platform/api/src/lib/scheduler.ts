@@ -41,6 +41,12 @@ const ESCALATIONS: { afterDays: number; to: string }[] = [
 const CERT_EXPIRY_DAYS = [90, 60, 30, 7]
 
 /**
+ * Days before expiry at which a fitness-to-work medical is flagged. Earlier than a
+ * certificate because booking a company doctor takes longer than booking a course.
+ */
+const MEDICAL_EXPIRY_DAYS = [60, 30, 14, 7]
+
+/**
  * How far back a sweep will look.
  *
  * Measured against a year of imported history, the first sweep raised 3,361 notifications
@@ -297,16 +303,64 @@ export class Scheduler {
     return raised
   }
 
+  /**
+   * Fitness-to-work medicals approaching expiry, and those that have lapsed.
+   *
+   * Chased on the same footing as a certificate, because the consequence is the same: an
+   * expired medical is a legal bar on confined space, working at height and most hot
+   * work, and the first anyone usually notices is when a permit is refused on the day.
+   */
+  async sweepMedicals(now = new Date()): Promise<number> {
+    const horizon = new Date(now.getTime() + Math.max(...MEDICAL_EXPIRY_DAYS) * DAY)
+    const floor = new Date(now.getTime() - LOOKBACK_DAYS * DAY)
+    const people = await this.db.employee.findMany({
+      where: { active: true, medicalExpiry: { not: null, lte: horizon, gte: floor } },
+      select: { id: true, companyId: true, name: true, employeeNo: true, medicalExpiry: true },
+      orderBy: { medicalExpiry: 'asc' },
+      // Same ceiling the certificate sweep uses: bounded work per pass, soonest first.
+      take: 5000,
+    })
+
+    const budget = new Budget()
+    let raised = 0
+
+    for (const p of people) {
+      if (!p.medicalExpiry || budget.exhausted(p.companyId)) continue
+      const days = daysBetween(p.medicalExpiry, now)
+
+      if (days < 0) {
+        if (await this.raise(
+          budget, p.companyId, 'system',
+          `Medical expired — ${p.name}`,
+          `${p.employeeNo}'s fitness-to-work certificate lapsed on ${p.medicalExpiry.toISOString().slice(0, 10)}. They cannot hold a permit until it is renewed.`,
+          `/employees?open=${p.id}&medical=expired`,
+        )) raised++
+        continue
+      }
+      if (!MEDICAL_EXPIRY_DAYS.includes(days)) continue
+      if (await this.raise(
+        budget, p.companyId, 'system',
+        `Medical expires in ${days} days — ${p.name}`,
+        `${p.employeeNo}'s fitness-to-work certificate lapses on ${p.medicalExpiry.toISOString().slice(0, 10)}. Book the appointment.`,
+        `/employees?open=${p.id}&expiring=${days}`,
+      )) raised++
+    }
+    return raised
+  }
+
   /** One full pass. Safe to call directly; that is how the tests drive it. */
-  async runOnce(now = new Date()): Promise<{ actions: number; inspections: number; certificates: number }> {
+  async runOnce(now = new Date()): Promise<{
+    actions: number; inspections: number; certificates: number; medicals: number
+  }> {
     const actions = await this.sweepActions(now)
     const inspections = await this.sweepInspections(now)
     lastRuns.set('j1', new Date().toISOString())
 
     const certificates = await this.sweepCertificates(now)
+    const medicals = await this.sweepMedicals(now)
     lastRuns.set('j2', new Date().toISOString())
 
-    return { actions, inspections, certificates }
+    return { actions, inspections, certificates, medicals }
   }
 
   /**

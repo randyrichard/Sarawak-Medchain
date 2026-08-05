@@ -251,7 +251,11 @@ d('Scheduler — integration (real Postgres)', () => {
 
   const makeEmployee = () =>
     db.employee.create({
-      data: { companyId: COMPANY, siteId: SITE, name: 'Aminah ITest', position: 'Operator' },
+      data: {
+        companyId: COMPANY, siteId: SITE, name: 'Aminah ITest', position: 'Operator',
+        // Unique per call: employee numbers are unique within a company.
+        employeeNo: `EMP-SCH-${Math.random().toString(36).slice(2, 8)}`,
+      },
     })
 
   it('warns at each expiry band and flags a lapse', async () => {

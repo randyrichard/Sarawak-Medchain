@@ -195,8 +195,14 @@ export class SearchService {
     const [employees, users, companies, auditLog] = await Promise.all([
       canSeeDirectory
         ? this.db.employee.findMany({
-            where: { companyId, ...siteScope, OR: [{ name: like }, { email: like }, { position: like }] },
-            select: { id: true, name: true, email: true, position: true, department: true, siteId: true, active: true },
+            where: {
+              companyId, ...siteScope,
+              OR: [{ name: like }, { employeeNo: like }, { email: like }, { position: like }],
+            },
+            select: {
+              id: true, name: true, employeeNo: true, email: true, position: true,
+              department: true, siteId: true, active: true,
+            },
             orderBy: { name: 'asc' },
             take: PER_KIND,
           })
@@ -238,12 +244,12 @@ export class SearchService {
 
     return [
       ...employees.map((r): SearchHit => ({
-        // Employees have no reference number of their own; the work email is what a
-        // colleague would actually recognise them by.
-        kind: 'employee', id: r.id, code: r.email ?? r.name, title: r.name,
-        detail: [r.position, r.department, r.siteId.toUpperCase(), r.active ? null : 'inactive']
+        kind: 'employee', id: r.id, code: r.employeeNo || r.email || r.name, title: r.name,
+        detail: [r.position, r.department, r.siteId.toUpperCase(), r.active ? null : 'left']
           .filter(Boolean).join(' · '),
-        href: `/training?employee=${r.id}`,
+        // Opens their record in the workforce register, which is where everything about
+        // them now lives.
+        href: `/employees?open=${r.id}`,
       })),
       ...users.map((r): SearchHit => ({
         kind: 'user', id: r.id, code: r.email, title: r.name,

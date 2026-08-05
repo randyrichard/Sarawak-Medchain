@@ -18,6 +18,7 @@ import { notificationsRouter } from './routes/notifications.js'
 import { activityRouter } from './routes/activity.js'
 import { accountRouter } from './routes/account.js'
 import { searchRouter } from './routes/search.js'
+import { employeesRouter } from './routes/employees.js'
 import { AuthError } from './lib/authService.js'
 import { IncidentError } from './lib/incidentService.js'
 import { PermitError } from './lib/permitService.js'
@@ -30,6 +31,7 @@ import { NotificationError } from './lib/notificationService.js'
 import { ActivityError } from './lib/activityService.js'
 import { AccountError } from './lib/accountService.js'
 import { SearchError } from './lib/searchService.js'
+import { EmployeeError } from './lib/employeeService.js'
 
 export function createApp() {
   const app = express()
@@ -122,6 +124,7 @@ export function createApp() {
   app.use('/activity', activityRouter)
   app.use('/account', accountRouter)
   app.use('/search', searchRouter)
+  app.use('/employees', employeesRouter)
 
   app.use((_req, res) => res.status(404).json({ error: 'not_found' }))
 
@@ -139,7 +142,8 @@ export function createApp() {
       err instanceof NotificationError ||
       err instanceof ActivityError ||
       err instanceof AccountError ||
-      err instanceof SearchError
+      err instanceof SearchError ||
+      err instanceof EmployeeError
     ) {
       return res.status(err.status).json({ error: err.code, message: err.message })
     }

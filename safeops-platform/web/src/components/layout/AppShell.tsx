@@ -2,7 +2,7 @@ import { Suspense, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, ClipboardList, ListChecks, GraduationCap, ShieldCheck, Bell,
-  Building2, Boxes, Menu, X, Lock, SlidersHorizontal, HardHat, ShieldAlert,
+  Building2, Boxes, Menu, X, Lock, SlidersHorizontal, HardHat, ShieldAlert, Users,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useOrg } from '@/features/org/OrgContext'
@@ -32,6 +32,7 @@ const NAV: NavItem[] = [
   { to: '/permits', label: 'Permits', icon: HardHat, capability: 'dashboard:view' },
   { to: '/audits', label: 'Compliance', icon: ShieldCheck, capability: 'dashboard:view' },
   { to: '/training', label: 'Training', icon: GraduationCap, capability: 'dashboard:view' },
+  { to: '/employees', label: 'Workforce', icon: Users, capability: 'dashboard:view' },
   { to: '/notifications', label: 'Notifications', icon: Bell, capability: 'dashboard:view' },
   { to: '/organization', label: 'Organization', icon: Building2, capability: 'org:view' },
   { to: '/admin', label: 'Administration', icon: SlidersHorizontal, capability: 'settings:manage' },

@@ -89,7 +89,7 @@ d('ActivityService — integration (real Postgres)', () => {
 
     const employee = await db.employee.create({
       data: {
-        id: 'act-emp', companyId: COMPANY, siteId: SITE_B, name: 'Certified Person',
+        id: 'act-emp', employeeNo: 'EMP-ACT-1', companyId: COMPANY, siteId: SITE_B, name: 'Certified Person',
         department: 'Maintenance',
       },
     })

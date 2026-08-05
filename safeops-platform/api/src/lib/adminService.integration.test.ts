@@ -560,13 +560,13 @@ d('AdminService — integration (real Postgres)', () => {
     // A row that belongs to somebody else must not appear in this tenant's snapshot.
     await db.employee.create({
       data: {
-        id: 'adm-other-emp', companyId: OTHER, siteId: OTHER_SITE,
+        id: 'adm-other-emp', employeeNo: 'EMP-OTHER-1', companyId: OTHER, siteId: OTHER_SITE,
         name: 'Not Yours', department: 'Ops',
       },
     })
     await db.employee.create({
       data: {
-        id: 'adm-mine-emp', companyId: COMPANY, siteId: SITE,
+        id: 'adm-mine-emp', employeeNo: 'EMP-MINE-1', companyId: COMPANY, siteId: SITE,
         name: 'Mine', department: 'Ops',
       },
     })
@@ -583,7 +583,7 @@ d('AdminService — integration (real Postgres)', () => {
       where: { id: 'adm-restore-emp' },
       update: { name: 'Restore Me' },
       create: {
-        id: 'adm-restore-emp', companyId: COMPANY, siteId: SITE,
+        id: 'adm-restore-emp', employeeNo: 'EMP-RESTORE-1', companyId: COMPANY, siteId: SITE,
         name: 'Restore Me', department: 'Maintenance',
       },
     })
@@ -613,7 +613,7 @@ d('AdminService — integration (real Postgres)', () => {
     const { backup } = await svc.createBackup(admin, COMPANY, ctx, 'Additive check')
     await db.employee.create({
       data: {
-        id: 'adm-after-snap', companyId: COMPANY, siteId: SITE,
+        id: 'adm-after-snap', employeeNo: 'EMP-AFTER-1', companyId: COMPANY, siteId: SITE,
         name: 'Created After', department: 'Ops',
       },
     })

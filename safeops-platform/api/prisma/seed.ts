@@ -108,11 +108,30 @@ async function seedOrg() {
   for (const t of TEAMS) {
     await prisma.team.upsert({ where: { id: t.id }, update: { name: t.name, lead: t.lead }, create: t })
   }
+  /*
+   * Employee numbers are unique per company, so the seed has to allocate them rather than
+   * fall back on the empty-string default — two blanks in one company collide. Numbered
+   * per company in fixture order, and the per-tenant counter is left pointing past the
+   * highest so the first person added through the UI continues the sequence.
+   */
+  const seqByCompany = new Map<string, number>()
   for (const e of EMPLOYEES) {
+    const next = (seqByCompany.get(e.companyId) ?? 1000) + 1
+    seqByCompany.set(e.companyId, next)
+    const employeeNo = `EMP-${next}`
     await prisma.employee.upsert({
       where: { id: e.id },
       update: { name: e.name, position: e.position, department: e.department, siteId: e.siteId },
-      create: e,
+      create: { ...e, employeeNo },
+    })
+  }
+  for (const [companyId, highest] of seqByCompany) {
+    await prisma.counter.upsert({
+      where: { companyId_kind: { companyId, kind: 'employee' } },
+      // Never move a live counter backwards: a tenant that has added people since the
+      // seed ran must keep its own sequence.
+      update: {},
+      create: { companyId, kind: 'employee', next: highest },
     })
   }
   console.log(
