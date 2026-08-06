@@ -747,4 +747,205 @@ d('Equipment — integration (real Postgres)', () => {
     }
     await expect(equipment.dashboard(outsider, COMPANY)).rejects.toMatchObject({ status: 403 })
   })
+  // -- Register edit and assignment -----------------------------------------
+
+  const makeEmployee = (name = 'Holder One') => db.employee.create({
+    data: {
+      companyId: COMPANY, siteId: SITE,
+      employeeNo: `EMP-H-${Math.random().toString(36).slice(2, 8)}`,
+      name, medicalExpiry: daysFromNow(200),
+    },
+  })
+
+  it('records both values on every edited field, not just that something changed', async () => {
+    const a = await newAsset({ name: 'Old name', model: 'MK1' })
+    await equipment.updateAsset(admin, a.id, { name: 'New name', model: 'MK2' })
+
+    const [edit] = await equipment.timeline(admin, a.id)
+    expect(edit.summary).toBe('Record edited.')
+    // "Serial number: SN-1 to SN-2" is what tells an auditor it is the same physical object.
+    expect(edit.detail).toContain('Name: Old name to New name')
+    expect(edit.detail).toContain('Model: MK1 to MK2')
+  })
+
+  it('writes nothing to the history when nothing actually changed', async () => {
+    const a = await newAsset({ name: 'Same' })
+    const before = (await equipment.timeline(admin, a.id)).length
+    await equipment.updateAsset(admin, a.id, { name: 'Same' })
+    expect((await equipment.timeline(admin, a.id)).length).toBe(before)
+  })
+
+  it('assigns to an employee and records it as an assignment, not an edit', async () => {
+    const a = await newAsset()
+    const e = await makeEmployee('Ahmad Zaki')
+    await equipment.updateAsset(admin, a.id, { assignedEmployeeId: e.id })
+
+    const holder = await equipment.holderOf(admin, a.id)
+    expect(holder).toMatchObject({ kind: 'employee', name: 'Ahmad Zaki' })
+
+    const [event] = await equipment.timeline(admin, a.id)
+    expect(event.kind).toBe('assigned')
+    expect(event.summary).toBe('Assigned to Ahmad Zaki.')
+  })
+
+  it('returns equipment to the pool when the holder is cleared', async () => {
+    const a = await newAsset()
+    const e = await makeEmployee()
+    await equipment.updateAsset(admin, a.id, { assignedEmployeeId: e.id })
+    await equipment.updateAsset(admin, a.id, { assignedEmployeeId: null })
+
+    expect(await equipment.holderOf(admin, a.id)).toBeNull()
+    expect((await equipment.timeline(admin, a.id))[0].summary).toBe('Returned to the pool.')
+  })
+
+  it('refuses two holders at once', async () => {
+    const a = await newAsset()
+    const e = await makeEmployee()
+    await expect(equipment.updateAsset(admin, a.id, {
+      assignedEmployeeId: e.id, assignedContractorWorkerId: 'someone-else',
+    })).rejects.toThrow(/held by one person/i)
+  })
+
+  it('clears the other holder when reassigned, so it never claims two', async () => {
+    const a = await newAsset()
+    const e1 = await makeEmployee('First')
+    const e2 = await makeEmployee('Second')
+    await equipment.updateAsset(admin, a.id, { assignedEmployeeId: e1.id })
+    await equipment.updateAsset(admin, a.id, { assignedEmployeeId: e2.id })
+
+    const row = await db.asset.findUnique({
+      where: { id: a.id },
+      select: { assignedEmployeeId: true, assignedContractorWorkerId: true },
+    })
+    expect(row?.assignedEmployeeId).toBe(e2.id)
+    expect(row?.assignedContractorWorkerId).toBeNull()
+  })
+
+  it('refuses a holder from another workspace', async () => {
+    const a = await newAsset()
+    const foreign = await db.employee.findFirst({
+      where: { companyId: { not: COMPANY } }, select: { id: true },
+    })
+    if (foreign) {
+      await expect(equipment.updateAsset(admin, a.id, { assignedEmployeeId: foreign.id }))
+        .rejects.toThrow(/not in this workspace/i)
+    }
+  })
+
+  it('refuses an inactive holder', async () => {
+    const a = await newAsset()
+    const e = await makeEmployee('Left The Company')
+    await db.employee.update({ where: { id: e.id }, data: { active: false } })
+    await expect(equipment.updateAsset(admin, a.id, { assignedEmployeeId: e.id }))
+      .rejects.toThrow(/no longer active/i)
+  })
+
+  it('refuses editing to a role that may not', async () => {
+    const a = await newAsset()
+    await expect(equipment.updateAsset(employee, a.id, { name: 'Renamed' }))
+      .rejects.toMatchObject({ status: 403 })
+  })
+
+  it('refuses to blank a name or a serial number', async () => {
+    const a = await newAsset()
+    await expect(equipment.updateAsset(admin, a.id, { name: '  ' })).rejects.toThrow(/name is required/i)
+    await expect(equipment.updateAsset(admin, a.id, { serialNumber: '' })).rejects.toThrow(/serial number is required/i)
+  })
+
+  it('takes the critical flag and the notes at registration', async () => {
+    const a = await assets.createAsset(admin, {
+      companyId: COMPANY, siteId: SITE, name: 'Critical winch', category: 'crane',
+      serialNumber: `SN-CRIT-${Math.random().toString(36).slice(2, 7)}`,
+      owner: 'ITest Admin', frequency: 'monthly',
+      critical: true, notes: 'Statutory item, six-monthly thorough examination.',
+    } as never)
+
+    const row = await db.asset.findUnique({
+      where: { id: a.id }, select: { critical: true, notes: true },
+    })
+    expect(row?.critical).toBe(true)
+    expect(row?.notes).toMatch(/thorough examination/)
+  })
+
+  it('records the assignment when equipment is issued at registration', async () => {
+    const e = await makeEmployee('Issued Day One')
+    const a = await assets.createAsset(admin, {
+      companyId: COMPANY, siteId: SITE, name: 'Issued detector', category: 'gas_detector',
+      serialNumber: `SN-ISS-${Math.random().toString(36).slice(2, 7)}`,
+      owner: 'ITest Admin', frequency: 'monthly',
+      assignedEmployeeId: e.id,
+    } as never)
+
+    // Without this, an item issued on day one looks as though it was never given to anybody.
+    const t = await equipment.timeline(admin, a.id)
+    expect(t.some((x) => x.kind === 'assigned' && /Issued Day One/.test(x.summary))).toBe(true)
+    expect(await equipment.holderOf(admin, a.id)).toMatchObject({ name: 'Issued Day One' })
+  })
+
+  it('refuses two holders at registration as well as on edit', async () => {
+    const e = await makeEmployee()
+    await expect(assets.createAsset(admin, {
+      companyId: COMPANY, siteId: SITE, name: 'Two holders', category: 'ladder',
+      serialNumber: `SN-TWO-${Math.random().toString(36).slice(2, 7)}`,
+      owner: 'ITest Admin', frequency: 'monthly',
+      assignedEmployeeId: e.id, assignedContractorWorkerId: 'someone',
+    } as never)).rejects.toThrow(/held by one person/i)
+  })
+
+  // -- Current permit -------------------------------------------------------
+
+  it('reports the live permit an item is booked onto', async () => {
+    const p = await approvedPermit()
+    const a = await newAsset()
+    await calibrate(a.id)
+    await equipment.addToPermit(admin, p.id, a.id, 'Monitoring')
+
+    // Approved is not live: the item is committed, not in use.
+    expect(await equipment.currentPermit(admin, a.id)).toBeNull()
+
+    await permits.activate(officer, p.id)
+    const current = await equipment.currentPermit(admin, a.id)
+    expect(current).toMatchObject({ code: p.code, status: 'active', purpose: 'Monitoring' })
+  })
+
+  it('stops reporting a permit once it is no longer live', async () => {
+    const p = await approvedPermit()
+    const a = await newAsset()
+    await calibrate(a.id)
+    await equipment.addToPermit(admin, p.id, a.id, 'Monitoring')
+    await permits.activate(officer, p.id)
+    expect(await equipment.currentPermit(admin, a.id)).not.toBeNull()
+
+    await db.permit.update({ where: { id: p.id }, data: { status: 'closed' } })
+    // Equipment on a permit that closed last week is not in use, and saying it is keeps a
+    // usable detector on the shelf all week.
+    expect(await equipment.currentPermit(admin, a.id)).toBeNull()
+  })
+
+  it('counts equipment booked to a live permit on the board, once per item', async () => {
+    const p = await approvedPermit()
+    const a = await newAsset()
+    await calibrate(a.id)
+    await equipment.addToPermit(admin, p.id, a.id, 'Monitoring')
+    await permits.activate(officer, p.id)
+
+    const s = await equipment.dashboard(admin, COMPANY)
+    expect(s.bookedToPermit).toBe(1)
+  })
+
+  it('lists the newest equipment and the work orders coming due', async () => {
+    const a = await newAsset({ name: 'Newest item' })
+    await equipment.raiseWorkOrder(admin, a.id, {
+      kind: 'preventive', description: 'Six monthly', dueAt: isoDays(5),
+    })
+    await equipment.raiseWorkOrder(admin, a.id, {
+      kind: 'preventive', description: 'Already late', dueAt: isoDays(-5),
+    })
+
+    const s = await equipment.dashboard(admin, COMPANY)
+    expect(s.newest[0].name).toBe('Newest item')
+    // Upcoming means still ahead of you; the overdue one has its own tile.
+    expect(s.upcomingWorkOrders).toHaveLength(1)
+    expect(s.upcomingWorkOrders[0].description).toBe('Six monthly')
+  })
 })

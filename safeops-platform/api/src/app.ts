@@ -12,6 +12,7 @@ import { permitsRouter } from './routes/permits.js'
 import { permitAttachmentsRouter } from './routes/permitAttachments.js'
 import { inspectionsRouter } from './routes/inspections.js'
 import { equipmentRouter } from './routes/equipment.js'
+import { assetDocumentsRouter } from './routes/assetDocuments.js'
 import { auditsRouter } from './routes/audits.js'
 import { trainingRouter } from './routes/training.js'
 import { adminRouter } from './routes/admin.js'
@@ -126,6 +127,8 @@ export function createApp() {
   app.use('/incidents', incidentsRouter)
   app.use('/permits', permitAttachmentsRouter)
   app.use('/permits', permitsRouter)
+  // Before the asset router: its /:idOrQr would otherwise match /assets/documents.
+  app.use('/assets', assetDocumentsRouter)
   app.use('/assets', inspectionsRouter)
   app.use('/audits', auditsRouter)
   app.use('/training', trainingRouter)

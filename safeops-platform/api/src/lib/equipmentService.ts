@@ -69,6 +69,49 @@ export interface EquipmentFitness {
   certificateNumber: string | null
 }
 
+/** UTC midnight, matching how every date-only value in this codebase is stored. */
+function utcMidnight(d: Date): Date {
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
+}
+
+/**
+ * What actually changed, as sentences naming both values.
+ *
+ * "Record edited" tells an auditor nothing. "Serial number: SN-1 to SN-2" tells them
+ * whether they are looking at the same physical object.
+ */
+const CHANGE_LABEL: Record<string, string> = {
+  name: 'Name', manufacturer: 'Manufacturer', model: 'Model', serialNumber: 'Serial number',
+  department: 'Department', location: 'Location', owner: 'Owner', notes: 'Notes',
+  critical: 'Critical', requiresCalibration: 'Requires calibration',
+  purchaseDate: 'Purchase date', commissionDate: 'Commission date', warrantyUntil: 'Warranty until',
+}
+
+function describeChanges(
+  before: Record<string, unknown>,
+  after: Record<string, unknown>,
+): string[] {
+  const show = (v: unknown) => {
+    if (v === null || v === undefined || v === '') return 'blank'
+    if (v instanceof Date) return v.toISOString().slice(0, 10)
+    if (typeof v === 'boolean') return v ? 'yes' : 'no'
+    return String(v)
+  }
+  const out: string[] = []
+  for (const [key, next] of Object.entries(after)) {
+    if (next === undefined) continue
+    const label = CHANGE_LABEL[key]
+    if (!label) continue
+    const prev = before[key]
+    const same = prev instanceof Date && next instanceof Date
+      ? prev.getTime() === next.getTime()
+      : (prev ?? null) === (next ?? null)
+    if (same) continue
+    out.push(`${label}: ${show(prev)} to ${show(next)}`)
+  }
+  return out
+}
+
 function startOfToday(): Date {
   const n = new Date()
   return new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate()))
@@ -480,6 +523,206 @@ export class EquipmentService {
    * unspecified is wrong.
    */
 
+
+  // -- Register -------------------------------------------------------------
+
+  /**
+   * Edit an equipment record.
+   *
+   * Every changed field produces a timeline line naming the old and new value, because
+   * "someone changed something" is not an audit trail. Assignment gets its own event kind:
+   * who was holding a harness when it failed is a different question from who edited its
+   * model number, and an investigator asks the first one.
+   *
+   * Status is deliberately not settable here. It moves through calibration, maintenance and
+   * retirement, each of which records why - a free-form status setter would let an item be
+   * marked available with an expired certificate still on file.
+   */
+  async updateAsset(caller: Caller, assetId: string, input: {
+    name?: string
+    manufacturer?: string
+    model?: string
+    serialNumber?: string
+    department?: string
+    location?: string
+    owner?: string
+    notes?: string
+    critical?: boolean
+    requiresCalibration?: boolean
+    purchaseDate?: string | null
+    commissionDate?: string | null
+    warrantyUntil?: string | null
+    /** Null clears the holder. Exactly one of these may be set. */
+    assignedEmployeeId?: string | null
+    assignedContractorWorkerId?: string | null
+  }, ctx: { ip?: string; device?: string } = {}) {
+    const asset = await this.assetFor(caller, assetId)
+    const m = this.requireRole(caller, asset.companyId, 'editing equipment')
+
+    if (input.name !== undefined && !input.name.trim()) {
+      throw new EquipmentError('validation', 'A name is required.')
+    }
+    if (input.serialNumber !== undefined && !input.serialNumber.trim()) {
+      throw new EquipmentError('validation', 'A serial number is required.')
+    }
+    if (input.assignedEmployeeId && input.assignedContractorWorkerId) {
+      throw new EquipmentError(
+        'validation',
+        'Equipment is held by one person. Assign it to an employee or a contractor worker, not both.',
+      )
+    }
+
+    // Whoever it is handed to has to be in this workspace, or the register would show a
+    // holder nobody here can find.
+    let holderName: string | null = null
+    if (input.assignedEmployeeId) {
+      const e = await this.db.employee.findUnique({
+        where: { id: input.assignedEmployeeId },
+        select: { id: true, name: true, companyId: true, active: true },
+      })
+      if (!e || e.companyId !== asset.companyId) {
+        throw new EquipmentError('validation', 'That employee is not in this workspace.')
+      }
+      if (!e.active) throw new EquipmentError('validation', `${e.name} is no longer active.`)
+      holderName = e.name
+    }
+    if (input.assignedContractorWorkerId) {
+      const w = await this.db.contractorWorker.findUnique({
+        where: { id: input.assignedContractorWorkerId },
+        select: { id: true, name: true, companyId: true, active: true },
+      })
+      if (!w || w.companyId !== asset.companyId) {
+        throw new EquipmentError('validation', 'That contractor worker is not in this workspace.')
+      }
+      if (!w.active) throw new EquipmentError('validation', `${w.name} is no longer active.`)
+      holderName = w.name
+    }
+
+    const date = (v: string | null | undefined) => {
+      if (v === undefined) return undefined
+      if (v === null || v === '') return null
+      const d = new Date(v)
+      if (Number.isNaN(d.getTime())) throw new EquipmentError('validation', 'That date is not valid.')
+      return utcMidnight(d)
+    }
+
+    // Assignment is all-or-nothing across the two columns: setting one clears the other, so
+    // the record can never claim two holders at once.
+    const assigning = input.assignedEmployeeId !== undefined
+      || input.assignedContractorWorkerId !== undefined
+
+    const data = {
+      name: input.name?.trim(),
+      manufacturer: input.manufacturer?.trim(),
+      model: input.model?.trim(),
+      serialNumber: input.serialNumber?.trim(),
+      department: input.department?.trim(),
+      location: input.location?.trim(),
+      owner: input.owner?.trim(),
+      notes: input.notes === undefined ? undefined : (input.notes.trim() || null),
+      critical: input.critical,
+      requiresCalibration: input.requiresCalibration,
+      purchaseDate: date(input.purchaseDate),
+      commissionDate: date(input.commissionDate),
+      warrantyUntil: date(input.warrantyUntil),
+      ...(assigning ? {
+        assignedEmployeeId: input.assignedEmployeeId ?? null,
+        assignedContractorWorkerId: input.assignedContractorWorkerId ?? null,
+      } : {}),
+    }
+
+    const changes = describeChanges(asset, data)
+
+    const updated = await this.db.$transaction(async (tx) => {
+      const row = await tx.asset.update({
+        where: { id: assetId },
+        data: { ...data, version: { increment: 1 } },
+      })
+
+      if (assigning) {
+        await this.event(
+          tx, assetId, 'assigned',
+          holderName ? `Assigned to ${holderName}.` : 'Returned to the pool.',
+          { actor: caller.name, actorRole: m.role },
+        )
+      }
+      const edits = changes.filter((c) => !c.startsWith('Assigned'))
+      if (edits.length > 0) {
+        await this.event(tx, assetId, 'created', 'Record edited.', {
+          detail: edits.join('; '),
+          actor: caller.name, actorRole: m.role,
+        })
+      }
+      return row
+    })
+
+    if (changes.length > 0) {
+      await this.log(caller, asset.companyId, 'Equipment edited',
+        `${asset.code} ${asset.name}: ${changes.join('; ')}`, ctx)
+    }
+    return updated
+  }
+
+  /** Who is holding it, resolved for the profile. Null for pool equipment. */
+  async holderOf(caller: Caller, assetId: string) {
+    const asset = await this.assetFor(caller, assetId)
+    if (asset.assignedEmployeeId) {
+      const e = await this.db.employee.findUnique({
+        where: { id: asset.assignedEmployeeId },
+        select: { id: true, name: true, employeeNo: true, position: true, department: true, active: true },
+      })
+      return e && {
+        kind: 'employee' as const, id: e.id, name: e.name, reference: e.employeeNo,
+        detail: [e.position, e.department].filter(Boolean).join(' - '), active: e.active,
+      }
+    }
+    if (asset.assignedContractorWorkerId) {
+      const w = await this.db.contractorWorker.findUnique({
+        where: { id: asset.assignedContractorWorkerId },
+        select: {
+          id: true, name: true, workerNo: true, position: true, active: true,
+          contractorCompany: { select: { name: true } },
+        },
+      })
+      return w && {
+        kind: 'contractor' as const, id: w.id, name: w.name, reference: w.workerNo,
+        detail: [w.contractorCompany?.name, w.position].filter(Boolean).join(' - '), active: w.active,
+      }
+    }
+    return null
+  }
+
+  /**
+   * The permit this equipment is on right now, if any.
+   *
+   * Only live permits count. Equipment booked onto a permit that closed last week is not
+   * "in use", and showing it that way is how a usable detector goes unused all week.
+   */
+  async currentPermit(caller: Caller, assetId: string) {
+    const asset = await this.assetFor(caller, assetId)
+    const row = await this.db.permitEquipment.findFirst({
+      where: { assetId: asset.id, permit: { status: { in: ['active', 'suspended'] } } },
+      include: {
+        permit: {
+          select: { id: true, code: true, title: true, status: true, type: true, validTo: true, location: true },
+        },
+      },
+      orderBy: { addedAt: 'desc' },
+    })
+    if (!row) return null
+    return {
+      linkId: row.id,
+      purpose: row.purpose,
+      permitId: row.permit.id,
+      code: row.permit.code,
+      title: row.permit.title,
+      status: row.permit.status,
+      type: row.permit.type,
+      location: row.permit.location,
+      validTo: row.permit.validTo.toISOString(),
+    }
+  }
+
   // -- Timeline ---------------------------------------------------------------
 
   /**
@@ -870,6 +1113,32 @@ export class EquipmentService {
       }),
     ])
 
+    const [bookedToPermit, retired, newest, upcomingWorkOrders] = await Promise.all([
+      // Distinct assets, not link rows: one detector on two live permits is one item in use.
+      this.db.asset.count({
+        where: {
+          ...live,
+          permitUsages: { some: { permit: { status: { in: ['active', 'suspended'] } } } },
+        },
+      }),
+      this.db.asset.count({ where: { ...scope, status: { in: OUT_OF_REGISTER } } }),
+      this.db.asset.findMany({
+        where: live,
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        select: { id: true, code: true, name: true, category: true, createdAt: true },
+      }),
+      this.db.workOrder.findMany({
+        where: { asset: scope, status: { in: ['open', 'in_progress'] }, dueAt: { gte: today } },
+        orderBy: { dueAt: 'asc' },
+        take: 5,
+        select: {
+          id: true, code: true, kind: true, priority: true, dueAt: true, description: true,
+          asset: { select: { code: true, name: true } },
+        },
+      }),
+    ])
+
     const [recentInspections, recentMaintenance, sites] = await Promise.all([
       this.db.inspection.findMany({
         where: { ...scope, status: 'completed' },
@@ -907,6 +1176,17 @@ export class EquipmentService {
       maintenanceOverdue,
       /** Available = in service and nothing overdue. The number an issuer can actually use. */
       available: Math.max(0, total - outOfService - underMaintenance - inspectionOverdue),
+      bookedToPermit,
+      retired,
+      newest: newest.map((a) => ({
+        id: a.id, code: a.code, name: a.name, category: a.category,
+        at: a.createdAt.toISOString(),
+      })),
+      upcomingWorkOrders: upcomingWorkOrders.map((w) => ({
+        id: w.id, code: w.code, kind: w.kind, priority: w.priority,
+        dueAt: w.dueAt?.toISOString() ?? null, description: w.description,
+        assetCode: w.asset.code, assetName: w.asset.name,
+      })),
       byCategory: tally((r) => r.category),
       bySite: tally((r) => siteName.get(r.siteId) ?? r.siteId),
       recentInspections: recentInspections.map((i) => ({

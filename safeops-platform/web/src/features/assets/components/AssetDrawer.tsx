@@ -13,6 +13,8 @@ import { Alert, Avatar, Badge, Button, Dialog, Input, Select, Skeleton, StatusPi
 import { CATEGORY_ICON, healthColor, RISK_PILL } from '../lib'
 import { QrBlock } from './QrBlock'
 import { CalibrationPanel } from './CalibrationPanel'
+import { AssetHolderPanel } from './AssetHolderPanel'
+import { AssetPhotos } from './AssetPhotos'
 import { MaintenancePanel } from './MaintenancePanel'
 import { AssetTimeline } from './AssetTimeline'
 import { cn } from '@/lib/cn'
@@ -221,6 +223,14 @@ export function AssetDrawer({
                 whether this instrument can be used. Renders nothing for categories where
                 calibration is not a control.
               */}
+              {/* Where it is: who has it, and what live permit it is on. */}
+              <AssetHolderPanel
+                assetId={asset.id} companyId={asset.companyId} manage={manage}
+                revision={revision} onChanged={changed}
+              />
+
+              <AssetPhotos assetId={asset.id} manage={manage} onChanged={changed} />
+
               <CalibrationPanel assetId={asset.id} manage={manage} onChanged={changed} />
 
               <MaintenancePanel assetId={asset.id} manage={manage} onChanged={changed} />

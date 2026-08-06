@@ -885,17 +885,34 @@ model Asset {
   @@index([nextDueDate])
 }
 
+/// A file held against a piece of equipment: photos, manuals, certificates.
+///
+/// Same storage contract as permit documents and incident evidence - one way of handling
+/// uploaded files in this codebase, not three. The file columns are nullable because rows
+/// predating real storage exist; those render as a name with no download rather than a
+/// broken link.
 model AssetDocument {
   id      String @id @default(cuid())
   assetId String
   asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
 
   name String
-  kind String @default("pdf") // pdf | image | certificate
+  /// photo | manual | certificate | pdf | image
+  kind String @default("pdf")
+
+  /// The name the operator's device gave it. Shown, never used as a path.
+  originalName String?
+  /// A UUID chosen by the server. The only name that touches the filesystem.
+  storedName   String?
+  mimeType     String?
+  sizeBytes    Int?
+  uploadedBy   String?
+  uploadedById String?
 
   createdAt DateTime @default(now())
 
   @@index([assetId])
+  @@index([assetId, kind])
 }
 
 model Inspection {

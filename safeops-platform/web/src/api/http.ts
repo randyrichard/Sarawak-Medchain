@@ -66,3 +66,59 @@ export const qs = (params: Record<string, string | number | boolean | undefined 
   }
   return p.toString()
 }
+
+/**
+ * Upload a multipart body with real progress.
+ *
+ * XHR rather than fetch: fetch still cannot report upload progress, and a 10 MB photo over
+ * site wifi with no progress bar looks like a hung screen.
+ *
+ * Lives here rather than in a feature client so there is one implementation of the upload
+ * contract to keep correct - the Authorization header, the credentialled request, and
+ * parsing the server's message out of a failure rather than showing "Upload failed".
+ */
+export function upload<T>(
+  path: string, form: FormData, onProgress?: (percent: number) => void,
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', `${API_BASE_URL}${path}`)
+    xhr.withCredentials = true
+    const token = getAccessToken()
+    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress?.(Math.round((e.loaded / e.total) * 100))
+    }
+    xhr.onload = () => {
+      let body: unknown = null
+      try { body = JSON.parse(xhr.responseText) } catch { /* non-JSON error page */ }
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(body as T)
+      } else {
+        // The server explains why it refused the file. Saying "Upload failed" instead
+        // leaves someone re-trying a .exe forever.
+        reject(new Error((body as { message?: string })?.message ?? 'Upload failed.'))
+      }
+    }
+    xhr.onerror = () => reject(new Error('Upload failed. Check your connection.'))
+    xhr.send(form)
+  })
+}
+
+/**
+ * Fetch a stored file as a blob.
+ *
+ * A plain link cannot carry the Authorization header, and the endpoint re-checks
+ * membership on every request - a stored filename grants nothing on its own. The caller
+ * builds its own object URL, which also keeps a crafted file out of the app origin.
+ */
+export async function blob(path: string): Promise<Blob> {
+  const token = getAccessToken()
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    credentials: 'include',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!res.ok) throw new Error('Could not download that file.')
+  return res.blob()
+}

@@ -115,6 +115,58 @@ equipmentRouter.post('/permits/:permitId/equipment', auth, async (req, res, next
   }
 })
 
+// -- Register ----------------------------------------------------------------
+
+const updateBody = z.object({
+  name: z.string().max(200).optional(),
+  manufacturer: z.string().max(200).optional(),
+  model: z.string().max(200).optional(),
+  serialNumber: z.string().max(200).optional(),
+  department: z.string().max(200).optional(),
+  location: z.string().max(300).optional(),
+  owner: z.string().max(200).optional(),
+  notes: z.string().max(4000).optional(),
+  critical: z.boolean().optional(),
+  requiresCalibration: z.boolean().optional(),
+  purchaseDate: z.string().max(40).nullable().optional(),
+  commissionDate: z.string().max(40).nullable().optional(),
+  warrantyUntil: z.string().max(40).nullable().optional(),
+  assignedEmployeeId: z.string().nullable().optional(),
+  assignedContractorWorkerId: z.string().nullable().optional(),
+})
+
+equipmentRouter.patch('/assets/:assetId', auth, async (req, res, next) => {
+  try {
+    const parsed = updateBody.safeParse(req.body)
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'validation', message: 'That equipment update is not valid.' })
+    }
+    res.json(await svc.updateAsset(
+      callerOf(req), req.params.assetId, parsed.data,
+      { ip: req.ip, device: req.get('user-agent') ?? '' },
+    ))
+  } catch (e) {
+    next(e)
+  }
+})
+
+/** Who is holding it, and what live permit it is on. Both nullable. */
+equipmentRouter.get('/assets/:assetId/holder', auth, async (req, res, next) => {
+  try {
+    res.json(await svc.holderOf(callerOf(req), req.params.assetId))
+  } catch (e) {
+    next(e)
+  }
+})
+
+equipmentRouter.get('/assets/:assetId/current-permit', auth, async (req, res, next) => {
+  try {
+    res.json(await svc.currentPermit(callerOf(req), req.params.assetId))
+  } catch (e) {
+    next(e)
+  }
+})
+
 // -- Dashboard ---------------------------------------------------------------
 
 equipmentRouter.get('/equipment/dashboard', auth, async (req, res, next) => {

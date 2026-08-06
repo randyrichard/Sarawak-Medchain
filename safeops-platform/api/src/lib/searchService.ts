@@ -100,8 +100,29 @@ export class SearchService {
         orderBy: { validTo: 'desc' },
         take: PER_KIND,
       }),
+      /*
+       * Equipment is found by whatever the person in front of it can read: the asset code,
+       * the QR payload on the label, the serial plate, the maker's badge, the model number,
+       * or where it lives. A search that only matches the code is useless to somebody
+       * holding the thing and looking for its record.
+       *
+       * Calibration certificate numbers reach the asset too - an auditor holding a
+       * certificate needs to find the instrument it belongs to.
+       */
       this.db.asset.findMany({
-        where: { ...scope, OR: [{ code: like }, { name: like }, { serialNumber: like }] },
+        where: {
+          ...scope,
+          OR: [
+            { code: like }, { name: like }, { serialNumber: like }, { qrKey: like },
+            { manufacturer: like }, { model: like }, { location: like }, { department: like },
+            { owner: like },
+            { calibrations: { some: { certificateNumber: like } } },
+            { inspections: { some: { code: like } } },
+            { assignedEmployee: { name: like } },
+            { assignedContractorWorker: { name: like } },
+            { permitUsages: { some: { permit: { code: like } } } },
+          ],
+        },
         select: { id: true, code: true, name: true, siteId: true, status: true, location: true },
         orderBy: { nextDueDate: 'asc' },
         take: PER_KIND,

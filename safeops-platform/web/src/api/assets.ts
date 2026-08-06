@@ -173,6 +173,14 @@ export interface NewAssetInput {
   frequency: InspectionFrequency
   commissionDate?: string
   warrantyUntil?: string
+  purchaseDate?: string
+  /** Failure of this item hurts someone directly. Drives filters and reminder wording. */
+  critical?: boolean
+  requiresCalibration?: boolean
+  notes?: string
+  /** At most one holder. The server refuses both. */
+  assignedEmployeeId?: string
+  assignedContractorWorkerId?: string
 }
 
 export interface CompleteInspectionInput {

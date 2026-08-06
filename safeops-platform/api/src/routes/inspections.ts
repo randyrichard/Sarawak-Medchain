@@ -131,6 +131,12 @@ const createBody = z.object({
   frequency: z.enum(['daily', 'weekly', 'monthly', 'quarterly', 'annual']),
   commissionDate: z.string().max(40).optional(),
   warrantyUntil: z.string().max(40).optional(),
+  purchaseDate: z.string().max(40).optional(),
+  critical: z.boolean().optional(),
+  requiresCalibration: z.boolean().optional(),
+  notes: z.string().max(4000).optional(),
+  assignedEmployeeId: z.string().optional(),
+  assignedContractorWorkerId: z.string().optional(),
 })
 
 inspectionsRouter.post('/', async (req, res, next) => {

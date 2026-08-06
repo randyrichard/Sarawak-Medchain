@@ -1,4 +1,4 @@
-import { request } from './http'
+import { blob, request, upload } from './http'
 
 /**
  * Calibration, equipment fitness, and the equipment named on a permit.
@@ -169,6 +169,40 @@ export interface AssetIncidentRow {
   occurredAt: string
 }
 
+export interface AssetDocumentRow {
+  id: string
+  name: string
+  kind: string
+  mimeType: string | null
+  sizeBytes: number | null
+  uploadedBy: string | null
+  createdAt: string
+  /** False for rows predating real storage: shown, but with nothing to fetch. */
+  hasFile: boolean
+  isImage: boolean
+}
+
+export interface AssetHolder {
+  kind: 'employee' | 'contractor'
+  id: string
+  name: string
+  reference: string
+  detail: string
+  active: boolean
+}
+
+export interface AssetCurrentPermit {
+  linkId: string
+  purpose: string
+  permitId: string
+  code: string
+  title: string
+  status: string
+  type: string
+  location: string
+  validTo: string
+}
+
 export interface EquipmentDashboard {
   total: number
   critical: number
@@ -184,6 +218,13 @@ export interface EquipmentDashboard {
   available: number
   byCategory: { name: string; value: number }[]
   bySite: { name: string; value: number }[]
+  bookedToPermit: number
+  retired: number
+  newest: { id: string; code: string; name: string; category: string; at: string }[]
+  upcomingWorkOrders: {
+    id: string; code: string; kind: string; priority: string
+    dueAt: string | null; description: string; assetCode: string; assetName: string
+  }[]
   recentInspections: {
     id: string; code: string; outcome: string | null
     at: string | null; by: string | null; assetCode: string; assetName: string
@@ -293,5 +334,77 @@ export const equipmentApi = {
 
   unlinkFromIncident(linkId: string): Promise<void> {
     return request(`/incidents/equipment/${linkId}`, { method: 'DELETE' })
+  },
+
+  // -- Register --------------------------------------------------------------
+
+  update(assetId: string, input: {
+    name?: string
+    manufacturer?: string
+    model?: string
+    serialNumber?: string
+    department?: string
+    location?: string
+    owner?: string
+    notes?: string
+    critical?: boolean
+    requiresCalibration?: boolean
+    purchaseDate?: string | null
+    commissionDate?: string | null
+    warrantyUntil?: string | null
+    assignedEmployeeId?: string | null
+    assignedContractorWorkerId?: string | null
+  }): Promise<unknown> {
+    return request(`/assets/${assetId}`, { method: 'PATCH', body: JSON.stringify(input) })
+  },
+
+  holder(assetId: string): Promise<AssetHolder | null> {
+    return request(`/assets/${assetId}/holder`)
+  },
+
+  currentPermit(assetId: string): Promise<AssetCurrentPermit | null> {
+    return request(`/assets/${assetId}/current-permit`)
+  },
+
+  // -- Documents and photos --------------------------------------------------
+
+  listDocuments(assetId: string): Promise<AssetDocumentRow[]> {
+    return request<{ rows: AssetDocumentRow[] }>(`/assets/${assetId}/documents`).then((r) => r.rows)
+  },
+
+  /**
+   * Upload with real progress.
+   *
+   * XHR rather than fetch, for the same reason as permit attachments: fetch still cannot
+   * report upload progress, and a 10 MB photo over site wifi with no progress bar looks
+   * like a hung screen. Same endpoint contract, same allow-list, enforced server-side.
+   */
+  uploadDocuments(
+    assetId: string,
+    files: File[],
+    kind: 'photo' | 'manual' | 'certificate' | 'other',
+    onProgress?: (percent: number) => void,
+  ): Promise<AssetDocumentRow[]> {
+    const form = new FormData()
+    for (const f of files) form.append('files', f)
+    form.append('kind', kind)
+    return upload<{ rows: AssetDocumentRow[] }>(
+      `/assets/${assetId}/documents`, form, onProgress,
+    ).then((r) => r.rows)
+  },
+
+  /**
+   * Fetched as a blob rather than linked.
+   *
+   * The endpoint needs an Authorization header and re-checks membership, so a stored
+   * filename grants nothing. The caller builds an object URL from this for thumbnails and
+   * previews, which also keeps a crafted file out of the app's own origin.
+   */
+  documentBlob(documentId: string): Promise<Blob> {
+    return blob(`/assets/documents/${documentId}`)
+  },
+
+  deleteDocument(documentId: string): Promise<void> {
+    return request(`/assets/documents/${documentId}`, { method: 'DELETE' })
   },
 }

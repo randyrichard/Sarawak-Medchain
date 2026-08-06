@@ -352,6 +352,14 @@ export class InspectionService {
     frequency: keyof typeof FREQUENCY_DAYS
     commissionDate?: string
     warrantyUntil?: string
+    purchaseDate?: string
+    /// Safety-critical: failure of this item hurts someone directly.
+    critical?: boolean
+    requiresCalibration?: boolean
+    notes?: string
+    /// Who holds it from the outset. At most one; the service refuses both.
+    assignedEmployeeId?: string
+    assignedContractorWorkerId?: string
   }) {
     const m = this.requireManager(caller, input.companyId, 'register assets')
 
@@ -360,6 +368,14 @@ export class InspectionService {
     }
     if (!ASSET_CATEGORIES.includes(input.category)) {
       throw new InspectionError('validation', 'Unknown asset category.')
+    }
+    // Refused at creation as well as on edit: equipment is held by one person, and a record
+    // created with two holders would be a state the edit path will not let you fix.
+    if (input.assignedEmployeeId && input.assignedContractorWorkerId) {
+      throw new InspectionError(
+        'validation',
+        'Equipment is held by one person. Assign it to an employee or a contractor worker, not both.',
+      )
     }
 
     const site = await this.db.site.findFirst({
@@ -397,6 +413,12 @@ export class InspectionService {
           frequency: input.frequency,
           commissionDate: input.commissionDate ? new Date(input.commissionDate) : null,
           warrantyUntil: input.warrantyUntil ? new Date(input.warrantyUntil) : null,
+          purchaseDate: input.purchaseDate ? new Date(input.purchaseDate) : null,
+          critical: input.critical ?? false,
+          requiresCalibration: input.requiresCalibration ?? false,
+          notes: input.notes?.trim() || null,
+          assignedEmployeeId: input.assignedEmployeeId ?? null,
+          assignedContractorWorkerId: input.assignedContractorWorkerId ?? null,
           nextDueDate,
           createdBy: caller.name,
         },
@@ -426,10 +448,34 @@ export class InspectionService {
         data: {
           assetId: asset.id, kind: 'created',
           summary: `Registered as ${code}, ${input.category.replace(/_/g, ' ')}.`,
-          detail: `Serial ${input.serialNumber.trim()}, owner ${input.owner.trim()}`,
+          detail: [
+            `Serial ${input.serialNumber.trim()}`,
+            `owner ${input.owner.trim()}`,
+            input.critical ? 'safety-critical' : null,
+          ].filter(Boolean).join(', '),
           actor: caller.name, actorRole: m.role,
         },
       })
+
+      // Equipment issued at registration gets its own assignment line, the same as one
+      // handed over later. Who was holding it is asked from the timeline, and an item
+      // issued on day one would otherwise appear to have never been given to anybody.
+      if (input.assignedEmployeeId || input.assignedContractorWorkerId) {
+        const holder = input.assignedEmployeeId
+          ? await tx.employee.findUnique({
+              where: { id: input.assignedEmployeeId }, select: { name: true },
+            })
+          : await tx.contractorWorker.findUnique({
+              where: { id: input.assignedContractorWorkerId! }, select: { name: true },
+            })
+        await tx.assetEvent.create({
+          data: {
+            assetId: asset.id, kind: 'assigned',
+            summary: `Assigned to ${holder?.name ?? 'a worker'}.`,
+            actor: caller.name, actorRole: m.role,
+          },
+        })
+      }
 
       return asset.id
     })

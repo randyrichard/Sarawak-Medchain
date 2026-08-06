@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Boxes, Star, ShieldAlert, Wrench, ClipboardCheck, Gauge, CircleCheck, AlertTriangle,
+  FileCheck, Archive, Clock, PackagePlus,
 } from 'lucide-react'
 import { equipmentApi, type EquipmentDashboard } from '@/api/equipmentApi'
 import { CATEGORY_LABEL, type AssetCategory } from '@/api/assets'
 import { ApiError } from '@/api/types'
 import { Alert, Badge, Card, CardBody, Skeleton } from '@/components/ui'
-import { fmtDateTime } from '@/features/incidents/lib'
+import { fmtDate, fmtDateTime } from '@/features/incidents/lib'
 import { cn } from '@/lib/cn'
 
 /**
@@ -50,8 +51,11 @@ export function EquipmentBoard({ companyId, siteId }: { companyId: string; siteI
     { label: 'Maintenance overdue', value: data?.maintenanceOverdue, icon: AlertTriangle,
       tone: data?.maintenanceOverdue ? 'var(--critical)' : undefined },
     { label: 'Maintenance open', value: data?.maintenanceOpen, icon: Wrench },
+    { label: 'Booked to a permit', value: data?.bookedToPermit, icon: FileCheck,
+      hint: 'On a live permit right now' },
     { label: 'Critical equipment', value: data?.critical, icon: Star,
       hint: 'Failure hurts someone directly' },
+    { label: 'Retired or disposed', value: data?.retired, icon: Archive },
     { label: 'Total in register', value: data?.total, icon: Boxes,
       hint: 'Excludes disposed and retired' },
   ]
@@ -85,6 +89,64 @@ export function EquipmentBoard({ companyId, siteId }: { companyId: string; siteI
           }))}
         />
         <Breakdown title="By site" rows={data?.bySite} />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardBody>
+            <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
+              <Clock size={11} /> Work orders coming due
+            </p>
+            {data === null ? (
+              <Skeleton className="h-20 rounded-lg" />
+            ) : data.upcomingWorkOrders.length === 0 ? (
+              <p className="text-2xs text-muted">Nothing scheduled ahead. Overdue work has its own tile.</p>
+            ) : (
+              <ul className="space-y-1.5">
+                {data.upcomingWorkOrders.map((w) => (
+                  <li key={w.id} className="flex items-start justify-between gap-2 text-2xs">
+                    <div className="min-w-0">
+                      <p className="text-ink">
+                        <span className="font-mono">{w.code}</span> — {w.assetName}
+                      </p>
+                      <p className="truncate text-muted">{w.description}</p>
+                    </div>
+                    <span className="shrink-0 text-muted">
+                      {w.dueAt ? fmtDate(w.dueAt) : '—'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardBody>
+            <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
+              <PackagePlus size={11} /> Newest equipment
+            </p>
+            {data === null ? (
+              <Skeleton className="h-20 rounded-lg" />
+            ) : data.newest.length === 0 ? (
+              <p className="text-2xs text-muted">Nothing registered yet.</p>
+            ) : (
+              <ul className="space-y-1.5">
+                {data.newest.map((a) => (
+                  <li key={a.id} className="flex items-start justify-between gap-2 text-2xs">
+                    <div className="min-w-0">
+                      <p className="text-ink">{a.name}</p>
+                      <Link to={`/assets?qr=${a.code}`} className="font-mono text-accent hover:underline">
+                        {a.code}
+                      </Link>
+                    </div>
+                    <span className="shrink-0 text-muted">{fmtDate(a.at)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardBody>
+        </Card>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
