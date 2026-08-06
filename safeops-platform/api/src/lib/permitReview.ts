@@ -19,6 +19,7 @@
 import type { PrismaClient, Role, PermitStatus } from '@prisma/client'
 import { PermitError } from './permitService.js'
 import { activationBlockers } from './permitCatalog.js'
+import { equipmentBlockers } from './equipmentService.js'
 import type { Caller } from './incidentService.js'
 
 /**
@@ -210,6 +211,7 @@ export class PermitReviewService {
     const unacknowledged = await this.db.permitAttendee.count({
       where: { permitId: id, toolboxAckAt: null },
     })
+    const equipment = await equipmentBlockers(this.db, id)
 
     return {
       status: permit.status,
@@ -229,6 +231,7 @@ export class PermitReviewService {
         ppeAcknowledgedAt: permit.ppeAcknowledgedAt,
         attendees,
         unacknowledged,
+        equipment,
       }),
     }
   }
@@ -241,6 +244,7 @@ export class PermitReviewService {
     ppeAcknowledgedAt: Date | null
     attendees: number
     unacknowledged: number
+    equipment?: string[]
   }): string[] {
     return activationBlockers(p)
   }

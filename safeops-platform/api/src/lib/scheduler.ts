@@ -21,6 +21,7 @@
  *    is wrapped, failures are logged, and the next tick tries again.
  */
 import type { PrismaClient } from '@prisma/client'
+import { CALIBRATED_CATEGORIES } from './equipmentService.js'
 
 const MINUTE = 60_000
 const DAY = 86400_000
@@ -65,6 +66,12 @@ const CONTRACTOR_EXPIRY_DAYS = [30, 14, 7]
 const LOOKBACK_DAYS = 45
 
 /**
+ * Days before a calibration lapses that a reminder goes out. Wider than the competency
+ * window because a calibration house needs booking and the instrument leaves site.
+ */
+const CALIBRATION_DAYS = [30, 14, 7, 1]
+
+/**
  * Ceiling on notifications from a single pass, **per workspace**.
  *
  * Belt to the lookback's braces: a first run against a large import should announce the
@@ -95,7 +102,7 @@ class Budget {
   }
 }
 
-export type JobId = 'j1' | 'j2'
+export type JobId = 'j1' | 'j2' | 'j3'
 
 /**
  * When each sweep last completed, in this process. Deliberately not persisted: after a
@@ -106,6 +113,7 @@ const lastRuns = new Map<JobId, string>()
 export const getLastRuns = (): Record<string, string | null> => ({
   j1: lastRuns.get('j1') ?? null,
   j2: lastRuns.get('j2') ?? null,
+  j3: lastRuns.get('j3') ?? null,
 })
 
 /** UTC midnight, matching how every date-only value in this codebase is stored. */
@@ -522,10 +530,129 @@ export class Scheduler {
     return raised
   }
 
+
+  /**
+   * Calibration certificates falling due, and instruments already unfit.
+   *
+   * Only the newest certificate per instrument counts. An instrument with a lapsed 2024
+   * certificate and a current 2026 one is calibrated, and chasing the old one forever is
+   * how people learn to ignore the reminders.
+   */
+  async sweepCalibrations(now = new Date()): Promise<number> {
+    const horizon = new Date(now.getTime() + Math.max(...CALIBRATION_DAYS) * DAY)
+    const floor = new Date(now.getTime() - LOOKBACK_DAYS * DAY)
+
+    const assets = await this.db.asset.findMany({
+      where: {
+        status: { notIn: ['retired', 'disposed'] },
+        OR: [{ requiresCalibration: true }, { category: { in: CALIBRATED_CATEGORIES } }],
+      },
+      select: {
+        id: true, code: true, name: true, owner: true, companyId: true, critical: true,
+        calibrations: { orderBy: { expiresAt: 'desc' }, take: 1 },
+      },
+      take: 5000,
+    })
+
+    const budget = new Budget()
+    let raised = 0
+    for (const a of assets) {
+      if (budget.exhausted(a.companyId)) continue
+      const latest = a.calibrations[0]
+      if (!latest) continue // Registered but never calibrated: chased by the register, not nightly.
+      if (latest.expiresAt > horizon || latest.expiresAt < floor) continue
+
+      const days = daysBetween(latest.expiresAt, now)
+      const critical = a.critical ? 'Critical equipment. ' : ''
+
+      if (days < 0) {
+        if (await this.raise(
+          budget, a.companyId, 'system',
+          `Calibration expired: ${a.name}`,
+          `${critical}${a.code} has been out of calibration for ${Math.abs(days)} day${days === -1 ? '' : 's'}. It cannot be booked onto a permit. Owner: ${a.owner}.`,
+          // The expiry date is part of the key, so recalibrating and lapsing again is a
+          // new event rather than a suppressed duplicate.
+          `/assets?asset=${a.id}&calibration=${latest.expiresAt.toISOString().slice(0, 10)}`,
+        )) raised++
+      } else if (CALIBRATION_DAYS.includes(days)) {
+        if (await this.raise(
+          budget, a.companyId, 'system',
+          `Calibration due in ${days} day${days === 1 ? '' : 's'}: ${a.name}`,
+          `${critical}${a.code} certificate ${latest.certificateNumber} expires on ${latest.expiresAt.toISOString().slice(0, 10)}. Owner: ${a.owner}.`,
+          `/assets?asset=${a.id}&calibration=${latest.expiresAt.toISOString().slice(0, 10)}&in=${days}`,
+        )) raised++
+      }
+    }
+    return raised
+  }
+
+  /** Work orders past their due date and still open. */
+  async sweepMaintenance(now = new Date()): Promise<number> {
+    const floor = new Date(now.getTime() - LOOKBACK_DAYS * DAY)
+    const orders = await this.db.workOrder.findMany({
+      where: {
+        status: { in: ['open', 'in_progress'] },
+        dueAt: { not: null, lt: now, gte: floor },
+      },
+      select: {
+        id: true, code: true, dueAt: true, description: true, assignedTo: true, priority: true,
+        asset: { select: { id: true, code: true, name: true, companyId: true, critical: true } },
+      },
+      orderBy: { dueAt: 'asc' },
+      take: 5000,
+    })
+
+    const budget = new Budget()
+    let raised = 0
+    for (const w of orders) {
+      if (!w.dueAt) continue
+      if (budget.exhausted(w.asset.companyId)) continue
+      const days = Math.abs(daysBetween(w.dueAt, now))
+      const critical = w.asset.critical ? 'Critical equipment. ' : ''
+
+      if (await this.raise(
+        budget, w.asset.companyId, 'system',
+        `Maintenance overdue: ${w.asset.name}`,
+        `${critical}${w.code} was due ${days} day${days === 1 ? '' : 's'} ago — ${w.description}${w.assignedTo ? `. Assigned to ${w.assignedTo}` : ''}.`,
+        `/assets?asset=${w.asset.id}&workOrder=${w.id}`,
+      )) raised++
+    }
+    return raised
+  }
+
+  /**
+   * Equipment sitting out of service.
+   *
+   * Raised once per item rather than nightly: the href carries no date, so the first
+   * notification stands until somebody deals with it. A daily reminder that an item is
+   * still broken is noise, and noise is what makes the real ones get dismissed.
+   */
+  async sweepOutOfService(): Promise<number> {
+    const assets = await this.db.asset.findMany({
+      where: { status: 'out_of_service' },
+      select: { id: true, code: true, name: true, owner: true, companyId: true, critical: true },
+      take: 5000,
+    })
+
+    const budget = new Budget()
+    let raised = 0
+    for (const a of assets) {
+      if (budget.exhausted(a.companyId)) continue
+      if (await this.raise(
+        budget, a.companyId, 'system',
+        a.critical ? `Critical equipment out of service: ${a.name}` : `Equipment out of service: ${a.name}`,
+        `${a.code} cannot be used or booked onto a permit until it is returned to service. Owner: ${a.owner}.`,
+        `/assets?asset=${a.id}&outOfService=1`,
+      )) raised++
+    }
+    return raised
+  }
+
   /** One full pass. Safe to call directly; that is how the tests drive it. */
   async runOnce(now = new Date()): Promise<{
     actions: number; inspections: number; certificates: number; medicals: number
     contractors: number; permits: number
+    calibrations: number; maintenance: number; outOfService: number
   }> {
     const actions = await this.sweepActions(now)
     const inspections = await this.sweepInspections(now)
@@ -537,7 +664,15 @@ export class Scheduler {
     const permits = await this.sweepPermits(now)
     lastRuns.set('j2', new Date().toISOString())
 
-    return { actions, inspections, certificates, medicals, contractors, permits }
+    const calibrations = await this.sweepCalibrations(now)
+    const maintenance = await this.sweepMaintenance(now)
+    const outOfService = await this.sweepOutOfService()
+    lastRuns.set('j3', new Date().toISOString())
+
+    return {
+      actions, inspections, certificates, medicals, contractors, permits,
+      calibrations, maintenance, outOfService,
+    }
   }
 
   /**

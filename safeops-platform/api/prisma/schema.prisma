@@ -339,6 +339,8 @@ model Incident {
   updatedAt DateTime @updatedAt
 
   // Composite indexes matching the actual list queries (company+stage, company+site).
+  equipmentLinks IncidentEquipment[]
+
   @@unique([companyId, number])
   @@index([companyId, stage])
   @@index([companyId, siteId])
@@ -616,6 +618,7 @@ model Permit {
 
   attendees   PermitAttendee[]
   extensions  PermitExtension[]
+  equipment   PermitEquipment[]
   jsaSteps    PermitJsaStep[]
   attachments PermitAttachment[]
 
@@ -762,6 +765,16 @@ enum AssetCategory {
   ppe
   vehicle
   pressure_vessel
+  crane
+  chain_block
+  lifting_sling
+  harness
+  gas_detector
+  scba
+  pressure_gauge
+  electrical_tool
+  generator
+  compressor
   custom
 }
 
@@ -770,6 +783,11 @@ enum AssetStatus {
   under_maintenance
   out_of_service
   retired
+  /// In active use on a job. Distinct from in_service so a shared gas detector cannot be
+  /// booked onto two permits at once.
+  in_use
+  /// Written off. Kept separate from retired so a disposal is auditable as a disposal.
+  disposed
 }
 
 enum InspectionFrequency {
@@ -821,6 +839,28 @@ model Asset {
 
   status    AssetStatus         @default(in_service)
   frequency InspectionFrequency
+
+  /// Safety-critical: failure of this item hurts someone directly. Drives the register's
+  /// filters, the dashboard, and how loudly the reminder engine chases it.
+  critical Boolean @default(false)
+
+  /// Who currently holds it. Exactly one of these, or neither for pool equipment.
+  assignedEmployeeId String?
+  assignedEmployee   Employee? @relation(fields: [assignedEmployeeId], references: [id], onDelete: SetNull)
+  assignedContractorWorkerId String?
+  assignedContractorWorker   ContractorWorker? @relation(fields: [assignedContractorWorkerId], references: [id], onDelete: SetNull)
+
+  notes String?
+
+  /// Calibration applies to measuring instruments only. Null on everything else, which is
+  /// how the permit gate knows whether to demand a valid certificate.
+  requiresCalibration Boolean @default(false)
+
+  calibrations Calibration[]
+  permitUsages PermitEquipment[]
+  workOrders   WorkOrder[]
+  incidentLinks IncidentEquipment[]
+  events       AssetEvent[]
 
   lastInspectedAt DateTime?
   /// Date the next inspection falls due. Rolled forward on completion so an asset can
@@ -1209,6 +1249,7 @@ model Employee {
   enrolments        SessionEnrolment[]
   certificates      Certificate[]
   permitAttendances PermitAttendee[]
+  assignedAssets    Asset[]
   emergencyContacts EmergencyContact[]
   ppeIssues         PpeIssue[]
 
@@ -1390,6 +1431,69 @@ enum PermitAttachmentKind {
   other
 }
 
+/// A calibration certificate for a measuring instrument.
+///
+/// Kept as history rather than columns on the asset, because "when was this gas detector
+/// last calibrated, by whom, against which certificate" is the question an auditor asks
+/// and a coroner asks. The current certificate is the most recently issued one, derived
+/// on read so a recalibration supersedes automatically.
+model Calibration {
+  id      String @id @default(cuid())
+  assetId String
+  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  calibratedAt      DateTime
+  /// Certificate reference from the calibration house. Quoted externally.
+  certificateNumber String
+  vendor            String   @default("")
+  /// When it lapses. An instrument past this reads numbers nobody should trust.
+  expiresAt         DateTime
+
+  result   CalibrationResult @default(pass)
+  remarks  String?
+
+  /// The scanned certificate, same storage contract as permit documents.
+  documentName String?
+  storedName   String?
+
+  recordedBy String
+  createdAt  DateTime @default(now())
+
+  @@index([assetId, calibratedAt])
+  @@index([expiresAt])
+}
+
+enum CalibrationResult {
+  pass
+  pass_with_adjustment
+  fail
+}
+
+/// Equipment booked onto a permit.
+///
+/// This is the join that makes the permit gate possible. A permit that names a gas
+/// detector is claiming that instrument will be used on the job, so the permit cannot go
+/// active unless the instrument is fit: in service, inspection current, and — for a
+/// measuring instrument — calibration valid.
+model PermitEquipment {
+  id       String @id @default(cuid())
+  permitId String
+  permit   Permit @relation(fields: [permitId], references: [id], onDelete: Cascade)
+  assetId  String
+  /// Restrict: equipment named on a permit is part of that permit's record.
+  asset    Asset  @relation(fields: [assetId], references: [id], onDelete: Restrict)
+
+  /// What it is there for, in the issuer's words.
+  purpose String @default("")
+
+  addedBy String
+  addedAt DateTime @default(now())
+
+  @@unique([permitId, assetId])
+  @@index([permitId])
+  @@index([assetId])
+}
+
 /// A permit extension.
 ///
 /// Kept as history rather than overwriting validTo, because "how long was this job
@@ -1501,6 +1605,7 @@ model ContractorWorker {
 
   certificates ContractorCertificate[]
   permitAttendances PermitAttendee[]
+  assignedAssets    Asset[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1908,4 +2013,130 @@ model NotificationRead {
 
   @@id([notificationId, userId])
   @@index([userId])
+}
+
+/// Preventive, corrective or emergency work on a piece of equipment.
+///
+/// Separate from Inspection because the two answer different questions. An inspection asks
+/// "is this still fit"; a work order records what was done about it, by whom, for how long
+/// the item was down and at what cost. Conflating them loses the downtime figure, which is
+/// the number a plant manager is actually judged on.
+model WorkOrder {
+  id      String @id @default(cuid())
+  /// Human reference (WO-####), per tenant.
+  code    String
+  assetId String
+  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  kind        MaintenanceKind
+  priority    MaintenancePriority @default(medium)
+  description String
+
+  assignedTo String @default("")
+
+  /// Planned start. Set at raise time; what "overdue" is measured against.
+  dueAt      DateTime?
+  startedAt  DateTime?
+  finishedAt DateTime?
+
+  /// Minutes the equipment was unavailable. Recorded rather than derived from the
+  /// start/finish stamps: a job can be paused overnight without the plant being down.
+  downtimeMinutes Int @default(0)
+
+  /// Stored in sen (1/100 of a ringgit) as an integer. Floating point money in a cost
+  /// report eventually produces a total that does not match the sum of its rows.
+  costSen   Int    @default(0)
+  partsUsed String @default("")
+
+  status MaintenanceStatus @default(open)
+
+  raisedBy   String
+  raisedAt   DateTime @default(now())
+  closedBy   String?
+  closingNote String?
+
+  @@unique([assetId, code])
+  @@index([assetId, status])
+  @@index([status, dueAt])
+}
+
+enum MaintenanceKind {
+  preventive
+  corrective
+  emergency
+}
+
+enum MaintenancePriority {
+  low
+  medium
+  high
+  critical
+}
+
+enum MaintenanceStatus {
+  open
+  in_progress
+  completed
+  cancelled
+}
+
+/// Equipment named on an incident.
+///
+/// A join table rather than a column on Incident because one incident can involve several
+/// items - a sling parted and the load struck a scaffold - and because the same asset
+/// accumulating incidents is the signal worth surfacing on its profile.
+model IncidentEquipment {
+  id         String   @id @default(cuid())
+  incidentId String
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  assetId    String
+  asset      Asset    @relation(fields: [assetId], references: [id], onDelete: Restrict)
+
+  /// What part this equipment played. Free text on purpose: "harness lanyard failed at
+  /// the stitching" is worth more than an enum value of "failure".
+  involvement String   @default("")
+  addedBy     String
+  addedAt     DateTime @default(now())
+
+  @@unique([incidentId, assetId])
+  @@index([assetId])
+}
+
+/// One line of an asset's history.
+///
+/// Written alongside the row that caused it, in the same transaction, so the timeline
+/// cannot drift from the facts. Denormalised on purpose: reconstructing a history by
+/// merging five tables at read time is how a timeline ends up missing the one event that
+/// mattered, and this is the view an investigator reads after someone is hurt.
+model AssetEvent {
+  id      String @id @default(cuid())
+  assetId String
+  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  kind   AssetEventKind
+  /// One sentence, already written for a human. Rendered as-is.
+  summary String
+  detail  String?
+
+  actor     String
+  actorRole String   @default("")
+  at        DateTime @default(now())
+
+  /// Where to go for the full record: a permit id, work order id, incident id. Nullable
+  /// because some events - a status change - have nothing further to show.
+  refType String?
+  refId   String?
+
+  @@index([assetId, at])
+}
+
+enum AssetEventKind {
+  created
+  assigned
+  inspection
+  calibration
+  maintenance
+  incident
+  status_change
+  permit
 }

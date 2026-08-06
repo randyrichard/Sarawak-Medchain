@@ -19,6 +19,7 @@ import { RcaPanel } from './components/RcaPanel'
 import { ActionsPanel } from './components/ActionsPanel'
 import { CommentsPanel } from './components/CommentsPanel'
 import { EvidencePanel } from './components/EvidencePanel'
+import { IncidentEquipmentPanel } from './components/IncidentEquipmentPanel'
 
 type Tab = 'overview' | 'investigation' | 'actions' | 'discussion' | 'activity'
 
@@ -186,6 +187,17 @@ export function IncidentDetailPage() {
           </Card>
 
           <EvidencePanel incident={incident} onUpdate={setIncident} />
+
+          {/*
+            Above the timeline, alongside the evidence: which item failed is part of the
+            case file, not a footnote to it.
+          */}
+          <IncidentEquipmentPanel
+            incidentId={incident.id}
+            companyId={incident.companyId}
+            canEdit={incident.stage !== 'closed'}
+          />
+
           <CaseTimeline incident={incident} />
         </div>
       </div>

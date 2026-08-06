@@ -8,6 +8,7 @@ import { ApiError } from '@/api/types'
 import type { Actor } from '@/api/incidents'
 import { GAS_LIMITS, GAS_TEST_REQUIRED, ISOLATION_REQUIRED, type PermitView } from '@/api/permits'
 import { PermitPeoplePanel } from './PermitPeoplePanel'
+import { PermitEquipmentPanel } from './PermitEquipmentPanel'
 import { ReviewChain } from './ReviewChain'
 import { ToolboxDialog } from './ToolboxDialog'
 import { JsaTable } from './JsaTable'
@@ -287,6 +288,18 @@ export function PermitDrawer({
             permitStatus={permit.status}
             canEdit={open}
             onChanged={onChanged}
+          />
+
+          {/*
+            Directly under the people, because they are the same kind of claim: this named
+            person and this named item are fit to be on the job. Reloading the permit on
+            change keeps the activation blockers in the header honest.
+          */}
+          <PermitEquipmentPanel
+            permitId={permit.id}
+            permitStatus={permit.status}
+            canEdit={open}
+            onChanged={() => { load(); onChanged() }}
           />
 
           <JsaTable permitId={permit.id} canEdit={open} onChanged={() => { load(); onChanged() }} />

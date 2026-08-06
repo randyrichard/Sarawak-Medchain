@@ -55,6 +55,9 @@ d('Scheduler — integration (real Postgres)', () => {
   beforeEach(async () => {
     await db.notification.deleteMany({ where: { companyId: COMPANY } })
     await db.correctiveAction.deleteMany({ where: { companyId: COMPANY } })
+    await db.workOrder.deleteMany({ where: { asset: { companyId: COMPANY } } })
+    await db.calibration.deleteMany({ where: { asset: { companyId: COMPANY } } })
+    await db.assetEvent.deleteMany({ where: { asset: { companyId: COMPANY } } })
     await db.asset.deleteMany({ where: { companyId: COMPANY } })
     await db.certificate.deleteMany({ where: { companyId: COMPANY } })
     await db.employee.deleteMany({ where: { companyId: COMPANY } })
@@ -351,5 +354,151 @@ d('Scheduler — integration (real Postgres)', () => {
     const second = await scheduler.runOnce()
     expect(second.actions + second.inspections + second.certificates).toBe(0)
     expect(await hrefs()).toHaveLength(before)
+  })
+  // -- Calibration ----------------------------------------------------------
+
+  /** A detector with one certificate, expiring in `n` days. */
+  const makeDetector = async (code: string, expiresInDays: number | null, over: Record<string, unknown> = {}) => {
+    const asset = await db.asset.create({
+      data: {
+        code, qrKey: code, companyId: COMPANY, siteId: SITE,
+        name: `ITest detector ${code}`, category: 'gas_detector', serialNumber: `SN-${code}`,
+        owner: 'Owner One', frequency: 'monthly', nextDueDate: inDays(200), createdBy: 'itest',
+        ...over,
+      },
+    })
+    if (expiresInDays !== null) {
+      await db.calibration.create({
+        data: {
+          assetId: asset.id, calibratedAt: inDays(-30), expiresAt: inDays(expiresInDays),
+          certificateNumber: `CAL-${code}`, recordedBy: 'itest',
+        },
+      })
+    }
+    return asset
+  }
+
+  it('warns at thirty, fourteen, seven and one day out — and not on other days', async () => {
+    await makeDetector('AST-C30', 30)
+    await makeDetector('AST-C14', 14)
+    await makeDetector('AST-C7', 7)
+    await makeDetector('AST-C1', 1)
+    await makeDetector('AST-C9', 9)   // between thresholds: silence is correct
+    await makeDetector('AST-C60', 60)
+
+    await scheduler.sweepCalibrations()
+    expect(await hrefs()).toHaveLength(4)
+  })
+
+  it('chases an instrument that is already out of calibration', async () => {
+    await makeDetector('AST-CX', -3)
+    expect(await scheduler.sweepCalibrations()).toBe(1)
+
+    const [n] = await db.notification.findMany({ where: { companyId: COMPANY } })
+    expect(n.title).toMatch(/Calibration expired/)
+    // The consequence, not just the fact: this is what makes someone act on it.
+    expect(n.detail).toMatch(/cannot be booked onto a permit/i)
+  })
+
+  it('says so when the instrument is safety-critical', async () => {
+    await makeDetector('AST-CC', -1, { critical: true })
+    await scheduler.sweepCalibrations()
+    const [n] = await db.notification.findMany({ where: { companyId: COMPANY } })
+    expect(n.detail).toMatch(/^Critical equipment\./)
+  })
+
+  it('counts only the newest certificate, so a superseded lapse is not chased forever', async () => {
+    const a = await makeDetector('AST-CS', -40)
+    await db.calibration.create({
+      data: {
+        assetId: a.id, calibratedAt: inDays(-2), expiresAt: inDays(300),
+        certificateNumber: 'CAL-NEW', recordedBy: 'itest',
+      },
+    })
+    expect(await scheduler.sweepCalibrations()).toBe(0)
+  })
+
+  it('leaves disposed and retired instruments alone', async () => {
+    await makeDetector('AST-CD', -5, { status: 'disposed' })
+    await makeDetector('AST-CR', -5, { status: 'retired' })
+    expect(await scheduler.sweepCalibrations()).toBe(0)
+  })
+
+  it('does not chase a category that needs no calibration', async () => {
+    await makeDetector('AST-CL', -5, { category: 'ladder' })
+    expect(await scheduler.sweepCalibrations()).toBe(0)
+  })
+
+  it('chases an item flagged for calibration whatever its category', async () => {
+    await makeDetector('AST-CF', -5, { category: 'machinery', requiresCalibration: true })
+    expect(await scheduler.sweepCalibrations()).toBe(1)
+  })
+
+  it('raises the lapse again after a recalibration lapses, because it is a new event', async () => {
+    const a = await makeDetector('AST-CN', -2)
+    await scheduler.sweepCalibrations()
+    expect(await scheduler.sweepCalibrations()).toBe(0)   // same certificate, no repeat
+
+    await db.calibration.create({
+      data: {
+        assetId: a.id, calibratedAt: inDays(-20), expiresAt: inDays(-1),
+        certificateNumber: 'CAL-NEXT', recordedBy: 'itest',
+      },
+    })
+    expect(await scheduler.sweepCalibrations()).toBe(1)
+  })
+
+  // -- Maintenance ----------------------------------------------------------
+
+  const makeWorkOrder = async (code: string, dueInDays: number, over: Record<string, unknown> = {}) => {
+    const asset = await db.asset.create({
+      data: {
+        code: `AST-${code}`, qrKey: `AST-${code}`, companyId: COMPANY, siteId: SITE,
+        name: `ITest rig ${code}`, category: 'machinery', serialNumber: `SN-${code}`,
+        owner: 'Owner One', frequency: 'monthly', nextDueDate: inDays(200), createdBy: 'itest',
+      },
+    })
+    return db.workOrder.create({
+      data: {
+        code, assetId: asset.id, kind: 'preventive', description: `Work ${code}`,
+        dueAt: inDays(dueInDays), raisedBy: 'itest', ...over,
+      },
+    })
+  }
+
+  it('chases only work orders that are past due and still open', async () => {
+    await makeWorkOrder('WO-LATE', -3)
+    await makeWorkOrder('WO-SOON', 3)
+    await makeWorkOrder('WO-DONE', -3, { status: 'completed' })
+    await makeWorkOrder('WO-VOID', -3, { status: 'cancelled' })
+
+    expect(await scheduler.sweepMaintenance()).toBe(1)
+  })
+
+  it('does not raise the same overdue work order twice', async () => {
+    await makeWorkOrder('WO-ONCE', -5)
+    expect(await scheduler.sweepMaintenance()).toBe(1)
+    expect(await scheduler.sweepMaintenance()).toBe(0)
+  })
+
+  // -- Out of service -------------------------------------------------------
+
+  it('raises equipment sitting out of service, once, not nightly', async () => {
+    await makeDetector('AST-OOS', 200, { status: 'out_of_service' })
+    expect(await scheduler.sweepOutOfService()).toBe(1)
+    // A daily reminder that it is still broken is noise, and noise gets everything ignored.
+    expect(await scheduler.sweepOutOfService()).toBe(0)
+  })
+
+  it('names critical equipment differently, because it is read differently', async () => {
+    await makeDetector('AST-OOC', 200, { status: 'out_of_service', critical: true })
+    await scheduler.sweepOutOfService()
+    const [n] = await db.notification.findMany({ where: { companyId: COMPANY } })
+    expect(n.title).toMatch(/^Critical equipment out of service/)
+  })
+
+  it('leaves in-service equipment alone', async () => {
+    await makeDetector('AST-OK', 200)
+    expect(await scheduler.sweepOutOfService()).toBe(0)
   })
 })

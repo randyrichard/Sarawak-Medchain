@@ -12,6 +12,9 @@ import { usePeople } from '@/features/incidents/lib'
 import { Alert, Avatar, Badge, Button, Dialog, Input, Select, Skeleton, StatusPill } from '@/components/ui'
 import { CATEGORY_ICON, healthColor, RISK_PILL } from '../lib'
 import { QrBlock } from './QrBlock'
+import { CalibrationPanel } from './CalibrationPanel'
+import { MaintenancePanel } from './MaintenancePanel'
+import { AssetTimeline } from './AssetTimeline'
 import { cn } from '@/lib/cn'
 
 interface Profile {
@@ -32,7 +35,14 @@ export function AssetDrawer({
   const actor = useActor()
   const people = usePeople()
   const [profile, setProfile] = useState<Profile | null>(null)
+  /*
+   * Bumped by every panel that writes something. The history is a read of what those
+   * writes produced, so it has to be told when one has happened; the alternative is
+   * polling, which is worse for the same result.
+   */
+  const [revision, setRevision] = useState(0)
   const [missing, setMissing] = useState(false)
+  const changed = () => { setRevision((n) => n + 1); onChanged() }
   const [scheduleOpen, setScheduleOpen] = useState(false)
   const [date, setDate] = useState('')
   const [inspector, setInspector] = useState('')
@@ -205,6 +215,18 @@ export function AssetDrawer({
                 {asset.lastInspectedAt && <Meta label="Last inspected" value={fmtDateTime(asset.lastInspectedAt)} />}
                 <Meta label="Frequency" value={FREQUENCY_LABEL[asset.frequency]} />
               </div>
+
+              {/*
+                Calibration, above the QR block because it is the thing that decides
+                whether this instrument can be used. Renders nothing for categories where
+                calibration is not a control.
+              */}
+              <CalibrationPanel assetId={asset.id} manage={manage} onChanged={changed} />
+
+              <MaintenancePanel assetId={asset.id} manage={manage} onChanged={changed} />
+
+              {/* Last, because it is the longest section and the least urgent to read. */}
+              <AssetTimeline assetId={asset.id} revision={revision} />
 
               {/* QR */}
               <QrBlock qrKey={asset.qrKey} />

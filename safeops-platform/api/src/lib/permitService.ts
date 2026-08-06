@@ -7,6 +7,7 @@ import {
   GAS_LIMITS, GAS_TEST_REQUIRED, ISOLATION_REQUIRED, PERMIT_CONTROLS, PERMIT_MAX_HOURS,
   PERMIT_STATUS_LABEL, PERMIT_TYPES, PERMIT_TYPE_LABEL, gasTestPasses, activationBlockers,
 } from './permitCatalog.js'
+import { equipmentBlockers } from './equipmentService.js'
 
 /**
  * Issuing authority: who may approve, reject, suspend, resume and close a permit.
@@ -576,10 +577,15 @@ export class PermitService {
      * Re-checked here rather than trusted from the screen, because this is the moment the
      * work actually begins. A toolbox talk nobody attended and PPE nobody confirmed are
      * the two findings that turn up after the event, so both are refusals.
+     *
+     * Equipment is re-checked here too, and it is the one that can change on its own: a
+     * gas detector whose certificate lapses between approval and start-of-work was fit
+     * when the permit was signed and is not fit now.
      */
-    const [attendees, unacknowledged] = await Promise.all([
+    const [attendees, unacknowledged, equipment] = await Promise.all([
       this.db.permitAttendee.count({ where: { permitId: id } }),
       this.db.permitAttendee.count({ where: { permitId: id, toolboxAckAt: null } }),
+      equipmentBlockers(this.db, id),
     ])
     const blockers = activationBlockers({
       status: permit.status,
@@ -588,6 +594,7 @@ export class PermitService {
       ppeAcknowledgedAt: permit.ppeAcknowledgedAt,
       attendees,
       unacknowledged,
+      equipment,
     })
     if (blockers.length > 0) {
       throw new PermitError('validation', blockers[0])

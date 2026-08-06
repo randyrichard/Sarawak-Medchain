@@ -3,7 +3,15 @@
 import type { Asset, AssetCategory, ChecklistItem, Inspection } from '../assets'
 import { FREQUENCY_DAYS } from '../assets'
 
-export const CHECKLISTS: Record<AssetCategory, ChecklistItem[]> = {
+/**
+ * Offline fallback templates.
+ *
+ * Partial on purpose. The server at /assets/checklists is the authority and carries every
+ * category; this copy exists so the runner has something to show when the API cannot be
+ * reached. Typed as partial so adding a category server-side is not a compile error here
+ * and, more to the point, is not silently missing from the form.
+ */
+export const CHECKLISTS: Partial<Record<AssetCategory, ChecklistItem[]>> = {
   fire_extinguisher: [
     { id: 'fe1', label: 'Pressure gauge needle in green zone' },
     { id: 'fe2', label: 'Safety pin and tamper seal intact' },
@@ -224,7 +232,7 @@ export function buildInspectionSeeds(assets: Asset[]): Inspection[] {
   let n = 2050
 
   const passAnswers = (cat: AssetCategory) =>
-    CHECKLISTS[cat].map((c) => ({ itemId: c.id, label: c.label, result: 'pass' as const }))
+    (CHECKLISTS[cat] ?? []).map((c) => ({ itemId: c.id, label: c.label, result: 'pass' as const }))
 
   // history: one passed inspection per asset (at lastInspectedAt)
   for (const a of assets) {
@@ -244,7 +252,7 @@ export function buildInspectionSeeds(assets: Asset[]): Inspection[] {
     id: 'ins-2043', code: 'INS-2043', assetId: gen.id, companyId: 'big', siteId: 'twu',
     scheduledFor: dISO(-4), assignedTo: 'Dayang Nurul', status: 'Completed',
     completedAt: tISO(-4), completedBy: 'Dayang Nurul', outcome: 'failed',
-    answers: CHECKLISTS.machinery.map((c) => {
+    answers: (CHECKLISTS.machinery ?? []).map((c) => {
       if (c.id === 'mc3') return { itemId: c.id, label: c.label, result: 'fail' as const, comment: 'Coolant hose perished at radiator end — weeping under load.' }
       if (c.id === 'mc5') return { itemId: c.id, label: c.label, result: 'fail' as const, comment: 'Battery terminals heavily corroded; starter cranking slow.' }
       if (c.id === 'mc4') return { itemId: c.id, label: c.label, result: 'pass' as const, measurement: '1,240 h' }

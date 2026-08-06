@@ -11,6 +11,7 @@ import { incidentExtrasRouter } from './routes/incidentExtras.js'
 import { permitsRouter } from './routes/permits.js'
 import { permitAttachmentsRouter } from './routes/permitAttachments.js'
 import { inspectionsRouter } from './routes/inspections.js'
+import { equipmentRouter } from './routes/equipment.js'
 import { auditsRouter } from './routes/audits.js'
 import { trainingRouter } from './routes/training.js'
 import { adminRouter } from './routes/admin.js'
@@ -35,6 +36,7 @@ import { AccountError } from './lib/accountService.js'
 import { SearchError } from './lib/searchService.js'
 import { EmployeeError } from './lib/employeeService.js'
 import { ContractorError } from './lib/contractorService.js'
+import { EquipmentError } from './lib/equipmentService.js'
 
 export function createApp() {
   const app = express()
@@ -113,6 +115,11 @@ export function createApp() {
     }
   })
 
+  // Mounted at the root and ahead of every parent it borrows a prefix from. It serves
+  // /assets/:id/calibrations, /permits/:id/equipment and /incidents/:id/equipment, and
+  // each of those parents is keyed on a path parameter that would otherwise capture the
+  // segment. Same ordering rule as the incident extras below.
+  app.use('/', equipmentRouter)
   app.use('/auth', authRouter)
   // Mounted first: its literal paths would otherwise be captured by /incidents/:id
   app.use('/incidents', incidentExtrasRouter)
@@ -149,7 +156,8 @@ export function createApp() {
       err instanceof AccountError ||
       err instanceof SearchError ||
       err instanceof EmployeeError ||
-      err instanceof ContractorError
+      err instanceof ContractorError ||
+      err instanceof EquipmentError
     ) {
       return res.status(err.status).json({ error: err.code, message: err.message })
     }

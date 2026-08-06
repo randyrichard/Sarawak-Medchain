@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Boxes, CalendarDays, ClipboardCheck, LineChart, Plus, Search } from 'lucide-react'
+import { Boxes, CalendarDays, ClipboardCheck, LayoutDashboard, LineChart, Plus, Search } from 'lucide-react'
 import { api } from '@/api/client'
 import type { AssetFilters, AssetStats, AssetView, InspectionView } from '@/api/assets'
 import { ASSET_CATEGORIES, CATEGORY_LABEL, type AssetCategory } from '@/api/assets'
@@ -12,11 +12,12 @@ import { canManageAssets, CATEGORY_ICON, healthColor, RISK_PILL } from './lib'
 import { AssetDrawer } from './components/AssetDrawer'
 import { InspectionsList } from './components/InspectionsList'
 import { InspectionCalendar } from './components/InspectionCalendar'
+import { EquipmentBoard } from './components/EquipmentBoard'
 import { AssetAnalytics } from './components/AssetAnalytics'
 import { NewAssetDialog } from './components/NewAssetDialog'
 import { InspectionRunner } from './components/InspectionRunner'
 
-type View = 'register' | 'inspections' | 'calendar' | 'analytics'
+type View = 'register' | 'inspections' | 'calendar' | 'analytics' | 'board'
 type Bucket = NonNullable<AssetFilters['bucket']>
 
 export function AssetsPage() {
@@ -86,6 +87,7 @@ export function AssetsPage() {
     { value: 'inspections', label: 'Inspections', badge: <ClipboardCheck size={13} className="text-muted" /> },
     { value: 'calendar', label: 'Calendar', badge: <CalendarDays size={13} className="text-muted" /> },
     { value: 'analytics', label: 'Analytics', badge: <LineChart size={13} className="text-muted" /> },
+    { value: 'board', label: 'Equipment board', badge: <LayoutDashboard size={13} className="text-muted" /> },
   ]
 
   return (
@@ -171,6 +173,10 @@ export function AssetsPage() {
         />
       )}
       {view === 'analytics' && <AssetAnalytics stats={stats} sites={sites} onOpenAsset={setOpenAssetId} />}
+
+      {/* Calibration, maintenance and the fitness counts, none of which the health-based
+          analytics view can express. */}
+      {view === 'board' && company && <EquipmentBoard companyId={company.id} siteId={site?.id} />}
 
       <AssetDrawer
         assetId={openAssetId}

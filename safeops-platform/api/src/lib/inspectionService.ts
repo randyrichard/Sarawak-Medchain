@@ -353,7 +353,7 @@ export class InspectionService {
     commissionDate?: string
     warrantyUntil?: string
   }) {
-    this.requireManager(caller, input.companyId, 'register assets')
+    const m = this.requireManager(caller, input.companyId, 'register assets')
 
     if (!input.name?.trim() || !input.serialNumber?.trim() || !input.siteId || !input.owner?.trim()) {
       throw new InspectionError('validation', 'Name, serial number, site and owner are required.')
@@ -417,6 +417,17 @@ export class InspectionService {
           siteId: input.siteId,
           scheduledFor: nextDueDate,
           assignedTo: input.owner.trim(),
+        },
+      })
+
+      // The first line of the item's history, written where it is created so a register
+      // entry can never exist without one.
+      await tx.assetEvent.create({
+        data: {
+          assetId: asset.id, kind: 'created',
+          summary: `Registered as ${code}, ${input.category.replace(/_/g, ' ')}.`,
+          detail: `Serial ${input.serialNumber.trim()}, owner ${input.owner.trim()}`,
+          actor: caller.name, actorRole: m.role,
         },
       })
 
@@ -651,6 +662,18 @@ export class InspectionService {
           siteId: asset.siteId,
           scheduledFor: nextDueDate,
           assignedTo: inspection.assignedTo,
+        },
+      })
+
+      await tx.assetEvent.create({
+        data: {
+          assetId: asset.id, kind: 'inspection',
+          summary: `${inspection.code} ${outcome}.`,
+          detail: fails.length > 0
+            ? `${fails.length} item${fails.length === 1 ? '' : 's'} failed: ${fails.map((f) => f.label).join('; ')}`
+            : `All ${answers.length} checks passed`,
+          actor: caller.name, actorRole: m.role,
+          refType: 'inspection', refId: inspection.id,
         },
       })
     })

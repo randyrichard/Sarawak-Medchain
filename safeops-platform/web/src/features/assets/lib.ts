@@ -1,6 +1,7 @@
 import {
   Car, FireExtinguisher, Forklift, Gauge, Lamp, Landmark, LayoutGrid, Package,
-  PlugZap, Cross, Cog, Construction, type LucideIcon,
+  PlugZap, Cross, Cog, Construction, ConstructionIcon, Link, Cable, HardHat,
+  Wind, Radiation, Zap, Fuel, type LucideIcon,
 } from 'lucide-react'
 import type { AssetCategory, RiskLevel } from '@/api/assets'
 
@@ -16,6 +17,16 @@ export const CATEGORY_ICON: Record<AssetCategory, LucideIcon> = {
   ppe: Package,
   vehicle: Car,
   pressure_vessel: Gauge,
+  crane: ConstructionIcon,
+  chain_block: Link,
+  lifting_sling: Cable,
+  harness: HardHat,
+  gas_detector: Radiation,
+  scba: Wind,
+  pressure_gauge: Gauge,
+  electrical_tool: Zap,
+  generator: Fuel,
+  compressor: Wind,
   custom: LayoutGrid,
 }
 

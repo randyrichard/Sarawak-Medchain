@@ -1125,7 +1125,7 @@ export class IncidentStore {
       throw new ApiError('forbidden', 'Only the assigned inspector (or a Safety Officer and above) can complete this inspection.')
     }
     const asset = this.assets.find((a) => a.id === insp.assetId)!
-    const template = CHECKLISTS[asset.category]
+    const template = CHECKLISTS[asset.category] ?? []
     if (input.answers.length !== template.length || input.answers.some((a) => !a.result)) {
       throw new ApiError('validation', 'Every checklist item needs a Pass, Fail or N/A answer.')
     }

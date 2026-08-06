@@ -4,7 +4,12 @@
 
 export const ASSET_CATEGORIES = [
   'fire_extinguisher', 'forklift', 'ladder', 'scaffolding', 'machinery', 'electrical_panel',
-  'emergency_lighting', 'first_aid_kit', 'ppe', 'vehicle', 'pressure_vessel', 'custom',
+  'emergency_lighting', 'first_aid_kit', 'ppe', 'vehicle', 'pressure_vessel',
+  // Lifting gear, breathing apparatus and measuring instruments. Mirrors
+  // api/src/lib/inspectionCatalog.ts — the server rejects anything not on its own list.
+  'crane', 'chain_block', 'lifting_sling', 'harness', 'gas_detector', 'scba',
+  'pressure_gauge', 'electrical_tool', 'generator', 'compressor',
+  'custom',
 ] as const
 export type AssetCategory = (typeof ASSET_CATEGORIES)[number]
 
@@ -20,6 +25,16 @@ export const CATEGORY_LABEL: Record<AssetCategory, string> = {
   ppe: 'PPE Inventory',
   vehicle: 'Vehicle',
   pressure_vessel: 'Pressure Vessel',
+  crane: 'Crane',
+  chain_block: 'Chain Block',
+  lifting_sling: 'Lifting Sling',
+  harness: 'Fall Arrest Harness',
+  gas_detector: 'Gas Detector',
+  scba: 'SCBA Set',
+  pressure_gauge: 'Pressure Gauge',
+  electrical_tool: 'Electrical Test Tool',
+  generator: 'Generator',
+  compressor: 'Air Compressor',
   custom: 'Custom Asset',
 }
 

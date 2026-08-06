@@ -5,6 +5,7 @@ import type {
   CompleteInspectionInput, InspectionFilters, InspectionFrequency, InspectionStatus,
   InspectionView, NewAssetInput,
 } from './assets'
+import type { ChecklistItem } from './assets'
 import type { CapaItem } from './capa'
 
 /**
@@ -226,6 +227,17 @@ function toOpenAction(a: ServerAction): CapaItem {
 }
 
 export const inspectionsApi = {
+  /**
+   * The checklist templates, from the server that validates the answers.
+   *
+   * Fetched rather than bundled. The runner used to read a copy compiled into the app,
+   * which meant adding a category server-side rendered an empty checklist here and the
+   * inspector signed off a form with nothing on it.
+   */
+  checklists(): Promise<Record<string, ChecklistItem[]>> {
+    return request('/assets/checklists')
+  },
+
   /** One page, with the server's true total — the input `drain` needs. */
   async listAssetsPage(
     companyId: string, filters: AssetFilters = {}, page = 1, pageSize = 200,

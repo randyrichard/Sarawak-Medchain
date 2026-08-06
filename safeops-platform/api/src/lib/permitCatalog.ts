@@ -211,6 +211,12 @@ export function activationBlockers(p: {
   ppeAcknowledgedAt: Date | null
   attendees: number
   unacknowledged: number
+  /**
+   * Sentences for equipment booked onto the permit that is not fit for use, computed by
+   * the equipment service. Passed in rather than looked up so this stays a pure function
+   * of the facts and the two callers can never disagree.
+   */
+  equipment?: string[]
 }): string[] {
   const out: string[] = []
   if (p.status !== 'approved') out.push('The permit has not completed the approval chain.')
@@ -222,6 +228,7 @@ export function activationBlockers(p: {
   if (p.requiredPpe.length > 0 && !p.ppeAcknowledgedAt) {
     out.push('Mandatory PPE has not been acknowledged by the issuer.')
   }
+  out.push(...(p.equipment ?? []))
   return out
 }
 

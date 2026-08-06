@@ -4,8 +4,9 @@ import { Link } from 'react-router-dom'
 import { Camera, CheckCircle2, LocateFixed, PenLine, Send, X } from 'lucide-react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
-import type { ChecklistAnswer, ChecklistResult, InspectionView } from '@/api/assets'
+import type { ChecklistAnswer, ChecklistItem, ChecklistResult, InspectionView } from '@/api/assets'
 import { CHECKLISTS } from '@/api/mock/assets'
+import { inspectionsApi } from '@/api/inspectionsApi'
 import { useActor, SITE_COORDS } from '@/features/incidents/lib'
 import { Alert, Badge, Button, Checkbox, Input, Textarea } from '@/components/ui'
 import { cn } from '@/lib/cn'
@@ -37,7 +38,19 @@ export function InspectionRunner({
   const dirty = useRef(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const template = inspection ? CHECKLISTS[inspection.category] : []
+  /*
+   * Templates come from the server, which is what validates the submitted answers. The
+   * bundled copy is the offline fallback only — this form is filled in on a phone at a
+   * scaffold, so an unreachable API must not leave the inspector with a blank checklist.
+   */
+  const [templates, setTemplates] = useState<Record<string, ChecklistItem[]> | null>(null)
+  useEffect(() => {
+    inspectionsApi.checklists().then(setTemplates).catch(() => setTemplates(null))
+  }, [])
+
+  const template = inspection
+    ? (templates?.[inspection.category] ?? CHECKLISTS[inspection.category] ?? [])
+    : []
   const draftKey = inspection ? `safeops.inspectionDraft.${inspection.id}` : ''
 
   // restore draft when opening
