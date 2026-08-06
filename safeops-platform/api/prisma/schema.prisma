@@ -188,6 +188,8 @@ model Company {
   backups        Backup[]
   notifications  Notification[]
   createdAt   DateTime   @default(now())
+  visitors          Visitor[]
+  visitorBlacklist  VisitorBlacklist[]
 }
 
 model Site {
@@ -214,6 +216,7 @@ model Site {
   departments Department[]
 
   @@index([companyId])
+  visitors Visitor[]
 }
 
 /// A department within a site. Employees carry the resolved department name for course
@@ -230,6 +233,7 @@ model Department {
   createdAt DateTime @default(now())
 
   @@index([siteId])
+  visitors Visitor[]
 }
 
 model Team {
@@ -1278,6 +1282,7 @@ model Employee {
   @@index([companyId, siteId])
   @@index([name])
   @@index([companyId, medicalExpiry])
+  visitorsHosted Visitor[] @relation("VisitorHost")
 }
 
 /// Who to call when someone is hurt. A separate table rather than two columns because
@@ -2156,4 +2161,206 @@ enum AssetEventKind {
   incident
   status_change
   permit
+}
+
+
+// ─── Visitor management ──────────────────────────────────────────────────────
+
+/// Somebody who is not staff and not a contractor worker, on site for a defined visit.
+///
+/// The register exists to answer one question at 3am with the alarm sounding: who is
+/// inside the fence. Everything else here - approvals, acknowledgements, badges - is
+/// machinery that keeps that answer true.
+model Visitor {
+  id String @id @default(cuid())
+  /// Human reference (VIS-####). Per tenant, same reasoning as Incident.number.
+  code String
+
+  companyId String
+  siteId    String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  site      Site    @relation(fields: [siteId], references: [id], onDelete: Restrict)
+
+  name        String
+  /// IC or passport. One column: which one it is varies by nationality and the register
+  /// has to match on either when a blacklist is checked.
+  idNumber    String
+  nationality String @default("")
+  visitorCompany String @default("")
+  phone       String @default("")
+  email       String @default("")
+  vehicleNumber String @default("")
+
+  /// The person responsible for them while they are on site. Named from the workforce
+  /// register, not typed, so the approval can actually reach somebody.
+  hostEmployeeId String?
+  hostEmployee   Employee? @relation("VisitorHost", fields: [hostEmployeeId], references: [id], onDelete: SetNull)
+  /// Kept as text as well: a host who leaves the company must not erase who signed them in.
+  hostNameAtBooking String @default("")
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+
+  purpose String @default("")
+
+  expectedArrival   DateTime
+  expectedDeparture DateTime
+  checkedInAt       DateTime?
+  checkedOutAt      DateTime?
+
+  status VisitorStatus @default(draft)
+
+  /// Physical pass handed over at reception. Unique per site while it is out.
+  badgeNumber String?
+  badgeIssuedAt DateTime?
+  badgeReturnedAt DateTime?
+
+  /// Opaque payload printed on the pass. Separate from `code` so a pass can be reissued
+  /// without renumbering the visit, and so a stale pass resolves to a clear 404.
+  passKey String @unique
+
+  notes String?
+
+  emergencyContactName  String @default("")
+  emergencyContactPhone String @default("")
+
+  // Site rules. Each is a timestamp rather than a boolean: "when did they acknowledge the
+  // emergency procedure" is the question asked after an evacuation, and a boolean cannot
+  // answer it.
+  inductionAt        DateTime?
+  ndaAt              DateTime?
+  safetyBriefingAt   DateTime?
+  emergencyProcedureAt DateTime?
+  siteRulesAt        DateTime?
+
+  approvedBy   String?
+  approvedAt   DateTime?
+  rejectedBy   String?
+  rejectedAt   DateTime?
+  decisionNote String?
+
+  deniedReason String?
+
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  /// Optimistic concurrency, same as the other registers.
+  version   Int      @default(0)
+
+  events    VisitorEvent[]
+  documents VisitorDocument[]
+
+  @@unique([companyId, code])
+  @@index([companyId, status])
+  @@index([companyId, siteId, status])
+  @@index([companyId, expectedArrival])
+  @@index([hostEmployeeId])
+  @@index([idNumber])
+}
+
+/// The visit lifecycle.
+///
+/// Appended in the order a visit actually moves so the enum reads as a process. Postgres
+/// enums are append-only, so anything added later goes on the end regardless.
+enum VisitorStatus {
+  draft
+  pre_registered
+  waiting
+  checked_in
+  on_site
+  checked_out
+  expired
+  denied
+  blacklisted
+  cancelled
+}
+
+/// One line of a visit's history. Written alongside the change that caused it.
+model VisitorEvent {
+  id        String @id @default(cuid())
+  visitorId String
+  visitor   Visitor @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+
+  kind    VisitorEventKind
+  /// One sentence, already written for a human. Rendered as-is.
+  summary String
+  detail  String?
+
+  actor     String
+  actorRole String   @default("")
+  at        DateTime @default(now())
+
+  @@index([visitorId, at])
+}
+
+enum VisitorEventKind {
+  created
+  approved
+  rejected
+  checked_in
+  checked_out
+  badge_issued
+  badge_returned
+  vehicle_added
+  vehicle_removed
+  blacklisted
+  note_added
+  acknowledgement
+  status_change
+}
+
+/// A photo or signed document held against a visit.
+///
+/// Same storage contract as equipment documents and permit attachments.
+model VisitorDocument {
+  id        String @id @default(cuid())
+  visitorId String
+  visitor   Visitor @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+
+  /// photo | id_scan | nda | other
+  kind String @default("photo")
+
+  originalName String
+  storedName   String
+  mimeType     String
+  sizeBytes    Int
+  uploadedBy   String
+  uploadedById String
+
+  createdAt DateTime @default(now())
+
+  @@index([visitorId])
+  @@index([visitorId, kind])
+}
+
+/// A person, company or vehicle refused entry.
+///
+/// Matched server-side at pre-registration and again at check-in, because a blacklist
+/// checked only by the screen is not a blacklist. Kept as one table with a nullable
+/// column per match type rather than a type/value pair, so a row cannot claim to be a
+/// phone match and hold an IC number.
+model VisitorBlacklist {
+  id        String @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  idNumber      String?
+  phone         String?
+  visitorCompany String?
+  vehicleNumber String?
+
+  reason String
+  /// Null means permanent. A date means it lapses on its own, which is what stops a
+  /// blacklist becoming a list nobody dares prune.
+  expiresAt DateTime?
+
+  active    Boolean  @default(true)
+  addedBy   String
+  addedAt   DateTime @default(now())
+  liftedBy  String?
+  liftedAt  DateTime?
+
+  @@index([companyId, active])
+  @@index([idNumber])
+  @@index([phone])
+  @@index([vehicleNumber])
 }

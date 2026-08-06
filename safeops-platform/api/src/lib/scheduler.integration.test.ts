@@ -54,6 +54,8 @@ d('Scheduler — integration (real Postgres)', () => {
 
   beforeEach(async () => {
     await db.notification.deleteMany({ where: { companyId: COMPANY } })
+    await db.visitorEvent.deleteMany({ where: { visitor: { companyId: COMPANY } } })
+    await db.visitor.deleteMany({ where: { companyId: COMPANY } })
     await db.correctiveAction.deleteMany({ where: { companyId: COMPANY } })
     await db.workOrder.deleteMany({ where: { asset: { companyId: COMPANY } } })
     await db.calibration.deleteMany({ where: { asset: { companyId: COMPANY } } })
@@ -500,5 +502,94 @@ d('Scheduler — integration (real Postgres)', () => {
   it('leaves in-service equipment alone', async () => {
     await makeDetector('AST-OK', 200)
     expect(await scheduler.sweepOutOfService()).toBe(0)
+  })
+  // -- Visitors -------------------------------------------------------------
+
+  const hoursFromNow = (h: number) => new Date(Date.now() + h * 3600_000)
+
+  let visitSeq = 0
+  const makeVisit = async (over: Record<string, unknown> = {}) => {
+    visitSeq += 1
+    return db.visitor.create({
+      data: {
+        code: `VIS-IT-${visitSeq}`,
+        passKey: `pass-itest-${visitSeq}-${Math.random().toString(36).slice(2, 8)}`,
+        companyId: COMPANY, siteId: SITE,
+        name: `ITest visitor ${visitSeq}`, idNumber: `IC-IT-${visitSeq}`,
+        expectedArrival: hoursFromNow(-4), expectedDeparture: hoursFromNow(-1),
+        status: 'on_site', checkedInAt: hoursFromNow(-3),
+        createdBy: 'itest',
+        ...over,
+      },
+    })
+  }
+
+  it('chases a visitor who is still on site past their departure time', async () => {
+    await makeVisit()
+    expect(await scheduler.sweepOverdueVisitors()).toBe(1)
+
+    const [n] = await db.notification.findMany({ where: { companyId: COMPANY } })
+    expect(n.title).toMatch(/still on site/i)
+    expect(n.detail).toMatch(/has not checked out/i)
+  })
+
+  it('does not chase a visitor who is still within their window', async () => {
+    await makeVisit({ expectedDeparture: hoursFromNow(2) })
+    expect(await scheduler.sweepOverdueVisitors()).toBe(0)
+  })
+
+  it('does not chase a visitor who has already left', async () => {
+    await makeVisit({ status: 'checked_out', checkedOutAt: hoursFromNow(-1) })
+    expect(await scheduler.sweepOverdueVisitors()).toBe(0)
+  })
+
+  it('raises the overdue visitor once, not on every pass', async () => {
+    await makeVisit()
+    expect(await scheduler.sweepOverdueVisitors()).toBe(1)
+    // Re-raised hourly, this becomes noise, and noise is what gets the real one dismissed.
+    expect(await scheduler.sweepOverdueVisitors()).toBe(0)
+  })
+
+  it('chases a badge that left with somebody', async () => {
+    await makeVisit({
+      status: 'checked_out', checkedOutAt: hoursFromNow(-1),
+      badgeNumber: 'B-LOST', badgeReturnedAt: null,
+    })
+    expect(await scheduler.sweepOutstandingBadges()).toBe(1)
+
+    const [n] = await db.notification.findMany({ where: { companyId: COMPANY } })
+    expect(n.title).toMatch(/Badge not returned: B-LOST/)
+  })
+
+  it('leaves a returned badge alone', async () => {
+    await makeVisit({
+      status: 'checked_out', checkedOutAt: hoursFromNow(-1),
+      badgeNumber: 'B-OK', badgeReturnedAt: hoursFromNow(-1),
+    })
+    expect(await scheduler.sweepOutstandingBadges()).toBe(0)
+  })
+
+  it('expires a booking nobody turned up for', async () => {
+    await makeVisit({ status: 'pre_registered', checkedInAt: null })
+    expect(await scheduler.sweepExpiredVisits()).toBe(1)
+
+    const row = await db.visitor.findFirst({ where: { companyId: COMPANY } })
+    // Otherwise "expected today" is a list of people who never came.
+    expect(row?.status).toBe('expired')
+  })
+
+  it('does not expire a booking that is still ahead', async () => {
+    await makeVisit({
+      status: 'pre_registered', checkedInAt: null,
+      expectedArrival: hoursFromNow(1), expectedDeparture: hoursFromNow(4),
+    })
+    expect(await scheduler.sweepExpiredVisits()).toBe(0)
+  })
+
+  it('never expires somebody who is actually inside', async () => {
+    await makeVisit()   // on_site, past their departure
+    expect(await scheduler.sweepExpiredVisits()).toBe(0)
+    // They are the overdue sweep's problem, and losing them here would lose them entirely.
+    expect(await scheduler.sweepOverdueVisitors()).toBe(1)
   })
 })

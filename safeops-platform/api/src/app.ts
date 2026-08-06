@@ -13,6 +13,7 @@ import { permitAttachmentsRouter } from './routes/permitAttachments.js'
 import { inspectionsRouter } from './routes/inspections.js'
 import { equipmentRouter } from './routes/equipment.js'
 import { assetDocumentsRouter } from './routes/assetDocuments.js'
+import { visitorsRouter } from './routes/visitors.js'
 import { auditsRouter } from './routes/audits.js'
 import { trainingRouter } from './routes/training.js'
 import { adminRouter } from './routes/admin.js'
@@ -38,6 +39,7 @@ import { SearchError } from './lib/searchService.js'
 import { EmployeeError } from './lib/employeeService.js'
 import { ContractorError } from './lib/contractorService.js'
 import { EquipmentError } from './lib/equipmentService.js'
+import { VisitorError } from './lib/visitorService.js'
 
 export function createApp() {
   const app = express()
@@ -130,6 +132,7 @@ export function createApp() {
   // Before the asset router: its /:idOrQr would otherwise match /assets/documents.
   app.use('/assets', assetDocumentsRouter)
   app.use('/assets', inspectionsRouter)
+  app.use('/visitors', visitorsRouter)
   app.use('/audits', auditsRouter)
   app.use('/training', trainingRouter)
   app.use('/admin', adminRouter)
@@ -160,7 +163,8 @@ export function createApp() {
       err instanceof SearchError ||
       err instanceof EmployeeError ||
       err instanceof ContractorError ||
-      err instanceof EquipmentError
+      err instanceof EquipmentError ||
+      err instanceof VisitorError
     ) {
       return res.status(err.status).json({ error: err.code, message: err.message })
     }

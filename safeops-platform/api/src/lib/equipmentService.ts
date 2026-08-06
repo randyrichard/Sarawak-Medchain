@@ -752,7 +752,11 @@ export class EquipmentService {
     const asset = await this.assetFor(caller, assetId)
     const rows = await this.db.assetEvent.findMany({
       where: { assetId: asset.id },
-      orderBy: { at: 'desc' },
+      // Two events written in the same transaction share a timestamp, so `at` alone is a
+      // tie and Postgres may return them either way round - a history that reads "taken
+      // out of service" before the calibration that caused it. The id breaks the tie in
+      // insertion order.
+      orderBy: [{ at: 'desc' }, { id: 'desc' }],
       take: 200,
     })
     return rows.map((r) => ({

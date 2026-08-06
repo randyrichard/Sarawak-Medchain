@@ -21,7 +21,7 @@ export class SearchError extends Error {
 }
 
 export type SearchKind =
-  | 'incident' | 'action' | 'permit' | 'asset' | 'audit' | 'certificate'
+  | 'incident' | 'action' | 'permit' | 'asset' | 'audit' | 'certificate' | 'visitor'
   | 'employee' | 'user' | 'company' | 'auditlog'
   | 'contractor' | 'contractorWorker'
 
@@ -81,7 +81,7 @@ export class SearchService {
     // `insensitive` so "ptw-4410" finds PTW-4410 — nobody types the case of a reference.
     const like = { contains: q, mode: 'insensitive' as const }
 
-    const [incidents, actions, permits, assets, audits, certificates] = await Promise.all([
+    const [incidents, actions, permits, assets, audits, certificates, visitors] = await Promise.all([
       this.db.incident.findMany({
         where: { ...scope, archived: false, OR: [{ number: like }, { title: like }] },
         select: { id: true, number: true, title: true, siteId: true, stage: true, severity: true },
@@ -150,6 +150,27 @@ export class SearchService {
         orderBy: { issueDate: 'desc' },
         take: PER_KIND,
       }),
+      /*
+       * A visitor is found by whatever the person at the gate is holding: the pass, an IC
+       * or passport, a badge, a plate, or the name of whoever they came to see. A search
+       * that only matches the visit number is no use to security walking the car park.
+       */
+      this.db.visitor.findMany({
+        where: {
+          ...scope,
+          OR: [
+            { code: like }, { name: like }, { idNumber: like }, { visitorCompany: like },
+            { vehicleNumber: like }, { badgeNumber: like }, { phone: like }, { email: like },
+            { hostNameAtBooking: like },
+          ],
+        },
+        select: {
+          id: true, code: true, name: true, siteId: true, status: true,
+          visitorCompany: true, badgeNumber: true, hostNameAtBooking: true,
+        },
+        orderBy: { expectedArrival: 'desc' },
+        take: PER_KIND,
+      }),
     ])
 
     const people = await this.searchPeople(caller, companyId, like, q)
@@ -169,6 +190,17 @@ export class SearchService {
         kind: 'permit', id: r.id, code: r.code, title: r.title,
         detail: `${r.status.replace(/_/g, ' ')} · ${r.location} · ${r.siteId.toUpperCase()}`,
         href: `/permits?open=${r.id}`,
+      })),
+      ...visitors.map((r): SearchHit => ({
+        kind: 'visitor', id: r.id, code: r.code, title: r.name,
+        detail: [
+          r.status.replace(/_/g, ' '),
+          r.visitorCompany || null,
+          r.badgeNumber ? `badge ${r.badgeNumber}` : null,
+          r.hostNameAtBooking ? `host ${r.hostNameAtBooking}` : null,
+          r.siteId.toUpperCase(),
+        ].filter(Boolean).join(' · '),
+        href: `/visitors?open=${r.id}`,
       })),
       ...assets.map((r): SearchHit => ({
         kind: 'asset', id: r.id, code: r.code, title: r.name,

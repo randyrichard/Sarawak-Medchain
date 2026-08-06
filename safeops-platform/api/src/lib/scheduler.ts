@@ -102,7 +102,7 @@ class Budget {
   }
 }
 
-export type JobId = 'j1' | 'j2' | 'j3'
+export type JobId = 'j1' | 'j2' | 'j3' | 'j4'
 
 /**
  * When each sweep last completed, in this process. Deliberately not persisted: after a
@@ -114,6 +114,7 @@ export const getLastRuns = (): Record<string, string | null> => ({
   j1: lastRuns.get('j1') ?? null,
   j2: lastRuns.get('j2') ?? null,
   j3: lastRuns.get('j3') ?? null,
+  j4: lastRuns.get('j4') ?? null,
 })
 
 /** UTC midnight, matching how every date-only value in this codebase is stored. */
@@ -648,11 +649,106 @@ export class Scheduler {
     return raised
   }
 
+
+  /**
+   * Visitors still inside past the time they said they would leave.
+   *
+   * The one sweep in this file that is about a person rather than a date on a record. An
+   * unaccounted visitor is what a muster list gets wrong, so the href carries no date: the
+   * first notification stands until somebody deals with it, rather than being re-raised
+   * hourly and learned to be ignored.
+   */
+  async sweepOverdueVisitors(now = new Date()): Promise<number> {
+    const visits = await this.db.visitor.findMany({
+      where: {
+        status: { in: ['checked_in', 'on_site'] },
+        expectedDeparture: { lt: now },
+      },
+      select: {
+        id: true, code: true, name: true, companyId: true, siteId: true,
+        visitorCompany: true, hostNameAtBooking: true, badgeNumber: true,
+        expectedDeparture: true,
+      },
+      orderBy: { expectedDeparture: 'asc' },
+      take: 5000,
+    })
+
+    const budget = new Budget()
+    let raised = 0
+    for (const v of visits) {
+      if (budget.exhausted(v.companyId)) continue
+      const minutes = Math.floor((now.getTime() - v.expectedDeparture.getTime()) / 60_000)
+      const late = minutes < 60 ? `${minutes} minutes` : `${Math.floor(minutes / 60)} hours`
+
+      if (await this.raise(
+        budget, v.companyId, 'system',
+        `Visitor still on site: ${v.name}`,
+        `${v.code} was due to leave ${late} ago and has not checked out.`
+        + `${v.visitorCompany ? ` ${v.visitorCompany}.` : ''}`
+        + `${v.hostNameAtBooking ? ` Host: ${v.hostNameAtBooking}.` : ''}`
+        + `${v.badgeNumber ? ` Badge ${v.badgeNumber}.` : ''}`,
+        `/visitors?open=${v.id}&overdue=1`,
+      )) raised++
+    }
+    return raised
+  }
+
+  /**
+   * Badges out with somebody who has already left.
+   *
+   * Separate from the overdue sweep because it is a different problem with a different
+   * owner: reception chases the badge, security chases the person.
+   */
+  async sweepOutstandingBadges(): Promise<number> {
+    const visits = await this.db.visitor.findMany({
+      where: {
+        status: 'checked_out',
+        badgeNumber: { not: null },
+        badgeReturnedAt: null,
+      },
+      select: { id: true, code: true, name: true, companyId: true, badgeNumber: true },
+      take: 5000,
+    })
+
+    const budget = new Budget()
+    let raised = 0
+    for (const v of visits) {
+      if (budget.exhausted(v.companyId)) continue
+      if (await this.raise(
+        budget, v.companyId, 'system',
+        `Badge not returned: ${v.badgeNumber}`,
+        `${v.name} (${v.code}) has checked out without returning badge ${v.badgeNumber}.`,
+        `/visitors?open=${v.id}&badge=1`,
+      )) raised++
+    }
+    return raised
+  }
+
+  /**
+   * Visits whose window has passed without anybody turning up.
+   *
+   * Marked expired rather than left pre-registered forever, so "expected today" means what
+   * it says and reception is not looking at a list of people who never came. Only visits
+   * that were never checked in: somebody inside is the overdue sweep's problem.
+   */
+  async sweepExpiredVisits(now = new Date()): Promise<number> {
+    const stale = await this.db.visitor.updateMany({
+      where: {
+        status: { in: ['draft', 'pre_registered', 'waiting'] },
+        checkedInAt: null,
+        expectedDeparture: { lt: now },
+      },
+      data: { status: 'expired' },
+    })
+    return stale.count
+  }
+
   /** One full pass. Safe to call directly; that is how the tests drive it. */
   async runOnce(now = new Date()): Promise<{
     actions: number; inspections: number; certificates: number; medicals: number
     contractors: number; permits: number
     calibrations: number; maintenance: number; outOfService: number
+    overdueVisitors: number; outstandingBadges: number; expiredVisits: number
   }> {
     const actions = await this.sweepActions(now)
     const inspections = await this.sweepInspections(now)
@@ -669,9 +765,17 @@ export class Scheduler {
     const outOfService = await this.sweepOutOfService()
     lastRuns.set('j3', new Date().toISOString())
 
+    // Expiry first: a visit that has quietly lapsed is not an overdue visitor, and
+    // sweeping in the other order would chase somebody who was never on site.
+    const expiredVisits = await this.sweepExpiredVisits(now)
+    const overdueVisitors = await this.sweepOverdueVisitors(now)
+    const outstandingBadges = await this.sweepOutstandingBadges()
+    lastRuns.set('j4', new Date().toISOString())
+
     return {
       actions, inspections, certificates, medicals, contractors, permits,
       calibrations, maintenance, outOfService,
+      overdueVisitors, outstandingBadges, expiredVisits,
     }
   }
 
