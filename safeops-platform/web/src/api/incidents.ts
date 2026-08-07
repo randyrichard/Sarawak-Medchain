@@ -4,6 +4,9 @@
 
 export const INCIDENT_STAGES = [
   'reported', 'assessment', 'investigation', 'rca', 'actions', 'review', 'verification', 'closed',
+  // A report started and not yet submitted. Last in the list because this is the storage
+  // order, not the workflow order - the workflow is a state machine on the server.
+  'draft',
 ] as const
 export type IncidentStage = (typeof INCIDENT_STAGES)[number]
 
@@ -16,11 +19,15 @@ export const STAGE_LABEL: Record<IncidentStage, string> = {
   review: 'Manager Review',
   verification: 'Verification',
   closed: 'Closed',
+  draft: 'Draft',
 }
 
 export const INCIDENT_TYPES = [
   'near_miss', 'first_aid', 'mtc', 'rwc', 'lti', 'fatality',
   'property_damage', 'environmental', 'vehicle', 'fire', 'unsafe_act', 'unsafe_condition',
+  // Mirrors api/src/lib/incidentCatalog.ts. The server rejects anything not on its list,
+  // and every map below has to cover every value or the register crashes rendering a row.
+  'injury', 'chemical_spill', 'security', 'occupational_illness', 'equipment_failure',
 ] as const
 export type IncidentType = (typeof INCIDENT_TYPES)[number]
 
@@ -37,9 +44,37 @@ export const TYPE_LABEL: Record<IncidentType, string> = {
   fire: 'Fire Incident',
   unsafe_act: 'Unsafe Act',
   unsafe_condition: 'Unsafe Condition',
+  injury: 'Injury',
+  chemical_spill: 'Chemical Spill',
+  security: 'Security',
+  occupational_illness: 'Occupational Illness',
+  equipment_failure: 'Equipment Failure',
 }
 
-export type IncidentSeverity = 'Minor' | 'Moderate' | 'Serious' | 'Critical'
+/**
+ * Outcome-based severity.
+ *
+ * The first four are the original scale and stay valid - rows carry them. The rest are the
+ * enterprise classification. Mirrors api/src/lib/incidentCatalog.ts.
+ */
+export type IncidentSeverity =
+  | 'Minor' | 'Moderate' | 'Serious' | 'Critical'
+  | 'near_miss' | 'medical_treatment' | 'restricted_work' | 'lost_time_injury'
+  | 'fatality' | 'environmental_major' | 'catastrophic'
+
+export const SEVERITY_LABEL: Record<IncidentSeverity, string> = {
+  near_miss: 'Near Miss',
+  Minor: 'Minor',
+  medical_treatment: 'Medical Treatment',
+  restricted_work: 'Restricted Work Case',
+  lost_time_injury: 'Lost Time Injury',
+  environmental_major: 'Environmental Major',
+  fatality: 'Fatality',
+  catastrophic: 'Catastrophic',
+  Moderate: 'Moderate',
+  Serious: 'Serious',
+  Critical: 'Critical',
+}
 export type RiskRating = 'Low' | 'Medium' | 'High' | 'Extreme'
 
 export const RCA_CATEGORIES = [

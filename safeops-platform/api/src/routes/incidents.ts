@@ -5,6 +5,15 @@ import {
   INCIDENT_STATUS_FILTERS, IncidentError, IncidentService, type Caller,
 } from '../lib/incidentService.js'
 import { requireAuth } from '../middleware/requireAuth.js'
+import { INCIDENT_SEVERITIES, INCIDENT_TYPES } from '../lib/incidentCatalog.js'
+
+/** One list, used to build the report form and to validate what comes back from it. */
+const TYPE_VALUES = z.enum(
+  INCIDENT_TYPES.map((t) => t.value) as [string, ...string[]],
+)
+const SEVERITY_VALUES = z.enum(
+  INCIDENT_SEVERITIES.map((s) => s.value) as [string, ...string[]],
+)
 
 const svc = new IncidentService(prisma)
 export const incidentsRouter = Router()
@@ -68,16 +77,28 @@ const createBody = z.object({
   siteId: z.string().min(1),
   title: z.string().min(1).max(300),
   description: z.string().max(5000).optional(),
-  type: z.enum([
-    'near_miss', 'first_aid', 'mtc', 'rwc', 'lti', 'fatality', 'property_damage',
-    'environmental', 'vehicle', 'fire', 'unsafe_act', 'unsafe_condition',
-  ]),
-  severity: z.enum(['Minor', 'Moderate', 'Serious', 'Critical']),
+  /*
+   * Derived from the catalogue rather than listed again. These were hardcoded copies, so
+   * adding a type server-side left the route rejecting it - the classification list and
+   * the thing that validates against it have to be the same list.
+   */
+  type: TYPE_VALUES,
+  severity: SEVERITY_VALUES,
   department: z.string().max(120).optional(),
+  departmentId: z.string().optional(),
   location: z.string().min(1).max(300),
   gps: z.string().max(120).optional(),
   immediateActions: z.string().max(5000).optional(),
-  occurredAt: z.string().datetime(),
+  weather: z.string().max(120).optional(),
+  shift: z.string().max(120).optional(),
+  emergencyResponseActivated: z.boolean().optional(),
+  anonymous: z.boolean().optional(),
+  /*
+   * Offsets accepted, not just Z. This platform is sold in Malaysia and the natural thing
+   * for a client to send is local time as +08:00; zod's default rejects that, which turns
+   * a correct ISO-8601 timestamp into a 400 nobody can explain. Stored as UTC either way.
+   */
+  occurredAt: z.string().datetime({ offset: true }),
 })
 
 incidentsRouter.post('/', async (req, res, next) => {
@@ -101,7 +122,7 @@ const advanceBody = z.object({
   investigator: z.string().max(200).optional(),
   findings: z.string().max(10000).optional(),
   riskRating: z.enum(['Low', 'Medium', 'High', 'Extreme']).optional(),
-  potentialSeverity: z.enum(['Minor', 'Moderate', 'Serious', 'Critical']).optional(),
+  potentialSeverity: SEVERITY_VALUES.optional(),
   expectedVersion: z.number().int().optional(),
 })
 

@@ -20,6 +20,8 @@ import { ActionsPanel } from './components/ActionsPanel'
 import { CommentsPanel } from './components/CommentsPanel'
 import { EvidencePanel } from './components/EvidencePanel'
 import { IncidentEquipmentPanel } from './components/IncidentEquipmentPanel'
+import { PeoplePanel } from './components/PeoplePanel'
+import { InvestigationPanel } from './components/InvestigationPanel'
 
 type Tab = 'overview' | 'investigation' | 'actions' | 'discussion' | 'activity'
 
@@ -192,10 +194,26 @@ export function IncidentDetailPage() {
             Above the timeline, alongside the evidence: which item failed is part of the
             case file, not a footnote to it.
           */}
+          {/*
+            Who was involved, then what else the event touched, then the causal analysis -
+            the order an investigator actually works in.
+          */}
+          <PeoplePanel
+            incidentId={incident.id}
+            companyId={incident.companyId}
+            canEdit={incident.stage !== 'closed'}
+          />
+
           <IncidentEquipmentPanel
             incidentId={incident.id}
             companyId={incident.companyId}
             canEdit={incident.stage !== 'closed'}
+          />
+
+          <InvestigationPanel
+            incidentId={incident.id}
+            canEdit={incident.stage !== 'closed'}
+            canSignOff={['admin', 'hse_manager'].includes(role ?? '')}
           />
 
           <CaseTimeline incident={incident} />
@@ -264,10 +282,18 @@ function Overview({ incident, siteName }: { incident: Incident; siteName: string
         {incident.weather && <MetaRow icon={CloudSun} label="Weather" value={incident.weather} />}
       </div>
 
+      {/*
+        What the reporter typed at the time, before anybody was matched to a register.
+        Shown only when it has content, and labelled as such: the authoritative list is the
+        People panel below, which links to the workforce and contractor registers and can
+        carry a statement. Two sections both titled "People involved" - one of them always
+        empty on new reports - is worse than one.
+      */}
+      {(incident.peopleInvolved.length > 0 || incident.witnesses.length > 0) && (
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <p className="mb-1.5 flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-muted">
-            <Users size={11} /> People involved
+            <Users size={11} /> Named on the report
           </p>
           {incident.peopleInvolved.length === 0 ? (
             <p className="text-xs text-muted">None recorded.</p>
@@ -293,6 +319,7 @@ function Overview({ incident, siteName }: { incident: Incident; siteName: string
           )}
         </div>
       </div>
+      )}
 
       {incident.signature && (
         <p className="text-2xs text-muted">

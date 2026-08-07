@@ -234,6 +234,7 @@ model Department {
 
   @@index([siteId])
   visitors Visitor[]
+  incidents Incident[]
 }
 
 model Team {
@@ -264,13 +265,33 @@ enum IncidentType {
   fire
   unsafe_act
   unsafe_condition
+  /// Appended for the enterprise classification set. The values above stay valid: rows
+  /// already carry them, and a first-aid case reported last year is still a first-aid case.
+  injury
+  chemical_spill
+  security
+  occupational_illness
+  equipment_failure
 }
 
+/// Outcome-based severity.
+///
+/// The first four are the original scale and remain valid - thousands of rows carry them
+/// and rewriting history to fit a new scale would be a lie. The appended values are the
+/// classification an HSE department actually reports on, because "lost time injury" is a
+/// regulatory category and "Serious" is an opinion.
 enum IncidentSeverity {
   Minor
   Moderate
   Serious
   Critical
+  near_miss
+  medical_treatment
+  restricted_work
+  lost_time_injury
+  fatality
+  environmental_major
+  catastrophic
 }
 
 /// Investigation workflow. Ordered; transitions are validated server-side.
@@ -283,6 +304,9 @@ enum IncidentStage {
   review
   verification
   closed
+  /// A report started and not yet submitted. Appended rather than inserted first: enum
+  /// order is storage order, not workflow order, and the workflow is defined in code.
+  draft
 }
 
 model Incident {
@@ -303,13 +327,45 @@ model Incident {
   stage       IncidentStage    @default(reported)
 
   department       String  @default("")
+  /// Set when the report names a department from the register rather than typing one.
+  /// The text above is kept regardless, so a department being renamed or removed does not
+  /// rewrite what the report said at the time.
+  departmentId     String?
+  departmentRef    Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   location         String
   gps              String?
   immediateActions String  @default("")
 
+  /// Conditions at the time. Weather and shift are the two that turn up in causal analysis
+  /// often enough to be worth structuring - night shift and heavy rain are not incidental.
+  weather String @default("")
+  shift   String @default("")
+
+  /// Whether the emergency response plan was activated. A separate fact from severity: a
+  /// near miss can trigger a muster, and a lost-time injury might not.
+  emergencyResponseActivated Boolean @default(false)
+
   reporter     String
   reporterId   String?
+  /// Reported without attribution. The reporter columns are still written - somebody has
+  /// to be able to follow up - but the API withholds them from anyone below HSE manager.
+  anonymous    Boolean @default(false)
   investigator String?
+
+  /// The investigation proper.
+  leadInvestigator      String?
+  investigationTeam     String   @default("")
+  investigationStartedAt  DateTime?
+  investigationCompletedAt DateTime?
+  /// What happened. Distinct from the root cause: the direct cause is the unsafe act or
+  /// condition, the underlying cause is why it was there.
+  directCause      String?
+  underlyingCause  String?
+  rootCause        String?
+  contributingFactors String?
+  recommendations  String?
+  /// Ishikawa categories: { manpower, machine, method, material, measurement, environment }
+  rcaFishbone      Json?
 
   /// Set during assessment; drives the high-risk flag on Mission Control.
   riskRating        String?
@@ -344,6 +400,8 @@ model Incident {
 
   // Composite indexes matching the actual list queries (company+stage, company+site).
   equipmentLinks IncidentEquipment[]
+  people         IncidentPerson[]
+  links          IncidentLink[]
 
   @@unique([companyId, number])
   @@index([companyId, stage])
@@ -484,6 +542,9 @@ model CorrectiveAction {
   status   CapaStatus   @default(open)
 
   /// Evidence the owner supplies when marking complete.
+  /// Whether closing this action demands evidence. Set when the action is raised, because
+  /// deciding after the fact that proof was needed is how actions get closed on a promise.
+  evidenceRequired Boolean @default(false)
   evidenceNote String?
   completedAt  DateTime?
 
@@ -1283,6 +1344,7 @@ model Employee {
   @@index([name])
   @@index([companyId, medicalExpiry])
   visitorsHosted Visitor[] @relation("VisitorHost")
+  incidentAppearances IncidentPerson[] @relation("IncidentPeople")
 }
 
 /// Who to call when someone is hurt. A separate table rather than two columns because
@@ -1638,6 +1700,7 @@ model ContractorWorker {
   @@index([companyId, medicalExpiry])
   @@index([companyId, inductionExpiry])
   @@index([companyId, onSite])
+  incidentAppearances IncidentPerson[] @relation("IncidentPeople")
 }
 
 /// Competency evidence supplied by the contractor.
@@ -2249,6 +2312,8 @@ model Visitor {
   events    VisitorEvent[]
   documents VisitorDocument[]
 
+  incidentAppearances IncidentPerson[]
+
   @@unique([companyId, code])
   @@index([companyId, status])
   @@index([companyId, siteId, status])
@@ -2363,4 +2428,96 @@ model VisitorBlacklist {
   @@index([idNumber])
   @@index([phone])
   @@index([vehicleNumber])
+}
+
+
+/// Somebody involved in an incident: a witness, an injured person, or the person whose
+/// act or omission is under investigation.
+///
+/// Named from a register where possible and kept as text regardless. A witness statement
+/// has to survive the witness leaving the company, and an injured contractor may not be in
+/// any register at all - which is exactly when the name matters most.
+model IncidentPerson {
+  id         String   @id @default(cuid())
+  incidentId String
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  role IncidentPersonRole
+
+  /// At most one of these. Null on all three means somebody outside every register.
+  employeeId         String?
+  employee           Employee? @relation("IncidentPeople", fields: [employeeId], references: [id], onDelete: SetNull)
+  contractorWorkerId String?
+  contractorWorker   ContractorWorker? @relation("IncidentPeople", fields: [contractorWorkerId], references: [id], onDelete: SetNull)
+  visitorId          String?
+  visitor            Visitor? @relation(fields: [visitorId], references: [id], onDelete: SetNull)
+
+  /// Always written, even when a register row is linked. The record of who was named
+  /// outlives them leaving.
+  name    String
+  company String @default("")
+
+  /// Injury detail. Only meaningful for the injured role, nullable for everyone else.
+  injuryType    String?
+  bodyPart      String?
+  treatment     String?
+  daysLost      Int?
+  /// What they saw, in their words.
+  statement     String?
+
+  addedBy String
+  addedAt DateTime @default(now())
+
+  @@index([incidentId])
+  @@index([incidentId, role])
+  @@index([employeeId])
+}
+
+enum IncidentPersonRole {
+  witness
+  injured
+  involved
+  first_aider
+}
+
+/// A record elsewhere in the platform that this incident is about.
+///
+/// One table rather than four columns, because an incident routinely involves a permit and
+/// an asset and a visitor at once, and because the interesting query is the reverse: what
+/// has gone wrong around this permit, this contractor, this visitor.
+///
+/// Equipment keeps its own table (IncidentEquipment) - it was built first and carries an
+/// involvement description this table has no place for.
+model IncidentLink {
+  id         String   @id @default(cuid())
+  incidentId String
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  kind IncidentLinkKind
+  /// The id of the linked row. Not a foreign key: it points at one of several tables, and
+  /// a link that outlives a deleted permit is better than a cascade that erases the fact
+  /// the incident referenced one.
+  targetId  String
+  /// Denormalised so the link renders without four joins, and still reads correctly after
+  /// the target is renamed or removed.
+  targetCode  String @default("")
+  targetLabel String @default("")
+
+  note String?
+
+  addedBy String
+  addedAt DateTime @default(now())
+
+  @@unique([incidentId, kind, targetId])
+  @@index([incidentId])
+  @@index([kind, targetId])
+}
+
+enum IncidentLinkKind {
+  permit
+  employee
+  contractor
+  contractor_worker
+  visitor
+  asset
 }

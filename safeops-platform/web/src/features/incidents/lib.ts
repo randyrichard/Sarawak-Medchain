@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import {
-  AlertTriangle, Ambulance, Car, CloudRain, Flame, HardHat, HeartPulse,
+  AlertTriangle, Ambulance, Car, CloudRain, Droplets, Flame, HardHat, HeartPulse,
   Leaf, ShieldAlert, Skull, Stethoscope, Wrench, type LucideIcon,
 } from 'lucide-react'
 import type { Incident, IncidentStage, IncidentType } from '@/api/incidents'
@@ -23,13 +23,40 @@ export const TYPE_ICON: Record<IncidentType, LucideIcon> = {
   fire: Flame,
   unsafe_act: AlertTriangle,
   unsafe_condition: CloudRain,
+  injury: HeartPulse,
+  chemical_spill: Droplets,
+  security: ShieldAlert,
+  occupational_illness: Stethoscope,
+  equipment_failure: Wrench,
+}
+
+/**
+ * How loudly to render a severity.
+ *
+ * A lookup with an explicit fallback rather than a chain of equality checks: a value the
+ * map has not heard of renders as neutral instead of quietly reading as "good", which is
+ * how a fatality ended up styled the same as a near miss.
+ */
+const SEVERITY_KIND: Record<string, StatusKind> = {
+  catastrophic: 'critical',
+  fatality: 'critical',
+  Critical: 'critical',
+  environmental_major: 'serious',
+  lost_time_injury: 'serious',
+  Serious: 'serious',
+  restricted_work: 'warning',
+  medical_treatment: 'warning',
+  Moderate: 'warning',
+  Minor: 'good',
+  near_miss: 'good',
 }
 
 export const severityKind = (s: Incident['severity']): StatusKind =>
-  s === 'Critical' ? 'critical' : s === 'Serious' ? 'serious' : s === 'Moderate' ? 'warning' : 'good'
+  SEVERITY_KIND[s] ?? 'neutral'
 
 /** Stage accent (series tokens — workflow identity, not status). */
 export const STAGE_COLOR: Record<IncidentStage, string> = {
+  draft: 'var(--s7)',
   reported: 'var(--s3)',
   assessment: 'var(--s8)',
   investigation: 'var(--s1)',

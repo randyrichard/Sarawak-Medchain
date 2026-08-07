@@ -82,8 +82,32 @@ export class SearchService {
     const like = { contains: q, mode: 'insensitive' as const }
 
     const [incidents, actions, permits, assets, audits, certificates, visitors] = await Promise.all([
+      /*
+       * An incident is found by whatever the person looking has in front of them: the
+       * reference, the words in the report, where it happened, who is investigating it,
+       * the root cause that keeps recurring, or any record it touched - a permit number, a
+       * plate, an employee. "Which incidents involved this contractor" is the question an
+       * auditor asks, and it is unanswerable if search only matches the title.
+       *
+       * Anonymous reports are matched on everything except the reporter, so searching a
+       * name cannot be used to unmask one.
+       */
       this.db.incident.findMany({
-        where: { ...scope, archived: false, OR: [{ number: like }, { title: like }] },
+        where: {
+          ...scope,
+          archived: false,
+          OR: [
+            { number: like }, { title: like }, { description: like },
+            { location: like }, { department: like },
+            { investigator: like }, { leadInvestigator: like },
+            { rootCause: like }, { directCause: like },
+            { people: { some: { name: like } } },
+            { links: { some: { OR: [{ targetCode: like }, { targetLabel: like }] } } },
+            { equipmentLinks: { some: { asset: { OR: [{ code: like }, { name: like }] } } } },
+            { actions: { some: { OR: [{ code: like }, { title: like }, { owner: like }] } } },
+            { AND: [{ anonymous: false }, { reporter: like }] },
+          ],
+        },
         select: { id: true, number: true, title: true, siteId: true, stage: true, severity: true },
         orderBy: { reportedAt: 'desc' },
         take: PER_KIND,

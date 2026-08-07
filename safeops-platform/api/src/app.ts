@@ -14,6 +14,7 @@ import { inspectionsRouter } from './routes/inspections.js'
 import { equipmentRouter } from './routes/equipment.js'
 import { assetDocumentsRouter } from './routes/assetDocuments.js'
 import { visitorsRouter } from './routes/visitors.js'
+import { incidentInvestigationRouter } from './routes/incidentInvestigation.js'
 import { auditsRouter } from './routes/audits.js'
 import { trainingRouter } from './routes/training.js'
 import { adminRouter } from './routes/admin.js'
@@ -40,6 +41,7 @@ import { EmployeeError } from './lib/employeeService.js'
 import { ContractorError } from './lib/contractorService.js'
 import { EquipmentError } from './lib/equipmentService.js'
 import { VisitorError } from './lib/visitorService.js'
+import { InvestigationError } from './lib/incidentInvestigation.js'
 
 export function createApp() {
   const app = express()
@@ -125,6 +127,7 @@ export function createApp() {
   app.use('/', equipmentRouter)
   app.use('/auth', authRouter)
   // Mounted first: its literal paths would otherwise be captured by /incidents/:id
+  app.use('/incidents', incidentInvestigationRouter)
   app.use('/incidents', incidentExtrasRouter)
   app.use('/incidents', incidentsRouter)
   app.use('/permits', permitAttachmentsRouter)
@@ -164,7 +167,8 @@ export function createApp() {
       err instanceof EmployeeError ||
       err instanceof ContractorError ||
       err instanceof EquipmentError ||
-      err instanceof VisitorError
+      err instanceof VisitorError ||
+      err instanceof InvestigationError
     ) {
       return res.status(err.status).json({ error: err.code, message: err.message })
     }

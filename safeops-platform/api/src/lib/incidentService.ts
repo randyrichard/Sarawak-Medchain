@@ -1,5 +1,8 @@
 import type { Prisma, PrismaClient, Role } from '@prisma/client'
 import { AuthError } from './authService.js'
+import {
+  INCIDENT_SEVERITIES, INCIDENT_TYPES, LOST_TIME_SEVERITIES, SEVERITY_RANK,
+} from './incidentCatalog.js'
 
 /** Roles permitted to triage and progress an investigation. */
 const MANAGE_ROLES: Role[] = ['admin', 'hse_manager', 'safety_officer']
@@ -170,7 +173,9 @@ export class IncidentService {
     ])
 
     return {
-      rows,
+      // Masked here too. A register that lists the reporter defeats the point of the
+      // anonymous flag entirely, and the list is where most people would see it.
+      rows: rows.map((r) => this.maskAnonymous(caller, r)),
       page: p.page,
       pageSize: p.pageSize,
       total,
@@ -198,7 +203,24 @@ export class IncidentService {
       select: { id: true },
     })
     if (!visible) throw new IncidentError('forbidden', 'You do not have access to this incident.', 403)
-    return incident
+    return this.maskAnonymous(caller, incident)
+  }
+
+  /**
+   * Withhold the reporter on an anonymous report.
+   *
+   * The columns are still written - somebody has to be able to follow up on a serious
+   * allegation, and an anonymous channel that keeps no record at all cannot be audited.
+   * They are stripped on the way out for everyone below HSE manager, which is the promise
+   * actually made to the person reporting.
+   */
+  private maskAnonymous<T extends { companyId: string; anonymous: boolean; reporter: string; reporterId: string | null }>(
+    caller: Caller, incident: T,
+  ): T {
+    if (!incident.anonymous) return incident
+    const role = caller.roles.find((r) => r.companyId === incident.companyId)?.role
+    if (role && REVIEW_ROLES.includes(role)) return incident
+    return { ...incident, reporter: 'Reported anonymously', reporterId: null }
   }
 
   /**
@@ -217,6 +239,13 @@ export class IncidentService {
     gps?: string
     immediateActions?: string
     occurredAt: string
+    departmentId?: string
+    weather?: string
+    shift?: string
+    emergencyResponseActivated?: boolean
+    /// Reported without attribution. The reporter is still recorded - somebody has to be
+    /// able to follow up - but withheld from anyone below HSE manager on the way out.
+    anonymous?: boolean
   }) {
     this.membership(caller, input.companyId) // any member may report
 
@@ -228,6 +257,26 @@ export class IncidentService {
       select: { id: true },
     })
     if (!site) throw new IncidentError('validation', 'Unknown site for this workspace.')
+
+    if (!INCIDENT_TYPES.some((t) => t.value === input.type)) {
+      throw new IncidentError('validation', 'Unknown incident type.')
+    }
+    if (!INCIDENT_SEVERITIES.some((sv) => sv.value === input.severity)) {
+      throw new IncidentError('validation', 'Unknown severity.')
+    }
+
+    // The department is kept as text as well as a link, so renaming or removing a
+    // department does not rewrite what the report said at the time.
+    let departmentName = input.department?.trim() ?? ''
+    if (input.departmentId) {
+      const dept = await this.db.department.findFirst({
+        // Departments hang off a site, so the workspace check goes through the site.
+        where: { id: input.departmentId, site: { companyId: input.companyId } },
+        select: { name: true },
+      })
+      if (!dept) throw new IncidentError('validation', 'Unknown department for this workspace.')
+      departmentName = dept.name
+    }
 
     return this.db.$transaction(async (tx) => {
       const counter = await tx.counter.upsert({
@@ -247,10 +296,15 @@ export class IncidentService {
           description: input.description?.trim() ?? '',
           type: input.type as never,
           severity: input.severity as never,
-          department: input.department ?? '',
+          department: departmentName,
+          departmentId: input.departmentId ?? null,
           location: input.location.trim(),
           gps: input.gps,
           immediateActions: input.immediateActions ?? '',
+          weather: input.weather?.trim() ?? '',
+          shift: input.shift?.trim() ?? '',
+          emergencyResponseActivated: input.emergencyResponseActivated ?? false,
+          anonymous: input.anonymous ?? false,
           reporter: caller.name,
           reporterId: caller.userId,
           occurredAt: new Date(input.occurredAt),
@@ -816,6 +870,106 @@ export class IncidentService {
   }
 
   /** Dashboard counters, computed in the database rather than by loading every row. */
+
+  /**
+   * The incident board.
+   *
+   * Counted in one transaction against one scope, so no two tiles can disagree. The
+   * breakdowns are tallied from a single bounded read rather than four groupBy calls: the
+   * rows are the same rows the tiles counted, which is what stops the pie chart summing to
+   * a different total than the headline.
+   */
+  async board(caller: Caller, companyId: string, siteId?: string) {
+    this.membership(caller, companyId)
+    const base: Prisma.IncidentWhereInput = {
+      companyId,
+      archived: false,
+      ...this.scopeWhere(caller, companyId),
+      ...(siteId ? { siteId } : {}),
+    }
+
+    const monthStart = new Date()
+    monthStart.setDate(1)
+    monthStart.setHours(0, 0, 0, 0)
+
+    const actionBase = {
+      companyId,
+      ...(siteId ? { siteId } : {}),
+    }
+    const OPEN_ACTION: Prisma.EnumCapaStatusFilter = { in: ['open', 'in_progress'] }
+
+    const [openIncidents, overdueCapas, lostTime, nearMisses, thisMonth, openInvestigations, rows, sites] =
+      await this.db.$transaction([
+        this.db.incident.count({ where: { ...base, stage: { notIn: ['closed'] } } }),
+        this.db.correctiveAction.count({
+          where: { ...actionBase, status: OPEN_ACTION, dueDate: { lt: startOfToday() } },
+        }),
+        // Severity, not type: a lost-time injury is an outcome. The legacy type values are
+        // counted too, because rows reported under the old scale still happened.
+        this.db.incident.count({
+          where: {
+            ...base,
+            OR: [
+              { severity: { in: LOST_TIME_SEVERITIES } },
+              { type: { in: ['lti', 'fatality'] } },
+            ],
+          },
+        }),
+        this.db.incident.count({
+          where: { ...base, OR: [{ severity: 'near_miss' }, { type: 'near_miss' }] },
+        }),
+        this.db.incident.count({ where: { ...base, reportedAt: { gte: monthStart } } }),
+        // Started and not signed off. An investigation nobody has closed out is the one
+        // that quietly runs past its deadline.
+        this.db.incident.count({
+          where: { ...base, investigationStartedAt: { not: null }, investigationCompletedAt: null },
+        }),
+        this.db.incident.findMany({
+          where: base,
+          select: {
+            severity: true, type: true, department: true, siteId: true,
+            rootCause: true, stage: true,
+          },
+          take: 5000,
+        }),
+        this.db.site.findMany({ where: { companyId }, select: { id: true, name: true } }),
+      ])
+
+    const siteName = new Map(sites.map((x) => [x.id, x.name]))
+
+    const tally = (pick: (r: (typeof rows)[number]) => string | null) => {
+      const m = new Map<string, number>()
+      for (const r of rows) {
+        const k = (pick(r) ?? '').trim()
+        if (!k) continue
+        m.set(k, (m.get(k) ?? 0) + 1)
+      }
+      return [...m.entries()]
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+    }
+
+    return {
+      openIncidents,
+      overdueCapas,
+      lostTime,
+      nearMisses,
+      thisMonth,
+      openInvestigations,
+      total: rows.length,
+      // Ordered by how serious, not by how many: a board that puts "Minor (48)" first
+      // buries the fatality underneath it.
+      bySeverity: tally((r) => r.severity)
+        .sort((a, b) =>
+          (SEVERITY_RANK[b.name as never] ?? 0) - (SEVERITY_RANK[a.name as never] ?? 0)),
+      byType: tally((r) => r.type),
+      byDepartment: tally((r) => r.department).slice(0, 12),
+      bySite: tally((r) => siteName.get(r.siteId) ?? r.siteId),
+      /** What keeps causing things. The reason an investigation is worth doing at all. */
+      topRootCauses: tally((r) => r.rootCause).slice(0, 8),
+    }
+  }
+
   async stats(caller: Caller, companyId: string, siteId?: string) {
     this.membership(caller, companyId)
     const base: Prisma.IncidentWhereInput = {

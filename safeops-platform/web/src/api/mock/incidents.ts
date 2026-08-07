@@ -46,7 +46,19 @@ const MANAGE_ROLES = ['admin', 'hse_manager', 'safety_officer']
 // roles allowed to approve reviews, verify evidence, close, and archive
 const REVIEW_ROLES = ['admin', 'hse_manager']
 
-const SEVERITY_RANK = { Critical: 0, Serious: 1, Moderate: 2, Minor: 3 } as const
+/**
+ * Sort order, most serious first. Covers the enterprise scale as well as the original one,
+ * with an explicit fallback: an unranked severity sorting to 0 would push it above a
+ * fatality, which is the wrong way for this to fail.
+ */
+const SEVERITY_RANK: Record<string, number> = {
+  catastrophic: -2, fatality: -1,
+  Critical: 0, environmental_major: 0,
+  Serious: 1, lost_time_injury: 1,
+  Moderate: 2, restricted_work: 2, medical_treatment: 2,
+  Minor: 3, near_miss: 4,
+}
+const rank = (s: string) => SEVERITY_RANK[s] ?? 99
 export const OVERDUE_AFTER_DAYS = 14
 
 type Notify = (kind: 'incident' | 'action' | 'audit' | 'system', title: string, detail: string) => void
@@ -338,7 +350,7 @@ export class IncidentStore {
       .sort(
         (a, b) =>
           (a.stage === 'closed' ? 1 : 0) - (b.stage === 'closed' ? 1 : 0) ||
-          SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] ||
+          rank(a.severity) - rank(b.severity) ||
           b.reportedAt.localeCompare(a.reportedAt),
       )
   }
