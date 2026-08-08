@@ -16,6 +16,11 @@ import {
   Alert, Badge, Button, Card, CardBody, Input, PageHeader, Select, Skeleton, StatusPill,
 } from '@/components/ui'
 import { severityKind, fmtDate, fmtDateTime } from './lib'
+import {
+  EMPTY_FILTERS, SORT_LABEL, activeFilterCount, applyChange, highSeverityCount,
+  parseFilters, toQuery, toSearchParams,
+  type BoardFilters, type SortKey,
+} from './boardFilters'
 import { cn } from '@/lib/cn'
 
 /**
@@ -32,64 +37,13 @@ import { cn } from '@/lib/cn'
  */
 const PAGE_SIZE = 25
 
-type SortKey = 'priority' | 'newest' | 'oldest' | 'severity' | 'updated' | 'site' | 'type' | 'status'
-
-const SORT_LABEL: Record<SortKey, string> = {
-  priority: 'Most urgent first',
-  newest: 'Newest',
-  oldest: 'Oldest',
-  severity: 'Highest severity',
-  updated: 'Recently updated',
-  site: 'Site',
-  type: 'Type',
-  status: 'Status',
-}
-
-/** Every filter this board understands, and how it reads in the URL. */
-interface Filters {
-  q: string
-  type: string
-  severity: string
-  stage: string
-  siteId: string
-  department: string
-  investigator: string
-  from: string
-  to: string
-  shift: string
-  anonymous: string
-  emergencyResponse: string
-  sort: SortKey
-  page: number
-}
-
-const EMPTY: Filters = {
-  q: '', type: '', severity: '', stage: '', siteId: '', department: '',
-  investigator: '', from: '', to: '', shift: '', anonymous: '',
-  emergencyResponse: '', sort: 'priority', page: 1,
-}
-
 export function IncidentBoardPage() {
   const { company, sites } = useOrg()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
 
-  const filters = useMemo<Filters>(() => ({
-    q: params.get('q') ?? '',
-    type: params.get('type') ?? '',
-    severity: params.get('severity') ?? '',
-    stage: params.get('stage') ?? '',
-    siteId: params.get('siteId') ?? '',
-    department: params.get('department') ?? '',
-    investigator: params.get('investigator') ?? '',
-    from: params.get('from') ?? '',
-    to: params.get('to') ?? '',
-    shift: params.get('shift') ?? '',
-    anonymous: params.get('anonymous') ?? '',
-    emergencyResponse: params.get('emergencyResponse') ?? '',
-    sort: (params.get('sort') as SortKey) || 'priority',
-    page: Math.max(1, Number(params.get('page') ?? 1) || 1),
-  }), [params])
+  // Parsed by the module the tests cover, so the board and its tests cannot drift apart.
+  const filters = useMemo<BoardFilters>(() => parseFilters(params), [params])
 
   const [board, setBoard] = useState<IncidentBoard | null>(null)
   const [rows, setRows] = useState<Incident[] | null>(null)
@@ -101,20 +55,8 @@ export function IncidentBoardPage() {
 
   useEffect(() => { setQDraft(filters.q) }, [filters.q])
 
-  const patch = useCallback((next: Partial<Filters>) => {
-    const merged = { ...filters, ...next }
-    // Any filter change resets to the first page: staying on page 4 of a result set that
-    // now has one page shows an empty board and reads as "no incidents".
-    if (!('page' in next)) merged.page = 1
-
-    const p = new URLSearchParams()
-    for (const [k, v] of Object.entries(merged)) {
-      if (v === '' || v === undefined) continue
-      if (k === 'sort' && v === 'priority') continue
-      if (k === 'page' && v === 1) continue
-      p.set(k, String(v))
-    }
-    setParams(p)
+  const patch = useCallback((next: Partial<BoardFilters>) => {
+    setParams(toSearchParams(applyChange(filters, next)))
   }, [filters, setParams])
 
   // Free-text search is debounced into the URL; everything else applies immediately.
@@ -129,25 +71,7 @@ export function IncidentBoardPage() {
     setError(null)
     setRows(null)
 
-    const query = {
-      page: filters.page,
-      pageSize: PAGE_SIZE,
-      sort: filters.sort,
-      q: filters.q || undefined,
-      type: filters.type || undefined,
-      severity: filters.severity || undefined,
-      stage: filters.stage || undefined,
-      siteId: filters.siteId || undefined,
-      department: filters.department || undefined,
-      investigator: filters.investigator || undefined,
-      from: filters.from || undefined,
-      to: filters.to || undefined,
-      shift: filters.shift || undefined,
-      anonymous: (filters.anonymous || undefined) as 'true' | 'false' | undefined,
-      emergencyResponse: (filters.emergencyResponse || undefined) as 'true' | 'false' | undefined,
-    }
-
-    incidentsApi.list(company.id, query)
+    incidentsApi.list(company.id, toQuery(filters, PAGE_SIZE))
       .then((res) => {
         setRows(res.rows)
         setTotal(res.total)
@@ -170,22 +94,16 @@ export function IncidentBoardPage() {
       .catch(() => setBoard(null))
   }, [company, filters.siteId])
 
-  const activeCount = useMemo(() => {
-    const { sort, page, ...rest } = filters
-    return Object.values(rest).filter((v) => v !== '').length
-  }, [filters])
+  const activeCount = useMemo(() => activeFilterCount(filters), [filters])
 
   /** Widgets jump to the register already filtered for what the number counted. */
   const tiles: {
     label: string; value: number | undefined; icon: typeof Activity
-    tone?: string; hint?: string; go?: Partial<Filters>
+    tone?: string; hint?: string; go?: Partial<BoardFilters>
   }[] = [
     { label: 'Open incidents', value: board?.openIncidents, icon: Activity,
-      go: { stage: '', severity: '', status: '' } as never },
-    { label: 'High severity', value: board
-      ? board.bySeverity.filter((s) => ['fatality', 'catastrophic', 'Critical', 'environmental_major', 'lost_time_injury'].includes(s.name))
-        .reduce((a, b) => a + b.value, 0)
-      : undefined,
+      go: { stage: '', severity: '' } },
+    { label: 'High severity', value: board ? highSeverityCount(board.bySeverity) : undefined,
       icon: ShieldAlert, tone: 'var(--critical)', hint: 'LTI and above',
       go: { sort: 'severity' } },
     { label: 'Investigations open', value: board?.openInvestigations, icon: Microscope,
@@ -221,7 +139,7 @@ export function IncidentBoardPage() {
           return (
             <Card key={t.label}>
               <Tag
-                {...(clickable ? { onClick: () => patch({ ...EMPTY, ...t.go }), type: 'button' as const } : {})}
+                {...(clickable ? { onClick: () => setParams(toSearchParams({ ...EMPTY_FILTERS, ...t.go })), type: 'button' as const } : {})}
                 className={cn('block w-full text-left', clickable && 'hover:bg-accent-soft/30')}
               >
                 <CardBody className="py-3">

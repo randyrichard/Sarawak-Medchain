@@ -347,15 +347,27 @@ d('Scheduler — integration (real Postgres)', () => {
       },
     })
 
+    /*
+     * runOnce sweeps every workspace, so its return counts include whatever other suites
+     * happen to have in the table at that moment - vitest runs test files in parallel.
+     * Asserting an exact global count made this fail intermittently for reasons that had
+     * nothing to do with the scheduler. The subject is that a full pass raises this
+     * workspace's three notifications and then raises nothing further, so that is what is
+     * asserted: our own rows, and idempotency measured against them.
+     */
     const first = await scheduler.runOnce()
     expect(first.actions).toBeGreaterThan(0)
-    expect(first.inspections).toBe(1)
-    expect(first.certificates).toBe(1)
+    expect(first.inspections).toBeGreaterThanOrEqual(1)
+    expect(first.certificates).toBeGreaterThanOrEqual(1)
 
-    const before = (await hrefs()).length
-    const second = await scheduler.runOnce()
-    expect(second.actions + second.inspections + second.certificates).toBe(0)
-    expect(await hrefs()).toHaveLength(before)
+    const raised = await hrefs()
+    expect(raised.some((h) => h.includes('CA-ALL') || h.includes('/actions'))).toBe(true)
+    expect(raised.some((h) => h.includes('/assets'))).toBe(true)
+    expect(raised.some((h) => h.includes('/training') || h.includes('/employees'))).toBe(true)
+
+    // A second pass must add nothing for this workspace.
+    await scheduler.runOnce()
+    expect(await hrefs()).toHaveLength(raised.length)
   })
   // -- Calibration ----------------------------------------------------------
 
@@ -479,17 +491,33 @@ d('Scheduler — integration (real Postgres)', () => {
 
   it('does not raise the same overdue work order twice', async () => {
     await makeWorkOrder('WO-ONCE', -5)
-    expect(await scheduler.sweepMaintenance()).toBe(1)
-    expect(await scheduler.sweepMaintenance()).toBe(0)
+    /*
+     * Counted against this workspace's notifications, not the sweep's global return value.
+     * The sweeps run across every company and vitest runs test files in parallel, so
+     * another suite's overdue work order lands in the same pass - which made this fail for
+     * reasons that had nothing to do with deduplication. The subject is that a second pass
+     * adds nothing for our row, and that is what is measured.
+     */
+    await scheduler.sweepMaintenance()
+    const after = (await hrefs()).length
+    expect(after).toBeGreaterThan(0)
+
+    await scheduler.sweepMaintenance()
+    expect(await hrefs()).toHaveLength(after)
   })
 
   // -- Out of service -------------------------------------------------------
 
   it('raises equipment sitting out of service, once, not nightly', async () => {
     await makeDetector('AST-OOS', 200, { status: 'out_of_service' })
-    expect(await scheduler.sweepOutOfService()).toBe(1)
+    // Measured against this workspace, for the same reason as the work-order sweep above.
+    await scheduler.sweepOutOfService()
+    const after = (await hrefs()).length
+    expect(after).toBeGreaterThan(0)
+
     // A daily reminder that it is still broken is noise, and noise gets everything ignored.
-    expect(await scheduler.sweepOutOfService()).toBe(0)
+    await scheduler.sweepOutOfService()
+    expect(await hrefs()).toHaveLength(after)
   })
 
   it('names critical equipment differently, because it is read differently', async () => {

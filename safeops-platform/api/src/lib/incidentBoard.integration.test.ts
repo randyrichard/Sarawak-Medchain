@@ -328,4 +328,128 @@ d('Incident board and register — integration (real Postgres)', () => {
     expect(board.bySeverity).toEqual([])
     expect(board.topRootCauses).toEqual([])
   })
+  // -- severityRank integrity -----------------------------------------------
+
+  it('keeps the rank correct when a row is written straight to the table', async () => {
+    // The seed, a bulk import and any hand-run SQL all bypass the service. The database
+    // trigger is what makes those safe; without it every seeded incident ranked 0 and
+    // sorted below a near miss.
+    const row = await db.incident.create({
+      data: {
+        number: `INC-RAW-${Math.random().toString(36).slice(2, 8)}`,
+        companyId: COMPANY, siteId: SITE, title: 'Written directly',
+        type: 'injury', severity: 'fatality', location: 'Nowhere',
+        occurredAt: new Date(), reporter: 'ITest',
+      },
+      select: { id: true, severityRank: true },
+    })
+    expect(row.severityRank).toBe(SEVERITY_RANK.fatality)
+  })
+
+  it('re-derives the rank when the severity is changed', async () => {
+    const i = await make({ severity: 'Minor' })
+    await db.incident.update({ where: { id: i.id }, data: { severity: 'catastrophic' } })
+
+    const after = await db.incident.findUnique({
+      where: { id: i.id }, select: { severityRank: true },
+    })
+    expect(after?.severityRank).toBe(SEVERITY_RANK.catastrophic)
+  })
+
+  it('ignores a rank supplied by the caller', async () => {
+    const i = await make({ severity: 'near_miss' })
+    // A client-chosen rank would be a way to reorder somebody else's board.
+    await db.incident.update({
+      where: { id: i.id }, data: { severity: 'near_miss', severityRank: 99 },
+    })
+    const after = await db.incident.findUnique({
+      where: { id: i.id }, select: { severityRank: true },
+    })
+    expect(after?.severityRank).toBe(SEVERITY_RANK.near_miss)
+  })
+
+  it('leaves no row in the table disagreeing with its own severity', async () => {
+    await make({ severity: 'lost_time_injury' })
+    await make({ severity: 'Serious' })
+    const adrift = await db.$queryRawUnsafe<{ n: number }[]>(
+      'select count(*)::int as n from "Incident" where "severityRank" is distinct from incident_severity_rank(severity)',
+    )
+    expect(adrift[0].n).toBe(0)
+  })
+
+  it('re-sorts the board correctly after a severity is corrected', async () => {
+    const a = await make({ severity: 'Minor', title: 'Reclassified later' })
+    await make({ severity: 'Serious', title: 'Serious from the start' })
+
+    // Triage decides it was worse than first reported.
+    await db.incident.update({ where: { id: a.id }, data: { severity: 'fatality' } })
+
+    const { rows } = await listFor(admin, { sort: 'severity' })
+    expect(rows[0].title).toBe('Reclassified later')
+  })
+  // -- RCA authorisation ----------------------------------------------------
+
+  const RCA_BODY = {
+    causes: [{ id: 'c1', category: 'Management System Failure', description: 'No review of legacy plant.' }],
+    fiveWhys: {
+      problem: 'Hand caught in the drive',
+      whys: ['Reached past the guard', 'Guard removed to clear a jam', 'No lock-off point', '', ''],
+      rootStatement: 'Legacy machines were never re-assessed.',
+    },
+  }
+
+  it('saves a root cause analysis and reads it back', async () => {
+    const i = await make()
+    await db.incident.update({ where: { id: i.id }, data: { stage: 'rca' } })
+    await incidents.saveRca(admin, i.id, RCA_BODY as never)
+
+    const row = await db.incident.findUnique({
+      where: { id: i.id }, select: { rcaFiveWhys: true, rcaCauses: true },
+    })
+    const whys = (row?.rcaFiveWhys as { whys: string[] }).whys
+    expect(whys.filter(Boolean)).toHaveLength(3)
+    expect((row?.rcaCauses as { category: string }[])[0].category).toBe('Management System Failure')
+  })
+
+  it('refuses to rewrite the analysis of a closed incident', async () => {
+    const i = await make()
+    await db.incident.update({ where: { id: i.id }, data: { stage: 'closed' } })
+    /*
+     * The screen hides the editor once the incident leaves the rca stage, but the screen is
+     * not the control. Rewriting the root cause of a closed investigation through the API
+     * is precisely what an audit trail exists to prevent.
+     */
+    await expect(incidents.saveRca(admin, i.id, RCA_BODY as never))
+      .rejects.toThrow(/closed.*part of the record/i)
+  })
+
+  it('refuses to rewrite the analysis of an archived incident', async () => {
+    const i = await make()
+    await db.incident.update({ where: { id: i.id }, data: { archived: true } })
+    await expect(incidents.saveRca(admin, i.id, RCA_BODY as never))
+      .rejects.toThrow()
+  })
+
+  it('keeps the approval lock as well as the closed rule', async () => {
+    const i = await make()
+    await db.incident.update({
+      where: { id: i.id }, data: { stage: 'rca', rcaApprovedBy: 'Somebody' },
+    })
+    await expect(incidents.saveRca(admin, i.id, RCA_BODY as never))
+      .rejects.toThrow(/approved and is locked/i)
+  })
+
+  it('refuses a root cause analysis from a role that may not record one', async () => {
+    const i = await make()
+    await db.incident.update({ where: { id: i.id }, data: { stage: 'rca' } })
+    const employee = role('employee', 'Employee')
+    await expect(incidents.saveRca(employee, i.id, RCA_BODY as never))
+      .rejects.toMatchObject({ status: 403 })
+  })
+
+  it('refuses a root cause analysis on another company incident', async () => {
+    const i = await make()
+    await db.incident.update({ where: { id: i.id }, data: { stage: 'rca' } })
+    await expect(incidents.saveRca(outsider, i.id, RCA_BODY as never)).rejects.toThrow()
+  })
 })

@@ -462,7 +462,14 @@ export class IncidentService {
           ...(payload.potentialSeverity
             ? {
                 potentialSeverity: payload.potentialSeverity as never,
-                highRisk: ['Serious', 'Critical'].includes(payload.potentialSeverity),
+                /*
+                 * By rank, not by a hardcoded pair. This read ['Serious', 'Critical'],
+                 * which predates the outcome-based severities - so an incident whose
+                 * potential outcome was a fatality or a catastrophe was not flagged as
+                 * high risk, while a legacy Serious was. Anything at or above Serious.
+                 */
+                highRisk: (SEVERITY_RANK[payload.potentialSeverity as never] ?? 0)
+                  >= SEVERITY_RANK.Serious,
               }
             : {}),
           ...(payload.to === 'closed' ? { closedAt: new Date(), closeNote: payload.note } : {}),
@@ -860,6 +867,18 @@ export class IncidentService {
 
     if (incident.rcaApprovedBy) {
       throw new IncidentError('validation', 'This analysis has been approved and is locked.')
+    }
+    /*
+     * A closed incident's analysis is part of the record.
+     *
+     * The screen already hides the editor once the incident leaves the rca stage, but the
+     * server was enforcing only the approval lock - so the root cause of a closed
+     * investigation could still be rewritten through the API, which is precisely the thing
+     * an audit trail exists to prevent. The same rule as saveInvestigation.
+     */
+    if (incident.stage === 'closed' || incident.archived) {
+      throw new IncidentError('validation',
+        'This incident is closed. Its root cause analysis is part of the record.')
     }
     if (!Array.isArray(input.causes)) {
       throw new IncidentError('validation', 'Contributing causes are required.')
