@@ -31,10 +31,21 @@ export class NotificationService {
   async list(caller: Caller, companyId: string) {
     this.membership(caller, companyId)
 
+    /*
+     * Workspace notifications, plus the ones addressed to this person.
+     *
+     * A null recipient is a broadcast - every notification was one before addressing
+     * existed, and most still are. A notification addressed to somebody else is theirs:
+     * showing "corrective action assigned to you" to the whole workspace is how a feed
+     * becomes noise nobody reads, and it leaks who has been given what.
+     */
     const rows = await this.db.notification.findMany({
-      where: { companyId },
+      where: {
+        companyId,
+        OR: [{ recipientUserId: null }, { recipientUserId: caller.userId }],
+      },
       include: { reads: { where: { userId: caller.userId }, take: 1 } },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: FEED_LIMIT,
     })
 
@@ -46,6 +57,9 @@ export class NotificationService {
       href: n.href,
       createdAt: n.createdAt,
       readAt: n.reads[0]?.readAt ?? null,
+      /** True when this was addressed to the reader rather than broadcast. */
+      forMe: n.recipientUserId === caller.userId,
+      recipientRole: n.recipientRole,
     }))
   }
 
@@ -104,7 +118,14 @@ export class NotificationService {
     this.membership(caller, companyId)
 
     const unread = await this.db.notification.findMany({
-      where: { companyId, reads: { none: { userId: caller.userId } } },
+      where: {
+        companyId,
+        reads: { none: { userId: caller.userId } },
+        // The same visibility rule as the feed. Without it, "mark all read" writes read
+        // receipts against notifications addressed to other people - rows the reader
+        // cannot see and has no business acknowledging.
+        OR: [{ recipientUserId: null }, { recipientUserId: caller.userId }],
+      },
       select: { id: true },
       take: FEED_LIMIT,
     })

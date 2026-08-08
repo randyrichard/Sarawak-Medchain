@@ -98,6 +98,10 @@ incidentExtrasRouter.post('/:id/attachments', (req, res, next) => {
           storedName: f.filename,
           mimeType: f.mimetype,
           sizeBytes: f.size,
+          // Optional: a file can be evidence for one corrective action, or attached to
+          // the incident generally. Same route, same allow-list, same storage.
+          actionId: typeof req.body?.actionId === 'string' && req.body.actionId
+            ? req.body.actionId : undefined,
         }))
       }
       res.status(201).json({ attachments: saved })
@@ -151,6 +155,10 @@ const actionBody = z.object({
   owner: z.string().min(1).max(200),
   dueDate: z.string().min(1),
   priority: z.enum(['Low', 'Medium', 'High', 'Critical']).optional(),
+  /** So the assignment notification reaches an account, not just a name. */
+  ownerId: z.string().optional(),
+  /** Decided at raise time; enforced server-side when the action is closed. */
+  evidenceRequired: z.boolean().optional(),
 })
 
 incidentExtrasRouter.post('/:id/actions', async (req, res, next) => {

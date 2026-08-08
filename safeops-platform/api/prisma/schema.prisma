@@ -469,9 +469,19 @@ model IncidentAttachment {
   sizeBytes    Int
   uploadedBy   String
   uploadedById String?
+
+  /// The corrective action this file is evidence for, when it is evidence for one.
+  ///
+  /// Null for evidence attached to the incident generally. One table rather than a second
+  /// attachment model, so there is one upload route, one allow-list and one storage
+  /// contract - the file is the same kind of thing either way.
+  actionId String?
+  action   CorrectiveAction? @relation(fields: [actionId], references: [id], onDelete: Cascade)
+
   createdAt    DateTime @default(now())
 
   @@index([incidentId])
+  @@index([actionId])
 }
 
 model CapaNote {
@@ -585,6 +595,7 @@ model CorrectiveAction {
   @@index([owner])
   @@index([assetId])
   @@index([inspectionId])
+  evidence IncidentAttachment[]
 }
 
 // ─── Permit to Work ──────────────────────────────────────────────────────────
@@ -2081,11 +2092,26 @@ model Notification {
   detail String  @default("")
   href   String?
 
+  /// Who this is actually for.
+  ///
+  /// Null means the workspace feed, which is what every notification was before this and
+  /// what broadcasts still are. A value means one person: the reporter, the investigator,
+  /// the action owner. Nullable rather than required precisely so the existing behaviour
+  /// is untouched - a feed notification is still a feed notification.
+  recipientUserId String?
+  /// The name at the time. A notification that says "assigned to you" has to still read
+  /// correctly after the account is renamed or removed.
+  recipientName   String?
+  /// Why they are getting it, for the audit trail: reporter | investigator | capa_owner |
+  /// safety_officer | hse_manager | department_manager
+  recipientRole   String?
+
   reads NotificationRead[]
 
   createdAt DateTime @default(now())
 
   @@index([companyId, createdAt])
+  @@index([recipientUserId, createdAt])
 }
 
 /// One row per person who has read a notification. Absence means unread, so a new user

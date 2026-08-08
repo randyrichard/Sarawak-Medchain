@@ -187,7 +187,11 @@ export class IncidentService {
     const incident = await this.db.incident.findUnique({
       where: { id },
       include: {
-        events: { orderBy: { at: 'desc' } },
+        // Two events written in the same transaction share a timestamp, so `at` alone is
+        // a tie and Postgres may return them either way round - a case file that reads
+        // "action verified" before "action completed". The id breaks the tie in insertion
+        // order. Same fix as the visitor and equipment histories.
+        events: { orderBy: [{ at: 'desc' }, { id: 'desc' }] },
         comments: { orderBy: { createdAt: 'asc' } },
         attachments: { orderBy: { createdAt: 'desc' } },
         actions: { orderBy: { dueDate: 'asc' } },
@@ -440,16 +444,39 @@ export class IncidentService {
     storedName: string
     mimeType: string
     sizeBytes: number
+    /// The corrective action this file proves, when it is evidence for one. Null attaches
+    /// it to the incident generally.
+    actionId?: string
   }) {
     const incident = await this.get(caller, incidentId)
+
+    // A file offered as proof of an action has to belong to this incident's action, not
+    // to one on somebody else's case.
+    let action: { id: string; code: string } | null = null
+    if (file.actionId) {
+      action = await this.db.correctiveAction.findFirst({
+        where: { id: file.actionId, incidentId: incident.id },
+        select: { id: true, code: true },
+      })
+      if (!action) {
+        throw new IncidentError('validation', 'That corrective action is not on this incident.')
+      }
+    }
+
+    const { actionId, ...rest } = file
     const att = await this.db.incidentAttachment.create({
-      data: { incidentId: incident.id, ...file, uploadedBy: caller.name, uploadedById: caller.userId },
+      data: {
+        incidentId: incident.id, ...rest,
+        actionId: action?.id ?? null,
+        uploadedBy: caller.name, uploadedById: caller.userId,
+      },
     })
     await this.db.incidentEvent.create({
       data: {
         incidentId: incident.id,
         action: 'Evidence uploaded',
-        detail: file.originalName + ' (' + Math.round(file.sizeBytes / 1024) + ' KB)',
+        detail: file.originalName + ' (' + Math.round(file.sizeBytes / 1024) + ' KB)'
+          + (action ? ' for ' + action.code : ''),
         actor: caller.name,
         actorRole: this.membership(caller, incident.companyId).role,
       },
@@ -471,8 +498,12 @@ export class IncidentService {
     title: string
     detail?: string
     owner: string
+    ownerId?: string
     dueDate: string
     priority?: string
+    /// Decided when the action is raised, not after the fact: deciding later that proof
+    /// was needed is how actions get closed on a promise.
+    evidenceRequired?: boolean
   }) {
     const incident = await this.get(caller, incidentId)
     this.requireRole(caller, incident.companyId, MANAGE_ROLES)
@@ -499,8 +530,10 @@ export class IncidentService {
           title: input.title.trim(),
           detail: input.detail?.trim() ?? '',
           owner: input.owner.trim(),
+          ownerId: input.ownerId ?? null,
           dueDate: due,
           priority: (input.priority ?? 'Medium') as never,
+          evidenceRequired: input.evidenceRequired ?? false,
           createdBy: caller.name,
         },
       })
@@ -508,9 +541,26 @@ export class IncidentService {
         data: {
           incidentId: incident.id,
           action: 'Corrective action raised',
-          detail: action.code + ' — ' + action.title + ' (owner ' + action.owner + ')',
+          detail: action.code + ' - ' + action.title + ' (owner ' + action.owner + ')'
+            + (action.evidenceRequired ? ', evidence required' : ''),
           actor: caller.name,
           actorRole: this.membership(caller, incident.companyId).role,
+        },
+      })
+
+      // Addressed to the owner, not shouted at the workspace. An action assigned to
+      // somebody who never learns of it is how a due date passes unnoticed.
+      await tx.notification.create({
+        data: {
+          companyId: incident.companyId,
+          kind: 'action',
+          title: 'Corrective action assigned: ' + action.code,
+          detail: action.title + '. Due ' + due.toISOString().slice(0, 10)
+            + (action.evidenceRequired ? '. Evidence required before it can be completed.' : '.'),
+          href: '/actions?open=' + action.id,
+          recipientUserId: input.ownerId ?? null,
+          recipientName: action.owner,
+          recipientRole: 'capa_owner',
         },
       })
       return action
@@ -548,6 +598,24 @@ export class IncidentService {
     }
     if (patch.status === 'completed' && !patch.evidenceNote?.trim() && !action.evidenceNote) {
       throw new IncidentError('validation', 'Describe the evidence before marking this complete.')
+    }
+
+    /*
+     * Evidence that was demanded when the action was raised has to actually exist.
+     *
+     * A note is a claim - "guard refitted" - and a file is proof of it. Where somebody
+     * decided at the outset that proof would be needed, a note is not a substitute, and
+     * closing on one is how corrective actions stop meaning anything. Enforced here rather
+     * than on the screen: the screen can be skipped.
+     */
+    if (patch.status === 'completed' && action.evidenceRequired) {
+      const files = await this.db.incidentAttachment.count({ where: { actionId: action.id } })
+      if (files === 0) {
+        throw new IncidentError(
+          'validation',
+          'Evidence is required before this corrective action can be completed. Upload a photo or document first.',
+        )
+      }
     }
 
     /*

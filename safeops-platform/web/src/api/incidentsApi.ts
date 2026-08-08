@@ -265,8 +265,10 @@ export const incidentsApi = {
 
   async create(input: {
     companyId: string; siteId: string; title: string; description?: string
-    type: string; severity: string; department?: string; location: string
-    gps?: string; immediateActions?: string; occurredAt: string
+    type: string; severity: string; department?: string; departmentId?: string
+    location: string; gps?: string; immediateActions?: string; occurredAt: string
+    weather?: string; shift?: string
+    emergencyResponseActivated?: boolean; anonymous?: boolean
   }): Promise<Incident> {
     return toIncident(await request<ServerIncident>('/incidents', {
       method: 'POST', body: JSON.stringify(input),

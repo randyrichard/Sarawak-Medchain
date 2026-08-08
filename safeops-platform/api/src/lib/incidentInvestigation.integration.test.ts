@@ -57,6 +57,7 @@ const makeEmployee = (name = 'Witness One') => db.employee.create({
 })
 
 async function purge() {
+  await db.incidentAttachment.deleteMany({ where: { incident: { companyId: COMPANY } } })
   await db.incidentPerson.deleteMany({ where: { incident: { companyId: COMPANY } } })
   await db.incidentLink.deleteMany({ where: { incident: { companyId: COMPANY } } })
   await db.incidentEvent.deleteMany({ where: { incident: { companyId: COMPANY } } })
@@ -445,5 +446,139 @@ d('Incident investigation — integration (real Postgres)', () => {
       roles: [{ companyId: 'some-other-co', role: 'admin' as never, siteIds: [] }],
     }
     await expect(incidents.board(outsider, COMPANY)).rejects.toMatchObject({ status: 403 })
+  })
+  // -- CAPA evidence enforcement --------------------------------------------
+
+  /** A corrective action on a fresh incident, optionally demanding proof. */
+  const makeAction = async (evidenceRequired: boolean) => {
+    const i = await newIncident()
+    const a = await incidents.addAction(admin, i.id, {
+      title: 'Refit the guard', owner: 'ITest Officer',
+      dueDate: new Date(Date.now() + 7 * 86400_000).toISOString().slice(0, 10),
+      evidenceRequired,
+    })
+    return { incident: i, action: a }
+  }
+
+  it('refuses to complete an action that demands evidence when none exists', async () => {
+    const { action } = await makeAction(true)
+    await expect(incidents.updateAction(admin, action.id, {
+      status: 'completed', evidenceNote: 'Guard refitted.',
+    })).rejects.toThrow(/Evidence is required before this corrective action can be completed/i)
+  })
+
+  it('completes once a file is actually attached', async () => {
+    const { incident, action } = await makeAction(true)
+    // A note is a claim; a file is proof of it.
+    await db.incidentAttachment.create({
+      data: {
+        incidentId: incident.id, actionId: action.id,
+        originalName: 'guard.jpg', storedName: `itest-${Math.random().toString(36).slice(2)}.jpg`,
+        mimeType: 'image/jpeg', sizeBytes: 1024, uploadedBy: 'ITest Admin',
+      },
+    })
+    const done = await incidents.updateAction(admin, action.id, {
+      status: 'completed', evidenceNote: 'Guard refitted, photo attached.',
+    })
+    expect(done.status).toBe('completed')
+  })
+
+  it('does not demand a file where evidence was never required', async () => {
+    const { action } = await makeAction(false)
+    const done = await incidents.updateAction(admin, action.id, {
+      status: 'completed', evidenceNote: 'Toolbox talk delivered to all shifts.',
+    })
+    expect(done.status).toBe('completed')
+  })
+
+  it('does not count a file attached to a different action', async () => {
+    const { incident } = await makeAction(true)
+    const other = await incidents.addAction(admin, incident.id, {
+      title: 'Second action', owner: 'ITest Officer',
+      dueDate: new Date(Date.now() + 7 * 86400_000).toISOString().slice(0, 10),
+      evidenceRequired: true,
+    })
+    await db.incidentAttachment.create({
+      data: {
+        incidentId: incident.id, actionId: other.id,
+        originalName: 'other.jpg', storedName: `itest-${Math.random().toString(36).slice(2)}.jpg`,
+        mimeType: 'image/jpeg', sizeBytes: 512, uploadedBy: 'ITest Admin',
+      },
+    })
+    const first = await db.correctiveAction.findFirst({
+      where: { incidentId: incident.id, id: { not: other.id } },
+    })
+    await expect(incidents.updateAction(admin, first!.id, {
+      status: 'completed', evidenceNote: 'Done.',
+    })).rejects.toThrow(/Evidence is required/i)
+  })
+
+  it('records on the timeline that evidence was demanded', async () => {
+    const { incident } = await makeAction(true)
+    const events = await db.incidentEvent.findMany({ where: { incidentId: incident.id } })
+    expect(events.some((e) => /evidence required/i.test(e.detail ?? ''))).toBe(true)
+  })
+
+  // -- Targeted notifications -----------------------------------------------
+
+  it('addresses the assignment notification to the owner, not the workspace', async () => {
+    const i = await newIncident()
+    await incidents.addAction(admin, i.id, {
+      title: 'Fit an isolator', owner: 'Amirul Hassan', ownerId: 'user-amirul',
+      dueDate: new Date(Date.now() + 7 * 86400_000).toISOString().slice(0, 10),
+    })
+
+    const [n] = await db.notification.findMany({
+      where: { companyId: COMPANY, recipientUserId: 'user-amirul' },
+    })
+    expect(n).toBeTruthy()
+    expect(n.recipientName).toBe('Amirul Hassan')
+    expect(n.recipientRole).toBe('capa_owner')
+    expect(n.title).toMatch(/Corrective action assigned/)
+  })
+
+  it('keeps the name so the notification reads correctly after the account changes', async () => {
+    const i = await newIncident()
+    await incidents.addAction(admin, i.id, {
+      title: 'X', owner: 'Named At The Time', ownerId: 'user-gone',
+      dueDate: new Date(Date.now() + 7 * 86400_000).toISOString().slice(0, 10),
+    })
+    const [n] = await db.notification.findMany({
+      where: { companyId: COMPANY, recipientUserId: 'user-gone' },
+    })
+    expect(n.recipientName).toBe('Named At The Time')
+  })
+
+  it('leaves an unassigned action as a workspace notification', async () => {
+    const i = await newIncident()
+    await incidents.addAction(admin, i.id, {
+      title: 'No account for this owner', owner: 'Agency Contractor',
+      dueDate: new Date(Date.now() + 7 * 86400_000).toISOString().slice(0, 10),
+    })
+    const [n] = await db.notification.findMany({
+      where: { companyId: COMPANY, kind: 'action' },
+    })
+    // Null recipient is the broadcast behaviour every notification had before addressing
+    // existed, and it must stay that way.
+    expect(n.recipientUserId).toBeNull()
+  })
+
+  // -- Timeline ordering ----------------------------------------------------
+
+  it('reads the case file in insertion order when events share a timestamp', async () => {
+    const i = await newIncident()
+    // Raising an action writes the action row and its timeline entry in one transaction,
+    // so several events land on the same millisecond.
+    await incidents.addAction(admin, i.id, {
+      title: 'A', owner: 'X',
+      dueDate: new Date(Date.now() + 7 * 86400_000).toISOString().slice(0, 10),
+    })
+    await inv.saveInvestigation(admin, i.id, { leadInvestigator: 'X', rootCause: 'Y' })
+
+    const first = await incidents.get(admin, i.id)
+    const second = await incidents.get(admin, i.id)
+    // Deterministic: the same read twice must not shuffle the history.
+    expect(first.events.map((e) => e.id)).toEqual(second.events.map((e) => e.id))
+    expect(first.events[first.events.length - 1].action).toMatch(/reported/i)
   })
 })

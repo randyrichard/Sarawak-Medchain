@@ -726,10 +726,19 @@ class MockApiClient implements ApiClient {
 
   async createIncident(input: NewIncidentInput, actor: Actor) {
     if (SERVER_INCIDENTS) {
+      /*
+       * Field by field, so anything added to NewIncidentInput has to be added here too.
+       * Weather was collected by the report form and silently dropped on this line for as
+       * long as the field has existed - the same failure the permit mapper had.
+       */
       return incidentsApi.create({
         companyId: input.companyId, siteId: input.siteId, title: input.title,
         description: input.description, type: input.type, severity: input.severity,
-        department: input.department, location: input.location, gps: input.gps,
+        department: input.department, departmentId: input.departmentId,
+        location: input.location, gps: input.gps,
+        weather: input.weather, shift: input.shift,
+        emergencyResponseActivated: input.emergencyResponseActivated,
+        anonymous: input.anonymous,
         immediateActions: input.immediateActions, occurredAt: input.occurredAt,
       })
     }

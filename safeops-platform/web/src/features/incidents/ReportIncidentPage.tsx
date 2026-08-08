@@ -28,6 +28,9 @@ interface Draft {
   location: string
   gps: string
   weather: string
+  shift: string
+  emergencyResponseActivated: boolean
+  anonymous: boolean
   peopleInvolved: PersonInvolved[]
   witnesses: string
   immediateActions: string
@@ -48,6 +51,9 @@ const emptyDraft = (): Draft => ({
   location: '',
   gps: '',
   weather: '',
+  shift: '',
+  emergencyResponseActivated: false,
+  anonymous: false,
   peopleInvolved: [],
   witnesses: '',
   immediateActions: '',
@@ -157,6 +163,9 @@ export function ReportIncidentPage() {
       location: draft.location,
       gps: draft.gps || undefined,
       weather: draft.weather || undefined,
+      shift: draft.shift || undefined,
+      emergencyResponseActivated: draft.emergencyResponseActivated,
+      anonymous: draft.anonymous,
       occurredAt: new Date(draft.occurredAt).toISOString(),
       reporter: user?.name ?? 'Unknown',
       peopleInvolved: draft.peopleInvolved.filter((p) => p.name.trim()),
@@ -394,12 +403,65 @@ export function ReportIncidentPage() {
               value={draft.immediateActions} onChange={(e) => patch({ immediateActions: e.target.value })}
               error={touchedNext && !draft.immediateActions.trim() ? 'What was done right away? "Nothing yet" is a valid answer.' : undefined}
             />
-            <Select label="Weather (optional)" value={draft.weather} onChange={(e) => patch({ weather: e.target.value })} hint="Relevant for outdoor and driving incidents.">
-              <option value="">Not relevant</option>
-              {['Clear / hot', 'Overcast', 'Rain', 'Heavy rain / storm', 'Haze', 'Night / low light'].map((w) => (
-                <option key={w} value={w}>{w}</option>
-              ))}
-            </Select>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Select label="Weather (optional)" value={draft.weather} onChange={(e) => patch({ weather: e.target.value })} hint="Relevant for outdoor and driving incidents.">
+                <option value="">Not relevant</option>
+                {['Clear / hot', 'Overcast', 'Rain', 'Heavy rain / storm', 'Haze', 'Night / low light'].map((w) => (
+                  <option key={w} value={w}>{w}</option>
+                ))}
+              </Select>
+              {/*
+                A picked list, not free text: "night", "Night" and "nite" would be three
+                different shifts, and the reason to record it is to be able to count it.
+                Night shift turns up in causal analysis often enough to be worth the field.
+              */}
+              <Select label="Shift (optional)" value={draft.shift} onChange={(e) => patch({ shift: e.target.value })} hint="Night shift is a recurring factor worth counting.">
+                <option value="">Not stated</option>
+                {['Day', 'Night', 'Swing', 'Rotating', 'Office hours'].map((sh) => (
+                  <option key={sh} value={sh}>{sh}</option>
+                ))}
+              </Select>
+            </div>
+
+            <label className="flex items-start gap-2 rounded-lg border px-3 py-2.5 text-xs text-ink">
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={draft.emergencyResponseActivated}
+                onChange={(e) => patch({ emergencyResponseActivated: e.target.checked })}
+              />
+              <span>
+                Emergency response was activated
+                <span className="block text-2xs text-muted">
+                  Muster, evacuation, fire team or ambulance. A separate fact from severity -
+                  a near miss can trigger a muster and a lost-time injury might not.
+                </span>
+              </span>
+            </label>
+
+            {/*
+              Anonymity is a promise made to the person reporting, so it says exactly what
+              it does. The reporter is still recorded server-side - an anonymous channel
+              that keeps no record cannot be audited, and somebody has to be able to follow
+              up on a serious allegation - but it is withheld from everyone below HSE
+              manager, including on the register and in search.
+            */}
+            <label className="flex items-start gap-2 rounded-lg border px-3 py-2.5 text-xs text-ink">
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={draft.anonymous}
+                onChange={(e) => patch({ anonymous: e.target.checked })}
+              />
+              <span>
+                Report this anonymously
+                <span className="block text-2xs text-muted">
+                  Your name will not be shown on the incident, the register or search
+                  results. Only the HSE manager and admins can see who reported it, so that
+                  somebody can follow up if they need to.
+                </span>
+              </span>
+            </label>
 
             <div>
               <p className="mb-2 text-xs font-semibold text-ink-2">Photos, videos & documents</p>
@@ -455,6 +517,9 @@ export function ReportIncidentPage() {
                 <ReviewRow label="Witnesses" value={draft.witnesses || 'None'} />
                 <ReviewRow label="Evidence" value={`${draft.attachments.length} file(s)`} />
                 <ReviewRow label="Weather" value={draft.weather || '—'} />
+                <ReviewRow label="Shift" value={draft.shift || '—'} />
+                <ReviewRow label="Emergency response" value={draft.emergencyResponseActivated ? 'Activated' : 'Not activated'} />
+                <ReviewRow label="Reported as" value={draft.anonymous ? 'Anonymous' : 'Named'} />
               </dl>
               <p className="border-t px-4 py-3 text-sm leading-relaxed text-ink-2">{draft.description}</p>
             </div>

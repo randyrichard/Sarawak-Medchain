@@ -230,6 +230,13 @@ export interface NewIncidentInput {
   location: string
   gps?: string
   weather?: string
+  /// Day / Night / Swing. A picked list, because the point of recording it is to count it.
+  shift?: string
+  emergencyResponseActivated?: boolean
+  /// Reported without attribution. The server still records who, and withholds it from
+  /// anyone below HSE manager.
+  anonymous?: boolean
+  departmentId?: string
   occurredAt: string
   reporter: string
   peopleInvolved: PersonInvolved[]
