@@ -6,7 +6,8 @@ import type { CapaFilters, CapaItem, CapaStats } from '@/api/capa'
 import type { ActionPriority } from '@/api/incidents'
 import { useOrg } from '@/features/org/OrgContext'
 import { useActor, usePeople } from '@/features/incidents/lib'
-import { Badge, Button, Card, PageHeader, Skeleton, Tabs, type TabItem } from '@/components/ui'
+import { Alert, Badge, Button, Card, PageHeader, Skeleton, Tabs, type TabItem } from '@/components/ui'
+import { ApiError } from '@/api/types'
 import { cn } from '@/lib/cn'
 import { isManager } from './lib'
 import { KanbanBoard } from './components/KanbanBoard'
@@ -73,24 +74,58 @@ export function ActionsPage() {
   const onChanged = useCallback(
     (updated: CapaItem) => {
       setItems((cur) => cur?.map((i) => (i.id === updated.id ? updated : i)) ?? null)
+      // The deep-linked row is not in `items`, so it needs updating on its own or the
+      // drawer keeps rendering the state from before the mutation.
+      setDeepLinked((cur) => (cur && cur.id === updated.id ? updated : cur))
       if (company) api.capaStats(company.id, actor).then(setStats)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [company, actor.name],
   )
 
-  // deep link from other modules (e.g. inspection defects): /actions?open=<id>
+  /*
+   * Deep link from another module: /actions?open=<id>
+   *
+   * The named action is very often not in `items` - the list is filtered by bucket, owner,
+   * priority, site and search, and a link arriving from a notification knows nothing about
+   * any of that. Waiting for it to appear in the list meant the drawer silently never
+   * opened and the operator was left staring at an unfiltered board wondering what the
+   * link was for. So the id is taken immediately and, if the list does not hold it, the
+   * one row is fetched by id.
+   */
+  const [deepLinked, setDeepLinked] = useState<CapaItem | null>(null)
+  const [deepLinkError, setDeepLinkError] = useState<string | null>(null)
+
   useEffect(() => {
     const openParam = params.get('open')
-    if (openParam && items) {
-      setOpenId(openParam)
-      params.delete('open')
-      setParams(params, { replace: true })
-    }
+    if (!openParam) return
+    setOpenId(openParam)
+    params.delete('open')
+    setParams(params, { replace: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items])
+  }, [])
 
-  const openItem = useMemo(() => items?.find((i) => i.id === openId) ?? null, [items, openId])
+  useEffect(() => {
+    if (!openId) { setDeepLinked(null); setDeepLinkError(null); return }
+    if (items?.some((i) => i.id === openId)) { setDeepLinked(null); return }
+    let cancelled = false
+    api.getCapa(openId)
+      .then((row) => { if (!cancelled) setDeepLinked(row) })
+      .catch((e) => {
+        // A stale or forbidden link is said out loud rather than opening nothing. The
+        // server decides which it is; this only reports it.
+        if (!cancelled) {
+          setDeepLinked(null)
+          setDeepLinkError(e instanceof ApiError ? e.message : 'That action could not be opened.')
+        }
+      })
+    return () => { cancelled = true }
+  }, [openId, items])
+
+  const openItem = useMemo(
+    () => items?.find((i) => i.id === openId) ?? deepLinked ?? null,
+    [items, openId, deepLinked],
+  )
   const readOnlyRole = role === 'ceo'
 
   const viewTabs: TabItem<View>[] = [
@@ -109,6 +144,13 @@ export function ActionsPage() {
 
   return (
     <>
+      {/* A stale or forbidden deep link says so rather than opening nothing. */}
+      {deepLinkError && (
+        <Alert tone="critical" className="mb-3" onDismiss={() => setDeepLinkError(null)}>
+          {deepLinkError}
+        </Alert>
+      )}
+
       <PageHeader
         title="Corrective Actions"
         subtitle={`Nothing falls through the cracks — ${scopeNote.toLowerCase()}`}

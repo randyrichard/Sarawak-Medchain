@@ -72,6 +72,7 @@ interface ServerAction {
   dueDate: string
   priority: IncidentAction['priority']
   status: string
+  evidenceRequired: boolean
   evidenceNote: string | null
   completedAt: string | null
   verifiedBy: string | null
@@ -104,7 +105,13 @@ function toAction(a: ServerAction): IncidentAction {
     dueDate: a.dueDate.slice(0, 10),
     priority: a.priority,
     status: ACTION_STATUS[a.status] ?? 'Open',
-    evidenceRequired: true,
+    /*
+     * From the row, not hardcoded. This was pinned to `true`, so every action claimed to
+     * demand evidence and the label read "(required)" on all of them - which is the same
+     * as saying it on none, because nobody believes a warning that never varies. The
+     * server column is what the completion guard actually enforces.
+     */
+    evidenceRequired: a.evidenceRequired ?? false,
     evidenceNote: a.evidenceNote ?? undefined,
     verifiedBy: a.verifiedBy ?? undefined,
     verifiedAt: a.verifiedAt ?? undefined,
