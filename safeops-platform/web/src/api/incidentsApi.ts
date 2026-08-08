@@ -48,6 +48,8 @@ interface ServerIncident {
   closeNote: string | null
   occurredAt: string
   reportedAt: string
+  updatedAt?: string
+  anonymous?: boolean
   closedAt: string | null
   version: number
   rcaCauses: RcaCause[] | null
@@ -161,6 +163,8 @@ export function toIncident(s: ServerIncident): Incident {
     closeNote: s.closeNote ?? undefined,
     occurredAt: s.occurredAt,
     reportedAt: s.reportedAt,
+    updatedAt: s.updatedAt,
+    anonymous: s.anonymous,
     closedAt: s.closedAt ?? undefined,
     version: s.version,
     rca: s.rcaCauses
@@ -259,6 +263,11 @@ export const incidentsApi = {
   async list(companyId: string, filters: {
     page?: number; pageSize?: number; q?: string; type?: string
     severity?: string; stage?: string; status?: string; siteId?: string | null
+    department?: string; investigator?: string; from?: string; to?: string
+    shift?: string; sort?: string
+    /** Tri-state: undefined means either. Sent as a string because it is a query param. */
+    anonymous?: 'true' | 'false'
+    emergencyResponse?: 'true' | 'false'
   } = {}): Promise<IncidentPageResult> {
     const data = await request<Page<ServerIncident>>(
       `/incidents?${qs({ companyId, ...filters, siteId: filters.siteId ?? undefined })}`,

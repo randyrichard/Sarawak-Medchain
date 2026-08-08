@@ -16,6 +16,7 @@ const DashboardPage = lazy(() => import('@/features/dashboard/DashboardPage').th
 const IncidentsListPage = lazy(() => import('@/features/incidents/IncidentsListPage').then((m) => ({ default: m.IncidentsListPage })))
 const ReportNearMissPage = lazy(() => import('@/features/incidents/ReportNearMissPage').then((m) => ({ default: m.ReportNearMissPage })))
 const ReportIncidentPage = lazy(() => import('@/features/incidents/ReportIncidentPage').then((m) => ({ default: m.ReportIncidentPage })))
+const IncidentBoardPage = lazy(() => import('@/features/incidents/IncidentBoardPage').then((m) => ({ default: m.IncidentBoardPage })))
 const IncidentDetailPage = lazy(() => import('@/features/incidents/IncidentDetailPage').then((m) => ({ default: m.IncidentDetailPage })))
 const ActionsPage = lazy(() => import('@/features/actions/ActionsPage').then((m) => ({ default: m.ActionsPage })))
 const AssetsPage = lazy(() => import('@/features/assets/AssetsPage').then((m) => ({ default: m.AssetsPage })))
@@ -68,6 +69,15 @@ export default function App() {
                   element={
                     <RequireCapability capability="reports:submit">
                       <ReportNearMissPage />
+                    </RequireCapability>
+                  }
+                />
+                {/* Before /incidents/:id, or the board would be looked up as an incident. */}
+                <Route
+                  path="/incidents/board"
+                  element={
+                    <RequireCapability capability="dashboard:view">
+                      <IncidentBoardPage />
                     </RequireCapability>
                   }
                 />

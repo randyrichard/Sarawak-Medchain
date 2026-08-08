@@ -189,7 +189,11 @@ export interface Incident {
 
   occurredAt: string
   reportedAt: string
+  /** Last change of any kind. What the "recently updated" ordering sorts on. */
+  updatedAt?: string
   reporter: string
+  /** Reported without attribution; the server withholds the reporter below HSE manager. */
+  anonymous?: boolean
   peopleInvolved: PersonInvolved[]
   witnesses: string[]
   immediateActions: string

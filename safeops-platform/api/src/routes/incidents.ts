@@ -6,6 +6,7 @@ import {
 } from '../lib/incidentService.js'
 import { requireAuth } from '../middleware/requireAuth.js'
 import { INCIDENT_SEVERITIES, INCIDENT_TYPES } from '../lib/incidentCatalog.js'
+import { SORT_KEYS } from '../lib/incidentService.js'
 
 /** One list, used to build the report form and to validate what comes back from it. */
 const TYPE_VALUES = z.enum(
@@ -38,6 +39,20 @@ const listQuery = z.object({
   severity: z.string().optional(),
   stage: z.string().optional(),
   status: z.enum(INCIDENT_STATUS_FILTERS).optional(),
+  department: z.string().max(160).optional(),
+  investigator: z.string().max(200).optional(),
+  from: z.string().max(40).optional(),
+  to: z.string().max(40).optional(),
+  // Tri-state on the wire: absent means "either", which is not the same as false.
+  anonymous: z.enum(['true', 'false']).optional(),
+  emergencyResponse: z.enum(['true', 'false']).optional(),
+  shift: z.string().max(60).optional(),
+  /*
+   * Validated against the service's allow-list rather than passed through. A sort field
+   * taken straight off the query string and handed to orderBy is a way to probe columns
+   * the caller was never meant to reach.
+   */
+  sort: z.enum(SORT_KEYS).optional(),
   siteId: z.string().optional(),
 })
 
@@ -47,7 +62,14 @@ incidentsRouter.get('/', async (req, res, next) => {
     if (!parsed.success) {
       return res.status(400).json({ error: 'validation', message: 'Invalid query parameters.' })
     }
-    res.json(await svc.list(callerOf(req), parsed.data))
+    // The two tri-state flags arrive as strings; absent stays undefined, which the
+    // service reads as "either" rather than false.
+    const { anonymous, emergencyResponse, ...rest } = parsed.data
+    res.json(await svc.list(callerOf(req), {
+      ...rest,
+      ...(anonymous === undefined ? {} : { anonymous: anonymous === 'true' }),
+      ...(emergencyResponse === undefined ? {} : { emergencyResponse: emergencyResponse === 'true' }),
+    }))
   } catch (e) {
     next(e)
   }

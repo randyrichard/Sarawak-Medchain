@@ -27,6 +27,7 @@ const NAV: NavItem[] = [
   // forgetting (customer research P1) — it has to be one tap from anywhere.
   { to: '/near-miss', label: 'Report Near Miss', icon: ShieldAlert, capability: 'reports:submit' },
   { to: '/incidents', label: 'Incidents', icon: ClipboardList, capability: 'incidents:manage' },
+  { to: '/incidents/board', label: 'Incident board', icon: LayoutDashboard, capability: 'dashboard:view' },
   { to: '/actions', label: 'Actions', icon: ListChecks, capability: 'dashboard:view' },
   { to: '/assets', label: 'Assets', icon: Boxes, capability: 'dashboard:view' },
   { to: '/permits', label: 'Permits', icon: HardHat, capability: 'dashboard:view' },

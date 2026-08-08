@@ -368,6 +368,14 @@ model Incident {
   rcaFishbone      Json?
 
   /// Set during assessment; drives the high-risk flag on Mission Control.
+  /// Seriousness as an orderable number, maintained on write.
+  ///
+  /// Postgres sorts an enum by declaration order, and severity values have been appended
+  /// over time - so `ORDER BY severity DESC` put a near miss above a legacy Critical and
+  /// buried the serious incidents. A rank column is the only way to sort by meaning in the
+  /// database, which is where sorting has to happen for pagination to be correct.
+  severityRank Int @default(0)
+
   riskRating        String?
   potentialSeverity IncidentSeverity?
   highRisk          Boolean           @default(false)
@@ -406,6 +414,8 @@ model Incident {
   @@unique([companyId, number])
   @@index([companyId, stage])
   @@index([companyId, siteId])
+  @@index([companyId, severityRank])
+  @@index([companyId, occurredAt])
   @@index([companyId, type])
   @@index([reportedAt])
 }

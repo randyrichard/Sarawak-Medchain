@@ -22,6 +22,23 @@ export class IncidentError extends Error {
   }
 }
 
+/**
+ * An inclusive date range over a timestamp column.
+ *
+ * `to` is pushed to the end of that day. A range of 1st-1st that matched nothing because
+ * the incident happened at 09:14 and the filter asked for exactly midnight is the kind of
+ * thing that makes people stop trusting the filters.
+ */
+function dateRange(from?: string, to?: string): Prisma.DateTimeFilter | undefined {
+  const gte = from ? new Date(from) : undefined
+  const lte = to ? new Date(to) : undefined
+  if (gte && Number.isNaN(gte.getTime())) return undefined
+  if (lte && Number.isNaN(lte.getTime())) return undefined
+  if (lte) lte.setUTCHours(23, 59, 59, 999)
+  if (!gte && !lte) return undefined
+  return { ...(gte ? { gte } : {}), ...(lte ? { lte } : {}) }
+}
+
 export interface ListParams {
   companyId: string
   page: number
@@ -32,6 +49,46 @@ export interface ListParams {
   stage?: string
   status?: IncidentStatusFilter
   siteId?: string
+  department?: string
+  investigator?: string
+  /** Inclusive, on the date the incident happened - not the date it was typed in. */
+  from?: string
+  to?: string
+  anonymous?: boolean
+  emergencyResponse?: boolean
+  shift?: string
+  sort?: SortKey
+}
+
+/**
+ * What the register may be ordered by.
+ *
+ * An allow-list, not a field name off the query string: passing a caller-supplied column
+ * into orderBy is how a sort parameter becomes a way to probe columns it was never meant
+ * to reach. Every entry names real columns and ends in a unique tiebreak, because a sort
+ * without one makes pagination non-deterministic - the same row can appear on two pages
+ * while another appears on none.
+ */
+export const SORT_KEYS = [
+  'priority', 'newest', 'oldest', 'severity', 'updated', 'site', 'type', 'status',
+] as const
+export type SortKey = (typeof SORT_KEYS)[number]
+
+const SORT_ORDER: Record<SortKey, Prisma.IncidentOrderByWithRelationInput[]> = {
+  /*
+   * The default, and the reason it is not simply "newest": an HSE manager opening the
+   * board needs the serious open incidents at the top, not whatever was typed in last.
+   * Severity first, then the oldest of those - a serious incident sitting untouched for
+   * three weeks is more urgent than one reported this morning.
+   */
+  priority: [{ severityRank: 'desc' }, { occurredAt: 'asc' }, { id: 'desc' }],
+  newest: [{ occurredAt: 'desc' }, { id: 'desc' }],
+  oldest: [{ occurredAt: 'asc' }, { id: 'asc' }],
+  severity: [{ severityRank: 'desc' }, { occurredAt: 'desc' }, { id: 'desc' }],
+  updated: [{ updatedAt: 'desc' }, { id: 'desc' }],
+  site: [{ siteId: 'asc' }, { occurredAt: 'desc' }, { id: 'desc' }],
+  type: [{ type: 'asc' }, { occurredAt: 'desc' }, { id: 'desc' }],
+  status: [{ stage: 'asc' }, { severityRank: 'desc' }, { id: 'desc' }],
 }
 
 /**
@@ -148,6 +205,29 @@ export class IncidentService {
       ...(p.type ? { type: p.type as never } : {}),
       ...(p.severity ? { severity: p.severity as never } : {}),
       ...(p.stage ? { stage: p.stage as never } : {}),
+      ...(p.department ? { department: { equals: p.department, mode: 'insensitive' } } : {}),
+      ...(p.shift ? { shift: { equals: p.shift, mode: 'insensitive' } } : {}),
+      ...(p.anonymous === undefined ? {} : { anonymous: p.anonymous }),
+      ...(p.emergencyResponse === undefined
+        ? {}
+        : { emergencyResponseActivated: p.emergencyResponse }),
+      /*
+       * The investigator filter matches either field. An incident can carry a triage
+       * investigator and a separate lead once the investigation proper starts, and
+       * somebody filtering by their own name means "mine" - not "mine, but only if I was
+       * assigned in the right one of two columns".
+       */
+      ...(p.investigator
+        ? {
+            OR: [
+              { investigator: { contains: p.investigator, mode: 'insensitive' } },
+              { leadInvestigator: { contains: p.investigator, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+      // Filtered on when it happened, not when it was reported: a late report of a
+      // Tuesday incident belongs to Tuesday.
+      ...(dateRange(p.from, p.to) ? { occurredAt: dateRange(p.from, p.to) } : {}),
       ...statusWhere(p.status),
       ...(p.q
         ? {
@@ -166,7 +246,7 @@ export class IncidentService {
       this.db.incident.count({ where }),
       this.db.incident.findMany({
         where,
-        orderBy: [{ severity: 'desc' }, { reportedAt: 'desc' }],
+        orderBy: SORT_ORDER[p.sort ?? 'priority'],
         skip: (p.page - 1) * p.pageSize,
         take: p.pageSize,
       }),
@@ -300,6 +380,8 @@ export class IncidentService {
           description: input.description?.trim() ?? '',
           type: input.type as never,
           severity: input.severity as never,
+          // Maintained here so the column can never disagree with the severity beside it.
+          severityRank: SEVERITY_RANK[input.severity as never] ?? 0,
           department: departmentName,
           departmentId: input.departmentId ?? null,
           location: input.location.trim(),
