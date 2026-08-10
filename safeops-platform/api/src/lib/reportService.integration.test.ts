@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest'
 import { PrismaClient } from '@prisma/client'
 import { ReportService } from './reportService.js'
 import { Scheduler } from './scheduler.js'
 import { IncidentService, type Caller } from './incidentService.js'
 import { dueSlotKey } from './reportSchedule.js'
+import { EmailProviderError, setEmailProviderForTests, type EmailMessage, type EmailProvider } from './email/index.js'
 
 /**
  * Integration tests against a REAL PostgreSQL database.
@@ -99,6 +100,36 @@ async function purge() {
   await db.user.deleteMany({ where: { email: { startsWith: 'rpt-' } } })
 }
 
+/**
+ * A provider that records what it was asked to send, and never sends anything.
+ *
+ * Automated tests must not put mail in a real inbox, so every delivery path below runs
+ * through this. What it captures is exactly what the report system promised the provider:
+ * the recipients, the subject and the attached PDF bytes.
+ */
+class FakeProvider implements EmailProvider {
+  readonly name = 'fake'
+  sent: EmailMessage[] = []
+  constructor(private behaviour: 'ok' | 'throw' | 'reject-all' = 'ok') {}
+
+  async send(message: EmailMessage) {
+    this.sent.push(message)
+    if (this.behaviour === 'throw') {
+      throw new EmailProviderError('API key is invalid', 'auth_failed', 401)
+    }
+    if (this.behaviour === 'reject-all') {
+      return { messageId: 'msg_none', accepted: [], rejected: message.to.map((t) => t.email) }
+    }
+    return {
+      messageId: 'msg_fake_123',
+      accepted: message.to.map((t) => t.email),
+      rejected: [],
+    }
+  }
+
+  async verify() { return { ok: true } }
+}
+
 d('Scheduled reports — integration (real Postgres)', () => {
   beforeAll(async () => {
     for (const [id, name] of [[COMPANY, 'Report ITest Co'], [OTHER, 'Report ITest Other']]) {
@@ -123,7 +154,13 @@ d('Scheduled reports — integration (real Postgres)', () => {
     await db.$disconnect()
   })
 
-  beforeEach(purge)
+  beforeEach(async () => {
+    await purge()
+    // Unconfigured by default, which is the state a fresh deployment is in.
+    setEmailProviderForTests(null)
+  })
+
+  afterEach(() => setEmailProviderForTests(undefined))
 
   // ── Overdue actions ──────────────────────────────────────────────────────
 
@@ -396,7 +433,7 @@ d('Scheduled reports — integration (real Postgres)', () => {
     // A run that claims "delivered" with no mail server is worse than a visible failure:
     // the manager stops checking the app because they think the email is coming.
     expect(run.delivered).toBe(false)
-    expect(run.deliveryNote).toMatch(/no mail provider is configured/i)
+    expect(run.deliveryNote).toMatch(/no email provider is configured/i)
   })
 
   it('does not touch the schedule timing on a manual run', async () => {
@@ -623,5 +660,238 @@ d('Scheduled reports — integration (real Postgres)', () => {
     const { data, pdf } = await reports.renderPdf(admin, COMPANY, 'overdue_actions')
     expect(data.rows).toHaveLength(0)
     expect(pdf.bytes.subarray(0, 5).toString()).toBe('%PDF-')
+  })
+  // -- Email delivery ------------------------------------------------------
+
+  const scheduleWith = async (tag: string, recipients?: string[]) => {
+    const u = recipients ? null : await member(COMPANY, tag)
+    return reports.createSchedule(admin, COMPANY, {
+      name: `Delivery ${tag}`, reportType: 'overdue_actions' as const,
+      frequency: 'weekly' as const, dayOfWeek: 1, timeOfDay: '08:00',
+      timezone: 'Asia/Kuching', recipientUserIds: recipients ?? [u!.id],
+    })
+  }
+
+  it('marks a run sent only after the provider accepts it, and records the message id', async () => {
+    const i = await incident()
+    await action(i.id)
+    const fake = new FakeProvider('ok')
+    setEmailProviderForTests(fake)
+
+    const s = await scheduleWith('sent')
+    await reports.runNow(admin, s.id)
+
+    const [run] = await reports.history(admin, COMPANY)
+    expect(run.deliveryStatus).toBe('sent')
+    expect(run.delivered).toBe(true)
+    // The only thing that later answers "did it actually go?" against the provider.
+    expect(run.messageId).toBe('msg_fake_123')
+    expect(run.sentAt).not.toBeNull()
+    expect(run.provider).toBe('fake')
+    expect(run.failureReason).toBeNull()
+  })
+
+  it('attaches the exact PDF this run generated, with the right name and type', async () => {
+    const i = await incident()
+    await action(i.id)
+    const fake = new FakeProvider('ok')
+    setEmailProviderForTests(fake)
+
+    const s = await scheduleWith('attach')
+    await reports.runNow(admin, s.id)
+
+    expect(fake.sent).toHaveLength(1)
+    const [att] = fake.sent[0].attachments
+    expect(att.contentType).toBe('application/pdf')
+    expect(att.filename).toMatch(/overdue-corrective-actions-\d{4}-\d{2}-\d{2}\.pdf/)
+    expect(att.content.subarray(0, 5).toString()).toBe('%PDF-')
+
+    // The same file the run points at, not a second render with different contents.
+    const [run] = await reports.history(admin, COMPANY)
+    expect(run.originalName).toBe(att.filename)
+    expect(run.sizeBytes).toBe(att.content.length)
+  })
+
+  it('puts the company and the real summary in the subject and body', async () => {
+    const i = await incident()
+    await action(i.id)
+    const fake = new FakeProvider('ok')
+    setEmailProviderForTests(fake)
+
+    await reports.runNow(admin, (await scheduleWith('subject')).id)
+
+    const msg = fake.sent[0]
+    expect(msg.subject).toContain('Report ITest Co')
+    expect(msg.subject).toContain('Overdue corrective actions')
+    // The headline number, so the inbox list alone tells somebody whether to open it.
+    expect(msg.subject).toMatch(/1 overdue actions/)
+    expect(msg.text).toContain('Overdue actions: 1')
+    expect(msg.html).toContain('Report ITest Co')
+  })
+
+  it('marks a run failed when the provider refuses, and keeps the PDF', async () => {
+    const i = await incident()
+    await action(i.id)
+    setEmailProviderForTests(new FakeProvider('throw'))
+
+    await reports.runNow(admin, (await scheduleWith('failed')).id)
+
+    const [run] = await reports.history(admin, COMPANY)
+    // Generating succeeded; only delivery failed. Losing the run would lose the PDF with it.
+    expect(run.status).toBe('success')
+    expect(run.deliveryStatus).toBe('failed')
+    expect(run.delivered).toBe(false)
+    expect(run.storedName).toMatch(/\.pdf$/)
+    expect(run.failureReason).toMatch(/auth_failed/)
+    expect(run.deliveryNote).toMatch(/was not marked as sent/i)
+  })
+
+  it('does not hide the provider reason from the operator', async () => {
+    setEmailProviderForTests(new FakeProvider('throw'))
+    await reports.runNow(admin, (await scheduleWith('reason')).id)
+
+    const [run] = await reports.history(admin, COMPANY)
+    expect(run.deliveryNote).toContain('API key is invalid')
+  })
+
+  it('never records a credential in the run history', async () => {
+    setEmailProviderForTests(new FakeProvider('throw'))
+    await reports.runNow(admin, (await scheduleWith('secrets')).id)
+
+    const [run] = await reports.history(admin, COMPANY)
+    const stored = JSON.stringify(run)
+    // The history is read by operators and exported.
+    for (const secret of ['re_', 'Bearer', 'Authorization', 'password', 'apiKey']) {
+      expect(stored, secret).not.toContain(secret)
+    }
+  })
+
+  it('fails the run when the provider accepts nobody', async () => {
+    setEmailProviderForTests(new FakeProvider('reject-all'))
+    await reports.runNow(admin, (await scheduleWith('nobody')).id)
+
+    const [run] = await reports.history(admin, COMPANY)
+    expect(run.deliveryStatus).toBe('failed')
+    expect(run.delivered).toBe(false)
+  })
+
+  it('stays "generated" with no provider configured, rather than claiming sent', async () => {
+    setEmailProviderForTests(null)
+    await reports.runNow(admin, (await scheduleWith('unconfigured')).id)
+
+    const [run] = await reports.history(admin, COMPANY)
+    expect(run.deliveryStatus).toBe('generated')
+    expect(run.delivered).toBe(false)
+    expect(run.messageId).toBeNull()
+    expect(run.deliveryNote).toMatch(/RESEND_API_KEY/)
+  })
+
+  it('emails every valid recipient and drops only the malformed ones', async () => {
+    const good1 = await member(COMPANY, 'multi1')
+    const good2 = await member(COMPANY, 'multi2')
+    const broken = await member(COMPANY, 'multi3')
+    await db.user.update({ where: { id: broken.id }, data: { email: 'rpt-malformed-no-at-sign' } })
+
+    const fake = new FakeProvider('ok')
+    setEmailProviderForTests(fake)
+    const s = await scheduleWith('multi', [good1.id, good2.id, broken.id])
+    await reports.runNow(admin, s.id)
+
+    // One bad entry in a distribution list must not fail delivery for everyone else.
+    expect(fake.sent[0].to).toHaveLength(2)
+    const [run] = await reports.history(admin, COMPANY)
+    expect(run.deliveryStatus).toBe('sent')
+    expect(run.deliveryNote).toMatch(/1 address\(es\) were rejected/)
+  })
+
+  it('fails rather than sends when every address is malformed', async () => {
+    const bad = await member(COMPANY, 'allbad')
+    await db.user.update({ where: { id: bad.id }, data: { email: 'rpt-also-malformed' } })
+
+    const fake = new FakeProvider('ok')
+    setEmailProviderForTests(fake)
+    await reports.runNow(admin, (await scheduleWith('allbad2', [bad.id])).id)
+
+    expect(fake.sent).toHaveLength(0)
+    const [run] = await reports.history(admin, COMPANY)
+    expect(run.deliveryStatus).toBe('failed')
+  })
+
+  it('sends on a scheduled sweep, through the same delivery service', async () => {
+    const i = await incident()
+    await action(i.id)
+    const fake = new FakeProvider('ok')
+    setEmailProviderForTests(fake)
+
+    const s = await scheduleWith('sweep')
+    await db.reportSchedule.update({
+      where: { id: s.id }, data: { nextRunAt: new Date(Date.now() - 60_000) },
+    })
+    expect(await scheduler.sweepScheduledReports()).toBe(1)
+
+    expect(fake.sent).toHaveLength(1)
+    const [run] = await reports.history(admin, COMPANY)
+    expect(run.trigger).toBe('scheduled')
+    expect(run.deliveryStatus).toBe('sent')
+    expect(run.messageId).toBe('msg_fake_123')
+  })
+
+  it('does not send the same slot twice however often the sweep runs', async () => {
+    const fake = new FakeProvider('ok')
+    setEmailProviderForTests(fake)
+
+    const s = await scheduleWith('dupe')
+    const due = new Date(Date.now() - 60_000)
+    await db.reportSchedule.update({ where: { id: s.id }, data: { nextRunAt: due } })
+    await scheduler.sweepScheduledReports()
+
+    // Same slot, sweep runs again - the unique (scheduleId, dueSlot) index is what stops
+    // the Monday report going out four times before nine o'clock.
+    await db.reportSchedule.update({ where: { id: s.id }, data: { nextRunAt: due } })
+    await scheduler.sweepScheduledReports()
+
+    expect(fake.sent).toHaveLength(1)
+  })
+
+  it('does not email another company recipients', async () => {
+    const ours = await member(COMPANY, 'ours')
+    const theirs = await member(OTHER, 'theirs')
+
+    const fake = new FakeProvider('ok')
+    setEmailProviderForTests(fake)
+
+    // Refused at creation: the schedule can never hold a foreign recipient to begin with.
+    await expect(scheduleWith('cross', [ours.id, theirs.id]))
+      .rejects.toThrow(/not active members of this workspace/i)
+
+    const s = await scheduleWith('cross2', [ours.id])
+    await reports.runNow(admin, s.id)
+    expect(fake.sent[0].to.map((t) => t.email)).toEqual([
+      (await db.user.findUniqueOrThrow({ where: { id: ours.id } })).email,
+    ])
+  })
+
+  it('drops a recipient who left the workspace before the email goes out', async () => {
+    const leaver = await member(COMPANY, 'gone')
+    const staying = await member(COMPANY, 'staying')
+    const fake = new FakeProvider('ok')
+    setEmailProviderForTests(fake)
+
+    const s = await scheduleWith('leaver', [leaver.id, staying.id])
+    await db.membership.deleteMany({ where: { userId: leaver.id, companyId: COMPANY } })
+    await reports.runNow(admin, s.id)
+
+    // Resolved again at send time, not trusted from when the schedule was written.
+    expect(fake.sent[0].to).toHaveLength(1)
+  })
+
+  it('refuses Run now to a role that may not, before anything is sent', async () => {
+    const fake = new FakeProvider('ok')
+    setEmailProviderForTests(fake)
+    const s = await scheduleWith('authz')
+
+    await expect(reports.runNow(employee, s.id)).rejects.toMatchObject({ status: 403 })
+    await expect(reports.runNow(outsider, s.id)).rejects.toMatchObject({ status: 403 })
+    expect(fake.sent).toHaveLength(0)
   })
 })

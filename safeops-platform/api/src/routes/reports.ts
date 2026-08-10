@@ -7,6 +7,7 @@ import { ReportError, ReportService, REPORT_TYPE_LABEL } from '../lib/reportServ
 import { renderReportPdf } from '../lib/reportPdf.js'
 import type { Caller } from '../lib/incidentService.js'
 import { requireAuth } from '../middleware/requireAuth.js'
+import { emailConfiguration } from '../lib/email/index.js'
 
 /**
  * Scheduled reports.
@@ -39,7 +40,9 @@ reportsRouter.get('/catalog', (_req, res) => {
     types: (Object.keys(REPORT_TYPE_LABEL) as (keyof typeof REPORT_TYPE_LABEL)[])
       .map((key) => ({ key, label: REPORT_TYPE_LABEL[key] })),
     // Stated plainly so the UI can tell the operator the report will be generated but not
-    // emailed, rather than implying an email is on its way.
+    // emailed, rather than implying an email is on its way. The provider name is safe to
+    // show; nothing about its credentials ever leaves the server.
+    ...emailConfiguration(),
     mailConfigured: svc.mailConfigured,
   })
 })

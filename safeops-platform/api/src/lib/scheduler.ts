@@ -783,16 +783,9 @@ export class Scheduler {
       const slot = dueSlotKey(shape, s.nextRunAt ?? now)
 
       try {
-        const result = await this.reports.execute({
-          companyId: s.companyId,
-          reportType: s.reportType,
-          siteId: s.siteId,
-          scheduleId: s.id,
-          dueSlot: slot,
-          trigger: 'scheduled',
-          triggeredBy: 'system',
-          recipientUserIds: s.recipientUserIds,
-        })
+        // One call. Generation, PDF, email and the run record all live in the delivery
+        // service; this sweep decides only what is due.
+        const result = await this.reports.runScheduledReport(s, slot)
         if (!result.skipped) ran++
       } catch {
         // execute() has already written the failure to the run and the schedule. Swallowed

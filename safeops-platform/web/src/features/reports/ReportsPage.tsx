@@ -426,15 +426,30 @@ export function ReportsPage() {
                           <Badge tone={r.trigger === 'manual' ? 'accent' : 'neutral'}>
                             {r.trigger === 'manual' ? 'Run now' : 'Scheduled'}
                           </Badge>
-                          {r.delivered
-                            ? <Badge tone="good"><Mail size={9} className="mr-0.5 inline" />Emailed</Badge>
-                            : <Badge tone="warning">Not emailed</Badge>}
+                          {/*
+                            The delivery outcome, distinct from whether the report built.
+                            "Generated" is not a failure - it means nobody has configured a
+                            provider yet - and saying so keeps the two apart.
+                          */}
+                          {r.deliveryStatus === 'sent'
+                            ? <Badge tone="good"><Mail size={9} className="mr-0.5 inline" />Sent</Badge>
+                            : r.deliveryStatus === 'failed'
+                              ? <Badge tone="critical">Delivery failed</Badge>
+                              : r.deliveryStatus === 'email_pending'
+                                ? <Badge tone="warning">Sending…</Badge>
+                                : <Badge tone="neutral">Generated</Badge>}
                         </p>
                         <p className="text-2xs text-muted">
                           {fmtDateTime(r.startedAt)} · by {r.triggeredBy}
                           {' · '}{r.rowCount} row(s)
                           {r.recipientCount > 0 && <> · {r.recipientCount} recipient(s)</>}
+                          {r.sentAt && <> · sent {fmtDateTime(r.sentAt)}</>}
+                          {r.provider && <> · via {r.provider}</>}
                         </p>
+                        {/* Why it failed, in the provider's own words. Never hidden. */}
+                        {r.failureReason && (
+                          <p className="mt-0.5 text-2xs text-critical">{r.failureReason}</p>
+                        )}
                         {/* The server's sentence, verbatim. */}
                         {r.deliveryNote && (
                           <p className="mt-0.5 text-2xs text-muted">{r.deliveryNote}</p>

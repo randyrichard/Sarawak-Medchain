@@ -2624,6 +2624,18 @@ enum ReportFrequency {
   monthly
 }
 
+/// How far a run got with delivery.
+enum ReportDeliveryStatus {
+  /// The PDF exists. No provider is configured, so nothing was attempted.
+  generated
+  /// Being sent, or interrupted mid-send. A run left here after a crash is visible.
+  email_pending
+  /// A provider accepted it for at least one recipient.
+  sent
+  /// A provider was asked and refused.
+  failed
+}
+
 /// One execution. Written before the work starts, so a crash mid-run leaves evidence.
 model ReportRun {
   id         String          @id @default(cuid())
@@ -2651,6 +2663,22 @@ model ReportRun {
   /// which is recorded honestly rather than reported as sent.
   delivered      Boolean @default(false)
   deliveryNote   String?
+
+  /// How far delivery got, separate from `status`, which is about generating the report.
+  ///
+  /// A report can generate perfectly and still fail to send, and the two outcomes need
+  /// different responses: one is a bug, the other is a relay problem. Collapsing them into
+  /// one column loses the PDF when only the email failed.
+  deliveryStatus ReportDeliveryStatus @default(generated)
+  /// The provider's own id for the message. The only thing that lets a support question -
+  /// "did it actually go?" - be answered against the provider's dashboard.
+  messageId      String?
+  /// When the provider accepted it. Null until one does.
+  sentAt         DateTime?
+  /// Why it failed, in words. Never a credential, never a raw provider payload.
+  failureReason  String?
+  /// Which provider handled it: resend | smtp | none
+  provider       String?
 
   /// The stored PDF, same contract as every other file in the platform.
   storedName   String?

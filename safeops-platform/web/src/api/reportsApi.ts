@@ -73,6 +73,14 @@ export interface ReportRun {
   recipientCount: number
   delivered: boolean
   deliveryNote: string | null
+  /** generated | email_pending | sent | failed */
+  deliveryStatus: 'generated' | 'email_pending' | 'sent' | 'failed'
+  /** The provider's own id, for answering "did it go?" from their dashboard. */
+  messageId: string | null
+  sentAt: string | null
+  failureReason: string | null
+  /** resend | smtp. Never anything about its credentials. */
+  provider: string | null
   originalName: string | null
   sizeBytes: number | null
   error: string | null
@@ -82,8 +90,10 @@ export interface ReportRun {
 export const reportsApi = {
   catalog(): Promise<{
     types: { key: ReportType; label: string }[]
-    /** False when no mail provider is set up; the UI says so rather than implying delivery. */
+    /** False when no provider is set up; the UI says so rather than implying delivery. */
     mailConfigured: boolean
+    configured: boolean
+    provider: string | null
   }> {
     return request('/reports/catalog')
   },

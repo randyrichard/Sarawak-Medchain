@@ -535,6 +535,27 @@ export class ReportService {
       const data = await this.build(opts.companyId, opts.reportType, opts.siteId)
       const pdf = await renderReportPdf(data)
       const recipients = await this.resolveRecipients(opts.companyId, opts.recipientUserIds)
+
+      /*
+       * The PDF is recorded before delivery is attempted.
+       *
+       * If the process dies mid-send the run still points at a stored file the operator can
+       * download, and the status left behind is email_pending rather than a run that looks
+       * like it never happened.
+       */
+      await this.db.reportRun.update({
+        where: { id: runId },
+        data: {
+          rowCount: data.rows.length,
+          recipientCount: recipients.length,
+          storedName: pdf.storedName,
+          originalName: pdf.fileName,
+          sizeBytes: pdf.bytes.length,
+          periodEnd: data.periodEnd,
+          deliveryStatus: recipients.length > 0 ? 'email_pending' : 'generated',
+        },
+      })
+
       const delivery = await deliverReport({ data, pdf, recipients })
 
       await this.db.reportRun.update({
@@ -542,14 +563,14 @@ export class ReportService {
         data: {
           status: 'success',
           completedAt: new Date(),
-          rowCount: data.rows.length,
-          recipientCount: recipients.length,
+          // Only ever true because a provider gave us an id to prove it.
           delivered: delivery.delivered,
+          deliveryStatus: delivery.status,
           deliveryNote: delivery.note,
-          storedName: pdf.storedName,
-          originalName: pdf.fileName,
-          sizeBytes: pdf.bytes.length,
-          periodEnd: data.periodEnd,
+          messageId: delivery.messageId,
+          sentAt: delivery.sentAt,
+          failureReason: delivery.failureReason,
+          provider: delivery.provider,
         },
       })
 
@@ -581,6 +602,32 @@ export class ReportService {
       }
       throw e
     }
+  }
+
+  /**
+   * The scheduler's entry point.
+   *
+   * Everything a scheduled report involves - building it, rendering the PDF, sending the
+   * email, recording the outcome - happens behind this one call, so scheduler.ts decides
+   * only what is due and never learns how any of it works.
+   */
+  async runScheduledReport(schedule: {
+    id: string
+    companyId: string
+    reportType: ReportType
+    siteId: string | null
+    recipientUserIds: string[]
+  }, dueSlot: string) {
+    return this.execute({
+      companyId: schedule.companyId,
+      reportType: schedule.reportType,
+      siteId: schedule.siteId,
+      scheduleId: schedule.id,
+      dueSlot,
+      trigger: 'scheduled',
+      triggeredBy: 'system',
+      recipientUserIds: schedule.recipientUserIds,
+    })
   }
 
   /** Run now. Does not touch the schedule's timing. */

@@ -25,6 +25,26 @@ const schema = z.object({
   MAX_FAILED_LOGINS: z.coerce.number().int().positive().default(5),
   LOCKOUT_MINUTES: z.coerce.number().int().positive().default(15),
 
+  /*
+   * Email delivery for scheduled reports.
+   *
+   * All optional: with none of it set the platform runs exactly as before and reports are
+   * generated and stored but not sent. Setting SMTP_URL is what turns delivery on, so an
+   * environment can enable it without a code change or a different build.
+   *
+   * SMTP rather than one vendor's SDK because every provider speaks it - Resend, SES,
+   * Postmark, Mailgun and a customer's own Exchange server all work through the same
+   * configuration, which matters when selling to companies with their own mail policy.
+   */
+  /// Resend, the default provider. Its presence selects it.
+  RESEND_API_KEY: z.string().optional(),
+  /// SMTP, for customers who require mail to leave through their own relay.
+  SMTP_URL: z.string().optional(),
+  /// The envelope sender, e.g. "SafeOps <safeops@yourcompany.com>". Required whenever a
+  /// provider is configured; checked below.
+  REPORT_EMAIL_FROM: z.string().optional(),
+  MAIL_REPLY_TO: z.string().optional(),
+
   CORS_ORIGINS: z.string().default('http://localhost:5181'),
   COOKIE_DOMAIN: z.string().optional(),
 
@@ -62,6 +82,24 @@ if (!parsed.success) {
 
 const raw = parsed.data
 
+/*
+ * Half-configured mail is worse than none.
+ *
+ * With SMTP_URL set but no MAIL_FROM every send is rejected by the relay, and the run
+ * history fills with failures whose cause is a missing line in the environment. Refused at
+ * boot, in keeping with the rest of this file: a misconfigured deploy fails loudly rather
+ * than silently doing nothing useful every Monday.
+ */
+if ((raw.RESEND_API_KEY || raw.SMTP_URL) && !raw.REPORT_EMAIL_FROM) {
+  // eslint-disable-next-line no-console
+  console.error(
+    'REPORT_EMAIL_FROM is required when an email provider is configured '
+    + '(e.g. "SafeOps <safeops@yourcompany.com>"). Without it every send is rejected by the '
+    + 'provider and the run history fills with failures caused by a missing line in the environment.',
+  )
+  process.exit(1)
+}
+
 function decodeKey(b64: string, label: string): string {
   const pem = Buffer.from(b64, 'base64').toString('utf8')
   if (!pem.includes('-----BEGIN')) {
@@ -79,4 +117,6 @@ export const env = {
   jwtPrivateKey: decodeKey(raw.JWT_PRIVATE_KEY_B64, 'JWT_PRIVATE_KEY_B64'),
   jwtPublicKey: decodeKey(raw.JWT_PUBLIC_KEY_B64, 'JWT_PUBLIC_KEY_B64'),
   corsOrigins: raw.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean),
+  /** One place that decides whether reports can actually be emailed. */
+  mailConfigured: Boolean((raw.RESEND_API_KEY || raw.SMTP_URL) && raw.REPORT_EMAIL_FROM),
 }
