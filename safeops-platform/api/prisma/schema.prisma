@@ -190,6 +190,8 @@ model Company {
   createdAt   DateTime   @default(now())
   visitors          Visitor[]
   visitorBlacklist  VisitorBlacklist[]
+  reportSchedules ReportSchedule[]
+  reportRuns      ReportRun[]
 }
 
 model Site {
@@ -2556,4 +2558,117 @@ enum IncidentLinkKind {
   contractor_worker
   visitor
   asset
+}
+
+// ─── Scheduled reports ───────────────────────────────────────────────────────
+
+/// A standing instruction to produce a report and send it to people.
+///
+/// The point of the module: an HSE manager should learn on Monday morning what is overdue
+/// without logging in. Everything here is per tenant, and the recipients are user ids
+/// checked against that tenant's memberships every time the schedule is written and again
+/// when it runs - a stale recipient who has left the company must not keep receiving the
+/// whole safety picture.
+model ReportSchedule {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  name       String
+  reportType ReportType
+
+  enabled Boolean @default(true)
+
+  frequency ReportFrequency @default(weekly)
+  /// 1 = Monday, 7 = Sunday (ISO). Only meaningful for the weekly frequency.
+  dayOfWeek Int             @default(1)
+  /// Local wall-clock time in `timezone`, as HH:mm. Stored as text because it is a time of
+  /// day in somebody's week, not an instant.
+  timeOfDay String          @default("08:00")
+  /// IANA zone, stored explicitly. A server in UTC and a site in Kuching disagree by eight
+  /// hours about when Monday morning is, and guessing is how a weekly report arrives on
+  /// Sunday afternoon.
+  timezone  String          @default("Asia/Kuching")
+
+  /// User ids. Validated against this company's memberships on write and on send.
+  recipientUserIds String[] @default([])
+
+  /// Site scope, empty for the whole company.
+  siteId String?
+
+  lastRunAt     DateTime?
+  lastRunStatus String?
+  lastRunError  String?
+  /// The instant this is next owed, recomputed after every run. Indexed because the sweep
+  /// asks "what is due" on every pass.
+  nextRunAt     DateTime?
+
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  runs ReportRun[]
+
+  @@index([companyId, enabled])
+  @@index([enabled, nextRunAt])
+}
+
+enum ReportType {
+  overdue_actions
+  open_investigations
+}
+
+enum ReportFrequency {
+  daily
+  weekly
+  monthly
+}
+
+/// One execution. Written before the work starts, so a crash mid-run leaves evidence.
+model ReportRun {
+  id         String          @id @default(cuid())
+  scheduleId String?
+  schedule   ReportSchedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  reportType ReportType
+  /// scheduled | manual - a Run now is recorded the same as an automatic pass.
+  trigger    String    @default("scheduled")
+
+  /// The period the report covered, so a re-read knows what it was about.
+  periodStart DateTime?
+  periodEnd   DateTime?
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  status      String    @default("running") // running | success | failed | delivered_partially
+
+  rowCount       Int    @default(0)
+  recipientCount Int    @default(0)
+  /// Whether a provider actually accepted it. False when no mail provider is configured,
+  /// which is recorded honestly rather than reported as sent.
+  delivered      Boolean @default(false)
+  deliveryNote   String?
+
+  /// The stored PDF, same contract as every other file in the platform.
+  storedName   String?
+  originalName String?
+  sizeBytes    Int?
+
+  error String?
+
+  triggeredBy String
+
+  /// One run per schedule per due slot.
+  ///
+  /// The sweep runs every fifteen minutes and can be started more than once; without this
+  /// a Monday report goes out four times before nine o'clock. Null for manual runs, which
+  /// are deliberate and may be repeated.
+  dueSlot String?
+
+  @@unique([scheduleId, dueSlot])
+  @@index([companyId, startedAt])
+  @@index([scheduleId, startedAt])
 }

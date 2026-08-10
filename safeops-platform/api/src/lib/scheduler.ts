@@ -22,6 +22,8 @@
  */
 import type { PrismaClient } from '@prisma/client'
 import { CALIBRATED_CATEGORIES } from './equipmentService.js'
+import { ReportService } from './reportService.js'
+import { dueSlotKey, nextRunAt, type Frequency } from './reportSchedule.js'
 
 const MINUTE = 60_000
 const DAY = 86400_000
@@ -102,7 +104,7 @@ class Budget {
   }
 }
 
-export type JobId = 'j1' | 'j2' | 'j3' | 'j4'
+export type JobId = 'j1' | 'j2' | 'j3' | 'j4' | 'j5'
 
 /**
  * When each sweep last completed, in this process. Deliberately not persisted: after a
@@ -115,6 +117,7 @@ export const getLastRuns = (): Record<string, string | null> => ({
   j2: lastRuns.get('j2') ?? null,
   j3: lastRuns.get('j3') ?? null,
   j4: lastRuns.get('j4') ?? null,
+  j5: lastRuns.get('j5') ?? null,
 })
 
 /** UTC midnight, matching how every date-only value in this codebase is stored. */
@@ -124,8 +127,12 @@ const daysBetween = (a: Date, b: Date) => Math.round((utcDay(a).getTime() - utcD
 export class Scheduler {
   private timer: NodeJS.Timeout | null = null
   private running = false
+  /** Owns report generation and delivery; the sweep only decides what is due. */
+  private readonly reports: ReportService
 
-  constructor(private db: PrismaClient) {}
+  constructor(private db: PrismaClient) {
+    this.reports = new ReportService(db)
+  }
 
   /**
    * Raises a notification unless one already exists for this exact reason.
@@ -743,12 +750,73 @@ export class Scheduler {
     return stale.count
   }
 
+
+  /**
+   * Scheduled reports that are now due.
+   *
+   * The only sweep that produces a document and sends it to people, so it is the one where
+   * running twice is most visible - four copies of the Monday report before nine o'clock.
+   * Idempotency comes from a unique index on (scheduleId, dueSlot) rather than from
+   * in-process state, so it holds across restarts and across two instances of the API.
+   *
+   * nextRunAt is advanced whether the run succeeded or failed. A schedule that stops trying
+   * because one week's report failed is worse than one that records the failure and carries
+   * on to the next Monday.
+   */
+  async sweepScheduledReports(now = new Date()): Promise<number> {
+    const due = await this.db.reportSchedule.findMany({
+      where: { enabled: true, nextRunAt: { not: null, lte: now } },
+      take: 200,
+    })
+
+    let ran = 0
+    for (const s of due) {
+      const shape = {
+        frequency: s.frequency as Frequency,
+        dayOfWeek: s.dayOfWeek,
+        timeOfDay: s.timeOfDay,
+        timezone: s.timezone,
+      }
+
+      // The slot this firing is for, derived from the due instant rather than from now:
+      // a sweep that runs late must still be recorded against the slot it was owed.
+      const slot = dueSlotKey(shape, s.nextRunAt ?? now)
+
+      try {
+        const result = await this.reports.execute({
+          companyId: s.companyId,
+          reportType: s.reportType,
+          siteId: s.siteId,
+          scheduleId: s.id,
+          dueSlot: slot,
+          trigger: 'scheduled',
+          triggeredBy: 'system',
+          recipientUserIds: s.recipientUserIds,
+        })
+        if (!result.skipped) ran++
+      } catch {
+        // execute() has already written the failure to the run and the schedule. Swallowed
+        // here so one broken schedule cannot stop the others in the same pass.
+      }
+
+      const next = nextRunAt(shape, now)
+      await this.db.reportSchedule.update({
+        where: { id: s.id },
+        // A schedule whose configuration no longer parses is disarmed rather than retried
+        // every fifteen minutes forever; lastRunError already says why.
+        data: { nextRunAt: next },
+      })
+    }
+    return ran
+  }
+
   /** One full pass. Safe to call directly; that is how the tests drive it. */
   async runOnce(now = new Date()): Promise<{
     actions: number; inspections: number; certificates: number; medicals: number
     contractors: number; permits: number
     calibrations: number; maintenance: number; outOfService: number
     overdueVisitors: number; outstandingBadges: number; expiredVisits: number
+    reports: number
   }> {
     const actions = await this.sweepActions(now)
     const inspections = await this.sweepInspections(now)
@@ -772,10 +840,15 @@ export class Scheduler {
     const outstandingBadges = await this.sweepOutstandingBadges()
     lastRuns.set('j4', new Date().toISOString())
 
+    // Last in the pass: the report reads the results of everything above it, so it should
+    // see this pass's notifications rather than last pass's.
+    const reports = await this.sweepScheduledReports(now)
+    lastRuns.set('j5', new Date().toISOString())
+
     return {
       actions, inspections, certificates, medicals, contractors, permits,
       calibrations, maintenance, outOfService,
-      overdueVisitors, outstandingBadges, expiredVisits,
+      overdueVisitors, outstandingBadges, expiredVisits, reports,
     }
   }
 

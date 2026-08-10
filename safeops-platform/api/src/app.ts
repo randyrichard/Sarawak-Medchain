@@ -14,6 +14,7 @@ import { inspectionsRouter } from './routes/inspections.js'
 import { equipmentRouter } from './routes/equipment.js'
 import { assetDocumentsRouter } from './routes/assetDocuments.js'
 import { visitorsRouter } from './routes/visitors.js'
+import { reportsRouter } from './routes/reports.js'
 import { incidentInvestigationRouter } from './routes/incidentInvestigation.js'
 import { auditsRouter } from './routes/audits.js'
 import { trainingRouter } from './routes/training.js'
@@ -41,6 +42,7 @@ import { EmployeeError } from './lib/employeeService.js'
 import { ContractorError } from './lib/contractorService.js'
 import { EquipmentError } from './lib/equipmentService.js'
 import { VisitorError } from './lib/visitorService.js'
+import { ReportError } from './lib/reportService.js'
 import { InvestigationError } from './lib/incidentInvestigation.js'
 
 export function createApp() {
@@ -136,6 +138,7 @@ export function createApp() {
   app.use('/assets', assetDocumentsRouter)
   app.use('/assets', inspectionsRouter)
   app.use('/visitors', visitorsRouter)
+  app.use('/reports', reportsRouter)
   app.use('/audits', auditsRouter)
   app.use('/training', trainingRouter)
   app.use('/admin', adminRouter)
@@ -168,6 +171,7 @@ export function createApp() {
       err instanceof ContractorError ||
       err instanceof EquipmentError ||
       err instanceof VisitorError ||
+      err instanceof ReportError ||
       err instanceof InvestigationError
     ) {
       return res.status(err.status).json({ error: err.code, message: err.message })

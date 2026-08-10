@@ -39,6 +39,22 @@ function dateRange(from?: string, to?: string): Prisma.DateTimeFilter | undefine
   return { ...(gte ? { gte } : {}), ...(lte ? { lte } : {}) }
 }
 
+/**
+ * What counts as an overdue corrective action.
+ *
+ * One definition, exported so the register, the board count and the scheduled report all
+ * mean the same thing by "overdue". Completed, verified and cancelled actions are excluded
+ * - an action closed last week is not overdue, and a report that says otherwise is the
+ * fastest way to lose a reader's trust. Measured against UTC midnight so an action due
+ * today is not overdue for the whole of today.
+ */
+export function overdueActionWhere(): Prisma.CorrectiveActionWhereInput {
+  return {
+    dueDate: { lt: startOfToday() },
+    status: { in: ['open', 'in_progress'] },
+  }
+}
+
 export interface ListParams {
   companyId: string
   page: number
@@ -828,7 +844,7 @@ export class IncidentService {
       ...(opts.status ? { status: opts.status as never } : {}),
       ...(opts.owner ? { owner: opts.owner } : {}),
       ...(opts.source ? { source: opts.source as never } : {}),
-      ...(opts.overdue ? { dueDate: { lt: startOfToday() }, status: { in: ['open', 'in_progress'] } } : {}),
+      ...(opts.overdue ? overdueActionWhere() : {}),
       // Employees and supervisors see only what they own.
       ...(['employee', 'supervisor'].includes(m.role) ? { owner: caller.name } : {}),
     }
