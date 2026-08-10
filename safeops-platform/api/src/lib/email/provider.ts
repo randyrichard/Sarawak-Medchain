@@ -20,6 +20,11 @@ export interface EmailMessage {
   text: string
   html: string
   attachments: EmailAttachment[]
+  /**
+   * Stable per report run, so a provider that supports it can recognise a retry of the
+   * same message and return the original result instead of sending a second copy.
+   */
+  idempotencyKey?: string
 }
 
 export interface EmailResult {
@@ -50,6 +55,14 @@ export class EmailProviderError extends Error {
 export interface EmailProvider {
   /** Short identifier stored on the run: resend | smtp */
   readonly name: string
+  /**
+   * Whether repeating a send with the same idempotency key is safe.
+   *
+   * This is what decides if an interrupted delivery can be retried automatically. A vendor
+   * API that de-duplicates says true; an SMTP relay, which has no way to be asked "did you
+   * already get this?", says false and its failures are reported instead of retried.
+   */
+  readonly idempotent: boolean
   send(message: EmailMessage): Promise<EmailResult>
   /** Checks the credentials without sending, for the configuration health view. */
   verify(): Promise<{ ok: boolean; error?: string }>

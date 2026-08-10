@@ -15,6 +15,12 @@ const ENDPOINT = 'https://api.resend.com/emails'
 
 export class ResendEmailProvider implements EmailProvider {
   readonly name = 'resend'
+  /*
+   * Resend honours an Idempotency-Key header: a repeat with the same key returns the
+   * original response rather than sending again. That is what makes automatic retry of an
+   * ambiguous failure safe here and unsafe over SMTP.
+   */
+  readonly idempotent = true
 
   constructor(
     private apiKey: string,
@@ -34,6 +40,9 @@ export class ResendEmailProvider implements EmailProvider {
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
+          ...(message.idempotencyKey
+            ? { 'Idempotency-Key': message.idempotencyKey }
+            : {}),
         },
         body: JSON.stringify({
           from: this.from,
@@ -84,9 +93,11 @@ export class ResendEmailProvider implements EmailProvider {
 
       throw new EmailProviderError(
         detail,
-        res.status === 401 || res.status === 403 ? 'auth_failed'
-          : res.status === 422 ? 'rejected'
-            : res.status >= 500 ? 'provider_unavailable' : 'provider_error',
+        // 429 is transient and worth retrying; 401/422 never are.
+        res.status === 429 ? 'rate_limited'
+          : res.status === 401 || res.status === 403 ? 'auth_failed'
+            : res.status === 422 ? 'rejected'
+              : res.status >= 500 ? 'provider_unavailable' : 'provider_error',
         res.status,
       )
     }

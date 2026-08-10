@@ -2680,6 +2680,16 @@ model ReportRun {
   /// Which provider handled it: resend | smtp | none
   provider       String?
 
+  /// How many times delivery has been attempted. Bounded; see MAX_ATTEMPTS.
+  attempts       Int       @default(0)
+  lastAttemptAt  DateTime?
+  /// When the next attempt becomes due. Null means no retry is owed - either it succeeded,
+  /// or it failed permanently, or the attempts ran out.
+  nextAttemptAt  DateTime?
+  /// The exact email this run produced: subject, bodies and resolved recipients. A retry
+  /// re-sends this, so the message that arrives always matches the stored PDF.
+  deliveryPayload Json?
+
   /// The stored PDF, same contract as every other file in the platform.
   storedName   String?
   originalName String?
@@ -2699,4 +2709,6 @@ model ReportRun {
   @@unique([scheduleId, dueSlot])
   @@index([companyId, startedAt])
   @@index([scheduleId, startedAt])
+  /// The recovery sweep asks "what delivery is owed" on every pass.
+  @@index([deliveryStatus, nextAttemptAt])
 }

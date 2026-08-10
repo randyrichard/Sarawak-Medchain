@@ -1,9 +1,16 @@
-import type { PrismaClient, ReportType, Role } from '@prisma/client'
+import { Prisma, type PrismaClient, type ReportType, type Role } from '@prisma/client'
 import type { Caller } from './incidentService.js'
 import { overdueActionWhere } from './incidentService.js'
 import { SEVERITY_LABEL, TYPE_LABEL } from './incidentCatalog.js'
-import { renderReportPdf } from './reportPdf.js'
-import { deliverReport, mailProviderConfigured } from './reportDelivery.js'
+import { renderReportPdf, readStoredReport } from './reportPdf.js'
+import {
+  deliverReport, mailProviderConfigured, sendDeliveryPayload,
+  type DeliveryPayload, type DeliveryResult,
+} from './reportDelivery.js'
+import { emailConfiguration, getEmailProvider } from './email/index.js'
+import {
+  canResumePending, decideRetry, idempotencyKeyFor, MAX_ATTEMPTS, STALE_PENDING_MINUTES,
+} from './reportRetry.js'
 import {
   describeSchedule, isValidTimezone, nextRunAt, parseTimeOfDay,
   type Frequency,
@@ -543,6 +550,14 @@ export class ReportService {
        * download, and the status left behind is email_pending rather than a run that looks
        * like it never happened.
        */
+      /*
+       * Everything needed to deliver is recorded before the provider is contacted.
+       *
+       * If the process dies mid-send, what survives is a run pointing at a stored PDF, the
+       * exact message that was being sent, and attempts = 1 - which is precisely enough for
+       * the recovery sweep to work out what happened and whether it is safe to try again.
+       */
+      const willAttempt = recipients.length > 0 && emailConfiguration().configured
       await this.db.reportRun.update({
         where: { id: runId },
         data: {
@@ -552,25 +567,24 @@ export class ReportService {
           originalName: pdf.fileName,
           sizeBytes: pdf.bytes.length,
           periodEnd: data.periodEnd,
-          deliveryStatus: recipients.length > 0 ? 'email_pending' : 'generated',
+          deliveryStatus: willAttempt ? 'email_pending' : 'generated',
+          ...(willAttempt ? { attempts: 1, lastAttemptAt: new Date() } : {}),
         },
       })
 
-      const delivery = await deliverReport({ data, pdf, recipients })
+      const delivery = await deliverReport({
+        data, pdf, recipients, idempotencyKey: idempotencyKeyFor(runId),
+      })
 
+      // The message is kept whatever the outcome: a retry must re-send this, not rebuild it.
+      const outcome = this.settleDelivery(delivery, willAttempt ? 1 : 0)
       await this.db.reportRun.update({
         where: { id: runId },
         data: {
           status: 'success',
           completedAt: new Date(),
-          // Only ever true because a provider gave us an id to prove it.
-          delivered: delivery.delivered,
-          deliveryStatus: delivery.status,
-          deliveryNote: delivery.note,
-          messageId: delivery.messageId,
-          sentAt: delivery.sentAt,
-          failureReason: delivery.failureReason,
-          provider: delivery.provider,
+          deliveryPayload: delivery.payload as unknown as Prisma.InputJsonValue,
+          ...outcome,
         },
       })
 
@@ -580,7 +594,10 @@ export class ReportService {
           data: { lastRunAt: new Date(), lastRunStatus: 'success', lastRunError: null },
         })
       }
-      return { skipped: false as const, runId, rowCount: data.rows.length, delivery }
+      return {
+        skipped: false as const, runId, rowCount: data.rows.length,
+        delivery: { ...delivery, ...outcome },
+      }
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Report generation failed.'
       await this.db.reportRun.update({
@@ -602,6 +619,191 @@ export class ReportService {
       }
       throw e
     }
+  }
+
+  /**
+   * Turn a delivery outcome into the columns that record it.
+   *
+   * One place decides what a failure means, so the first attempt and every retry after it
+   * agree. A transient failure that is safe to repeat stays email_pending with a time on
+   * it - the run is still in flight, and showing it as failed would send an operator
+   * chasing something that is about to fix itself. Anything else is final.
+   */
+  private settleDelivery(delivery: DeliveryResult, attempts: number) {
+    const decision = delivery.status === 'failed' && delivery.errorCode
+      ? decideRetry({
+        code: delivery.errorCode,
+        attempts,
+        providerIdempotent: delivery.providerIdempotent,
+      })
+      : null
+
+    const retrying = decision?.retry === true
+    const note = decision ? `${delivery.note} ${decision.explanation}` : delivery.note
+
+    return {
+      // Only ever true because a provider gave us an id to prove it.
+      delivered: delivery.delivered,
+      deliveryStatus: retrying ? ('email_pending' as const) : delivery.status,
+      deliveryNote: note.slice(0, 900),
+      messageId: delivery.messageId,
+      sentAt: delivery.sentAt,
+      failureReason: delivery.failureReason
+        ? `${delivery.failureReason} ${decision?.explanation ?? ''}`.trim().slice(0, 500)
+        : null,
+      provider: delivery.provider,
+      attempts,
+      lastAttemptAt: attempts > 0 ? new Date() : null,
+      nextAttemptAt: decision?.nextAttemptAt ?? null,
+    }
+  }
+
+  /**
+   * Send a run's stored message again.
+   *
+   * Re-sends what was recorded at generation time - the same subject, the same body, the
+   * same PDF read back off disk - so a retry can never deliver something that disagrees
+   * with the run it belongs to. The idempotency key is derived from the run id, which is
+   * what lets a provider that supports it recognise the repeat instead of sending twice.
+   */
+  private async retryStoredDelivery(run: {
+    id: string
+    attempts: number
+    storedName: string | null
+    originalName: string | null
+    deliveryPayload: Prisma.JsonValue
+  }) {
+    const payload = run.deliveryPayload as unknown as DeliveryPayload | null
+    const bytes = run.storedName ? readStoredReport(run.storedName) : null
+
+    if (!payload || !bytes || !run.originalName) {
+      /*
+       * Nothing to re-send. Older runs pre-date the stored payload, and a file can be
+       * removed by retention. Either way this is final and says why, rather than looping.
+       */
+      await this.db.reportRun.update({
+        where: { id: run.id },
+        data: {
+          deliveryStatus: 'failed',
+          nextAttemptAt: null,
+          failureReason: 'The stored report is no longer available to re-send. '
+            + 'Run the report again to deliver a current copy.',
+          deliveryNote: 'Delivery could not be retried because the generated PDF or the '
+            + 'recorded message is no longer available.',
+        },
+      })
+      return { retried: false as const, runId: run.id }
+    }
+
+    const attempts = run.attempts + 1
+    // Written before the provider is contacted, so a crash mid-send is still visible as an
+    // attempt that was in flight rather than one that never happened.
+    await this.db.reportRun.update({
+      where: { id: run.id },
+      data: { attempts, lastAttemptAt: new Date(), nextAttemptAt: null },
+    })
+
+    const delivery = await sendDeliveryPayload({
+      payload,
+      pdf: { fileName: run.originalName, bytes },
+      idempotencyKey: idempotencyKeyFor(run.id),
+    })
+
+    const outcome = this.settleDelivery(delivery, attempts)
+    await this.db.reportRun.update({ where: { id: run.id }, data: outcome })
+    return { retried: true as const, runId: run.id, status: outcome.deliveryStatus }
+  }
+
+  /**
+   * Pick up deliveries that were left in flight, and retries that have come due.
+   *
+   * Called from the scheduler's existing sweep rather than from a timer of its own - one
+   * thing in this system decides when work happens.
+   *
+   * Two populations, deliberately handled differently. A run with a time on it failed for a
+   * reason known to be transient and is simply due again. A run with no time on it was
+   * interrupted: the process stopped somewhere between handing the message over and
+   * recording what came back, and whether it can be repeated depends entirely on whether
+   * the provider can recognise a duplicate. That question is answered in reportRetry.ts,
+   * not here.
+   */
+  async recoverStalledDeliveries(now = new Date()) {
+    const staleBefore = new Date(now.getTime() - STALE_PENDING_MINUTES * 60_000)
+
+    const pending = await this.db.reportRun.findMany({
+      where: {
+        deliveryStatus: 'email_pending',
+        OR: [
+          // A retry that has come due.
+          { nextAttemptAt: { lte: now } },
+          // Interrupted: no retry was scheduled and nothing has touched it since.
+          { nextAttemptAt: null, lastAttemptAt: { lt: staleBefore } },
+          { nextAttemptAt: null, lastAttemptAt: null, startedAt: { lt: staleBefore } },
+        ],
+      },
+      select: {
+        id: true, attempts: true, storedName: true, originalName: true,
+        deliveryPayload: true, nextAttemptAt: true,
+      },
+      orderBy: { startedAt: 'asc' },
+      // Bounded: a bad night must not turn one sweep into a thousand provider calls.
+      take: 25,
+    })
+
+    const { configured, provider: providerName } = emailConfiguration()
+    if (!configured || pending.length === 0) {
+      return { examined: pending.length, retried: 0, abandoned: 0 }
+    }
+
+    const idempotent = getEmailProvider()?.idempotent ?? false
+    let retried = 0
+    let abandoned = 0
+
+    for (const run of pending) {
+      // A scheduled retry was already judged safe at the moment it was scheduled.
+      const due = run.nextAttemptAt !== null
+      const verdict = due
+        ? { resume: true, reason: '' }
+        : canResumePending({ attempts: run.attempts, providerIdempotent: idempotent })
+
+      if (!verdict.resume) {
+        abandoned += 1
+        await this.db.reportRun.update({
+          where: { id: run.id },
+          data: {
+            deliveryStatus: 'failed',
+            nextAttemptAt: null,
+            provider: providerName,
+            // Short reason, fuller note - the two are shown on separate lines, so making
+            // them identical printed the same paragraph twice.
+            failureReason: 'Delivery was interrupted and could not be confirmed.',
+            deliveryNote: verdict.reason.slice(0, 900),
+          },
+        })
+        continue
+      }
+
+      if (run.attempts >= MAX_ATTEMPTS) {
+        abandoned += 1
+        await this.db.reportRun.update({
+          where: { id: run.id },
+          data: {
+            deliveryStatus: 'failed',
+            nextAttemptAt: null,
+            failureReason: `Delivery gave up after ${MAX_ATTEMPTS} attempts.`,
+            deliveryNote: 'The mail provider could not be reached on any attempt. '
+              + 'The report is available to download from the history.',
+          },
+        })
+        continue
+      }
+
+      const result = await this.retryStoredDelivery(run)
+      if (result.retried) retried += 1
+      else abandoned += 1
+    }
+
+    return { examined: pending.length, retried, abandoned }
   }
 
   /**
@@ -658,12 +860,42 @@ export class ReportService {
       orderBy: [{ startedAt: 'desc' }, { id: 'desc' }],
       take: 100,
     })
+    /*
+     * Listed field by field rather than spread.
+     *
+     * The row carries things the browser has no business holding: deliveryPayload is the
+     * rendered email including every recipient's address, and storedName is the filename on
+     * disk. Spreading the record would ship both to anyone who can open the History tab,
+     * and would keep doing it silently every time a column is added.
+     */
     return rows.map((r) => ({
-      ...r,
+      id: r.id,
+      scheduleId: r.scheduleId,
+      reportType: r.reportType,
+      typeLabel: REPORT_TYPE_LABEL[r.reportType],
+      trigger: r.trigger,
+      triggeredBy: r.triggeredBy,
+      status: r.status,
+      rowCount: r.rowCount,
+      recipientCount: r.recipientCount,
+      delivered: r.delivered,
+      deliveryStatus: r.deliveryStatus,
+      deliveryNote: r.deliveryNote,
+      failureReason: r.failureReason,
+      // The provider's name only - never anything about how it authenticates.
+      provider: r.provider,
+      // The provider's own id, so an operator can look the message up at their end.
+      messageId: r.messageId,
+      attempts: r.attempts,
+      maxAttempts: MAX_ATTEMPTS,
+      originalName: r.originalName,
+      sizeBytes: r.sizeBytes,
+      error: r.error,
       startedAt: r.startedAt.toISOString(),
       completedAt: r.completedAt?.toISOString() ?? null,
       periodEnd: r.periodEnd?.toISOString() ?? null,
-      typeLabel: REPORT_TYPE_LABEL[r.reportType],
+      sentAt: r.sentAt?.toISOString() ?? null,
+      nextAttemptAt: r.nextAttemptAt?.toISOString() ?? null,
     }))
   }
 

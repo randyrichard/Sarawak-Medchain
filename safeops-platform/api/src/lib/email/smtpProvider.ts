@@ -11,6 +11,12 @@ import {
  */
 export class SmtpEmailProvider implements EmailProvider {
   readonly name = 'smtp'
+  /*
+   * An SMTP relay cannot be asked "did you already receive this?". Once the message is
+   * handed over there is no key to repeat and no way to de-duplicate, so an interrupted
+   * delivery is reported to the operator rather than retried into a second copy.
+   */
+  readonly idempotent = false
   private transporter: Transporter | null = null
 
   constructor(
@@ -84,7 +90,17 @@ export class SmtpEmailProvider implements EmailProvider {
       const code = (e as { code?: string }).code
       throw new EmailProviderError(
         msg.slice(0, 300),
-        code === 'EAUTH' ? 'auth_failed' : code === 'ECONNECTION' ? 'provider_unavailable' : 'provider_error',
+        /*
+         * nodemailer's codes say where in the conversation it broke, which is exactly what
+         * decides whether a retry is safe. A connection that never opened delivered
+         * nothing; a rejected envelope or a refused login will be rejected identically
+         * forever.
+         */
+        code === 'EAUTH' ? 'auth_failed'
+          : code === 'EENVELOPE' || code === 'EMESSAGE' ? 'rejected'
+            : code === 'ECONNECTION' || code === 'ESOCKET' || code === 'EDNS' ? 'network_error'
+              : code === 'ETIMEDOUT' ? 'timeout'
+                : 'provider_error',
       )
     }
   }

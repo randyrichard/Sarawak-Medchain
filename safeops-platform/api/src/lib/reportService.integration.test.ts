@@ -107,15 +107,33 @@ async function purge() {
  * through this. What it captures is exactly what the report system promised the provider:
  * the recipients, the subject and the attached PDF bytes.
  */
+type Behaviour = 'ok' | 'throw' | 'reject-all' | 'transient' | 'timeout'
+
 class FakeProvider implements EmailProvider {
   readonly name = 'fake'
   sent: EmailMessage[] = []
-  constructor(private behaviour: 'ok' | 'throw' | 'reject-all' = 'ok') {}
+  /** Flipped by tests that want the first attempt to fail and a later one to succeed. */
+  behaviour: Behaviour
+
+  constructor(behaviour: Behaviour = 'ok', readonly idempotent = false) {
+    this.behaviour = behaviour
+  }
+
+  /** Distinct sends, keyed the way a provider that de-duplicates would key them. */
+  get distinctSends() {
+    return new Set(this.sent.map((m) => m.idempotencyKey ?? Math.random())).size
+  }
 
   async send(message: EmailMessage) {
     this.sent.push(message)
     if (this.behaviour === 'throw') {
       throw new EmailProviderError('API key is invalid', 'auth_failed', 401)
+    }
+    if (this.behaviour === 'transient') {
+      throw new EmailProviderError('Service unavailable', 'provider_unavailable', 503)
+    }
+    if (this.behaviour === 'timeout') {
+      throw new EmailProviderError('socket hang up', 'network_error')
     }
     if (this.behaviour === 'reject-all') {
       return { messageId: 'msg_none', accepted: [], rejected: message.to.map((t) => t.email) }
@@ -420,7 +438,7 @@ d('Scheduled reports — integration (real Postgres)', () => {
     expect(run.status).toBe('success')
     expect(run.rowCount).toBe(1)
     expect(run.recipientCount).toBe(1)
-    expect(run.storedName).toMatch(/\.pdf$/)
+    expect(run.originalName).toMatch(/\.pdf$/)
     expect(run.sizeBytes!).toBeGreaterThan(500)
   })
 
@@ -741,7 +759,7 @@ d('Scheduled reports — integration (real Postgres)', () => {
     expect(run.status).toBe('success')
     expect(run.deliveryStatus).toBe('failed')
     expect(run.delivered).toBe(false)
-    expect(run.storedName).toMatch(/\.pdf$/)
+    expect(run.originalName).toMatch(/\.pdf$/)
     expect(run.failureReason).toMatch(/auth_failed/)
     expect(run.deliveryNote).toMatch(/was not marked as sent/i)
   })
@@ -893,5 +911,369 @@ d('Scheduled reports — integration (real Postgres)', () => {
     await expect(reports.runNow(employee, s.id)).rejects.toMatchObject({ status: 403 })
     await expect(reports.runNow(outsider, s.id)).rejects.toMatchObject({ status: 403 })
     expect(fake.sent).toHaveLength(0)
+  })
+
+  // -- Retry, recovery and duplicate protection ----------------------------
+
+  /** Age a run so the recovery sweep considers it stranded rather than in flight. */
+  const strand = (runId: string, over: Record<string, unknown> = {}) =>
+    db.reportRun.update({
+      where: { id: runId },
+      data: {
+        deliveryStatus: 'email_pending',
+        lastAttemptAt: new Date(Date.now() - 60 * 60_000),
+        startedAt: new Date(Date.now() - 60 * 60_000),
+        nextAttemptAt: null,
+        ...over,
+      },
+    })
+
+  const latest = () => db.reportRun.findFirstOrThrow({
+    where: { companyId: COMPANY },
+    orderBy: [{ startedAt: 'desc' }, { id: 'desc' }],
+  })
+
+  it('holds a transient failure open for a retry instead of calling it failed', async () => {
+    const i = await incident()
+    await action(i.id)
+    // Idempotent, so an ambiguous failure is safe to repeat.
+    setEmailProviderForTests(new FakeProvider('transient', true))
+
+    await reports.runNow(admin, (await scheduleWith('transient')).id)
+
+    const run = await latest()
+    expect(run.deliveryStatus).toBe('email_pending')
+    expect(run.attempts).toBe(1)
+    expect(run.nextAttemptAt).not.toBeNull()
+    expect(run.deliveryNote).toMatch(/Attempt 1 of 3/)
+  })
+
+  it('fails a rejected key immediately rather than retrying it', async () => {
+    const i = await incident()
+    await action(i.id)
+    setEmailProviderForTests(new FakeProvider('throw', true))
+
+    await reports.runNow(admin, (await scheduleWith('permanent')).id)
+
+    const run = await latest()
+    expect(run.deliveryStatus).toBe('failed')
+    expect(run.nextAttemptAt).toBeNull()
+    expect(run.attempts).toBe(1)
+  })
+
+  it('sends the retry when it comes due, and marks it sent', async () => {
+    const i = await incident()
+    await action(i.id)
+    const fake = new FakeProvider('transient', true)
+    setEmailProviderForTests(fake)
+
+    await reports.runNow(admin, (await scheduleWith('due')).id)
+    const before = await latest()
+    expect(before.deliveryStatus).toBe('email_pending')
+
+    // The provider recovers, and the backoff elapses.
+    fake.behaviour = 'ok'
+    await db.reportRun.update({
+      where: { id: before.id },
+      data: { nextAttemptAt: new Date(Date.now() - 60_000) },
+    })
+    const result = await reports.recoverStalledDeliveries()
+
+    expect(result.retried).toBeGreaterThanOrEqual(1)
+    const after = await latest()
+    expect(after.deliveryStatus).toBe('sent')
+    expect(after.attempts).toBe(2)
+    expect(after.messageId).toBe('msg_fake_123')
+    expect(after.nextAttemptAt).toBeNull()
+  })
+
+  it('leaves a retry alone until its backoff has elapsed', async () => {
+    const i = await incident()
+    await action(i.id)
+    const fake = new FakeProvider('transient', true)
+    setEmailProviderForTests(fake)
+
+    await reports.runNow(admin, (await scheduleWith('early')).id)
+    const sentDuringRun = fake.sent.length
+
+    // nextAttemptAt is in the future; the sweep must not touch it.
+    await reports.recoverStalledDeliveries()
+
+    expect(fake.sent).toHaveLength(sentDuringRun)
+    expect((await latest()).attempts).toBe(1)
+  })
+
+  it('re-sends the stored PDF and subject, never a fresh render', async () => {
+    /*
+     * The whole point of storing the message. Between the first attempt and the retry the
+     * database moves on - here another overdue action appears - and an email whose body
+     * disagrees with its own attachment is exactly what an auditor will find.
+     */
+    const i = await incident()
+    await action(i.id)
+    const fake = new FakeProvider('transient', true)
+    setEmailProviderForTests(fake)
+
+    await reports.runNow(admin, (await scheduleWith('same')).id)
+    const first = fake.sent[0]
+    const run = await latest()
+
+    const j = await incident()
+    await action(j.id)
+
+    fake.behaviour = 'ok'
+    await db.reportRun.update({ where: { id: run.id }, data: { nextAttemptAt: new Date(Date.now() - 60_000) } })
+    await reports.recoverStalledDeliveries()
+
+    const retryMessage = fake.sent[fake.sent.length - 1]
+    expect(retryMessage.subject).toBe(first.subject)
+    expect(retryMessage.text).toBe(first.text)
+    expect(retryMessage.attachments[0].filename).toBe(first.attachments[0].filename)
+    // Byte for byte the report the run history points at.
+    expect(retryMessage.attachments[0].content.equals(first.attachments[0].content)).toBe(true)
+  })
+
+  it('repeats the same idempotency key so a provider can recognise the retry', async () => {
+    const i = await incident()
+    await action(i.id)
+    const fake = new FakeProvider('transient', true)
+    setEmailProviderForTests(fake)
+
+    await reports.runNow(admin, (await scheduleWith('idem')).id)
+    const run = await latest()
+
+    await db.reportRun.update({ where: { id: run.id }, data: { nextAttemptAt: new Date(Date.now() - 60_000) } })
+    await reports.recoverStalledDeliveries()
+
+    const keys = fake.sent.map((m) => m.idempotencyKey)
+    expect(keys[0]).toBeTruthy()
+    expect(keys[0]).toContain(run.id)
+    expect(new Set(keys).size).toBe(1)
+  })
+
+  it('gives up after the attempt limit instead of retrying forever', async () => {
+    const i = await incident()
+    await action(i.id)
+    const fake = new FakeProvider('transient', true)
+    setEmailProviderForTests(fake)
+
+    await reports.runNow(admin, (await scheduleWith('giveup')).id)
+    const run = await latest()
+
+    // Drive the sweep until it stops, with a hard ceiling so a bug cannot loop this test.
+    for (let pass = 0; pass < 6; pass += 1) {
+      await db.reportRun.updateMany({
+        where: { id: run.id, deliveryStatus: 'email_pending' },
+        data: { nextAttemptAt: new Date(Date.now() - 60_000) },
+      })
+      await reports.recoverStalledDeliveries()
+    }
+
+    const after = await db.reportRun.findUniqueOrThrow({ where: { id: run.id } })
+    expect(after.deliveryStatus).toBe('failed')
+    expect(after.attempts).toBe(3)
+    expect(after.nextAttemptAt).toBeNull()
+    expect(after.failureReason).toMatch(/gave up after 3 attempts/i)
+    // Three attempts means three provider calls, not one per sweep.
+    expect(fake.sent).toHaveLength(3)
+  })
+
+  it('will not resend an interrupted delivery over a provider that cannot de-duplicate', async () => {
+    /*
+     * The crash case on SMTP. The relay may already hold the message; there is no way to
+     * ask. Resending could put two copies of a safety report in every inbox, so it stops
+     * and tells the operator, who still has the PDF.
+     */
+    const i = await incident()
+    await action(i.id)
+    const fake = new FakeProvider('ok', false)
+    setEmailProviderForTests(fake)
+
+    await reports.runNow(admin, (await scheduleWith('crash-smtp')).id)
+    const run = await latest()
+    const sentBefore = fake.sent.length
+    await strand(run.id, { attempts: 1 })
+
+    const result = await reports.recoverStalledDeliveries()
+
+    expect(result.abandoned).toBeGreaterThanOrEqual(1)
+    expect(fake.sent).toHaveLength(sentBefore)
+    const after = await db.reportRun.findUniqueOrThrow({ where: { id: run.id } })
+    expect(after.deliveryStatus).toBe('failed')
+    // Short reason on the badge line, the full explanation underneath it.
+    expect(after.failureReason).toMatch(/interrupted and could not be confirmed/)
+    expect(after.deliveryNote).toMatch(/cannot confirm whether it was already accepted/)
+    expect(after.deliveryNote).toMatch(/available to download/)
+  })
+
+  it('does resend an interrupted delivery when the provider de-duplicates', async () => {
+    const i = await incident()
+    await action(i.id)
+    const fake = new FakeProvider('ok', true)
+    setEmailProviderForTests(fake)
+
+    await reports.runNow(admin, (await scheduleWith('crash-resend')).id)
+    const run = await latest()
+    await strand(run.id, { attempts: 1 })
+
+    await reports.recoverStalledDeliveries()
+
+    const after = await db.reportRun.findUniqueOrThrow({ where: { id: run.id } })
+    expect(after.deliveryStatus).toBe('sent')
+    expect(after.attempts).toBe(2)
+  })
+
+  it('resumes a delivery that had not started when the process stopped', async () => {
+    const i = await incident()
+    await action(i.id)
+    const fake = new FakeProvider('ok', false)
+    setEmailProviderForTests(fake)
+
+    await reports.runNow(admin, (await scheduleWith('crash-early')).id)
+    const run = await latest()
+    // attempts = 0 means the provider was never contacted; nothing can have been delivered.
+    await strand(run.id, { attempts: 0 })
+
+    await reports.recoverStalledDeliveries()
+
+    const after = await db.reportRun.findUniqueOrThrow({ where: { id: run.id } })
+    expect(after.deliveryStatus).toBe('sent')
+  })
+
+  it('does not touch a delivery that is merely still in flight', async () => {
+    const i = await incident()
+    await action(i.id)
+    const fake = new FakeProvider('ok', true)
+    setEmailProviderForTests(fake)
+
+    await reports.runNow(admin, (await scheduleWith('inflight')).id)
+    const run = await latest()
+    // Pending, attempted seconds ago: a slow send, not a crash.
+    await db.reportRun.update({
+      where: { id: run.id },
+      data: { deliveryStatus: 'email_pending', lastAttemptAt: new Date(), nextAttemptAt: null },
+    })
+    const sentBefore = fake.sent.length
+
+    await reports.recoverStalledDeliveries()
+
+    expect(fake.sent).toHaveLength(sentBefore)
+    expect((await db.reportRun.findUniqueOrThrow({ where: { id: run.id } })).deliveryStatus)
+      .toBe('email_pending')
+  })
+
+  it('stops trying when the stored report is gone rather than looping', async () => {
+    const i = await incident()
+    await action(i.id)
+    const fake = new FakeProvider('ok', true)
+    setEmailProviderForTests(fake)
+
+    await reports.runNow(admin, (await scheduleWith('nofile')).id)
+    const run = await latest()
+    await strand(run.id, { attempts: 1, storedName: 'does-not-exist.pdf' })
+
+    await reports.recoverStalledDeliveries()
+
+    const after = await db.reportRun.findUniqueOrThrow({ where: { id: run.id } })
+    expect(after.deliveryStatus).toBe('failed')
+    expect(after.failureReason).toMatch(/no longer available/)
+    expect(after.nextAttemptAt).toBeNull()
+  })
+
+  it('does nothing at all when no provider is configured', async () => {
+    const i = await incident()
+    await action(i.id)
+    setEmailProviderForTests(new FakeProvider('ok', true))
+    await reports.runNow(admin, (await scheduleWith('unconfigured')).id)
+    const run = await latest()
+    await strand(run.id, { attempts: 1 })
+
+    // Provider removed, as it would be if the key were unset.
+    setEmailProviderForTests(null)
+    const result = await reports.recoverStalledDeliveries()
+
+    expect(result.retried).toBe(0)
+    expect((await db.reportRun.findUniqueOrThrow({ where: { id: run.id } })).deliveryStatus)
+      .toBe('email_pending')
+  })
+
+  it('runs the same scheduled slot only once however many sweeps fire', async () => {
+    const i = await incident()
+    await action(i.id)
+    const fake = new FakeProvider('ok', true)
+    setEmailProviderForTests(fake)
+    const s = await scheduleWith('slot')
+
+    const slot = '2026-08-10T08:00'
+    const first = await reports.runScheduledReport(
+      { id: s.id, companyId: COMPANY, reportType: 'overdue_actions', siteId: null, recipientUserIds: s.recipientUserIds },
+      slot,
+    )
+    const second = await reports.runScheduledReport(
+      { id: s.id, companyId: COMPANY, reportType: 'overdue_actions', siteId: null, recipientUserIds: s.recipientUserIds },
+      slot,
+    )
+
+    expect(first.skipped).toBe(false)
+    expect(second.skipped).toBe(true)
+    // One email, not two, however many workers raced.
+    expect(fake.sent).toHaveLength(1)
+    expect(await db.reportRun.count({ where: { scheduleId: s.id, dueSlot: slot } })).toBe(1)
+  })
+
+  it('keeps two overlapping workers to a single email', async () => {
+    const i = await incident()
+    await action(i.id)
+    const fake = new FakeProvider('ok', true)
+    setEmailProviderForTests(fake)
+    const s = await scheduleWith('race')
+    const slot = '2026-08-17T08:00'
+    const args = {
+      id: s.id, companyId: COMPANY, reportType: 'overdue_actions' as const,
+      siteId: null, recipientUserIds: s.recipientUserIds,
+    }
+
+    // Started together, as two instances behind a load balancer would.
+    const results = await Promise.allSettled([
+      reports.runScheduledReport(args, slot),
+      reports.runScheduledReport(args, slot),
+    ])
+
+    const ran = results.filter(
+      (r) => r.status === 'fulfilled' && r.value.skipped === false,
+    )
+    expect(ran).toHaveLength(1)
+    expect(fake.sent).toHaveLength(1)
+  })
+
+  it('treats Run now twice as two deliberate runs, each with its own key', async () => {
+    const i = await incident()
+    await action(i.id)
+    const fake = new FakeProvider('ok', true)
+    setEmailProviderForTests(fake)
+    const s = await scheduleWith('twice')
+
+    await reports.runNow(admin, s.id)
+    await reports.runNow(admin, s.id)
+
+    // A person pressing the button twice asked for it twice - but the two are distinct
+    // messages, so a provider cannot collapse them and neither can a retry.
+    expect(fake.sent).toHaveLength(2)
+    expect(new Set(fake.sent.map((m) => m.idempotencyKey)).size).toBe(2)
+  })
+
+  it('keeps the rendered email and the stored filename out of the history payload', async () => {
+    const i = await incident()
+    await action(i.id)
+    setEmailProviderForTests(new FakeProvider('ok', true))
+    await reports.runNow(admin, (await scheduleWith('leak')).id)
+
+    const [run] = await reports.history(admin, COMPANY)
+    // deliveryPayload holds every recipient's address and the full HTML body; storedName is
+    // a path on the server. Neither belongs in a browser.
+    expect(run).not.toHaveProperty('deliveryPayload')
+    expect(run).not.toHaveProperty('storedName')
+    expect(run.attempts).toBe(1)
+    expect(run.maxAttempts).toBe(3)
   })
 })

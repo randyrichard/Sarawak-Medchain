@@ -1,6 +1,6 @@
 import PDFDocument from 'pdfkit'
 import { randomUUID } from 'node:crypto'
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { env } from './../env.js'
 import type { ReportData } from './reportService.js'
@@ -19,6 +19,19 @@ import type { ReportData } from './reportService.js'
 
 /** Where generated PDFs live. Same directory as every other stored file. */
 const UPLOAD_DIR = resolve(process.cwd(), env.UPLOAD_DIR)
+
+/**
+ * Read back the PDF a run already generated.
+ *
+ * Retrying a delivery must attach the bytes that were stored at generation time, never a
+ * fresh render: the numbers in a safety report change by the hour, and an email whose
+ * attachment disagrees with the run it claims to be is worse than no email.
+ */
+export function readStoredReport(storedName: string): Buffer | null {
+  const path = join(UPLOAD_DIR, storedName)
+  if (!existsSync(path)) return null
+  return readFileSync(path)
+}
 
 const BRAND = 'SafeOps'
 const BRAND_SUB = 'Safety Intelligence Platform'

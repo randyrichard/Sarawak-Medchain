@@ -81,6 +81,11 @@ export interface ReportRun {
   failureReason: string | null
   /** resend | smtp. Never anything about its credentials. */
   provider: string | null
+  /** Delivery attempts made so far, and the ceiling. Retrying is bounded, visibly. */
+  attempts: number
+  maxAttempts: number
+  /** When the next attempt is due. Set only while a retry is still owed. */
+  nextAttemptAt: string | null
   originalName: string | null
   sizeBytes: number | null
   error: string | null

@@ -88,7 +88,17 @@ d('AdminService — integration (real Postgres)', () => {
   })
 
   afterAll(async () => {
-    await db.user.deleteMany({ where: { email: { contains: '@itest.local' } } })
+    /*
+     * Scoped to this suite's own fixtures.
+     *
+     * Deleting everything at @itest.local removed the users other suites were mid-way
+     * through using - vitest runs files in parallel against one database - which showed up
+     * as an unrelated suite failing at random. The malformed fixture is named explicitly
+     * because it has no domain to match on.
+     */
+    await db.user.deleteMany({
+      where: { OR: [{ email: { startsWith: 'adm-' } }, { email: 'not-an-email' }] },
+    })
     await db.company.deleteMany({ where: { id: { in: [COMPANY, OTHER] } } })
     await db.counter.deleteMany({ where: { companyId: { in: [COMPANY, OTHER] } } })
     await db.$disconnect()

@@ -836,12 +836,22 @@ export class Scheduler {
     // Last in the pass: the report reads the results of everything above it, so it should
     // see this pass's notifications rather than last pass's.
     const reports = await this.sweepScheduledReports(now)
+    /*
+     * Recovery runs after the reports sweep, on the same pass.
+     *
+     * A delivery interrupted by a restart, or one waiting out a backoff, is picked up here
+     * rather than by a timer of its own - the report system already has exactly one thing
+     * that decides when work happens, and a second would be a second set of locking to get
+     * wrong. Whether a message may actually be sent again is decided in reportRetry.ts.
+     */
+    const recovered = await this.reports.recoverStalledDeliveries(now)
     lastRuns.set('j5', new Date().toISOString())
 
     return {
       actions, inspections, certificates, medicals, contractors, permits,
       calibrations, maintenance, outOfService,
-      overdueVisitors, outstandingBadges, expiredVisits, reports,
+      overdueVisitors, outstandingBadges, expiredVisits,
+      reports: reports + recovered.retried,
     }
   }
 

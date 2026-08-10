@@ -14,6 +14,9 @@ import {
   Alert, Badge, Button, Card, CardBody, PageHeader, Skeleton, Tabs, type TabItem,
 } from '@/components/ui'
 import { ScheduleDialog } from './components/ScheduleDialog'
+import {
+  canDownloadRun, canManageReports, deliveryBadge, recipientSummary, runFlashMessage,
+} from './lib'
 import { cn } from '@/lib/cn'
 
 /**
@@ -56,11 +59,7 @@ export function ReportsPage() {
     { open: false, editing: null },
   )
 
-  /*
-   * Mirrors the server's report roles. Presentation only: every call below is re-checked
-   * server-side, so hiding a button is a courtesy and never the control.
-   */
-  const manage = ['admin', 'hse_manager', 'safety_officer'].includes(role ?? '')
+  const manage = canManageReports(role)
 
   const loadSchedules = useCallback(() => {
     if (!company) return
@@ -120,11 +119,12 @@ export function ReportsPage() {
     setError(null)
     try {
       const res = await reportsApi.runNow(s.id)
-      say(
-        mailConfigured
-          ? `${s.name} generated and sent to ${s.recipients.length} recipient(s).`
-          : `${s.name} generated (${res.rowCount ?? 0} rows). Email delivery needs a mail provider — download it from History.`,
-      )
+      say(runFlashMessage({
+        name: s.name,
+        recipientCount: s.recipients.length,
+        mailConfigured,
+        rowCount: res.rowCount,
+      }))
       loadSchedules()
       loadRuns()
       setView('history')
@@ -191,8 +191,9 @@ export function ReportsPage() {
             <MailWarning size={13} className="mt-0.5 shrink-0" />
             <span>
               No mail provider is configured, so reports are generated and stored but not
-              emailed. Set <code className="font-mono">SMTP_URL</code> or{' '}
-              <code className="font-mono">MAIL_PROVIDER_API_KEY</code> to turn delivery on.
+              emailed. Set <code className="font-mono">RESEND_API_KEY</code> (or{' '}
+              <code className="font-mono">SMTP_URL</code>) together with{' '}
+              <code className="font-mono">REPORT_EMAIL_FROM</code> to turn delivery on.
               Until then, download reports from the History tab.
             </span>
           </span>
@@ -349,7 +350,7 @@ export function ReportsPage() {
                         </p>
                         <p className="mt-0.5 text-2xs text-muted">
                           {s.recipients.length > 0
-                            ? <>To {s.recipients.map((r) => r.name).join(', ')}</>
+                            ? <>{recipientSummary({ ...s, unreachableRecipients: 0 })}</>
                             : <span className="text-critical">No reachable recipients</span>}
                           {s.unreachableRecipients > 0 && (
                             <span className="text-critical">
@@ -431,13 +432,20 @@ export function ReportsPage() {
                             "Generated" is not a failure - it means nobody has configured a
                             provider yet - and saying so keeps the two apart.
                           */}
-                          {r.deliveryStatus === 'sent'
-                            ? <Badge tone="good"><Mail size={9} className="mr-0.5 inline" />Sent</Badge>
-                            : r.deliveryStatus === 'failed'
-                              ? <Badge tone="critical">Delivery failed</Badge>
-                              : r.deliveryStatus === 'email_pending'
-                                ? <Badge tone="warning">Sending…</Badge>
-                                : <Badge tone="neutral">Generated</Badge>}
+{(() => {
+                            /*
+                              The delivery outcome, distinct from whether the report built.
+                              "Generated" is not a failure - it means nobody has configured
+                              a provider yet - and saying so keeps the two apart.
+                            */
+                            const b = deliveryBadge(r)
+                            return (
+                              <Badge tone={b.tone}>
+                                {b.tone === 'good' && <Mail size={9} className="mr-0.5 inline" />}
+                                {b.label}
+                              </Badge>
+                            )
+                          })()}
                         </p>
                         <p className="text-2xs text-muted">
                           {fmtDateTime(r.startedAt)} · by {r.triggeredBy}
@@ -445,18 +453,27 @@ export function ReportsPage() {
                           {r.recipientCount > 0 && <> · {r.recipientCount} recipient(s)</>}
                           {r.sentAt && <> · sent {fmtDateTime(r.sentAt)}</>}
                           {r.provider && <> · via {r.provider}</>}
+                          {r.deliveryStatus === 'email_pending' && r.nextAttemptAt && (
+                            <> · next attempt {fmtDateTime(r.nextAttemptAt)}</>
+                          )}
+                          {r.deliveryStatus === 'failed' && r.attempts > 1 && (
+                            <> · {r.attempts} attempts</>
+                          )}
                         </p>
                         {/* Why it failed, in the provider's own words. Never hidden. */}
                         {r.failureReason && (
                           <p className="mt-0.5 text-2xs text-critical">{r.failureReason}</p>
                         )}
-                        {/* The server's sentence, verbatim. */}
-                        {r.deliveryNote && (
+                        {/*
+                          The server's sentence, verbatim - unless it is already the failure
+                          reason above it, in which case printing it again is just noise.
+                        */}
+                        {r.deliveryNote && r.deliveryNote !== r.failureReason && (
                           <p className="mt-0.5 text-2xs text-muted">{r.deliveryNote}</p>
                         )}
                         {r.error && <p className="mt-0.5 text-2xs text-critical">{r.error}</p>}
                       </div>
-                      {r.status === 'success' && r.originalName && (
+                      {canDownloadRun(r) && (
                         <Button size="sm" variant="secondary" icon={<Download size={11} />}
                           onClick={() => void download(() => reportsApi.runFile(r.id), r.originalName!)}>
                           PDF

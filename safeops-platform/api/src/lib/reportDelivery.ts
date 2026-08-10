@@ -32,6 +32,13 @@ export interface DeliveryResult {
   provider: string | null
   accepted: string[]
   rejected: string[]
+  /**
+   * The provider's error code, kept so the retry policy can tell a blip from a rejected
+   * key without re-parsing prose. Null when nothing failed.
+   */
+  errorCode: string | null
+  /** Whether this provider can recognise a repeat, which decides if a retry is safe. */
+  providerIdempotent: boolean
 }
 
 export function mailProviderConfigured(): boolean {
@@ -128,30 +135,76 @@ function htmlBody(data: ReportData, appUrl: string): string {
   </table></body></html>`
 }
 
-export async function deliverReport(input: {
-  data: ReportData
-  pdf: RenderedReport
+/**
+ * The exact message a run produced.
+ *
+ * Stored on the run so a retry re-sends this rather than rebuilding it. Rebuilding would
+ * re-read the database, and the numbers move: an email saying "4 overdue" with a PDF
+ * attached listing 6 is the kind of inconsistency that costs an audit.
+ */
+export interface DeliveryPayload {
+  subject: string
+  text: string
+  html: string
+  /** Who was addressed at generation time. A retry goes to the same people. */
   recipients: ReportRecipient[]
+  /** Addresses rejected before a provider was asked. Carried so the note stays accurate. */
+  malformed: string[]
+}
+
+/** Split the addressees into those worth sending to and those that cannot be delivered. */
+function partition(recipients: ReportRecipient[]) {
+  return {
+    usable: recipients.filter((r) => DELIVERABLE.test(r.email)),
+    malformed: recipients.filter((r) => !DELIVERABLE.test(r.email)).map((r) => r.email),
+  }
+}
+
+/** Build the message for a report, without sending it. */
+export function buildDeliveryPayload(
+  data: ReportData,
+  recipients: ReportRecipient[],
+): DeliveryPayload {
+  const appUrl = env.corsOrigins[0] ?? 'http://localhost:5181'
+  const { usable, malformed } = partition(recipients)
+  return {
+    subject: reportSubject(data),
+    text: textBody(data, appUrl),
+    html: htmlBody(data, appUrl),
+    recipients: usable,
+    malformed,
+  }
+}
+
+/**
+ * Hand a prepared message to whichever provider is configured.
+ *
+ * Every outcome is returned, never thrown. The report itself generated and stored
+ * successfully; only delivery is in question, and throwing here would mark the whole run
+ * failed and lose the PDF with it when the operator can still download it and act today.
+ */
+export async function sendDeliveryPayload(input: {
+  payload: DeliveryPayload
+  pdf: { fileName: string; bytes: Buffer }
+  idempotencyKey?: string
 }): Promise<DeliveryResult> {
-  const { data, pdf, recipients } = input
+  const { payload, pdf } = input
+  const { recipients: usable, malformed } = payload
 
   const base: DeliveryResult = {
     status: 'generated', delivered: false, note: '', messageId: null,
     sentAt: null, failureReason: null, provider: null, accepted: [], rejected: [],
+    errorCode: null, providerIdempotent: false,
   }
 
-  if (recipients.length === 0) {
+  if (usable.length === 0 && malformed.length === 0) {
     return {
       ...base,
       note: 'No active recipients. Nobody in this workspace was addressed.',
       failureReason: 'No active recipients.',
+      errorCode: 'no_recipients',
     }
   }
-
-  // Malformed addresses are separated before a provider is asked, so one bad entry in a
-  // distribution list does not fail the whole run.
-  const usable = recipients.filter((r) => DELIVERABLE.test(r.email))
-  const malformed = recipients.filter((r) => !DELIVERABLE.test(r.email)).map((r) => r.email)
 
   const provider = getEmailProvider()
   if (!provider) {
@@ -175,21 +228,22 @@ export async function deliverReport(input: {
     return {
       ...base,
       status: 'failed',
-      note: `No usable email addresses among ${recipients.length} recipient(s): ${malformed.join(', ')}.`,
+      note: `No usable email addresses among ${malformed.length} recipient(s): ${malformed.join(', ')}.`,
       failureReason: 'Every recipient address was malformed.',
+      errorCode: 'no_recipients',
       provider: provider.name,
+      providerIdempotent: provider.idempotent,
       rejected: malformed,
     }
   }
 
-  const appUrl = env.corsOrigins[0] ?? 'http://localhost:5181'
-
   try {
     const result = await provider.send({
       to: usable,
-      subject: reportSubject(data),
-      text: textBody(data, appUrl),
-      html: htmlBody(data, appUrl),
+      ...(input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : {}),
+      subject: payload.subject,
+      text: payload.text,
+      html: payload.html,
       attachments: [{
         // The exact PDF this run generated, never a second render.
         filename: pdf.fileName,
@@ -205,7 +259,9 @@ export async function deliverReport(input: {
         status: 'failed',
         note: `The provider accepted no recipients. Rejected: ${rejected.join(', ') || 'none reported'}.`,
         failureReason: 'The provider accepted no recipients.',
+        errorCode: 'rejected',
         provider: provider.name,
+        providerIdempotent: provider.idempotent,
         messageId: result.messageId || null,
         rejected,
       }
@@ -219,18 +275,13 @@ export async function deliverReport(input: {
       messageId: result.messageId || null,
       sentAt: new Date(),
       failureReason: null,
+      errorCode: null,
       provider: provider.name,
+      providerIdempotent: provider.idempotent,
       accepted: result.accepted,
       rejected,
     }
   } catch (e) {
-    /*
-     * A provider refusal is reported, not thrown.
-     *
-     * The report itself generated and stored successfully; only delivery failed. Throwing
-     * would mark the whole run failed and lose the PDF with it, when the operator can
-     * still download it and act on the contents today.
-     */
     const err = e instanceof EmailProviderError ? e : null
     const reason = err ? `${err.code}: ${err.message}` : (e as Error)?.message ?? 'Unknown mail error.'
     return {
@@ -239,8 +290,28 @@ export async function deliverReport(input: {
       note: `Report generated, but email delivery failed. ${reason}. `
         + 'The report was not marked as sent. The PDF is available to download from the run history.',
       failureReason: reason.slice(0, 400),
+      // An unrecognised throw is deliberately not classified as transient: the retry policy
+      // only repeats codes somebody has decided are safe to repeat.
+      errorCode: err?.code ?? 'unknown_error',
       provider: provider.name,
+      providerIdempotent: provider.idempotent,
       rejected: [...malformed, ...usable.map((r) => r.email)],
     }
   }
+}
+
+/** First attempt: build the message and send it. */
+export async function deliverReport(input: {
+  data: ReportData
+  pdf: RenderedReport
+  recipients: ReportRecipient[]
+  idempotencyKey?: string
+}): Promise<DeliveryResult & { payload: DeliveryPayload }> {
+  const payload = buildDeliveryPayload(input.data, input.recipients)
+  const result = await sendDeliveryPayload({
+    payload,
+    pdf: { fileName: input.pdf.fileName, bytes: input.pdf.bytes },
+    idempotencyKey: input.idempotencyKey,
+  })
+  return { ...result, payload }
 }
