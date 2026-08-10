@@ -1,1 +1,7 @@
 .env.prod
+
+# Stored uploads: incident evidence, permit documents, equipment photos, generated
+# report PDFs. Runtime data, and in production it is customer data - it belongs on a
+# volume, never in the repository. A .gitkeep preserves the directory itself.
+uploads/*
+!uploads/.gitkeep
