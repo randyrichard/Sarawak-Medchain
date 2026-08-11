@@ -42,13 +42,17 @@ export interface AdminDepartment {
 }
 
 export type InvitationState = 'pending' | 'accepted' | 'revoked' | 'expired'
+/** Delivery, in the same words the Reports page uses. */
+export type InvitationDelivery = 'created' | 'email_pending' | 'sent' | 'failed'
 
 export interface AdminInvitation {
   id: string
   email: string
   role: string
   siteIds: string[]
+  siteNames: string[]
   departmentId: string | null
+  departmentName: string | null
   invitedBy: string
   createdAt: string
   expiresAt: string
@@ -57,6 +61,15 @@ export interface AdminInvitation {
   userId: string
   userName: string
   userStatus: string
+  /* Delivery is separate from the invitation's own lifecycle: a failed email leaves a
+   * perfectly valid invitation that simply has not reached anybody. */
+  deliveryStatus: InvitationDelivery
+  sentAt: string | null
+  lastAttemptAt: string | null
+  failureReason: string | null
+  provider: string | null
+  attempts: number
+  maxSends: number
 }
 
 export interface RoleCatalogEntry {
@@ -128,17 +141,30 @@ export const orgAdminApi = {
   },
 
   /**
-   * Issues an invitation. The token comes back exactly once, here.
+   * Issues an invitation and sends it through the configured email provider.
    *
-   * With no mail provider configured, this link is how the invitee gets in - the console
-   * shows it to the administrator to pass on, rather than pretending an email was sent.
+   * The token comes back only when the email did not go - no provider configured, or the
+   * provider refused it. Once a provider has the message the administrator has no need for
+   * the secret, and there is no reason to put a working credential through another system.
    */
   createInvitation(companyId: string, input: {
     email: string; name?: string; role: string
     siteIds?: string[]; departmentId?: string | null
-  }): Promise<{ id: string; email: string; role: string; expiresAt: string; token: string }> {
+  }): Promise<{
+    id: string; email: string; role: string; expiresAt: string
+    deliveryStatus: InvitationDelivery; token?: string
+  }> {
     return request('/admin/invitations', {
       method: 'POST', body: JSON.stringify({ companyId, ...input }),
+    })
+  },
+
+  /** Sends the invitation again with a fresh link; the previous one stops working. */
+  resendInvitation(companyId: string, id: string): Promise<{
+    id: string; email: string; deliveryStatus: InvitationDelivery; token?: string
+  }> {
+    return request(`/admin/invitations/${id}/resend`, {
+      method: 'POST', body: JSON.stringify({ companyId }),
     })
   },
 

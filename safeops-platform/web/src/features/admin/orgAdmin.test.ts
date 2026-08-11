@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
-  departmentInUseSummary, invitationLink, invitationState, siteInUseSummary,
+  canResendInvitation, departmentInUseSummary, invitationDelivery, invitationLink,
+  invitationState, siteInUseSummary,
 } from './lib'
 
 /**
@@ -84,5 +85,48 @@ describe('invitationLink', () => {
     // base64url tokens carry - and _; mangling either makes the link fail silently.
     const token = 'aB-3_xY9zQ'
     expect(invitationLink(token, 'https://x.test')).toContain(token)
+  })
+})
+
+describe('invitationDelivery', () => {
+  it('uses the same words as the Reports page', () => {
+    // An operator who learnt what "failed" means there should not learn it twice.
+    expect(invitationDelivery('sent')).toEqual({ label: 'Emailed', tone: 'good' })
+    expect(invitationDelivery('failed')).toEqual({ label: 'Email failed', tone: 'critical' })
+    expect(invitationDelivery('email_pending')).toEqual({ label: 'Sending', tone: 'warning' })
+  })
+
+  it('does not dress "nobody configured mail" up as a failure', () => {
+    /*
+     * "created" means no provider exists, which is a configuration gap rather than
+     * something that went wrong. Colouring it red sends an administrator hunting a bug.
+     */
+    const created = invitationDelivery('created')
+    expect(created.label).toBe('Not emailed')
+    expect(created.tone).toBe('neutral')
+  })
+
+  it('never reports an email as delivered for any other state', () => {
+    for (const s of ['created', 'email_pending', 'failed']) {
+      expect(invitationDelivery(s).label).not.toBe('Emailed')
+    }
+  })
+})
+
+describe('canResendInvitation', () => {
+  it('offers a resend on a live invitation with attempts left', () => {
+    expect(canResendInvitation({ state: 'pending', attempts: 1, maxSends: 5 })).toBe(true)
+  })
+
+  it('does not offer a click that can only fail', () => {
+    for (const state of ['accepted', 'revoked', 'expired']) {
+      expect(canResendInvitation({ state, attempts: 1, maxSends: 5 })).toBe(false)
+    }
+  })
+
+  it('stops at the ceiling', () => {
+    // Past this the server refuses, so offering the button would be a lie.
+    expect(canResendInvitation({ state: 'pending', attempts: 5, maxSends: 5 })).toBe(false)
+    expect(canResendInvitation({ state: 'pending', attempts: 4, maxSends: 5 })).toBe(true)
   })
 })

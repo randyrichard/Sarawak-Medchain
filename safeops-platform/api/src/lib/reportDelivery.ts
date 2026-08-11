@@ -165,7 +165,9 @@ export function buildDeliveryPayload(
   data: ReportData,
   recipients: ReportRecipient[],
 ): DeliveryPayload {
-  const appUrl = env.corsOrigins[0] ?? 'http://localhost:5181'
+  // One definition of where this deployment lives, shared with invitation links. In
+  // production it is validated at boot, so this can never be a localhost address there.
+  const appUrl = env.appUrl
   const { usable, malformed } = partition(recipients)
   return {
     subject: reportSubject(data),

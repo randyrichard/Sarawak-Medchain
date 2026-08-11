@@ -107,3 +107,36 @@ export function invitationState(state: string): { label: string; tone: 'good' | 
 export function invitationLink(token: string, origin = window.location.origin): string {
   return `${origin}/accept-invitation/${token}`
 }
+
+/**
+ * How an invitation's email delivery reads.
+ *
+ * Deliberately the same words and tones the Reports page uses for its own delivery - an
+ * operator who has learnt what "Failed" means there should not have to learn it again.
+ * "Not sent" is not a failure: it means nobody has configured a mail provider yet.
+ */
+export function invitationDelivery(status: string): {
+  label: string
+  tone: 'good' | 'warning' | 'neutral' | 'critical'
+} {
+  switch (status) {
+    case 'sent': return { label: 'Emailed', tone: 'good' }
+    case 'failed': return { label: 'Email failed', tone: 'critical' }
+    case 'email_pending': return { label: 'Sending', tone: 'warning' }
+    default: return { label: 'Not emailed', tone: 'neutral' }
+  }
+}
+
+/**
+ * Whether resending is worth offering.
+ *
+ * Only for an invitation that is still live and has attempts left. Offering it on an
+ * accepted or revoked one invites a click that can only fail.
+ */
+export function canResendInvitation(inv: {
+  state: string
+  attempts: number
+  maxSends: number
+}): boolean {
+  return inv.state === 'pending' && inv.attempts < inv.maxSends
+}

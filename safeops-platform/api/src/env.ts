@@ -46,6 +46,15 @@ const schema = z.object({
   MAIL_REPLY_TO: z.string().optional(),
 
   CORS_ORIGINS: z.string().default('http://localhost:5181'),
+  /**
+   * Where this deployment is reachable from a browser.
+   *
+   * Every link that leaves the building - invitation, password reset, the button in a
+   * scheduled report - is built from this. Optional in development, where the first CORS
+   * origin is a sensible stand-in; required in production, because a link to localhost in
+   * somebody's inbox is worse than no link at all.
+   */
+  APP_PUBLIC_URL: z.string().url().optional(),
   COOKIE_DOMAIN: z.string().optional(),
 
   // The reminder and escalation sweeps run inside the API process. Set to "false" on
@@ -90,6 +99,34 @@ const raw = parsed.data
  * boot, in keeping with the rest of this file: a misconfigured deploy fails loudly rather
  * than silently doing nothing useful every Monday.
  */
+/**
+ * A production deployment must know its own public address.
+ *
+ * Refused at boot rather than discovered later: an invitation pointing at localhost is
+ * indistinguishable from a working one until the recipient clicks it, by which time the
+ * token has been spent on nothing and the administrator is chasing a link that never
+ * resolved.
+ */
+if (raw.NODE_ENV === 'production') {
+  const url = raw.APP_PUBLIC_URL ?? ''
+  if (!url) {
+    // eslint-disable-next-line no-console
+    console.error(
+      'APP_PUBLIC_URL is required in production (e.g. "https://app.yourcompany.com"). '
+      + 'Invitation and password links are built from it.',
+    )
+    process.exit(1)
+  }
+  if (/^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/i.test(url)) {
+    // eslint-disable-next-line no-console
+    console.error(
+      `APP_PUBLIC_URL is set to ${url}, which nobody outside this machine can reach. `
+      + 'Set it to the address your users actually visit.',
+    )
+    process.exit(1)
+  }
+}
+
 if ((raw.RESEND_API_KEY || raw.SMTP_URL) && !raw.REPORT_EMAIL_FROM) {
   // eslint-disable-next-line no-console
   console.error(
@@ -119,4 +156,12 @@ export const env = {
   corsOrigins: raw.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean),
   /** One place that decides whether reports can actually be emailed. */
   mailConfigured: Boolean((raw.RESEND_API_KEY || raw.SMTP_URL) && raw.REPORT_EMAIL_FROM),
+  /**
+   * The one definition of "where this app lives", used by every outbound link.
+   *
+   * Production is validated above, so the fallbacks here only ever apply in development.
+   */
+  appUrl: (raw.APP_PUBLIC_URL
+    ?? raw.CORS_ORIGINS.split(',')[0]?.trim()
+    ?? 'http://localhost:5181').replace(/\/+$/, ''),
 }

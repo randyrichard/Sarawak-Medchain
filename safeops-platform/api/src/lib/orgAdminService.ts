@@ -4,6 +4,10 @@ import type { Caller } from './incidentService.js'
 import { writeAdminAudit, type AdminContext } from './adminAudit.js'
 import { hashResetToken } from './tokens.js'
 import { hashPassword, validatePasswordStrength } from './password.js'
+import { env } from '../env.js'
+import { getEmailProvider } from './email/index.js'
+import { EmailProviderError } from './email/provider.js'
+import { buildInvitationEmail } from './email/invitationEmail.js'
 
 /**
  * Organisation administration: sites, departments and invitations.
@@ -27,6 +31,24 @@ export class OrgAdminError extends Error {
 
 /** Seven days. Long enough for somebody on leave, short enough to expire before it leaks. */
 export const INVITE_TTL_DAYS = 7
+
+/**
+ * How often one invitation may be re-sent, and how many times in total.
+ *
+ * The cooldown stops a double-click becoming two emails; the ceiling stops an invitation
+ * nobody is ever going to accept from being used to post mail at somebody indefinitely.
+ * Both are per invitation, on top of the request-rate limit at the route.
+ */
+export const RESEND_COOLDOWN_SECONDS = 60
+export const MAX_SENDS_PER_INVITATION = 5
+
+/** Delivery, in ReportRun's vocabulary. One set of words for "did the email go". */
+export type InvitationDelivery = 'created' | 'email_pending' | 'sent' | 'failed'
+
+/** The acceptance link, built from the one configured public address. */
+export function invitationUrl(token: string): string {
+  return `${env.appUrl}/accept-invitation/${token}`
+}
 
 const ROLES: Role[] = ['ceo', 'admin', 'hse_manager', 'safety_officer', 'supervisor', 'employee']
 
@@ -224,7 +246,8 @@ export class OrgAdminService {
   ) {
     this.requireAdmin(caller, companyId)
     const site = await this.findSite(companyId, id)
-    if (site.active === active) return site
+    // Already in the requested state: nothing to write, nothing to audit, same shape back.
+    if (site.active === active) return { ...site, stillAssigned: 0 }
 
     if (!active) {
       const remaining = await this.db.site.count({ where: { companyId, active: true } })
@@ -241,7 +264,21 @@ export class OrgAdminService {
       caller, companyId, ctx, active ? 'Reactivated site' : 'Deactivated site', site.name,
       site.active ? 'active' : 'inactive', active ? 'active' : 'inactive',
     )
-    return updated
+
+    /*
+     * Who is still pointed at this site.
+     *
+     * Their assignment is deliberately left in place: rewriting somebody's scope as a side
+     * effect of an administrator tidying up the site list is how people quietly gain or
+     * lose visibility nobody decided to give them. What changes is that no new assignment
+     * can name it - see checkAssignableSites - and the count is reported so the
+     * administrator can reassign deliberately rather than discover it later.
+     */
+    const stillAssigned = active ? 0 : await this.db.membership.count({
+      where: { companyId, siteIds: { has: id } },
+    })
+
+    return { ...updated, stillAssigned }
   }
 
   private async findSite(companyId: string, id: string) {
@@ -265,7 +302,7 @@ export class OrgAdminService {
       orderBy: [{ active: 'desc' }, { name: 'asc' }],
       include: {
         site: { select: { id: true, name: true } },
-        manager: { select: { id: true, name: true, email: true } },
+        manager: { select: { id: true, name: true, email: true, status: true } },
         _count: { select: { incidents: true, visitors: true, teams: true } },
       },
     })
@@ -276,7 +313,20 @@ export class OrgAdminService {
       active: d.active,
       siteId: d.siteId,
       siteName: d.site.name,
-      manager: d.manager ? { id: d.manager.id, name: d.manager.name, email: d.manager.email } : null,
+      /*
+       * managerUserId is an accountability reference and nothing else - no routing, no
+       * approvals, no notifications read it. So a manager whose account is deactivated is
+       * stale rather than broken, and the honest thing is to show that rather than to
+       * silently clear the field or block the deactivation.
+       */
+      manager: d.manager
+        ? {
+          id: d.manager.id,
+          name: d.manager.name,
+          email: d.manager.email,
+          active: d.manager.status === 'active',
+        }
+        : null,
       inUse: { incidents: d._count.incidents, visitors: d._count.visitors, teams: d._count.teams },
     }))
   }
@@ -288,7 +338,12 @@ export class OrgAdminService {
     const name = input.name?.trim()
     if (!name) throw new OrgAdminError('validation', 'The department needs a name.')
 
-    await this.findSite(companyId, input.siteId)
+    const site = await this.findSite(companyId, input.siteId)
+    if (!site.active) {
+      throw new OrgAdminError(
+        'validation', `${site.name} is deactivated. Reactivate it before adding departments.`,
+      )
+    }
     const managerUserId = await this.checkManager(companyId, input.managerUserId)
 
     const clash = await this.db.department.findFirst({
@@ -392,16 +447,42 @@ export class OrgAdminService {
       take: 100,
       include: { user: { select: { id: true, name: true, status: true } } },
     })
+
+    /* Resolve names once for the whole page rather than per row. */
+    const siteIds = [...new Set(rows.flatMap((r) => r.siteIds))]
+    const deptIds = [...new Set(rows.map((r) => r.departmentId).filter(Boolean) as string[])]
+    const [sites, depts] = await Promise.all([
+      siteIds.length
+        ? this.db.site.findMany({ where: { id: { in: siteIds } }, select: { id: true, name: true } })
+        : Promise.resolve([]),
+      deptIds.length
+        ? this.db.department.findMany({ where: { id: { in: deptIds } }, select: { id: true, name: true } })
+        : Promise.resolve([]),
+    ])
+    const siteName = new Map(sites.map((x) => [x.id, x.name]))
+    const deptName = new Map(depts.map((x) => [x.id, x.name]))
+
     const now = Date.now()
     return rows.map((i) => ({
       id: i.id,
       email: i.email,
       role: i.role,
       siteIds: i.siteIds,
+      siteNames: i.siteIds.map((id) => siteName.get(id)).filter(Boolean) as string[],
       departmentId: i.departmentId,
+      departmentName: i.departmentId ? deptName.get(i.departmentId) ?? null : null,
       invitedBy: i.invitedBy,
       createdAt: i.createdAt.toISOString(),
       expiresAt: i.expiresAt.toISOString(),
+      /* Delivery, separate from the invitation's own lifecycle. A failed email does not
+       * make the invitation invalid - it makes it undelivered. */
+      deliveryStatus: i.deliveryStatus as InvitationDelivery,
+      sentAt: i.sentAt?.toISOString() ?? null,
+      lastAttemptAt: i.lastAttemptAt?.toISOString() ?? null,
+      failureReason: i.failureReason,
+      provider: i.provider,
+      attempts: i.attempts,
+      maxSends: MAX_SENDS_PER_INVITATION,
       /*
        * Derived on read. A stored status needs a job to expire it, and any window where
        * that job had not run would show a dead invitation as live.
@@ -415,6 +496,134 @@ export class OrgAdminService {
       userStatus: i.user.status,
       // The token itself is never returned after issue, and never stored in the clear.
     }))
+  }
+
+  /**
+   * Sites somebody can actually be assigned to.
+   *
+   * A deactivated site is on its way out of use; putting a new person on one gives them a
+   * scope that resolves to nothing in the pickers. Existing assignments are deliberately
+   * left alone - see setSiteActive.
+   */
+  private async checkAssignableSites(companyId: string, siteIds: string[] | undefined) {
+    if (!siteIds?.length) return
+    const rows = await this.db.site.findMany({
+      where: { id: { in: siteIds }, companyId },
+      select: { id: true, name: true, active: true },
+    })
+    if (rows.length !== siteIds.length) {
+      throw new OrgAdminError('validation', 'One or more sites are not in this workspace.')
+    }
+    const inactive = rows.filter((r) => !r.active)
+    if (inactive.length) {
+      throw new OrgAdminError(
+        'validation',
+        `${inactive.map((r) => r.name).join(', ')} ${inactive.length === 1 ? 'is' : 'are'} `
+        + 'deactivated. Reactivate the site before assigning anyone to it.',
+      )
+    }
+  }
+
+  /**
+   * Hand an invitation to the configured email provider and record what happened.
+   *
+   * Every outcome is recorded, none is thrown. The invitation is already committed and
+   * still works: a provider outage costs the recipient an email, not their way in, so the
+   * administrator is told delivery failed and offered a resend rather than losing the
+   * invitation along with the message.
+   *
+   * The attempt is written before the provider is contacted, which is what makes the
+   * idempotency key distinct per send - the same pattern the scheduled reports use.
+   */
+  private async deliverInvitation(invitationId: string, rawToken: string) {
+    const invite = await this.db.invitation.findUniqueOrThrow({
+      where: { id: invitationId },
+      include: { company: { select: { name: true } } },
+    })
+
+    const provider = getEmailProvider()
+    if (!provider) {
+      /*
+       * Nothing is sent and nothing pretends otherwise. The invitation stays at "created",
+       * which is exactly what it is, and the console shows the link for somebody to pass
+       * on by hand.
+       */
+      await this.db.invitation.update({
+        where: { id: invitationId },
+        data: {
+          deliveryStatus: 'created',
+          failureReason: 'No email provider is configured, so no invitation email was sent. '
+            + 'Set RESEND_API_KEY (or SMTP_URL) with REPORT_EMAIL_FROM to enable delivery.',
+        },
+      })
+      return { delivered: false as const, status: 'created' as const, showLink: true }
+    }
+
+    const attempts = invite.attempts + 1
+    await this.db.invitation.update({
+      where: { id: invitationId },
+      data: { deliveryStatus: 'email_pending', attempts, lastAttemptAt: new Date() },
+    })
+
+    const [sites, dept] = await Promise.all([
+      invite.siteIds.length
+        ? this.db.site.findMany({ where: { id: { in: invite.siteIds } }, select: { name: true } })
+        : Promise.resolve([]),
+      invite.departmentId
+        ? this.db.department.findUnique({
+          where: { id: invite.departmentId }, select: { name: true },
+        })
+        : Promise.resolve(null),
+    ])
+
+    const label = ROLE_CATALOG.find((r) => r.role === invite.role)?.label
+      ?? invite.role.replace(/_/g, ' ')
+
+    const message = buildInvitationEmail({
+      companyName: invite.company.name,
+      recipientEmail: invite.email,
+      inviterName: invite.invitedBy,
+      roleLabel: label,
+      siteNames: sites.map((x) => x.name),
+      departmentName: dept?.name ?? null,
+      acceptUrl: invitationUrl(rawToken),
+      expiresAt: invite.expiresAt,
+    // Distinct per send, stable per attempt: a resend is a new email, a retry of one send
+    // is recognised as the same message by a provider that de-duplicates.
+    }, `safeops-invitation-${invitationId}-${attempts}`)
+
+    try {
+      const result = await provider.send(message)
+      await this.db.invitation.update({
+        where: { id: invitationId },
+        data: {
+          deliveryStatus: 'sent',
+          messageId: result.messageId || null,
+          sentAt: new Date(),
+          failureReason: null,
+          provider: provider.name,
+        },
+      })
+      return { delivered: true as const, status: 'sent' as const, showLink: false }
+    } catch (e) {
+      const err = e instanceof EmailProviderError ? e : null
+      const reason = err
+        ? `${err.code}: ${err.message}`
+        : (e as Error)?.message ?? 'Unknown mail error.'
+      await this.db.invitation.update({
+        where: { id: invitationId },
+        data: {
+          deliveryStatus: 'failed',
+          failureReason: reason.slice(0, 400),
+          provider: provider.name,
+        },
+      })
+      /*
+       * The link is surfaced on failure too. The invitation is valid and the administrator
+       * needs some way to get it to the person while the mail problem is sorted out.
+       */
+      return { delivered: false as const, status: 'failed' as const, showLink: true }
+    }
   }
 
   /**
@@ -439,14 +648,7 @@ export class OrgAdminService {
     }
     const role = input.role as Role
 
-    if (input.siteIds?.length) {
-      const count = await this.db.site.count({
-        where: { id: { in: input.siteIds }, companyId },
-      })
-      if (count !== input.siteIds.length) {
-        throw new OrgAdminError('validation', 'One or more sites are not in this workspace.')
-      }
-    }
+    await this.checkAssignableSites(companyId, input.siteIds)
     if (input.departmentId) await this.findDepartment(companyId, input.departmentId)
 
     const existing = await this.db.user.findUnique({
@@ -514,14 +716,108 @@ export class OrgAdminService {
     // is a second copy of the credential store.
     await this.log(caller, companyId, ctx, 'Invited user', email, undefined, role)
 
+    const delivery = await this.deliverInvitation(result.invitation.id, rawToken)
+    await this.logDelivery(caller, companyId, ctx, result.invitation.id, email, 'Invitation')
+
     return {
       id: result.invitation.id,
       email,
       role,
       expiresAt: expiresAt.toISOString(),
-      /** Returned once, here. Deliver it however the organisation delivers such things. */
-      token: rawToken,
+      deliveryStatus: delivery.status,
+      /*
+       * The link comes back only when the email did not go. Once a provider has it, the
+       * administrator has no need for the secret and there is no reason to put a working
+       * credential through another system that might log it.
+       */
+      token: delivery.showLink ? rawToken : undefined,
     }
+  }
+
+  /**
+   * Send an invitation again.
+   *
+   * The same invitation row is reused - one invite, one audit lineage - but the token is
+   * replaced, because only its hash was ever stored and the original cannot be recovered.
+   * Replacing it also supersedes the old link, so a resend never leaves two working ways in.
+   */
+  async resendInvitation(caller: Caller, companyId: string, ctx: AdminContext, id: string) {
+    this.requireAdmin(caller, companyId)
+
+    const invite = await this.db.invitation.findFirst({ where: { id, companyId } })
+    if (!invite) throw new OrgAdminError('not_found', 'Invitation not found.', 404)
+    if (invite.acceptedAt) {
+      throw new OrgAdminError('validation', 'That invitation has already been accepted.')
+    }
+    if (invite.revokedAt) {
+      throw new OrgAdminError('validation', 'That invitation was revoked. Invite them again.')
+    }
+    if (invite.attempts >= MAX_SENDS_PER_INVITATION) {
+      throw new OrgAdminError(
+        'validation',
+        `This invitation has been sent ${MAX_SENDS_PER_INVITATION} times. `
+        + 'Revoke it and invite them again if it is still needed.',
+      )
+    }
+    const since = invite.lastAttemptAt
+      ? (Date.now() - invite.lastAttemptAt.getTime()) / 1000
+      : Infinity
+    if (since < RESEND_COOLDOWN_SECONDS) {
+      throw new OrgAdminError(
+        'rate_limited',
+        `Just sent. Wait ${Math.ceil(RESEND_COOLDOWN_SECONDS - since)} seconds before resending.`,
+        429,
+      )
+    }
+
+    // A fresh secret and a fresh window; the previous link stops working at this point.
+    const rawToken = randomBytes(32).toString('base64url')
+    await this.db.invitation.update({
+      where: { id },
+      data: {
+        tokenHash: hashResetToken(rawToken),
+        expiresAt: new Date(Date.now() + INVITE_TTL_DAYS * 86_400_000),
+      },
+    })
+
+    await this.log(caller, companyId, ctx, 'Resent invitation', invite.email)
+    const delivery = await this.deliverInvitation(id, rawToken)
+    await this.logDelivery(caller, companyId, ctx, id, invite.email, 'Invitation')
+
+    return {
+      id,
+      email: invite.email,
+      deliveryStatus: delivery.status,
+      token: delivery.showLink ? rawToken : undefined,
+    }
+  }
+
+  /**
+   * Record what the provider did with a message.
+   *
+   * Separate from the "Invited user" entry so the audit trail distinguishes the decision to
+   * invite somebody from whether the email reached them - they fail independently, and an
+   * auditor asking "was this person actually notified" needs the second one.
+   */
+  private async logDelivery(
+    caller: Caller, companyId: string, ctx: AdminContext,
+    invitationId: string, email: string, what: string,
+  ) {
+    const row = await this.db.invitation.findUniqueOrThrow({
+      where: { id: invitationId },
+      select: { deliveryStatus: true, provider: true, failureReason: true, attempts: true },
+    })
+    const action = row.deliveryStatus === 'sent'
+      ? `${what} email sent`
+      : row.deliveryStatus === 'failed'
+        ? `${what} email failed`
+        : `${what} email not sent`
+    await this.log(
+      caller, companyId, ctx, action, email,
+      undefined,
+      // Provider name and reason only. Never the token - the trail is read and exported.
+      [row.provider, row.failureReason].filter(Boolean).join(': ').slice(0, 400) || undefined,
+    )
   }
 
   async revokeInvitation(caller: Caller, companyId: string, ctx: AdminContext, id: string) {
@@ -684,14 +980,7 @@ export class OrgAdminService {
     }
 
     if (patch.siteIds !== undefined) {
-      if (patch.siteIds.length) {
-        const count = await this.db.site.count({
-          where: { id: { in: patch.siteIds }, companyId },
-        })
-        if (count !== patch.siteIds.length) {
-          throw new OrgAdminError('validation', 'One or more sites are not in this workspace.')
-        }
-      }
+      await this.checkAssignableSites(companyId, patch.siteIds)
       data.siteIds = patch.siteIds
     }
 

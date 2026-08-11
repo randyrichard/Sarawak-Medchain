@@ -2776,6 +2776,25 @@ model Invitation {
   invitedBy String
   createdAt DateTime @default(now())
 
+  /// Delivery, in the same vocabulary ReportRun already uses: created, email_pending,
+  /// sent, failed. Deliberately the same words rather than a second scheme - an operator
+  /// who has learnt what "failed" means on the Reports page should not learn it twice.
+  ///
+  /// The invitation stays usable whatever this says. A provider outage must not cost
+  /// somebody their way into the workspace; it costs them an email, and the link can be
+  /// resent or passed on by hand.
+  deliveryStatus String    @default("created")
+  /// The provider's own id, for answering "did it actually go?" from their dashboard.
+  messageId      String?
+  sentAt         DateTime?
+  failureReason  String?
+  /// resend | smtp. Never anything about how it authenticates.
+  provider       String?
+  /// Sends attempted, including resends. Also what makes each send's idempotency key
+  /// distinct, so a resend is a new email while a retry of one send is not.
+  attempts       Int       @default(0)
+  lastAttemptAt  DateTime?
+
   @@index([companyId, email])
   @@index([companyId, createdAt])
   @@index([userId])

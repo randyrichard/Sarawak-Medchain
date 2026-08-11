@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import rateLimit from 'express-rate-limit'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
 import { OrgAdminService } from '../lib/orgAdminService.js'
@@ -27,6 +28,21 @@ const ctxOf = (req: { ip?: string; get: (h: string) => string | undefined }) =>
   ({ ip: req.ip, device: req.get('user-agent') ?? '' })
 
 const COMPANY = z.object({ companyId: z.string().min(1) })
+
+/**
+ * A ceiling on invitation mail leaving this instance.
+ *
+ * The service already enforces a cooldown and a send ceiling per invitation; this bounds
+ * the whole surface, so a compromised admin session cannot use the console to post mail at
+ * a few hundred addresses. Generous enough that onboarding a real site never touches it.
+ */
+const inviteLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 60,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'rate_limited', message: 'Too many invitations. Try again shortly.' },
+})
 
 // ── Sites ────────────────────────────────────────────────────────────────────
 
@@ -119,7 +135,7 @@ orgAdminRouter.get('/invitations', requireAuth, async (req, res, next) => {
   } catch (e) { next(e) }
 })
 
-orgAdminRouter.post('/invitations', requireAuth, async (req, res, next) => {
+orgAdminRouter.post('/invitations', inviteLimiter, requireAuth, async (req, res, next) => {
   try {
     const { companyId, ...input } = COMPANY.extend({
       email: z.string().min(3).max(200),
@@ -129,6 +145,13 @@ orgAdminRouter.post('/invitations', requireAuth, async (req, res, next) => {
       departmentId: z.string().nullable().optional(),
     }).parse(req.body)
     res.status(201).json(await svc.createInvitation(callerOf(req), companyId, ctxOf(req), input))
+  } catch (e) { next(e) }
+})
+
+orgAdminRouter.post('/invitations/:id/resend', inviteLimiter, requireAuth, async (req, res, next) => {
+  try {
+    const { companyId } = COMPANY.parse(req.body)
+    res.json(await svc.resendInvitation(callerOf(req), companyId, ctxOf(req), req.params.id))
   } catch (e) { next(e) }
 })
 

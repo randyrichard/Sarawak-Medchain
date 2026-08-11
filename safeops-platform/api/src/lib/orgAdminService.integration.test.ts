@@ -1,9 +1,14 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest'
 import { PrismaClient } from '@prisma/client'
-import { OrgAdminService, INVITE_TTL_DAYS } from './orgAdminService.js'
+import {
+  OrgAdminService, INVITE_TTL_DAYS, MAX_SENDS_PER_INVITATION, RESEND_COOLDOWN_SECONDS,
+} from './orgAdminService.js'
+import { setEmailProviderForTests } from './email/index.js'
+import { EmailProviderError, type EmailMessage, type EmailProvider } from './email/provider.js'
 import { OrgService } from './orgService.js'
 import type { Caller } from './incidentService.js'
 import { verifyPassword } from './password.js'
+import { env } from '../env.js'
 
 /**
  * Organisation administration, against a REAL PostgreSQL database.
@@ -297,7 +302,7 @@ d('Organisation administration — integration (real Postgres)', () => {
     const invite = await svc.createInvitation(admin, CO, ctx, {
       email, role: 'safety_officer', siteIds: [SITE],
     })
-    expect(invite.token).toBeTruthy()
+    expect(invite.token!).toBeTruthy()
 
     const user = await db.user.findUniqueOrThrow({ where: { email } })
     expect(user.status).toBe('invited')
@@ -305,14 +310,14 @@ d('Organisation administration — integration (real Postgres)', () => {
     const listed = await svc.listInvitations(admin, CO)
     expect(listed[0].state).toBe('pending')
     // The secret is never handed back out after issue.
-    expect(JSON.stringify(listed)).not.toContain(invite.token)
+    expect(JSON.stringify(listed)).not.toContain(invite.token!)
   })
 
   it('stores only the hash of the token', async () => {
     const invite = await svc.createInvitation(admin, CO, ctx, { email: mail(), role: 'employee' })
     const row = await db.invitation.findUniqueOrThrow({ where: { id: invite.id } })
     // A leaked database must not hand out working invitations.
-    expect(row.tokenHash).not.toBe(invite.token)
+    expect(row.tokenHash).not.toBe(invite.token!)
     expect(row.tokenHash).toMatch(/^[0-9a-f]{64}$/)
   })
 
@@ -320,11 +325,11 @@ d('Organisation administration — integration (real Postgres)', () => {
     const email = mail()
     const invite = await svc.createInvitation(admin, CO, ctx, { email, role: 'hse_manager' })
 
-    const preview = await svc.previewInvitation(invite.token)
+    const preview = await svc.previewInvitation(invite.token!)
     expect(preview.companyName).toBe('OA ITest Co')
     expect(preview.email).toBe(email)
 
-    await svc.acceptInvitation(invite.token, { password: 'Str0ng-Passw0rd!23', name: 'Real Name' })
+    await svc.acceptInvitation(invite.token!, { password: 'Str0ng-Passw0rd!23', name: 'Real Name' })
 
     const user = await db.user.findUniqueOrThrow({ where: { email } })
     expect(user.status).toBe('active')
@@ -336,8 +341,8 @@ d('Organisation administration — integration (real Postgres)', () => {
 
   it('cannot spend the same invitation twice', async () => {
     const invite = await svc.createInvitation(admin, CO, ctx, { email: mail(), role: 'employee' })
-    await svc.acceptInvitation(invite.token, { password: 'Str0ng-Passw0rd!23' })
-    await expect(svc.acceptInvitation(invite.token, { password: 'An0ther-Passw0rd!' }))
+    await svc.acceptInvitation(invite.token!, { password: 'Str0ng-Passw0rd!23' })
+    await expect(svc.acceptInvitation(invite.token!, { password: 'An0ther-Passw0rd!' }))
       .rejects.toMatchObject({ code: 'invalid_token' })
   })
 
@@ -346,15 +351,15 @@ d('Organisation administration — integration (real Postgres)', () => {
     await db.invitation.update({
       where: { id: invite.id }, data: { expiresAt: new Date(Date.now() - 1000) },
     })
-    await expect(svc.previewInvitation(invite.token)).rejects.toMatchObject({ code: 'invalid_token' })
-    await expect(svc.acceptInvitation(invite.token, { password: 'Str0ng-Passw0rd!23' }))
+    await expect(svc.previewInvitation(invite.token!)).rejects.toMatchObject({ code: 'invalid_token' })
+    await expect(svc.acceptInvitation(invite.token!, { password: 'Str0ng-Passw0rd!23' }))
       .rejects.toMatchObject({ code: 'invalid_token' })
   })
 
   it('refuses a revoked invitation', async () => {
     const invite = await svc.createInvitation(admin, CO, ctx, { email: mail(), role: 'employee' })
     await svc.revokeInvitation(admin, CO, ctx, invite.id)
-    await expect(svc.acceptInvitation(invite.token, { password: 'Str0ng-Passw0rd!23' }))
+    await expect(svc.acceptInvitation(invite.token!, { password: 'Str0ng-Passw0rd!23' }))
       .rejects.toMatchObject({ code: 'invalid_token' })
     expect((await svc.listInvitations(admin, CO))[0].state).toBe('revoked')
   })
@@ -368,12 +373,12 @@ d('Organisation administration — integration (real Postgres)', () => {
     await grab(() => svc.previewInvitation('completely-made-up'))
 
     const used = await svc.createInvitation(admin, CO, ctx, { email: mail(), role: 'employee' })
-    await svc.acceptInvitation(used.token, { password: 'Str0ng-Passw0rd!23' })
-    await grab(() => svc.previewInvitation(used.token))
+    await svc.acceptInvitation(used.token!, { password: 'Str0ng-Passw0rd!23' })
+    await grab(() => svc.previewInvitation(used.token!))
 
     const revoked = await svc.createInvitation(admin, CO, ctx, { email: mail(), role: 'employee' })
     await svc.revokeInvitation(admin, CO, ctx, revoked.id)
-    await grab(() => svc.previewInvitation(revoked.token))
+    await grab(() => svc.previewInvitation(revoked.token!))
 
     expect(messages.size).toBe(1)
   })
@@ -385,7 +390,7 @@ d('Organisation administration — integration (real Postgres)', () => {
     // than silently minting a second working link.
     await expect(svc.createInvitation(admin, CO, ctx, { email, role: 'employee' }))
       .rejects.toMatchObject({ status: 400 })
-    expect((await svc.previewInvitation(first.token)).email).toBe(email)
+    expect((await svc.previewInvitation(first.token!)).email).toBe(email)
   })
 
   it('binds an invitation to one workspace', async () => {
@@ -394,7 +399,7 @@ d('Organisation administration — integration (real Postgres)', () => {
      * tamper with, so a link cannot be redirected at another workspace.
      */
     const invite = await svc.createInvitation(admin, CO, ctx, { email: mail(), role: 'admin' })
-    const result = await svc.acceptInvitation(invite.token, { password: 'Str0ng-Passw0rd!23' })
+    const result = await svc.acceptInvitation(invite.token!, { password: 'Str0ng-Passw0rd!23' })
     expect(result.companyId).toBe(CO)
 
     const user = await db.user.findUniqueOrThrow({
@@ -412,10 +417,10 @@ d('Organisation administration — integration (real Postgres)', () => {
 
   it('refuses a weak password at acceptance', async () => {
     const invite = await svc.createInvitation(admin, CO, ctx, { email: mail(), role: 'employee' })
-    await expect(svc.acceptInvitation(invite.token, { password: '123' }))
+    await expect(svc.acceptInvitation(invite.token!, { password: '123' }))
       .rejects.toMatchObject({ status: 400 })
     // Still usable afterwards: a rejected password must not burn the invitation.
-    await expect(svc.acceptInvitation(invite.token, { password: 'Str0ng-Passw0rd!23' }))
+    await expect(svc.acceptInvitation(invite.token!, { password: 'Str0ng-Passw0rd!23' }))
       .resolves.toBeTruthy()
   })
 
@@ -437,7 +442,7 @@ d('Organisation administration — integration (real Postgres)', () => {
     const users = await db.user.findMany({ where: { email: existing.email } })
     expect(users).toHaveLength(1)
 
-    await svc.acceptInvitation(invite.token, { password: 'Str0ng-Passw0rd!23' })
+    await svc.acceptInvitation(invite.token!, { password: 'Str0ng-Passw0rd!23' })
     const memberships = await db.membership.findMany({ where: { userId: existing.id } })
     expect(memberships.map((m) => m.companyId).sort()).toEqual([CO, OTHER].sort())
   })
@@ -454,7 +459,7 @@ d('Organisation administration — integration (real Postgres)', () => {
     })
 
     const invite = await svc.createInvitation(admin, CO, ctx, { email, role: 'supervisor' })
-    await svc.acceptInvitation(invite.token, { password: 'Str0ng-Passw0rd!23' })
+    await svc.acceptInvitation(invite.token!, { password: 'Str0ng-Passw0rd!23' })
 
     const after = await db.employee.findUniqueOrThrow({ where: { id: emp.id } })
     const user = await db.user.findUniqueOrThrow({ where: { email } })
@@ -466,7 +471,7 @@ d('Organisation administration — integration (real Postgres)', () => {
   it('does not invent an employee for somebody who was never on the register', async () => {
     const email = mail()
     const invite = await svc.createInvitation(admin, CO, ctx, { email, role: 'hse_manager' })
-    await svc.acceptInvitation(invite.token, { password: 'Str0ng-Passw0rd!23' })
+    await svc.acceptInvitation(invite.token!, { password: 'Str0ng-Passw0rd!23' })
     // Most invited users are managers, not workers on an HSE headcount.
     expect(await db.employee.count({ where: { companyId: CO, email } })).toBe(0)
   })
@@ -591,7 +596,7 @@ d('Organisation administration — integration (real Postgres)', () => {
     const entries = await db.adminAuditEntry.findMany({ where: { companyId: CO } })
     // The audit trail is read by auditors and exported; a working secret in it is a second
     // copy of the credential store.
-    expect(JSON.stringify(entries)).not.toContain(invite.token)
+    expect(JSON.stringify(entries)).not.toContain(invite.token!)
   })
 
   it('keeps one tenant\'s audit entries out of another\'s', async () => {
@@ -612,5 +617,387 @@ d('Organisation administration — integration (real Postgres)', () => {
       expect(roles).toContain(r)
     }
     for (const r of rows) expect(r.summary.length).toBeGreaterThan(20)
+  })
+
+  // ── Invitation email delivery ─────────────────────────────────────────────
+
+  /**
+   * A provider that records what it was asked to send and never sends anything.
+   *
+   * Automated tests must not put mail in a real inbox. What this captures is exactly what
+   * the invitation system handed the provider: the recipient, the subject and the URL the
+   * person is expected to click.
+   */
+  class FakeProvider implements EmailProvider {
+    readonly name = 'fake'
+    readonly idempotent = true
+    sent: EmailMessage[] = []
+    behaviour: 'ok' | 'throw' | 'transient' = 'ok'
+
+    async send(message: EmailMessage) {
+      this.sent.push(message)
+      if (this.behaviour === 'throw') {
+        throw new EmailProviderError('API key is invalid', 'auth_failed', 401)
+      }
+      if (this.behaviour === 'transient') {
+        throw new EmailProviderError('Service unavailable', 'provider_unavailable', 503)
+      }
+      return {
+        messageId: `msg_${this.sent.length}`,
+        accepted: message.to.map((t) => t.email),
+        rejected: [],
+      }
+    }
+
+    async verify() { return { ok: true } }
+  }
+
+  /** The acceptance token, taken from the link the recipient would actually click. */
+  const tokenFromEmail = (m: EmailMessage) =>
+    (m.text.match(/accept-invitation\/([A-Za-z0-9_-]+)/) ?? [])[1]
+
+  const withProvider = (p: FakeProvider | null) => { setEmailProviderForTests(p) }
+
+  afterEach(() => setEmailProviderForTests(undefined))
+
+  it('hands the invitation to the configured provider', async () => {
+    const fake = new FakeProvider()
+    withProvider(fake)
+    const email = mail()
+
+    const res = await svc.createInvitation(admin, CO, ctx, { email, role: 'safety_officer' })
+
+    expect(fake.sent).toHaveLength(1)
+    expect(res.deliveryStatus).toBe('sent')
+    // Nothing left for the administrator to copy once a provider has it.
+    expect(res.token).toBeUndefined()
+  })
+
+  it('addresses the email to the person being invited', async () => {
+    const fake = new FakeProvider()
+    withProvider(fake)
+    const email = mail()
+    await svc.createInvitation(admin, CO, ctx, { email, role: 'employee' })
+
+    expect(fake.sent[0].to.map((t) => t.email)).toEqual([email])
+  })
+
+  it('names the workspace in the subject', async () => {
+    const fake = new FakeProvider()
+    withProvider(fake)
+    await svc.createInvitation(admin, CO, ctx, { email: mail(), role: 'employee' })
+
+    // An invitation that does not say who it is from is indistinguishable from phishing.
+    expect(fake.sent[0].subject).toBe("You're invited to join OA ITest Co on SafeOps")
+  })
+
+  it('carries a working acceptance link in both bodies', async () => {
+    const fake = new FakeProvider()
+    withProvider(fake)
+    const email = mail()
+    await svc.createInvitation(admin, CO, ctx, { email, role: 'hse_manager' })
+
+    const m = fake.sent[0]
+    const token = tokenFromEmail(m)
+    expect(token).toBeTruthy()
+    // The same link in the HTML, for clients that render it, and in the text for those
+    // that do not.
+    expect(m.html).toContain(`/accept-invitation/${token}`)
+
+    const preview = await svc.previewInvitation(token!)
+    expect(preview.email).toBe(email)
+    expect(preview.companyName).toBe('OA ITest Co')
+  })
+
+  it('tells the recipient what they are being given and when it lapses', async () => {
+    const fake = new FakeProvider()
+    withProvider(fake)
+    const dept = await svc.createDepartment(admin, CO, ctx, { name: 'Email Dept', siteId: SITE })
+    const email = mail()
+
+    await svc.createInvitation(admin, CO, ctx, {
+      email, role: 'supervisor', siteIds: [SITE], departmentId: dept.id,
+    })
+
+    const m = fake.sent[0]
+    for (const fragment of ['OA ITest Co', email, 'Supervisor', 'OA Site One', 'Email Dept']) {
+      expect(m.text).toContain(fragment)
+      expect(m.html).toContain(fragment)
+    }
+    expect(m.text).toMatch(/expires on \d+ \w+ \d{4}/)
+    expect(m.text).toMatch(/Do not forward it/)
+  })
+
+  it('does not depend on images or scripts to be readable', async () => {
+    const fake = new FakeProvider()
+    withProvider(fake)
+    await svc.createInvitation(admin, CO, ctx, { email: mail(), role: 'employee' })
+
+    const html = fake.sent[0].html
+    // Corporate clients strip all three, and a blank rectangle is not an invitation.
+    expect(html).not.toMatch(/<script/i)
+    expect(html).not.toMatch(/<img/i)
+    expect(fake.sent[0].text.length).toBeGreaterThan(200)
+  })
+
+  it('records a failed send without losing the invitation', async () => {
+    const fake = new FakeProvider()
+    fake.behaviour = 'throw'
+    withProvider(fake)
+    const email = mail()
+
+    const res = await svc.createInvitation(admin, CO, ctx, { email, role: 'employee' })
+
+    expect(res.deliveryStatus).toBe('failed')
+    // The link comes back, because the invitation is valid and somebody has to deliver it.
+    expect(res.token).toBeTruthy()
+
+    const [listed] = await svc.listInvitations(admin, CO)
+    expect(listed.deliveryStatus).toBe('failed')
+    expect(listed.failureReason).toMatch(/auth_failed/)
+    expect(listed.state).toBe('pending')
+
+    // And it still works: a provider outage costs an email, not a way in.
+    await expect(svc.acceptInvitation(res.token!, { password: 'Str0ng-Passw0rd!23' }))
+      .resolves.toBeTruthy()
+  })
+
+  it('does not claim delivery when no provider is configured', async () => {
+    withProvider(null)
+    const res = await svc.createInvitation(admin, CO, ctx, { email: mail(), role: 'employee' })
+
+    expect(res.deliveryStatus).toBe('created')
+    expect(res.token).toBeTruthy()
+    const [listed] = await svc.listInvitations(admin, CO)
+    expect(listed.deliveryStatus).toBe('created')
+    expect(listed.failureReason).toMatch(/No email provider is configured/)
+  })
+
+  it('gives each send its own idempotency key', async () => {
+    const fake = new FakeProvider()
+    withProvider(fake)
+    const email = mail()
+    const created = await svc.createInvitation(admin, CO, ctx, { email, role: 'employee' })
+
+    await db.invitation.update({
+      where: { id: created.id }, data: { lastAttemptAt: new Date(Date.now() - 600_000) },
+    })
+    await svc.resendInvitation(admin, CO, ctx, created.id)
+
+    const keys = fake.sent.map((m) => m.idempotencyKey)
+    expect(keys[0]).toContain(created.id)
+    // A resend is a different email carrying a different link, so it must not be collapsed
+    // into the first by a provider that de-duplicates.
+    expect(keys[0]).not.toBe(keys[1])
+  })
+
+  // ── Resend ────────────────────────────────────────────────────────────────
+
+  it('resends with a new link and retires the old one', async () => {
+    const fake = new FakeProvider()
+    withProvider(fake)
+    const created = await svc.createInvitation(admin, CO, ctx, { email: mail(), role: 'employee' })
+    const firstToken = tokenFromEmail(fake.sent[0])!
+
+    await db.invitation.update({
+      where: { id: created.id }, data: { lastAttemptAt: new Date(Date.now() - 600_000) },
+    })
+    await svc.resendInvitation(admin, CO, ctx, created.id)
+    const secondToken = tokenFromEmail(fake.sent[1])!
+
+    expect(secondToken).not.toBe(firstToken)
+    // Only its hash was ever stored, so a resend has to mint a new secret - and the old
+    // link must stop working rather than leaving two ways in.
+    await expect(svc.previewInvitation(firstToken)).rejects.toMatchObject({ code: 'invalid_token' })
+    await expect(svc.previewInvitation(secondToken)).resolves.toBeTruthy()
+  })
+
+  it('keeps one invitation row across resends', async () => {
+    const fake = new FakeProvider()
+    withProvider(fake)
+    const email = mail()
+    const created = await svc.createInvitation(admin, CO, ctx, { email, role: 'employee' })
+
+    await db.invitation.update({
+      where: { id: created.id }, data: { lastAttemptAt: new Date(Date.now() - 600_000) },
+    })
+    await svc.resendInvitation(admin, CO, ctx, created.id)
+
+    // One invite, one lineage - not a new row every time somebody clicks resend.
+    expect(await db.invitation.count({ where: { companyId: CO, email } })).toBe(1)
+    expect((await svc.listInvitations(admin, CO))[0].attempts).toBe(2)
+  })
+
+  it('refuses a resend inside the cooldown', async () => {
+    const fake = new FakeProvider()
+    withProvider(fake)
+    const created = await svc.createInvitation(admin, CO, ctx, { email: mail(), role: 'employee' })
+
+    // A double-click must not become two emails.
+    await expect(svc.resendInvitation(admin, CO, ctx, created.id))
+      .rejects.toMatchObject({ status: 429 })
+    expect(fake.sent).toHaveLength(1)
+    expect(RESEND_COOLDOWN_SECONDS).toBeGreaterThan(0)
+  })
+
+  it('stops resending after the ceiling', async () => {
+    const fake = new FakeProvider()
+    withProvider(fake)
+    const created = await svc.createInvitation(admin, CO, ctx, { email: mail(), role: 'employee' })
+
+    for (let i = 1; i < MAX_SENDS_PER_INVITATION; i += 1) {
+      await db.invitation.update({
+        where: { id: created.id }, data: { lastAttemptAt: new Date(Date.now() - 600_000) },
+      })
+      await svc.resendInvitation(admin, CO, ctx, created.id)
+    }
+    await db.invitation.update({
+      where: { id: created.id }, data: { lastAttemptAt: new Date(Date.now() - 600_000) },
+    })
+
+    await expect(svc.resendInvitation(admin, CO, ctx, created.id))
+      .rejects.toMatchObject({ status: 400 })
+    expect(fake.sent).toHaveLength(MAX_SENDS_PER_INVITATION)
+  })
+
+  it('refuses to resend an accepted or revoked invitation', async () => {
+    const fake = new FakeProvider()
+    withProvider(fake)
+
+    const accepted = await svc.createInvitation(admin, CO, ctx, { email: mail(), role: 'employee' })
+    await svc.acceptInvitation(tokenFromEmail(fake.sent[0])!, { password: 'Str0ng-Passw0rd!23' })
+    await expect(svc.resendInvitation(admin, CO, ctx, accepted.id))
+      .rejects.toMatchObject({ status: 400 })
+
+    const revoked = await svc.createInvitation(admin, CO, ctx, { email: mail(), role: 'employee' })
+    await svc.revokeInvitation(admin, CO, ctx, revoked.id)
+    await expect(svc.resendInvitation(admin, CO, ctx, revoked.id))
+      .rejects.toMatchObject({ status: 400 })
+  })
+
+  it('refuses a resend to anybody who is not an administrator', async () => {
+    const fake = new FakeProvider()
+    withProvider(fake)
+    const created = await svc.createInvitation(admin, CO, ctx, { email: mail(), role: 'employee' })
+
+    for (const who of [hse, supervisor, employee]) {
+      await expect(svc.resendInvitation(who, CO, ctx, created.id))
+        .rejects.toMatchObject({ status: 403 })
+    }
+    expect(fake.sent).toHaveLength(1)
+  })
+
+  it('does not let one tenant resend another tenant\'s invitation', async () => {
+    const fake = new FakeProvider()
+    withProvider(fake)
+    const theirAdmin = caller('admin', 'their-admin', OTHER)
+    const theirs = await svc.createInvitation(theirAdmin, OTHER, ctx, {
+      email: mail(), role: 'employee',
+    })
+
+    await expect(svc.resendInvitation(admin, CO, ctx, theirs.id))
+      .rejects.toMatchObject({ status: 404 })
+  })
+
+  // ── Audit ─────────────────────────────────────────────────────────────────
+
+  it('audits the send, the failure and the resend without the token', async () => {
+    const fake = new FakeProvider()
+    withProvider(fake)
+    const created = await svc.createInvitation(admin, CO, ctx, { email: mail(), role: 'employee' })
+    const token = tokenFromEmail(fake.sent[0])!
+
+    fake.behaviour = 'throw'
+    await db.invitation.update({
+      where: { id: created.id }, data: { lastAttemptAt: new Date(Date.now() - 600_000) },
+    })
+    await svc.resendInvitation(admin, CO, ctx, created.id)
+
+    const entries = await db.adminAuditEntry.findMany({ where: { companyId: CO } })
+    const actions = entries.map((e) => e.action)
+    expect(actions).toContain('Invited user')
+    expect(actions).toContain('Invitation email sent')
+    expect(actions).toContain('Resent invitation')
+    expect(actions).toContain('Invitation email failed')
+
+    // The trail is read by auditors and exported; a working secret in it is a second copy
+    // of the credential store.
+    const dump = JSON.stringify(entries)
+    expect(dump).not.toContain(token)
+    expect(dump).not.toContain(tokenFromEmail(fake.sent[0])!)
+  })
+
+  // ── Link building ─────────────────────────────────────────────────────────
+
+  it('builds the acceptance link from the configured public address', async () => {
+    const fake = new FakeProvider()
+    withProvider(fake)
+    await svc.createInvitation(admin, CO, ctx, { email: mail(), role: 'employee' })
+
+    const url = (fake.sent[0].text.match(/https?:\/\/\S+/) ?? [])[0]
+    expect(url).toBeTruthy()
+    expect(url).toContain('/accept-invitation/')
+    // Whatever it is, it is one configured value rather than a guess per call site.
+    expect(url!.startsWith(env.appUrl)).toBe(true)
+  })
+
+  // ── Site and department lifecycle ─────────────────────────────────────────
+
+  it('refuses to assign anybody to a deactivated site', async () => {
+    /*
+     * The scope would resolve to nothing: the pickers hide inactive sites, so a person
+     * assigned to one sees an empty list and cannot tell why.
+     */
+    const site = await svc.createSite(admin, CO, ctx, { name: 'Closing Yard' })
+    await svc.setSiteActive(admin, CO, ctx, site.id, false)
+
+    const target = await member(CO, 'safety_officer')
+    await expect(svc.setUserAccess(admin, CO, ctx, target.id, { siteIds: [site.id] }))
+      .rejects.toMatchObject({ status: 400 })
+    await expect(svc.createInvitation(admin, CO, ctx, {
+      email: mail(), role: 'safety_officer', siteIds: [site.id],
+    })).rejects.toMatchObject({ status: 400 })
+  })
+
+  it('leaves existing assignments alone when a site is deactivated, and says how many', async () => {
+    /*
+     * Rewriting somebody's scope as a side effect of tidying the site list is how people
+     * quietly gain or lose visibility nobody decided to give them. The assignment stays;
+     * the count is reported so the administrator can reassign deliberately.
+     */
+    const site = await svc.createSite(admin, CO, ctx, { name: 'Winding Down' })
+    const target = await member(CO, 'supervisor')
+    await svc.setUserAccess(admin, CO, ctx, target.id, { siteIds: [site.id] })
+
+    const result = await svc.setSiteActive(admin, CO, ctx, site.id, false)
+    expect(result.stillAssigned).toBe(1)
+
+    const m = await db.membership.findFirstOrThrow({ where: { userId: target.id, companyId: CO } })
+    expect(m.siteIds).toEqual([site.id])
+  })
+
+  it('refuses to add a department to a deactivated site', async () => {
+    const site = await svc.createSite(admin, CO, ctx, { name: 'Mothballed' })
+    await svc.setSiteActive(admin, CO, ctx, site.id, false)
+    await expect(svc.createDepartment(admin, CO, ctx, { name: 'Too Late', siteId: site.id }))
+      .rejects.toMatchObject({ status: 400 })
+  })
+
+  it('shows a department manager whose account is no longer active', async () => {
+    /*
+     * managerUserId is an accountability reference - nothing routes, approves or notifies
+     * through it - so a deactivated manager is stale, not invalid. Surfacing it beats
+     * silently clearing the field or blocking the deactivation.
+     */
+    const manager = await member(CO, 'supervisor')
+    const dept = await svc.createDepartment(admin, CO, ctx, {
+      name: 'Orphaned Dept', siteId: SITE, managerUserId: manager.id,
+    })
+    await db.user.update({ where: { id: manager.id }, data: { status: 'deactivated' } })
+
+    const listed = await svc.listDepartments(admin, CO)
+    const row = listed.find((d) => d.id === dept.id)!
+    expect(row.manager!.id).toBe(manager.id)
+    expect(row.manager!.active).toBe(false)
   })
 })
