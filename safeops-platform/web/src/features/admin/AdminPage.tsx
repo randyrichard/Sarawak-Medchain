@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   Activity, Building2, DatabaseBackup, KeyRound, ScrollText, ShieldCheck, Plug, Users, UserCog,
+  MailPlus, MapPin, Network,
 } from 'lucide-react'
 import { PageHeader } from '@/components/ui'
 import { cn } from '@/lib/cn'
@@ -14,17 +15,23 @@ import { AuditLogSection } from './sections/AuditLogSection'
 import { IntegrationsSection } from './sections/IntegrationsSection'
 import { DeveloperSection } from './sections/DeveloperSection'
 import { BackupSection } from './sections/BackupSection'
+import { SitesSection } from './sections/SitesSection'
+import { DepartmentsSection } from './sections/DepartmentsSection'
+import { InvitationsSection } from './sections/InvitationsSection'
 
 type Section =
-  | 'overview' | 'users' | 'roles' | 'organization' | 'security'
-  | 'audit' | 'integrations' | 'developer' | 'backup'
+  | 'overview' | 'users' | 'invitations' | 'roles' | 'organization' | 'security'
+  | 'sites' | 'departments' | 'audit' | 'integrations' | 'developer' | 'backup'
 
 const NAV: { id: Section; label: string; icon: typeof Activity; group: string }[] = [
   { id: 'overview', label: 'System Health', icon: Activity, group: 'Monitor' },
   { id: 'users', label: 'Users', icon: Users, group: 'People & Access' },
+  { id: 'invitations', label: 'Invitations', icon: MailPlus, group: 'People & Access' },
   { id: 'roles', label: 'Roles & Permissions', icon: UserCog, group: 'People & Access' },
   { id: 'security', label: 'Security Center', icon: ShieldCheck, group: 'People & Access' },
   { id: 'organization', label: 'Organization', icon: Building2, group: 'Configuration' },
+  { id: 'sites', label: 'Sites', icon: MapPin, group: 'Configuration' },
+  { id: 'departments', label: 'Departments', icon: Network, group: 'Configuration' },
   { id: 'audit', label: 'Audit Log', icon: ScrollText, group: 'Governance' },
   { id: 'integrations', label: 'Integrations', icon: Plug, group: 'Platform' },
   { id: 'developer', label: 'API & Webhooks', icon: KeyRound, group: 'Platform' },
@@ -49,7 +56,12 @@ export function AdminPage() {
 
       <div className="grid gap-5 lg:grid-cols-[220px_1fr]">
         {/* Sub-navigation */}
-        <nav className="lg:sticky lg:top-4 lg:self-start">
+        {/*
+          min-w-0 matters at mobile. A grid item defaults to min-width:auto, so the twelve
+          nowrap buttons below stretched the single column to their combined width and the
+          section beside them was clipped off-screen - taking the row actions with it.
+        */}
+        <nav className="min-w-0 lg:sticky lg:top-4 lg:self-start">
           <div className="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:gap-0.5 lg:overflow-visible">
             {groups.map((g) => (
               <div key={g} className="contents lg:block">
@@ -79,6 +91,9 @@ export function AdminPage() {
         <div className="min-w-0">
           {section === 'overview' && <OverviewSection />}
           {section === 'users' && <UsersSection />}
+          {section === 'invitations' && <InvitationsSection />}
+          {section === 'sites' && <SitesSection />}
+          {section === 'departments' && <DepartmentsSection />}
           {section === 'roles' && <RolesSection />}
           {section === 'organization' && <OrganizationSection />}
           {section === 'security' && <SecuritySection />}

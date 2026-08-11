@@ -8,6 +8,7 @@ import AppShell from '@/components/layout/AppShell'
 // Auth surface is the entry point — keep it eager so the login screen paints without a chunk fetch.
 import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { ResetPasswordPage } from '@/features/auth/pages/ResetPasswordPage'
+import { AcceptInvitationPage } from '@/features/auth/pages/AcceptInvitationPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 
 // Each business module is code-split into its own chunk, loaded on first visit.
@@ -41,6 +42,12 @@ export default function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
+            {/*
+              Fully public, outside both guards: an invitee has no session, and an
+              administrator checking the link while signed in must not be bounced away.
+            */}
+            <Route path="/accept-invitation/:token" element={<AcceptInvitationPage />} />
+
             {/* Public auth surface */}
             <Route element={<RequireAnonymous />}>
               <Route path="/login" element={<LoginPage />} />

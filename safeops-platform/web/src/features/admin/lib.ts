@@ -44,3 +44,66 @@ export function downloadJson(content: string, filename: string) {
   a.click()
   URL.revokeObjectURL(url)
 }
+
+/**
+ * What a site is carrying, in a sentence.
+ *
+ * Shown next to every site because the only off-switch offered is deactivation - stating
+ * what would be orphaned is how an administrator understands why, rather than hunting for
+ * a delete button that is deliberately absent.
+ */
+export function siteInUseSummary(s: {
+  inUse: { incidents: number; permits: number; assets: number; employees: number; departments: number }
+}): string {
+  const parts = [
+    [s.inUse.incidents, 'incident'],
+    [s.inUse.permits, 'permit'],
+    [s.inUse.assets, 'asset'],
+    [s.inUse.employees, 'employee'],
+    [s.inUse.departments, 'department'],
+  ] as const
+  const used = parts
+    .filter(([n]) => n > 0)
+    .map(([n, word]) => `${n} ${word}${n === 1 ? '' : 's'}`)
+  return used.length === 0
+    ? 'Nothing references this site yet.'
+    : `Referenced by ${used.join(', ')}.`
+}
+
+/** The same, for a department. */
+export function departmentInUseSummary(d: {
+  inUse: { incidents: number; visitors: number; teams: number }
+}): string {
+  const used = ([
+    [d.inUse.incidents, 'incident'],
+    [d.inUse.visitors, 'visitor'],
+    [d.inUse.teams, 'team'],
+  ] as const)
+    .filter(([n]) => n > 0)
+    .map(([n, word]) => `${n} ${word}${n === 1 ? '' : 's'}`)
+  return used.length === 0
+    ? 'Nothing references this department yet.'
+    : `Referenced by ${used.join(', ')}.`
+}
+
+/** How an invitation reads, and how urgently. */
+export function invitationState(state: string): { label: string; tone: 'good' | 'warning' | 'neutral' | 'critical' } {
+  switch (state) {
+    case 'accepted': return { label: 'Accepted', tone: 'good' }
+    case 'pending': return { label: 'Pending', tone: 'warning' }
+    case 'revoked': return { label: 'Revoked', tone: 'neutral' }
+    case 'expired': return { label: 'Expired', tone: 'critical' }
+    default: return { label: state, tone: 'neutral' }
+  }
+}
+
+/**
+ * The link an invitee follows.
+ *
+ * Built in the browser from the token the server returned once. With no mail provider
+ * configured this is how the invitation reaches somebody, so it is shown to the
+ * administrator to pass on rather than pretending an email went out.
+ */
+export function invitationLink(token: string, origin = window.location.origin): string {
+  return `${origin}/accept-invitation/${token}`
+}

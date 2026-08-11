@@ -48,6 +48,15 @@ export class OrgService {
     return this.db.site.findMany({
       where: {
         companyId,
+        /*
+         * Deactivated sites leave the pickers.
+         *
+         * Only the choosers are filtered: the incidents, permits and assets that already
+         * point at a site read it through a relation by id, so their history is untouched
+         * by this. The administration console lists inactive sites deliberately, because
+         * reactivating one is what an administrator comes there to do.
+         */
+        active: true,
         // A site-scoped role sees its own sites. An empty list means organisation-wide,
         // which is how the seeded managers are set up.
         ...(m.siteIds.length > 0 && ['safety_officer', 'supervisor'].includes(m.role)
@@ -64,9 +73,10 @@ export class OrgService {
     // tenants just because the caller can guess it.
     return this.db.department.findMany({
       where: {
-        id: { not: undefined },
         siteId: { in: siteIds },
         site: { companyId: { in: this.companyIds(caller) } },
+        // Same reasoning as sites: gone from the picker, still readable on old records.
+        active: true,
       },
       orderBy: { name: 'asc' },
     })

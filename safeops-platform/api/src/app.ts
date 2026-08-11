@@ -27,6 +27,8 @@ import { searchRouter } from './routes/search.js'
 import { employeesRouter } from './routes/employees.js'
 import { contractorsRouter } from './routes/contractors.js'
 import { dashboardRouter } from './routes/dashboard.js'
+import { orgAdminRouter, inviteRouter } from './routes/orgAdmin.js'
+import { OrgAdminError } from './lib/orgAdminService.js'
 import { DashboardError } from './lib/dashboardService.js'
 import { AuthError } from './lib/authService.js'
 import { IncidentError } from './lib/incidentService.js'
@@ -143,7 +145,12 @@ export function createApp() {
   app.use('/reports', reportsRouter)
   app.use('/audits', auditsRouter)
   app.use('/training', trainingRouter)
+  // Before the console router: its literal paths must not be captured by anything there,
+  // and mounting order is the only thing that guarantees it.
+  app.use('/admin', orgAdminRouter)
   app.use('/admin', adminRouter)
+  // Unauthenticated on purpose - an invitee has no session. The token is the authority.
+  app.use('/invitations', inviteRouter)
   app.use('/org', orgRouter)
   app.use('/notifications', notificationsRouter)
   app.use('/activity', activityRouter)
@@ -176,7 +183,8 @@ export function createApp() {
       err instanceof VisitorError ||
       err instanceof ReportError ||
       err instanceof InvestigationError ||
-      err instanceof DashboardError
+      err instanceof DashboardError ||
+      err instanceof OrgAdminError
     ) {
       return res.status(err.status).json({ error: err.code, message: err.message })
     }

@@ -54,6 +54,9 @@ model User {
   preferences        Json?
 
   memberships   Membership[]
+  employee      Employee?
+  managedDepartments Department[] @relation("DepartmentManager")
+  invitations   Invitation[]
   refreshTokens RefreshToken[]
   loginAttempts LoginAttempt[]
   resetTokens   PasswordResetToken[]
@@ -183,6 +186,7 @@ model Company {
   connectors     ConnectorConfig[]
   securityPolicy SecurityPolicy?
   orgSettings    OrgSettings?
+  invitations    Invitation[]
   configItems    OrgConfigItem[]
   retention      RetentionPolicy?
   backups        Backup[]
@@ -203,6 +207,15 @@ model Site {
   city      String  @default("")
   timezone  String  @default("Asia/Kuching")
   headcount Int     @default(0)
+
+  /// Company's own reference for the site, e.g. "BTU-01". Not unique across tenants.
+  code         String @default("")
+  address      String @default("")
+  contactName  String @default("")
+  contactPhone String @default("")
+  /// Deactivated rather than deleted: incidents, permits and assets point here, and a
+  /// site that stops existing takes their history with it.
+  active       Boolean @default(true)
   company     Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
   incidents   Incident[]
   actions     CorrectiveAction[]
@@ -230,11 +243,21 @@ model Department {
   site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
 
   name  String
+  code  String @default("")
+  /// The person accountable for this department. A real user, not a typed-in name: the
+  /// visitor register showed what happens when identity is inferred from a display name.
+  managerUserId String?
+  manager       User?   @relation("DepartmentManager", fields: [managerUserId], references: [id], onDelete: SetNull)
+  /// Deactivated departments disappear from pickers but stay readable on the incidents,
+  /// permits and visitors that already reference them.
+  active Boolean @default(true)
+
   teams Team[]
 
   createdAt DateTime @default(now())
 
   @@index([siteId])
+  @@index([siteId, active])
   visitors Visitor[]
   incidents Incident[]
 }
@@ -1350,6 +1373,12 @@ model Employee {
   bloodGroup    String?
   /// Restrictions a supervisor must know about — "no working at height", "wears glasses".
   medicalNotes  String?
+
+  /// The login this person uses, when they have one. Optional because most workers on an
+  /// HSE register never sign in - and nullable is what stops an invitation quietly
+  /// creating a second Employee for somebody already on the books.
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   enrolments        SessionEnrolment[]
   certificates      Certificate[]
@@ -2711,4 +2740,43 @@ model ReportRun {
   @@index([scheduleId, startedAt])
   /// The recovery sweep asks "what delivery is owed" on every pass.
   @@index([deliveryStatus, nextAttemptAt])
+}
+
+/// An invitation to join one workspace.
+///
+/// The User row is created immediately so the account shows as Invited in the console and
+/// its role and site assignment are settled before anyone clicks anything. What this adds
+/// is the missing piece: a single-use, time-limited secret that lets the invitee set a
+/// password. Only the hash is stored, exactly as password resets do - a leaked database
+/// must not hand out working invitations.
+model Invitation {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  email String
+  role  Role
+  /// Where the invitee lands. Validated against this tenant when the invitation is issued.
+  siteIds      String[] @default([])
+  departmentId String?
+
+  /// sha256 of the token that was handed out. The token itself is never stored.
+  tokenHash String   @unique
+  expiresAt DateTime
+
+  /// Terminal states. Both nullable, so an open invitation is simply neither.
+  acceptedAt DateTime?
+  revokedAt  DateTime?
+  revokedBy  String?
+
+  /// The account this invitation belongs to, so accepting activates the right user.
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  invitedBy String
+  createdAt DateTime @default(now())
+
+  @@index([companyId, email])
+  @@index([companyId, createdAt])
+  @@index([userId])
 }
