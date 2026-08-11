@@ -1,28 +1,87 @@
-import { useEffect, useState } from 'react'
-import { api } from '@/api/client'
-import type { DashboardData } from '@/api/dashboard'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { dashboardApi, type DashboardOverview } from '@/api/dashboardApi'
+import { ApiError } from '@/api/types'
 import { useOrg } from '@/features/org/OrgContext'
 
-/** Fetches the scoped Mission Control payload; refetches when scope changes. */
-export function useDashboard(): { loading: boolean; data: DashboardData | null } {
+/**
+ * The dashboard's data and its filters.
+ *
+ * Filters live in the URL rather than in component state, so a refresh keeps what the
+ * operator was looking at and a link to "Bintulu, last 7 days" is a link somebody can send.
+ * Company and site come from the org switcher, which is where scope already lives - a
+ * second site control on this page would let the two disagree.
+ */
+
+export interface DashboardFilterState {
+  from: string | null
+  to: string | null
+  department: string | null
+}
+
+export function useDashboard() {
   const { company, site } = useOrg()
-  const [state, setState] = useState<{ loading: boolean; data: DashboardData | null }>({
-    loading: true,
-    data: null,
-  })
+  const [params, setParams] = useSearchParams()
+
+  const filters = useMemo<DashboardFilterState>(() => ({
+    from: params.get('from'),
+    to: params.get('to'),
+    department: params.get('department'),
+  }), [params])
+
+  const [data, setData] = useState<DashboardOverview | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  /** Bumped by refresh(); the effect below watches it. */
+  const [nonce, setNonce] = useState(0)
 
   useEffect(() => {
     if (!company) return
     let cancelled = false
-    setState({ loading: true, data: null })
-    const scopeLabel = site ? site.name : `${company.name} · all sites`
-    api.getDashboard(company.id, site?.id ?? null, scopeLabel).then((data) => {
-      if (!cancelled) setState({ loading: false, data })
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [company, site])
+    setLoading(true)
+    setError(null)
 
-  return state
+    dashboardApi.overview({
+      companyId: company.id,
+      siteId: site?.id ?? null,
+      department: filters.department,
+      from: filters.from,
+      to: filters.to,
+    })
+      .then((d) => { if (!cancelled) { setData(d); setLoading(false) } })
+      .catch((e) => {
+        if (cancelled) return
+        setLoading(false)
+        /*
+         * The error is shown rather than swallowed into an empty dashboard. A page of
+         * zeroes that is actually a failed request is the worst outcome here: it reads as
+         * "nothing needs attention".
+         */
+        setError(e instanceof ApiError ? e.message : 'Could not load the dashboard.')
+      })
+
+    return () => { cancelled = true }
+  }, [company, site, filters.department, filters.from, filters.to, nonce])
+
+  const setFilter = useCallback((patch: Partial<DashboardFilterState>) => {
+    const next = new URLSearchParams(params)
+    for (const [k, v] of Object.entries(patch)) {
+      if (v === null || v === '') next.delete(k)
+      else next.set(k, v)
+    }
+    setParams(next, { replace: true })
+  }, [params, setParams])
+
+  const clearFilters = useCallback(() => {
+    const next = new URLSearchParams(params)
+    for (const k of ['from', 'to', 'department']) next.delete(k)
+    setParams(next, { replace: true })
+  }, [params, setParams])
+
+  const refresh = useCallback(() => setNonce((n) => n + 1), [])
+
+  return {
+    data, loading, error, filters, setFilter, clearFilters, refresh,
+    filtered: Boolean(filters.from || filters.to || filters.department),
+  }
 }

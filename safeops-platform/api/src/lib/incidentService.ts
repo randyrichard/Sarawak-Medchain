@@ -48,6 +48,36 @@ function dateRange(from?: string, to?: string): Prisma.DateTimeFilter | undefine
  * fastest way to lose a reader's trust. Measured against UTC midnight so an action due
  * today is not overdue for the whole of today.
  */
+/**
+ * Which incidents a caller may see, as a free function.
+ *
+ * Exported so the dashboard applies exactly the same row scope the register does. Without
+ * it an employee's dashboard would total every incident in the company while the list one
+ * click away showed only their own - and the wider number is the one that leaks.
+ */
+export function incidentScopeWhere(caller: Caller, companyId: string): Prisma.IncidentWhereInput {
+  const m = caller.roles.find((r) => r.companyId === companyId)
+  if (!m) return { id: '__no_access__' }
+  if (['admin', 'hse_manager', 'ceo'].includes(m.role)) return {}
+  if (m.role === 'safety_officer' || m.role === 'supervisor') {
+    return m.siteIds.length > 0 ? { siteId: { in: m.siteIds } } : {}
+  }
+  // employee
+  return { reporterId: caller.userId }
+}
+
+/**
+ * Which corrective actions a caller may see.
+ *
+ * Mirrors the incident register's stats: an employee or supervisor sees the actions they
+ * own, not the company's whole backlog.
+ */
+export function actionScopeWhere(caller: Caller, companyId: string): Prisma.CorrectiveActionWhereInput {
+  const m = caller.roles.find((r) => r.companyId === companyId)
+  if (!m) return { id: '__no_access__' }
+  return ['employee', 'supervisor'].includes(m.role) ? { owner: caller.name } : {}
+}
+
 export function overdueActionWhere(): Prisma.CorrectiveActionWhereInput {
   return {
     dueDate: { lt: startOfToday() },
@@ -143,8 +173,12 @@ const ORDERED_STAGES = [
  * stages and "awaiting review" the two sign-off stages, so a case sitting with a reviewer
  * is not reported as still under investigation.
  */
-const INVESTIGATING_STAGES = ['investigation', 'rca'] as const
-const AWAITING_REVIEW_STAGES = ['review', 'verification'] as const
+/*
+ * Exported so the dashboard counts the same thing this module does. Two definitions of
+ * "under investigation" is two different numbers on two screens a click apart.
+ */
+export const INVESTIGATING_STAGES = ['investigation', 'rca'] as const
+export const AWAITING_REVIEW_STAGES = ['review', 'verification'] as const
 
 /**
  * Translates a status chip into a WHERE clause.
@@ -197,13 +231,7 @@ export class IncidentService {
    * rows never leave the database, rather than being filtered in the client.
    */
   private scopeWhere(caller: Caller, companyId: string): Prisma.IncidentWhereInput {
-    const m = this.membership(caller, companyId)
-    if (['admin', 'hse_manager', 'ceo'].includes(m.role)) return {}
-    if (m.role === 'safety_officer' || m.role === 'supervisor') {
-      return m.siteIds.length > 0 ? { siteId: { in: m.siteIds } } : {}
-    }
-    // employee
-    return { reporterId: caller.userId }
+    return incidentScopeWhere(caller, companyId)
   }
 
   async list(caller: Caller, p: ListParams) {

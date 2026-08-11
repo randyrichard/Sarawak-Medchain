@@ -74,7 +74,9 @@ export function AssetsPage() {
   }
 
   const KPIS: { label: string; value: number | string | undefined; bucket?: Bucket; tone?: string }[] = [
-    { label: 'Assets in service', value: stats?.totalAssets },
+    // totalAssets is the whole register, in service or not. Labelling it "in service"
+    // made this tile disagree with the dashboard, which counts status = in_service.
+    { label: 'Assets registered', value: stats?.totalAssets },
     { label: 'Inspection compliance', value: stats !== null ? `${stats.complianceRate}%` : undefined, tone: stats && stats.complianceRate < 85 ? 'var(--serious)' : 'var(--good)' },
     { label: 'Overdue inspections', value: stats?.overdueInspections, bucket: 'overdue', tone: stats && stats.overdueInspections > 0 ? 'var(--critical)' : 'var(--good)' },
     { label: 'Due this week', value: stats?.dueThisWeek, bucket: 'due_week', tone: 'var(--warning)' },

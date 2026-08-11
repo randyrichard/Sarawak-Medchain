@@ -1,0 +1,146 @@
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import {
+  AlertTriangle, ClipboardCheck, FileWarning, HardHat, Mail, UserCheck, ChevronRight,
+} from 'lucide-react'
+import type { AttentionItem, AttentionKind } from '@/api/dashboardApi'
+import { Badge, Card, CardBody, CardHeader, EmptyState } from '@/components/ui'
+import {
+  filterAttention, kindLabel, overdueLabel, priorityLabel, priorityTone, sortAttention,
+} from '../lib'
+
+/**
+ * What needs attention, in the order it needs it.
+ *
+ * The point of the whole page. Ordering is by operational importance rather than by date:
+ * a potential fatality outranks a certificate expiring next week however much older the
+ * certificate is. Every row opens the real record in the module that owns it - there is no
+ * detail view here, because a second one would drift from the first.
+ */
+const ICON: Record<AttentionKind, typeof AlertTriangle> = {
+  incident: AlertTriangle,
+  action: ClipboardCheck,
+  permit: FileWarning,
+  equipment: HardHat,
+  visitor: UserCheck,
+  report: Mail,
+}
+
+const TABS: { value: AttentionKind | 'all'; label: string }[] = [
+  { value: 'all', label: 'Everything' },
+  { value: 'incident', label: 'Incidents' },
+  { value: 'action', label: 'Actions' },
+  { value: 'permit', label: 'Permits' },
+  { value: 'equipment', label: 'Equipment' },
+  { value: 'visitor', label: 'Visitors' },
+  // Report items land in the queue too; without a tab they were unreachable by filter.
+  { value: 'report', label: 'Reports' },
+]
+
+export function NeedsAttention({
+  items, total, loading, className,
+}: {
+  items: AttentionItem[] | undefined
+  total: number
+  loading: boolean
+  className?: string
+}) {
+  const [kind, setKind] = useState<AttentionKind | 'all'>('all')
+
+  const rows = items ? sortAttention(filterAttention(items, kind)) : []
+  const shown = items?.length ?? 0
+
+  return (
+    <Card className={className}>
+      <CardHeader
+        title="Needs attention"
+        subtitle={
+          loading
+            ? undefined
+            : total > shown
+              ? `Showing the ${shown} most urgent of ${total}`
+              : `${total} item${total === 1 ? '' : 's'}`
+        }
+      />
+
+      <div className="flex gap-1 overflow-x-auto px-5 pb-2 pt-1">
+        {TABS.map((t) => {
+          const count = items ? filterAttention(items, t.value).length : 0
+          return (
+            <button
+              key={t.value}
+              type="button"
+              onClick={() => setKind(t.value)}
+              aria-pressed={kind === t.value}
+              className={`shrink-0 rounded-full border px-2.5 py-1 text-2xs font-semibold transition ${
+                kind === t.value
+                  ? 'border-[var(--accent)] bg-accent-soft text-ink'
+                  : 'border-line text-muted hover:text-ink'
+              }`}
+            >
+              {t.label}
+              {count > 0 && <span className="ml-1 opacity-70">{count}</span>}
+            </button>
+          )
+        })}
+      </div>
+
+      <CardBody className="pt-1">
+        {loading && (
+          <ul className="space-y-2">
+            {[0, 1, 2, 3].map((i) => (
+              <li key={i} className="h-14 animate-pulse rounded-lg bg-[var(--surface-2)]" />
+            ))}
+          </ul>
+        )}
+
+        {!loading && rows.length === 0 && (
+          <EmptyState
+            icon={ClipboardCheck}
+            title={kind === 'all' ? 'All clear' : `Nothing outstanding in ${kindLabel(kind as AttentionKind).toLowerCase()}s`}
+          >
+            {kind === 'all'
+              ? 'Nothing is overdue, expiring or waiting on a review right now.'
+              : 'Switch back to Everything to see the rest of the queue.'}
+          </EmptyState>
+        )}
+
+        {!loading && rows.length > 0 && (
+          <ul className="divide-y divide-line">
+            {rows.map((r) => {
+              const Icon = ICON[r.kind]
+              const late = overdueLabel(r.overdueDays)
+              return (
+                <li key={r.id}>
+                  <Link
+                    to={r.href}
+                    className="flex items-start gap-3 py-2.5 transition hover:bg-[var(--surface-2)]"
+                  >
+                    <Icon size={15} className="mt-0.5 shrink-0 text-muted" />
+                    <div className="min-w-0 flex-1">
+                      <p className="flex flex-wrap items-center gap-1.5">
+                        <Badge tone={priorityTone(r.priority)}>{priorityLabel(r.priority)}</Badge>
+                        <span className="shrink-0 font-mono text-2xs text-muted">{r.reference}</span>
+                        {/* Wraps rather than forcing the row wider than a phone. */}
+                        <span className="min-w-0 break-words text-xs font-semibold text-ink">
+                          {r.title}
+                        </span>
+                      </p>
+                      <p className="mt-0.5 text-2xs text-muted">
+                        {kindLabel(r.kind)} · {r.status}
+                        {r.owner && <> · {r.owner}</>}
+                        {late && <span className="text-critical"> · {late}</span>}
+                      </p>
+                      <p className="mt-0.5 truncate text-2xs text-muted">{r.detail}</p>
+                    </div>
+                    <ChevronRight size={14} className="mt-1 shrink-0 text-muted" />
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </CardBody>
+    </Card>
+  )
+}

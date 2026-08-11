@@ -26,6 +26,8 @@ import { accountRouter } from './routes/account.js'
 import { searchRouter } from './routes/search.js'
 import { employeesRouter } from './routes/employees.js'
 import { contractorsRouter } from './routes/contractors.js'
+import { dashboardRouter } from './routes/dashboard.js'
+import { DashboardError } from './lib/dashboardService.js'
 import { AuthError } from './lib/authService.js'
 import { IncidentError } from './lib/incidentService.js'
 import { PermitError } from './lib/permitService.js'
@@ -149,6 +151,7 @@ export function createApp() {
   app.use('/search', searchRouter)
   app.use('/employees', employeesRouter)
   app.use('/contractors', contractorsRouter)
+  app.use('/dashboard', dashboardRouter)
 
   app.use((_req, res) => res.status(404).json({ error: 'not_found' }))
 
@@ -172,7 +175,8 @@ export function createApp() {
       err instanceof EquipmentError ||
       err instanceof VisitorError ||
       err instanceof ReportError ||
-      err instanceof InvestigationError
+      err instanceof InvestigationError ||
+      err instanceof DashboardError
     ) {
       return res.status(err.status).json({ error: err.code, message: err.message })
     }

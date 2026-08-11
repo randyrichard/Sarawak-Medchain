@@ -1,77 +1,145 @@
-import { Badge, PageHeader } from '@/components/ui'
+import { Link } from 'react-router-dom'
+import { RefreshCw } from 'lucide-react'
+import { Alert, Badge, Button, Card, CardBody, PageHeader, Skeleton } from '@/components/ui'
 import { useAuth } from '@/features/auth/AuthContext'
-import { useOrg } from '@/features/org/OrgContext'
-import { useDashboard } from './useDashboard'
-import { KpiGrid } from './components/KpiGrid'
-import { PriorityPanel } from './components/PriorityPanel'
-import { RiskHeatmap } from './components/RiskHeatmap'
-import { PerformanceCharts } from './components/PerformanceCharts'
-import { Leaderboard } from './components/Leaderboard'
-import { ActivityTimeline } from './components/ActivityTimeline'
-import { InsightsPanel } from './components/InsightsPanel'
-import { EventsList } from './components/EventsList'
 import { timeAgo } from '@/lib/time'
+import { useDashboard } from './useDashboard'
+import { DashboardFilters } from './components/DashboardFilters'
+import { NeedsAttention } from './components/NeedsAttention'
+import {
+  ActionsPanel, EquipmentPanel, IncidentPanel, PermitPanel, ReportPanel, VisitorPanel,
+} from './components/ModulePanels'
+import { headline, kpiCards, scopeCaveats, scopeSummary } from './lib'
 
-// Mission Control — the decision dashboard. Order encodes priority:
-// 1. KPIs (30-second health check)  2. Priorities + Insights (what to do)
-// 3. Risk map (where)  4. Performance + Upcoming (how it's changing / what's next)
-// 5. Leaderboard + Activity (accountability / pulse)
-
+/**
+ * The safety operations dashboard.
+ *
+ * One question, answered in the order an HSE manager asks it: is anything on fire, what is
+ * overdue, and then how each module is doing. Every figure is counted server-side from the
+ * modules that own the data - nothing here is illustrative, and a metric that cannot be
+ * derived is absent rather than estimated.
+ */
 export function DashboardPage() {
   const { user } = useAuth()
-  const { allowed, site } = useOrg()
-  const { loading, data } = useDashboard()
+  const { data, loading, error, filters, setFilter, clearFilters, refresh, filtered } = useDashboard()
 
   const firstName = user?.name.split(' ')[0] ?? ''
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
-  const canAnalyze = allowed('analytics:view')
+
+  const cards = data ? kpiCards(data) : []
+  const verdict = data ? headline(data) : null
+  const caveats = data ? scopeCaveats(data) : []
 
   return (
     <>
       <PageHeader
-        title="Mission Control"
-        subtitle={`${greeting}, ${firstName}. Here's what's happening across ${site ? site.name : 'your organization'} today.`}
-        right={
-          data ? (
-            <Badge tone="neutral">{data.scopeLabel} · updated {timeAgo(data.generatedAt)}</Badge>
-          ) : undefined
-        }
+        title="Safety operations"
+        subtitle={`${greeting}${firstName ? `, ${firstName}` : ''}. Here is what needs attention today.`}
+        right={data
+          ? (
+            <div className="flex items-center gap-2">
+              <Badge tone="neutral">updated {timeAgo(data.generatedAt)}</Badge>
+              <Button
+                size="sm"
+                variant="secondary"
+                icon={<RefreshCw size={12} />}
+                onClick={refresh}
+              >
+                Refresh
+              </Button>
+            </div>
+          )
+          : undefined}
       />
 
-      {/* 30-second health check */}
-      <KpiGrid kpis={data?.kpis} loading={loading} />
-
-      {/* What needs me + what the data says */}
-      <div className="mt-4 grid gap-4 xl:grid-cols-3">
-        <PriorityPanel items={data?.priorities} loading={loading} className="xl:col-span-2" />
-        <InsightsPanel insights={data?.insights} loading={loading} />
-      </div>
-
-      {/* Where the risk is */}
-      {canAnalyze && (
-        <div className="mt-4">
-          <RiskHeatmap sites={data?.sites} loading={loading} />
-        </div>
+      {error && (
+        <Alert tone="critical" className="mb-3">
+          {error} Nothing below is current until this loads.
+        </Alert>
       )}
 
-      {/* How performance is moving + what's coming */}
-      <div className="mt-4 grid gap-4 xl:grid-cols-3">
-        {canAnalyze ? (
-          <PerformanceCharts charts={data?.charts} loading={loading} className="xl:col-span-2" />
-        ) : (
-          <ActivityTimeline events={data?.activity} loading={loading} className="xl:col-span-2" />
-        )}
-        <EventsList events={data?.events} loading={loading} />
+      <DashboardFilters
+        filters={filters}
+        departments={data?.departments ?? []}
+        onChange={setFilter}
+        onClear={clearFilters}
+        filtered={filtered}
+      />
+
+      {/*
+        The verdict line. If it says all clear, an operator can stop reading - which is the
+        point of putting it above everything else.
+      */}
+      {verdict && (
+        <Card className="mb-3">
+          <CardBody className="flex flex-wrap items-center justify-between gap-2 py-3">
+            <p className="flex items-center gap-2">
+              <Badge tone={verdict.tone}>{verdict.text}</Badge>
+            </p>
+            <p className="text-2xs text-muted">{data && scopeSummary(data)}</p>
+          </CardBody>
+        </Card>
+      )}
+
+      {/* Said plainly, because these totals will not reconcile against the module otherwise. */}
+      {caveats.map((c) => (
+        <Alert key={c} tone="info" className="mb-2">
+          {c}
+        </Alert>
+      ))}
+
+      {/* ── The eight numbers ──────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+        {loading && !data
+          ? [0, 1, 2, 3, 4, 5, 6, 7].map((i) => <Skeleton key={i} className="h-20 rounded-xl" />)
+          : cards.map((c) => (
+            <Link key={c.id} to={c.href} className="group">
+              <Card className="h-full transition group-hover:border-[var(--accent)]">
+                <CardBody className="py-3">
+                  <p className="text-2xs font-medium text-muted">{c.label}</p>
+                  <p className={`mt-1 text-2xl font-semibold tabular-nums ${
+                    c.value === 0 ? 'text-muted'
+                      : c.tone === 'critical' ? 'text-critical'
+                        : c.tone === 'serious' ? 'text-[var(--serious)]'
+                          : c.tone === 'warning' ? 'text-[var(--warning)]'
+                            : c.tone === 'good' ? 'text-[var(--good)]' : 'text-ink'
+                  }`}
+                  >
+                    {c.value}
+                  </p>
+                  {/* A bare zero reads as broken; saying what zero means does not. */}
+                  {c.value === 0 && <p className="mt-0.5 text-2xs text-muted">{c.quiet}</p>}
+                </CardBody>
+              </Card>
+            </Link>
+          ))}
       </div>
 
-      {/* Accountability + pulse */}
-      {canAnalyze && (
-        <div className="mt-4 grid gap-4 xl:grid-cols-2">
-          <Leaderboard entries={data?.leaderboard} loading={loading} />
-          <ActivityTimeline events={data?.activity} loading={loading} />
+      {/* ── What needs attention ───────────────────────────────────────────── */}
+      <div className="mt-3 grid gap-3 xl:grid-cols-3">
+        <NeedsAttention
+          items={data?.attention}
+          total={data?.attentionTotal ?? 0}
+          loading={loading && !data}
+          className="min-w-0 xl:col-span-2"
+        />
+        <div className="min-w-0 space-y-3">
+          {data ? <ActionsPanel d={data} /> : <Skeleton className="h-64 rounded-xl" />}
+          {data ? <VisitorPanel d={data} /> : <Skeleton className="h-48 rounded-xl" />}
         </div>
-      )}
+      </div>
+
+      {/* ── Per-module detail ──────────────────────────────────────────────── */}
+      <div className="mt-3 grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+        {data ? <IncidentPanel d={data} className="min-w-0" /> : <Skeleton className="h-72 rounded-xl" />}
+        {data ? <PermitPanel d={data} className="min-w-0" /> : <Skeleton className="h-72 rounded-xl" />}
+        {data ? <EquipmentPanel d={data} className="min-w-0" /> : <Skeleton className="h-72 rounded-xl" />}
+      </div>
+
+      <div className="mt-3">
+        {data ? <ReportPanel d={data} /> : <Skeleton className="h-40 rounded-xl" />}
+      </div>
     </>
   )
 }
