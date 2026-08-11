@@ -368,6 +368,37 @@ d('Incident board and register — integration (real Postgres)', () => {
     expect(after?.severityRank).toBe(SEVERITY_RANK.near_miss)
   })
 
+  it('re-derives the rank when only the rank column is written', async () => {
+    /*
+     * The case the trigger originally missed. It was created as UPDATE OF severity, so a
+     * statement that touched only "severityRank" never fired it:
+     *
+     *   UPDATE "Incident" SET "severityRank" = 99 WHERE ...
+     *
+     * left a near miss ranked above a fatality. The board orders by rank and the
+     * dashboard's critical band is rank-based, so one column-wise import or hand-run fix
+     * floated a trivial incident to the top of both. Raw SQL here on purpose: Prisma
+     * always includes severity in its UPDATE, which hid the gap.
+     */
+    const i = await make({ severity: 'near_miss' })
+    await db.$executeRawUnsafe('UPDATE "Incident" SET "severityRank" = 99 WHERE id = $1', i.id)
+
+    const after = await db.incident.findUnique({
+      where: { id: i.id }, select: { severityRank: true },
+    })
+    expect(after?.severityRank).toBe(SEVERITY_RANK.near_miss)
+  })
+
+  it('keeps the rank correct when an unrelated column is updated', async () => {
+    const i = await make({ severity: 'Serious' })
+    await db.$executeRawUnsafe('UPDATE "Incident" SET title = $2 WHERE id = $1', i.id, 'Retitled')
+
+    const after = await db.incident.findUnique({
+      where: { id: i.id }, select: { severityRank: true },
+    })
+    expect(after?.severityRank).toBe(SEVERITY_RANK.Serious)
+  })
+
   it('leaves no row in the table disagreeing with its own severity', async () => {
     await make({ severity: 'lost_time_injury' })
     await make({ severity: 'Serious' })

@@ -89,6 +89,31 @@ d('IncidentService — integration (real Postgres)', () => {
       .rejects.toMatchObject({ status: 403 })
   })
 
+  it("does not confirm that another tenant's incident exists", async () => {
+    /*
+     * 404, not 403.
+     *
+     * Answering "forbidden" for a real id belonging to somebody else while an invented id
+     * answers "not found" tells a caller which ids are real - an enumeration oracle, and
+     * inconsistent with the organisation console, which has always answered 404 here.
+     */
+    const mine = await svc.create(manager, newIncident('Not yours') as never)
+
+    const real = svc.get(outsider, mine.id).catch((e) => e.status)
+    const invented = svc.get(outsider, 'cmnonexistent000000000000').catch((e) => e.status)
+
+    expect(await real).toBe(404)
+    // Indistinguishable from an id that never existed, which is the point.
+    expect(await invented).toBe(404)
+  })
+
+  it('still tells a member of the workspace that a record is out of their scope', async () => {
+    // Inside a workspace they belong to, 403 is useful rather than leaky: they already
+    // know the workspace exists.
+    const hidden = await svc.create(manager, newIncident('Someone else reported this') as never)
+    await expect(svc.get(employee, hidden.id)).rejects.toMatchObject({ status: 403 })
+  })
+
   it('paginates deterministically without overlap', async () => {
     const p1 = await svc.list(manager, { companyId: COMPANY, page: 1, pageSize: 3 })
     const p2 = await svc.list(manager, { companyId: COMPANY, page: 2, pageSize: 3 })

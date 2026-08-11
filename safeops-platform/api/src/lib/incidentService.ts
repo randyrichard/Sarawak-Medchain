@@ -324,6 +324,21 @@ export class IncidentService {
     if (!incident || incident.archived) {
       throw new IncidentError('not_found', 'Incident not found.', 404)
     }
+    /*
+     * Another tenant's incident is "not found", not "forbidden".
+     *
+     * Answering 403 here while an unknown id answers 404 tells a caller which ids are real
+     * somewhere else in the system - an enumeration oracle, and inconsistent with the
+     * organisation console, which has always returned 404 for another tenant's rows.
+     *
+     * Within a workspace the caller is a member of, 403 is still right: they know the
+     * workspace exists, and being told an incident is out of their scope is useful rather
+     * than leaky.
+     */
+    if (!caller.roles.some((r) => r.companyId === incident.companyId)) {
+      throw new IncidentError('not_found', 'Incident not found.', 404)
+    }
+
     // Re-apply scoping to a direct fetch: a guessed id must not bypass row-level access.
     const scope = this.scopeWhere(caller, incident.companyId)
     const visible = await this.db.incident.findFirst({
