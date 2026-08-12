@@ -250,6 +250,9 @@ adminRouter.get('/audit', async (req, res, next) => {
       q: req.query.q ? String(req.query.q) : undefined,
       module: req.query.module ? String(req.query.module) : undefined,
       actor: req.query.actor ? String(req.query.actor) : undefined,
+      // Bounds are applied in the service, so a nonsense value here cannot widen the read.
+      page: req.query.page ? Number(req.query.page) : undefined,
+      pageSize: req.query.pageSize ? Number(req.query.pageSize) : undefined,
     }))
   } catch (e) {
     next(e)

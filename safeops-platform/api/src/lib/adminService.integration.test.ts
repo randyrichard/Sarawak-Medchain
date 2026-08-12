@@ -345,12 +345,57 @@ d('AdminService — integration (real Postgres)', () => {
 
   // ── Audit trail ────────────────────────────────────────────────────────────
 
+  it('pages the audit trail without dropping or repeating an entry', async () => {
+    /*
+     * The trail is a compliance record, so "the oldest thing you can reach is entry 500"
+     * was a functional gap rather than a performance choice. Paging it also exposes an
+     * ordering problem that an unpaged list hides: several entries can share a
+     * millisecond, and without the id tiebreak a row can appear on two pages or neither.
+     */
+    for (let i = 0; i < 12; i += 1) {
+      await svc.toggleMfa(admin, COMPANY, ctx, staffId)
+    }
+
+    const first = await svc.listAudit(admin, COMPANY, { page: 1, pageSize: 5 })
+    expect(first.rows).toHaveLength(5)
+    expect(first.total).toBeGreaterThanOrEqual(12)
+    expect(first.totalPages).toBe(Math.ceil(first.total / 5))
+
+    const second = await svc.listAudit(admin, COMPANY, { page: 2, pageSize: 5 })
+    const overlap = first.rows.filter((a) => second.rows.some((b) => b.id === a.id))
+    expect(overlap).toHaveLength(0)
+
+    // Walking every page reaches each entry exactly once.
+    const seen = new Set<string>()
+    for (let page = 1; page <= first.totalPages; page += 1) {
+      const chunk = await svc.listAudit(admin, COMPANY, { page, pageSize: 5 })
+      for (const row of chunk.rows) seen.add(row.id)
+    }
+    expect(seen.size).toBe(first.total)
+  })
+
+  it('caps the page size a caller can ask for', async () => {
+    // Otherwise pageSize=100000 is a way to pull the whole table in one response.
+    const huge = await svc.listAudit(admin, COMPANY, { page: 1, pageSize: 100_000 })
+    expect(huge.pageSize).toBe(200)
+    expect(huge.rows.length).toBeLessThanOrEqual(200)
+  })
+
+  it('keeps filters applied across pages', async () => {
+    const filtered = await svc.listAudit(admin, COMPANY, { q: 'password', page: 1, pageSize: 2 })
+    expect(filtered.rows.every((e) => /password/i.test(`${e.action} ${e.target}`))).toBe(true)
+    // The total counts what matches the filter, not the whole trail.
+    const all = await svc.listAudit(admin, COMPANY, { page: 1, pageSize: 2 })
+    expect(filtered.total).toBeLessThanOrEqual(all.total)
+  })
+
   it('writes an append-only entry for every administrative act, with the real actor', async () => {
     await svc.toggleMfa(admin, COMPANY, ctx, staffId)
     const entries = await svc.listAudit(admin, COMPANY, {})
 
-    expect(entries.length).toBeGreaterThan(0)
-    const latest = entries[0]
+    expect(entries.rows.length).toBeGreaterThan(0)
+    expect(entries.total).toBeGreaterThan(0)
+    const latest = entries.rows[0]
     expect(latest.actor).toBe('ADM Admin')
     // The role is taken from the verified session, not from the request.
     expect(latest.actorRole).toBe('admin')
@@ -362,7 +407,7 @@ d('AdminService — integration (real Postgres)', () => {
       name: 'Direct Create', email: 'adm-direct@itest.local', role: 'employee', sendInvite: false,
     })
     const withDirect = await svc.listAudit(admin, COMPANY, {})
-    const actions = withDirect.map((e) => e.action)
+    const actions = withDirect.rows.map((e) => e.action)
     expect(actions).toContain('Invited user')
     expect(actions).toContain('Created user')
     expect(actions).toContain('Deactivated user')
@@ -371,10 +416,10 @@ d('AdminService — integration (real Postgres)', () => {
     expect(actions).toContain('Issued password reset link')
 
     // Newest first, and filterable.
-    const times = entries.map((e) => e.at.getTime())
+    const times = entries.rows.map((e) => e.at.getTime())
     expect([...times].sort((a, b) => b - a)).toEqual(times)
     const filtered = await svc.listAudit(admin, COMPANY, { q: 'password' })
-    expect(filtered.every((e) => /password/i.test(`${e.action} ${e.target}`))).toBe(true)
+    expect(filtered.rows.every((e) => /password/i.test(`${e.action} ${e.target}`))).toBe(true)
   })
 
   // ── API keys ───────────────────────────────────────────────────────────────
@@ -498,8 +543,8 @@ d('AdminService — integration (real Postgres)', () => {
     expect(after.mfaRequired).toBe(true)
 
     const entries = await svc.listAudit(admin, COMPANY, { q: 'security policy' })
-    expect(entries.some((e) => e.target === 'passwordMinLength' && e.newValue === '14')).toBe(true)
-    expect(entries.some((e) => e.target === 'mfaRequired')).toBe(true)
+    expect(entries.rows.some((e) => e.target === 'passwordMinLength' && e.newValue === '14')).toBe(true)
+    expect(entries.rows.some((e) => e.target === 'mfaRequired')).toBe(true)
   })
 
   it('reports security posture from real accounts and real login attempts', async () => {
@@ -616,7 +661,7 @@ d('AdminService — integration (real Postgres)', () => {
     expect(backupsAfter.some((b) => b.type === 'pre_restore')).toBe(true)
 
     const entries = await svc.listAudit(admin, COMPANY, { q: 'Restored' })
-    expect(entries.length).toBeGreaterThan(0)
+    expect(entries.rows.length).toBeGreaterThan(0)
   })
 
   it('does not delete work done since the snapshot', async () => {
@@ -691,7 +736,7 @@ d('AdminService — integration (real Postgres)', () => {
     const hooks = await svc.listWebhooks(admin, COMPANY)
     expect(hooks.some((w) => w.url.includes('theirs'))).toBe(false)
     const audit = await svc.listAudit(admin, COMPANY, {})
-    expect(audit.every((e) => e.companyId === COMPANY)).toBe(true)
+    expect(audit.rows.every((e) => e.companyId === COMPANY)).toBe(true)
   })
 
   it('reports a user outside the workspace as not found', async () => {

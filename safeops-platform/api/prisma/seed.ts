@@ -2,9 +2,32 @@ import { PrismaClient, type Role } from '@prisma/client'
 import { hashPassword } from '../src/lib/password.js'
 
 /**
- * Seeds the demo workspace. Passwords are hashed with Argon2id here — the plaintext
+ * Seeds the demo workspace. Passwords are hashed with Argon2id here - the plaintext
  * exists only in this file as a known demo credential and is never stored.
+ *
+ * Refused in production.
+ *
+ * Every account below shares one password that is committed to this repository, and one of
+ * them is an administrator. Running this against a customer's database would hand anyone
+ * who has read the source a full-access login. `npm run dev` seeds automatically, so the
+ * mistake needs only a stray NODE_ENV or a copied command - which is exactly why the guard
+ * is here rather than in a deployment checklist.
+ *
+ * SEED_ALLOW_PRODUCTION=yes is the deliberate override, for a demo tenant somebody really
+ * does want to stand up on production infrastructure.
  */
+if (process.env.NODE_ENV === 'production' && process.env.SEED_ALLOW_PRODUCTION !== 'yes') {
+  // eslint-disable-next-line no-console
+  console.error(
+    'Refusing to seed: NODE_ENV=production. '
+    + 'This seed creates demo accounts - including an administrator - that share a password '
+    + 'committed to the repository. '
+    + 'Set SEED_ALLOW_PRODUCTION=yes only if you genuinely intend to create demo logins on '
+    + 'this database.',
+  )
+  process.exit(1)
+}
+
 const prisma = new PrismaClient()
 
 const DEMO_PASSWORD = 'SafeOpsPlatform2026'

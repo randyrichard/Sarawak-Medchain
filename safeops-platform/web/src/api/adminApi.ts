@@ -1,4 +1,5 @@
 import { request, qs } from './http'
+import { drain } from './paging'
 import type {
   AdminUser, ApiKey, AuditEntry, AuditFilters, Backup, BusinessUnit, Connector, Holiday,
   JobPosition, LoginEvent, NewUserInput, OrgSettings, RbacAction, RbacModule,
@@ -188,9 +189,22 @@ export const adminApi = {
 
   // ── Audit & security ───────────────────────────────────────────────────────
 
+  /**
+   * The audit trail.
+   *
+   * Server-side paged and drained here, the same way the other list screens work. The trail
+   * is a compliance record, so stopping at the first page would mean an administrator
+   * simply cannot reach last quarter's entries; `drain` walks the pages the server already
+   * returns and reports honestly when it hits its own ceiling.
+   */
   async listAudit(companyId: string, filters: AuditFilters) {
-    const rows = await request<ServerAudit[]>(`/admin/audit?${qs({ companyId, ...filters })}`)
-    return rows.map(toAudit)
+    const drained = await drain<ServerAudit>(async (page, pageSize) => {
+      const res = await request<{ rows: ServerAudit[]; total: number }>(
+        `/admin/audit?${qs({ companyId, ...filters, page, pageSize })}`,
+      )
+      return { rows: res.rows, total: res.total }
+    })
+    return { rows: drained.rows.map(toAudit), total: drained.total, complete: drained.complete }
   },
 
   async getSecurity(companyId: string) {

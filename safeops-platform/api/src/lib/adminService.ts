@@ -83,29 +83,62 @@ export class AdminService {
     })
   }
 
+  /**
+   * The audit trail, paged.
+   *
+   * It was a flat cap of 500 with no way past it. That is fine for a demo and wrong for a
+   * compliance record: an HSE customer is buying the trail, and "the oldest thing you can
+   * reach is entry 500" is a functional gap in the feature, not a performance choice.
+   *
+   * Ordering carries an id tiebreak. Two entries written in one request - a role change
+   * logs the role, the sites and the department separately - can land on the same
+   * millisecond, and `at` alone leaves Postgres free to return them either way round. That
+   * is invisible in an unpaged list and becomes a row appearing on two pages, or on
+   * neither, the moment it is paged.
+   */
   async listAudit(caller: Caller, companyId: string, filters: {
-    q?: string; module?: string; actor?: string
+    q?: string; module?: string; actor?: string; page?: number; pageSize?: number
   }) {
     this.requireAdminRead(caller, companyId)
     const q = filters.q?.trim()
-    return this.db.adminAuditEntry.findMany({
-      where: {
-        companyId,
-        ...(filters.module ? { module: filters.module } : {}),
-        ...(filters.actor ? { actor: filters.actor } : {}),
-        ...(q
-          ? {
-              OR: [
-                { action: { contains: q, mode: 'insensitive' } },
-                { target: { contains: q, mode: 'insensitive' } },
-                { actor: { contains: q, mode: 'insensitive' } },
-              ],
-            }
-          : {}),
-      },
-      orderBy: { at: 'desc' },
-      take: 500,
-    })
+    // Bounded so a hand-written pageSize cannot ask for the whole table in one response.
+    const pageSize = Math.min(Math.max(filters.pageSize ?? 100, 1), 200)
+    const page = Math.max(filters.page ?? 1, 1)
+
+    const where: Prisma.AdminAuditEntryWhereInput = {
+      companyId,
+      ...(filters.module ? { module: filters.module } : {}),
+      ...(filters.actor ? { actor: filters.actor } : {}),
+      ...(q
+        ? {
+          OR: [
+            { action: { contains: q, mode: 'insensitive' } },
+            { target: { contains: q, mode: 'insensitive' } },
+            { actor: { contains: q, mode: 'insensitive' } },
+          ],
+        }
+        : {}),
+    }
+
+    // Two statements, one round trip. The count is what lets the console say how much
+    // exists rather than how much it happens to be holding.
+    const [total, rows] = await this.db.$transaction([
+      this.db.adminAuditEntry.count({ where }),
+      this.db.adminAuditEntry.findMany({
+        where,
+        orderBy: [{ at: 'desc' }, { id: 'desc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+    ])
+
+    return {
+      rows,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    }
   }
 
   // ── Users ──────────────────────────────────────────────────────────────────

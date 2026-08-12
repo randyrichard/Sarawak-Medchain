@@ -1292,7 +1292,9 @@ class MockApiClient implements ApiClient {
   }
 
   async adminListAudit(companyId: string, filters: AdminAuditFilters) {
-    if (SERVER_ADMIN) return adminApi.listAudit(companyId, filters)
+    // The server path is paged; drain hands back every page it could reach and warns to
+    // the console when its own ceiling stopped it, exactly as the other list screens do.
+    if (SERVER_ADMIN) return (await adminApi.listAudit(companyId, filters)).rows
     await delay(LATENCY() / 2); return this.admin.listAudit(filters)
   }
   async adminGetSecurity(companyId: string) {

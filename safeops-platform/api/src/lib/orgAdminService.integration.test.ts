@@ -762,6 +762,52 @@ d('Organisation administration — integration (real Postgres)', () => {
       .resolves.toBeTruthy()
   })
 
+  it('leaves the account inactive when delivery fails', async () => {
+    /*
+     * Activation is tied to accepting the invitation and nothing else. If a delivery
+     * outcome could flip status to active, a provider hiccup would mint a live account
+     * nobody had ever authenticated into - and the random password it was created with is
+     * held by no one, so it would sit there unusable and unnoticed.
+     */
+    const fake = new FakeProvider()
+    fake.behaviour = 'throw'
+    withProvider(fake)
+    const email = mail()
+
+    const res = await svc.createInvitation(admin, CO, ctx, { email, role: 'admin' })
+    expect(res.deliveryStatus).toBe('failed')
+
+    const user = await db.user.findUniqueOrThrow({ where: { email } })
+    expect(user.status).toBe('invited')
+    expect(user.mustChangePassword).toBe(true)
+
+    // Still inactive after a failed resend, too.
+    await db.invitation.update({
+      where: { id: res.id }, data: { lastAttemptAt: new Date(Date.now() - 600_000) },
+    })
+    await svc.resendInvitation(admin, CO, ctx, res.id)
+    expect((await db.user.findUniqueOrThrow({ where: { email } })).status).toBe('invited')
+  })
+
+  it('does not let a superseded token revive after a failed resend', async () => {
+    // The old link must stay dead even when the new one never reached anybody.
+    const fake = new FakeProvider()
+    withProvider(fake)
+    const created = await svc.createInvitation(admin, CO, ctx, { email: mail(), role: 'employee' })
+    const firstToken = tokenFromEmail(fake.sent[0])!
+
+    fake.behaviour = 'throw'
+    await db.invitation.update({
+      where: { id: created.id }, data: { lastAttemptAt: new Date(Date.now() - 600_000) },
+    })
+    const resent = await svc.resendInvitation(admin, CO, ctx, created.id)
+    expect(resent.deliveryStatus).toBe('failed')
+
+    await expect(svc.previewInvitation(firstToken)).rejects.toMatchObject({ code: 'invalid_token' })
+    // The new one still works, so the invitation is recoverable by hand.
+    await expect(svc.previewInvitation(resent.token!)).resolves.toBeTruthy()
+  })
+
   it('does not claim delivery when no provider is configured', async () => {
     withProvider(null)
     const res = await svc.createInvitation(admin, CO, ctx, { email: mail(), role: 'employee' })
