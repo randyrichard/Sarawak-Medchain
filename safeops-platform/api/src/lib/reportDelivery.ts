@@ -1,5 +1,5 @@
 import { env } from '../env.js'
-import { EmailProviderError, getEmailProvider } from './email/index.js'
+import { EmailProviderError, getEmailProvider, headerSafe } from './email/index.js'
 import type { ReportData } from './reportService.js'
 import type { RenderedReport } from './reportPdf.js'
 
@@ -62,7 +62,9 @@ export function reportSubject(data: ReportData): string {
   const date = data.periodEnd.toISOString().slice(0, 10)
   const headline = data.summary[0]
   const count = headline ? `${headline.value} ${headline.label.toLowerCase()}` : ''
-  return `${data.companyName} - ${data.title}${count ? ` - ${count}` : ''} - ${date}`
+  // Same reasoning as the invitation subject: this is a header and the company name is
+  // tenant-controlled.
+  return headerSafe(`${data.companyName} - ${data.title}${count ? ` - ${count}` : ''} - ${date}`)
 }
 
 function textBody(data: ReportData, appUrl: string): string {

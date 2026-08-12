@@ -102,8 +102,18 @@ export class AdminService {
     this.requireAdminRead(caller, companyId)
     const q = filters.q?.trim()
     // Bounded so a hand-written pageSize cannot ask for the whole table in one response.
-    const pageSize = Math.min(Math.max(filters.pageSize ?? 100, 1), 200)
-    const page = Math.max(filters.page ?? 1, 1)
+    /*
+     * Non-numeric input falls back to the default rather than reaching the query.
+     *
+     * `?page=abc` became NaN, then `skip: NaN`, which Prisma rejected as a 500. A malformed
+     * query parameter is the caller's mistake and deserves a sensible page, not a server
+     * error - a 500 on user input is noise that hides the failures worth paging somebody for.
+     */
+    const asCount = (v: number | undefined, fallback: number) =>
+      (typeof v === 'number' && Number.isFinite(v) ? Math.floor(v) : fallback)
+
+    const pageSize = Math.min(Math.max(asCount(filters.pageSize, 100), 1), 200)
+    const page = Math.max(asCount(filters.page, 1), 1)
 
     const where: Prisma.AdminAuditEntryWhereInput = {
       companyId,

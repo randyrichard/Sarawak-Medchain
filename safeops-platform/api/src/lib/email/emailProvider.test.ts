@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { EmailProviderError } from './provider.js'
+import { EmailProviderError, headerSafe } from './provider.js'
+import { buildInvitationEmail } from './invitationEmail.js'
 import { ResendEmailProvider } from './resendProvider.js'
 import { SmtpEmailProvider } from './smtpProvider.js'
 
@@ -210,5 +211,64 @@ describe('SmtpEmailProvider', () => {
     await expect(p.send(message)).rejects.toMatchObject({
       name: 'EmailProviderError', code: 'auth_failed',
     })
+  })
+})
+
+describe('header safety', () => {
+  /*
+   * A subject is a header, and a header ends at a newline. The company name is
+   * tenant-controlled and reaches the subject, so a name carrying CRLF could end the
+   * Subject line and start whatever follows it.
+   *
+   * nodemailer was tested against a real relay and collapses this before the wire, so the
+   * SMTP path was never exploitable. These assertions exist so the guarantee does not
+   * depend on which provider is configured - the Resend path hands the subject to an API
+   * this environment cannot test.
+   */
+  it('flattens CRLF out of a value bound for a header', () => {
+    expect(headerSafe('Acme\r\nBcc: attacker@evil.test')).toBe('Acme Bcc: attacker@evil.test')
+    expect(headerSafe('a\nb\tc')).toBe('a b c')
+    expect(headerSafe('  padded  ')).toBe('padded')
+  })
+
+  it('bounds the length so a subject cannot become an essay', () => {
+    expect(headerSafe('x'.repeat(500))).toHaveLength(200)
+  })
+
+  it('leaves ordinary names untouched', () => {
+    expect(headerSafe('Borneo Industrial Group')).toBe('Borneo Industrial Group')
+    // Non-ASCII is normal in this market and must survive.
+    expect(headerSafe('Syarikat Bhd — Kuching')).toBe('Syarikat Bhd — Kuching')
+  })
+
+  const hostile = {
+    companyName: 'Acme\r\nBcc: attacker@evil.test',
+    recipientEmail: 'victim@example.com',
+    inviterName: '<img src=x onerror=alert(1)>Bob',
+    roleLabel: 'HSE Manager',
+    siteNames: ['Yard <script>alert(2)</script>'],
+    departmentName: 'Maint\r\nX-Injected: yes',
+    acceptUrl: 'https://app.test/accept-invitation/TOKEN123',
+    expiresAt: new Date('2026-08-19T00:00:00Z'),
+  }
+
+  it('keeps a hostile company name out of the subject line', () => {
+    const m = buildInvitationEmail(hostile, 'k')
+    expect(m.subject).not.toMatch(/[\r\n]/)
+  })
+
+  it('escapes markup rather than rendering it', () => {
+    const m = buildInvitationEmail(hostile, 'k')
+    expect(m.html).not.toContain('<img src=x')
+    expect(m.html).not.toContain('<script>')
+    expect(m.html).toContain('&lt;img')
+    expect(m.html).toContain('&lt;script&gt;')
+  })
+
+  it('addresses exactly the one invitee, whatever the other fields contain', () => {
+    // Recipient injection: nothing in the content may add an address.
+    const m = buildInvitationEmail(hostile, 'k')
+    expect(m.to).toHaveLength(1)
+    expect(m.to[0].email).toBe('victim@example.com')
   })
 })

@@ -7,6 +7,36 @@
  * or adding one is a new file and a line in the factory, not a change to the report system.
  */
 
+/**
+ * Flatten a value that is about to become part of a header.
+ *
+ * A subject is a header, and a header ends at a newline. Tenant-controlled text reaches
+ * ours - the company name, the report title - so a name containing CRLF would end the
+ * Subject line and start whatever the rest of it spells, which is how "Bcc: someone-else"
+ * gets added to a message.
+ *
+ * nodemailer already collapses this before it reaches the wire, and that was confirmed
+ * against a real relay rather than assumed. This exists so the guarantee does not depend on
+ * which provider happens to be configured: the Resend path hands the subject to an API this
+ * environment cannot test, and a subject reading "Acme Bcc: attacker@evil.test" is a
+ * phishing aid even where no header is actually injected.
+ */
+export function headerSafe(value: string): string {
+  /*
+   * Filtered by code point rather than by a regex character class. A class spelling out the
+   * control range needs \u escapes, and those are exactly the characters most likely to be
+   * mangled by whatever edits this file next - which would silently turn the guard off.
+   * This form cannot be quietly broken by an escaping mistake.
+   */
+  let flat = ''
+  for (const ch of value) {
+    const code = ch.codePointAt(0) ?? 0
+    flat += code < 0x20 || code === 0x7f ? ' ' : ch
+  }
+  // Runs of whitespace collapsed, and bounded: a subject is not a place for an essay.
+  return flat.replace(/\s{2,}/g, ' ').trim().slice(0, 200)
+}
+
 export interface EmailAttachment {
   filename: string
   content: Buffer

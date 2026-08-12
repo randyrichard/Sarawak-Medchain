@@ -1,4 +1,4 @@
-import type { EmailMessage } from './provider.js'
+import { headerSafe, type EmailMessage } from './provider.js'
 
 /**
  * The invitation email.
@@ -38,8 +38,9 @@ function longDate(d: Date): string {
 }
 
 export function invitationSubject(input: InvitationEmailInput): string {
-  const product = input.productName ?? 'SafeOps'
-  return `You're invited to join ${input.companyName} on ${product}`
+  const product = headerSafe(input.productName ?? 'SafeOps')
+  // The company name is tenant-controlled and this is a header.
+  return `You're invited to join ${headerSafe(input.companyName)} on ${product}`
 }
 
 /** The details worth repeating in both bodies, in the order somebody reads them. */

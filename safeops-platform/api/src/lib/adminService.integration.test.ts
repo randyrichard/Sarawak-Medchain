@@ -374,6 +374,35 @@ d('AdminService — integration (real Postgres)', () => {
     expect(seen.size).toBe(first.total)
   })
 
+  it('falls back to a sensible page rather than erroring on rubbish input', async () => {
+    /*
+     * `?page=abc` reached the query as NaN and Prisma rejected it as a 500. A malformed
+     * query parameter is the caller's mistake and deserves a sensible page - a 500 on user
+     * input is noise that hides the failures worth paging somebody for.
+     */
+    const nonsense = await svc.listAudit(admin, COMPANY, {
+      page: Number('abc'), pageSize: Number('xyz'),
+    })
+    expect(nonsense.page).toBe(1)
+    expect(nonsense.pageSize).toBe(100)
+    expect(nonsense.rows.length).toBeGreaterThan(0)
+  })
+
+  it('clamps a page below one instead of skipping backwards', async () => {
+    const zero = await svc.listAudit(admin, COMPANY, { page: 0, pageSize: 5 })
+    const negative = await svc.listAudit(admin, COMPANY, { page: -20, pageSize: 5 })
+    expect(zero.page).toBe(1)
+    expect(negative.page).toBe(1)
+  })
+
+  it('answers an absurd page cheaply and emptily', async () => {
+    // Postgres stops once the rows run out, so a huge OFFSET is not a way to make the
+    // server work hard on request.
+    const far = await svc.listAudit(admin, COMPANY, { page: 999_999_999, pageSize: 200 })
+    expect(far.rows).toEqual([])
+    expect(far.total).toBeGreaterThan(0)
+  })
+
   it('caps the page size a caller can ask for', async () => {
     // Otherwise pageSize=100000 is a way to pull the whole table in one response.
     const huge = await svc.listAudit(admin, COMPANY, { page: 1, pageSize: 100_000 })
