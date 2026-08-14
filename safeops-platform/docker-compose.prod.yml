@@ -75,7 +75,19 @@ services:
       JWT_PRIVATE_KEY_B64: ${JWT_PRIVATE_KEY_B64:?run npm run keygen}
       JWT_PUBLIC_KEY_B64: ${JWT_PUBLIC_KEY_B64:?run npm run keygen}
       CORS_ORIGINS: ${CORS_ORIGINS:?set the web origin}
+      # Required in production and validated at boot: every invitation and report link is
+      # built from it. Without it the container exits immediately rather than sending
+      # people links to localhost.
+      APP_PUBLIC_URL: ${APP_PUBLIC_URL:?set the public address users visit}
       COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+      # Email. All optional: with none of it set, reports are still generated and
+      # downloadable and invitations still work by passing the link on by hand. Nothing is
+      # ever recorded as emailed when it was not. REPORT_EMAIL_FROM becomes required as
+      # soon as a transport is set, and the API refuses to boot without it.
+      REPORT_EMAIL_FROM: ${REPORT_EMAIL_FROM:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      SMTP_URL: ${SMTP_URL:-}
+      MAIL_REPLY_TO: ${MAIL_REPLY_TO:-}
       ACCESS_TOKEN_TTL_MIN: ${ACCESS_TOKEN_TTL_MIN:-15}
       REFRESH_TOKEN_TTL_DAYS: ${REFRESH_TOKEN_TTL_DAYS:-30}
       SCHEDULER_ENABLED: 'true'

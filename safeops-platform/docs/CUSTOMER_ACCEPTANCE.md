@@ -82,7 +82,10 @@ done and demonstrated, or it is not done. Sign the bottom when every line is tic
 | 7.2 | It raises notifications | Create an action due in 7 days; within 15 minutes a notification appears | ☐ |
 | 7.3 | It does not duplicate | Restart the API; the count does not increase | ☐ |
 | 7.4 | Notifications reach the bell | Visible in the UI, scoped to the right workspace | ☐ |
-| 7.5 | **Customer told there is no email** | Notifications are in-app only. Get an explicit acknowledgement | ☐ |
+| 7.5 | **Customer told notifications are in-app** | The bell and its counts are in-app only — there is no email digest of notifications. Get an explicit acknowledgement | ☐ |
+| 7.6 | Email transport configured | `REPORT_EMAIL_FROM` plus one transport set, and `/reports/catalog` reports a provider | ☐ |
+| 7.7 | **One real invitation delivered** | Invite your own address; the row reads *Emailed*, the mail arrives, and its link points at `APP_PUBLIC_URL`. This is the only proof external delivery works — see [DEPLOYMENT.md §5](DEPLOYMENT.md) | ☐ |
+| 7.8 | Scheduled report email arrives | Run a report now; the run history shows *Sent* and the PDF is attached | ☐ |
 
 ## 8. Security
 

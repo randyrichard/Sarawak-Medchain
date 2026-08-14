@@ -30,6 +30,28 @@ import { PrismaClient, type IncidentSeverity, type IncidentStage, type IncidentT
 import { PERMIT_CONTROLS } from '../src/lib/permitCatalog.js'
 import { TRAINING_COURSES, courseApplies } from '../src/lib/trainingCatalog.js'
 
+/*
+ * Refused in production, for the same reason the base seed is.
+ *
+ * This one is arguably worse. The seed creates logins; this writes a month of fabricated
+ * incidents, permits, audits and training records into a workspace. In a system a company
+ * keeps for regulatory reasons, invented safety records are not merely untidy - they sit
+ * alongside the real ones in the register an inspector reads.
+ *
+ * The reset is scoped by `createdBy` and would not delete a customer's rows, but nothing
+ * scopes the insert away from a real workspace, so the guard is on the whole script.
+ */
+if (process.env.NODE_ENV === 'production' && process.env.SEED_ALLOW_PRODUCTION !== 'yes') {
+  // eslint-disable-next-line no-console
+  console.error(
+    'Refusing to load the demo dataset: NODE_ENV=production. '
+    + 'This writes fabricated incidents, permits and audits into a workspace, which in a '
+    + 'compliance system sits alongside the real ones an inspector reads. '
+    + 'Set SEED_ALLOW_PRODUCTION=yes only if you genuinely intend that on this database.',
+  )
+  process.exit(1)
+}
+
 const db = new PrismaClient()
 
 /** Written to `createdBy`, which no screen renders. The handle for a clean removal. */

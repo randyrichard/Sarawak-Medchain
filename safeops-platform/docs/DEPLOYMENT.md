@@ -55,11 +55,18 @@ Generate a database password:
 openssl rand -base64 24
 ```
 
-### The two settings that will bite you
+### The three settings that will bite you
 
 **`CORS_ORIGINS` and `VITE_API_BASE_URL` must match your real hostnames.**
 `VITE_API_BASE_URL` is compiled into the browser bundle at build time — changing it needs a
 rebuild, not a restart.
+
+**`APP_PUBLIC_URL` must be the address your users actually visit.** Every invitation and
+report link is built from it. The API validates it at boot and will not start without it,
+and will not accept a `localhost` or `127.0.0.1` value — a link nobody outside the machine
+can reach looks like it worked to whoever sent it. If the container exits immediately on
+first deploy, this is almost always why; the reason is on the first line of
+`docker compose logs api`.
 
 **Web and API must share a registrable domain.** The refresh cookie is
 `sameSite=strict`, so `app.example.com` + `api.example.com` works and
@@ -154,7 +161,76 @@ const { hashPassword } = require('./dist/lib/password.js');
 Pass the first password in the environment so it never lands in shell history, and note
 `mustChangePassword: true` — they are forced to set their own on first sign-in.
 
-## 5. Environment reference
+## 5. Email
+
+Optional, and the product is honest without it: reports still generate and download, and
+invitations still work — the console shows the administrator a link to pass on by hand.
+Nothing is ever recorded as emailed when it was not.
+
+Turning it on means setting a sender and exactly one transport.
+
+```
+REPORT_EMAIL_FROM="SafeOps <safeops@yourcompany.com>"
+RESEND_API_KEY=            # from the Resend dashboard
+```
+
+`REPORT_EMAIL_FROM` becomes **required** the moment either transport is set. The API
+refuses to start without it, because a relay rejects every message that has no From and
+the run history would otherwise fill with failures caused by a missing line here.
+
+### Resend
+
+1. Add your sending domain in the Resend dashboard and complete its DNS records.
+   **Until the domain is verified, Resend rejects every message.** This is the step most
+   often skipped, and the symptom is every invitation showing *Email failed*.
+2. Create an API key and put it in `.env.prod` as `RESEND_API_KEY`. It is read only by
+   the API process. It is never sent to the browser, never written to the audit trail and
+   never returned by any endpoint.
+3. Restart the API and confirm the provider is live:
+
+   ```
+   curl -s -H "Authorization: Bearer $TOKEN" \
+     'https://api.yourcompany.com/reports/catalog' | grep provider
+   ```
+
+   `"provider":"resend"` means the API has accepted the configuration. It does **not**
+   mean a message has been delivered — only the test below proves that.
+
+### SMTP instead
+
+For a customer whose mail policy requires their own relay:
+
+```
+REPORT_EMAIL_FROM="SafeOps <safeops@yourcompany.com>"
+SMTP_URL=smtps://user:password@smtp.yourcompany.com:465
+```
+
+Resend wins if both are set.
+
+### Prove it works — do this before go-live
+
+Email is the one part of this system that cannot be verified from the repository, because
+it depends on a live account, a verified domain and DNS. Send one real invitation to an
+address you control:
+
+1. **Administration → Invitations → Invite user**, to your own address.
+2. The confirmation should read *Invitation emailed*. If it shows a link to copy instead,
+   nothing was sent — check `REPORT_EMAIL_FROM` and the key.
+3. Open the mail. Confirm:
+   - the sender is your `REPORT_EMAIL_FROM`;
+   - the subject reads *You're invited to join &lt;Company&gt; on SafeOps*;
+   - the **Accept invitation** link points at your `APP_PUBLIC_URL`, not localhost;
+   - it arrived in the inbox rather than the spam folder.
+4. Click it, set a password, sign in.
+5. Back in **Invitations**, that row now reads *Accepted*.
+6. In **Audit Log**, confirm `Invited user` and `Invitation email sent` are recorded, and
+   that no token appears in either.
+
+If the invitation shows **Email failed**, the reason from the provider is on the row —
+that text is the provider's own, and it is usually a rejected key or an unverified domain.
+The invitation itself is still valid: use **Resend** once the configuration is fixed.
+
+## 6. Environment reference
 
 | Variable | Required | Notes |
 |---|---|---|
@@ -162,6 +238,12 @@ Pass the first password in the environment so it never lands in shell history, a
 | `JWT_PRIVATE_KEY_B64` | yes | `npm run keygen`. Rotating it signs everyone out — that is the emergency response to a suspected compromise |
 | `JWT_PUBLIC_KEY_B64` | yes | As above |
 | `CORS_ORIGINS` | yes | Comma-separated. Only these origins may call the API |
+| `APP_PUBLIC_URL` | **yes** | Where users reach the app. Every invitation and report link is built from it. Validated at boot: the API refuses to start without it, and refuses a `localhost`/`127.0.0.1` value — a link nobody outside the machine can reach looks like it worked to whoever sent it |
+| `REPORT_EMAIL_FROM` | when email is on | Envelope sender, e.g. `SafeOps <safeops@yourcompany.com>`. Required as soon as a transport is set; the API refuses to boot without it |
+| `RESEND_API_KEY` | no | Resend transport. Server-side only — never sent to the browser, never written to the audit trail, never returned by an endpoint |
+| `SMTP_URL` | no | SMTP transport, for a customer using their own relay. Resend wins if both are set |
+| `MAIL_REPLY_TO` | no | Where replies go, if not the sender |
+| `SEED_ALLOW_PRODUCTION` | no | Leave unset. The demo seed refuses to run under `NODE_ENV=production` without it, because it creates accounts — including an administrator — sharing a password that is public in this repository |
 | `VITE_API_BASE_URL` | yes | Build-time. A bundle built without it refuses to sign anyone in |
 | `COOKIE_DOMAIN` | no | Set when web and API are on sibling subdomains |
 | `ACCESS_TOKEN_TTL_MIN` | no | Default 15 |
@@ -172,7 +254,7 @@ Pass the first password in the environment so it never lands in shell history, a
 | `SCHEDULER_INTERVAL_MIN` | no | Default 15 |
 | `UPLOAD_DIR` | yes in production | Must be a mounted volume. Checked for writability at boot — a missing or read-only mount stops the process rather than surprising someone mid-upload |
 
-## 6. Capacity
+## 7. Capacity
 
 Measured, not estimated. Against a year of operations (5,012 incidents, 4,000 actions,
 1,500 permits, 900 assets, 6,000 certificates):
@@ -189,7 +271,7 @@ Measured, not estimated. Against a year of operations (5,012 incidents, 4,000 ac
 **50–100 concurrent users on 2 vCPU / 4 GB.** A pilot of 20–40 users at one site sits well
 inside that. The first thing to run out is the Postgres connection pool, not CPU.
 
-## 7. Upgrading
+## 8. Upgrading
 
 ```bash
 cd safeops-platform && git pull

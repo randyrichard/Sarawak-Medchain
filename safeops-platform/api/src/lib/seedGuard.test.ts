@@ -15,15 +15,19 @@ import { resolve } from 'node:path'
  * here touches the database: the process is expected to exit before it connects.
  */
 const seed = resolve(process.cwd(), 'prisma/seed.ts')
+const demo = resolve(process.cwd(), 'prisma/demo.ts')
 
-function runSeed(env: Record<string, string | undefined>) {
-  return spawnSync('npx', ['tsx', seed], {
+function run(script: string, env: Record<string, string | undefined>) {
+  return spawnSync('npx', ['tsx', script], {
     env: { ...process.env, ...env },
     encoding: 'utf8',
     shell: process.platform === 'win32',
     timeout: 60_000,
   })
 }
+
+const runSeed = (env: Record<string, string | undefined>) => run(seed, env)
+const runDemo = (env: Record<string, string | undefined>) => run(demo, env)
 
 describe('demo seed production guard', () => {
   it('refuses to run when NODE_ENV is production', () => {
@@ -47,6 +51,34 @@ describe('demo seed production guard', () => {
   it('does not leak the demo password in the refusal', () => {
     const r = runSeed({ NODE_ENV: 'production' })
     // The refusal is likely to end up in a deployment log.
+    expect(`${r.stdout}${r.stderr}`).not.toMatch(/SafeOpsPlatform/)
+  })
+})
+
+describe('demo dataset production guard', () => {
+  /*
+   * Guarded for a sharper reason than the base seed. That one creates logins; this writes
+   * a month of fabricated incidents, permits, audits and training records. In a system a
+   * company keeps for regulatory reasons, invented safety records sit in the same register
+   * an inspector reads.
+   */
+  it('refuses to run when NODE_ENV is production', () => {
+    const r = runDemo({ NODE_ENV: 'production', SEED_ALLOW_PRODUCTION: undefined })
+
+    expect(r.status).toBe(1)
+    const said = `${r.stdout}${r.stderr}`
+    expect(said).toMatch(/Refusing to load the demo dataset/i)
+    expect(said).toMatch(/SEED_ALLOW_PRODUCTION/)
+  })
+
+  it('explains why rather than only refusing', () => {
+    // An operator who cannot see the risk will just set the override.
+    const r = runDemo({ NODE_ENV: 'production' })
+    expect(`${r.stdout}${r.stderr}`).toMatch(/fabricated|compliance/i)
+  })
+
+  it('does not leak the demo password in the refusal', () => {
+    const r = runDemo({ NODE_ENV: 'production' })
     expect(`${r.stdout}${r.stderr}`).not.toMatch(/SafeOpsPlatform/)
   })
 })
