@@ -194,6 +194,15 @@ invitation email actually went out. The invitation token is never written to it.
 
 ## 5. Email
 
+> **Live delivery is NOT VERIFIED.** No message has ever left this repository through a
+> real provider: there is no Resend account, no API key and no verified sending domain
+> here, and none was invented. What *is* verified, by test: the adapter's request shape,
+> its idempotency key, its timeout, its failure classification, that a lone recipient is
+> addressed directly rather than bcc'd, that the API key never appears in a log, an error,
+> a response or the audit trail, and that a failed send leaves the invitation valid and
+> says so honestly. The one unproven step is whether your account and DNS deliver — which
+> is exactly what the drill at the end of this section is for.
+
 Optional, and the product is honest without it: reports still generate and download, and
 invitations still work — the console shows the administrator a link to pass on by hand.
 Nothing is ever recorded as emailed when it was not.
