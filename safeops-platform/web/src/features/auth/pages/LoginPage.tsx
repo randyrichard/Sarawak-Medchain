@@ -7,6 +7,7 @@ import { loadPreferences } from '@/features/account/preferences'
 import { ApiError, ROLE_LABEL, type Role } from '@/api/types'
 import { Alert, Button, Checkbox, Input } from '@/components/ui'
 import { AuthLayout } from './AuthLayout'
+import { shouldShowDemoLogins } from '../demoLogins'
 
 const DEMO_ACCOUNTS: { role: Role; email: string }[] = [
   { role: 'ceo', email: 'ceo@demo.safeops.app' },
@@ -17,7 +18,21 @@ const DEMO_ACCOUNTS: { role: Role; email: string }[] = [
   { role: 'employee', email: 'employee@demo.safeops.app' },
 ]
 // Must match the API seed (prisma/seed.ts). Length satisfies the server-side policy.
-const DEMO_PASSWORD = 'SafeOpsPlatform2026'
+/*
+ * Written so the literal cannot reach a production bundle.
+ *
+ * Vite replaces `import.meta.env.DEV` with a constant at build time, so in a production
+ * build this folds to the env lookup and the string below is eliminated as dead code -
+ * hiding the panel alone was not enough, because the constant still shipped in the
+ * JavaScript and anybody could read it with view-source. A deliberate demo deployment
+ * supplies VITE_DEMO_PASSWORD at build time instead.
+ */
+const DEMO_PASSWORD = import.meta.env.DEV
+  ? 'SafeOpsPlatform2026'
+  : (import.meta.env.VITE_DEMO_PASSWORD ?? '')
+
+// Build-time constant: the demo accounts must never appear on a customer's login page.
+const showDemoLogins = shouldShowDemoLogins(import.meta.env)
 
 /**
  * Where to land after signing in.
@@ -106,6 +121,7 @@ export function LoginPage() {
         </Button>
       </form>
 
+      {showDemoLogins && (
       <div className="mt-8">
         <p className="mb-2 text-2xs font-semibold uppercase tracking-wider text-muted">
           Demo workspace — sign in as any role
@@ -124,6 +140,7 @@ export function LoginPage() {
         </div>
         <p className="mt-2 text-2xs text-muted">Shared demo password: {DEMO_PASSWORD}</p>
       </div>
+      )}
     </AuthLayout>
   )
 }

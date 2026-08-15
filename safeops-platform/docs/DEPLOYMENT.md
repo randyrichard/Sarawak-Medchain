@@ -2,23 +2,27 @@
 
 Putting SafeOps on a server for a pilot customer.
 
-> **The container images in this repository have never been built.** Docker Desktop is
-> installed on the development machine, but its Linux engine would not start (the WSL
-> distro runs; the engine pipe never appears), so `docker build` and `docker compose up`
-> remain unexecuted.
+> **The images build and run.** Both were built with the compose file below, started as a
+> three-container stack, and exercised: migrations applied, `/health` and `/health/ready`
+> answered 200, unauthenticated requests refused, a foreign CORS origin declined, the first
+> platform administrator bootstrapped, two customers provisioned, and `docker stop`
+> completed in one second with the drain logic running.
 >
-> What has been verified instead is the *contents* of the runtime image, reconstructed
-> exactly as the Dockerfile assembles it: `npm ci --omit=dev` from the committed lockfile,
-> the compiled `dist/`, the Prisma schema and generated client copied in the same order.
-> That tree was pointed at an empty PostgreSQL database with `NODE_ENV=production`, ran
-> `prisma migrate deploy` through all 36 migrations, booted `node dist/server.js`, answered
-> `/health` and `/health/ready`, refused an unauthenticated request, declined a foreign CORS
-> origin, and bootstrapped its first platform administrator. No development dependency is
-> present in that tree — `typescript`, `vitest` and `tsx` are all absent.
+> The first real build found three faults that no amount of reading the Dockerfile would
+> have shown, all now fixed:
 >
-> What that does **not** cover: the image build itself — layer caching, `apk add
-> postgresql16-client`, file permissions under `USER node`, and the compose networking
-> between containers. Budget half a day for the first build, and expect to fix something.
+> 1. **Everything under `/app` was root-owned** while the process runs as `node`, so
+>    `prisma migrate deploy` could not write to `node_modules/@prisma/engines`. The
+>    container died on its first command and restarted forever.
+> 2. **`openssl` was missing.** Prisma selects its query engine by probing the libssl
+>    version; without it the probe failed and every database call would have used the wrong
+>    engine.
+> 3. **The build and runtime stages disagreed about openssl**, so `prisma generate`
+>    produced a `linux-musl` engine while the runtime looked for
+>    `linux-musl-openssl-3.0.x`. The image built cleanly and failed at run time.
+>
+> Base images are now pinned by digest. `node:24-alpine` had already drifted from Alpine
+> 3.21 to 3.24.1, and that drift is what moves the openssl major underneath fault 3.
 
 ## Shape
 
@@ -87,6 +91,11 @@ deploy.
 
 ## 2. Build and start
 
+**Prerequisites:** Docker Engine with Compose v2. Verified against Docker 29.6.2 / Docker
+Desktop 4.84 on WSL2. The build pulls `node`, `nginx` and `postgres` base images by digest,
+so the first build needs network access to Docker Hub; after that it is offline-capable.
+The API image is ~525 MB and the web image ~76 MB.
+
 ```bash
 cd safeops-platform && docker compose -f docker-compose.prod.yml --env-file .env.prod build
 ```
@@ -95,9 +104,29 @@ cd safeops-platform && docker compose -f docker-compose.prod.yml --env-file .env
 cd safeops-platform && docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
 ```
 
-Migrations run automatically before the API accepts traffic — the container's command is
-`prisma migrate deploy && node dist/server.js`, so it can never serve against a schema it
-does not expect.
+Migrations run automatically as the API container starts — the entrypoint applies them and
+only then execs the server, so the app never serves against a schema it does not expect. No
+separate migration step is needed on a normal deploy.
+
+Expect all three containers to reach `healthy`:
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env.prod ps
+```
+
+`docker stop` is graceful: the entrypoint ends in `exec node`, so the server is PID 1 and
+receives SIGTERM directly. A stop that takes ten seconds means something is wrong — that is
+Docker's kill timeout expiring, not a clean drain.
+
+### The demo sign-in panel
+
+The login page carries one-click demo accounts and a shared password while developing.
+They are **not** in a production bundle: the panel and the password literal are both
+compiled out unless the build is a development one. A deliberate demo deployment can bring
+them back with `VITE_DEMO_LOGINS=true` and `VITE_DEMO_PASSWORD=…` at build time.
+
+If you ever see that panel on a customer's deployment, the bundle was built wrong — the
+accounts it names are the ones the demo seed creates, one of which is an administrator.
 
 ## 3. Verify the deploy
 
@@ -142,10 +171,15 @@ unknown origin is not echoed back by CORS.
 
 ## 4. Create the customer's workspace
 
-The seed creates a demo workspace with known passwords. **Do not run it in production.**
+The seed creates a demo workspace with known passwords. **Do not run it in production** —
+it refuses to run when `NODE_ENV=production`, and that guard is the only thing standing
+between a customer's deployment and six shared-password accounts.
+
+Migrations have already run by this point: the API container applies them on start. You
+only need this if you are re-running them by hand after a manual intervention:
 
 ```bash
-docker compose -f docker-compose.prod.yml exec api npx prisma migrate deploy
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec api npx prisma migrate deploy
 ```
 
 ### Create the first platform administrator
@@ -352,15 +386,16 @@ inside that. The first thing to run out is the Postgres connection pool, not CPU
 
 ## 8. Backup and restore
 
-> **PARTLY VERIFIED.** The dump and restore commands themselves have **never been run** —
-> the development machine has no `pg_dump` anywhere on it, and the container engine would
-> not start. What *has* been verified, against a real PostgreSQL instance: that the schema
-> rebuilds from nothing (all 36 migrations applied to an empty database, and the production
-> server then booted against it and served), and that `db:verify` below correctly passes a
-> healthy database and fails a deliberately torn one. The untested step is `pg_dump` →
-> `pg_restore` itself. Run the drill at the end of this section on a throwaway copy
-> **before** you put a customer's records on this. A backup nobody has restored is a
-> hypothesis.
+> **VERIFIED.** A full round-trip was executed against the running stack: two customers
+> provisioned through the API, `pg_dump -Fc` inside the `db` container (224 KB), restore
+> into a clean database with `pg_restore`, row counts identical (Company 2, Site 2, User 3,
+> Membership 2, migrations 36), both tenants present with their plans intact, the API
+> started against the restored database and served `/health/ready`, and a login using a
+> password set *before* the dump succeeded. `verifyRestore` returned 0 on the restored
+> database and 1 after a company row was deliberately deleted with the foreign key dropped.
+>
+> Run the drill at the end of this section on your own deployment anyway — this proves the
+> procedure, not your disks.
 
 The `db` service already mounts a `safeops_backups` volume at `/backups`, and the Postgres
 image carries its own client tools, so the dump is taken inside that container.

@@ -23,7 +23,8 @@ x-logging: &logging
 
 services:
   db:
-    image: postgres:16-alpine
+    # Pinned by digest; see api/Dockerfile for why and how to re-pin.
+    image: postgres:16-alpine@sha256:44c4ee9810eff91f7eab4d822642e01115b1a9eccce4bcbdde7604752d68eac6
     restart: unless-stopped
     logging: *logging
     # max_connections must exceed what every API instance's pool can ask for, plus room
