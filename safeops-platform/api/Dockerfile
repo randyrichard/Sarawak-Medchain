@@ -37,6 +37,11 @@ COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
 
+# Copied with the executable bit set explicitly: the repository is developed on Windows,
+# where the mode bit does not survive, and a non-executable entrypoint fails the container
+# at start with "permission denied" and nothing else.
+COPY --chmod=0755 api/docker-entrypoint.sh /usr/local/bin/safeops-entrypoint
+
 # Evidence lives here. Mount a volume over it: without one, every uploaded photograph is
 # discarded when the container is replaced.
 ENV UPLOAD_DIR=/data/uploads
@@ -53,5 +58,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 # Migrations run before the server accepts traffic, so a deploy can never serve against a
-# schema it does not expect.
-CMD ["npm", "run", "start:deploy"]
+# schema it does not expect. The entrypoint ends in `exec node`, which makes node PID 1 so
+# that `docker stop` reaches the drain logic in server.ts — see the script for why that
+# matters. Do not change this back to `npm run start:deploy`.
+CMD ["/usr/local/bin/safeops-entrypoint"]

@@ -2,12 +2,23 @@
 
 Putting SafeOps on a server for a pilot customer.
 
-> **The container images in this repository have never been built.** The machine this was
-> developed on has no Docker, no Podman and no WSL, so `docker build` and
-> `docker compose up` could not be executed. Every command the images run has been verified
-> natively — `npm ci`, `npx prisma generate`, `npm run build`, `npm start`, `prisma migrate
-> deploy` — and the production entrypoint boots and serves. But the images themselves are
-> unproven. Budget half a day for the first build, and expect to fix something.
+> **The container images in this repository have never been built.** Docker Desktop is
+> installed on the development machine, but its Linux engine would not start (the WSL
+> distro runs; the engine pipe never appears), so `docker build` and `docker compose up`
+> remain unexecuted.
+>
+> What has been verified instead is the *contents* of the runtime image, reconstructed
+> exactly as the Dockerfile assembles it: `npm ci --omit=dev` from the committed lockfile,
+> the compiled `dist/`, the Prisma schema and generated client copied in the same order.
+> That tree was pointed at an empty PostgreSQL database with `NODE_ENV=production`, ran
+> `prisma migrate deploy` through all 36 migrations, booted `node dist/server.js`, answered
+> `/health` and `/health/ready`, refused an unauthenticated request, declined a foreign CORS
+> origin, and bootstrapped its first platform administrator. No development dependency is
+> present in that tree — `typescript`, `vitest` and `tsx` are all absent.
+>
+> What that does **not** cover: the image build itself — layer caching, `apk add
+> postgresql16-client`, file permissions under `USER node`, and the compose networking
+> between containers. Budget half a day for the first build, and expect to fix something.
 
 ## Shape
 
@@ -137,23 +148,51 @@ The seed creates a demo workspace with known passwords. **Do not run it in produ
 docker compose -f docker-compose.prod.yml exec api npx prisma migrate deploy
 ```
 
-### Grant the first platform administrator
+### Create the first platform administrator
 
 Customers are created from inside the product, by a SafeOps platform administrator. That
 is a different thing from a customer's own administrator: it is authority over every
 tenant, and nothing in the customer-facing console can grant it. The first one has to be
-made from the shell, once:
+made from the shell, once.
+
+A fresh deployment has **no accounts at all** — there is no public sign-up, and the demo
+seed refuses to run against production. So the first command opens the account and grants
+the privilege together:
+
+```bash
+docker compose -f docker-compose.prod.yml exec api node dist/cli/grantPlatformAdmin.js --create you@safeops.app
+```
+
+It prints a single-use link. Open it, choose your own password, and sign in:
+
+```
+Set a password with this single-use link:
+
+  https://app.yourcompany.com/reset-password/JEXBDE2ST8FJ…
+```
+
+**No password is chosen by anyone, including you.** The account is created with a hash of
+random bytes that nothing can reproduce, so until that link is used there is no working
+credential for it — which is the same property that protects every customer administrator.
+The link expires in 30 minutes and is shown once; run this interactively and don't pipe the
+output anywhere it will be kept.
+
+Afterwards, `--create` is not needed. For somebody who already has an account:
 
 ```bash
 docker compose -f docker-compose.prod.yml exec api node dist/cli/grantPlatformAdmin.js you@safeops.app
 ```
 
-The account must already exist — this grants a privilege, it does not open an account. To
-take the flag away again:
+To take the flag away again:
 
 ```bash
 docker compose -f docker-compose.prod.yml exec api node dist/cli/grantPlatformAdmin.js --revoke someone@safeops.app
 ```
+
+The command takes exactly one address and refuses two, rather than guessing which you
+meant; it refuses to grant to a deactivated account, because platform authorization checks
+status on every request and the grant would silently do nothing; and it always allows a
+revoke, including from a deactivated account. Re-running it is safe and says "no change".
 
 (In development the same tool is `npm run platform:grant -- you@safeops.app`. The deployed
 image installs without dev dependencies, so it runs the compiled file directly.)
@@ -313,11 +352,15 @@ inside that. The first thing to run out is the Postgres connection pool, not CPU
 
 ## 8. Backup and restore
 
-> **NOT VERIFIED.** These commands were written against the compose file and the images'
-> contents, but no dump or restore has been executed — this machine has no Docker, and the
-> local development cluster ships without `pg_dump`. Run the restore drill below on a
-> throwaway copy **before** you put a customer's records on this. A backup nobody has
-> restored is a hypothesis.
+> **PARTLY VERIFIED.** The dump and restore commands themselves have **never been run** —
+> the development machine has no `pg_dump` anywhere on it, and the container engine would
+> not start. What *has* been verified, against a real PostgreSQL instance: that the schema
+> rebuilds from nothing (all 36 migrations applied to an empty database, and the production
+> server then booted against it and served), and that `db:verify` below correctly passes a
+> healthy database and fails a deliberately torn one. The untested step is `pg_dump` →
+> `pg_restore` itself. Run the drill at the end of this section on a throwaway copy
+> **before** you put a customer's records on this. A backup nobody has restored is a
+> hypothesis.
 
 The `db` service already mounts a `safeops_backups` volume at `/backups`, and the Postgres
 image carries its own client tools, so the dump is taken inside that container.
@@ -371,11 +414,45 @@ alongside the dump:
 docker run --rm -v safeops_uploads:/data -v "$PWD":/out alpine tar czf /out/safeops-uploads-$(date +%Y%m%d).tar.gz -C /data .
 ```
 
+### Check a restored database before trusting it
+
+`pg_restore` exiting zero means the file was readable, not that the result is something to
+serve customers from. A dump taken mid-write, a restore that ran out of disk, or simply the
+wrong file all produce a database that starts and answers queries.
+
+```bash
+docker compose -f docker-compose.prod.yml exec api node dist/cli/verifyRestore.js
+```
+
+It is read-only and safe to run against production at any time. It checks that the schema
+is fully migrated and that no migration is stuck mid-change, that the core tables exist,
+and that nothing is orphaned — sites whose company is gone, memberships whose user is gone,
+incidents whose site is gone. Those are the joins a torn restore breaks first. It exits
+non-zero if anything is wrong, so it can gate a script.
+
+It then prints one line per customer, with site, user and incident counts:
+
+```
+tenants:
+  Borneo Industrial Group (big): 6 site(s), 7 user(s), 520 incident(s)
+```
+
+**Read that list.** The structural checks pass happily on a restore of the wrong backup;
+only somebody who knows the customers can see that a company is missing or that a year of
+incidents is not there.
+
 ### The drill
 
-Before go-live, prove the pair works together: take a dump, restore it into a scratch
-database, and confirm a known incident and its attachment are both there. Do it once, on
-purpose, while nothing depends on the answer.
+Before go-live, prove the whole chain works together, on a throwaway copy:
+
+1. Take a dump.
+2. Restore it into a scratch database.
+3. Run `verifyRestore.js` against the scratch database and confirm it exits 0.
+4. Confirm a known incident **and its attachment file** are both there — the attachment
+   comes from the uploads volume, not the dump, which is the failure this step exists to
+   catch.
+
+Do it once, on purpose, while nothing depends on the answer.
 
 ## 9. Upgrading
 
