@@ -137,34 +137,60 @@ The seed creates a demo workspace with known passwords. **Do not run it in produ
 docker compose -f docker-compose.prod.yml exec api npx prisma migrate deploy
 ```
 
-Create the first company, site and administrator directly:
+### Grant the first platform administrator
+
+Customers are created from inside the product, by a SafeOps platform administrator. That
+is a different thing from a customer's own administrator: it is authority over every
+tenant, and nothing in the customer-facing console can grant it. The first one has to be
+made from the shell, once:
 
 ```bash
-docker compose -f docker-compose.prod.yml exec api node -e "
-const { PrismaClient } = require('@prisma/client');
-const { hashPassword } = require('./dist/lib/password.js');
-(async () => {
-  const db = new PrismaClient();
-  const company = await db.company.create({ data: { id: 'acme', name: 'Acme Industrial', industry: 'Manufacturing', plan: 'standard' } });
-  await db.site.create({ data: { id: 'acme-1', companyId: company.id, name: 'Main Plant', short: 'Main', city: 'Kuching' } });
-  const user = await db.user.create({ data: {
-    email: 'admin@acme.example', name: 'Their Administrator', title: 'HSE Manager',
-    passwordHash: await hashPassword(process.env.FIRST_PASSWORD), mustChangePassword: true,
-  }});
-  await db.membership.create({ data: { userId: user.id, companyId: company.id, role: 'admin', siteIds: [] } });
-  console.log('created', company.id, user.email);
-  await db.\$disconnect();
-})();
-"
+docker compose -f docker-compose.prod.yml exec api node dist/cli/grantPlatformAdmin.js you@safeops.app
 ```
 
-The account is created with `mustChangePassword: true`, and the app enforces it: at their
-first sign-in the administrator is shown a forced password-change screen and cannot reach
-any page until they have chosen their own. Tell them to expect it. It is what stops the
-password you chose from remaining a working login to their incident and audit records.
+The account must already exist — this grants a privilege, it does not open an account. To
+take the flag away again:
 
-Pass the first password in the environment so it never lands in shell history, and note
-`mustChangePassword: true` — they are forced to set their own on first sign-in.
+```bash
+docker compose -f docker-compose.prod.yml exec api node dist/cli/grantPlatformAdmin.js --revoke someone@safeops.app
+```
+
+(In development the same tool is `npm run platform:grant -- you@safeops.app`. The deployed
+image installs without dev dependencies, so it runs the compiled file directly.)
+
+Keep this list short and review it: a platform administrator can see every customer on the
+deployment. The flag is read from the database on every request rather than carried in the
+session, so revoking it takes effect on the holder's next call, not when their token
+expires.
+
+### Create the customer
+
+Sign in and open **SafeOps customers** in the sidebar — it only appears for platform staff.
+"New customer" asks for the company, the plan, the first administrator and their first
+site, and in one transaction creates:
+
+- the company, on the chosen plan, with `subscriptionStatus: trial`
+- one site
+- one administrator, with an `admin` membership scoped to that company alone
+- one invitation, valid for 7 days
+
+Nobody at SafeOps ever holds a working password for a customer's workspace. The
+administrator receives an invitation and chooses their own; the account is created in
+`invited` status with no usable credential until they do. If a company name is submitted
+twice the second attempt is refused rather than creating a duplicate tenant, so a
+double-click cannot bill anybody twice.
+
+No incidents, permits, audits or compliance records are created. A safety register that
+arrives pre-filled with invented rows is worse than an empty one, because somebody
+eventually has to work out which of them were real.
+
+**If email is not configured**, the console says so plainly and shows the invitation link
+once, for you to pass on yourself. Copy it then — it is a credential and is not shown
+again. The same happens if the provider rejects the message; the customer is still created
+correctly and the link still works.
+
+Everything above is recorded in the new customer's own audit trail, including whether the
+invitation email actually went out. The invitation token is never written to it.
 
 ## 5. Email
 

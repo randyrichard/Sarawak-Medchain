@@ -32,6 +32,7 @@ const EmployeesPage = lazy(() => import('@/features/employees/EmployeesPage').th
 const ContractorsPage = lazy(() => import('@/features/contractors/ContractorsPage').then((m) => ({ default: m.ContractorsPage })))
 const OrganizationPage = lazy(() => import('@/features/org/OrganizationPage').then((m) => ({ default: m.OrganizationPage })))
 const AccountPage = lazy(() => import('@/features/account/AccountPage').then((m) => ({ default: m.AccountPage })))
+const PlatformRoute = lazy(() => import('@/features/platform/PlatformRoute').then((m) => ({ default: m.PlatformRoute })))
 const StyleguidePage = lazy(() => import('@/features/styleguide/StyleguidePage').then((m) => ({ default: m.StyleguidePage })))
 
 // Path routing (not hash): every view is a deep-linkable URL per the PRD.
@@ -194,6 +195,11 @@ export default function App() {
                     </RequireCapability>
                   }
                 />
+                {/*
+                  Re-authorized server-side on every call; the component renders a plain
+                  explanation rather than the console for anybody who is not SafeOps staff.
+                */}
+                <Route path="/platform" element={<PlatformRoute />} />
                 <Route path="/account" element={<AccountPage />} />
                 <Route path="/design" element={<StyleguidePage />} />
                 <Route path="*" element={<NotFoundPage />} />

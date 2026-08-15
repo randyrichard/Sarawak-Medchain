@@ -28,6 +28,8 @@ import { employeesRouter } from './routes/employees.js'
 import { contractorsRouter } from './routes/contractors.js'
 import { dashboardRouter } from './routes/dashboard.js'
 import { orgAdminRouter, inviteRouter } from './routes/orgAdmin.js'
+import { platformRouter } from './routes/platform.js'
+import { ProvisioningError } from './lib/provisioningService.js'
 import { OrgAdminError } from './lib/orgAdminService.js'
 import { DashboardError } from './lib/dashboardService.js'
 import { AuthError } from './lib/authService.js'
@@ -151,6 +153,9 @@ export function createApp() {
   app.use('/admin', adminRouter)
   // Unauthenticated on purpose - an invitee has no session. The token is the authority.
   app.use('/invitations', inviteRouter)
+  // Above every customer rather than inside one, so it never shares an authorization
+  // model with the tenant-scoped console.
+  app.use('/platform', platformRouter)
   app.use('/org', orgRouter)
   app.use('/notifications', notificationsRouter)
   app.use('/activity', activityRouter)
@@ -184,7 +189,8 @@ export function createApp() {
       err instanceof ReportError ||
       err instanceof InvestigationError ||
       err instanceof DashboardError ||
-      err instanceof OrgAdminError
+      err instanceof OrgAdminError ||
+      err instanceof ProvisioningError
     ) {
       return res.status(err.status).json({ error: err.code, message: err.message })
     }

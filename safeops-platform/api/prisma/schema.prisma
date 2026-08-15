@@ -38,6 +38,14 @@ model User {
   lastLoginAt      DateTime?
 
   mustChangePassword Boolean @default(false)
+
+  /// SafeOps staff, not a member of any customer.
+  ///
+  /// Deliberately a column rather than a Role value: Role lives on Membership and describes
+  /// somebody's place *inside* one company, and a platform administrator has no place
+  /// inside any of them. Keeping it separate is also what stops a customer administrator
+  /// granting it - the organisation console writes Membership.role and never touches this.
+  platformAdmin Boolean @default(false)
   mfaEnabled         Boolean @default(false)
   /// Shown in the admin console's user list. Additive and nullable — authentication
   /// does not read it, so every existing account is unaffected.
@@ -157,7 +165,22 @@ model LoginAttempt {
 model Company {
   id        String     @id
   name      String
+  /// Commercial tier. Free-text rather than an enum so existing rows keep the value they
+  /// were created with; the recognised keys and their prices live in planCatalog.ts, which
+  /// is the only place a price is written down.
   plan      String     @default("enterprise")
+
+  /// Whether the customer may use the product at all. Separate from subscriptionStatus:
+  /// a company can be past due and still working, or paid up and suspended for cause.
+  status             String    @default("active")
+  /// trial | active | past_due | cancelled. Recorded here so a billing integration added
+  /// later has somewhere to write without reshaping the tenant model.
+  subscriptionStatus String    @default("trial")
+  /// Whatever the eventual payment provider calls this customer. Null until one exists.
+  billingReference   String?
+  /// Set when the company was created through the provisioning console rather than by hand.
+  provisionedAt      DateTime?
+  provisionedBy      String?
   /// Shown in the company switcher. Additive: every existing row keeps a sensible
   /// default and nothing that reads Company today is affected.
   industry     String @default("")

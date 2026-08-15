@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useOrg } from '@/features/org/OrgContext'
+import { usePlatformAdmin } from '@/features/platform/usePlatformAdmin'
 import type { Capability } from '@/features/permissions/permissions'
 import { ErrorBoundary } from '@/app/ErrorBoundary'
 import { Topbar } from './Topbar'
@@ -99,6 +100,9 @@ export default function AppShell() {
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { allowed, company } = useOrg()
+  // Platform staff only, and answered by the server rather than by a tenant capability -
+  // managing customers sits above every workspace rather than inside one.
+  const platformAdmin = usePlatformAdmin()
   return (
     <>
       <div className="flex items-center gap-2.5 px-5 py-5">
@@ -112,7 +116,15 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       <nav className="flex-1 space-y-0.5 px-3 pt-1">
-        {NAV.filter((item) => allowed(item.capability)).map((item) =>
+        {[
+          ...NAV.filter((item) => allowed(item.capability)),
+          // Appended after the capability filter, never through it: capabilities come from
+          // membership of one company, and this is authority over all of them. The
+          // capability below is inert - it satisfies the shared item shape and is not read.
+          ...(platformAdmin
+            ? [{ to: '/platform', label: 'SafeOps customers', icon: Building2, capability: 'dashboard:view' as const }]
+            : []),
+        ].map((item) =>
           item.locked ? (
             <div
               key={item.to}

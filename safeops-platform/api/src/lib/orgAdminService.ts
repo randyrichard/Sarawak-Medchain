@@ -535,7 +535,13 @@ export class OrgAdminService {
    * The attempt is written before the provider is contacted, which is what makes the
    * idempotency key distinct per send - the same pattern the scheduled reports use.
    */
-  private async deliverInvitation(invitationId: string, rawToken: string) {
+  /*
+   * Public so provisioning can reuse it. A new customer's first administrator gets exactly
+   * the same email, the same delivery states and the same idempotency key as any other
+   * invitee - the alternative was a second copy of all three living in the provisioning
+   * service and drifting from this one.
+   */
+  async deliverInvitation(invitationId: string, rawToken: string) {
     const invite = await this.db.invitation.findUniqueOrThrow({
       where: { id: invitationId },
       include: { company: { select: { name: true } } },
