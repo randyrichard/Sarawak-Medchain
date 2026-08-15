@@ -81,6 +81,28 @@ describe('ResendEmailProvider', () => {
     expect(body.to).toEqual([FROM])
   })
 
+  it('addresses a lone recipient directly instead of bcc-ing them', async () => {
+    /*
+     * An invitation always has exactly one recipient, and it is the first thing anybody at
+     * a new customer ever receives from SafeOps. Sent to ourselves with the real person
+     * bcc'd it carries a textbook bulk-mail signature, so the one message that must arrive
+     * is the one most likely to be filtered - and if it lands, it is not addressed to the
+     * reader, which reads as phishing.
+     *
+     * Bcc exists to keep a distribution list private. With one recipient there is no list.
+     */
+    const { impl, calls } = stubFetch({ status: 200, body: { id: 'msg_1' } })
+    await new ResendEmailProvider('re_test', FROM, undefined, impl).send({
+      ...message,
+      to: [{ name: 'Their Administrator', email: 'admin@customer.example' }],
+    })
+
+    const body = JSON.parse(String(calls[0].init.body))
+    expect(body.to).toEqual(['admin@customer.example'])
+    // Not merely empty - absent, so nothing downstream sees a bcc header at all.
+    expect(body.bcc).toBeUndefined()
+  })
+
   it('sends the key as a bearer token and nowhere else', async () => {
     const { impl, calls } = stubFetch({ status: 200, body: { id: 'msg_1' } })
     await new ResendEmailProvider('re_secret_key', FROM, undefined, impl).send(message)
@@ -188,11 +210,45 @@ describe('SmtpEmailProvider', () => {
   })
 
   it('matches the sender regardless of case', async () => {
+    // Two recipients, because that is what puts our own address in To in the first place:
+    // a lone recipient is addressed directly and the sender is not in the envelope at all.
     const p = new SmtpEmailProvider(
       'smtp://localhost:2525', FROM, undefined,
-      fakeTransport(['SafeOps@Example.com', 'a@example.com']),
+      fakeTransport(['SafeOps@Example.com', 'a@example.com', 'b@example.com']),
     )
-    expect((await p.send(message)).accepted).toEqual(['a@example.com'])
+    const result = await p.send({
+      ...message,
+      to: [{ name: 'A', email: 'a@example.com' }, { name: 'B', email: 'b@example.com' }],
+    })
+    expect(result.accepted).toEqual(['a@example.com', 'b@example.com'])
+  })
+
+  it('addresses a lone recipient directly', async () => {
+    const p = new SmtpEmailProvider(
+      'smtp://localhost:2525', FROM, undefined, fakeTransport(['admin@customer.example']),
+    )
+    const result = await p.send({
+      ...message,
+      to: [{ name: 'Their Administrator', email: 'admin@customer.example' }],
+    })
+    expect(result.accepted).toEqual(['admin@customer.example'])
+  })
+
+  it('still counts a lone recipient who happens to be our own sender address', async () => {
+    /*
+     * Inviting somebody at the address the product sends from is legitimate - a SafeOps
+     * operator onboarding themselves, most obviously. In direct mode that address is a
+     * genuine recipient rather than the artefact of bcc addressing, so filtering it would
+     * report a delivery that did happen as one that did not.
+     */
+    const p = new SmtpEmailProvider(
+      'smtp://localhost:2525', FROM, undefined, fakeTransport(['safeops@example.com']),
+    )
+    const result = await p.send({
+      ...message,
+      to: [{ name: 'Us', email: 'safeops@example.com' }],
+    })
+    expect(result.accepted).toEqual(['safeops@example.com'])
   })
 
   it('returns the relay message id', async () => {

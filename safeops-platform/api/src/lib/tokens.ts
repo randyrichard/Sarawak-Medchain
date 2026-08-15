@@ -8,6 +8,14 @@ export interface AccessClaims {
   name: string
   /** Company → role, resolved from Membership rows on the server. */
   roles: { companyId: string; role: string; siteIds: string[] }[]
+  /**
+   * Whether this account is still carrying a password somebody else chose.
+   *
+   * Carried in the token so the gate in requireAuth costs nothing per request, and read
+   * from the database every time a token is minted - both at sign-in and on refresh - so
+   * it can never be older than one access-token lifetime.
+   */
+  mustChangePassword: boolean
   jti: string
 }
 

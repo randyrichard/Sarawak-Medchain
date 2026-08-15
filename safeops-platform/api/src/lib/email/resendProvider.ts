@@ -32,6 +32,14 @@ export class ResendEmailProvider implements EmailProvider {
 
   async send(message: EmailMessage): Promise<EmailResult> {
     const addresses = message.to.map((r) => r.email)
+    /*
+     * Bcc protects a distribution list. With one recipient there is no list to protect,
+     * and hiding them costs real delivery: an invitation addressed to safeops@ourselves
+     * with the actual person bcc'd is a textbook bulk-mail signature, so the first thing a
+     * new customer's administrator ever receives is the message most likely to be filtered
+     * - and if it does arrive, it is not addressed to them, which reads as phishing.
+     */
+    const direct = addresses.length === 1
 
     let res: Response
     try {
@@ -48,14 +56,14 @@ export class ResendEmailProvider implements EmailProvider {
           from: this.from,
           ...(this.replyTo ? { reply_to: this.replyTo } : {}),
           /*
-           * Recipients go in bcc, with the sender as the visible to.
+           * Several recipients go in bcc, with the sender as the visible to.
            *
            * A safety report names people and their overdue actions. Putting twelve managers
            * in the to line publishes the distribution list to all of them and invites
            * reply-all; worse, it tells every reader exactly who else was told.
            */
-          to: [this.from],
-          bcc: addresses,
+          to: direct ? addresses : [this.from],
+          ...(direct ? {} : { bcc: addresses }),
           subject: message.subject,
           text: message.text,
           html: message.html,

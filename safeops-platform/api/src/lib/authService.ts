@@ -40,6 +40,7 @@ export class AuthService {
       email: user.email,
       name: user.name,
       roles: memberships.map((m) => ({ companyId: m.companyId, role: m.role, siteIds: m.siteIds })),
+      mustChangePassword: user.mustChangePassword,
     })
 
     const refreshToken = generateRefreshToken()
@@ -179,6 +180,7 @@ export class AuthService {
       email: user.email,
       name: user.name,
       roles: memberships.map((m) => ({ companyId: m.companyId, role: m.role, siteIds: m.siteIds })),
+      mustChangePassword: user.mustChangePassword,
     })
 
     return { accessToken, accessExpiresAt, refreshToken, user: this.publicUser(user) }

@@ -302,7 +302,73 @@ Measured, not estimated. Against a year of operations (5,012 incidents, 4,000 ac
 **50–100 concurrent users on 2 vCPU / 4 GB.** A pilot of 20–40 users at one site sits well
 inside that. The first thing to run out is the Postgres connection pool, not CPU.
 
-## 8. Upgrading
+## 8. Backup and restore
+
+> **NOT VERIFIED.** These commands were written against the compose file and the images'
+> contents, but no dump or restore has been executed — this machine has no Docker, and the
+> local development cluster ships without `pg_dump`. Run the restore drill below on a
+> throwaway copy **before** you put a customer's records on this. A backup nobody has
+> restored is a hypothesis.
+
+The `db` service already mounts a `safeops_backups` volume at `/backups`, and the Postgres
+image carries its own client tools, so the dump is taken inside that container.
+
+### Take a backup
+
+```bash
+docker compose -f docker-compose.prod.yml exec db sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc -f /backups/safeops-$(date +%Y%m%d-%H%M%S).dump'
+```
+
+`-Fc` is the custom format: compressed, and restorable table-by-table if you ever need only
+part of it.
+
+**Copy it off the host.** A backup on the same machine as the database survives a bad
+migration and nothing else — not a failed disk, not a lost server.
+
+```bash
+docker compose -f docker-compose.prod.yml cp db:/backups/safeops-20260815-120000.dump ./
+```
+
+Schedule it from the host's own cron, daily and before every upgrade. This product holds a
+company's incident and audit history; some of it is what they would produce to a regulator,
+and none of it can be reconstructed from anywhere else.
+
+### Restore
+
+Stop the API first, so nothing writes while the schema is being replaced:
+
+```bash
+docker compose -f docker-compose.prod.yml stop api
+```
+
+```bash
+docker compose -f docker-compose.prod.yml exec db sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists /backups/safeops-20260815-120000.dump'
+```
+
+```bash
+docker compose -f docker-compose.prod.yml start api
+```
+
+`--clean --if-exists` drops what it is about to replace, so the restore lands on a database
+that already has a schema. It is destructive by design: everything written after the dump
+is gone. That is the point, and it is why the drill matters more than the command.
+
+Uploaded evidence — photographs attached to incidents — lives in the `safeops_uploads`
+volume, **not** in the database dump. A restore that brings back the records without the
+files leaves an investigation citing evidence that no longer exists, so back the volume up
+alongside the dump:
+
+```bash
+docker run --rm -v safeops_uploads:/data -v "$PWD":/out alpine tar czf /out/safeops-uploads-$(date +%Y%m%d).tar.gz -C /data .
+```
+
+### The drill
+
+Before go-live, prove the pair works together: take a dump, restore it into a scratch
+database, and confirm a known incident and its attachment are both there. Do it once, on
+purpose, while nothing depends on the answer.
+
+## 9. Upgrading
 
 ```bash
 cd safeops-platform && git pull

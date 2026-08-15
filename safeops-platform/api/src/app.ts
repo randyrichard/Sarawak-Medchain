@@ -51,6 +51,24 @@ import { VisitorError } from './lib/visitorService.js'
 import { ReportError } from './lib/reportService.js'
 import { InvestigationError } from './lib/incidentInvestigation.js'
 
+/**
+ * Removes single-use credentials from a path before it is logged.
+ *
+ * Invitation and reset links carry their token as a path segment, and the request log is
+ * the one artefact that routinely leaves the database's blast radius - retained on disk,
+ * shipped to an aggregator, pasted into a support ticket. Logged raw, anybody who can read
+ * it could redeem an invitation before its recipient and take over the account it was
+ * meant for, including the first administrator of a brand-new customer.
+ *
+ * The route shape is kept, because "somebody opened an invitation link and got a 400" is
+ * exactly what an operations log is for. Only the secret goes.
+ */
+export function redactPath(path: string): string {
+  return path
+    .replace(/^\/invitations\/[^/]+/, '/invitations/:token')
+    .replace(/^\/auth\/reset-password\/[^/]+/, '/auth/reset-password/:token')
+}
+
 export function createApp() {
   const app = express()
 
@@ -79,7 +97,7 @@ export function createApp() {
     // to the mount point while a router handles the request, so reading it later reported
     // `/admin/health` as `/health` — an operations log that says a health check returned
     // 403 sends whoever reads it somewhere the problem is not.
-    const path = req.originalUrl.split('?')[0]
+    const path = redactPath(req.originalUrl.split('?')[0])
     res.on('finish', () => {
       // eslint-disable-next-line no-console
       console.log(JSON.stringify({

@@ -10,6 +10,7 @@ const claims = {
   email: 'hse@demo.safeops.app',
   name: 'Marcus Tan',
   roles: [{ companyId: 'big', role: 'hse_manager', siteIds: [] }],
+  mustChangePassword: false,
 }
 
 describe('access tokens', () => {

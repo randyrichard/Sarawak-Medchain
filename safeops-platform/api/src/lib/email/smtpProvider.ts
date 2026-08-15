@@ -54,14 +54,16 @@ export class SmtpEmailProvider implements EmailProvider {
       Array.isArray(v)
         ? v.map((x) => (typeof x === 'string' ? x : (x as { address?: string })?.address ?? String(x)))
         : []
+    const recipients = message.to.map((r) => `${r.name} <${r.email}>`)
+    // One recipient is addressed directly; see the Resend provider for why. Several are
+    // bcc'd, because the distribution list is not something every reader should be handed.
+    const direct = recipients.length === 1
     try {
       const info = await this.transport().sendMail({
         from: this.from,
         ...(this.replyTo ? { replyTo: this.replyTo } : {}),
-        // Bcc for the same reason as the Resend provider: the distribution list is not
-        // something every reader should be handed.
-        to: this.from,
-        bcc: message.to.map((r) => `${r.name} <${r.email}>`),
+        to: direct ? recipients : this.from,
+        ...(direct ? {} : { bcc: recipients }),
         subject: message.subject,
         text: message.text,
         html: message.html,
@@ -72,13 +74,19 @@ export class SmtpEmailProvider implements EmailProvider {
       /*
        * The sender is not a recipient.
        *
-       * The visible To is our own from-address (recipients are bcc'd), and a relay reports
-       * every envelope address as accepted - so the count came back one too high and the
-       * history read "Emailed to 3 recipient(s)" when two people received it. An inflated
-       * delivery count is exactly the kind of number this feature must not produce.
+       * When recipients are bcc'd the visible To is our own from-address, and a relay
+       * reports every envelope address as accepted - so the count came back one too high
+       * and the history read "Emailed to 3 recipient(s)" when two people received it. An
+       * inflated delivery count is exactly the kind of number this feature must not
+       * produce.
+       *
+       * Addressing one recipient directly puts a real person in To and the sender nowhere,
+       * so the same filter would then discard a genuine delivery whenever somebody is
+       * invited at the address the product sends from. Only applied when it applies.
        */
       const senderAddress = this.from.match(/<([^>]+)>/)?.[1] ?? this.from
-      const isSender = (a: string) => a.toLowerCase() === senderAddress.toLowerCase()
+      const isSender = (a: string) =>
+        !direct && a.toLowerCase() === senderAddress.toLowerCase()
 
       return {
         messageId: info.messageId ?? '',
