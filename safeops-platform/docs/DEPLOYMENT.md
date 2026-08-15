@@ -158,6 +158,11 @@ const { hashPassword } = require('./dist/lib/password.js');
 "
 ```
 
+The account is created with `mustChangePassword: true`, and the app enforces it: at their
+first sign-in the administrator is shown a forced password-change screen and cannot reach
+any page until they have chosen their own. Tell them to expect it. It is what stops the
+password you chose from remaining a working login to their incident and audit records.
+
 Pass the first password in the environment so it never lands in shell history, and note
 `mustChangePassword: true` — they are forced to set their own on first sign-in.
 

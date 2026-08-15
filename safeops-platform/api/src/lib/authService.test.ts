@@ -100,6 +100,22 @@ describe('login', () => {
     expect(claims?.roles).toEqual([{ companyId: 'big', role: 'hse_manager', siteIds: [] }])
   })
 
+  it('tells the client when the account must change its password', async () => {
+    /*
+     * The client gates the whole app on this flag: an account still carrying a password
+     * somebody else chose gets a forced-change screen instead of the product. If the flag
+     * stopped being returned here the gate would silently stop firing, and the first
+     * administrator of a workspace would keep the password whoever deployed it chose.
+     */
+    store.users[0].mustChangePassword = true
+    const forced = await auth.login('hse@demo.safeops.app', PASSWORD, ctx)
+    expect(forced.user.mustChangePassword).toBe(true)
+
+    store.users[0].mustChangePassword = false
+    const normal = await auth.login('hse@demo.safeops.app', PASSWORD, ctx)
+    expect(normal.user.mustChangePassword).toBe(false)
+  })
+
   it('never returns the password hash to the client', async () => {
     const res = await auth.login('hse@demo.safeops.app', PASSWORD, ctx)
     expect(JSON.stringify(res.user)).not.toContain('argon2')

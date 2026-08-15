@@ -5,15 +5,27 @@ import { useOrg } from '@/features/org/OrgContext'
 import type { Capability } from '@/features/permissions/permissions'
 import { FullPageSpinner } from '@/components/ui/Spinner'
 import { ForbiddenPage } from '@/app/pages/ForbiddenPage'
+import { ChangePasswordRequiredPage } from './pages/ChangePasswordRequiredPage'
 
 /** Blocks anonymous users; preserves the intended destination. */
 export function RequireAuth() {
-  const { status } = useAuth()
+  const { status, user } = useAuth()
   const location = useLocation()
   if (status === 'restoring') return <FullPageSpinner label="Restoring your session…" />
   if (status === 'anonymous') {
     return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />
   }
+  /*
+   * An account still carrying a password somebody else chose gets no further.
+   *
+   * Four admin actions set this flag and nothing acted on it, so "Force password reset"
+   * changed a column and left the old password working. It matters most for the first
+   * administrator of a new workspace, whose password is chosen by whoever deploys the
+   * system - without this, that person keeps a working login to the customer's records.
+   *
+   * Placed here rather than on a route so there is no address that skips it.
+   */
+  if (user?.mustChangePassword) return <ChangePasswordRequiredPage />
   return <Outlet />
 }
 

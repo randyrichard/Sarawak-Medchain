@@ -4,6 +4,7 @@ import { UserPlus } from 'lucide-react'
 import { request } from '@/api/http'
 import { ApiError } from '@/api/types'
 import { Alert, Button, Input } from '@/components/ui'
+import { policyProblem } from '../passwordPolicy'
 import { AuthLayout } from './AuthLayout'
 
 /**
@@ -17,14 +18,6 @@ import { AuthLayout } from './AuthLayout'
  * indistinguishable from a phishing link.
  */
 
-/** Mirrors the server policy, so the user is told before a round trip rather than after. */
-function policyProblem(pw: string): string | null {
-  if (pw.length < 12) return 'At least 12 characters.'
-  if (!/[a-z]/.test(pw)) return 'Include a lowercase letter.'
-  if (!/[A-Z]/.test(pw)) return 'Include an uppercase letter.'
-  if (!/[0-9]/.test(pw)) return 'Include a number.'
-  return null
-}
 
 interface Preview {
   email: string
