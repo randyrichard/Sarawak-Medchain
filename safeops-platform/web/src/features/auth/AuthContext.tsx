@@ -6,6 +6,7 @@ import { authApi, isBackendConfigured } from '@/api/authApi'
 import { setAuthenticatedRoles } from '@/api/mock/identity'
 import type { User } from '@/api/types'
 import { clearPreferences, markFreshLogin } from '@/features/account/preferences'
+import { resetPlatformInfo } from '@/features/platform/usePlatformAdmin'
 import { clearSession, loadSession, saveSession } from './session'
 
 type Status = 'restoring' | 'anonymous' | 'authenticated'
@@ -96,6 +97,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     clearPreferences()
+    // The platform-staff answer is cached across components for the session. Without
+    // this, signing out and back in as somebody else would leave the previous user's
+    // navigation drawn until a full reload.
+    resetPlatformInfo()
     if (BACKEND) {
       // Revoke server-side first; clearing local state alone would leave the session live.
       await authApi.logout().catch(() => {})

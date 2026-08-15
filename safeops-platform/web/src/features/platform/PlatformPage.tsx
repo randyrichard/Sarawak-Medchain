@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Building2, Plus, Copy, Check, ShieldCheck } from 'lucide-react'
 import {
   platformApi,
-  type PlatformCompany, type PlatformPlan, type ProvisionResult,
+  type PlatformCompany, type ProvisionResult,
 } from '@/api/platformApi'
 import { ApiError } from '@/api/types'
 import {
@@ -15,6 +15,7 @@ import {
   companyStatusBadge, formatMyr, monthlyRecurring, previewCompanyId, provisionOutcome,
   subscriptionBadge,
 } from './lib'
+import { usePlatformInfo } from './usePlatformAdmin'
 
 /**
  * The SafeOps platform console.
@@ -34,7 +35,8 @@ const EMPTY = {
 
 export function PlatformPage() {
   const [companies, setCompanies] = useState<PlatformCompany[] | null>(null)
-  const [plans, setPlans] = useState<PlatformPlan[]>([])
+  // Shared with the sidebar and the route guard - one answer per navigation, not three.
+  const { plans } = usePlatformInfo()
   const [error, setError] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -44,8 +46,8 @@ export function PlatformPage() {
 
   const load = useCallback(() => {
     setCompanies(null)
-    Promise.all([platformApi.listCompanies(), platformApi.me()])
-      .then(([rows, me]) => { setCompanies(rows); setPlans(me.plans) })
+    platformApi.listCompanies()
+      .then(setCompanies)
       .catch((e) => {
         setCompanies([])
         setError(e instanceof ApiError ? e.message : 'Could not load the customer list.')
