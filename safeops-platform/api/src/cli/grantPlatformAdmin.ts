@@ -100,10 +100,20 @@ async function createFirstAdmin(email: string) {
     email,
     userId: user.id,
   }))
+  /*
+   * The token goes in the query string, not the path.
+   *
+   * The web app's route is `/reset-password` with no parameter - the page reads
+   * `?token=`, and the admin console builds its links the same way. Printed as
+   * `/reset-password/<token>` this matched no route at all, so the one link that lets a
+   * fresh deployment's first administrator set a password opened a not-found page and the
+   * account could never be used. The token itself was fine, which is exactly why testing
+   * it against the API missed this: what needed checking was the URL.
+   */
   console.log(
     `\nCreated ${email} as a SafeOps platform administrator.\n\n`
     + 'Set a password with this single-use link:\n\n'
-    + `  ${env.appUrl}/reset-password/${token}\n\n`
+    + `  ${env.appUrl}/reset-password?token=${encodeURIComponent(token)}\n\n`
     + `It expires in ${RESET_TOKEN_TTL_MIN} minutes and is shown once. Nobody, including\n`
     + 'whoever ran this command, holds a working password for the account until it is used.',
   )

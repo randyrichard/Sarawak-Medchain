@@ -178,16 +178,37 @@ d('grantPlatformAdmin', () => {
     const fresh = `${PREFIX}-nopass@itest.local`
     const r = run('--create', fresh)
 
-    expect(r.said).toMatch(/reset-password\//)
+    expect(r.said).toMatch(/reset-password\?token=/)
     expect(r.said).not.toMatch(/passwordHash|\$2[aby]\$/)
 
-    const printed = r.said.match(/reset-password\/([A-Za-z0-9_-]+)/)?.[1]
+    const printed = r.said.match(/reset-password\?token=([A-Za-z0-9_%-]+)/)?.[1]
     expect(printed).toBeTruthy()
     // What is stored is the digest, not the secret that was shown.
     const stored = await db.passwordResetToken.findFirst({
       where: { user: { email: fresh } }, select: { tokenHash: true },
     })
     expect(stored!.tokenHash).not.toBe(printed)
+  })
+
+  it('prints a link the web app can actually open', async () => {
+    /*
+     * This shipped broken. The token was correct and the API accepted it, so testing the
+     * token passed while the *link* opened a not-found page - the web route is
+     * `/reset-password` with no path parameter, and the page reads `?token=`. On a fresh
+     * deployment that is the only way the first administrator ever sets a password, so a
+     * malformed URL there means the deployment cannot be used at all.
+     *
+     * Pinned against the route in web/src/app/App.tsx and the link the admin console
+     * builds in UsersSection.tsx. If either moves, this has to move with it.
+     */
+    const fresh = `${PREFIX}-linkshape@itest.local`
+    const r = run('--create', fresh)
+
+    const url = r.said.split('\n').map((l) => l.trim()).find((l) => l.includes('/reset-password'))
+    expect(url, 'a reset link should be printed').toBeTruthy()
+    expect(url).toContain('/reset-password?token=')
+    // The shape that was broken: the token as a path segment matches no route.
+    expect(url).not.toMatch(/reset-password\/[A-Za-z0-9_-]/)
   })
 
   it('does not open a second account when one already exists', async () => {
