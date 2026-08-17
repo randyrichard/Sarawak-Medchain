@@ -52,35 +52,37 @@ ENV NODE_ENV=production
 # to be right for `migrate deploy` at startup.
 RUN apk add --no-cache postgresql16-client openssl
 
-COPY api/package*.json ./
-RUN npm ci --omit=dev && npm cache clean --force
-
-COPY --from=build /app/dist ./dist
-# Prisma needs the schema and the migration history at runtime for `migrate deploy`, and
-# the generated client that the build produced.
-COPY --from=build /app/prisma ./prisma
-COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
-
 # Copied with the executable bit set explicitly: the repository is developed on Windows,
 # where the mode bit does not survive, and a non-executable entrypoint fails the container
-# at start with "permission denied" and nothing else.
+# at start with "permission denied" and nothing else. Done while still root, because it
+# lands outside /app.
 COPY --chmod=0755 api/docker-entrypoint.sh /usr/local/bin/safeops-entrypoint
 
 # Evidence lives here. Mount a volume over it: without one, every uploaded photograph is
 # discarded when the container is replaced.
 ENV UPLOAD_DIR=/data/uploads
-RUN mkdir -p /data/uploads && chown -R node:node /data
+RUN mkdir -p /data/uploads /app && chown -R node:node /data /app
 
-# Every COPY and RUN above executes as root, so /app and everything under it is root-owned
-# while the process runs as `node`. That is fine for reading, and fatal for startup:
-# `prisma migrate deploy` writes into node_modules/@prisma/engines, and without this the
-# container died on its first command with "Can't write to /app/node_modules/@prisma/engines"
-# and restarted forever.
-RUN chown -R node:node /app
-
-# Unprivileged from here on. `node` is provided by the base image.
+# Unprivileged from here on, and deliberately *before* the dependency install. `node` is
+# provided by the base image.
+#
+# The process runs as `node` and `prisma migrate deploy` writes into
+# node_modules/@prisma/engines at startup, so that tree has to be node-owned or the
+# container dies on its first command. Ownership is established by installing and copying
+# as the right user rather than by a `chown -R /app` afterwards: chown rewrites every file
+# it touches, and as a separate layer that duplicated the whole of node_modules — 267 MB of
+# image for a metadata change.
 USER node
+
+COPY --chown=node:node api/package*.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+
+COPY --from=build --chown=node:node /app/dist ./dist
+# Prisma needs the schema and the migration history at runtime for `migrate deploy`, and
+# the generated client that the build produced.
+COPY --from=build --chown=node:node /app/prisma ./prisma
+COPY --from=build --chown=node:node /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=build --chown=node:node /app/node_modules/@prisma ./node_modules/@prisma
 
 EXPOSE 4000
 

@@ -94,7 +94,7 @@ deploy.
 **Prerequisites:** Docker Engine with Compose v2. Verified against Docker 29.6.2 / Docker
 Desktop 4.84 on WSL2. The build pulls `node`, `nginx` and `postgres` base images by digest,
 so the first build needs network access to Docker Hub; after that it is offline-capable.
-The API image is ~525 MB and the web image ~76 MB.
+The API image is ~577 MB and the web image ~76 MB.
 
 ```bash
 cd safeops-platform && docker compose -f docker-compose.prod.yml --env-file .env.prod build
