@@ -1,0 +1,104 @@
+# Serves the built SPA.
+#
+# This is a template, not a finished config: the nginx image runs envsubst over
+# /etc/nginx/templates/*.template at container start, which is how CSP_CONNECT_SRC gets in.
+# Only ${NAME} forms are substituted, so nginx's own $uri and $host survive untouched.
+#
+# Two things this has to get right: a client-side router means any path must return
+# index.html rather than 404, and the hashed asset filenames mean those files can be
+# cached indefinitely while index.html must never be.
+#
+# ---------------------------------------------------------------------------------------
+# The security headers are repeated in every location block, deliberately.
+#
+# nginx inherits add_header from an outer level *only if the inner level declares none of
+# its own*. Both blocks below set Cache-Control, so before this they silently dropped
+# X-Content-Type-Options, X-Frame-Options and Referrer-Policy for every asset and for
+# index.html itself - the one document a policy most needs to reach. There is no way to
+# merge them, so they are written out each time; if you add a location, copy the block.
+# ---------------------------------------------------------------------------------------
+
+server {
+    listen 8080;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    ###########################################################################
+    # Content-Security-Policy
+    #
+    # Every script and stylesheet is same-origin and content-hashed by the build; there is
+    # no CDN, no analytics tag and no external font. That makes most of this policy simply
+    # 'self'.
+    #
+    # script-src carries one hash. index.html has a small inline script that applies the
+    # saved dark/light theme before first paint - without it the app flashes white on every
+    # load for anybody using dark mode. Hashing it keeps script-src free of 'unsafe-inline',
+    # which is the directive that actually stops injected script. If somebody edits that
+    # script the hash stops matching and the page breaks loudly, which is the right way for
+    # this to fail.
+    #
+    # style-src is split, because the two halves have different requirements.
+    #
+    # Inline style *attributes* cannot be allowed by a nonce or a hash - the CSP spec has
+    # no mechanism for it - so anything setting `style="..."` forces 'unsafe-inline'. This
+    # app does that in around 140 places (progress bars, chart colours, any computed
+    # dimension) and Recharts does it too, so that part is a genuine limitation short of a
+    # frontend refactor.
+    #
+    # Inline <style> *elements* are a different matter, and measured rather than assumed:
+    # the dashboard and a Recharts-heavy analytics view were both loaded and inspected, and
+    # neither produced a single <style> element - 4 chart wrappers, 34 style attributes,
+    # zero injected stylesheets. So style-src-elem can be 'self', which blocks an injected
+    # stylesheet outright while leaving the attributes the app actually needs.
+    #
+    # The broad style-src stays as a fallback for browsers that do not implement the -elem
+    # and -attr forms; those that do ignore it in favour of the narrower pair, so this is
+    # strictly tighter than before and cannot regress.
+    #
+    # connect-src has to name the API, which is a different origin decided at build time.
+    # It is substituted from CSP_CONNECT_SRC so one image can serve any deployment;
+    # docker-compose.prod.yml derives it from VITE_API_BASE_URL.
+    #
+    # No upgrade-insecure-requests: TLS terminates upstream, and forcing it here breaks a
+    # plain-http staging or local run without improving a deployment that already has TLS.
+    ###########################################################################
+
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-BT0iGxctNSS3gHXyZrG/Hpgysy9VrpnUggJx7s45pwU='; style-src 'self' 'unsafe-inline'; style-src-elem 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ${CSP_CONNECT_SRC}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+    gzip_min_length 1024;
+
+    # Content-hashed by the build, so a given URL's bytes never change.
+    location /assets/ {
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()" always;
+        add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-BT0iGxctNSS3gHXyZrG/Hpgysy9VrpnUggJx7s45pwU='; style-src 'self' 'unsafe-inline'; style-src-elem 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ${CSP_CONNECT_SRC}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
+        add_header Cache-Control "public, immutable" always;
+        expires 1y;
+        try_files $uri =404;
+    }
+
+    # Must not be cached: it names the current asset bundle, so a stale copy pins a
+    # browser to a deployment that no longer exists.
+    location = /index.html {
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()" always;
+        add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-BT0iGxctNSS3gHXyZrG/Hpgysy9VrpnUggJx7s45pwU='; style-src 'self' 'unsafe-inline'; style-src-elem 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ${CSP_CONNECT_SRC}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
+        add_header Cache-Control "no-store, must-revalidate" always;
+    }
+
+    # Client-side routing: /incidents/abc is a route, not a file.
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

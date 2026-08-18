@@ -17,7 +17,33 @@ export function Dialog({
 }) {
   const panelRef = useRef<HTMLDivElement>(null)
 
-  // Esc to close + rudimentary focus containment
+  /*
+   * Focus moves into the dialog once, when it opens - and only then.
+   *
+   * This used to live in the same effect as the key handler, which depends on `onClose`.
+   * Every caller passes that inline (`onClose={() => setOpen(false)}`), so its identity
+   * changed on every render, the effect re-ran on every render, and this line dragged
+   * focus back to the dialog's first focusable element each time.
+   *
+   * The result was that no dialog in the product could be typed into. One keystroke
+   * updated the parent's state, the parent re-rendered, focus jumped to the close button,
+   * and the next keystroke went nowhere - across all 52 components that use this. Anything
+   * that changes on each keystroke made it worse: the "New customer" form recomputes its
+   * workspace-id hint as you type, so it re-rendered on every single character.
+   *
+   * Depending on `open` alone is what makes it fire once per opening.
+   */
+  useEffect(() => {
+    if (!open) return
+    const previouslyFocused = document.activeElement as HTMLElement | null
+    panelRef.current?.querySelector<HTMLElement>('button, input, select, textarea')?.focus()
+    // Returning focus where it came from is why the dialog does not lose the page's place
+    // when it closes.
+    return () => { previouslyFocused?.focus?.() }
+  }, [open])
+
+  // Esc to close + rudimentary focus containment. Safe to re-bind on every render: adding
+  // and removing a listener has no effect on where the caret is.
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
@@ -39,12 +65,7 @@ export function Dialog({
       }
     }
     document.addEventListener('keydown', onKey)
-    const prev = document.activeElement as HTMLElement | null
-    panelRef.current?.querySelector<HTMLElement>('button, input, select, textarea')?.focus()
-    return () => {
-      document.removeEventListener('keydown', onKey)
-      prev?.focus?.()
-    }
+    return () => document.removeEventListener('keydown', onKey)
   }, [open, onClose])
 
   if (!open) return null

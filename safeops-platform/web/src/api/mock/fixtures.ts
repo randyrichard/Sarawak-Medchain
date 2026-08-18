@@ -2,15 +2,35 @@ import type {
   ActivityEvent, AppNotification, Company, Department, Employee, Site, Team, User,
 } from '../types'
 
+/**
+ * The demo dataset, and why it is behind a build-time flag.
+ *
+ * This is the in-browser mock backend's data: two fictional companies, their staff, and -
+ * until this guard existed - six user records carrying a plaintext password. All of it was
+ * compiled into the production bundle, where anybody could read it with view-source. The
+ * accounts are synthetic and the mock backend is inert once a real API URL is configured,
+ * so nothing was exploitable; what shipped was a list of names, roles and a password
+ * convention on a page sold to safety-compliance buyers, which is its own problem.
+ *
+ * `import.meta.env.DEV` is replaced by a literal at build time, so in a production build
+ * every array below folds to `[]` and the data is eliminated as dead code rather than
+ * merely hidden behind a runtime check. Verified by grepping the built bundle, which is
+ * the only way to know it actually went.
+ *
+ * Development and tests are unaffected. A deliberate demo deployment sets
+ * VITE_DEMO_LOGINS=true, the same flag that restores the sign-in shortcuts.
+ */
+const INCLUDE = import.meta.env.DEV || import.meta.env.VITE_DEMO_LOGINS === 'true'
+
 // Two companies so the company switcher is real. Borneo Industrial Group is the
 // primary demo tenant; Kenyalang Construction proves cross-tenant boundaries.
 
-export const COMPANIES: Company[] = [
+export const COMPANIES: Company[] = INCLUDE ? [
   { id: 'big', name: 'Borneo Industrial Group', industry: 'Diversified Industrial', plan: 'enterprise', logoInitials: 'BI' },
   { id: 'kcs', name: 'Kenyalang Construction Sdn Bhd', industry: 'Construction', plan: 'standard', logoInitials: 'KC' },
-]
+] : []
 
-export const SITES: Site[] = [
+export const SITES: Site[] = INCLUDE ? [
   { id: 'kch', companyId: 'big', name: 'Kuching Assembly Plant', short: 'Kuching', city: 'Kuching', timezone: 'Asia/Kuching', headcount: 1240 },
   { id: 'btu', companyId: 'big', name: 'Bintulu LNG Terminal', short: 'Bintulu', city: 'Bintulu', timezone: 'Asia/Kuching', headcount: 860 },
   { id: 'mri', companyId: 'big', name: 'Miri Fabrication Yard', short: 'Miri', city: 'Miri', timezone: 'Asia/Kuching', headcount: 620 },
@@ -19,9 +39,9 @@ export const SITES: Site[] = [
   { id: 'sen', companyId: 'big', name: 'Senari Warehouse Complex', short: 'Senari', city: 'Kuching', timezone: 'Asia/Kuching', headcount: 310 },
   { id: 'pjy', companyId: 'kcs', name: 'Petra Jaya Township Project', short: 'Petra Jaya', city: 'Kuching', timezone: 'Asia/Kuching', headcount: 480 },
   { id: 'smh', companyId: 'kcs', name: 'Samalaju Plant Expansion', short: 'Samalaju', city: 'Bintulu', timezone: 'Asia/Kuching', headcount: 350 },
-]
+] : []
 
-export const DEPARTMENTS: Department[] = [
+export const DEPARTMENTS: Department[] = INCLUDE ? [
   { id: 'kch-prod', siteId: 'kch', name: 'Production' },
   { id: 'kch-mnt', siteId: 'kch', name: 'Maintenance' },
   { id: 'kch-whs', siteId: 'kch', name: 'Warehouse & Stores' },
@@ -36,9 +56,9 @@ export const DEPARTMENTS: Department[] = [
   { id: 'sen-whs', siteId: 'sen', name: 'Warehouse' },
   { id: 'pjy-civ', siteId: 'pjy', name: 'Civil Works' },
   { id: 'smh-mep', siteId: 'smh', name: 'M&E Installation' },
-]
+] : []
 
-export const TEAMS: Team[] = [
+export const TEAMS: Team[] = INCLUDE ? [
   { id: 't1', departmentId: 'kch-prod', name: 'Line 1 (Day)', lead: 'Sarah Wong' },
   { id: 't2', departmentId: 'kch-prod', name: 'Line 2 (Night)', lead: 'Jason Ngu' },
   { id: 't3', departmentId: 'kch-mnt', name: 'Mechanical', lead: 'Ganesh Pillai' },
@@ -47,9 +67,9 @@ export const TEAMS: Team[] = [
   { id: 't6', departmentId: 'mri-ctr', name: 'Scaffolding Crew A', lead: 'Vincent Chai' },
   { id: 't7', departmentId: 'twu-fld', name: 'Harvest Block 12–16', lead: 'Dayang Nurul' },
   { id: 't8', departmentId: 'sen-whs', name: 'Inbound Shift', lead: 'Grace Lim' },
-]
+] : []
 
-export const EMPLOYEES: Employee[] = [
+export const EMPLOYEES: Employee[] = INCLUDE ? [
   { id: 'e01', companyId: 'big', siteId: 'kch', departmentId: 'kch-prod', teamId: 't1', name: 'Sarah Wong', position: 'Production Supervisor' },
   { id: 'e02', companyId: 'big', siteId: 'kch', departmentId: 'kch-prod', teamId: 't2', name: 'Jason Ngu', position: 'Shift Supervisor' },
   { id: 'e03', companyId: 'big', siteId: 'kch', departmentId: 'kch-mnt', teamId: 't3', name: 'Ganesh Pillai', position: 'Maintenance Supervisor' },
@@ -71,10 +91,10 @@ export const EMPLOYEES: Employee[] = [
   { id: 'e18', companyId: 'big', siteId: 'btu', departmentId: 'btu-hse', name: 'Nurul Izzah', position: 'Emergency Response Lead' },
   { id: 'e19', companyId: 'big', siteId: 'mri', departmentId: 'mri-ctr', name: 'Kumar Raj', position: 'Scaffolder' },
   { id: 'e20', companyId: 'big', siteId: 'twu', departmentId: 'twu-mil', name: 'Lim Boon Keat', position: 'Mill Operator' },
-]
+] : []
 
 // Demo users — one per role. All share the demo password (see mock client).
-export const USERS: (User & { password: string })[] = [
+export const USERS: (User & { password: string })[] = INCLUDE ? [
   {
     id: 'u-ceo', email: 'ceo@demo.safeops.app', name: 'Faridah Abdullah', title: 'Group Managing Director',
     password: 'SafeOpsPlatform2026',
@@ -111,24 +131,24 @@ export const USERS: (User & { password: string })[] = [
     password: 'SafeOpsPlatform2026',
     memberships: [{ companyId: 'big', role: 'employee', siteIds: ['kch'] }],
   },
-]
+] : []
 
 const now = Date.now()
 const iso = (minAgo: number) => new Date(now - minAgo * 60000).toISOString()
 
-export const NOTIFICATIONS: AppNotification[] = [
+export const NOTIFICATIONS: AppNotification[] = INCLUDE ? [
   { id: 'n1', kind: 'incident', title: 'Critical incident reported at Bintulu', detail: 'Hydrocarbon leak at loading arm 3 — investigation not yet assigned.', createdAt: iso(42), readAt: null },
   { id: 'n2', kind: 'action', title: 'Corrective action overdue: CA-440', detail: 'Alarm-shelving audit is 4 days late. Escalated to site manager.', createdAt: iso(60 * 3), readAt: null },
   { id: 'n3', kind: 'audit', title: 'CIMAH audit in 38 days', detail: '3 major findings still open at Bintulu LNG Terminal.', createdAt: iso(60 * 8), readAt: null },
   { id: 'n4', kind: 'action', title: 'Verification requested: CA-436', detail: 'Tool-lanyard checks marked complete — evidence awaiting your review.', createdAt: iso(60 * 26), readAt: iso(60 * 20) },
   { id: 'n5', kind: 'system', title: 'Weekly digest is ready', detail: 'Your safety summary for week 28 covering 6 sites.', createdAt: iso(60 * 49), readAt: iso(60 * 44) },
-]
+] : []
 
-export const ACTIVITY: ActivityEvent[] = [
+export const ACTIVITY: ActivityEvent[] = INCLUDE ? [
   { id: 'a1', actor: 'Amirul Hassan', verb: 'promoted report to incident', target: 'INC-2607 · Hydrocarbon leak at loading arm 3', at: iso(38) },
   { id: 'a2', actor: 'Grace Lim', verb: 'completed action', target: 'CA-438 · Reinstate pedestrian barriers', at: iso(60 * 2) },
   { id: 'a3', actor: 'Marcus Tan', verb: 'approved RCA for', target: 'INC-2604 · Dropped scaffold clamp', at: iso(60 * 5) },
   { id: 'a4', actor: 'Vincent Chai', verb: 'uploaded evidence to', target: 'CA-428 · Contractor CSE refresher', at: iso(60 * 7) },
   { id: 'a5', actor: 'Dayang Nurul', verb: 'raised corrective action', target: 'CA-437 · Mobile hydration stations', at: iso(60 * 22) },
   { id: 'a6', actor: 'System', verb: 'escalated overdue action to', target: 'Site Manager — Bintulu (CA-440)', at: iso(60 * 26) },
-]
+] : []

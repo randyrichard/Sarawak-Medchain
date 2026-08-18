@@ -29,7 +29,21 @@ function run(script: string, env: Record<string, string | undefined>) {
 const runSeed = (env: Record<string, string | undefined>) => run(seed, env)
 const runDemo = (env: Record<string, string | undefined>) => run(demo, env)
 
-describe('demo seed production guard', () => {
+/*
+ * A longer per-test timeout than vitest's 5s default, because every test in this file
+ * spawns `npx tsx` and waits for a real process.
+ *
+ * Idle, each takes about 3 seconds. Under load - a Docker build alongside, or the other
+ * 36 suites running in parallel - a cold TypeScript start comfortably doubles that and
+ * crosses 5s, so the harness killed tests that would have passed. Observed as roughly one
+ * failure in three full-suite runs, which is exactly the kind of intermittently red
+ * pipeline that teaches people to ignore CI.
+ *
+ * This changes no assertion. It only stops the runner giving up before the process does.
+ */
+const SPAWN_TIMEOUT = 30_000
+
+describe('demo seed production guard', { timeout: SPAWN_TIMEOUT }, () => {
   it('refuses to run when NODE_ENV is production', () => {
     const r = runSeed({ NODE_ENV: 'production', SEED_ALLOW_PRODUCTION: undefined })
 
@@ -55,7 +69,7 @@ describe('demo seed production guard', () => {
   })
 })
 
-describe('demo dataset production guard', () => {
+describe('demo dataset production guard', { timeout: SPAWN_TIMEOUT }, () => {
   /*
    * Guarded for a sharper reason than the base seed. That one creates logins; this writes
    * a month of fabricated incidents, permits, audits and training records. In a system a

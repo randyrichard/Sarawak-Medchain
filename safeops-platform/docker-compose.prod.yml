@@ -1,16 +1,23 @@
 # SafeOps — pilot deployment.
 #
 #   cp .env.prod.example .env.prod        # then fill it in
-#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod --profile tls up -d --build
 #
 # Deliberately one instance of the API. The reminder sweeps run inside it, and two
 # instances would each sweep; the dedupe makes that harmless rather than duplicating, but
 # a pilot has no reason to take the risk. Uploaded evidence is on a named volume for the
 # same reason it is not on the container filesystem: it must outlive the container.
 #
-# Not included, on purpose: TLS. Terminate it at whatever sits in front of this — a cloud
-# load balancer, Caddy, or an nginx you already run. Rolling a certificate story into a
-# pilot compose file is how you end up debugging ACME instead of the product.
+# ── TLS ──────────────────────────────────────────────────────────────────────
+# The `tls` profile runs deploy/Caddyfile, which obtains and renews a real certificate
+# automatically. It is a profile rather than a plain service because terminating TLS
+# somewhere else is a legitimate choice: a cloud load balancer, or an nginx already on the
+# host (deploy/nginx-safeops.conf). Omit `--profile tls` and nothing about the rest of the
+# stack changes.
+#
+# Whichever you choose, something in front MUST terminate TLS. The API refuses to boot
+# unless APP_PUBLIC_URL is https, because every invitation and reset link carries a
+# single-use credential in the URL.
 
 # Every service uses this. Docker's json-file driver is unbounded by default: the API
 # writes one line per request, so a busy day or a retry storm fills the disk, and a full
@@ -24,7 +31,7 @@ x-logging: &logging
 services:
   db:
     # Pinned by digest; see api/Dockerfile for why and how to re-pin.
-    image: postgres:16-alpine@sha256:44c4ee9810eff91f7eab4d822642e01115b1a9eccce4bcbdde7604752d68eac6
+    image: postgres:16-alpine@sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
     restart: unless-stopped
     logging: *logging
     # max_connections must exceed what every API instance's pool can ask for, plus room
@@ -97,8 +104,14 @@ services:
       UPLOAD_DIR: /data/uploads
     volumes:
       - safeops_uploads:/data/uploads
+    # Bound to loopback by default. With a proxy in front, publishing these on 0.0.0.0
+    # would expose a plaintext HTTP port on the public interface alongside the HTTPS one,
+    # and anything reaching it bypasses TLS and HSTS entirely - the redirect only helps
+    # people who arrive on :80. Caddy reaches these over the compose network, not via a
+    # published port, so the default costs nothing. Set BIND_HOST=0.0.0.0 only if the
+    # thing terminating TLS is on another host.
     ports:
-      - '${API_PORT:-4000}:4000'
+      - '${BIND_HOST:-127.0.0.1}:${API_PORT:-4000}:4000'
 
   web:
     build:
@@ -111,10 +124,50 @@ services:
     restart: unless-stopped
     depends_on:
       - api
+    environment:
+      # Substituted into the Content-Security-Policy at container start. The browser calls
+      # the API on another origin, so connect-src has to name it; deriving it from the same
+      # value the bundle was built against keeps the two from drifting apart.
+      CSP_CONNECT_SRC: ${VITE_API_BASE_URL}
     ports:
-      - '${WEB_PORT:-8080}:8080'
+      - '${BIND_HOST:-127.0.0.1}:${WEB_PORT:-8080}:8080'
+
+  # Opt-in: only starts with `--profile tls`. See the note at the top of this file.
+  caddy:
+    image: caddy:2-alpine
+    profiles: ['tls']
+    restart: unless-stopped
+    logging: *logging
+    depends_on: [api, web]
+    environment:
+      # Empty defaults, deliberately - NOT `${VAR:?...}`.
+      #
+      # Compose interpolates every service in the file regardless of which profiles are
+      # active, so a required-variable guard here makes `ps`, `logs`, `down` and `up` all
+      # fail for anyone terminating TLS elsewhere. That breaks the promise this profile is
+      # built on: omit it and nothing else changes. Found by running it.
+      #
+      # Nothing is lost. An empty site address is an invalid Caddyfile, so starting this
+      # profile unconfigured still fails immediately and says so - verified by running it
+      # with the variables unset.
+      SAFEOPS_APP_DOMAIN: ${SAFEOPS_APP_DOMAIN:-}
+      SAFEOPS_API_DOMAIN: ${SAFEOPS_API_DOMAIN:-}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+    ports:
+      # These two are genuinely public: :80 exists only to redirect to :443.
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Issued certificates and the ACME account key. Losing this volume means re-issuing
+      # on next start, which counts against Let's Encrypt rate limits.
+      - safeops_caddy_data:/data
+      - safeops_caddy_config:/config
 
 volumes:
   safeops_pgdata:
   safeops_uploads:
   safeops_backups:
+  safeops_caddy_data:
+  safeops_caddy_config:

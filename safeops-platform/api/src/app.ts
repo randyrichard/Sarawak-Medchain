@@ -223,6 +223,30 @@ export function createApp() {
       return res.status(400).json({ error: 'malformed_json', message: 'Request body is not valid JSON.' })
     }
 
+    /*
+     * A schema rejection is the caller's problem, not ours.
+     *
+     * Most handlers use `safeParse` and answer 400 themselves, but around twenty use the
+     * throwing `parse`, and nothing here caught what it threw - so a missing query
+     * parameter produced "Something went wrong", a 500 in the access log and an
+     * "unhandled error" line in the application log. Observed on
+     * `GET /dashboard/overview` with no companyId. 500 tells a monitor the service is
+     * broken and tells the caller nothing; the truth is that the request was malformed.
+     *
+     * The field paths are returned because they are the caller's own input. No value is
+     * echoed back - a validation message that repeats what was sent will eventually repeat
+     * a password.
+     */
+    if ((err as { name?: string })?.name === 'ZodError') {
+      const issues = (err as { issues?: { path: (string | number)[]; message: string }[] }).issues ?? []
+      return res.status(400).json({
+        error: 'validation',
+        message: issues.length
+          ? `Invalid request: ${issues.map((i) => i.path.join('.') || '(body)').join(', ')}`
+          : 'Invalid request.',
+      })
+    }
+
     // A database that is down is not a bug in the request. Observed during a real outage:
     // every call returned 500, which tells a proxy the response is final and tells a
     // monitor the application is broken. 503 says "unavailable, try again", which is what

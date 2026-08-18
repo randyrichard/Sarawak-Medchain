@@ -61,9 +61,22 @@ export function OrgProvider({ children }: { children: ReactNode }) {
     }
   }, [user])
 
-  // Load sites when company changes; restrict to membership site scope
+  /*
+   * Load sites when company changes; restrict to membership site scope.
+   *
+   * This effect is also where `loading` is cleared, which is why the early return below
+   * has to clear it too. With no company there are no sites to fetch, so this returned
+   * immediately and left `loading` true for the rest of the session - and a context that
+   * says "still loading" forever means every consumer waits forever. A platform
+   * administrator, who belongs to no company by design, saw a dashboard of skeleton tiles
+   * that never resolved because of this line.
+   */
   useEffect(() => {
-    if (!user || !companyId) return
+    if (!user) return
+    if (!companyId) {
+      setLoading(false)
+      return
+    }
     let cancelled = false
     setLoading(true)
     api.listSites(companyId).then((list) => {

@@ -36,7 +36,17 @@ export function useDashboard() {
   const [nonce, setNonce] = useState(0)
 
   useEffect(() => {
-    if (!company) return
+    if (!company) {
+      /*
+       * No company means no request will ever be made, so the loading flag has to be
+       * cleared here or it stays true forever - which is exactly what happened: a platform
+       * administrator, who belongs to no company by design, landed on a dashboard of
+       * twenty skeleton tiles that pulsed indefinitely. The page cannot show a useful
+       * empty state while it still believes data is on the way.
+       */
+      setLoading(false)
+      return
+    }
     let cancelled = false
     setLoading(true)
     setError(null)

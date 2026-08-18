@@ -1,0 +1,134 @@
+# CI for SafeOps (safeops-platform/).
+#
+# There was none before this: the 1,100+ tests in this project ran only when somebody
+# remembered to run them, which for a product holding other companies' safety records is
+# not a position to be in.
+#
+# Two things here are deliberate and worth keeping:
+#
+#   1. A real Postgres service. The integration tests skip themselves when DATABASE_URL is
+#      absent (`const hasDb = !!process.env.DATABASE_URL`), so a database-less pipeline
+#      would go green while silently running none of the tenant-isolation, provisioning or
+#      platform-admin suites - the ones that actually matter.
+#
+#   2. `verify:bundle`. It scans the built browser bundle for credentials. The demo
+#      password and account list used to ship to production, and that class of mistake is
+#      invisible in a diff, so it is a gate rather than a habit.
+name: safeops-platform-ci
+
+on:
+  push:
+    branches: [main]
+    paths: ['safeops-platform/**', '.github/workflows/safeops-platform-ci.yml']
+  pull_request:
+    paths: ['safeops-platform/**', '.github/workflows/safeops-platform-ci.yml']
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    defaults:
+      run: { working-directory: safeops-platform/api }
+    services:
+      postgres:
+        # Matches the production compose file's major version.
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: safeops
+          POSTGRES_PASSWORD: safeops
+          POSTGRES_DB: safeops_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U safeops" --health-interval 5s
+          --health-timeout 3s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://safeops:safeops@localhost:5432/safeops_test?schema=public
+      # NOT production: development mode keeps the boot-time production guards (https-only
+      # APP_PUBLIC_URL and the rest) out of the way of a test run, and those guards have
+      # their own tests that set NODE_ENV=production explicitly.
+      NODE_ENV: development
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: safeops-platform/api/package-lock.json
+      - run: npm ci
+
+      # The app refuses to start without a signing keypair, by design. CI generates a
+      # throwaway one per run rather than carrying a fixture key in the repository - a
+      # committed private key is a committed private key even if it is "only for tests".
+      - name: Generate a throwaway signing keypair
+        run: |
+          node -e "
+            const { generateKeyPairSync } = require('node:crypto');
+            const { privateKey, publicKey } = generateKeyPairSync('rsa', {
+              modulusLength: 2048,
+              publicKeyEncoding: { type: 'spki', format: 'pem' },
+              privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+            });
+            const b64 = s => Buffer.from(s, 'utf8').toString('base64');
+            console.log('JWT_PRIVATE_KEY_B64=' + b64(privateKey));
+            console.log('JWT_PUBLIC_KEY_B64=' + b64(publicKey));
+          " >> "$GITHUB_ENV"
+
+      - run: npx prisma generate
+      - run: npx prisma migrate deploy
+      - run: npm run typecheck
+      - run: npm test
+
+      # Proves the schema still materialises from nothing, which is what a first
+      # deployment does. `migrate deploy` above ran against an empty database, so this
+      # asserts the ledger agrees rather than re-running it.
+      - name: Migration status
+        run: npx prisma migrate status
+
+      - name: Dependency vulnerability gate
+        run: npm audit --omit=dev --audit-level=high
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run: { working-directory: safeops-platform/web }
+    env:
+      # A production build needs this or the bundle falls back to in-browser mock auth.
+      # The value is irrelevant to the checks below; its presence is what matters.
+      VITE_API_BASE_URL: https://api.example.invalid
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: safeops-platform/web/package-lock.json
+      - run: npm ci
+      - run: npm test
+      # `build` is `tsc -b && vite build`, so this is the typecheck as well.
+      - run: npm run build
+
+      # The gate. Fails the pipeline if a credential reached the shipped bundle.
+      - name: Bundle credential scan
+        run: npm run verify:bundle
+
+      - name: Dependency vulnerability gate
+        run: npm audit --omit=dev --audit-level=high
+
+  # Proves the images still build. Deliberately does not push anywhere: this repository has
+  # no registry wired up, and inventing one would be a deployment decision rather than a
+  # verification.
+  docker:
+    runs-on: ubuntu-latest
+    needs: [api, web]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the API image
+        run: docker build -f api/Dockerfile -t safeops-api:ci .
+        working-directory: safeops-platform
+      - name: Build the web image
+        run: docker build -f web/Dockerfile --build-arg VITE_API_BASE_URL=https://api.example.invalid -t safeops-web:ci .
+        working-directory: safeops-platform
+      - name: Runtime must not be root
+        run: |
+          USER_ID=$(docker run --rm --entrypoint sh safeops-api:ci -c 'id -u')
+          echo "api image runs as uid $USER_ID"
+          test "$USER_ID" != "0"

@@ -1,7 +1,11 @@
-import { Link } from 'react-router-dom'
-import { RefreshCw } from 'lucide-react'
-import { Alert, Badge, Button, Card, CardBody, PageHeader, Skeleton } from '@/components/ui'
+import { Link, Navigate } from 'react-router-dom'
+import { Building2, RefreshCw } from 'lucide-react'
+import {
+  Alert, Badge, Button, Card, CardBody, EmptyState, PageHeader, Skeleton,
+} from '@/components/ui'
 import { useAuth } from '@/features/auth/AuthContext'
+import { useOrg } from '@/features/org/OrgContext'
+import { usePlatformAdmin } from '@/features/platform/usePlatformAdmin'
 import { timeAgo } from '@/lib/time'
 import { useDashboard } from './useDashboard'
 import { DashboardFilters } from './components/DashboardFilters'
@@ -21,7 +25,46 @@ import { headline, kpiCards, scopeCaveats, scopeSummary } from './lib'
  */
 export function DashboardPage() {
   const { user } = useAuth()
+  const { loading: orgLoading, companies } = useOrg()
+  const platformAdmin = usePlatformAdmin()
   const { data, loading, error, filters, setFilter, clearFilters, refresh, filtered } = useDashboard()
+
+  /*
+   * This dashboard is tenant-scoped, and some people belong to no tenant.
+   *
+   * A SafeOps platform administrator has no company membership by design - that is what
+   * makes their access cross-tenant rather than inside one - so sending them here showed a
+   * page that could never populate: an empty company switcher, a search box reading
+   * "Search unavailable", and twenty skeleton tiles pulsing forever. Their landing place
+   * is the customer console.
+   *
+   * Waits for the org context to finish loading first, or a normal user with one company
+   * would be bounced away during the moment before their membership arrives.
+   */
+  if (!orgLoading && companies.length === 0 && platformAdmin) {
+    return <Navigate to="/platform" replace />
+  }
+
+  /*
+   * Anybody else with no workspace gets told so. Rare - it means an account exists with no
+   * membership - but the alternative is the same blank page with no explanation, and
+   * somebody staring at it has no way to know whether it is broken or empty.
+   */
+  if (!orgLoading && companies.length === 0) {
+    return (
+      <>
+        <PageHeader title="Safety operations" subtitle="No workspace yet" />
+        <Card>
+          <CardBody>
+            <EmptyState icon={Building2} title="Your account is not in a workspace yet.">
+              An administrator needs to add you to a company before there is anything to
+              show here. If you were expecting access, ask whoever invited you.
+            </EmptyState>
+          </CardBody>
+        </Card>
+      </>
+    )
+  }
 
   const firstName = user?.name.split(' ')[0] ?? ''
   const hour = new Date().getHours()

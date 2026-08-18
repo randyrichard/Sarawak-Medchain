@@ -1960,6 +1960,44 @@ model RoleDefinition {
 
 /// Append-only administrative trail. Never updated or deleted by the application;
 /// pruning is the retention policy's job, not a feature of the console.
+/// Platform-level audit: privilege changes that belong to no customer.
+///
+/// Deliberately a separate table from AdminAuditEntry rather than making that one's
+/// companyId nullable. Granting cross-tenant access has no company to hang off, and a
+/// nullable foreign key there would let platform rows surface in queries that every
+/// tenant-scoped screen runs. Isolation by construction beats isolation by remembering to
+/// filter.
+///
+/// Never holds a password, a hash or a token - only who did what, to whom, and how it
+/// turned out.
+model PlatformAuditEntry {
+  id String @id @default(cuid())
+
+  /// platform_admin_granted | platform_admin_revoked | platform_admin_bootstrapped
+  action String
+  /// applied | no_change | refused
+  outcome String
+
+  /// Whoever held the shell. There is no session here: this is an operator act at the
+  /// server, so the OS user and host are the only identity available, and saying so is
+  /// more honest than inventing one.
+  actor     String
+  actorHost String @default("")
+  /// How it was performed, so a future in-product path is distinguishable from the CLI.
+  source String @default("cli")
+
+  targetEmail  String
+  targetUserId String?
+
+  /// Why a refusal happened, or what changed. Free text, never a secret.
+  detail String?
+
+  at DateTime @default(now())
+
+  @@index([at])
+  @@index([targetEmail])
+}
+
 model AdminAuditEntry {
   id        String  @id @default(cuid())
   companyId String

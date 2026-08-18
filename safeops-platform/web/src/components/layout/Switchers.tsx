@@ -15,7 +15,17 @@ function SwitcherButton({
   return (
     <button
       className={cn(
-        'flex max-w-[180px] items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm font-medium text-ink transition-colors md:max-w-[240px]',
+        /*
+         * `min-w-0` is what makes the `truncate` below actually truncate.
+         *
+         * A flex item's default `min-width: auto` refuses to shrink past its content, so
+         * the company and site switchers sitting side by side in the header pushed each
+         * other out rather than eliding. On a 375px phone that put the site name 5px past
+         * the viewport and gave the whole page a horizontal scroll - small, but it is the
+         * header, so it is on every screen. `max-w` alone could not fix it: the floor was
+         * the minimum, not the maximum.
+         */
+        'flex min-w-0 max-w-[180px] items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm font-medium text-ink transition-colors md:max-w-[240px]',
         open ? 'bg-accent-soft' : 'hover:bg-accent-soft/60',
       )}
     >

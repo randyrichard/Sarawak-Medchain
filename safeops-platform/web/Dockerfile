@@ -27,7 +27,10 @@ RUN npm run build
 
 FROM nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10 AS runtime
 COPY --from=build /app/dist /usr/share/nginx/html
-COPY web/nginx.conf /etc/nginx/conf.d/default.conf
+# A template rather than a finished config: the nginx image's entrypoint runs envsubst
+# over /etc/nginx/templates/*.template at start, which is how the CSP learns the API
+# origin without baking one deployment's hostname into the image.
+COPY web/nginx.conf.template /etc/nginx/templates/default.conf.template
 
 EXPOSE 8080
 

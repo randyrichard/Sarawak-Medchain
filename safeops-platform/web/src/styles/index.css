@@ -7,6 +7,17 @@
    Light and dark are both *selected* palettes (see docs in Styleguide). */
 
 :root {
+  /*
+   * Tells the browser which palette to draw *native* controls in.
+   *
+   * Without this every OS-rendered control ignores the theme: a <select>'s dropdown list
+   * paints white, and against light option text the choices are unreadable - a customer
+   * opening the plan menu could see the highlighted row and nothing else. Date inputs and
+   * scrollbars have the same problem. No amount of styling the <select> itself fixes it,
+   * because the popup is drawn by the platform rather than the page.
+   */
+  color-scheme: light;
+
   /* surfaces */
   --page: #f9f9f7;
   --surface: #fcfcfb;
@@ -53,6 +64,9 @@
 }
 
 .dark {
+  /* Native controls follow the theme; see :root above. */
+  color-scheme: dark;
+
   --page: #0d0d0d;
   --surface: #1a1a19;
   --raised: #222221;

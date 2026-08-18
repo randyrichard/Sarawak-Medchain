@@ -79,6 +79,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string, rememberMe = true) => {
     // Whoever was signed in before, their cached preferences must not leak into this session.
     clearPreferences()
+    /*
+     * Nor may their platform-staff answer. It is cached in a module-level promise shared by
+     * the sidebar, the route guard and the console; signing out clears it, but a session
+     * that simply expired never passes through sign-out. Without this, the next person to
+     * sign in on that browser inherits the previous answer - either seeing a console link
+     * they cannot use, or missing one they can.
+     *
+     * Cosmetic rather than a hole, since the server re-checks the database on every
+     * platform call and a stale `true` still cannot make it answer one. But the login
+     * redirect now reads this to decide where to land somebody, so a stale answer would put
+     * them back on the wall this change exists to remove.
+     */
+    resetPlatformInfo()
     if (BACKEND) {
       const u = await authApi.login(email, password, rememberMe)
       markFreshLogin()

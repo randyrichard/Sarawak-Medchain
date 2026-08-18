@@ -40,10 +40,29 @@ const flagFor = (email: string) =>
     .then((u) => u.platformAdmin)
 
 async function purge() {
+  await db.platformAuditEntry.deleteMany({ where: { targetEmail: { startsWith: PREFIX } } })
   await db.user.deleteMany({ where: { email: { startsWith: PREFIX } } })
 }
 
-d('grantPlatformAdmin', () => {
+/** The durable audit rows this command left behind, oldest first. */
+const auditFor = (email: string) =>
+  db.platformAuditEntry.findMany({ where: { targetEmail: email }, orderBy: { at: 'asc' } })
+
+/*
+ * A longer per-test timeout than vitest's 5s default, because every test in this file
+ * spawns `npx tsx` and waits for a real process.
+ *
+ * Idle, each takes about 3 seconds. Under load - a Docker build alongside, or the other
+ * 36 suites running in parallel - a cold TypeScript start comfortably doubles that and
+ * crosses 5s, so the harness killed tests that would have passed. Observed as roughly one
+ * failure in three full-suite runs, which is exactly the kind of intermittently red
+ * pipeline that teaches people to ignore CI.
+ *
+ * This changes no assertion. It only stops the runner giving up before the process does.
+ */
+const SPAWN_TIMEOUT = 30_000
+
+d('grantPlatformAdmin', { timeout: SPAWN_TIMEOUT }, () => {
   beforeAll(purge)
   afterAll(async () => { await purge(); await db.$disconnect() })
 
@@ -232,6 +251,133 @@ d('grantPlatformAdmin', () => {
     const r = run(`${PREFIX}-missing@itest.local`)
     expect(r.status).toBe(1)
     expect(r.said).toMatch(/--create/)
+  })
+
+  it('writes a durable audit row for a grant and a revoke', async () => {
+    /*
+     * A log line lasts until somebody rotates the logs. This is the act that hands one
+     * account read access to every customer on the deployment, so "who made this person
+     * staff, and when" has to be answerable months later.
+     */
+    run(ACTIVE)
+    run('--revoke', ACTIVE)
+
+    const rows = await auditFor(ACTIVE)
+    expect(rows.map((r) => `${r.action}:${r.outcome}`)).toEqual([
+      'platform_admin_granted:applied',
+      'platform_admin_revoked:applied',
+    ])
+    // Enough to investigate with: who, from where, and against which account.
+    expect(rows[0].actor).toBeTruthy()
+    expect(rows[0].source).toBe('cli')
+    expect(rows[0].targetUserId).toBeTruthy()
+  })
+
+  it('records a refused grant, not just the successful ones', async () => {
+    // An attempt to make an account staff that was turned down is exactly what an
+    // investigation wants to see; only logging successes hides the interesting half.
+    run(DEACTIVATED)
+    const rows = await auditFor(DEACTIVATED)
+    expect(rows).toHaveLength(1)
+    expect(rows[0].outcome).toBe('refused')
+    expect(rows[0].detail).toMatch(/deactivated/)
+  })
+
+  it('records an idempotent re-run as no_change rather than a second grant', async () => {
+    // Otherwise the trail reads as two separate privilege escalations.
+    run(ACTIVE)
+    run(ACTIVE)
+    const rows = await auditFor(ACTIVE)
+    expect(rows.map((r) => r.outcome)).toEqual(['applied', 'no_change'])
+  })
+
+  it('never writes a password, hash or token into the audit trail', async () => {
+    /*
+     * The bootstrap path is the risky one: it mints a reset token and a password hash in
+     * the same transaction, so a careless audit payload would put a live credential in a
+     * table that exists to be read during investigations.
+     */
+    const fresh = `${PREFIX}-audit-secrets@itest.local`
+    run('--create', fresh)
+
+    const rows = await auditFor(fresh)
+    expect(rows).toHaveLength(1)
+    expect(rows[0].action).toBe('platform_admin_bootstrapped')
+
+    const blob = JSON.stringify(rows).toLowerCase()
+    for (const forbidden of ['passwordhash', '$2a$', '$2b$', '$2y$', 'token=']) {
+      expect(blob, `audit row must not contain ${forbidden}`).not.toContain(forbidden)
+    }
+  })
+
+  it('keeps platform events out of the tenant-scoped audit table', async () => {
+    /*
+     * The reason this is its own table. AdminAuditEntry.companyId is a required foreign
+     * key and every tenant screen filters on it; a platform grant belongs to no customer,
+     * so putting it there would have meant making that column nullable and letting rows
+     * with no tenant into the query path those screens use.
+     */
+    const before = await db.adminAuditEntry.count()
+    run(ACTIVE)
+    expect(await db.adminAuditEntry.count(), 'a platform grant must not touch tenant audit')
+      .toBe(before)
+    expect(await auditFor(ACTIVE)).toHaveLength(1)
+  })
+
+  it('issues a fresh link for an account that already exists', async () => {
+    /*
+     * The lockout this closes. A platform administrator belongs to no company, and the only
+     * in-product reset is scoped to one - so the account that creates every customer had no
+     * recovery path at all. Forgetting the password, or letting the 30-minute bootstrap
+     * link lapse, meant deleting the row and starting again. That happened during this
+     * work, which is why it is a test rather than a note.
+     */
+    const r = run('--reset-link', ACTIVE)
+    expect(r.status).toBe(0)
+    expect(r.said).toMatch(/reset-password\?token=/)
+
+    const tokens = await db.passwordResetToken.findMany({ where: { user: { email: ACTIVE } } })
+    expect(tokens).toHaveLength(1)
+    expect(tokens[0].usedAt).toBeNull()
+  })
+
+  it('supersedes an earlier link rather than leaving two live', async () => {
+    // Otherwise a link sitting in somebody's scrollback keeps working after a new one is
+    // issued, which defeats re-issuing it.
+    run('--reset-link', ACTIVE)
+    run('--reset-link', ACTIVE)
+
+    const tokens = await db.passwordResetToken.findMany({
+      where: { user: { email: ACTIVE } }, orderBy: { createdAt: 'asc' },
+    })
+    expect(tokens).toHaveLength(2)
+    expect(tokens[0].usedAt, 'the first link must be spent').not.toBeNull()
+    expect(tokens[1].usedAt, 'the newest link must still work').toBeNull()
+  })
+
+  it('changes no privilege when it only issues a link', async () => {
+    // Re-issuing a password link is account recovery, not a promotion.
+    const before = await flagFor(ACTIVE)
+    run('--reset-link', ACTIVE)
+    expect(await flagFor(ACTIVE)).toBe(before)
+  })
+
+  it('refuses to issue a link for an account that cannot sign in', async () => {
+    const r = run('--reset-link', DEACTIVATED)
+    expect(r.status).toBe(1)
+    expect(r.said).toMatch(/deactivated/i)
+    expect(await db.passwordResetToken.count({ where: { user: { email: DEACTIVATED } } })).toBe(0)
+  })
+
+  it('records the re-issue in the audit trail, without the token', async () => {
+    const r = run('--reset-link', ACTIVE)
+    const printed = r.said.match(/token=([A-Za-z0-9_%-]+)/)?.[1]
+    expect(printed).toBeTruthy()
+
+    const rows = await auditFor(ACTIVE)
+    expect(rows.map((x) => x.action)).toContain('platform_admin_reset_link')
+    // The link is a credential; the trail records that one was issued, never which one.
+    expect(JSON.stringify(rows)).not.toContain(printed)
   })
 
   it('does not print anything that looks like a credential', async () => {

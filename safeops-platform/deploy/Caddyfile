@@ -4,20 +4,38 @@
 # obtains and renews certificates automatically, redirects HTTP to HTTPS by default, and
 # sets sane TLS defaults — three things that are easy to get subtly wrong by hand.
 #
-#   caddy run --config deploy/Caddyfile
-#   caddy validate --config deploy/Caddyfile
+# Run it as part of the stack (it reads the same .env.prod as everything else):
 #
-# Replace the two hostnames. They MUST share a registrable domain: the refresh cookie is
-# SameSite=Strict, so app.safeops.example and api.safeops.example work, and a pair on
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod --profile tls up -d
+#
+# or standalone, with the three variables exported:
+#
+#   caddy validate --config deploy/Caddyfile
+#   caddy run --config deploy/Caddyfile
+#
+# ── What the operator must supply ────────────────────────────────────────────
+# Nothing here is hard-coded, because a hostname baked into a config file is a hostname
+# somebody ships to production by accident. All three come from the environment and Caddy
+# refuses to start if any is empty:
+#
+#   SAFEOPS_APP_DOMAIN   the address people type,   e.g. app.yourcompany.com
+#   SAFEOPS_API_DOMAIN   the address the app calls, e.g. api.yourcompany.com
+#   ACME_EMAIL           where Let's Encrypt sends expiry warnings
+#
+# The two hostnames MUST share a registrable domain. The refresh cookie is
+# SameSite=Strict, so app.yourcompany.com and api.yourcompany.com work; a pair on
 # different registrable domains will silently fail to keep anyone signed in.
+#
+# Both names must already resolve to this server before you start: Caddy proves control of
+# them over HTTP/TLS to get a certificate, so DNS comes first, not after.
 
 {
-	# Where Let's Encrypt sends expiry warnings. Set it.
-	email ops@safeops.example
+	# Where Let's Encrypt sends expiry warnings. Required — no default on purpose.
+	email {$ACME_EMAIL}
 }
 
 # ── Web app ──────────────────────────────────────────────────────────────────
-app.safeops.example {
+{$SAFEOPS_APP_DOMAIN} {
 	encode zstd gzip
 
 	# HSTS. Caddy already redirects HTTP→HTTPS; this stops the first request of a later
@@ -31,14 +49,14 @@ app.safeops.example {
 		-Server
 	}
 
-	reverse_proxy safeops-web:8080 {
+	reverse_proxy {$WEB_UPSTREAM:web:8080} {
 		header_up X-Forwarded-Proto {scheme}
 		header_up X-Real-IP {remote_host}
 	}
 }
 
 # ── API ──────────────────────────────────────────────────────────────────────
-api.safeops.example {
+{$SAFEOPS_API_DOMAIN} {
 	encode zstd gzip
 
 	header {
@@ -51,7 +69,7 @@ api.safeops.example {
 	# refuse an unknown origin. Adding CORS headers here would either duplicate them or
 	# override a deliberate refusal, so nothing is set.
 
-	reverse_proxy safeops-api:4000 {
+	reverse_proxy {$API_UPSTREAM:api:4000} {
 		# The API sets `trust proxy`, so this is what makes req.ip the real client rather
 		# than this proxy. Per-IP rate limiting depends on it: without these headers every
 		# user shares one bucket.

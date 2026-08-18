@@ -125,6 +125,70 @@ if (raw.NODE_ENV === 'production') {
     )
     process.exit(1)
   }
+  /*
+   * https, not http.
+   *
+   * Every link built from this carries a single-use credential in the URL: the invitation
+   * that creates somebody's account, and the password-reset link that takes one over. Over
+   * plaintext those are readable by anything between the recipient and the server, and the
+   * token is all an attacker needs - no password required.
+   *
+   * TLS terminates upstream of this container, so the process cannot detect the scheme for
+   * itself; this value is the only place the deployment declares it. Refused at boot for
+   * the same reason as everything else in this file - a misconfiguration that only shows up
+   * as "somebody else accepted the invitation" is not one you find in time.
+   */
+  if (!/^https:\/\//i.test(url)) {
+    // eslint-disable-next-line no-console
+    console.error(
+      `APP_PUBLIC_URL is ${url}, which is not https. Invitation and password-reset links\n`
+      + 'are built from it and each one carries a single-use credential in the URL, so\n'
+      + 'sending them over plaintext hands the account to anybody on the path.\n'
+      + 'Terminate TLS in front of this deployment and set the https address here.',
+    )
+    process.exit(1)
+  }
+  /*
+   * Reserved domains, which mean somebody deployed the example configuration.
+   *
+   * RFC 2606 and RFC 6761 set these aside precisely so they can never belong to anyone:
+   * example.com/net/org, and the .test, .invalid, .example and .localhost suffixes. A
+   * production deployment on one of them is not a deployment, it is `.env.prod.example`
+   * that nobody filled in - and the failure it produces is invitations pointing at a
+   * domain the customer cannot reach, discovered when they say nothing arrived.
+   *
+   * Deliberately narrow. It matches only names that are guaranteed unusable, so a real
+   * hostname can never trip it.
+   *
+   * `localhost` is deliberately absent. APP_PUBLIC_URL rejects it above for its own
+   * reasons, and CORS_ORIGINS legitimately names it when the stack is run in production
+   * mode locally - which is how this deployment gets verified before it reaches a
+   * customer. Refusing it here would remove that check rather than add one.
+   */
+  const RESERVED = /(^|\.)(example\.(com|net|org)|invalid|test|example)$/i
+  const hostsToCheck: [string, string][] = [
+    ['APP_PUBLIC_URL', url],
+    ...raw.CORS_ORIGINS.split(',').map((o) => ['CORS_ORIGINS', o.trim()] as [string, string]),
+  ]
+  for (const [name, value] of hostsToCheck) {
+    if (!value) continue
+    let host: string
+    try {
+      host = new URL(value).hostname
+    } catch {
+      continue // CORS_ORIGINS entries are validated where they are used
+    }
+    if (RESERVED.test(host)) {
+      // eslint-disable-next-line no-console
+      console.error(
+        `${name} points at ${host}, which is a reserved documentation domain and cannot\n`
+        + 'belong to any real deployment. This is the example configuration - replace every\n'
+        + 'hostname in .env.prod with the addresses your customers actually visit, and\n'
+        + 'regenerate the database password and signing keys while you are there.',
+      )
+      process.exit(1)
+    }
+  }
 }
 
 if ((raw.RESEND_API_KEY || raw.SMTP_URL) && !raw.REPORT_EMAIL_FROM) {

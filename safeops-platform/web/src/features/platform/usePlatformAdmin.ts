@@ -41,9 +41,20 @@ function fetchInfo(): Promise<PlatformInfo> {
   return inFlight
 }
 
-/** Drops the shared answer, so the next mount asks again. Used when signing out. */
+/** Drops the shared answer, so the next mount asks again. Used when signing in and out. */
 export function resetPlatformInfo() {
   inFlight = null
+}
+
+/**
+ * The same answer, for code that is not a component.
+ *
+ * The login page needs this before it has rendered anything, to decide where to send
+ * somebody - a hook cannot answer that. Shares the in-flight promise with the hook, so a
+ * sign-in costs one call rather than two.
+ */
+export function getPlatformInfo(): Promise<PlatformInfo> {
+  return fetchInfo()
 }
 
 export function usePlatformInfo(): PlatformInfo {
