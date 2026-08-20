@@ -6,7 +6,7 @@ import {
 } from '@/api/equipmentApi'
 import { listEquipmentHolders, type EquipmentHolderOption } from '@/api/equipmentHolders'
 import { ApiError } from '@/api/types'
-import { Alert, Badge, Button, Dialog, Select, Skeleton } from '@/components/ui'
+import { Alert, Badge, Button, Dialog, PersonRegisterOptions, Select, Skeleton } from '@/components/ui'
 import { fmtDateTime } from '@/features/incidents/lib'
 
 /**
@@ -192,22 +192,18 @@ function AssignDialog({
         {people === null ? (
           <Skeleton className="h-10 rounded-lg" />
         ) : (
+          /*
+           * The empty case matters most here. Every other entry in this list is a real
+           * person, so with both registers empty the picker previously offered nothing
+           * selectable but the placeholder - equipment could not be handed to anybody, and
+           * the screen gave no reason why.
+           */
           <Select label="Hand it to" value={chosen} onChange={(e) => setChosen(e.target.value)}>
             <option value="">Choose a person…</option>
-            <optgroup label="Employees">
-              {people.filter((p) => p.kind === 'employee').map((p) => (
-                <option key={p.id} value={`employee:${p.id}`}>
-                  {p.name}{p.reference ? ` — ${p.reference}` : ''}
-                </option>
-              ))}
-            </optgroup>
-            <optgroup label="Contractor workers">
-              {people.filter((p) => p.kind === 'contractor').map((p) => (
-                <option key={p.id} value={`contractor:${p.id}`}>
-                  {p.name}{p.reference ? ` — ${p.reference}` : ''}
-                </option>
-              ))}
-            </optgroup>
+            <PersonRegisterOptions
+              people={people}
+              emptyHint="— Nobody in the registers yet. Add them under Employees or Contractors —"
+            />
           </Select>
         )}
 

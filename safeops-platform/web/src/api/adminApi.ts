@@ -131,9 +131,21 @@ export const adminApi = {
     }))
   },
 
-  /** The raw token is returned once and never again — the server stores only its digest. */
+  /**
+   * Issue a reset link.
+   *
+   * `token` arrives only when the email did not go — once a provider has accepted the
+   * message there is no reason to put a working credential through the browser as well.
+   * `emailed` says which of those happened, so the console can tell the administrator the
+   * truth rather than always showing a link.
+   */
   async resetPassword(companyId: string, id: string) {
-    return request<{ token: string; expiresInMinutes: number }>(`/admin/users/${id}/reset-password`, {
+    return request<{
+      token?: string
+      expiresInMinutes: number
+      emailed: boolean
+      deliveryNote?: string
+    }>(`/admin/users/${id}/reset-password`, {
       method: 'POST', body: JSON.stringify({ companyId }),
     })
   },

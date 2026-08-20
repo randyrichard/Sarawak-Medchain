@@ -220,8 +220,15 @@ d('AdminService — integration (real Postgres)', () => {
       ],
     })
 
-    const { token } = await svc.resetPassword(admin, COMPANY, ctx, staffId)
-    expect(token.length).toBeGreaterThan(10)
+    const issued = await svc.resetPassword(admin, COMPANY, ctx, staffId)
+    /*
+     * No email provider is configured in tests, so the link comes back for the administrator
+     * to pass on by hand, and `emailed` says plainly that nothing was sent. Asserting both
+     * is what stops a later change swallowing the token while still reporting success.
+     */
+    expect(issued.emailed).toBe(false)
+    expect(issued.token).toBeDefined()
+    expect(issued.token!.length).toBeGreaterThan(10)
 
     // A reset that leaves the compromised session alive has not reset anything.
     const live = await db.refreshToken.count({ where: { userId: staffId, revokedAt: null } })

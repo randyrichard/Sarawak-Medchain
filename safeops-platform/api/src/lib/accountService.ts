@@ -8,7 +8,10 @@
 import { Prisma } from '@prisma/client'
 import type { PrismaClient } from '@prisma/client'
 import { hashPassword, validatePasswordStrength, verifyPassword } from './password.js'
-import { hashRefreshToken, hashResetToken } from './tokens.js'
+import {
+  generateResetToken, hashRefreshToken, hashResetToken, resetTokenExpiry, RESET_TOKEN_TTL_MIN,
+} from './tokens.js'
+import { sendPasswordResetEmail } from './email/passwordResetDelivery.js'
 
 export class AccountError extends Error {
   constructor(public code: string, message: string, public status = 400) {
@@ -256,6 +259,70 @@ export class AccountService {
    *  - One message for expired, used, and unknown tokens: distinguishing them tells an
    *    attacker which guesses were once real.
    */
+  /**
+   * "I forgot my password." Issue a link and email it, if that address has an account.
+   *
+   * Returns nothing in every case, on purpose. The caller cannot tell a hit from a miss and
+   * so cannot leak one - see the route, which is where the reasoning for that lives.
+   *
+   * Everything the redeem path already guarantees is preserved because this reuses the same
+   * mechanism: only the SHA-256 digest is stored, the link is single-use and short-lived,
+   * and issuing a new one supersedes any earlier one so a request never leaves two working
+   * ways in.
+   *
+   * Deactivated accounts are skipped silently. A link that cannot be redeemed - redeem
+   * rejects deactivated users - would be an email promising a way in that does not exist.
+   */
+  async requestPasswordReset(email: string): Promise<void> {
+    const address = email.trim().toLowerCase()
+    const user = await this.db.user.findUnique({
+      where: { email: address },
+      select: { id: true, email: true, name: true, status: true },
+    })
+    if (!user || user.status === 'deactivated') return
+
+    const token = generateResetToken()
+
+    await this.db.$transaction(async (tx) => {
+      // Supersede any earlier live link for this user, so requesting twice does not leave
+      // two valid secrets in two inboxes.
+      await tx.passwordResetToken.updateMany({
+        where: { userId: user.id, usedAt: null },
+        data: { usedAt: new Date() },
+      })
+      await tx.passwordResetToken.create({
+        data: {
+          userId: user.id,
+          tokenHash: hashResetToken(token),
+          expiresAt: resetTokenExpiry(),
+          // Non-nullable in the schema, so the self-service case is named rather than
+          // blanked - "who issued this link" is a question the audit trail should answer,
+          // and "" would read as data loss rather than as an answer.
+          issuedBy: 'self-service',
+        },
+      })
+    })
+
+    /*
+     * Sent after the transaction commits - the token must be valid before a message
+     * carrying it exists, and a third-party network call inside a transaction holds a
+     * database connection hostage to somebody else's outage.
+     *
+     * The result is deliberately ignored. There is nobody to report a failure to: the
+     * requester is anonymous by definition and telling them "delivery failed" would confirm
+     * the address exists. `sendPasswordResetEmail` already logs the failure server-side,
+     * without the token or the URL.
+     */
+    await sendPasswordResetEmail({
+      token,
+      recipientEmail: user.email,
+      recipientName: user.name,
+      expiresInMinutes: RESET_TOKEN_TTL_MIN,
+      issuedByAdmin: false,
+      idempotencyKey: `safeops-reset-self-${user.id}-${Date.now()}`,
+    })
+  }
+
   async redeemPasswordReset(rawToken: string, newPassword: string): Promise<void> {
     const weak = validatePasswordStrength(newPassword)
     if (weak) throw new AccountError('validation', weak)

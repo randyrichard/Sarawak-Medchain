@@ -1,12 +1,12 @@
 import { useState, type FormEvent } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { LogIn } from 'lucide-react'
 import { useAuth } from '../AuthContext'
 import { safeInternalPath } from '../safeRedirect'
 import { loadPreferences } from '@/features/account/preferences'
 import { getPlatformInfo } from '@/features/platform/usePlatformAdmin'
 import { ApiError, ROLE_LABEL, type Role } from '@/api/types'
-import { Alert, Button, Checkbox, Input } from '@/components/ui'
+import { Alert, Button, Checkbox, Input, PasswordInput } from '@/components/ui'
 import { AuthLayout } from './AuthLayout'
 import { shouldShowDemoLogins } from '../demoLogins'
 
@@ -113,36 +113,38 @@ export function LoginPage() {
           label="Work email" type="email" autoComplete="email" placeholder="you@company.com"
           value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus
         />
-        <Input
-          label="Password" type="password" autoComplete="current-password" placeholder="••••••••••"
+        <PasswordInput
+          label="Password" autoComplete="current-password" placeholder="••••••••••"
           value={password} onChange={(e) => setPassword(e.target.value)} required
         />
-        <div className="flex items-center justify-between">
+        {/*
+          Recovery is administrator-issued: an admin creates a single-use link from the user
+          console and passes it on, because this deployment has no email delivery.
+
+          That constraint used to be explained in a paragraph here. It is now a link, for a
+          plain reason - "Forgot password?" is the first thing anyone looks for on a sign-in
+          screen, and a wall of small grey text where the link should be reads as a broken
+          product rather than a deliberate choice. The page it leads to says the same thing
+          with room to separate the two audiences it applies to, and it is where the form
+          goes once email delivery exists.
+
+          Sitting opposite the checkbox rather than under the button because that is where
+          people already look for it.
+        */}
+        <div className="flex items-center justify-between gap-3">
           <Checkbox
             label="Keep me signed in"
             checked={remember}
             onChange={(e) => setRemember(e.target.checked)}
           />
+          <Link
+            to="/forgot-password"
+            className="rounded text-xs font-medium text-accent transition-colors hover:text-ink
+                       focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            Forgot password?
+          </Link>
         </div>
-
-        {/*
-          Recovery is administrator-issued: an admin creates a single-use link from the user
-          console and passes it on. Self-service arrives with email delivery - until then a
-          "Forgot password?" link would lead nowhere, which is worse than saying plainly who
-          can help.
-
-          The second sentence exists because the first one is impossible to follow for the
-          people most likely to read it. "Ask your workspace admin" is fine for a team
-          member; a company's only administrator has no one to ask, and a SafeOps platform
-          administrator belongs to no company at all, so nothing in the product can issue
-          them a link. Sending those two to support is the difference between advice and a
-          dead end.
-        */}
-        <p className="text-xs leading-relaxed text-muted">
-          Forgot it? Your workspace admin can issue you a reset link from{' '}
-          <span className="font-medium text-ink-2">Administration &rarr; Users</span>.
-          If you are the administrator, contact SafeOps support.
-        </p>
         <Button type="submit" size="lg" loading={busy} icon={<LogIn size={15} />} className="w-full">
           Sign in
         </Button>

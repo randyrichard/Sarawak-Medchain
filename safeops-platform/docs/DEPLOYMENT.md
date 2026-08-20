@@ -482,9 +482,24 @@ invitation email actually went out. The invitation token is never written to it.
 > says so honestly. The one unproven step is whether your account and DNS deliver — which
 > is exactly what the drill at the end of this section is for.
 
-Optional, and the product is honest without it: reports still generate and download, and
-invitations still work — the console shows the administrator a link to pass on by hand.
-Nothing is ever recorded as emailed when it was not.
+Optional to start, and the product is honest without it: reports still generate and
+download, and invitations and password resets still work — the console shows the
+administrator a link to pass on by hand. Nothing is ever recorded as emailed when it was
+not.
+
+**What configuring it turns on.** One provider, one code path, three workflows:
+
+| Workflow | Without email | With email |
+|---|---|---|
+| User invited, or customer provisioned | Admin copies the link and sends it | Invitation emailed automatically |
+| Admin issues a password reset | Link shown once, admin passes it on | Link emailed; the console says "emailed" and shows nothing |
+| **User forgets their password** | **No recovery without a human** | Self-service — they request it from the sign-in page |
+| Scheduled reports | Generated and downloadable | Delivered on schedule |
+
+The third row is the one that matters for a pilot. Without email there is no self-service
+recovery at all, so a customer's **sole administrator** who forgets their password has
+nobody in the product who can help them — you have to run a CLI command on the server for
+them. That is tolerable for one pilot customer and does not scale past a handful.
 
 Turning it on means setting a sender and exactly one transport.
 

@@ -25,6 +25,7 @@ import { PrismaClient } from '@prisma/client'
 import { env } from '../env.js'
 import { hashPassword } from '../lib/password.js'
 import { generateResetToken, hashResetToken, resetTokenExpiry, RESET_TOKEN_TTL_MIN } from '../lib/tokens.js'
+import { sendPasswordResetEmail } from '../lib/email/passwordResetDelivery.js'
 
 const db = new PrismaClient()
 
@@ -142,7 +143,8 @@ async function createFirstAdmin(email: string) {
         mustChangePassword: true,
         platformAdmin: !revoke,
       },
-      select: { id: true, email: true },
+      // `name` is selected because the reset email addresses the recipient by it.
+      select: { id: true, email: true, name: true },
     })
     await tx.passwordResetToken.create({
       data: {
@@ -180,12 +182,41 @@ async function createFirstAdmin(email: string) {
    * account could never be used. The token itself was fine, which is exactly why testing
    * it against the API missed this: what needed checking was the URL.
    */
+  const delivery = await sendPasswordResetEmail({
+    token,
+    recipientEmail: email,
+    recipientName: user.name,
+    expiresInMinutes: RESET_TOKEN_TTL_MIN,
+    issuedByAdmin: true,
+    idempotencyKey: `safeops-bootstrap-${user.id}-${Date.now()}`,
+  })
+
   console.log(
     `\nCreated ${email} as a SafeOps platform administrator.\n\n`
-    + 'Set a password with this single-use link:\n\n'
-    + `  ${env.appUrl}/reset-password?token=${encodeURIComponent(token)}\n\n`
-    + `It expires in ${RESET_TOKEN_TTL_MIN} minutes and is shown once. Nobody, including\n`
+    + linkOrSent(delivery, token)
+    + `\nIt expires in ${RESET_TOKEN_TTL_MIN} minutes. Nobody, including\n`
     + 'whoever ran this command, holds a working password for the account until it is used.',
+  )
+}
+
+/**
+ * What to print: "we emailed it", or the link itself.
+ *
+ * The link is printed only when the email did not go. Once a provider has accepted the
+ * message there is no reason to also put a working credential on a terminal, into shell
+ * history, and into whatever captures the output of a deployment script.
+ */
+function linkOrSent(
+  delivery: { delivered: boolean; showLink: boolean; reason?: string },
+  token: string,
+): string {
+  if (delivery.delivered) {
+    return 'A single-use link has been emailed to them.\n'
+  }
+  return (
+    `${delivery.reason ? `Email was not sent: ${delivery.reason}\n\n` : ''}`
+    + 'Set a password with this single-use link:\n\n'
+    + `  ${env.appUrl}/reset-password?token=${encodeURIComponent(token)}\n`
   )
 }
 
@@ -241,10 +272,19 @@ async function issueResetLink(user: { id: string; name: string; status: string }
     detail: 'password reset link issued from the server; earlier links invalidated',
   })
 
+  const delivery = await sendPasswordResetEmail({
+    token,
+    recipientEmail: email,
+    recipientName: user.name,
+    expiresInMinutes: RESET_TOKEN_TTL_MIN,
+    issuedByAdmin: true,
+    idempotencyKey: `safeops-reset-cli-${user.id}-${Date.now()}`,
+  })
+
   console.log(
     `\nA new password link for ${user.name} <${email}>:\n\n`
-    + `  ${env.appUrl}/reset-password?token=${encodeURIComponent(token)}\n\n`
-    + `It expires in ${RESET_TOKEN_TTL_MIN} minutes, works once, and cancels any earlier\n`
+    + linkOrSent(delivery, token)
+    + `\nIt expires in ${RESET_TOKEN_TTL_MIN} minutes, works once, and cancels any earlier\n`
     + 'link. Their existing password keeps working until this one is used.',
   )
 }

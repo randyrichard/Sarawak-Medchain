@@ -58,20 +58,32 @@ export function UsersSection() {
   }
 
   /**
-   * Issues a reset link and shows it once.
+   * Issues a reset link: emailed if a provider is configured, shown once if not.
    *
-   * There is no email transport yet, so the admin passes the link on themselves. Saying
-   * "reset sent" while sending nothing is how the previous version left users stranded.
+   * Both outcomes are told plainly. Saying "reset sent" while sending nothing is how an
+   * earlier version left users stranded; showing a link the recipient has already been
+   * emailed would put a working credential on screen for no reason.
+   *
+   * The server decides which happened - it returns the token only when delivery did not
+   * occur - so this cannot claim an email went out that did not.
    */
   const issueReset = async (u: AdminUser) => {
     setError(null)
     try {
-      const { token, expiresInMinutes } = await api.adminResetPassword(companyId, u.id, actor)
-      setResetLink({
-        email: u.email,
-        url: `${window.location.origin}/reset-password?token=${token}`,
-        minutes: expiresInMinutes,
-      })
+      const r = await api.adminResetPassword(companyId, u.id, actor)
+      if (r.emailed) {
+        setFlash(`A reset link has been emailed to ${u.email}. It expires in ${r.expiresInMinutes} minutes.`)
+      } else if (r.token) {
+        setResetLink({
+          email: u.email,
+          url: `${window.location.origin}/reset-password?token=${r.token}`,
+          minutes: r.expiresInMinutes,
+        })
+      } else {
+        // Neither emailed nor returned. Nothing to hand over, so say so rather than
+        // showing an empty box.
+        setError(r.deliveryNote ?? 'The reset link could not be issued. Try again.')
+      }
       refresh()
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Could not issue a reset link.')

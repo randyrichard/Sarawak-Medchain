@@ -162,7 +162,17 @@ export interface ApiClient {
   adminGetUser(companyId: string, id: string): Promise<AdminUser>
   adminCreateUser(companyId: string, input: NewUserInput, actor: AdminActor): Promise<AdminUser>
   adminSetUserStatus(companyId: string, id: string, status: AdminUser['status'], actor: AdminActor): Promise<AdminUser>
-  adminResetPassword(companyId: string, id: string, actor: AdminActor): Promise<{ token: string; expiresInMinutes: number }>
+  /**
+   * `token` is present only when the link could not be emailed — a provider that has
+   * accepted the message means the administrator has no need for the raw credential.
+   * `emailed` tells the console which happened so it can say so truthfully.
+   */
+  adminResetPassword(companyId: string, id: string, actor: AdminActor): Promise<{
+    token?: string
+    expiresInMinutes: number
+    emailed: boolean
+    deliveryNote?: string
+  }>
   adminForcePasswordReset(companyId: string, id: string, actor: AdminActor): Promise<AdminUser>
   adminToggleMfa(companyId: string, id: string, actor: AdminActor): Promise<AdminUser>
   adminBulkImport(companyId: string, csv: string, actor: AdminActor): Promise<{ created: number; skipped: number; errors: string[] }>
@@ -1243,10 +1253,14 @@ class MockApiClient implements ApiClient {
     if (SERVER_ADMIN) {
       const r = await adminApi.resetPassword(companyId, id)
       this.pushNotification(companyId, 'system', 'Password reset issued',
-        'Live sessions were revoked and a single-use link was generated.')
+        r.emailed
+          ? 'Live sessions were revoked and a reset link was emailed.'
+          : 'Live sessions were revoked and a single-use link was generated.')
       return r
     }
-    await delay(LATENCY() / 3); return this.admin.resetPassword(id, actor)
+    // The credential-free demo has no mail transport, so it always hands the link back.
+    await delay(LATENCY() / 3)
+    return { ...this.admin.resetPassword(id, actor), emailed: false }
   }
   async adminForcePasswordReset(companyId: string, id: string, actor: AdminActor) {
     if (SERVER_ADMIN) return adminApi.forcePasswordReset(companyId, id)

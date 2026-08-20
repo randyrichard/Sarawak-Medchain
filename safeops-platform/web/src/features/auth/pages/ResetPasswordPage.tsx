@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { KeyRound } from 'lucide-react'
 import { authApi } from '@/api/authApi'
 import { ApiError } from '@/api/types'
-import { Alert, Button, Input } from '@/components/ui'
+import { Alert, Button, PasswordInput } from '@/components/ui'
 import { policyProblem } from '../passwordPolicy'
 import { AuthLayout } from './AuthLayout'
 
@@ -103,8 +103,8 @@ export function ResetPasswordPage() {
         <form onSubmit={submit} className="mt-6 space-y-4" noValidate>
           {error && <Alert tone="critical">{error}</Alert>}
           <div className="space-y-1.5">
-            <Input
-              label="New password" type="password" autoComplete="new-password"
+            <PasswordInput
+              label="New password" autoComplete="new-password"
               value={password} onChange={(e) => setPassword(e.target.value)} required autoFocus
               error={problem ?? undefined}
             />
@@ -119,8 +119,8 @@ export function ResetPasswordPage() {
               </div>
             )}
           </div>
-          <Input
-            label="Confirm new password" type="password" autoComplete="new-password"
+          <PasswordInput
+            label="Confirm new password" autoComplete="new-password"
             value={confirm} onChange={(e) => setConfirm(e.target.value)} required
             error={mismatch ? 'Does not match the password above.' : undefined}
           />

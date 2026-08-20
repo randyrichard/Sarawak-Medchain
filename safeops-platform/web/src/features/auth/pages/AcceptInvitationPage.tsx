@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { UserPlus } from 'lucide-react'
 import { request } from '@/api/http'
 import { ApiError } from '@/api/types'
-import { Alert, Button, Input } from '@/components/ui'
+import { Alert, Button, Input, PasswordInput } from '@/components/ui'
 import { policyProblem } from '../passwordPolicy'
 import { AuthLayout } from './AuthLayout'
 
@@ -134,9 +134,8 @@ export function AcceptInvitationPage() {
           autoComplete="name"
         />
 
-        <Input
+        <PasswordInput
           label="Choose a password"
-          type="password"
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -144,9 +143,8 @@ export function AcceptInvitationPage() {
           autoComplete="new-password"
         />
 
-        <Input
+        <PasswordInput
           label="Confirm password"
-          type="password"
           required
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}

@@ -10,6 +10,7 @@ import {
   type PermissionMatrix, type RbacAction, type RbacModule,
 } from './adminCatalog.js'
 import { generateResetToken, hashResetToken, resetTokenExpiry, RESET_TOKEN_TTL_MIN } from './tokens.js'
+import { sendPasswordResetEmail } from './email/passwordResetDelivery.js'
 
 export class AdminError extends Error {
   constructor(public code: string, message: string, public status = 400) {
@@ -386,7 +387,40 @@ export class AdminService {
     })
 
     await this.log(caller, companyId, ctx, 'Issued password reset link', 'admin', target.email)
-    return { token, expiresInMinutes: RESET_TOKEN_TTL_MIN }
+
+    /*
+     * Emailed if a provider is configured, handed back for manual delivery if not.
+     *
+     * Sent after the transaction commits, deliberately: the token has to be valid before a
+     * message carrying it can exist, and holding a database transaction open across a
+     * network call to a third party is how connection pools get exhausted by somebody
+     * else's outage.
+     *
+     * The audit line above records that a link was issued and to whom. It does not record
+     * the token, and neither does anything below - an audit trail carrying working
+     * credentials is a second copy of the credential store.
+     */
+    const delivery = await sendPasswordResetEmail({
+      token,
+      recipientEmail: target.email,
+      recipientName: target.name,
+      expiresInMinutes: RESET_TOKEN_TTL_MIN,
+      issuedByAdmin: true,
+      idempotencyKey: `safeops-reset-${id}-${Date.now()}`,
+    })
+
+    return {
+      /*
+       * The link comes back only when the email did not go. Once a provider has accepted
+       * it, the administrator has no need for the secret, and returning it anyway would put
+       * a working credential through the browser, the API response log and whatever the
+       * administrator pastes it into.
+       */
+      token: delivery.showLink ? token : undefined,
+      expiresInMinutes: RESET_TOKEN_TTL_MIN,
+      emailed: delivery.delivered,
+      deliveryNote: delivery.reason,
+    }
   }
 
   async forcePasswordReset(caller: Caller, companyId: string, ctx: AdminContext, id: string) {

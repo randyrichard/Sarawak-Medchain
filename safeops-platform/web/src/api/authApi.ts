@@ -177,6 +177,21 @@ export const authApi = {
     })
   },
 
+  /**
+   * "I forgot my password — email me a link."
+   *
+   * Resolves the same way whether or not the address has an account: the server answers
+   * identically on purpose, so that an unauthenticated endpoint cannot be walked through an
+   * address list to learn who works where. Nothing in the response is worth branching on,
+   * which is why this returns void.
+   */
+  async requestPasswordReset(email: string): Promise<void> {
+    await request<{ message: string }>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    })
+  },
+
   /** Whether a link is still redeemable. Returns nothing about the account behind it. */
   async checkResetToken(token: string): Promise<boolean> {
     const r = await request<{ valid: boolean }>(`/auth/reset-password/${encodeURIComponent(token)}`)

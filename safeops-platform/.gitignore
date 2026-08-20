@@ -1,4 +1,16 @@
+# Production environment files.
+#
+# Every variant, not just the exact name. `.env.prod` alone did not cover
+# `.env.prod.bak-022415`, a timestamped copy left beside it by an earlier edit - and
+# `git add -A` duly staged it, database password and all. Caught before it was committed,
+# but only by looking; a secret in git history is not removed by deleting the file later.
+#
+# `.env.prod.example` is re-included: it is the template and holds only placeholders.
 .env.prod
+.env.prod.*
+!.env.prod.example
+.env.local
+.env.*.local
 
 # Stored uploads: incident evidence, permit documents, equipment photos, generated
 # report PDFs. Runtime data, and in production it is customer data - it belongs on a

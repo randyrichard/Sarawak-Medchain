@@ -142,6 +142,61 @@ authRouter.post('/reset-password', resetLimiter, async (req, res, next) => {
   }
 })
 
+/**
+ * Self-service password reset: "I forgot mine, send me a link."
+ *
+ * Until now recovery was administrator-issued only, which works for a team member and
+ * strands the people most likely to need it - a company's sole administrator has no peer to
+ * ask, and a platform administrator belongs to no company at all. Both had to contact a
+ * human who then ran a CLI command on the server.
+ *
+ * ── Anti-enumeration ─────────────────────────────────────────────────────────
+ * The response is identical whether or not the address exists: same status, same body, no
+ * timing branch worth measuring, and no hint in any error. A sign-in form that answers "no
+ * such account" is a free membership oracle - worth more to an attacker than it sounds,
+ * because knowing who banks with whom, or in this case which companies use this product and
+ * who works there, is the reconnaissance step before a phishing run.
+ *
+ * That is why nothing here throws on a miss and why delivery failures are swallowed too: a
+ * 500 for real addresses and a 202 for made-up ones is the same oracle wearing a different
+ * hat.
+ *
+ * Rate limited by the same limiter as the rest of the reset flow - 15 attempts per quarter
+ * hour per IP - so the endpoint cannot be walked through an address list.
+ */
+const forgotBody = z.object({ email: z.string().email().max(320) })
+
+authRouter.post('/forgot-password', resetLimiter, async (req, res) => {
+  const parsed = forgotBody.safeParse(req.body)
+  /*
+   * Even a malformed address gets the same answer. Replying 400 for "not an email" and 202
+   * for a well-formed one is harmless; replying differently for a well-formed address that
+   * does not exist is not, and keeping one exit path is how that stays true when somebody
+   * edits this later.
+   */
+  if (parsed.success) {
+    try {
+      await account.requestPasswordReset(parsed.data.email)
+    } catch (e) {
+      /*
+       * Deliberately swallowed. This endpoint's whole purpose is to be indistinguishable
+       * across inputs, and an error response is a distinguishing input. Logged server-side
+       * without the address's token so an operator can still see something went wrong.
+       */
+      // eslint-disable-next-line no-console
+      console.error(JSON.stringify({
+        t: new Date().toISOString(),
+        event: 'forgot_password_failed',
+        reason: e instanceof Error ? e.message : 'unknown',
+      }))
+    }
+  }
+  res.status(202).json({
+    message: 'If that address has an account, a reset link is on its way. '
+      + 'Check your inbox, including spam.',
+  })
+})
+
 /** Lets the reset page tell the user a link is dead before they type a password twice. */
 authRouter.get('/reset-password/:token', resetLimiter, async (req, res, next) => {
   try {

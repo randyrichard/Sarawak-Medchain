@@ -4,7 +4,7 @@ import { ApiError } from '@/api/types'
 import { ASSET_CATEGORIES, CATEGORY_LABEL, type AssetCategory, type InspectionFrequency, FREQUENCY_LABEL } from '@/api/assets'
 import { useOrg } from '@/features/org/OrgContext'
 import { usePeople, useActor } from '@/features/incidents/lib'
-import { Alert, Button, Dialog, Input, Select, Textarea } from '@/components/ui'
+import { Alert, Button, Dialog, Input, PersonRegisterOptions, Select, Textarea } from '@/components/ui'
 import { listEquipmentHolders, type EquipmentHolderOption } from '@/api/equipmentHolders'
 
 export function NewAssetDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
@@ -143,20 +143,7 @@ export function NewAssetDialog({ open, onClose, onCreated }: { open: boolean; on
           hint="Leave blank for pool equipment."
         >
           <option value="">Nobody yet (pool)</option>
-          <optgroup label="Employees">
-            {holders.filter((p) => p.kind === 'employee').map((p) => (
-              <option key={`e-${p.id}`} value={`employee:${p.id}`}>
-                {p.name}{p.reference ? ` — ${p.reference}` : ''}
-              </option>
-            ))}
-          </optgroup>
-          <optgroup label="Contractor workers">
-            {holders.filter((p) => p.kind === 'contractor').map((p) => (
-              <option key={`c-${p.id}`} value={`contractor:${p.id}`}>
-                {p.name}{p.reference ? ` — ${p.reference}` : ''}
-              </option>
-            ))}
-          </optgroup>
+          <PersonRegisterOptions people={holders} />
         </Select>
 
         <label className="flex items-start gap-2 text-2xs text-ink">

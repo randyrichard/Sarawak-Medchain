@@ -8,6 +8,7 @@ import AppShell from '@/components/layout/AppShell'
 // Auth surface is the entry point — keep it eager so the login screen paints without a chunk fetch.
 import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { ResetPasswordPage } from '@/features/auth/pages/ResetPasswordPage'
+import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage'
 import { AcceptInvitationPage } from '@/features/auth/pages/AcceptInvitationPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 
@@ -53,6 +54,7 @@ export default function App() {
             <Route element={<RequireAnonymous />}>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             </Route>
 
             {/* Authenticated app */}

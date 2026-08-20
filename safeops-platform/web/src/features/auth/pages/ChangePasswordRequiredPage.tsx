@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { KeyRound } from 'lucide-react'
 import { accountApi } from '@/api/accountApi'
 import { ApiError } from '@/api/types'
-import { Alert, Button, Input } from '@/components/ui'
+import { Alert, Button, PasswordInput } from '@/components/ui'
 import { useAuth } from '../AuthContext'
 import { policyProblem } from '../passwordPolicy'
 import { AuthLayout } from './AuthLayout'
@@ -88,9 +88,8 @@ export function ChangePasswordRequiredPage() {
           <span className="min-w-0 truncate text-xs text-ink">{user?.email}</span>
         </div>
 
-        <Input
+        <PasswordInput
           label="Current password"
-          type="password"
           required
           value={current}
           onChange={(e) => setCurrent(e.target.value)}
@@ -98,9 +97,8 @@ export function ChangePasswordRequiredPage() {
           autoComplete="current-password"
         />
 
-        <Input
+        <PasswordInput
           label="New password"
-          type="password"
           required
           value={next}
           onChange={(e) => setNext(e.target.value)}
@@ -108,9 +106,8 @@ export function ChangePasswordRequiredPage() {
           autoComplete="new-password"
         />
 
-        <Input
+        <PasswordInput
           label="Confirm new password"
-          type="password"
           required
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}

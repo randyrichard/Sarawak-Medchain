@@ -6,7 +6,7 @@ import {
 } from '@/api/investigationApi'
 import { listEquipmentHolders, type EquipmentHolderOption } from '@/api/equipmentHolders'
 import { ApiError } from '@/api/types'
-import { Alert, Badge, Button, Card, CardBody, Dialog, Input, Select, Skeleton, Textarea } from '@/components/ui'
+import { Alert, Badge, Button, Card, CardBody, Dialog, Input, PersonRegisterOptions, Select, Skeleton, Textarea, hasRegisteredPeople } from '@/components/ui'
 import { fmtDate } from '../lib'
 import { cn } from '@/lib/cn'
 
@@ -178,6 +178,8 @@ function AddPersonDialog({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const hasRegisterEntries = hasRegisteredPeople(people)
+
   useEffect(() => {
     if (!open) return
     setRole('witness'); setWho(''); setName(''); setCompany('')
@@ -236,23 +238,26 @@ function AddPersonDialog({
         {people === null ? (
           <Skeleton className="h-10 rounded-lg" />
         ) : (
+          /*
+           * Each group is rendered only when somebody is actually in it.
+           *
+           * Both were rendered unconditionally before, which on a workspace whose registers
+           * are still empty - every new customer, on day one - produced two bold headings,
+           * "Employees" and "Contractor workers", with nothing underneath them. An optgroup
+           * label is not selectable by design, so people clicked them, nothing happened, and
+           * the whole dropdown read as broken. Reported exactly that way, and confirmed in
+           * the browser: one selectable option and two groups with zero children.
+           *
+           * When both are empty the field says so rather than presenting headings that
+           * cannot be chosen - which also answers the question that follows, why is nobody
+           * here, instead of leaving somebody to wonder whether the page failed to load.
+           */
           <Select label="From the registers" value={who} onChange={(e) => setWho(e.target.value)}
-            hint="Leave blank for somebody who is not on the books.">
+            hint={hasRegisterEntries
+              ? 'Leave blank for somebody who is not on the books.'
+              : 'Nobody is in your registers yet, so type their name below.'}>
             <option value="">Not in a register — type their name below</option>
-            <optgroup label="Employees">
-              {people.filter((p) => p.kind === 'employee').map((p) => (
-                <option key={`e-${p.id}`} value={`employee:${p.id}`}>
-                  {p.name}{p.reference ? ` — ${p.reference}` : ''}
-                </option>
-              ))}
-            </optgroup>
-            <optgroup label="Contractor workers">
-              {people.filter((p) => p.kind === 'contractor').map((p) => (
-                <option key={`c-${p.id}`} value={`contractor:${p.id}`}>
-                  {p.name}{p.reference ? ` — ${p.reference}` : ''}
-                </option>
-              ))}
-            </optgroup>
+            <PersonRegisterOptions people={people} />
           </Select>
         )}
 
