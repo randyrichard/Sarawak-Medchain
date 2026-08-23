@@ -170,7 +170,16 @@ export function ReportsPage() {
     <>
       <PageHeader
         title="Reports"
-        subtitle="What is overdue and what is still open, on a schedule, without logging in"
+        /*
+         * "…without logging in" was stated unconditionally, and it is only true once a mail
+         * provider is configured. On a deployment without one it is the product promising
+         * something it cannot do, on the very screen a customer would be shown in a demo -
+         * and the banner further down this same page already says the opposite. Now the two
+         * agree.
+         */
+        subtitle={mailConfigured === false
+          ? 'What is overdue and what is still open — generate now, or schedule once email is configured'
+          : 'What is overdue and what is still open, on a schedule, without logging in'}
         right={manage && view === 'schedules'
           ? <Button icon={<Plus size={15} />} onClick={() => setDialog({ open: true, editing: null })}>
               New schedule

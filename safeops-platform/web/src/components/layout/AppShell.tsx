@@ -20,6 +20,15 @@ interface NavItem {
   /** future-sprint modules render locked, communicating the roadmap */
   locked?: string
   end?: boolean
+  /**
+   * Sub-paths that belong to a different nav item.
+   *
+   * NavLink matches by prefix, so "/incidents" lit up on "/incidents/board" and both rows
+   * highlighted at once - reported exactly that way. Plain `end` is the wrong cure: it
+   * would also stop "Incidents" highlighting on "/incidents/INC-2601", which genuinely is
+   * part of that section. Only the paths that have their own nav row are excluded.
+   */
+  notFor?: string[]
 }
 
 const NAV: NavItem[] = [
@@ -27,7 +36,7 @@ const NAV: NavItem[] = [
   // Near-miss capture sits in the nav because under-reporting is driven by friction and
   // forgetting (customer research P1) — it has to be one tap from anywhere.
   { to: '/near-miss', label: 'Report Near Miss', icon: ShieldAlert, capability: 'reports:submit' },
-  { to: '/incidents', label: 'Incidents', icon: ClipboardList, capability: 'incidents:manage' },
+  { to: '/incidents', label: 'Incidents', icon: ClipboardList, capability: 'incidents:manage', notFor: ['/incidents/board'] },
   { to: '/incidents/board', label: 'Incident board', icon: LayoutDashboard, capability: 'dashboard:view' },
   { to: '/actions', label: 'Actions', icon: ListChecks, capability: 'dashboard:view' },
   { to: '/assets', label: 'Assets', icon: Boxes, capability: 'dashboard:view' },
@@ -103,6 +112,19 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   // Platform staff only, and answered by the server rather than by a tenant capability -
   // managing customers sits above every workspace rather than inside one.
   const platformAdmin = usePlatformAdmin()
+  const { pathname } = useLocation()
+
+  /**
+   * Does this row own the current page?
+   *
+   * NavLink's own `isActive` matches by prefix, so "/incidents" reported itself active on
+   * "/incidents/board" and two rows lit up together. This keeps the prefix behaviour -
+   * "Incidents" should stay lit on "/incidents/INC-2601" - and subtracts only the paths
+   * that have a nav row of their own.
+   */
+  const own = (item: { notFor?: string[] }, isActive: boolean) =>
+    isActive && !item.notFor?.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+
   return (
     <>
       <div className="flex items-center gap-2.5 px-5 py-5">
@@ -116,15 +138,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       <nav className="flex-1 space-y-0.5 px-3 pt-1">
-        {[
-          ...NAV.filter((item) => allowed(item.capability)),
-          // Appended after the capability filter, never through it: capabilities come from
-          // membership of one company, and this is authority over all of them. The
-          // capability below is inert - it satisfies the shared item shape and is not read.
-          ...(platformAdmin
-            ? [{ to: '/platform', label: 'SafeOps customers', icon: Building2, capability: 'dashboard:view' as const }]
-            : []),
-        ].map((item) =>
+        {NAV.filter((item) => allowed(item.capability)).map((item) =>
           item.locked ? (
             <div
               key={item.to}
@@ -145,18 +159,61 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               className={({ isActive }) =>
                 cn(
                   'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  own(item, isActive)
+                    ? 'bg-accent-soft text-ink'
+                    : 'text-ink-2 hover:bg-accent-soft/60 hover:text-ink',
+                )
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <item.icon size={16} className={own(item, isActive) ? 'text-accent' : 'text-muted'} />
+                  <span className="flex-1">{item.label}</span>
+                </>
+              )}
+            </NavLink>
+          ),
+        )}
+
+        {/*
+          SafeOps staff tools, kept out of the customer's navigation.
+
+          This link used to be appended to the same list as Incidents and Permits, which
+          made it read as part of the workspace somebody was working in. It is not: it
+          spans every customer on the deployment, and opening it in front of one customer
+          shows them the names and plans of the others.
+
+          Separating it is a visual change, not a security one - the flag can only be set
+          from a shell on the server (grantPlatformAdmin), the server re-checks it on every
+          platform call, and nothing in the product can grant it. The label exists so that
+          whoever holds it always knows which hat they are wearing.
+        */}
+        {platformAdmin && (
+          <div className="mt-4 border-t pt-3">
+            <p className="px-3 pb-1 text-2xs font-semibold uppercase tracking-widest text-muted">
+              SafeOps staff
+            </p>
+            <NavLink
+              to="/platform"
+              onClick={onNavigate}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                   isActive ? 'bg-accent-soft text-ink' : 'text-ink-2 hover:bg-accent-soft/60 hover:text-ink',
                 )
               }
             >
               {({ isActive }) => (
                 <>
-                  <item.icon size={16} className={isActive ? 'text-accent' : 'text-muted'} />
-                  <span className="flex-1">{item.label}</span>
+                  <Building2 size={16} className={isActive ? 'text-accent' : 'text-muted'} />
+                  <span className="flex-1">SafeOps customers</span>
                 </>
               )}
             </NavLink>
-          ),
+            <p className="px-3 pt-1 text-2xs leading-relaxed text-muted">
+              Every customer on this deployment. Not part of {company?.name ?? 'this workspace'}.
+            </p>
+          </div>
         )}
       </nav>
 

@@ -84,9 +84,17 @@ export function NotificationsPage() {
           <div className="p-5"><SkeletonRows rows={5} /></div>
         ) : visible.length === 0 ? (
           <EmptyState icon={Bell} title={filter === 'unread' ? "You're all caught up" : 'Nothing here yet'}>
+            {/*
+              The old wording here was "as the related modules go live", which was true
+              while the product was being built and is now simply alarming: to a paying
+              customer it reads as "these features do not exist yet". The modules are live -
+              this list is empty because nothing has fallen due, which is a different and
+              much better message.
+            */}
             {filter === 'unread'
               ? 'New alerts land here the moment something needs you.'
-              : 'Notifications of this type will appear as the related modules go live.'}
+              : 'Nothing has fallen due yet. Permits nearing expiry, overdue actions and '
+                + 'inspections coming up will appear here.'}
           </EmptyState>
         ) : (
           <ul className="divide-y">

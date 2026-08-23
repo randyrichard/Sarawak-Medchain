@@ -91,7 +91,7 @@ export function DashboardFilters({
           <select
             value={filters.department ?? ''}
             onChange={(e) => onChange({ department: e.target.value || null })}
-            className="rounded-lg border border-line bg-transparent px-2 py-1 text-2xs text-ink"
+            className="rounded-lg border border-line bg-surface px-2 py-1 text-2xs text-ink"
           >
             <option value="">All</option>
             {departments.map((dep) => <option key={dep} value={dep}>{dep}</option>)}

@@ -35,8 +35,25 @@ export function Dropdown({
   }, [open])
 
   return (
-    <div ref={rootRef} className={cn('relative', className)}>
-      <div onClick={() => setOpen((o) => !o)}>{trigger(open)}</div>
+    /*
+     * `min-w-0` on both wrappers, so a dropdown used as a flex child can actually shrink.
+     *
+     * A flex item defaults to `min-width: auto`, which refuses to go below its content.
+     * These two divs sit between the flex row and the trigger, so a trigger that truncates
+     * perfectly well never got the chance: the header's company and site switchers wanted
+     * 323px inside a 184px row and simply overflowed, putting the site name 5px past a
+     * 375px viewport and giving every page a horizontal scroll.
+     *
+     * Worth recording how long this took to find. The first fix put `min-w-0` on the
+     * trigger button, which was the wrong element and changed nothing. The second added
+     * `flex-1` to the row, which was also correct and also changed nothing. Neither could
+     * work while these wrappers still refused to shrink - the constraint has to reach every
+     * element between the flex container and the text, not just the ends.
+     *
+     * A no-op anywhere a dropdown is not a flex child, which is most of its uses.
+     */
+    <div ref={rootRef} className={cn('relative min-w-0', className)}>
+      <div className="min-w-0" onClick={() => setOpen((o) => !o)}>{trigger(open)}</div>
       {open && (
         <div
           role="menu"

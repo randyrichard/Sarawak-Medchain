@@ -110,6 +110,33 @@ body {
   border-color: var(--line);
 }
 
+/*
+ * Native dropdowns need an opaque background, or the popup is drawn light.
+ *
+ * A <select> whose background is transparent gets the platform's own default when the
+ * browser draws the open list - white, with a blue highlight - even in dark mode, even
+ * with `color-scheme: dark` set. The closed control looks right and the list that drops
+ * out of it does not, which is confusing precisely at the moment somebody is trying to
+ * read it. Reported against the "Manager" dropdown; it affected 29 selects across the app.
+ *
+ * Set here rather than on each one. An element selector loses to any Tailwind `bg-*`
+ * class, so a select that deliberately styles itself still wins, and a select added later
+ * is covered without anybody remembering this rule.
+ */
+select {
+  background-color: var(--surface);
+}
+
+/*
+ * The options too. Some engines paint the list from the option's own background rather
+ * than the control's, which leaves individual rows white inside an otherwise dark popup.
+ */
+select option,
+select optgroup {
+  background-color: var(--surface);
+  color: var(--ink);
+}
+
 /* Focus visibility — accessibility is part of the design language */
 :focus-visible {
   outline: none;

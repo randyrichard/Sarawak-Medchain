@@ -20,8 +20,19 @@ export function Topbar({ menuButton }: { menuButton: ReactNode }) {
     <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-surface px-4 md:px-5">
       {menuButton}
 
-      {/* Scope switchers — company sets permissions, site narrows data */}
-      <div className="flex min-w-0 items-center gap-1.5">
+      {/*
+        Scope switchers — company sets permissions, site narrows data.
+
+        `flex-1` is what actually bounds this row. `min-w-0` on the children lets them
+        shrink, but nothing was asking them to: without flex-1 this container sizes to its
+        content, so on a 375px phone the two switchers wanted 380px together and the second
+        one hung 5px off the edge, giving every page a horizontal scroll.
+
+        An earlier fix added min-w-0 to the buttons and I checked only the first switcher,
+        which was comfortably inside the viewport, and called it fixed. The one that
+        overflowed was the one I did not measure.
+      */}
+      <div className="flex min-w-0 flex-1 items-center gap-1.5">
         <CompanySwitcher />
         <span className="hidden text-muted md:inline">/</span>
         <SiteSwitcher />

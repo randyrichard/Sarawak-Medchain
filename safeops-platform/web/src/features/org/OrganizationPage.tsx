@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Building2, ChevronRight, Plus, Users } from 'lucide-react'
 import { api } from '@/api/client'
 import type { Department, Employee, Site, Team } from '@/api/types'
@@ -14,8 +15,12 @@ import { cn } from '@/lib/cn'
 
 type View = 'structure' | 'people' | 'roles'
 
+/** "1 site", "2 sites". Only regular plurals are needed here. */
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
+
 export function OrganizationPage() {
   const { company } = useOrg()
+  const navigate = useNavigate()
   const [view, setView] = useState<View>('structure')
 
   const tabs: TabItem<View>[] = [
@@ -29,9 +34,25 @@ export function OrganizationPage() {
       <PageHeader
         title="Organization"
         subtitle={company ? `${company.name} — companies hold sites, sites hold departments, departments hold teams` : 'Loading…'}
+        /*
+         * This button had no onClick at all. It rendered, looked like the page's primary
+         * action, and did nothing whatsoever - no dialog, no navigation, no feedback. Found
+         * by clicking it.
+         *
+         * The invitation flow it advertises is real, it just lives on the admin console. So
+         * it now goes there rather than being removed: somebody who reached for "Invite
+         * user" on the Organization page wanted to invite somebody, and sending them to the
+         * screen that does it is more useful than taking the button away.
+         */
         right={
           <Can capability="org:manage">
-            <Button size="sm" icon={<Plus size={14} />}>Invite user</Button>
+            <Button
+              size="sm"
+              icon={<Plus size={14} />}
+              onClick={() => navigate('/admin?s=invitations')}
+            >
+              Invite user
+            </Button>
           </Can>
         }
       />
@@ -71,7 +92,14 @@ function StructureView() {
     <Card>
       <CardHeader
         title={company.name}
-        subtitle={`${sites.length} sites · ${departments?.length ?? '…'} departments · ${teams?.length ?? '…'} teams`}
+        // "1 sites" read as a bug to anyone looking at a single-site workspace - which is
+        // every customer on their first day. The site node below already pluralises
+        // properly; this line simply did not.
+        subtitle={[
+          plural(sites.length, 'site'),
+          departments === null ? '… departments' : plural(departments.length, 'department'),
+          teams === null ? '… teams' : plural(teams.length, 'team'),
+        ].join(' · ')}
         right={<Badge tone="accent" className="capitalize">{company.plan}</Badge>}
       />
       <CardBody>

@@ -309,7 +309,7 @@ export function InvitationsSection() {
             <select
               value={draft.role}
               onChange={(e) => setDraft({ ...draft, role: e.target.value })}
-              className="h-9 w-full rounded-lg border border-line bg-transparent px-2 text-xs text-ink"
+              className="h-9 w-full rounded-lg border border-line bg-surface px-2 text-xs text-ink"
             >
               {roles.map((r) => <option key={r.role} value={r.role}>{r.label}</option>)}
             </select>
