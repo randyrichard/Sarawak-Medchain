@@ -317,8 +317,38 @@ async function main() {
   const email = addresses[0]
   const user = await db.user.findUnique({
     where: { email },
-    select: { id: true, name: true, status: true, platformAdmin: true },
+    select: {
+      id: true, name: true, status: true, platformAdmin: true,
+      // Needed for the separation check below.
+      memberships: { select: { companyId: true } },
+    },
   })
+
+  /*
+   * The other direction of the same rule.
+   *
+   * orgAdminService refuses to invite a platform administrator into a workspace; this
+   * refuses to make a workspace member into a platform administrator. Both are needed,
+   * because the two roles can be acquired in either order and only one of them being
+   * guarded leaves the same person holding both.
+   *
+   * Revoke is deliberately exempt. Revoking always reduces authority, and refusing it would
+   * strand exactly the account this rule exists to clean up - which is how the situation
+   * arose here in the first place.
+   */
+  if (user && !revoke && user.memberships.length > 0) {
+    console.error(
+      `Refusing: ${email} is a member of ${user.memberships.length} customer workspace(s).\n\n`
+      + 'SafeOps staff accounts do not belong to customer workspaces. An account holding both\n'
+      + 'sees the customer console - every company on this deployment, their plans and the\n'
+      + 'revenue figure - inside a customer\'s own workspace, which is one screen-share away\n'
+      + 'from showing one customer the names of the others.\n\n'
+      + 'Use a separate address for platform administration, or remove this account from its\n'
+      + 'workspaces first.',
+    )
+    process.exitCode = 1
+    return
+  }
 
   if (!user) {
     if (revoke) {

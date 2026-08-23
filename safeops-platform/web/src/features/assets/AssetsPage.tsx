@@ -149,7 +149,7 @@ export function AssetsPage() {
             )}
           </>
         )}
-        <div className="ml-auto">
+        <div className="ml-auto min-w-0">
           <Tabs items={viewTabs} value={view} onChange={switchView} className="border-b-0" />
         </div>
       </div>

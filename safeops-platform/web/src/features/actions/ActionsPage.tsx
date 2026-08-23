@@ -212,7 +212,7 @@ export function ActionsPage() {
             <button onClick={() => setBucket('all')}>filter: {bucket.replace('_', ' ')} ✕</button>
           </Badge>
         )}
-        <div className="ml-auto">
+        <div className="ml-auto min-w-0">
           <Tabs
             items={viewTabs.map((t) => {
               const Icon = VIEW_ICON[t.value]

@@ -16,7 +16,23 @@ export function Tabs<T extends string>({
   className?: string
 }) {
   return (
-    <div role="tablist" className={cn('flex items-center gap-1 border-b', className)}>
+    /*
+     * `min-w-0 overflow-x-auto` so a tab row that does not fit scrolls instead of
+     * overflowing.
+     *
+     * This was a bare flex row, so on a 375px phone the later tabs simply rendered past the
+     * edge of a container that clipped them: "Analytics" on the equipment page sat at x=420
+     * in a 333px row with no way to reach it. Not a cosmetic overflow - a tab you cannot
+     * scroll to is a part of the product a phone user cannot open at all.
+     *
+     * `min-w-0` is again the half that matters. The parent rows are flex containers, and a
+     * flex item refuses to shrink below its content without it, so `overflow-x-auto` alone
+     * would have had nothing to scroll within.
+     */
+    <div
+      role="tablist"
+      className={cn('flex min-w-0 items-center gap-1 overflow-x-auto border-b', className)}
+    >
       {items.map((item) => {
         const active = item.value === value
         return (

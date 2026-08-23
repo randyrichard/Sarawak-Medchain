@@ -108,7 +108,7 @@ export function TrainingPage() {
       </div>
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <div className="ml-auto">
+        <div className="ml-auto min-w-0">
           <Tabs items={viewTabs} value={view} onChange={switchView} className={cn('border-b-0')} />
         </div>
       </div>

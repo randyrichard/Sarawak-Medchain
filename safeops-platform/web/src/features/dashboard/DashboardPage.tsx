@@ -9,6 +9,8 @@ import { usePlatformAdmin } from '@/features/platform/usePlatformAdmin'
 import { timeAgo } from '@/lib/time'
 import { useDashboard } from './useDashboard'
 import { DashboardFilters } from './components/DashboardFilters'
+import { GettingStarted } from './components/GettingStarted'
+import { useGettingStarted } from './useGettingStarted'
 import { NeedsAttention } from './components/NeedsAttention'
 import {
   ActionsPanel, EquipmentPanel, IncidentPanel, PermitPanel, ReportPanel, VisitorPanel,
@@ -28,6 +30,7 @@ export function DashboardPage() {
   const { loading: orgLoading, companies } = useOrg()
   const platformAdmin = usePlatformAdmin()
   const { data, loading, error, filters, setFilter, clearFilters, refresh, filtered } = useDashboard()
+  const { progress: gettingStarted, dismiss: dismissGettingStarted } = useGettingStarted()
 
   /*
    * This dashboard is tenant-scoped, and some people belong to no tenant.
@@ -100,6 +103,15 @@ export function DashboardPage() {
         <Alert tone="critical" className="mb-3">
           {error} Nothing below is current until this loads.
         </Alert>
+      )}
+
+      {/*
+        Above the filters and the tiles, because on a workspace with nothing in it yet the
+        tiles are twenty-four zeros and this is the only thing on the page with an answer.
+        It removes itself once the four steps are done.
+      */}
+      {gettingStarted && (
+        <GettingStarted progress={gettingStarted} onDismiss={dismissGettingStarted} />
       )}
 
       <DashboardFilters

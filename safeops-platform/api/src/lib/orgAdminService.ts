@@ -664,6 +664,28 @@ export class OrgAdminService {
     if (existing?.memberships.length) {
       throw new OrgAdminError('validation', 'That person is already in this workspace.')
     }
+    /*
+     * SafeOps staff do not join customer workspaces.
+     *
+     * Nothing prevented this before, and it happened: a platform administrator was invited
+     * into a workspace as an ordinary admin, accepted, and from then on saw the SafeOps
+     * customer console - every company on the deployment, their plans and the revenue
+     * figure - in the sidebar of a customer's own account. Tenant isolation was never
+     * breached, and that is the point: the danger is not a broken boundary but a person
+     * holding both sides of it, one screen-share away from showing customer A the names of
+     * customers B and C.
+     *
+     * Refused at the invitation rather than at acceptance so the administrator finds out
+     * while they are still looking at the form, and refused by a database read rather than
+     * anything the browser sent.
+     */
+    if (existing?.platformAdmin) {
+      throw new OrgAdminError(
+        'validation',
+        'That address belongs to a SafeOps platform administrator, which cannot join a '
+        + 'customer workspace. Use an ordinary work address for this person.',
+      )
+    }
 
     const rawToken = randomBytes(32).toString('base64url')
     const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 86_400_000)
@@ -874,6 +896,29 @@ export class OrgAdminService {
     if (weak) throw new OrgAdminError('validation', weak)
 
     const invite = await this.openInvitation(rawToken)
+
+    /*
+     * Checked again here, not only when the invitation was created.
+     *
+     * Invitations live for seven days, and platform-admin status can be granted inside that
+     * window - so an address that was an ordinary one on Monday can be SafeOps staff by the
+     * time the link is clicked on Thursday. Without this, that link would still hand them a
+     * customer workspace membership. Cheap to check, and the alternative is a rule that
+     * holds only at the moment somebody typed the address.
+     */
+    const target = await this.db.user.findUnique({
+      where: { id: invite.userId },
+      select: { platformAdmin: true },
+    })
+    if (target?.platformAdmin) {
+      throw new OrgAdminError(
+        'forbidden',
+        'This invitation is for a SafeOps platform administrator, which cannot join a '
+        + 'customer workspace. Ask your administrator to invite an ordinary work address.',
+        403,
+      )
+    }
+
     const passwordHash = await hashPassword(input.password)
 
     await this.db.$transaction(async (tx) => {
