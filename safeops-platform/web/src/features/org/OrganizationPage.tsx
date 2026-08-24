@@ -230,10 +230,22 @@ function PeopleView() {
 
 const ALL_ROLES: Role[] = ['ceo', 'admin', 'hse_manager', 'safety_officer', 'supervisor', 'employee']
 
+/*
+ * Read by an administrator deciding what a role can do, so every capability needs a plain
+ * English name. A key that falls through to its raw form ("workforce:view") reads as a bug
+ * on the one screen where somebody is making a permissions decision.
+ */
 const CAPABILITY_LABEL: Record<string, string> = {
   'dashboard:view': 'View dashboard',
   'reports:submit': 'Submit field reports',
-  'incidents:manage': 'Manage incidents',
+  'incidents:view': 'See incidents',
+  'permits:view': 'See permits to work',
+  'equipment:view': 'See equipment register',
+  'visitors:view': 'See visitors on site',
+  'training:view': 'See training records',
+  'workforce:view': 'See workforce and contractor registers',
+  'reports:view': 'See generated reports',
+  'incidents:manage': 'Investigate and close incidents',
   'actions:manage': 'Manage corrective actions',
   'analytics:view': 'View analytics',
   'compliance:manage': 'Manage compliance',

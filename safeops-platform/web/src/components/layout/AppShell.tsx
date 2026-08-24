@@ -36,17 +36,30 @@ const NAV: NavItem[] = [
   // Near-miss capture sits in the nav because under-reporting is driven by friction and
   // forgetting (customer research P1) — it has to be one tap from anywhere.
   { to: '/near-miss', label: 'Report Near Miss', icon: ShieldAlert, capability: 'reports:submit' },
-  { to: '/incidents', label: 'Incidents', icon: ClipboardList, capability: 'incidents:manage', notFor: ['/incidents/board'] },
-  { to: '/incidents/board', label: 'Incident board', icon: LayoutDashboard, capability: 'dashboard:view' },
-  { to: '/actions', label: 'Actions', icon: ListChecks, capability: 'dashboard:view' },
-  { to: '/assets', label: 'Assets', icon: Boxes, capability: 'dashboard:view' },
-  { to: '/permits', label: 'Permits', icon: HardHat, capability: 'dashboard:view' },
-  { to: '/visitors', label: 'Visitors', icon: UserCheck, capability: 'dashboard:view' },
-  { to: '/reports', label: 'Reports', icon: FileText, capability: 'dashboard:view' },
-  { to: '/audits', label: 'Compliance', icon: ShieldCheck, capability: 'dashboard:view' },
-  { to: '/training', label: 'Training', icon: GraduationCap, capability: 'dashboard:view' },
-  { to: '/employees', label: 'Workforce', icon: Users, capability: 'dashboard:view' },
-  { to: '/contractors', label: 'Contractors', icon: HardHat, capability: 'dashboard:view' },
+  /*
+   * Each item asks for the capability it actually needs.
+   *
+   * Thirteen of these were gated on `dashboard:view`, which every role holds, so an
+   * employee was shown the contractor register, the workforce list, audits, training and
+   * tenant-wide reports. Nothing leaked - the API refused every write, and medical detail
+   * is redacted server-side - but the menu promised a product that was not theirs, and a
+   * worker who opens a screen full of things they cannot use stops opening it.
+   *
+   * Incidents deliberately asks for `:view`, not `:manage`. Reporting one is everybody's
+   * job; triaging it is not, and the difference belongs in the page rather than the menu.
+   */
+  { to: '/incidents', label: 'Incidents', icon: ClipboardList, capability: 'incidents:view', notFor: ['/incidents/board'] },
+  { to: '/incidents/board', label: 'Incident board', icon: LayoutDashboard, capability: 'incidents:view' },
+  { to: '/actions', label: 'Actions', icon: ListChecks, capability: 'actions:manage' },
+  { to: '/assets', label: 'Assets', icon: Boxes, capability: 'equipment:view' },
+  { to: '/permits', label: 'Permits', icon: HardHat, capability: 'permits:view' },
+  { to: '/visitors', label: 'Visitors', icon: UserCheck, capability: 'visitors:view' },
+  { to: '/reports', label: 'Reports', icon: FileText, capability: 'reports:view' },
+  { to: '/audits', label: 'Compliance', icon: ShieldCheck, capability: 'compliance:manage' },
+  { to: '/training', label: 'Training', icon: GraduationCap, capability: 'training:view' },
+  { to: '/employees', label: 'Workforce', icon: Users, capability: 'workforce:view' },
+  { to: '/contractors', label: 'Contractors', icon: HardHat, capability: 'workforce:view' },
+  // Everyone gets told what needs them.
   { to: '/notifications', label: 'Notifications', icon: Bell, capability: 'dashboard:view' },
   { to: '/organization', label: 'Organization', icon: Building2, capability: 'org:view' },
   { to: '/admin', label: 'Administration', icon: SlidersHorizontal, capability: 'settings:manage' },

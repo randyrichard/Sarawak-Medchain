@@ -30,8 +30,16 @@ export class ReportError extends Error {
   }
 }
 
-/** Who may schedule, run and read reports. A tenant-wide safety picture is not for workers. */
-const REPORT_ROLES: Role[] = ['admin', 'hse_manager', 'safety_officer']
+/**
+ * Who may schedule, run and read reports. A tenant-wide safety picture is not for workers.
+ *
+ * `ceo` was missing, and its absence contradicted the sentence above. A tenant-wide safety
+ * picture is precisely what an executive is for - "where are our biggest risks, and are we
+ * managing them" is the question the role exists to ask - and they were refused 403 on the
+ * one screen built to answer it while still being able to read the underlying incidents.
+ * Supervisors and employees remain excluded, which is what "not for workers" meant.
+ */
+const REPORT_ROLES: Role[] = ['admin', 'hse_manager', 'safety_officer', 'ceo']
 
 export const REPORT_TYPE_LABEL: Record<ReportType, string> = {
   overdue_actions: 'Overdue corrective actions',
