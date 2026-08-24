@@ -5,6 +5,7 @@ import type { Prisma, PrismaClient, PermitStatus, PermitType, Role } from '@pris
 import { type Caller } from './incidentService.js'
 import {
   GAS_LIMITS, GAS_TEST_REQUIRED, ISOLATION_REQUIRED, PERMIT_CONTROLS, PERMIT_MAX_HOURS,
+  SEPARATE_APPROVER_REQUIRED,
   PERMIT_STATUS_LABEL, PERMIT_TYPES, PERMIT_TYPE_LABEL, gasTestPasses, activationBlockers,
 } from './permitCatalog.js'
 import { equipmentBlockers } from './equipmentService.js'
@@ -507,6 +508,35 @@ export class PermitService {
     }
     if (ISOLATION_REQUIRED.includes(permit.type) && permit.isolations.length === 0) {
       throw new PermitError('validation', 'At least one isolation point must be recorded for this permit type.')
+    }
+
+    /*
+     * Separation of duties, on the types where self-approval is indefensible.
+     *
+     * Compared by name, because that is the only identity this module has: the applicant
+     * field, the signatures and the event log all record `caller.name`, and there is no
+     * user id on any of them. Matching the existing model rather than adding a second,
+     * half-populated notion of identity - and a rename would break it, which is why the
+     * comparison is against both the applicant field and the signature that was actually
+     * captured at submission.
+     *
+     * Two people sharing a name would be blocked from issuing each other's permits. That
+     * is the wrong answer, but it is the safe wrong answer: a false refusal costs somebody
+     * a phone call, a false approval authorises unverified hot work.
+     */
+    if (SEPARATE_APPROVER_REQUIRED.includes(permit.type)) {
+      const applicantSignature = permit.signatures.find((s) => s.role === 'applicant')
+      const sameName = (a?: string | null, b?: string | null) =>
+        !!a && !!b && a.trim().toLowerCase() === b.trim().toLowerCase()
+
+      if (sameName(caller.name, permit.applicant) || sameName(caller.name, applicantSignature?.name)) {
+        throw new PermitError(
+          'validation',
+          `A ${PERMIT_TYPE_LABEL[permit.type] ?? permit.type} permit must be issued by somebody `
+          + 'other than the person who applied for it. Ask another authorised issuer to review '
+          + 'the controls and approve it.',
+        )
+      }
     }
 
     const text = statement?.trim() || 'Controls verified on site. Permit issued.'

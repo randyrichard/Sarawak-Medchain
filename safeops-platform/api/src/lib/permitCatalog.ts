@@ -175,6 +175,26 @@ export const GAS_TEST_REQUIRED: PermitType[] = ['hot_work', 'confined_space', 'l
 /** Types where isolation points must be recorded before issue. */
 export const ISOLATION_REQUIRED: PermitType[] = ['electrical_isolation', 'line_breaking', 'confined_space']
 
+/**
+ * Types where the person who applied may not also issue the permit.
+ *
+ * Separation of duties. A permit to work is an authorisation given *to* someone *by*
+ * somebody else who has independently checked the controls; one person doing both turns
+ * the whole document into a self-declaration, and it is the first thing an auditor looks
+ * for on a hot work permit.
+ *
+ * Deliberately not every type. A supervisor raising and issuing their own cold work or
+ * working-at-height permit is normal practice on a small site, and a rule that blocked it
+ * would be wrong for the customers this product is for - they would work around it by
+ * sharing a login, which is worse than the thing the rule was protecting. So the
+ * restriction covers the three where self-approval is genuinely indefensible: fire risk,
+ * atmosphere risk, and radiation.
+ *
+ * Found by testing rather than by reading: the same account raised a permit and approved
+ * it, and nothing objected.
+ */
+export const SEPARATE_APPROVER_REQUIRED: PermitType[] = ['hot_work', 'confined_space', 'radiography']
+
 /** Gas-test acceptance limits — the same thresholds quoted in the control text. */
 export const GAS_LIMITS = {
   oxygenMin: 19.5,

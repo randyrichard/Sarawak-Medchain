@@ -244,7 +244,13 @@ d('PermitService — integration (real Postgres)', () => {
         .rejects.toMatchObject({ code: 'validation' })
 
       await svc.addGasTest(officer, p.id, PASSING_GAS)
-      const issued = await svc.approve(officer, p.id, '')
+      /*
+       * Issued by the manager, not the officer who submitted it. Hot work and confined
+       * space now require a separate issuing authority - the officer signed as applicant
+       * at submit, so they cannot also issue. This test is about the gas gate; using two
+       * people keeps it about that.
+       */
+      const issued = await svc.approve(manager, p.id, '')
       expect(issued.status).toBe('approved')
     }
   })
@@ -269,7 +275,8 @@ d('PermitService — integration (real Postgres)', () => {
       .rejects.toMatchObject({ code: 'validation' })
 
     await svc.addGasTest(officer, p.id, PASSING_GAS)
-    expect((await svc.approve(officer, p.id, '')).status).toBe('approved')
+    // Manager issues: hot work needs an issuer other than whoever signed as applicant.
+    expect((await svc.approve(manager, p.id, '')).status).toBe('approved')
   })
 
   it('requires a recorded isolation for isolation-dependent types', async () => {

@@ -83,7 +83,7 @@ async function makeWorkspace() {
   const provisioner = await makePlatformAdmin()
   const adminEmail = mail()
   const r = await provisioning.provisionCompany(
-    { userId: provisioner.id, name: 'SafeOps Staff', email: provisioner.email, roles: [] },
+    { userId: provisioner.id, name: 'SafeOps Staff', roles: [] },
     ctx,
     {
       companyName: `Separation ITest ${uniq()}`,
@@ -106,7 +106,6 @@ async function makeWorkspace() {
     caller: {
       userId: admin.id,
       name: admin.name,
-      email: admin.email,
       roles: admin.memberships.map((m) => ({
         companyId: m.companyId, role: m.role, siteIds: m.siteIds,
       })),
@@ -188,11 +187,11 @@ d('SafeOps staff never join a customer workspace', () => {
     const ws = await makeWorkspace()
 
     expect(await provisioning.isPlatformAdmin({
-      userId: staff.id, name: 'staff', email: staff.email, roles: [],
+      userId: staff.id, name: 'staff', roles: [],
     })).toBe(true)
 
     expect(await provisioning.isPlatformAdmin({
-      userId: ws.caller.userId, name: ws.caller.name, email: ws.caller.email, roles: [],
+      userId: ws.caller.userId, name: ws.caller.name, roles: [],
     })).toBe(false)
   })
 
@@ -203,7 +202,7 @@ d('SafeOps staff never join a customer workspace', () => {
      * very next request.
      */
     const staff = await makePlatformAdmin()
-    const caller = { userId: staff.id, name: 'staff', email: staff.email, roles: [] }
+    const caller = { userId: staff.id, name: 'staff', roles: [] }
 
     expect(await provisioning.isPlatformAdmin(caller)).toBe(true)
     await db.user.update({ where: { id: staff.id }, data: { platformAdmin: false } })
@@ -212,7 +211,7 @@ d('SafeOps staff never join a customer workspace', () => {
 
   it('E2. a deactivated platform admin is refused even with the flag still set', async () => {
     const staff = await makePlatformAdmin()
-    const caller = { userId: staff.id, name: 'staff', email: staff.email, roles: [] }
+    const caller = { userId: staff.id, name: 'staff', roles: [] }
     await db.user.update({ where: { id: staff.id }, data: { status: 'deactivated' } })
     expect(await provisioning.isPlatformAdmin(caller)).toBe(false)
   })
