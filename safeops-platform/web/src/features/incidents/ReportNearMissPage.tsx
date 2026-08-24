@@ -214,6 +214,18 @@ export function ReportNearMissPage() {
                 key={t}
                 type="button"
                 onClick={() => toggleTag(t)}
+                /*
+                 * These are toggles, so they have to say whether they are on.
+                 *
+                 * Selection was signalled by colour alone - accent fill for chosen, plain
+                 * for not - which is invisible to a screen reader and unreliable for anyone
+                 * who cannot distinguish the two. `aria-pressed` is the standard way to say
+                 * it, and it costs one attribute.
+                 *
+                 * The period filters on the dashboard already do this; these were the ones
+                 * that did not.
+                 */
+                aria-pressed={tags.includes(t)}
                 className={cn(
                   'min-h-[36px] rounded-full border px-3 py-1.5 text-2xs font-semibold transition-colors',
                   tags.includes(t) ? 'border-transparent bg-accent text-white' : 'text-ink-2 hover:bg-accent-soft',

@@ -99,6 +99,7 @@ export function NewPermitDialog({
               <button
                 key={t}
                 onClick={() => setType(t)}
+                aria-pressed={type === t}
                 className={cn(
                   'rounded-lg border px-2.5 py-2 text-left text-2xs font-semibold transition-colors',
                   type === t ? 'text-ink' : 'text-ink-2 hover:bg-accent-soft/60',

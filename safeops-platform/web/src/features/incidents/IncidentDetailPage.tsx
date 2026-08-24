@@ -49,11 +49,34 @@ export function IncidentDetailPage() {
     }
   }, [id])
 
+  /*
+   * A record that is gone, not an error.
+   *
+   * Reachable more often than it looks: a link to an incident that has since been archived,
+   * a stale bookmark, or - the case that prompted this - somebody whose session expired on
+   * an incident page, signed back in, and was returned to it by the redirect. Landing a
+   * fresh sign-in on one grey line reading "not found" is a poor first thing to see, and
+   * the old version offered a single way out.
+   *
+   * Says why it might have happened, and gives both exits. Deliberately not phrased as a
+   * failure: nothing went wrong, the incident is simply not there any more.
+   */
   if (missing) {
     return (
       <div className="py-16 text-center">
-        <p className="text-sm text-muted">Incident not found or archived.</p>
-        <Link to="/incidents" className="mt-2 inline-block text-sm font-semibold text-accent">Back to incidents</Link>
+        <p className="text-sm font-medium text-ink">This incident is no longer available.</p>
+        <p className="mx-auto mt-1.5 max-w-sm text-xs leading-relaxed text-muted">
+          It may have been archived, or the link may be out of date. Archived incidents stay
+          in the register and can be restored by an administrator.
+        </p>
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+          <Link to="/incidents">
+            <Button variant="secondary" size="sm">Back to incidents</Button>
+          </Link>
+          <Link to="/">
+            <Button variant="ghost" size="sm">Go to dashboard</Button>
+          </Link>
+        </div>
       </div>
     )
   }

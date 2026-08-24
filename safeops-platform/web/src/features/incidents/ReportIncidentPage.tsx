@@ -259,6 +259,7 @@ export function ReportIncidentPage() {
                     <button
                       key={t}
                       onClick={() => patch({ type: t })}
+                      aria-pressed={active}
                       className={cn(
                         'flex flex-col items-start gap-1.5 rounded-xl border p-3 text-left transition-all hover:-translate-y-0.5',
                         active ? 'bg-accent-soft shadow-card' : 'hover:bg-accent-soft/40',

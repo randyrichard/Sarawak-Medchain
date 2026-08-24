@@ -196,6 +196,7 @@ export function IncidentsListPage() {
           <button
             key={chip.value}
             onClick={() => setStatus(chip.value)}
+            aria-pressed={status === chip.value}
             className={cn(
               'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
               status === chip.value ? 'bg-accent-soft text-ink' : 'text-ink-2 hover:text-ink',
