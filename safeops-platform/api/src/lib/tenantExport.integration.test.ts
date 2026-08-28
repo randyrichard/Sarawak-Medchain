@@ -233,6 +233,36 @@ d('workspace export', () => {
     }
   })
 
+  it('declares a column set for every register', async () => {
+    // A register that reached the archive with no declared shape is one that exports blank
+    // when unused - the exact defect this was added to close.
+    const snap = await collectTenantExport(db, ours.companyId)
+    const shapeless = snap.tables.filter((t) => t.columns.length === 0)
+    expect(shapeless.map((t) => t.name)).toEqual([])
+  })
+
+  it('declares exactly the columns the database actually returns', async () => {
+    /*
+     * The load-bearing check for the whole approach. The columns come from Prisma's
+     * generated datamodel while the rows come from a query, and nothing forces those two to
+     * agree. A model renamed in the table list, or a field the datamodel reports but
+     * `findMany` does not return, would give an empty register a header that does not match
+     * the header the same register gets once it has data - two shapes for one file.
+     *
+     * Checked against every populated register rather than a sample, because the one that
+     * drifts will be whichever nobody thought to look at.
+     */
+    const snap = await collectTenantExport(db, ours.companyId)
+    const populated = snap.tables.filter((t) => t.rows.length > 0)
+    expect(populated.length).toBeGreaterThan(3)
+
+    for (const t of populated) {
+      const actual = Object.keys(t.rows[0]).sort()
+      const declared = [...t.columns].sort()
+      expect({ table: t.name, columns: declared }).toEqual({ table: t.name, columns: actual })
+    }
+  })
+
   // ── Nothing belonging to anybody else ──────────────────────────────────────
 
   it('contains no row from another workspace', async () => {

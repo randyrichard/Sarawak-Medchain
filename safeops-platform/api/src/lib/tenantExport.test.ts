@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  toCsv, buildReadme, safeEntryName, uniqueEntryName, type TenantExport,
+  toCsv, buildReadme, columnsOf, safeEntryName, uniqueEntryName, type TenantExport,
 } from './tenantExport.js'
 
 /**
@@ -34,9 +34,41 @@ describe('toCsv — shape', () => {
     expect(csv.startsWith('﻿')).toBe(true)
   })
 
-  it('returns just a BOM for an empty table rather than an empty file', () => {
-    // A zero-byte file reads as a broken export; a BOM-only file opens as an empty sheet.
+  it('returns just a BOM when there is nothing at all to describe', () => {
+    // No rows and no declared shape. Nothing can be said about the columns, so the file is
+    // a BOM and nothing else. Registers never hit this - see the block below.
     expect(toCsv([])).toBe('﻿')
+  })
+
+  it('writes a header for an empty register when the shape is declared', () => {
+    /*
+     * The find that prompted this. `visitors.csv` for a workspace that never logged a
+     * visitor came out as three bytes of BOM - a file that opens completely blank, where
+     * the customer cannot tell "we never used this" from "the export is broken". Twenty-two
+     * of thirty-nine registers looked like that for a small tenant.
+     */
+    const csv = toCsv([], ['id', 'name', 'signedInAt'])
+    expect(rows(csv)).toEqual(['id,name,signedInAt'])
+    expect(csv.startsWith('﻿')).toBe(true)
+  })
+
+  it('puts declared columns in their declared order, not the data’s order', () => {
+    // Order used to come from whatever key order the first row happened to have, so two
+    // exports of the same workspace could differ column-wise. Now it is the schema's order.
+    const csv = toCsv([{ severity: 'Minor', id: 'a', title: 'Slip' }], ['id', 'title', 'severity'])
+    expect(rows(csv)[0]).toBe('id,title,severity')
+    expect(rows(csv)[1]).toBe('a,Slip,Minor')
+  })
+
+  it('still carries a column the declaration missed rather than dropping it', () => {
+    /*
+     * Belt and braces. A column absent from the header does not merely lose itself - every
+     * value after it shifts one place left, which is the kind of corruption nobody notices
+     * until they are relying on the file.
+     */
+    const csv = toCsv([{ id: 'a', surprise: 'kept' }], ['id'])
+    expect(rows(csv)[0]).toBe('id,surprise')
+    expect(rows(csv)[1]).toBe('a,kept')
   })
 
   it('uses the union of keys, not the first row', () => {
@@ -111,6 +143,66 @@ describe('toCsv — formula injection', () => {
   it('does not mistake a negative number for a formula lead in a way that loses it', () => {
     // "-5" trips the guard because a cell can start "-2+3"; the value must still be readable.
     expect(rows(toCsv([{ delta: -5 }]))[1]).toContain('-5')
+  })
+})
+
+describe('columnsOf', () => {
+  /*
+   * Read from Prisma's generated datamodel rather than written out by hand. Thirty-nine
+   * hand-maintained column lists would be thirty-nine things to forget when a field is
+   * added, and the failure is silent - the export keeps working and quietly stops carrying
+   * the new column.
+   */
+  it('names the scalar columns of a real model', () => {
+    const cols = columnsOf('Incident')
+    expect(cols).toContain('id')
+    expect(cols).toContain('companyId')
+    expect(cols).toContain('title')
+    expect(cols).toContain('occurredAt')
+  })
+
+  it('includes enum columns, which are data', () => {
+    const cols = columnsOf('Incident')
+    expect(cols).toContain('severity')
+    expect(cols).toContain('stage')
+  })
+
+  it('excludes relation fields, which findMany does not return', () => {
+    // A header listing `events` or `company` would be a column that is always empty.
+    const cols = columnsOf('Incident')
+    expect(cols).not.toContain('events')
+    expect(cols).not.toContain('comments')
+    expect(cols).not.toContain('company')
+    expect(cols).not.toContain('site')
+  })
+
+  it('covers the child registers a restore point drops', () => {
+    expect(columnsOf('PermitControl')).toEqual(
+      expect.arrayContaining(['id', 'permitId', 'label', 'required', 'confirmed', 'confirmedBy']),
+    )
+    expect(columnsOf('PermitSignature')).toEqual(
+      expect.arrayContaining(['id', 'permitId', 'role', 'name', 'signedAt', 'statement']),
+    )
+    expect(columnsOf('IncidentEvent')).toEqual(
+      expect.arrayContaining(['id', 'incidentId', 'action', 'actor', 'at']),
+    )
+  })
+
+  it('carries the medical columns the readme warns about', () => {
+    // If these ever stop being exported the warning becomes a lie, and if they stop being
+    // *present* the customer has lost data. Either way this should fail.
+    const cols = columnsOf('Employee')
+    expect(cols).toContain('medicalExpiry')
+    expect(cols).toContain('medicalNotes')
+  })
+
+  it('returns nothing for a model that does not exist, without throwing', () => {
+    expect(() => columnsOf('NoSuchModel')).not.toThrow()
+    expect(columnsOf('NoSuchModel')).toEqual([])
+  })
+
+  it('is stable across calls', () => {
+    expect(columnsOf('Permit')).toEqual(columnsOf('Permit'))
   })
 })
 
@@ -206,8 +298,8 @@ describe('buildReadme', () => {
     companyName: 'Sarawak Pilot Energy',
     takenAt: new Date('2026-08-28T01:00:00.000Z'),
     tables: [
-      { name: 'incidents', rows: [{ id: 'a' }, { id: 'b' }] },
-      { name: 'permit-controls', rows: [{ id: 'c' }] },
+      { name: 'incidents', rows: [{ id: 'a' }, { id: 'b' }], columns: ['id'] },
+      { name: 'permit-controls', rows: [{ id: 'c' }], columns: ['id'] },
     ],
     files: [{ storedName: 'x1', originalName: 'burn.jpg', folder: 'incident-evidence' }],
     ...over,

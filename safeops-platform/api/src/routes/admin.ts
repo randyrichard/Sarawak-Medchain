@@ -8,7 +8,9 @@ import { AdminError, AdminService, type AdminContext } from '../lib/adminService
 import type { Caller } from '../lib/incidentService.js'
 import { RBAC_ACTIONS, RBAC_MODULES, WEBHOOK_EVENTS } from '../lib/adminCatalog.js'
 import { requireAuth } from '../middleware/requireAuth.js'
-import { buildReadme, safeEntryName, toCsv, uniqueEntryName } from '../lib/tenantExport.js'
+import {
+  buildReadme, MANIFEST_COLUMNS, safeEntryName, toCsv, uniqueEntryName,
+} from '../lib/tenantExport.js'
 import { env } from '../env.js'
 
 const svc = new AdminService(prisma)
@@ -672,7 +674,7 @@ adminRouter.get('/export', async (req, res, next) => {
     archive.pipe(res)
 
     for (const table of snapshot.tables) {
-      archive.append(toCsv(table.rows), { name: `tables/${table.name}.csv` })
+      archive.append(toCsv(table.rows, table.columns), { name: `tables/${table.name}.csv` })
     }
 
     /*
@@ -708,7 +710,9 @@ adminRouter.get('/export', async (req, res, next) => {
       if (present) archive.file(source, { name: `files/${entry}` })
     }
 
-    archive.append(toCsv(manifest), { name: 'files/manifest.csv' })
+    // Declared too: a workspace with no uploads still gets a manifest that explains itself
+    // rather than an empty file on the one document whose job is describing the others.
+    archive.append(toCsv(manifest, [...MANIFEST_COLUMNS]), { name: 'files/manifest.csv' })
     archive.append(buildReadme(snapshot), { name: 'readme.txt' })
 
     await archive.finalize()

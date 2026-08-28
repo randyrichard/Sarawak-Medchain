@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client'
 import type { PrismaClient } from '@prisma/client'
 
 /**
@@ -64,29 +65,80 @@ function cell(value: unknown): string {
  * The BOM is not decoration. Without it Excel on Windows reads the file as the system code
  * page, and every Malay or Chinese name in the workforce register comes back mojibake — on
  * the one artefact whose entire purpose is being readable somewhere else.
+ *
+ * `columns` is the register's declared shape. Passing it does two things a row-derived
+ * header cannot:
+ *
+ * An empty register still gets a header. Without it, a workspace that has never logged a
+ * visitor exported `visitors.csv` as three bytes of BOM and nothing else — a file that opens
+ * blank, where the customer cannot tell "we never used this" from "the export is broken".
+ * Twenty-two of thirty-nine registers came out that way for a small tenant.
+ *
+ * And the column order stops depending on data. Derived from the first row, the order came
+ * from whatever Prisma happened to return; declared, it is the schema's order every time, so
+ * two exports of the same workspace diff cleanly.
  */
-export function toCsv(rows: Record<string, unknown>[]): string {
-  if (rows.length === 0) return '﻿'
-
-  // Union rather than the first row's keys: a nullable JSON column can be absent from one
-  // row and present in the next, and a header short by a column silently shifts the data.
-  const columns: string[] = []
+export function toCsv(rows: Record<string, unknown>[], columns: string[] = []): string {
   const seen = new Set<string>()
-  for (const row of rows) {
-    for (const key of Object.keys(row)) {
-      if (!seen.has(key)) {
-        seen.add(key)
-        columns.push(key)
-      }
+  const cols: string[] = []
+  const add = (key: string) => {
+    if (!seen.has(key)) {
+      seen.add(key)
+      cols.push(key)
     }
   }
 
-  const lines = [columns.map(cell).join(',')]
+  for (const c of columns) add(c)
+  /*
+   * Then anything the rows carry that the declaration did not. Belt and braces: a column
+   * missing from the header does not just lose itself, it shifts every value after it one
+   * place left, and that is the kind of corruption nobody notices until they rely on it.
+   */
+  for (const row of rows) for (const key of Object.keys(row)) add(key)
+
+  // Nothing declared and nothing to infer from — a genuinely shapeless table.
+  if (cols.length === 0) return '﻿'
+
+  const lines = [cols.map(cell).join(',')]
   for (const row of rows) {
-    lines.push(columns.map((c) => cell(row[c])).join(','))
+    lines.push(cols.map((c) => cell(row[c])).join(','))
   }
   return `﻿${lines.join('\r\n')}\r\n`
 }
+
+// ─── Register shapes ─────────────────────────────────────────────────────────
+
+/**
+ * The column names of a Prisma model, in schema order.
+ *
+ * Read from the generated datamodel rather than written out by hand. Thirty-nine registers
+ * with hand-maintained column lists would be thirty-nine lists to forget when a field is
+ * added, and the failure is silent: the export keeps working and quietly stops carrying the
+ * new column.
+ *
+ * Scalars and enums only. Relation fields are navigation, not data — `findMany` without a
+ * `select` does not return them, so including them would produce a header with columns that
+ * are always empty.
+ */
+const columnCache = new Map<string, string[]>()
+
+export function columnsOf(model: string): string[] {
+  const hit = columnCache.get(model)
+  if (hit) return hit
+
+  const found = Prisma.dmmf.datamodel.models.find((m) => m.name === model)
+  const cols = found
+    ? found.fields.filter((f) => f.kind === 'scalar' || f.kind === 'enum').map((f) => f.name)
+    : []
+
+  columnCache.set(model, cols)
+  return cols
+}
+
+/** The manifest is assembled here rather than read from a table, so it declares its own. */
+export const MANIFEST_COLUMNS = [
+  'archivePath', 'storedName', 'originalName', 'belongsTo', 'present',
+] as const
 
 // ─── Shape ───────────────────────────────────────────────────────────────────
 
@@ -94,6 +146,8 @@ export interface ExportTable {
   /** Becomes `<name>.csv` in the archive. */
   name: string
   rows: Record<string, unknown>[]
+  /** The register's declared shape, so an unused one still exports a header. */
+  columns: string[]
 }
 
 export interface ExportFile {
@@ -199,55 +253,63 @@ export async function collectTenantExport(
     db.adminAuditEntry.findMany({ where: own }),
   ])
 
+  /*
+   * Filename, Prisma model, rows. The model is what gives an unused register its header —
+   * see `columnsOf`. Keeping it beside the rows means the two cannot drift apart, which they
+   * would immediately if the column lists lived in a separate map.
+   */
+  const table = (name: string, model: string, rows: unknown[]): ExportTable =>
+    ({ name, rows: rows as Record<string, unknown>[], columns: columnsOf(model) })
+
   const tables: ExportTable[] = [
-    { name: 'sites', rows: sites },
+    table('sites', 'Site', sites),
 
-    { name: 'incidents', rows: incidents },
-    { name: 'incident-timeline', rows: incidentEvents },
-    { name: 'incident-comments', rows: incidentComments },
-    { name: 'incident-attachments', rows: incidentAttachments },
-    { name: 'incident-equipment', rows: incidentEquipment },
-    { name: 'incident-people', rows: incidentPeople },
-    { name: 'incident-links', rows: incidentLinks },
-    { name: 'corrective-actions', rows: actions },
+    table('incidents', 'Incident', incidents),
+    table('incident-timeline', 'IncidentEvent', incidentEvents),
+    table('incident-comments', 'IncidentComment', incidentComments),
+    table('incident-attachments', 'IncidentAttachment', incidentAttachments),
+    table('incident-equipment', 'IncidentEquipment', incidentEquipment),
+    table('incident-people', 'IncidentPerson', incidentPeople),
+    table('incident-links', 'IncidentLink', incidentLinks),
+    table('corrective-actions', 'CorrectiveAction', actions),
 
-    { name: 'permits', rows: permits },
-    { name: 'permit-controls', rows: permitControls },
-    { name: 'permit-isolations', rows: permitIsolations },
-    { name: 'permit-gas-tests', rows: permitGasTests },
-    { name: 'permit-signatures', rows: permitSignatures },
-    { name: 'permit-timeline', rows: permitEvents },
-    { name: 'permit-attendees', rows: permitAttendees },
-    { name: 'permit-jsa-steps', rows: permitJsaSteps },
-    { name: 'permit-equipment', rows: permitEquipment },
-    { name: 'permit-extensions', rows: permitExtensions },
-    { name: 'permit-attachments', rows: permitAttachments },
+    table('permits', 'Permit', permits),
+    table('permit-controls', 'PermitControl', permitControls),
+    table('permit-isolations', 'IsolationPoint', permitIsolations),
+    table('permit-gas-tests', 'GasTest', permitGasTests),
+    table('permit-signatures', 'PermitSignature', permitSignatures),
+    table('permit-timeline', 'PermitEvent', permitEvents),
+    table('permit-attendees', 'PermitAttendee', permitAttendees),
+    table('permit-jsa-steps', 'PermitJsaStep', permitJsaSteps),
+    table('permit-equipment', 'PermitEquipment', permitEquipment),
+    table('permit-extensions', 'PermitExtension', permitExtensions),
+    table('permit-attachments', 'PermitAttachment', permitAttachments),
 
-    { name: 'assets', rows: assets },
-    { name: 'asset-documents', rows: assetDocuments },
-    { name: 'calibrations', rows: calibrations },
-    { name: 'inspections', rows: inspections },
+    table('assets', 'Asset', assets),
+    table('asset-documents', 'AssetDocument', assetDocuments),
+    table('calibrations', 'Calibration', calibrations),
+    table('inspections', 'Inspection', inspections),
 
-    { name: 'audits', rows: audits },
-    { name: 'compliance-obligations', rows: obligations },
-    { name: 'compliance-documents', rows: complianceDocuments },
+    table('audits', 'Audit', audits),
+    table('compliance-obligations', 'ComplianceObligation', obligations),
+    table('compliance-documents', 'ComplianceDocument', complianceDocuments),
 
-    { name: 'employees', rows: employees },
-    { name: 'ppe-issues', rows: ppeIssues },
-    { name: 'training-courses', rows: courses },
-    { name: 'training-sessions', rows: sessions },
-    { name: 'certificates', rows: certificates },
+    table('employees', 'Employee', employees),
+    table('ppe-issues', 'PpeIssue', ppeIssues),
+    table('training-courses', 'TrainingCourse', courses),
+    table('training-sessions', 'TrainingSession', sessions),
+    table('certificates', 'Certificate', certificates),
 
-    { name: 'contractor-companies', rows: contractorCompanies },
-    { name: 'contractor-workers', rows: contractorWorkers },
+    table('contractor-companies', 'ContractorCompany', contractorCompanies),
+    table('contractor-workers', 'ContractorWorker', contractorWorkers),
 
-    { name: 'visitors', rows: visitors },
-    { name: 'visitor-documents', rows: visitorDocuments },
-    { name: 'visitor-blacklist', rows: visitorBlacklist },
+    table('visitors', 'Visitor', visitors),
+    table('visitor-documents', 'VisitorDocument', visitorDocuments),
+    table('visitor-blacklist', 'VisitorBlacklist', visitorBlacklist),
 
-    { name: 'report-runs', rows: reportRuns },
-    { name: 'admin-audit-trail', rows: adminAudit },
-  ] as ExportTable[]
+    table('report-runs', 'ReportRun', reportRuns),
+    table('admin-audit-trail', 'AdminAuditEntry', adminAudit),
+  ]
 
   /*
    * The uploaded evidence.
@@ -398,6 +460,12 @@ ${'-'.repeat(60)}
 tables/     One CSV per register. Open them in Excel, LibreOffice, Numbers, or
             load them into any database. They are UTF-8 with a byte-order mark,
             comma separated, with CRLF line endings.
+
+            A register you never used is still here, as a file containing only
+            its column headings. That is not an error - it is how this export
+            says "nothing was recorded here", as distinct from a file that is
+            missing because something went wrong. The row counts below tell you
+            which is which.
 
 files/      Every document and photograph uploaded to the workspace, sorted
             into folders by what it belongs to. The matching row in the CSVs
