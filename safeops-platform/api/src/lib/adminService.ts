@@ -11,6 +11,7 @@ import {
 } from './adminCatalog.js'
 import { generateResetToken, hashResetToken, resetTokenExpiry, RESET_TOKEN_TTL_MIN } from './tokens.js'
 import { sendPasswordResetEmail } from './email/passwordResetDelivery.js'
+import { collectTenantExport } from './tenantExport.js'
 
 export class AdminError extends Error {
   constructor(public code: string, message: string, public status = 400) {
@@ -1431,6 +1432,39 @@ export class AdminService {
       },
       snapshot: json,
     }
+  }
+
+  /**
+   * The customer's complete data, on their way out.
+   *
+   * Distinct from a backup in every way that matters. A backup is a snapshot we hold, in a
+   * format only this application understands, stored inside the database it protects. This
+   * is a copy the customer keeps, in CSV, readable with no account and no vendor — including
+   * the child records and the uploaded files a backup leaves behind.
+   *
+   * It answers the question a one-person supplier always gets asked: what happens to our
+   * records if you disappear. A promise to help them migrate is not an answer, because the
+   * promise fails in precisely the scenario being asked about.
+   *
+   * Administrator only, and written to the audit trail. Exporting the workforce register
+   * means exporting health data, so "who took a full copy, and when" has to be answerable
+   * afterwards — that is the same standard the rest of this console is held to.
+   */
+  async exportWorkspace(caller: Caller, companyId: string, ctx: AdminContext) {
+    this.requireAdmin(caller, companyId)
+
+    const snapshot = await collectTenantExport(this.db, companyId)
+
+    const rowCount = snapshot.tables.reduce((n, t) => n + t.rows.length, 0)
+    await this.log(
+      caller, companyId, ctx,
+      'Exported workspace data', 'system',
+      `${snapshot.tables.length} tables`,
+      undefined,
+      `${rowCount} rows, ${snapshot.files.length} files`,
+    )
+
+    return snapshot
   }
 
   /**

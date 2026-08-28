@@ -2,7 +2,7 @@
   "name": "@safeops/api",
   "version": "1.0.0",
   "private": true,
-  "description": "SafeOps API \u2014 authentication and authorization service",
+  "description": "SafeOps API — authentication and authorization service",
   "type": "module",
   "main": "dist/server.js",
   "scripts": {
@@ -30,9 +30,11 @@
   "dependencies": {
     "@node-rs/argon2": "^2.0.2",
     "@prisma/client": "^5.22.0",
+    "@types/archiver": "^6.0.4",
     "@types/multer": "^2.2.0",
     "@types/nodemailer": "^8.0.1",
     "@types/pdfkit": "^0.17.6",
+    "archiver": "^7.0.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",

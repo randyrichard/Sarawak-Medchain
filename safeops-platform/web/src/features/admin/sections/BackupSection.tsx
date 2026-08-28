@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Archive, Database, DatabaseBackup, History, RotateCcw, Save } from 'lucide-react'
+import { Archive, Database, DatabaseBackup, Download, History, RotateCcw, Save } from 'lucide-react'
 import { api } from '@/api/client'
+import { isBackendConfigured } from '@/api/authApi'
 import { useOrg } from '@/features/org/OrgContext'
 import { ApiError } from '@/api/types'
 import type { Backup, RetentionSettings } from '@/api/admin'
@@ -22,6 +23,9 @@ export function BackupSection() {
   const [error, setError] = useState<string | null>(null)
   const [restoreFor, setRestoreFor] = useState<Backup | null>(null)
   const [savingRetention, setSavingRetention] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  // The archive streams files from the server's disk, which the static demo does not have.
+  const serverBacked = isBackendConfigured()
 
   const load = () => { api.adminListBackups(companyId).then(setBackups); api.adminGetRetention(companyId).then(setRetention) }
   useEffect(() => { load() }, [])
@@ -37,6 +41,33 @@ export function BackupSection() {
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Backup failed.')
     } finally { setBusy(false) }
+  }
+
+  /**
+   * Download the whole workspace.
+   *
+   * The archive is streamed and can run to hundreds of megabytes once photographs are in it,
+   * so the button stays in its loading state until the last byte has arrived. A control that
+   * returned to idle while the download was still running would invite a second click and a
+   * second full export.
+   */
+  const exportWorkspace = async () => {
+    setExporting(true); setError(null)
+    try {
+      const archive = await api.adminExportWorkspace(companyId)
+      const stamp = new Date().toISOString().slice(0, 10)
+      const slug = (company?.name ?? 'workspace').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+      const url = URL.createObjectURL(archive)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `safeops-${slug || 'workspace'}-${stamp}.zip`
+      a.click()
+      URL.revokeObjectURL(url)
+      setFlash('Export downloaded. It opens in Excel and needs no SafeOps account to read.')
+      setTimeout(() => setFlash(null), 5000)
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Could not export the workspace.')
+    } finally { setExporting(false) }
   }
 
   const restore = async () => {
@@ -63,6 +94,46 @@ export function BackupSection() {
     <div className="space-y-4">
       {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
       {flash && <Alert tone="success" onDismiss={() => setFlash(null)}>{flash}</Alert>}
+
+      {/*
+        Deliberately the first thing on this screen, and deliberately separate from Backups.
+
+        A backup is a snapshot we hold, in a format only this application understands, stored
+        inside the database it protects. This is a copy the customer keeps and can read
+        without us. They answer different questions and putting them in one card would blur
+        the only one that matters to somebody deciding whether to trust a small supplier.
+      */}
+      {serverBacked && (
+        <Card>
+          <CardHeader
+            title="Export your data"
+            subtitle="Everything in this workspace, in a format you can read without SafeOps"
+            right={
+              <Button size="sm" icon={<Download size={13} />} loading={exporting} onClick={() => void exportWorkspace()}>
+                Export everything
+              </Button>
+            }
+          />
+          <CardBody>
+            <p className="text-sm text-ink-2">
+              A ZIP containing one spreadsheet per register — incidents, permits and the
+              precautions signed off on them, actions, assets, inspections, training,
+              contractors and visitors — together with every photograph and document uploaded
+              to this workspace, and a readme explaining how the records join up.
+            </p>
+            <p className="mt-2 text-2xs text-muted">
+              Opens in Excel, LibreOffice or Numbers. No account or licence is needed to read
+              it. Unlike a restore point, this includes incident timelines, permit controls,
+              gas tests and signatures.
+            </p>
+            <p className="mt-2 text-2xs text-muted">
+              The workforce register contains health information, which is sensitive personal
+              data under the PDPA. The downloaded file has no access control of its own — store
+              it accordingly. Administrators only, and every export is recorded in the audit log.
+            </p>
+          </CardBody>
+        </Card>
+      )}
 
       <Card>
         <CardHeader title="Backups" subtitle="Point-in-time snapshots of the entire tenant" right={<Button size="sm" icon={<Save size={13} />} loading={busy} onClick={() => void createBackup()}>Create backup</Button>} />

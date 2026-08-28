@@ -1,4 +1,4 @@
-import { request, qs } from './http'
+import { request, qs, blob } from './http'
 import { drain } from './paging'
 import type {
   AdminUser, ApiKey, AuditEntry, AuditFilters, Backup, BusinessUnit, Connector, Holiday,
@@ -353,6 +353,17 @@ export const adminApi = {
     return request<{ restored: number; skipped: number }>(`/admin/backups/${id}/restore`, {
       method: 'POST', body: JSON.stringify({ companyId }),
     })
+  },
+
+  /**
+   * The whole workspace as a zip — CSV per register, plus every uploaded file.
+   *
+   * A blob rather than JSON: the server streams the archive as it builds it, so there is no
+   * point at which the whole thing exists as a parseable body. `blob()` carries the bearer
+   * token, which a plain download link cannot.
+   */
+  async exportWorkspace(companyId: string) {
+    return blob(`/admin/export?${qs({ companyId })}`)
   },
 }
 

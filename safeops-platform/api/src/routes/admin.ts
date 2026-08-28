@@ -1,10 +1,15 @@
 import { Router } from 'express'
 import { z } from 'zod'
+import { existsSync } from 'node:fs'
+import { join, resolve } from 'node:path'
+import archiver from 'archiver'
 import { prisma } from '../lib/prisma.js'
 import { AdminError, AdminService, type AdminContext } from '../lib/adminService.js'
 import type { Caller } from '../lib/incidentService.js'
 import { RBAC_ACTIONS, RBAC_MODULES, WEBHOOK_EVENTS } from '../lib/adminCatalog.js'
 import { requireAuth } from '../middleware/requireAuth.js'
+import { buildReadme, safeEntryName, toCsv, uniqueEntryName } from '../lib/tenantExport.js'
+import { env } from '../env.js'
 
 const svc = new AdminService(prisma)
 export const adminRouter = Router()
@@ -616,6 +621,101 @@ adminRouter.post('/backups/:id/restore', async (req, res, next) => {
     if (!parsed.success) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
     res.json(await svc.restoreBackup(callerOf(req), parsed.data.companyId, ctxOf(req), req.params.id))
   } catch (e) {
+    next(e)
+  }
+})
+
+// ── Take your data and go ────────────────────────────────────────────────────
+
+/**
+ * The whole workspace as a zip: a CSV per register, every uploaded file, and a readme.
+ *
+ * Deliberately a plain authenticated GET rather than a job with a polling endpoint. A
+ * customer asking "can I get my data out" should be able to satisfy themselves in one click
+ * during a demo — a background job that emails a link later does not answer the question in
+ * the room, which is where it gets asked.
+ *
+ * Authorisation and collection both happen before a single byte is written, because once the
+ * response has started streaming the status code is already sent and an error can no longer
+ * be reported as one. After that point a failure can only truncate the archive, so the
+ * manifest records what was expected and the readme explains how to check.
+ */
+adminRouter.get('/export', async (req, res, next) => {
+  try {
+    const companyId = company(req)
+    if (!companyId) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
+
+    // Throws before anything is streamed if the caller is not an administrator here.
+    const snapshot = await svc.exportWorkspace(callerOf(req), companyId, ctxOf(req))
+
+    const stamp = snapshot.takenAt.toISOString().slice(0, 10)
+    const slug = snapshot.companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    const fileName = `safeops-${slug || 'workspace'}-${stamp}.zip`
+
+    res.setHeader('Content-Type', 'application/zip')
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileName)}"`)
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    // The archive is built as it is sent, so the length is not known up front.
+    res.setHeader('Cache-Control', 'no-store')
+
+    const archive = archiver('zip', { zlib: { level: 9 } })
+    archive.on('warning', (err) => console.warn('[export] %s', err.message))
+    archive.on('error', (err) => {
+      console.error('[export] failed mid-stream: %s', err.message)
+      res.destroy(err)
+    })
+    // A client that closes the tab mid-download should not leave the archiver reading files.
+    res.on('close', () => {
+      if (!res.writableFinished) archive.abort()
+    })
+
+    archive.pipe(res)
+
+    for (const table of snapshot.tables) {
+      archive.append(toCsv(table.rows), { name: `tables/${table.name}.csv` })
+    }
+
+    /*
+     * Files, with a manifest.
+     *
+     * Two attachments can share an original filename, so entry names are de-duplicated and
+     * the manifest is what ties an entry back to its database row. Missing files are listed
+     * rather than quietly skipped: a customer needs to know that a record claims evidence
+     * the storage no longer holds, and finding that out during a DOSH investigation instead
+     * of on the day they export would be considerably worse.
+     */
+    const uploadDir = resolve(process.cwd(), env.UPLOAD_DIR)
+    const used = new Set<string>()
+    const manifest: Record<string, unknown>[] = []
+
+    for (const file of snapshot.files) {
+      const source = join(uploadDir, file.storedName)
+      const present = existsSync(source)
+
+      const entry = uniqueEntryName(
+        `${file.folder}/${safeEntryName(file.originalName, file.storedName)}`,
+        used,
+      )
+
+      manifest.push({
+        archivePath: present ? `files/${entry}` : '',
+        storedName: file.storedName,
+        originalName: file.originalName,
+        belongsTo: file.folder,
+        present: present ? 'yes' : 'MISSING FROM STORAGE',
+      })
+
+      if (present) archive.file(source, { name: `files/${entry}` })
+    }
+
+    archive.append(toCsv(manifest), { name: 'files/manifest.csv' })
+    archive.append(buildReadme(snapshot), { name: 'readme.txt' })
+
+    await archive.finalize()
+  } catch (e) {
+    // Only reachable while the response is still headers-only; once streaming has begun the
+    // archiver's own error handler owns the failure.
+    if (res.headersSent) return
     next(e)
   }
 })

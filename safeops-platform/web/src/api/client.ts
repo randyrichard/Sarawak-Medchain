@@ -215,6 +215,7 @@ export interface ApiClient {
   adminUpdateRetention(companyId: string, patch: Partial<RetentionSettings>, actor: AdminActor): Promise<RetentionSettings>
   adminListBackups(companyId: string): Promise<Backup[]>
   adminCreateBackup(companyId: string, actor: AdminActor, note: string): Promise<{ backup: Backup; snapshot: string }>
+  adminExportWorkspace(companyId: string): Promise<Blob>
   adminRestoreBackup(companyId: string, id: string, actor: AdminActor): Promise<void>
 
   // ── permits to work ────────────────────────────────────────────────────────
@@ -1435,6 +1436,19 @@ class MockApiClient implements ApiClient {
       return
     }
     await delay(LATENCY()); this.admin.restoreBackup(id, actor)
+  }
+
+  /**
+   * Take the whole workspace away as a zip.
+   *
+   * Server-only, and the caller checks that before offering it — the archive includes files
+   * from disk, which the static demo has none of. A mock that produced a convincing-looking
+   * but empty export would be worse than no button, because the one thing this feature has
+   * to establish is that the export is real.
+   */
+  async adminExportWorkspace(companyId: string) {
+    if (SERVER_ADMIN) return adminApi.exportWorkspace(companyId)
+    throw new Error('Exporting your data needs the SafeOps server; this is the static demo.')
   }
 
   // ── permits to work ────────────────────────────────────────────────────────
