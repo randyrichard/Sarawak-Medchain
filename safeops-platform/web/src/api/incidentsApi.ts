@@ -1,4 +1,5 @@
 import { API_BASE_URL, authApi, getAccessToken } from './authApi'
+import { explainNetworkFailure } from './networkError'
 import { ApiError } from './types'
 import type {
   FiveWhys, Incident, IncidentAction, IncidentAttachment, IncidentComment,
@@ -220,9 +221,12 @@ async function request<T>(path: string, init: RequestInit = {}, retry = true): P
       },
     })
   } catch {
-    // Network-level failure — distinguishable from a server rejection so the UI can
-    // offer "retry" rather than showing a validation-style message.
-    throw new ApiError('network', 'Cannot reach the server. Check your connection and try again.')
+    /*
+     * Network-level failure. Same explanation as the shared helper in http.ts — this module
+     * carries its own copy of that request logic from the first vertical, and the two must
+     * not drift on what they tell somebody when a request cannot be made at all.
+     */
+    throw new ApiError('network', explainNetworkFailure())
   }
 
   if (res.status === 401 && retry) {

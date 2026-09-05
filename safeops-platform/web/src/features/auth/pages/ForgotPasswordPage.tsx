@@ -2,6 +2,8 @@ import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, MailCheck, Send } from 'lucide-react'
 import { authApi } from '@/api/authApi'
+import { explainNetworkFailure } from '@/api/networkError'
+import { ApiError } from '@/api/types'
 import { Alert, Button, Input } from '@/components/ui'
 import { AuthLayout } from './AuthLayout'
 
@@ -37,13 +39,18 @@ export function ForgotPasswordPage() {
     try {
       await authApi.requestPasswordReset(email.trim())
       setSent(true)
-    } catch {
+    } catch (e) {
       /*
-       * Only reachable when the request itself could not be made - offline, or the rate
-       * limiter refusing. Never "that account does not exist", which the server does not
-       * tell us and this screen must not imply.
+       * Only reachable when the request itself could not be made - offline, the API
+       * unreachable, or the rate limiter refusing. Never "that account does not exist",
+       * which the server does not tell us and this screen must not imply.
+       *
+       * The message comes from the error rather than being hardcoded here, so a blocked
+       * cross-origin request says so instead of blaming the reader's connection. This page
+       * had its own copy of the old wording, which is why it kept saying "check your
+       * connection" while the server was answering perfectly well.
        */
-      setError('Could not reach the server. Check your connection and try again.')
+      setError(e instanceof ApiError ? e.message : explainNetworkFailure())
     } finally {
       setBusy(false)
     }

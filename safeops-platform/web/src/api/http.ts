@@ -6,6 +6,7 @@
 // incident copy is left in place only because that module is not being touched here.
 
 import { API_BASE_URL, authApi, getAccessToken } from './authApi'
+import { explainNetworkFailure } from './networkError'
 import { ApiError } from './types'
 
 /**
@@ -35,9 +36,14 @@ export async function request<T>(path: string, init: RequestInit = {}, retry = t
       },
     })
   } catch {
-    // Network-level failure — distinguishable from a server rejection so the UI can
-    // offer "retry" rather than showing a validation-style message.
-    throw new ApiError('network', 'Cannot reach the server. Check your connection and try again.')
+    /*
+     * Network-level failure. Kept distinct from a server rejection so the UI can offer
+     * "retry" rather than a validation-style message — and now explained, because a browser
+     * reports a blocked cross-origin request and a dead server identically, and telling
+     * somebody to "check your connection" while the server answers fine sends them to
+     * debug the wrong thing entirely.
+     */
+    throw new ApiError('network', explainNetworkFailure())
   }
 
   if (res.status === 401 && retry) {
