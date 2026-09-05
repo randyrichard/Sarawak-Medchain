@@ -4,6 +4,22 @@ export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
     extend: {
+      /*
+       * Touch input, rather than a narrow window.
+       *
+       * `(pointer: coarse)` asks how the person is pointing, which is the question that
+       * actually matters for hit size — a finger needs room whether it is on a phone or a
+       * touchscreen laptop, and a mouse does not gain anything from a taller button just
+       * because the window was dragged narrow. Keying this off a width breakpoint would get
+       * both of those backwards.
+       *
+       * Used to raise controls to a comfortable target on touch while leaving the dense
+       * desktop layout alone; this product is read at a desk as often as it is used on a
+       * site, and the density there is deliberate.
+       */
+      screens: {
+        coarse: { raw: '(pointer: coarse)' },
+      },
       colors: {
         page: 'var(--page)',
         surface: 'var(--surface)',

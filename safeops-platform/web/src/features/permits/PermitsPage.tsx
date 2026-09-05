@@ -171,7 +171,7 @@ export function PermitsPage() {
               onClick={() => setParam('status', c.value)}
               aria-pressed={status === c.value}
               className={cn(
-                'rounded-full border px-3 py-1 text-2xs font-semibold transition-colors',
+                'rounded-full border px-3 py-1 text-2xs font-semibold transition-colors coarse:min-h-11 coarse:px-4',
                 status === c.value ? 'border-transparent bg-accent text-white' : 'text-ink-2 hover:bg-accent-soft',
               )}
             >

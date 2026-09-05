@@ -157,13 +157,13 @@ export function IncidentsListPage() {
 
       {/* Search + dimension filters */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <div className="flex min-w-56 flex-1 items-center gap-2 rounded-lg border bg-surface px-3 py-2 md:max-w-sm">
+        <div className="flex min-w-56 flex-1 items-center gap-2 rounded-lg border coarse:min-h-11 bg-surface px-3 py-2 coarse:py-0 md:max-w-sm">
           <Search size={14} className="shrink-0 text-muted" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search number, title, reporter, location…"
-            className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-muted"
+            className="w-full coarse:self-stretch bg-transparent text-sm text-ink outline-none placeholder:text-muted"
           />
         </div>
         <select
@@ -198,7 +198,7 @@ export function IncidentsListPage() {
             onClick={() => setStatus(chip.value)}
             aria-pressed={status === chip.value}
             className={cn(
-              'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+              'rounded-full border px-3 py-1 text-xs font-medium transition-colors coarse:min-h-11 coarse:px-4',
               status === chip.value ? 'bg-accent-soft text-ink' : 'text-ink-2 hover:text-ink',
             )}
             style={status === chip.value ? { borderColor: 'var(--accent)' } : undefined}

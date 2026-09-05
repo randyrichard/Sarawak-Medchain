@@ -128,7 +128,7 @@ export default function AppShell() {
             <button
               onClick={() => setMobileOpen(false)}
               aria-label="Close menu"
-              className="absolute right-3 top-4 rounded-lg p-1.5 text-muted hover:bg-accent-soft"
+              className="absolute right-3 top-4 rounded-lg p-1.5 text-muted hover:bg-accent-soft coarse:min-h-11 coarse:min-w-11 coarse:flex coarse:items-center coarse:justify-center"
             >
               <X size={16} />
             </button>
@@ -143,7 +143,7 @@ export default function AppShell() {
             <button
               onClick={() => setMobileOpen(true)}
               aria-label="Open menu"
-              className="rounded-lg border p-2 text-ink-2 hover:bg-accent-soft lg:hidden"
+              className="rounded-lg border p-2 text-ink-2 hover:bg-accent-soft coarse:min-h-11 coarse:min-w-11 lg:hidden"
             >
               <Menu size={15} />
             </button>
@@ -218,7 +218,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               onClick={onNavigate}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors coarse:min-h-11',
                   own(item, isActive)
                     ? 'bg-accent-soft text-ink'
                     : 'text-ink-2 hover:bg-accent-soft/60 hover:text-ink',
@@ -258,7 +258,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               onClick={onNavigate}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors coarse:min-h-11',
                   isActive ? 'bg-accent-soft text-ink' : 'text-ink-2 hover:bg-accent-soft/60 hover:text-ink',
                 )
               }

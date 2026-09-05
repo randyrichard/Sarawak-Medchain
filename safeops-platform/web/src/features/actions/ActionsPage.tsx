@@ -190,13 +190,13 @@ export function ActionsPage() {
 
       {/* Toolbar */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <div className="flex min-w-52 flex-1 items-center gap-2 rounded-lg border bg-surface px-3 py-2 md:max-w-xs">
+        <div className="flex min-w-52 flex-1 items-center gap-2 rounded-lg border coarse:min-h-11 bg-surface px-3 py-2 coarse:py-0 md:max-w-xs">
           <Search size={14} className="shrink-0 text-muted" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search code, title, owner, incident…"
-            className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-muted"
+            className="w-full coarse:self-stretch bg-transparent text-sm text-ink outline-none placeholder:text-muted"
           />
         </div>
         <select value={owner} onChange={(e) => setOwner(e.target.value)} className="h-9 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none" aria-label="Filter by owner">

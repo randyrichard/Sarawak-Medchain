@@ -44,7 +44,7 @@ export function NotificationMenu() {
     <Dropdown
       width="w-96"
       trigger={() => (
-        <button className="relative rounded-lg border p-2 text-ink-2 hover:bg-accent-soft" aria-label={`Notifications${unread ? ` (${unread} unread)` : ''}`}>
+        <button className="relative rounded-lg border p-2 text-ink-2 hover:bg-accent-soft coarse:min-h-11 coarse:min-w-11" aria-label={`Notifications${unread ? ` (${unread} unread)` : ''}`}>
           <Bell size={15} />
           {unread > 0 && (
             <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-critical px-1 text-2xs font-bold text-white">

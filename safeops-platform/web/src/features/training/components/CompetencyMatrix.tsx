@@ -45,7 +45,7 @@ export function CompetencyMatrix({
         </select>
         <button
           onClick={() => setGapsOnly((v) => !v)}
-          className={cn('rounded-full border px-3 py-1 text-xs font-medium transition-colors', gapsOnly ? 'bg-accent-soft text-ink' : 'text-ink-2 hover:text-ink')}
+          className={cn('rounded-full border px-3 py-1 text-xs font-medium transition-colors coarse:min-h-11 coarse:px-4', gapsOnly ? 'bg-accent-soft text-ink' : 'text-ink-2 hover:text-ink')}
           style={gapsOnly ? { borderColor: 'var(--accent)' } : undefined}
         >
           Gaps &amp; expiring only

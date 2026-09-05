@@ -54,7 +54,8 @@ export function DashboardFilters({
             type="button"
             onClick={() => applyRange(r.days!)}
             aria-pressed={activeRange?.label === r.label}
-            className={`rounded-full border px-2.5 py-1 text-2xs font-semibold transition ${
+            // `coarse:` gives a finger something to hit; the desk size is unchanged.
+            className={`rounded-full border px-2.5 py-1 text-2xs font-semibold transition coarse:min-h-11 coarse:px-4 ${
               activeRange?.label === r.label
                 ? 'border-[var(--accent)] bg-accent-soft text-ink'
                 : 'border-line text-muted hover:text-ink'
@@ -71,7 +72,7 @@ export function DashboardFilters({
           type="date"
           value={filters.from ?? ''}
           onChange={(e) => onChange({ from: e.target.value || null })}
-          className="rounded-lg border border-line bg-transparent px-2 py-1 text-2xs text-ink"
+          className="rounded-lg border border-line bg-transparent px-2 py-1 text-2xs text-ink coarse:min-h-11 coarse:px-3"
         />
       </label>
       <label className="flex items-center gap-1 text-2xs text-muted">
@@ -80,7 +81,7 @@ export function DashboardFilters({
           type="date"
           value={filters.to ?? ''}
           onChange={(e) => onChange({ to: e.target.value || null })}
-          className="rounded-lg border border-line bg-transparent px-2 py-1 text-2xs text-ink"
+          className="rounded-lg border border-line bg-transparent px-2 py-1 text-2xs text-ink coarse:min-h-11 coarse:px-3"
         />
       </label>
 
@@ -91,7 +92,7 @@ export function DashboardFilters({
           <select
             value={filters.department ?? ''}
             onChange={(e) => onChange({ department: e.target.value || null })}
-            className="rounded-lg border border-line bg-surface px-2 py-1 text-2xs text-ink"
+            className="rounded-lg border border-line bg-surface px-2 py-1 text-2xs text-ink coarse:min-h-11 coarse:px-3"
           >
             <option value="">All</option>
             {departments.map((dep) => <option key={dep} value={dep}>{dep}</option>)}

@@ -95,7 +95,7 @@ export function ActionsTable({
   const SortHeader = ({ label, k, className }: { label: string; k: SortKey; className?: string }) => (
     <th className={cn('px-3 py-2.5 font-semibold', className)}>
       <button
-        className="inline-flex items-center gap-1 uppercase tracking-wide hover:text-ink"
+        className="inline-flex items-center gap-1 uppercase tracking-wide hover:text-ink coarse:min-h-11"
         onClick={() => setSort((s) => ({ key: k, dir: s.key === k ? ((s.dir * -1) as 1 | -1) : 1 }))}
       >
         {label}

@@ -43,7 +43,7 @@ export function Topbar({ menuButton }: { menuButton: ReactNode }) {
 
         <NotificationMenu />
 
-        <button onClick={toggle} className="rounded-lg border p-2 text-ink-2 hover:bg-accent-soft" aria-label="Toggle theme">
+        <button onClick={toggle} className="rounded-lg border p-2 text-ink-2 hover:bg-accent-soft coarse:min-h-11 coarse:min-w-11 coarse:justify-center" aria-label="Toggle theme">
           {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
         </button>
 
