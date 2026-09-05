@@ -79,7 +79,14 @@ services:
       # an 8-core box and 65 on a 32-core one — enough for two instances to exhaust
       # PostgreSQL's 100 and lock everyone out. pool_timeout bounds how long a request
       # waits for a free connection instead of hanging.
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-safeops}?schema=public&connection_limit=${DB_POOL_SIZE:-20}&pool_timeout=15
+      # Defaults to the database container beside it, and can be replaced wholesale by
+      # setting DATABASE_URL in .env.prod — which is what a managed database needs, since
+      # its host, port and credentials have nothing to do with the values above.
+      #
+      # A managed URL must carry sslmode=require (or verify-full with the provider's CA):
+      # the connection crosses a real network, and the API refuses to start in production
+      # without it. See the check in api/src/env.ts.
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-safeops}?schema=public&connection_limit=${DB_POOL_SIZE:-20}&pool_timeout=15}
       JWT_PRIVATE_KEY_B64: ${JWT_PRIVATE_KEY_B64:?run npm run keygen}
       JWT_PUBLIC_KEY_B64: ${JWT_PUBLIC_KEY_B64:?run npm run keygen}
       CORS_ORIGINS: ${CORS_ORIGINS:?set the web origin}

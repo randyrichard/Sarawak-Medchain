@@ -189,6 +189,56 @@ if (raw.NODE_ENV === 'production') {
       process.exit(1)
     }
   }
+
+  /*
+   * A database reached across a network must be reached over TLS.
+   *
+   * The bundled deployment runs PostgreSQL as a container on a private compose network and
+   * publishes no port, so plaintext there never leaves the host and requiring TLS would be
+   * ceremony. A managed database is the opposite: DigitalOcean, RDS and Cloud SQL are all
+   * reached over a network the connection genuinely crosses, and every row of this product
+   * — injury records, medical restrictions, password hashes — crosses it too.
+   *
+   * The check is on the host rather than on a flag, because the dangerous case is precisely
+   * the one an operator reaches by editing DATABASE_URL to point somewhere new and not
+   * thinking about the query string. Refused at boot, for the same reason as the https rule
+   * above: a connection that is silently in the clear is not a thing anybody notices.
+   */
+  const LOCAL_DB = /^(localhost|127\.0\.0\.1|\[?::1\]?|db|postgres|database)$/i
+  try {
+    const dbUrl = new URL(raw.DATABASE_URL)
+    const sslmode = dbUrl.searchParams.get('sslmode')
+    const encrypted = sslmode !== null && sslmode !== 'disable' && sslmode !== 'allow'
+
+    /*
+     * A Unix socket never crosses a network, so TLS is meaningless for it.
+     *
+     * Prisma spells that `?host=/var/run/postgresql`, and the hostname slot then holds a
+     * placeholder that parses as an ordinary host — so without this the guard refuses a
+     * perfectly safe local connection. Found by the test for the unparseable case, which
+     * turned out to parse.
+     */
+    const unixSocket = dbUrl.searchParams.get('host')?.startsWith('/') ?? false
+
+    if (!LOCAL_DB.test(dbUrl.hostname) && !unixSocket && !encrypted) {
+      // eslint-disable-next-line no-console
+      console.error(
+        `DATABASE_URL points at ${dbUrl.hostname}, which is not on this host, and does not\n`
+        + 'require TLS. Everything this product stores would cross that network in the clear,\n'
+        + 'including medical restrictions and password hashes.\n'
+        + 'Append "?sslmode=require" (or "verify-full" with the provider CA) to DATABASE_URL.\n'
+        + 'A database running beside the API on the compose network does not need this and is\n'
+        + 'not affected.',
+      )
+      process.exit(1)
+    }
+  } catch {
+    /*
+     * Not a parseable URL. Left alone deliberately: Prisma accepts forms this constructor
+     * does not, and a connection string that is genuinely malformed fails at the first query
+     * with a far better message than anything guessed here.
+     */
+  }
 }
 
 if ((raw.RESEND_API_KEY || raw.SMTP_URL) && !raw.REPORT_EMAIL_FROM) {

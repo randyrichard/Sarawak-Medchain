@@ -124,4 +124,80 @@ describe('production environment guards', { timeout: SPAWN_TIMEOUT }, () => {
     const r = bootWith({ APP_PUBLIC_URL: 'http://app.safeops-pilot.my' })
     expect(r.said).toContain('http://app.safeops-pilot.my')
   })
+
+  // ── Database transport ────────────────────────────────────────────────────
+  /*
+   * The bundled deployment runs PostgreSQL as a container on a private compose network with
+   * no published port, so plaintext there never leaves the host. A managed database is the
+   * opposite — the connection crosses a real network, and so does every row of this product.
+   *
+   * The rule keys on the host rather than on a flag, because the dangerous case is exactly
+   * the one an operator reaches by repointing DATABASE_URL at a provider and not thinking
+   * about the query string.
+   */
+  const MANAGED = 'db-postgresql-sgp1-12345.b.db.ondigitalocean.com:25060/safeops'
+
+  it('refuses a remote database reached without TLS', () => {
+    const r = bootWith({ DATABASE_URL: `postgresql://doadmin:pw@${MANAGED}` })
+    expect(r.status).toBe(1)
+    expect(r.said).toMatch(/does not\s*\n?\s*require TLS/i)
+    // It has to say which host, or the operator is guessing at their own config.
+    expect(r.said).toContain('db-postgresql-sgp1-12345.b.db.ondigitalocean.com')
+  })
+
+  it('refuses sslmode=disable, which is worse than omitting it', () => {
+    // Explicitly turning encryption off reads as deliberate and is almost never meant.
+    const r = bootWith({ DATABASE_URL: `postgresql://doadmin:pw@${MANAGED}?sslmode=disable` })
+    expect(r.status).toBe(1)
+    expect(r.said).toMatch(/require TLS/i)
+  })
+
+  it('refuses sslmode=allow, which does not guarantee encryption', () => {
+    // "allow" means the client will try plaintext first and only upgrade if the server
+    // insists — so a misconfigured server silently gets an unencrypted session.
+    const r = bootWith({ DATABASE_URL: `postgresql://doadmin:pw@${MANAGED}?sslmode=allow` })
+    expect(r.status).toBe(1)
+    expect(r.said).toMatch(/require TLS/i)
+  })
+
+  it('accepts a remote database with sslmode=require', () => {
+    const r = bootWith({ DATABASE_URL: `postgresql://doadmin:pw@${MANAGED}?sslmode=require` })
+    expect(r.said).not.toMatch(/require TLS/i)
+  })
+
+  it('accepts verify-full, which is stronger still', () => {
+    const r = bootWith({ DATABASE_URL: `postgresql://doadmin:pw@${MANAGED}?sslmode=verify-full` })
+    expect(r.said).not.toMatch(/require TLS/i)
+  })
+
+  it('leaves the bundled compose database alone', () => {
+    /*
+     * The check must not fire on the deployment almost everyone runs. `db` is the service
+     * name inside the compose network; the connection never leaves the host, and demanding
+     * TLS there would be ceremony that costs an operator an evening.
+     */
+    for (const host of ['db', 'localhost', '127.0.0.1']) {
+      const r = bootWith({ DATABASE_URL: `postgresql://safeops:pw@${host}:5432/safeops?schema=public` })
+      expect(r.said).not.toMatch(/require TLS/i)
+    }
+  })
+
+  it('leaves a Unix socket connection alone', () => {
+    /*
+     * `?host=/var/run/postgresql` is how Prisma spells a Unix socket, and the hostname slot
+     * then holds a placeholder that parses as an ordinary remote host. The first version of
+     * this guard refused it — a socket never crosses a network, so demanding TLS on one is
+     * both meaningless and a new way to break a working deployment.
+     */
+    const r = bootWith({ DATABASE_URL: 'postgres://socket/safeops?host=/var/run/postgresql' })
+    expect(r.said).not.toMatch(/require TLS/i)
+  })
+
+  it('does not reject a connection string it cannot parse', () => {
+    // Prisma accepts forms the URL constructor does not. A genuinely malformed string fails
+    // at the first query with a better message than anything guessed here, and refusing to
+    // boot on a parse failure would be a second way to break a working deployment.
+    const r = bootWith({ DATABASE_URL: 'not even close to a url' })
+    expect(r.said).not.toMatch(/require TLS/i)
+  })
 })
