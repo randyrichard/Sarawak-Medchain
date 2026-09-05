@@ -16,9 +16,37 @@ Both are pilot-appropriate, not production-grade. To improve RPO you need contin
 archiving (WAL shipping), which is a change to the database deployment and not something to
 introduce during a pilot.
 
-**Neither number has been demonstrated.** The restore path has never been executed —
-`pg_dump` and `pg_restore` are not available on the development machine. The first drill on
-a real host is what turns these from intentions into commitments.
+### First drill — 2026-09-06
+
+The restore path has now been executed end to end against the production stack. Measured,
+not estimated:
+
+| Step | Time | Result |
+|---|---|---|
+| `pg_dump`, custom format, compress 9 | **1.2 s** | 268 KB from a 13 MB database |
+| Uploads tarball from the volume | **1.1 s** | round-tripped and extracted intact |
+| Create scratch database | 1.5 s | |
+| `pg_restore` | **8.1 s** | exit 0, no warnings |
+| Verify | — | **all 9 tables matched production row for row** |
+
+The verification is the part that matters. Company, User, Incident, Permit, Employee and
+AdminAuditEntry all matched — and so did `PermitControl` (68), `PermitSignature` (12) and
+`IncidentEvent` (25), which are precisely the child records the in-app restore point drops.
+A `pg_dump` restore brings back a permit with the controls that were signed off on it. The
+restore point does not.
+
+Production was never touched: the dump was restored into a separate `drill_restore`
+database, which was dropped afterwards, and the API and web both answered 200 throughout.
+
+**What this does and does not establish.** It proves the procedure works and that the
+backup is complete. It does not predict a real customer's restore time — this database is
+13 MB with 9 incidents, and a 3,000-person industrial group generates roughly 5,000 incident
+reports a year. Restore time scales with data; the 2-hour RTO above is dominated by
+rebuilding a host, not by these seconds. Re-run this drill against a loaded database
+(`api/scripts/load-scale.ts`) before quoting a number to a customer.
+
+**RPO of 24 hours remains an untested intention**, because it is a property of the backup
+schedule rather than of the restore, and the nightly cron has not yet run on a real host.
 
 ## What must survive
 

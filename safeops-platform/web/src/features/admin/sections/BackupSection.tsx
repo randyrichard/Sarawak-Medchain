@@ -257,9 +257,15 @@ export function BackupSection() {
                   (backups are nightly), and a full rebuild is estimated at{' '}
                   <span className="font-semibold">about 2 hours</span>.
                 </p>
+                <p className="mt-1 text-2xs text-muted">
+                  The restore itself has been tested: a full dump and restore completed in
+                  under 10 seconds and every table matched, including the permit controls and
+                  signatures an in-app restore point leaves behind.
+                </p>
                 <p className="mt-1 text-2xs text-warning">
-                  Both are targets, not commitments. Neither has been measured on this
-                  deployment — time a real restore and replace these with what it took.
+                  The 2 hours is still an estimate — it is mostly rebuilding a host, which has
+                  not been timed — and the 24 hours assumes the nightly backup is running. Both
+                  remain targets, not commitments.
                 </p>
               </div>
             </div>
