@@ -3,6 +3,7 @@ import type {
   CertificateView, CompetencyLevel, CompetencyStatus, CourseCategory, EmployeeCompetency,
 } from '@/api/training'
 import type { StatusKind } from '@/components/ui'
+import { csvDocument } from '@/lib/csv'
 
 export const COMPETENCY_META: Record<CompetencyStatus, { color: string; label: string }> = {
   competent: { color: 'var(--good)', label: 'Competent' },
@@ -94,24 +95,23 @@ function download(content: string, filename: string, type: string) {
   URL.revokeObjectURL(url)
 }
 
-const esc = (v: string | number | null | undefined) => `"${String(v ?? '').replace(/"/g, '""')}"`
-
 export function exportMatrixCsv(
   courses: { id: string; code: string; name: string }[],
   employees: EmployeeCompetency[],
 ) {
   const header = ['Employee', 'Position', 'Site', 'Department', 'Level', 'Compliance %', ...courses.map((c) => c.code)]
-  const rows = employees.map((e) =>
-    [e.name, e.position, e.siteId.toUpperCase(), e.department, e.level, e.compliancePct,
-      ...courses.map((c) => e.cells[c.id]?.status ?? 'na')].map(esc).join(','),
-  )
-  download([header.map(esc).join(','), ...rows].join('\r\n'), 'safeops-competency-matrix.csv', 'text/csv;charset=utf-8')
+  const rows = employees.map((e) => [
+    e.name, e.position, e.siteId.toUpperCase(), e.department, e.level, e.compliancePct,
+    ...courses.map((c) => e.cells[c.id]?.status ?? 'na'),
+  ])
+  download(csvDocument(header, rows), 'safeops-competency-matrix.csv', 'text/csv;charset=utf-8')
 }
 
 export function exportCertsCsv(certs: CertificateView[]) {
   const header = ['Certificate No', 'Employee', 'Course', 'Site', 'Issued', 'Expires', 'Status', 'Days to expiry', 'Issued by']
-  const rows = certs.map((c) =>
-    [c.number, c.employeeName, c.courseName, c.siteId.toUpperCase(), c.issueDate, c.expiryDate ?? 'No expiry', c.status, c.daysToExpiry ?? '', c.issuedBy].map(esc).join(','),
-  )
-  download([header.map(esc).join(','), ...rows].join('\r\n'), 'safeops-certificates.csv', 'text/csv;charset=utf-8')
+  const rows = certs.map((c) => [
+    c.number, c.employeeName, c.courseName, c.siteId.toUpperCase(), c.issueDate,
+    c.expiryDate ?? 'No expiry', c.status, c.daysToExpiry ?? '', c.issuedBy,
+  ])
+  download(csvDocument(header, rows), 'safeops-certificates.csv', 'text/csv;charset=utf-8')
 }

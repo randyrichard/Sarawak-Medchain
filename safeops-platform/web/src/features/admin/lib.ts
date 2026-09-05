@@ -3,6 +3,7 @@ import type { AdminActor, UserStatus } from '@/api/admin'
 import type { StatusKind } from '@/components/ui'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useOrg } from '@/features/org/OrgContext'
+import { csvDocument } from '@/lib/csv'
 
 /** The acting administrator, with a session-stable device + IP for the audit log. */
 export function useAdminActor(): AdminActor {
@@ -24,9 +25,10 @@ export const USER_STATUS_KIND: Record<UserStatus, StatusKind> = {
 }
 
 export function downloadCsv(header: string[], rows: (string | number | null | undefined)[][], filename: string) {
-  const esc = (v: string | number | null | undefined) => `"${String(v ?? '').replace(/"/g, '""')}"`
-  const body = rows.map((r) => r.map(esc).join(',')).join('\r\n')
-  const blob = new Blob([[header.map(esc).join(','), body].join('\r\n')], { type: 'text/csv;charset=utf-8' })
+  // Built by the shared writer, which neutralises cells a spreadsheet would execute. The
+  // login-history export carries the raw User-Agent of every login attempt, so an attacker
+  // with no account can put a formula into a file an administrator opens.
+  const blob = new Blob([csvDocument(header, rows)], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url

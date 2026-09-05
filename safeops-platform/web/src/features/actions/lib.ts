@@ -1,6 +1,7 @@
 import type { CapaDerivedStatus, CapaItem } from '@/api/capa'
 import type { Actor } from '@/api/incidents'
 import type { StatusKind } from '@/components/ui'
+import { csvDocument } from '@/lib/csv'
 
 export const DERIVED_META: Record<CapaDerivedStatus, { kind: StatusKind; label: string }> = {
   Open: { kind: 'serious', label: 'Open' },
@@ -48,12 +49,13 @@ export function dueLabel(item: CapaItem): string {
 }
 
 export function exportCsv(items: CapaItem[], filename: string) {
-  const esc = (v: string | number | undefined | null) => `"${String(v ?? '').replace(/"/g, '""')}"`
   const header = ['Code', 'Title', 'Status', 'Priority', 'Owner', 'Reviewer', 'Site', 'Department', 'Due date', 'Progress %', 'Incident', 'Root cause', 'Overdue']
+  // Title and root cause are free text written by whoever raised the action, which includes
+  // every employee — so this file needs the same formula guard as the rest.
   const rows = items.map((i) =>
-    [i.code, i.title, i.derived, i.priority, i.owner, i.reviewer, i.siteId.toUpperCase(), i.department, i.dueDate, i.progress, i.incidentNumber ?? '', i.rootCause ?? '', i.overdue ? 'YES' : ''].map(esc).join(','),
+    [i.code, i.title, i.derived, i.priority, i.owner, i.reviewer, i.siteId.toUpperCase(), i.department, i.dueDate, i.progress, i.incidentNumber ?? '', i.rootCause ?? '', i.overdue ? 'YES' : ''],
   )
-  const blob = new Blob([[header.map(esc).join(','), ...rows].join('\r\n')], { type: 'text/csv;charset=utf-8' })
+  const blob = new Blob([csvDocument(header, rows)], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
