@@ -35,6 +35,7 @@ const OrganizationPage = lazy(() => import('@/features/org/OrganizationPage').th
 const AccountPage = lazy(() => import('@/features/account/AccountPage').then((m) => ({ default: m.AccountPage })))
 const PlatformRoute = lazy(() => import('@/features/platform/PlatformRoute').then((m) => ({ default: m.PlatformRoute })))
 const StyleguidePage = lazy(() => import('@/features/styleguide/StyleguidePage').then((m) => ({ default: m.StyleguidePage })))
+const LegalPage = lazy(() => import('@/features/legal/LegalPage').then((m) => ({ default: m.LegalPage })))
 
 // Path routing (not hash): every view is a deep-linkable URL per the PRD.
 
@@ -49,6 +50,18 @@ export default function App() {
               administrator checking the link while signed in must not be bounced away.
             */}
             <Route path="/accept-invitation/:token" element={<AcceptInvitationPage />} />
+
+            {/*
+              The legal documents, outside every guard — including RequireAnonymous.
+
+              PDPA section 7 requires the notice at or before the point of collection, so it
+              has to be readable by somebody who has not signed in and has not yet decided to.
+              Putting it behind RequireAnonymous as well would be a subtler version of the
+              same mistake: a signed-in employee could no longer read the notice that governs
+              the data already held about them.
+            */}
+            <Route path="/privacy" element={<LegalPage />} />
+            <Route path="/terms" element={<LegalPage />} />
 
             {/* Public auth surface */}
             <Route element={<RequireAnonymous />}>

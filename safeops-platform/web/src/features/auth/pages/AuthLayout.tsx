@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import { ShieldCheck } from 'lucide-react'
 
 /** Split auth screen: form left, product promise right (hidden on mobile). */
@@ -17,6 +18,24 @@ export function AuthLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
           {children}
+
+          {/*
+            On every auth screen, because this layout wraps all of them — sign in, password
+            reset, and invitation acceptance.
+
+            Acceptance is the one that matters: PDPA section 7 requires the notice at or
+            before the point of collection, and accepting an invitation is the moment a
+            person's account is created. A link they can only find afterwards is not a notice.
+          */}
+          <p className="mt-8 border-t pt-4 text-2xs text-muted">
+            <Link to="/privacy" className="font-medium text-ink-2 underline-offset-2 hover:underline">
+              Personal Data Protection Notice
+            </Link>
+            <span aria-hidden="true"> · </span>
+            <Link to="/terms" className="font-medium text-ink-2 underline-offset-2 hover:underline">
+              Terms of Service
+            </Link>
+          </p>
         </div>
       </div>
 
