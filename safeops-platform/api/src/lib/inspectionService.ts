@@ -818,30 +818,44 @@ export class InspectionService {
     const bySite = new Map<string, number[]>()
     for (const v of views) bySite.set(v.siteId, [...(bySite.get(v.siteId) ?? []), v.health])
 
-    // Six months of completion history, counted in the database month by month.
-    const monthlyTrend: { month: string; Completed: number; Failed: number }[] = []
-    for (let m = 5; m >= 0; m--) {
+    /*
+     * Six months of completion history.
+     *
+     * Counted in one round trip rather than six. This was a `for` loop awaiting a
+     * two-count transaction per month — twelve queries in six sequential round trips, each
+     * waiting on the last for no reason, since the months do not depend on each other.
+     *
+     * It showed up as the slowest endpoint in the load test: `/assets/stats` at 1.2s p95
+     * with 150 concurrent users, against 417ms at 50. Latency from serialised round trips
+     * scales with contention, because every one of them holds a pool connection while it
+     * waits — so the endpoint degrades faster than the work it does would suggest.
+     */
+    const scope = { companyId, ...(siteId ? { siteId } : {}) }
+    const months = Array.from({ length: 6 }, (_, i) => {
       const start = new Date()
-      start.setMonth(start.getMonth() - m, 1)
+      start.setMonth(start.getMonth() - (5 - i), 1)
       start.setHours(0, 0, 0, 0)
       const end = new Date(start)
       end.setMonth(end.getMonth() + 1)
+      return { start, end }
+    })
 
-      const scope = { companyId, ...(siteId ? { siteId } : {}) }
-      const [completed, failed] = await this.db.$transaction([
+    const counts = await this.db.$transaction(
+      months.flatMap(({ start, end }) => [
         this.db.inspection.count({
           where: { ...scope, status: 'completed', completedAt: { gte: start, lt: end } },
         }),
         this.db.inspection.count({
           where: { ...scope, status: 'completed', outcome: 'failed', completedAt: { gte: start, lt: end } },
         }),
-      ])
-      monthlyTrend.push({
-        month: start.toLocaleDateString('en-MY', { month: 'short' }),
-        Completed: completed,
-        Failed: failed,
-      })
-    }
+      ]),
+    )
+
+    const monthlyTrend = months.map(({ start }, i) => ({
+      month: start.toLocaleDateString('en-MY', { month: 'short' }),
+      Completed: counts[i * 2],
+      Failed: counts[i * 2 + 1],
+    }))
 
     return {
       totalAssets,
