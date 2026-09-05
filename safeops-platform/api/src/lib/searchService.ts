@@ -12,7 +12,7 @@
  * screens it links to is a data leak with a magnifying-glass icon.
  */
 import type { PrismaClient } from '@prisma/client'
-import type { Caller } from './incidentService.js'
+import { actionScopeWhere, incidentScopeWhere, type Caller } from './incidentService.js'
 
 export class SearchError extends Error {
   constructor(public code: string, message: string, public status = 400) {
@@ -95,6 +95,16 @@ export class SearchService {
       this.db.incident.findMany({
         where: {
           ...scope,
+          /*
+           * Row-level scope, not just the tenant and the site.
+           *
+           * Without it an employee - whose incident scope is "the ones I reported" - could
+           * search the whole workspace and get back the reference, title and severity of
+           * incidents the register one click away refuses them, and confirm that a term or a
+           * colleague's name appears in a report they cannot read. A search box that reaches
+           * further than the screens it links to is a data leak with a magnifying glass on it.
+           */
+          ...incidentScopeWhere(caller, companyId),
           archived: false,
           OR: [
             { number: like }, { title: like }, { description: like },
@@ -113,7 +123,13 @@ export class SearchService {
         take: PER_KIND,
       }),
       this.db.correctiveAction.findMany({
-        where: { ...scope, OR: [{ code: like }, { title: like }] },
+        // Employees and supervisors are scoped to the actions they own; the site filter in
+        // `scope` has no owner clause and so does not cover it.
+        where: {
+          ...scope,
+          ...actionScopeWhere(caller, companyId),
+          OR: [{ code: like }, { title: like }],
+        },
         select: { id: true, code: true, title: true, siteId: true, status: true, owner: true },
         orderBy: { dueDate: 'asc' },
         take: PER_KIND,

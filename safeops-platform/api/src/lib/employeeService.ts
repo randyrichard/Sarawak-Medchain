@@ -291,7 +291,16 @@ export class EmployeeService {
       // The status itself is not confidential — a supervisor has to know they cannot send
       // someone into a vessel — only the underlying notes are.
       medicalStatus: medicalStatus(r.medicalExpiry),
-      daysToMedicalExpiry: daysUntil(r.medicalExpiry),
+      /*
+       * Gated, because it is the same fact as `medicalExpiry` in another form.
+       *
+       * `daysUntil` returns an exact day count from today's UTC midnight, so a caller who
+       * was refused the date on the line above could reconstruct it precisely as
+       * today + N — the redaction visibly succeeding and failing in one response. The
+       * coarse `medicalStatus` bucket above is what the operational justification actually
+       * requires, and it stays.
+       */
+      daysToMedicalExpiry: canSeeMedical ? daysUntil(r.medicalExpiry) : null,
       certificateCount: r._count.certificates,
       ppeCount: r._count.ppeIssues,
       createdAt: r.createdAt,

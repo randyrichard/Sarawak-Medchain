@@ -8,6 +8,8 @@ import { EmailProviderError, type EmailMessage, type EmailProvider } from './ema
 import { OrgService } from './orgService.js'
 import type { Caller } from './incidentService.js'
 import { verifyPassword } from './password.js'
+import { hashResetToken } from './tokens.js'
+import { randomBytes } from 'node:crypto'
 import { env } from '../env.js'
 
 /**
@@ -49,6 +51,23 @@ const outsider = caller('admin', 'outsider', OTHER)
 let seq = 0
 const uniq = () => { seq += 1; return `${Date.now().toString(36)}${seq}` }
 const mail = () => `oa-${uniq()}@itest.local`
+
+/**
+ * A usable token for an invitation whose token the API deliberately withheld.
+ *
+ * Only the hash is ever stored, so a token that was emailed rather than returned cannot be
+ * recovered — this re-stamps the row with a fresh one, standing in for the link that reached
+ * the invitee's inbox. It lets a test exercise the invitee genuinely accepting, which is the
+ * case that matters: the guard has to hold even when the *right* person clicks the link.
+ */
+async function tokenFor(invitationId: string) {
+  const raw = randomBytes(32).toString('base64url')
+  await db.invitation.update({
+    where: { id: invitationId },
+    data: { tokenHash: hashResetToken(raw) },
+  })
+  return raw
+}
 
 /** A real user row with a membership, so it can be a manager or a target. */
 async function member(companyId = CO, role = 'employee') {
@@ -442,9 +461,89 @@ d('Organisation administration — integration (real Postgres)', () => {
     const users = await db.user.findMany({ where: { email: existing.email } })
     expect(users).toHaveLength(1)
 
-    await svc.acceptInvitation(invite.token!, { password: 'Str0ng-Passw0rd!23' })
+    const token = await tokenFor(invite.id)
+    await svc.acceptInvitation(token, { password: 'Str0ng-Passw0rd!23' })
     const memberships = await db.membership.findMany({ where: { userId: existing.id } })
     expect(memberships.map((m) => m.companyId).sort()).toEqual([CO, OTHER].sort())
+  })
+
+  // ── Cross-tenant account takeover ─────────────────────────────────────────
+  /*
+   * `User.email` is unique across the whole deployment, so an administrator of one workspace
+   * can invite an address that already belongs to a user of another. Adding them to a second
+   * workspace is the intended behaviour. Setting their password is not, and that is exactly
+   * what acceptance used to do - it overwrote the victim's real credentials, cleared
+   * `mustChangePassword` and `lockedUntil`, and because the session carries every membership
+   * the attacker then signed in holding the victim's *other* tenant.
+   */
+  describe('an invitation cannot take over an account in another workspace', () => {
+    it('leaves an existing user’s password untouched on acceptance', async () => {
+      const victim = await member(OTHER, 'admin')
+      const before = await db.user.findUniqueOrThrow({
+        where: { id: victim.id }, select: { passwordHash: true },
+      })
+
+      const invite = await svc.createInvitation(admin, CO, ctx, {
+        email: victim.email, role: 'employee',
+      })
+      await svc.acceptInvitation(await tokenFor(invite.id), { password: 'Attacker-Chosen!23' })
+
+      const after = await db.user.findUniqueOrThrow({
+        where: { id: victim.id }, select: { passwordHash: true },
+      })
+      expect(after.passwordHash).toBe(before.passwordHash)
+    })
+
+    it('does not clear the account’s lockout or forced password change', async () => {
+      // Both were reset unconditionally, so acceptance also undid an administrator's
+      // decision to lock the account or force a password change in the victim's own tenant.
+      const victim = await member(OTHER, 'admin')
+      const locked = new Date(Date.now() + 3_600_000)
+      await db.user.update({
+        where: { id: victim.id },
+        data: { mustChangePassword: true, lockedUntil: locked, failedLoginCount: 4 },
+      })
+
+      const invite = await svc.createInvitation(admin, CO, ctx, {
+        email: victim.email, role: 'employee',
+      })
+      await svc.acceptInvitation(await tokenFor(invite.id), { password: 'Attacker-Chosen!23' })
+
+      const after = await db.user.findUniqueOrThrow({ where: { id: victim.id } })
+      expect(after.mustChangePassword).toBe(true)
+      expect(after.lockedUntil).not.toBeNull()
+      expect(after.failedLoginCount).toBe(4)
+    })
+
+    it('does not hand the inviting administrator a token for someone else’s account', async () => {
+      /*
+       * With no mail provider configured the raw token comes back in the API response, so
+       * the issuing admin could redeem it themselves. For an account that already exists
+       * elsewhere that token is a credential belonging to another tenant's user.
+       */
+      const victim = await member(OTHER, 'admin')
+      const invite = await svc.createInvitation(admin, CO, ctx, {
+        email: victim.email, role: 'employee',
+      })
+      expect(invite.token).toBeUndefined()
+
+      const resent = await svc.resendInvitation(admin, CO, ctx, invite.id)
+      expect(resent.token).toBeUndefined()
+    })
+
+    it('still sets the password for an account the invitation created', async () => {
+      // The guard must not break the ordinary case: a brand-new invitee has no credentials
+      // and the invitation is the only way they get any.
+      const email = mail()
+      const invite = await svc.createInvitation(admin, CO, ctx, { email, role: 'employee' })
+      expect(invite.token).toBeTruthy()
+
+      await svc.acceptInvitation(invite.token!, { password: 'Str0ng-Passw0rd!23' })
+      const user = await db.user.findUniqueOrThrow({ where: { email } })
+      expect(user.status).toBe('active')
+      expect(user.mustChangePassword).toBe(false)
+      expect(user.passwordHash).not.toBe('x')
+    })
   })
 
   // ── Employee linking ──────────────────────────────────────────────────────

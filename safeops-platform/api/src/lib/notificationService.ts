@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client'
+import type { Prisma, PrismaClient, Role } from '@prisma/client'
 // `Caller` is the verified identity shape shared by every module — see permitService.
 import { type Caller } from './incidentService.js'
 
@@ -12,6 +12,44 @@ const KINDS = ['incident', 'action', 'audit', 'system']
 
 /** How many a bell ever needs; older entries stay queryable but are not listed. */
 const FEED_LIMIT = 100
+
+/**
+ * Audiences that are narrower than "the workspace".
+ *
+ * `recipientRole` existed but nothing read it, so a notification could be tagged for an
+ * audience and still be shown to everybody. The medical sweep is why this now matters: it
+ * names an employee and states the date their fitness-to-work certificate expires, which
+ * `EmployeeService` deliberately withholds from every role outside MEDICAL_ROLES — so the
+ * reminder was handing the whole workspace, at every site, the exact field the register
+ * refuses them.
+ *
+ * A tag with no entry here is a broadcast, which keeps every existing notification behaving
+ * as it did.
+ */
+const ROLE_AUDIENCES: Record<string, Role[]> = {
+  /** Mirrors EmployeeService.MEDICAL_ROLES. Health information about a named person. */
+  medical: ['admin', 'hse_manager', 'safety_officer'],
+}
+
+/**
+ * The clause that keeps a tagged notification away from roles it was not meant for.
+ *
+ * Only tags listed in ROLE_AUDIENCES restrict anything, so an unrecognised tag stays
+ * visible and forgetting to register one cannot silently hide a workspace's reminders.
+ *
+ * The null branch is not belt-and-braces, it is required. `recipientRole` is nullable, and
+ * in SQL `NOT (col IN ('medical'))` evaluates to NULL rather than TRUE when col IS NULL —
+ * so a plain negation drops every untagged broadcast, which is almost all of them, and the
+ * feed empties for everyone below HSE manager. The test for it is in rowScope.
+ */
+export function visibleToRole(role: Role): Prisma.NotificationWhereInput {
+  const barred = Object.entries(ROLE_AUDIENCES)
+    .filter(([, allowed]) => !allowed.includes(role))
+    .map(([tag]) => tag)
+
+  if (barred.length === 0) return {}
+  return { OR: [{ recipientRole: null }, { recipientRole: { notIn: barred } }] }
+}
 
 export class NotificationService {
   constructor(private db: PrismaClient) {}
@@ -29,7 +67,7 @@ export class NotificationService {
    * the same alert see their own bell rather than each other's.
    */
   async list(caller: Caller, companyId: string) {
-    this.membership(caller, companyId)
+    const m = this.membership(caller, companyId)
 
     /*
      * Workspace notifications, plus the ones addressed to this person.
@@ -42,7 +80,10 @@ export class NotificationService {
     const rows = await this.db.notification.findMany({
       where: {
         companyId,
-        OR: [{ recipientUserId: null }, { recipientUserId: caller.userId }],
+        AND: [
+          { OR: [{ recipientUserId: null }, { recipientUserId: caller.userId }] },
+          visibleToRole(m.role),
+        ],
       },
       include: { reads: { where: { userId: caller.userId }, take: 1 } },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
@@ -115,7 +156,7 @@ export class NotificationService {
   }
 
   async markAllRead(caller: Caller, companyId: string) {
-    this.membership(caller, companyId)
+    const m = this.membership(caller, companyId)
 
     const unread = await this.db.notification.findMany({
       where: {
@@ -124,7 +165,10 @@ export class NotificationService {
         // The same visibility rule as the feed. Without it, "mark all read" writes read
         // receipts against notifications addressed to other people - rows the reader
         // cannot see and has no business acknowledging.
-        OR: [{ recipientUserId: null }, { recipientUserId: caller.userId }],
+        AND: [
+          { OR: [{ recipientUserId: null }, { recipientUserId: caller.userId }] },
+          visibleToRole(m.role),
+        ],
       },
       select: { id: true },
       take: FEED_LIMIT,

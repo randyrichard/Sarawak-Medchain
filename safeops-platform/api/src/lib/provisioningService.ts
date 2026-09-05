@@ -262,6 +262,9 @@ export class ProvisioningService {
             tokenHash: hashResetToken(rawToken),
             expiresAt,
             userId: user.id,
+            // This invitation created the account immediately above, so accepting it is
+            // what gives that account its first password. See Invitation.provisionedUser.
+            provisionedUser: true,
             invitedBy: staff.name,
           },
         })

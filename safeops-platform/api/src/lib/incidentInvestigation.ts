@@ -1,7 +1,7 @@
 import type {
   IncidentLinkKind, IncidentPersonRole, PrismaClient, Role,
 } from '@prisma/client'
-import type { Caller } from './incidentService.js'
+import { incidentScopeWhere, type Caller } from './incidentService.js'
 import { MANDATORY_INVESTIGATION } from './incidentCatalog.js'
 
 /**
@@ -105,11 +105,43 @@ export class InvestigationService {
     return m
   }
 
+  /**
+   * The incident behind an `:id`, or a refusal.
+   *
+   * Tenant membership is not enough here. `IncidentService.get()` re-applies row-level scope
+   * to a direct fetch for a stated reason — a guessed id must not bypass it — and this
+   * router reached the same incidents without it, so an employee could read the people and
+   * investigation of an incident they did not report, and a site-scoped supervisor could
+   * write to one at a site they are not assigned to. The rows behind these endpoints are
+   * injury type, body part, treatment and witness statements.
+   *
+   * Ids are not the protection: search, the linked-incident lookup and the workspace-wide
+   * notifications all hand out incident ids to every member.
+   */
   private async incidentFor(caller: Caller, id: string) {
     const inc = await this.db.incident.findUnique({ where: { id } })
     if (!inc) throw new InvestigationError('not_found', 'Incident not found.', 404)
     this.membership(caller, inc.companyId)
+    await this.assertVisible(caller, inc.companyId, id)
     return inc
+  }
+
+  /**
+   * The same row-level check, for the handlers that reach an incident through one of its
+   * children rather than through `incidentFor`.
+   *
+   * `updatePerson`, `removePerson` and `removeLink` resolve the parent from a person or link
+   * id and check only the tenant and the role, so a site-scoped supervisor could edit the
+   * injury record on an incident at a site they are not assigned to.
+   */
+  private async assertVisible(caller: Caller, companyId: string, incidentId: string) {
+    const visible = await this.db.incident.findFirst({
+      where: { id: incidentId, ...incidentScopeWhere(caller, companyId) },
+      select: { id: true },
+    })
+    if (!visible) {
+      throw new InvestigationError('forbidden', 'You do not have access to this incident.', 403)
+    }
   }
 
   /** Timeline and audit, written together with the change that caused them. */
@@ -275,6 +307,7 @@ export class InvestigationService {
     })
     if (!row) throw new InvestigationError('not_found', 'That person is not on this incident.', 404)
     this.require(caller, row.incident.companyId, WRITE_ROLES, 'editing incident statements')
+    await this.assertVisible(caller, row.incident.companyId, row.incident.id)
 
     if (input.daysLost !== undefined && input.daysLost < 0) {
       throw new InvestigationError('validation', 'Days lost cannot be negative.')
@@ -313,6 +346,7 @@ export class InvestigationService {
     })
     if (!row) throw new InvestigationError('not_found', 'That person is not on this incident.', 404)
     this.require(caller, row.incident.companyId, WRITE_ROLES, 'removing people from an incident')
+    await this.assertVisible(caller, row.incident.companyId, row.incident.id)
 
     if (row.incident.stage === 'closed') {
       throw new InvestigationError('validation',
@@ -403,6 +437,7 @@ export class InvestigationService {
     })
     if (!row) throw new InvestigationError('not_found', 'That link no longer exists.', 404)
     this.require(caller, row.incident.companyId, WRITE_ROLES, 'removing incident links')
+    await this.assertVisible(caller, row.incident.companyId, row.incident.id)
 
     if (row.incident.stage === 'closed') {
       throw new InvestigationError('validation',
@@ -469,7 +504,9 @@ export class InvestigationService {
   async incidentsFor(caller: Caller, companyId: string, kind: IncidentLinkKind, targetId: string) {
     this.membership(caller, companyId)
     const rows = await this.db.incidentLink.findMany({
-      where: { kind, targetId, incident: { companyId } },
+      // Scoped, not merely tenant-filtered: this is one of the routes that was handing out
+      // ids for incidents the caller is refused at `GET /incidents/:id`.
+      where: { kind, targetId, incident: { companyId, ...incidentScopeWhere(caller, companyId) } },
       include: {
         incident: {
           select: {

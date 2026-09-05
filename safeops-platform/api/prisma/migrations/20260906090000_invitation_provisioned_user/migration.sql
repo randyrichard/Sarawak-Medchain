@@ -1,0 +1,14 @@
+-- Distinguishes an invitation that created an account from one that adds an existing
+-- person to a second workspace.
+--
+-- Accepting an invitation sets a password. That is correct for an account which has never
+-- had one, and a cross-tenant account takeover for one that has: User.email is unique
+-- across the whole deployment, so an administrator of workspace B could invite an address
+-- belonging to a user of workspace A and, on accepting their own invitation, overwrite that
+-- person's real password and inherit their workspace A memberships at the next login.
+--
+-- DEFAULT false is deliberate. Rows written before this column existed cannot be classified
+-- retrospectively, and false is the safe reading: those invitations will no longer set a
+-- password. An invitee holding one of them signs in with the credentials they already have,
+-- or uses password reset — neither of which is a lockout.
+ALTER TABLE "Invitation" ADD COLUMN "provisionedUser" BOOLEAN NOT NULL DEFAULT false;

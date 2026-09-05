@@ -50,6 +50,13 @@ const CERT_EXPIRY_DAYS = [90, 60, 30, 7]
 const MEDICAL_EXPIRY_DAYS = [60, 30, 14, 7]
 
 /**
+ * Audience tag for the medical reminders. Resolved by `visibleToRole` in
+ * notificationService, which is where the role list lives so it sits beside the read path
+ * that enforces it rather than the write path that requests it.
+ */
+const MEDICAL_AUDIENCE = 'medical'
+
+/**
  * Days before expiry at which contractor medicals, inductions and insurance are chased.
  * Matches what the customer specified, and the tenant has no other visibility of these
  * dates — nobody's HR system is tracking a subcontractor's induction.
@@ -143,6 +150,11 @@ export class Scheduler {
    */
   private async raise(
     budget: Budget, companyId: string, kind: string, title: string, detail: string, href: string,
+    /**
+     * Narrows the audience. Omitted means the whole workspace, which is what almost every
+     * reminder here wants — see ROLE_AUDIENCES in notificationService for the exceptions.
+     */
+    recipientRole?: string,
   ): Promise<boolean> {
     if (budget.exhausted(companyId)) return false
 
@@ -156,7 +168,12 @@ export class Scheduler {
 
     try {
       await this.db.notification.create({
-        data: { companyId, kind, title: title.slice(0, 300), detail: detail.slice(0, 1000), href },
+        data: {
+          companyId, kind, href,
+          title: title.slice(0, 300),
+          detail: detail.slice(0, 1000),
+          recipientRole: recipientRole ?? null,
+        },
       })
     } catch (err) {
       // One row must never abort the pass. A workspace deleted between the query above and
@@ -351,12 +368,23 @@ export class Scheduler {
       if (!p.medicalExpiry || budget.exhausted(p.companyId)) continue
       const days = daysBetween(p.medicalExpiry, now)
 
+      /*
+       * Addressed to the roles that may see medical detail, not broadcast.
+       *
+       * These name an employee and state the exact date their fitness-to-work certificate
+       * expires. `EmployeeService` withholds that date from every role outside
+       * MEDICAL_ROLES and from anyone outside the employee's site — and the notification
+       * feed had no role filter and the table has no site column, so this reminder was
+       * handing the whole workspace precisely what the register refuses them. The tag is
+       * what `visibleToRole` enforces on the way out.
+       */
       if (days < 0) {
         if (await this.raise(
           budget, p.companyId, 'system',
           `Medical expired — ${p.name}`,
           `${p.employeeNo}'s fitness-to-work certificate lapsed on ${p.medicalExpiry.toISOString().slice(0, 10)}. They cannot hold a permit until it is renewed.`,
           `/employees?open=${p.id}&medical=expired`,
+          MEDICAL_AUDIENCE,
         )) raised++
         continue
       }
@@ -366,6 +394,7 @@ export class Scheduler {
         `Medical expires in ${days} days — ${p.name}`,
         `${p.employeeNo}'s fitness-to-work certificate lapses on ${p.medicalExpiry.toISOString().slice(0, 10)}. Book the appointment.`,
         `/employees?open=${p.id}&expiring=${days}`,
+        MEDICAL_AUDIENCE,
       )) raised++
     }
     return raised

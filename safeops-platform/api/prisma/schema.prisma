@@ -2834,6 +2834,17 @@ model Invitation {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  /// Whether this invitation created the account, or merely adds an existing person to a
+  /// second workspace.
+  ///
+  /// Load-bearing, not bookkeeping. Accepting an invitation sets a password, which is the
+  /// right thing to do for an account that has never had one and a cross-tenant account
+  /// takeover for one that has: `User.email` is globally unique, so an administrator of one
+  /// workspace can invite an address belonging to a user of another, and before this flag
+  /// existed acceptance overwrote that person's real password. Defaults to false so any row
+  /// written before this column existed is treated as the dangerous case.
+  provisionedUser Boolean @default(false)
+
   invitedBy String
   createdAt DateTime @default(now())
 

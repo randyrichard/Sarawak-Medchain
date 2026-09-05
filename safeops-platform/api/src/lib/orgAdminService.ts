@@ -692,6 +692,12 @@ export class OrgAdminService {
 
     const result = await this.db.$transaction(async (tx) => {
       let userId: string
+      /*
+       * Whether this invitation is creating the account or joining an existing person to a
+       * second workspace. Recorded because acceptance behaves differently for each: see the
+       * note on Invitation.provisionedUser, and the guard in acceptInvitation.
+       */
+      let provisionedUser = false
       if (existing) {
         /*
          * The person already has a login for another workspace. They get a membership
@@ -715,6 +721,7 @@ export class OrgAdminService {
           },
         })
         userId = created.id
+        provisionedUser = true
       }
 
       // Any earlier open invitation for this address is superseded, so issuing a new one
@@ -734,10 +741,11 @@ export class OrgAdminService {
           tokenHash: hashResetToken(rawToken),
           expiresAt,
           userId,
+          provisionedUser,
           invitedBy: caller.name,
         },
       })
-      return { invitation, userId }
+      return { invitation, userId, provisionedUser }
     })
 
     // The role is recorded; the token is not. An audit trail that carries working secrets
@@ -757,8 +765,14 @@ export class OrgAdminService {
        * The link comes back only when the email did not go. Once a provider has it, the
        * administrator has no need for the secret and there is no reason to put a working
        * credential through another system that might log it.
+       *
+       * And never for somebody who already has an account elsewhere on this deployment.
+       * Their invitation is an offer to join a second workspace, addressed to them - handing
+       * the issuing administrator a working token for another tenant's user is handing one
+       * customer a credential belonging to another. They can accept from the emailed link,
+       * or simply sign in: the membership is already theirs.
        */
-      token: delivery.showLink ? rawToken : undefined,
+      token: delivery.showLink && result.provisionedUser ? rawToken : undefined,
     }
   }
 
@@ -816,7 +830,9 @@ export class OrgAdminService {
       id,
       email: invite.email,
       deliveryStatus: delivery.status,
-      token: delivery.showLink ? rawToken : undefined,
+      // Same rule as the original send: never hand the issuing administrator a working
+      // token for somebody who already has an account elsewhere on this deployment.
+      token: delivery.showLink && invite.provisionedUser ? rawToken : undefined,
     }
   }
 
@@ -928,17 +944,35 @@ export class OrgAdminService {
       })
       if (consumed.count === 0) throw this.badToken()
 
-      await tx.user.update({
-        where: { id: invite.userId },
-        data: {
-          passwordHash,
-          status: 'active',
-          mustChangePassword: false,
-          failedLoginCount: 0,
-          lockedUntil: null,
-          ...(input.name?.trim() ? { name: input.name.trim() } : {}),
-        },
-      })
+      /*
+       * Credentials are set only for an account this invitation created.
+       *
+       * `User.email` is unique across the whole deployment, so an administrator of one
+       * workspace can invite an address that already belongs to a user of another - that is
+       * the intended "one human, one set of credentials" behaviour, and the membership is
+       * genuinely theirs to accept. What must not follow is a password write: before this
+       * guard, accepting such an invitation overwrote that person's real password, cleared
+       * `mustChangePassword` and `lockedUntil`, and the next login carried *all* their
+       * memberships - so an admin of workspace B could take over an administrator of
+       * workspace A and inherit their tenant.
+       *
+       * `provisionedUser` is written once, when the invitation is created, and never
+       * updated - so reading it before the transaction is safe. A row written before the
+       * column existed defaults to false and is therefore treated as the dangerous case.
+       */
+      if (invite.provisionedUser) {
+        await tx.user.update({
+          where: { id: invite.userId },
+          data: {
+            passwordHash,
+            status: 'active',
+            mustChangePassword: false,
+            failedLoginCount: 0,
+            lockedUntil: null,
+            ...(input.name?.trim() ? { name: input.name.trim() } : {}),
+          },
+        })
+      }
 
       /*
        * Link the HSE employee record if one is already on the books for this address.
