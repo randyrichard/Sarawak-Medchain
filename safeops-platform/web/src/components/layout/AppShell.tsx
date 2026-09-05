@@ -1,4 +1,4 @@
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, ClipboardList, FileText, ListChecks, GraduationCap, ShieldCheck, Bell,
@@ -65,11 +65,56 @@ const NAV: NavItem[] = [
   { to: '/admin', label: 'Administration', icon: SlidersHorizontal, capability: 'settings:manage' },
 ]
 
+/**
+ * Keeps the browser title in step with the route.
+ *
+ * Every screen announced "SafeOps — Safety Intelligence Platform", because a single-page
+ * app changes the URL without touching the document title. A screen reader reads the title
+ * on navigation, so every move around the product was announced identically — and a person
+ * with a dozen tabs open had a dozen tabs with the same name.
+ *
+ * The label comes from the nav table rather than a second list, so a renamed screen renames
+ * its title too. Deep routes fall back to their section: `/incidents/INC-2601` is titled
+ * "Incidents", which is imprecise but true, and better than the alternative of naming every
+ * route twice.
+ */
+function useDocumentTitle(pathname: string) {
+  useEffect(() => {
+    const match = NAV
+      .filter((item) => pathname === item.to || pathname.startsWith(`${item.to}/`))
+      .sort((a, b) => b.to.length - a.to.length)[0]
+
+    document.title = match && match.to !== '/'
+      ? `${match.label} · SafeOps`
+      : 'SafeOps — Safety Intelligence Platform'
+  }, [pathname])
+}
+
 export default function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
+  useDocumentTitle(location.pathname)
   return (
     <div className="flex h-full">
+      {/*
+        Skip link.
+
+        Sixteen navigation items sit before the content on every screen, so anyone tabbing
+        through — a keyboard user, or somebody using a switch or voice control — traverses
+        the whole sidebar again on every page before reaching what they came for.
+        WCAG 2.4.1 exists for exactly this.
+
+        Visually hidden until focused rather than hidden outright: `display: none` and
+        `visibility: hidden` both remove an element from the tab order, which would make
+        this a link nobody can reach.
+      */}
+      <a
+        href="#main"
+        className="sr-only rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60]"
+      >
+        Skip to main content
+      </a>
+
       {/* Desktop sidebar */}
       <aside className="hidden w-60 shrink-0 flex-col border-r bg-surface lg:flex">
         <SidebarContent />
@@ -104,7 +149,9 @@ export default function AppShell() {
             </button>
           }
         />
-        <main className="min-w-0 flex-1 overflow-y-auto px-4 py-5 md:px-6 lg:px-7">
+        {/* `tabIndex={-1}` so the skip link can move focus here, not merely scroll to it —
+            without it the browser jumps the viewport and leaves focus in the sidebar. */}
+        <main id="main" tabIndex={-1} className="min-w-0 flex-1 overflow-y-auto px-4 py-5 outline-none md:px-6 lg:px-7">
           <div className="mx-auto max-w-[1360px]">
             {/* Per-route boundary: a page crash shows a recoverable fallback here while the
                 shell stays usable. Keying by pathname clears the error on navigation. */}

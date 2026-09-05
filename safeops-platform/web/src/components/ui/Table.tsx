@@ -32,6 +32,10 @@ export function DataTable<T>({
             {columns.map((c) => (
               <th
                 key={c.key}
+                // Names the column this header governs, so a screen reader can say
+                // "Severity, Lost time injury" when reading a cell rather than reading a
+                // bare value out of a grid with no context. WCAG 1.3.1.
+                scope="col"
                 className={cn('px-4 py-2.5 font-semibold first:pl-5 last:pr-5', c.align === 'right' && 'text-right', c.visibility)}
                 style={c.width ? { width: c.width } : undefined}
               >

@@ -1,12 +1,31 @@
 import {
-  createContext, useContext, useEffect, useRef, useState,
-  type ReactNode, type HTMLAttributes,
+  cloneElement, createContext, isValidElement, useContext, useEffect, useRef, useState,
+  type ReactElement, type ReactNode, type HTMLAttributes,
 } from 'react'
 import { cn } from '@/lib/cn'
 
 // Lightweight popover menu: click-outside + Esc to dismiss, no positioning lib.
 
 const DropdownCtx = createContext<{ close: () => void }>({ close: () => {} })
+
+/**
+ * Adds the menu-button semantics to whatever the caller rendered as its trigger.
+ *
+ * `aria-haspopup` says the control opens a menu; `aria-expanded` says whether it is open
+ * right now. Without the pair, a screen reader announces a button and gives no indication
+ * that anything appeared when it was pressed.
+ *
+ * Falls through untouched for a non-element trigger (a bare string), and never overwrites
+ * an attribute a caller set deliberately.
+ */
+function annotateTrigger(node: ReactNode, open: boolean): ReactNode {
+  if (!isValidElement(node)) return node
+  const existing = node.props as Record<string, unknown>
+  return cloneElement(node as ReactElement<Record<string, unknown>>, {
+    'aria-haspopup': existing['aria-haspopup'] ?? 'menu',
+    'aria-expanded': existing['aria-expanded'] ?? open,
+  })
+}
 
 export function Dropdown({
   trigger, children, align = 'end', width = 'w-64', className,
@@ -53,7 +72,23 @@ export function Dropdown({
      * A no-op anywhere a dropdown is not a flex child, which is most of its uses.
      */
     <div ref={rootRef} className={cn('relative min-w-0', className)}>
-      <div className="min-w-0" onClick={() => setOpen((o) => !o)}>{trigger(open)}</div>
+      {/*
+        The trigger is annotated rather than wrapped in ARIA.
+
+        Every caller returns a real <button>, so the keyboard already worked — Enter and
+        Space fire a click that bubbles to this div. What a screen reader had no way to know
+        was that the button opens a menu, or whether it is currently open: nothing announced
+        it, so the control read as an unlabelled action with no state.
+
+        Injected here instead of asked of each caller, because six callers is six chances to
+        forget, and the component is the only place that knows `open`. Putting the
+        attributes on this wrapper instead would be wrong twice over — it is not the control,
+        and a div carrying button semantics around a real button is a worse tree than the one
+        it replaces.
+      */}
+      <div className="min-w-0" onClick={() => setOpen((o) => !o)}>
+        {annotateTrigger(trigger(open), open)}
+      </div>
       {open && (
         <div
           role="menu"
