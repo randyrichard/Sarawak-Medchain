@@ -172,8 +172,11 @@ export function Checkbox({
 }: InputHTMLAttributes<HTMLInputElement> & { label: string }) {
   const autoId = useId()
   const inputId = id ?? autoId
+  // The 16px box is not the target - the label is, because a <label htmlFor> toggles the
+  // input natively across the whole of its own area. So the row is what gets raised on a
+  // touch pointer; inflating the box itself would only make it an ugly 44px square.
   return (
-    <label htmlFor={inputId} className="flex cursor-pointer items-center gap-2 text-sm text-ink">
+    <label htmlFor={inputId} className="flex cursor-pointer items-center gap-2 text-sm text-ink coarse:min-h-11">
       <input id={inputId} type="checkbox" className={cn('h-4 w-4 rounded border accent-[var(--accent)]', className)} {...rest} />
       {label}
     </label>
