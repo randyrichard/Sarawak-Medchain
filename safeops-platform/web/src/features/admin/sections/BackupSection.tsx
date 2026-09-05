@@ -148,10 +148,16 @@ export function BackupSection() {
                     <p className="text-2xs text-muted">{fmtDateTime(b.at)} · {b.sizeKb} KB · by {b.by}</p>
                   </div>
                   <Badge tone={b.type === 'manual' ? 'accent' : 'neutral'}>{b.type === 'manual' ? 'Manual' : 'Auto'}</Badge>
+                  {/*
+                    "record only", not "catalogued". Retention drops the payload and keeps
+                    the row (`snapshot: DbNull`, `restorable: false`) — there is no cold
+                    storage tier and the data is gone, not archived. The old wording, and its
+                    tooltip about "encrypted cold storage", implied it could be retrieved.
+                  */}
                   {b.restorable ? (
                     <Button size="sm" variant="secondary" icon={<RotateCcw size={12} />} onClick={() => setRestoreFor(b)}>Restore</Button>
                   ) : (
-                    <span className="text-2xs text-muted" title="Older snapshots are catalogued; the payload is on encrypted cold storage">catalogued</span>
+                    <span className="text-2xs text-muted" title="Kept as a record of what was taken and when. The snapshot itself was discarded when it passed the retention limit and cannot be restored.">record only</span>
                   )}
                 </li>
               ))}
@@ -162,41 +168,99 @@ export function BackupSection() {
       </Card>
 
       <div className="grid gap-4 xl:grid-cols-2">
+        {/*
+          Only one of these three is enforced by the software.
+
+          "Backups to keep" genuinely prunes — createBackup drops the payload of anything
+          past the limit. The other two are stored and read by nothing: no scheduler deletes
+          an old audit entry or a closed incident. Presenting all three identically told an
+          administrator their retention policy was being applied when two thirds of it was
+          not, which matters twice over here — a PDPA notice has to state a retention period,
+          and stating one the system ignores is worse than stating none.
+
+          Kept rather than removed: the numbers are the customer's stated policy and belong
+          in a processing agreement. They are now labelled as what they are.
+        */}
         <Card>
-          <CardHeader title="Data retention" subtitle="How long records and snapshots are kept" />
+          <CardHeader title="Data retention" subtitle="Your policy, and what the software currently enforces" />
           <CardBody className="space-y-3">
             {retention === null ? <Skeleton className="h-32 w-full" /> : (
               <>
-                <Input label="Audit log retention (days)" type="number" value={String(retention.auditLogDays)} onChange={(e) => void saveRetention({ auditLogDays: Number(e.target.value) || 365 })} className="w-40" />
-                <Input label="Backups to keep" type="number" value={String(retention.backupCount)} onChange={(e) => void saveRetention({ backupCount: Number(e.target.value) || 10 })} className="w-40" />
-                <Input label="Closed incident retention (years)" type="number" value={String(retention.closedIncidentYears)} onChange={(e) => void saveRetention({ closedIncidentYears: Number(e.target.value) || 7 })} className="w-40" />
+                <div>
+                  <Input label="Backups to keep" type="number" value={String(retention.backupCount)} onChange={(e) => void saveRetention({ backupCount: Number(e.target.value) || 10 })} className="w-40" />
+                  <p className="mt-1 text-2xs text-good">Enforced. Older snapshots lose their payload automatically.</p>
+                </div>
+                <div>
+                  <Input label="Audit log retention (days)" type="number" value={String(retention.auditLogDays)} onChange={(e) => void saveRetention({ auditLogDays: Number(e.target.value) || 365 })} className="w-40" />
+                  <p className="mt-1 text-2xs text-warning">Recorded, not yet enforced — nothing deletes old entries.</p>
+                </div>
+                <div>
+                  <Input label="Closed incident retention (years)" type="number" value={String(retention.closedIncidentYears)} onChange={(e) => void saveRetention({ closedIncidentYears: Number(e.target.value) || 7 })} className="w-40" />
+                  <p className="mt-1 text-2xs text-warning">Recorded, not yet enforced — closed incidents are kept indefinitely.</p>
+                </div>
                 {savingRetention && <p className="text-2xs text-muted">Saving…</p>}
+                <p className="pt-1 text-2xs text-muted">
+                  Both unenforced values are still worth setting: they are your stated policy,
+                  and a data processing agreement has to name one. Deleting safety records on a
+                  timer is deliberately not automatic — it is irreversible, and a closed
+                  incident can be evidence years later.
+                </p>
               </>
             )}
           </CardBody>
         </Card>
 
+        {/*
+          Every claim on this card was untrue.
+
+          There was no encryption-at-rest statement anyone could support, no replication to
+          any region, no cold archive tier, and the recovery figures contradicted
+          docs/DISASTER_RECOVERY.md — which states 24h/2h and calls them untested targets.
+          The toggle scheduled nothing: backups come from a cron on the host (docs/BACKUP.md),
+          and the flag only drives a job indicator on System Health.
+
+          An absent feature is honest. A claimed one a customer might rely on in an incident
+          is not — and this is the screen somebody reads while deciding whether to trust us
+          with their safety records.
+        */}
         <Card>
-          <CardHeader title="Archive & scheduling" subtitle="Automated protection" />
+          <CardHeader title="Recovery" subtitle="What is actually in place today" />
           <CardBody className="space-y-3">
             {retention && (
               <div className="rounded-lg border px-3.5 py-3">
-                <Switch checked={retention.autoBackupDaily} onChange={(v) => void saveRetention({ autoBackupDaily: v })} label="Daily automated backup (02:00 local)" />
-                <p className="mt-1 text-2xs text-muted">Snapshots are encrypted at rest and replicated to the SG region.</p>
+                <Switch checked={retention.autoBackupDaily} onChange={(v) => void saveRetention({ autoBackupDaily: v })} label="A nightly database dump is scheduled on the server" />
+                <p className="mt-1 text-2xs text-muted">
+                  This records that your operator has set up the nightly <span className="font-mono">pg_dump</span> cron.
+                  SafeOps does not schedule it — turning this on tells System Health to flag it
+                  if the dump stops arriving. It does not create a backup by itself.
+                </p>
               </div>
             )}
             <div className="flex items-start gap-2.5 rounded-lg border px-3.5 py-3">
               <Archive size={16} className="mt-0.5 text-accent" />
               <div>
-                <p className="text-sm font-medium text-ink">Cold archive</p>
-                <p className="text-2xs text-muted">Closed incidents older than the retention window are moved to immutable archive storage, keeping the working set fast while preserving the legal record.</p>
+                <p className="text-sm font-medium text-ink">Where the real backup lives</p>
+                <p className="text-2xs text-muted">
+                  A nightly <span className="font-mono">pg_dump</span> plus a tar of the uploaded
+                  files, copied off this host. Uploaded photographs and PDFs are on a volume and
+                  are <span className="font-semibold">not</span> inside the database dump — the two
+                  are taken together and must be restored together. See BACKUP.md.
+                </p>
               </div>
             </div>
             <div className="flex items-start gap-2.5 rounded-lg border px-3.5 py-3">
               <Database size={16} className="mt-0.5 text-accent" />
               <div>
-                <p className="text-sm font-medium text-ink">RPO / RTO</p>
-                <p className="text-2xs text-muted">Recovery point objective 1 hour · recovery time objective 4 hours. Restore drills run monthly.</p>
+                <p className="text-sm font-medium text-ink">Recovery targets</p>
+                <p className="text-2xs text-muted">
+                  Up to <span className="font-semibold">24 hours</span> of work could be lost
+                  (backups are nightly), and a full rebuild is estimated at{' '}
+                  <span className="font-semibold">about 2 hours</span>.
+                </p>
+                <p className="mt-1 text-2xs text-warning">
+                  Both are targets, not commitments. Neither has been measured on this
+                  deployment — time a real restore and replace these with what it took.
+                </p>
               </div>
             </div>
           </CardBody>
