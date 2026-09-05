@@ -74,6 +74,20 @@ const schema = z.object({
    */
   RATE_LIMIT_PER_MIN: z.coerce.number().int().positive().max(100_000).default(3000),
 
+  /*
+   * How many reverse proxies sit in front of this process.
+   *
+   * Express walks X-Forwarded-For from the right and skips this many entries to find the
+   * client. The number must match the deployment exactly, and both directions are wrong in
+   * their own way: too low and every visitor is recorded as the proxy's address, which
+   * buckets the whole customer into one rate limit and fills the audit trail with a single
+   * IP; too high and a client can forge X-Forwarded-For and be believed, which is worse.
+   *
+   * 1 is the bundled deployment: browser -> Caddy -> api.
+   * 2 once a CDN or WAF is added:  browser -> Cloudflare -> Caddy -> api.
+   */
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
+
   // Where incident evidence is written. This MUST be a persistent volume in production:
   // the default is inside the working directory, which a container platform discards on
   // every redeploy, taking the photographs attached to safety investigations with it.

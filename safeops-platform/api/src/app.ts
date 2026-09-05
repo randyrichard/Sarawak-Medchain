@@ -72,9 +72,22 @@ export function redactPath(path: string): string {
 export function createApp() {
   const app = express()
 
-  // Behind a load balancer, req.ip must reflect the client, not the proxy — otherwise
-  // per-IP rate limiting buckets every user together.
-  app.set('trust proxy', 1)
+  /*
+   * How far back along X-Forwarded-For to look for the real client.
+   *
+   * `req.ip` is not cosmetic here: it is the key the rate limiter buckets on, and it is
+   * written into the audit trail and the login history that a customer is buying. Get it
+   * wrong and both degrade silently — every visitor arrives as the same address, so one
+   * abusive session throttles a whole company, and the security log records the proxy for
+   * every action anybody ever took.
+   *
+   * Hardcoded 1 was right for the bundled deployment (browser → Caddy → api) and becomes
+   * wrong the moment a CDN or WAF is put in front, which adds a hop. It is configuration
+   * rather than a constant because only the deployment knows its own shape, and because
+   * raising it blindly is worse than leaving it low: trusting more hops than exist lets a
+   * client forge X-Forwarded-For and be believed.
+   */
+  app.set('trust proxy', env.TRUST_PROXY_HOPS)
   app.disable('x-powered-by')
 
   app.use(helmet())

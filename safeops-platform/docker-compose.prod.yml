@@ -108,6 +108,8 @@ services:
       SCHEDULER_ENABLED: 'true'
       SCHEDULER_INTERVAL_MIN: ${SCHEDULER_INTERVAL_MIN:-15}
       RATE_LIMIT_PER_MIN: ${RATE_LIMIT_PER_MIN:-3000}
+      # 1 for Caddy alone; 2 once Cloudflare or another CDN is in front. See docs/CLOUDFLARE.md.
+      TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-1}
       UPLOAD_DIR: /data/uploads
     volumes:
       - safeops_uploads:/data/uploads
