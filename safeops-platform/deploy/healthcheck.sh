@@ -133,6 +133,51 @@ else
 fi
 
 say ""
+# ── Public address ───────────────────────────────────────────────────────────
+# Every invitation and password-reset link is built from APP_PUBLIC_URL. The API refuses
+# at boot to accept an empty value, a localhost one, plain http, or a reserved
+# documentation domain — but it cannot tell whether a plausible-looking hostname was ever
+# registered, and resolving DNS at boot would trade a silent fault for an outage on any
+# deployment whose resolver is slow or absent.
+#
+# So it is checked here instead, where an operator is asking. A hostname that does not
+# resolve produces links that go nowhere: the recipient cannot accept their invitation,
+# the token expires unspent, and nothing in the product reports a failure because the
+# email was sent perfectly well. That is the shape this went wrong in — the configured
+# host had never been registered at all.
+resolves_host() {
+  # getent is authoritative where it exists (Linux, and therefore the deployment target):
+  # it exits non-zero when a name does not resolve.
+  if command -v getent >/dev/null 2>&1; then
+    getent hosts "$1" >/dev/null 2>&1 && return 0 || return 1
+  fi
+  # nslookup exits 0 even for NXDOMAIN, on every platform tested — the exit code cannot be
+  # used and the output has to be read instead. Trusting the status here produced a check
+  # that passed a domain which had never been registered, which is worse than no check.
+  if command -v nslookup >/dev/null 2>&1; then
+    nslookup "$1" 2>&1 | grep -qiE "can.t find|NXDOMAIN|Non-existent domain|SERVFAIL" && return 1
+    nslookup "$1" 2>&1 | grep -qiE "^Address:|^Name:" && return 0
+    return 1
+  fi
+  return 2   # no resolver tool available
+}
+
+if [ -n "${APP_PUBLIC_URL:-}" ]; then
+  APP_HOST="$(printf '%s' "$APP_PUBLIC_URL" | sed -E 's#^https?://##; s#[:/].*##')"
+  if [ -z "$APP_HOST" ]; then
+    report_bad "APP_PUBLIC_URL is set but no hostname could be read from it: $APP_PUBLIC_URL"
+  else
+    resolves_host "$APP_HOST"
+    case $? in
+      0) report_ok "APP_PUBLIC_URL resolves ($APP_HOST)" ;;
+      1) report_bad "APP_PUBLIC_URL points at $APP_HOST, which does not resolve. Every invitation and password-reset link is built from it, so they will all be dead on arrival - and nothing will report a failure, because the emails send correctly." ;;
+      *) report_warn "cannot check whether $APP_HOST resolves - no getent or nslookup here" ;;
+    esac
+  fi
+else
+  report_warn "APP_PUBLIC_URL is not set - invitation and reset links cannot be built"
+fi
+
 if [ "$PROBLEMS" -eq 0 ]; then
   say "Healthy."
   exit 0
