@@ -33,7 +33,23 @@ export function Topbar({ menuButton }: { menuButton: ReactNode }) {
         overflowed was the one I did not measure.
       */}
       <div className="flex min-w-0 flex-1 items-center gap-1.5">
-        <CompanySwitcher />
+        {/*
+          The company switcher is hidden on a phone, and this is a space decision rather
+          than a preference. A 375px header carries the menu button, three icon controls
+          and their gaps, which leaves about 150px for switchers. Two of them in 150px
+          means roughly 75px each, and at that width neither shows a usable label - the
+          company read "B..." and the site switcher rendered as a bare globe with no text.
+          A site switcher that cannot tell you which site you are scoped to is worse than
+          no site switcher, because scope decides which incidents you are looking at.
+
+          So one of them goes. It is the company: switching company is rare and only
+          affects people who belong to more than one, while site scope is changed
+          constantly and changes what every screen shows. Nothing is lost - the drawer
+          carries the company switcher on exactly the breakpoints this hides it.
+        */}
+        <div className="hidden min-w-0 md:block">
+          <CompanySwitcher />
+        </div>
         <span className="hidden text-muted md:inline">/</span>
         <SiteSwitcher />
       </div>

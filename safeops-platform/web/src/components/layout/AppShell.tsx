@@ -11,6 +11,7 @@ import type { Capability } from '@/features/permissions/permissions'
 import { ErrorBoundary } from '@/app/ErrorBoundary'
 import { PageTitleContext, resolveTitle } from '@/app/pageTitle'
 import { Topbar } from './Topbar'
+import { CompanySwitcher } from './Switchers'
 import { Badge, FullPageSpinner } from '@/components/ui'
 
 interface NavItem {
@@ -198,6 +199,16 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <p className="text-sm font-bold leading-none tracking-tight text-ink">SafeOps</p>
           <p className="mt-0.5 text-2xs font-medium uppercase tracking-widest text-muted">Safety Intelligence</p>
         </div>
+      </div>
+
+      {/*
+        Company switching, for the widths where the header cannot afford it. See the note in
+        Topbar.tsx: below md the header gives up this control so the site switcher has room
+        to show a name, and this is where it goes instead. Hidden from md up, where the
+        header has it again, so it is never in two places at once.
+      */}
+      <div className="px-3 pb-3 md:hidden">
+        <CompanySwitcher />
       </div>
 
       <nav className="flex-1 space-y-0.5 px-3 pt-1">

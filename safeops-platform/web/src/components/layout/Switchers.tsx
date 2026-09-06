@@ -24,8 +24,23 @@ function SwitcherButton({
          * the viewport and gave the whole page a horizontal scroll - small, but it is the
          * header, so it is on every screen. `max-w` alone could not fix it: the floor was
          * the minimum, not the maximum.
+         *
+         * `w-full` is the other half, and without it the above only looked fixed.
+         *
+         * Dropdown wraps this button in two plain <div>s. Those are the flex items, so they
+         * shrank correctly - to 85px and 60px on a 375px phone - but the button inside is
+         * not a flex item of that row, and a block container does not constrain a child that
+         * sizes itself from its own content. So the button stayed at its natural 180px and,
+         * the wrappers being overflow:visible, simply painted straight through the next one:
+         * the two switchers overlapped by 89px and the company name ran under the
+         * notification badge. Three controls drawn on top of each other.
+         *
+         * Nothing caught it. There was no horizontal scroll to find - the spill stayed
+         * inside the viewport - so a responsive audit measuring document width passed it,
+         * and measuring the wrappers rather than the button says everything is fine. It is
+         * visible in a screenshot and in the button's own rect, and nowhere else.
          */
-        'flex min-w-0 max-w-[180px] items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm font-medium text-ink transition-colors md:max-w-[240px]',
+        'flex w-full min-w-0 max-w-[180px] items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm font-medium text-ink transition-colors md:max-w-[240px]',
         open ? 'bg-accent-soft' : 'hover:bg-accent-soft/60',
       )}
     >
