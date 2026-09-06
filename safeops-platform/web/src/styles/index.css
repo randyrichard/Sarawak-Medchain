@@ -27,7 +27,14 @@
   /* ink */
   --ink: #0b0b0b;
   --ink-2: #52514e;
-  --muted: #898781;
+  /*
+   * Was #898781, which is 3.23:1 against the sunken background — below the 4.5:1 that
+   * WCAG AA asks for body text, and this token is used 777 times, always as text. It also
+   * pairs with the smallest size in the app 467 times, so the most common piece of text in
+   * SafeOps was both the palest and the smallest. Darkened by the least amount that
+   * reaches 4.5:1, with hue and saturation untouched.
+   */
+  --muted: #716f69;
 
   /* lines */
   --line: rgba(11, 11, 11, 0.1);
@@ -35,18 +42,35 @@
   --baseline: #c3c2b7;
 
   /* brand accent */
-  --accent: #2a78d6;
-  --accent-hover: #256abf;
+  /* 3.97:1 before, so every link and every text button failed AA in this theme. */
+  --accent: #266fc6;
+  --accent-hover: #1f5da6;
   --accent-soft: rgba(42, 120, 214, 0.1);
 
-  /* status — fixed, never themed, never used as series colors */
-  --good: #0ca30c;
+  /*
+   * Status colours.
+   *
+   * These are now themed, which the previous note here said they never would be, so the
+   * reason matters. They were one shared set tuned for the dark theme, and measured against
+   * the light one they were unreadable: warning at 1.65:1, serious 2.37, good 3.02,
+   * critical 4.32 — against 4.5 for text. Warning on white is the extreme case and it is
+   * simple physics, not taste: a bright yellow cannot carry 4.5:1 on a near-white ground.
+   *
+   * Only lightness changes. Hue and saturation are held, so a status still means what it
+   * meant — the darker amber is still amber — and the -soft tints are untouched, so every
+   * badge and banner background looks as it did. Checked before changing: `--warning` is
+   * never a solid fill behind text anywhere, only a border or a -soft tint, so nothing
+   * depended on it staying bright.
+   *
+   * .dark restores values suited to a dark ground. See the note there.
+   */
+  --good: #0a810a;
   --good-soft: rgba(12, 163, 12, 0.12);
-  --warning: #fab219;
+  --warning: #946603;
   --warning-soft: rgba(250, 178, 25, 0.16);
-  --serious: #ec835a;
+  --serious: #c24616;
   --serious-soft: rgba(236, 131, 90, 0.14);
-  --critical: #d03b3b;
+  --critical: #ce3434;
   --critical-soft: rgba(208, 59, 59, 0.1);
   --delta-good: #006300;
 
@@ -83,6 +107,23 @@
   --accent: #3987e5;
   --accent-hover: #5598e7;
   --accent-soft: rgba(57, 135, 229, 0.16);
+
+  /*
+   * Status colours, restored for a dark ground.
+   *
+   * :root now darkens these to be readable on near-white, and those darker values measure
+   * about 3.45:1 here — so inheriting them would fix one theme by breaking the other. These
+   * three are the original values, which already pass on dark: good 5.19, warning 9.49,
+   * serious 6.60.
+   *
+   * Critical is not a restoration. #d03b3b was 3.62:1 against the dark surface and failed
+   * here too, in the theme it was tuned for; this is the smallest lightening that reaches
+   * 4.5:1. It was the only token failing in both themes at once.
+   */
+  --good: #0ca30c;
+  --warning: #fab219;
+  --serious: #ec835a;
+  --critical: #d75959;
 
   --delta-good: #0ca30c;
 

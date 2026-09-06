@@ -48,16 +48,39 @@ export default {
         sans: ['Inter', 'system-ui', '-apple-system', '"Segoe UI"', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'Consolas', 'monospace'],
       },
+      /*
+       * The type scale — the only sizes the app uses.
+       *
+       * Every step moved up one. The scale used to sit a full step below web convention:
+       * `base` was 14px where the browser default and nearly every other product is 16, and
+       * the rest followed from there.
+       *
+       * That was not an abstract problem. Counted across the app, 650 of about 1,250 size
+       * declarations were `2xs` — 11px was the single most-used size in the product, and
+       * `base` appeared 15 times. So more than half of everything on screen was set at
+       * eleven pixels.
+       *
+       * Consider who reads it. A supervisor in their forties or fifties, which is where
+       * presbyopia starts; on a phone; in Bintulu daylight; sometimes through safety
+       * glasses. Eleven pixels is a poor bet against all four at once, and the cost of
+       * losing it is a near miss that does not get filed.
+       *
+       * Line heights move with the sizes to hold roughly a 1.45 ratio, which is what keeps
+       * a wrapped label legible rather than merely larger.
+       *
+       * The deeper fix is not here. It is that the app reaches for `2xs` where it means
+       * `sm`, and that is a judgement per component rather than a number in a config. This
+       * raises the floor under all of it first.
+       */
       fontSize: {
-        // type scale — the only sizes the app uses
-        '2xs': ['11px', '16px'],
-        xs: ['12px', '18px'],
-        sm: ['13px', '20px'],
-        base: ['14px', '22px'],
-        lg: ['16px', '24px'],
-        xl: ['18px', '26px'],
-        '2xl': ['22px', '30px'],
-        '3xl': ['28px', '34px'],
+        '2xs': ['12px', '17px'],
+        xs: ['13px', '19px'],
+        sm: ['14px', '21px'],
+        base: ['16px', '24px'],
+        lg: ['18px', '27px'],
+        xl: ['20px', '29px'],
+        '2xl': ['24px', '32px'],
+        '3xl': ['30px', '38px'],
       },
       boxShadow: {
         card: '0 1px 2px rgba(11,11,11,0.04)',
