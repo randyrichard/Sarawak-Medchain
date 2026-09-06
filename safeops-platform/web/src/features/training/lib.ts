@@ -4,6 +4,7 @@ import type {
 } from '@/api/training'
 import type { StatusKind } from '@/components/ui'
 import { csvDocument } from '@/lib/csv'
+import { escapeHtml } from '@/lib/escapeHtml'
 
 export const COMPETENCY_META: Record<CompetencyStatus, { color: string; label: string }> = {
   competent: { color: 'var(--good)', label: 'Competent' },
@@ -43,8 +44,8 @@ export function printCertificate(cert: CertificateView, siteName: string) {
   qr.addData(verifyUrl)
   qr.make()
   const qrSvg = qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true })
-  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;')
-  const html = `<!doctype html><html><head><title>${cert.number}</title><style>
+  const esc = escapeHtml
+  const html = `<!doctype html><html><head><title>${esc(cert.number)}</title><style>
     *{box-sizing:border-box}
     body{font-family:"Segoe UI",system-ui,sans-serif;margin:0;padding:40px;color:#111}
     .cert{border:3px double #1c5cab;border-radius:14px;padding:40px;max-width:820px;margin:0 auto;position:relative}
@@ -69,7 +70,7 @@ export function printCertificate(cert: CertificateView, siteName: string) {
     <div class="sub">has successfully completed and is assessed competent in</div>
     <div class="course">${esc(cert.courseName)}</div>
     <div class="grid">
-      <span><b>Certificate No:</b> ${cert.number}</span><span><b>Site:</b> ${esc(siteName)}</span>
+      <span><b>Certificate No:</b> ${esc(cert.number)}</span><span><b>Site:</b> ${esc(siteName)}</span>
       <span><b>Issued:</b> ${cert.issueDate}</span><span><b>Expires:</b> ${cert.expiryDate ?? 'No expiry'}</span>
       <span><b>Issued by:</b> ${esc(cert.issuedBy)}</span><span><b>Score:</b> ${cert.score ?? '—'}%</span>
     </div>

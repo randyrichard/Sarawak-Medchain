@@ -1,7 +1,8 @@
 import type { PermitView } from '@/api/permits'
 import { GAS_LIMITS } from '@/api/permits'
+import { escapeHtml } from '@/lib/escapeHtml'
 
-const esc = (s: string) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+const esc = escapeHtml
 const fmt = (iso: string) => new Date(iso).toLocaleString('en-MY', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 
 /**

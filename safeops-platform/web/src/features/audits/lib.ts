@@ -1,6 +1,7 @@
 import type { AuditStatus, AuditView, FindingDerivedStatus, FindingSeverity } from '@/api/audits'
 import { AUDIT_TYPE_LABEL } from '@/api/audits'
 import type { StatusKind } from '@/components/ui'
+import { escapeHtml } from '@/lib/escapeHtml'
 
 export const SEVERITY_META: Record<FindingSeverity, { kind: StatusKind }> = {
   Critical: { kind: 'critical' },
@@ -30,7 +31,7 @@ export const scoreColor = (score: number) =>
 
 /** Printable audit report — opens a clean document and triggers the print dialog. */
 export function printAuditReport(audit: AuditView, findings: { code: string; severity: string; category: string; description: string; status: string; actionCode: string; actionOwner: string; actionDue: string }[], siteName: string) {
-  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+  const esc = escapeHtml
   const rows = findings
     .map(
       (f) => `<tr><td>${f.code}</td><td>${f.severity}</td><td>${esc(f.category)}</td><td>${esc(f.description)}</td><td>${f.actionCode} · ${esc(f.actionOwner)} · due ${f.actionDue}</td><td>${f.status}</td></tr>`,
@@ -60,7 +61,7 @@ export function printAuditReport(audit: AuditView, findings: { code: string; sev
     ${audit.score !== undefined ? `<p>Audit score: <span class="score">${audit.score}%</span></p>` : ''}
     <h2>Findings (${findings.length})</h2>
     ${findings.length ? `<table><thead><tr><th>Ref</th><th>Severity</th><th>Category</th><th>Description</th><th>Corrective action</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>` : '<p>No findings raised.</p>'}
-    ${audit.signature ? `<p class="sig">Digitally signed by <b>${esc(audit.signature)}</b>${audit.completedAt ? ` on ${new Date(audit.completedAt).toLocaleString('en-MY')}` : ''}${audit.gps ? ` · GPS ${audit.gps}` : ''}</p>` : ''}
+    ${audit.signature ? `<p class="sig">Digitally signed by <b>${esc(audit.signature)}</b>${audit.completedAt ? ` on ${new Date(audit.completedAt).toLocaleString('en-MY')}` : ''}${audit.gps ? ` · GPS ${esc(audit.gps)}` : ''}</p>` : ''}
     <script>window.onload = () => window.print()</script>
   </body></html>`
   const w = window.open('', '_blank', 'width=900,height=700')
