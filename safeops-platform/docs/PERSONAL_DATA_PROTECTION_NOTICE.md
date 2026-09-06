@@ -9,11 +9,18 @@
 > What it is not is a compliant notice. Before any of it is shown to a customer it needs:
 >
 > 1. **Review by a Malaysian lawyer** familiar with the PDPA 2010 as amended in 2024.
-> 2. **A Bahasa Malaysia translation.** Section 7(3) requires the notice in both Bahasa
->    Malaysia and English. An English-only notice does not satisfy the section.
+> 2. **A checked Bahasa Malaysia translation.** Section 7(3) requires the notice in both
+>    Bahasa Malaysia and English; an English-only notice does not satisfy the section. A
+>    Malay version now exists and is shown beside the English one in the product, with a
+>    language switch that carries a `lang` attribute so a screen reader pronounces it
+>    correctly. It was written to be accurate and readable, **not** certified: a translator
+>    still has to confirm the two versions say the same thing, and that the PDPA terms of
+>    art are the ones the Act uses.
 > 3. **The blanks filled in** — every `[SQUARE BRACKET]` below is a fact only you can supply.
 > 4. **A decision on the retention periods**, which the software does not currently enforce.
 >    See "How long we keep it".
+> 5. **TLS actually running** in front of the deployment that serves the notice. See the
+>    Security section.
 >
 > Publishing this as-is would be worse than publishing nothing, because it would be a set of
 > statements a customer could hold you to.
@@ -211,10 +218,21 @@ between you and your employer, not between you and us.
 - Passwords are stored as Argon2id hashes and are never recoverable, by us or anyone else.
 - Sessions use short-lived signed tokens; the long-lived part is an HTTP-only cookie that
   page scripts cannot read.
-- Traffic is encrypted with TLS.
+- The software requires the connection to be encrypted: it refuses to start in production
+  unless its public address is HTTPS, because every invitation and password-reset link
+  carries a single-use credential in the URL.
 - Access is checked on every request, on the server, against your role and your sites.
-- Uploaded files are stored under server-generated names and served only to people
-  authorised for the record they belong to.
+- Uploaded files are stored under server-generated names, recorded with a SHA-256 digest so
+  a changed or corrupted file can be detected, and served only to people authorised for the
+  record they belong to.
+
+> **Do not publish this section until TLS is actually terminating in front of the
+> deployment.** This previously read "Traffic is encrypted with TLS", stated flatly, while
+> the pilot stack was serving plain HTTP with no certificate and no proxy in front of it. A
+> privacy notice asserting encryption that is not there is the one kind of inaccuracy that
+> is worse than a gap, because a reader acts on it. The wording above describes what the
+> software requires, which is true of the software; whether a given deployment does it is a
+> property of that deployment and belongs in the checklist at the top of this file.
 
 No system is perfectly secure, and we do not claim otherwise.
 

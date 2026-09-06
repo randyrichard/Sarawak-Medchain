@@ -1,6 +1,11 @@
+import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ShieldCheck } from 'lucide-react'
-import { PRIVACY_NOTICE, TERMS_OF_SERVICE, type LegalDocument } from './documents'
+import { cn } from '@/lib/cn'
+import {
+  LANGUAGE_LABEL, LANGUAGE_TAG, PRIVACY_NOTICE, TERMS_OF_SERVICE,
+  type LegalDocument, type LegalLanguage,
+} from './documents'
 import { usePageTitle } from '@/app/pageTitle'
 
 /**
@@ -17,7 +22,34 @@ import { usePageTitle } from '@/app/pageTitle'
 export function LegalPage() {
   const { pathname } = useLocation()
   const doc: LegalDocument = pathname.startsWith('/terms') ? TERMS_OF_SERVICE : PRIVACY_NOTICE
-  usePageTitle(doc.title)
+
+  /*
+   * Which language is showing.
+   *
+   * Both are equally reachable rather than one being the real notice and the other a
+   * courtesy: section 7(3) of the PDPA requires the notice in both national and English
+   * language, so a Malay version reachable only through a link at the bottom would be
+   * meeting the letter and missing the point.
+   *
+   * The choice is remembered, because somebody who reads in Malay reads the terms in Malay
+   * too, and being asked twice is being asked once too often.
+   */
+  const [lang, setLang] = useState<LegalLanguage>(() => {
+    try {
+      const saved = localStorage.getItem('safeops.legal.lang')
+      if (saved === 'ms' || saved === 'en') return saved
+    } catch { /* private mode, blocked storage - fall through to the default */ }
+    // Malaysia's own language setting is a better first guess than English.
+    return typeof navigator !== 'undefined' && /^ms/i.test(navigator.language || '') ? 'ms' : 'en'
+  })
+
+  const choose = (next: LegalLanguage) => {
+    setLang(next)
+    try { localStorage.setItem('safeops.legal.lang', next) } catch { /* nothing to do */ }
+  }
+
+  const content = doc[lang]
+  usePageTitle(content.title)
 
   return (
     <div className="min-h-full bg-page">
@@ -67,25 +99,54 @@ export function LegalPage() {
           </div>
         )}
 
-        <h1 className="text-xl font-bold tracking-tight text-ink">{doc.title}</h1>
-        <p className="mt-1 text-xs text-muted">
-          Version {doc.version} · Last updated {doc.updated}
-        </p>
+        {/*
+          The language switch, above the title rather than below the document.
 
-        <div className="mt-6 space-y-6">
-          {doc.sections.map((s) => (
-            <section key={s.heading}>
-              <h2 className="text-sm font-bold text-ink">{s.heading}</h2>
-              {s.body.map((p, i) => (
-                <p key={i} className="mt-2 text-sm leading-relaxed text-ink-2">{p}</p>
-              ))}
-              {s.list && (
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-relaxed text-ink-2">
-                  {s.list.map((li) => <li key={li}>{li}</li>)}
-                </ul>
+          `lang` on the wrapper is what makes a screen reader pronounce Malay as Malay
+          instead of reading it with English phonemes, which is the difference between a
+          notice somebody can follow and a noise.
+        */}
+        <div className="mb-5 flex flex-wrap items-center gap-1" role="group" aria-label="Language / Bahasa">
+          {(['en', 'ms'] as const).map((code) => (
+            <button
+              key={code}
+              type="button"
+              onClick={() => choose(code)}
+              lang={LANGUAGE_TAG[code]}
+              aria-pressed={lang === code}
+              className={cn(
+                'rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors coarse:min-h-11',
+                lang === code
+                  ? 'border-accent bg-accent-soft text-ink'
+                  : 'text-ink-2 hover:bg-accent-soft hover:text-ink',
               )}
-            </section>
+            >
+              {LANGUAGE_LABEL[code]}
+            </button>
           ))}
+        </div>
+
+        <div lang={LANGUAGE_TAG[lang]}>
+          <h1 className="text-xl font-bold tracking-tight text-ink">{content.title}</h1>
+          <p className="mt-1 text-xs text-muted">
+            Version {doc.version} · Last updated {doc.updated}
+          </p>
+
+          <div className="mt-6 space-y-6">
+            {content.sections.map((s) => (
+              <section key={s.heading}>
+                <h2 className="text-sm font-bold text-ink">{s.heading}</h2>
+                {s.body.map((p, i) => (
+                  <p key={i} className="mt-2 text-sm leading-relaxed text-ink-2">{p}</p>
+                ))}
+                {s.list && (
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-relaxed text-ink-2">
+                    {s.list.map((li) => <li key={li}>{li}</li>)}
+                  </ul>
+                )}
+              </section>
+            ))}
+          </div>
         </div>
 
         <p className="mt-10 border-t pt-4 text-xs text-muted">
