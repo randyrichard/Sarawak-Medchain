@@ -35,6 +35,11 @@ export default {
         'accent-soft': 'var(--accent-soft)',
         good: 'var(--good)',
         warning: 'var(--warning)',
+        // The soft variant already existed as a CSS variable but was never exposed here, so
+        // `bg-warning-soft` generated no class at all and the element rendered transparent -
+        // a silent failure, since Tailwind does not complain about a class it has not heard
+        // of. Its accent and critical counterparts were already listed.
+        'warning-soft': 'var(--warning-soft)',
         serious: 'var(--serious)',
         critical: 'var(--critical)',
         'critical-soft': 'var(--critical-soft)',

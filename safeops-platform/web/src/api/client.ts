@@ -751,6 +751,7 @@ class MockApiClient implements ApiClient {
         emergencyResponseActivated: input.emergencyResponseActivated,
         anonymous: input.anonymous,
         immediateActions: input.immediateActions, occurredAt: input.occurredAt,
+        clientRef: input.clientRef,
       })
     }
     await delay(LATENCY())

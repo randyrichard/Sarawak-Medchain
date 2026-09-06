@@ -11,6 +11,7 @@ import type { Capability } from '@/features/permissions/permissions'
 import { ErrorBoundary } from '@/app/ErrorBoundary'
 import { PageTitleContext, resolveTitle } from '@/app/pageTitle'
 import { Topbar } from './Topbar'
+import { OutboxBanner } from '@/features/incidents/components/OutboxBanner'
 import { CompanySwitcher } from './Switchers'
 import { Badge, FullPageSpinner } from '@/components/ui'
 
@@ -155,6 +156,15 @@ export default function AppShell() {
             without it the browser jumps the viewport and leaves focus in the sidebar. */}
         <main id="main" tabIndex={-1} className="min-w-0 flex-1 overflow-y-auto px-4 py-5 outline-none md:px-6 lg:px-7">
           <div className="mx-auto max-w-[1360px]">
+            {/*
+              Unsent incident reports, shown on every screen.
+
+              Above the error boundary and outside Suspense on purpose: the queue must stay
+              visible even when the page inside has crashed or is still loading. Somebody
+              whose report is sitting unsent needs to know that regardless of what else the
+              app is doing.
+            */}
+            <OutboxBanner />
             {/* Per-route boundary: a page crash shows a recoverable fallback here while the
                 shell stays usable. Keying by pathname clears the error on navigation. */}
             <ErrorBoundary key={location.pathname} scope="This screen">

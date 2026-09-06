@@ -121,6 +121,20 @@ const createBody = z.object({
    * a correct ISO-8601 timestamp into a 400 nobody can explain. Stored as UTC either way.
    */
   occurredAt: z.string().datetime({ offset: true }),
+  /*
+   * Idempotency key for a report the browser queued while offline and is now replaying.
+   *
+   * Constrained to a UUID rather than any string, because it becomes half of a unique index
+   * and it arrives from a client. A caller who could send arbitrary text could occupy a key
+   * another client will later generate, and that client's genuine report would then be
+   * answered with somebody else's incident. A v4 UUID is not guessable, and the index is
+   * scoped per company, so the reachable damage is bounded to a workspace the caller is
+   * already a member of.
+   *
+   * Optional: reports sent straight from the form carry none, and nothing about the existing
+   * path changes.
+   */
+  clientRef: z.string().uuid().optional(),
 })
 
 incidentsRouter.post('/', async (req, res, next) => {

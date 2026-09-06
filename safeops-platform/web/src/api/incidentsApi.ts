@@ -289,6 +289,14 @@ export const incidentsApi = {
     location: string; gps?: string; immediateActions?: string; occurredAt: string
     weather?: string; shift?: string
     emergencyResponseActivated?: boolean; anonymous?: boolean
+    /**
+     * Idempotency key for a report the browser queued while offline.
+     *
+     * Generated once per report and resent unchanged on every attempt, which is what lets
+     * the server answer a replay with the incident it already filed instead of filing a
+     * second one. Absent for a report submitted straight from the form.
+     */
+    clientRef?: string
   }): Promise<Incident> {
     return toIncident(await request<ServerIncident>('/incidents', {
       method: 'POST', body: JSON.stringify(input),

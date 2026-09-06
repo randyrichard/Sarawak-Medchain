@@ -389,11 +389,34 @@ export class IncidentService {
     /// Reported without attribution. The reporter is still recorded - somebody has to be
     /// able to follow up - but withheld from anyone below HSE manager on the way out.
     anonymous?: boolean
+    /// Idempotency key from the reporting browser. See the clientRef handling below.
+    clientRef?: string
   }) {
     this.membership(caller, input.companyId) // any member may report
 
     if (!input.title?.trim()) throw new IncidentError('validation', 'A title is required.')
     if (!input.location?.trim()) throw new IncidentError('validation', 'A location is required.')
+
+    /*
+     * Idempotency, for reports filed offline and replayed later.
+     *
+     * A phone on a site loses signal mid-submit, queues the report, and sends it again when
+     * it can. The retry cannot distinguish "never arrived" from "arrived, committed, and the
+     * response was lost coming back" - so without a key the second case files the injury a
+     * second time. Not a cosmetic duplicate: it double-counts in the incident statistics and
+     * in whatever is reported to DOSH from them.
+     *
+     * Checked here and caught again after the insert, because a check and an insert are not
+     * atomic. This lookup covers the ordinary replay, minutes or hours later; the catch
+     * covers two copies of one queued report arriving together, which is what happens when a
+     * phone regains signal with the app open in more than one tab.
+     */
+    if (input.clientRef) {
+      const already = await this.db.incident.findFirst({
+        where: { companyId: input.companyId, clientRef: input.clientRef },
+      })
+      if (already) return already
+    }
 
     const site = await this.db.site.findFirst({
       where: { id: input.siteId, companyId: input.companyId },
@@ -421,6 +444,27 @@ export class IncidentService {
       departmentName = dept.name
     }
 
+    try {
+      return await this.createInTransaction(caller, input, departmentName)
+    } catch (e) {
+      // Someone else committed the same queued report first. Their row is the one that
+      // exists, so return it: the caller asked for this report to be filed, and it is.
+      if (input.clientRef && (e as { code?: string }).code === 'P2002') {
+        const raced = await this.db.incident.findFirst({
+          where: { companyId: input.companyId, clientRef: input.clientRef },
+        })
+        if (raced) return raced
+      }
+      throw e
+    }
+  }
+
+  /** The insert itself, split out only so the clientRef race above has something to wrap. */
+  private async createInTransaction(
+    caller: Caller,
+    input: Parameters<IncidentService['create']>[1],
+    departmentName: string,
+  ) {
     return this.db.$transaction(async (tx) => {
       const counter = await tx.counter.upsert({
         where: { companyId_kind: { companyId: input.companyId, kind: 'incident' } },
@@ -453,6 +497,7 @@ export class IncidentService {
           reporter: caller.name,
           reporterId: caller.userId,
           occurredAt: new Date(input.occurredAt),
+          clientRef: input.clientRef ?? null,
         },
       })
 

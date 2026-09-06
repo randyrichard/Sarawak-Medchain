@@ -363,6 +363,21 @@ model Incident {
   /// run their own sequence and both legitimately have an INC-2601.
   number String
 
+  /// Idempotency key supplied by the reporter's browser, so a report that is sent twice
+  /// creates one incident.
+  ///
+  /// This exists because of how reports are actually filed: on a phone, on a site, on a
+  /// connection that drops. The browser queues the report and retries, and a retry cannot
+  /// tell the difference between "the request never arrived" and "it arrived, committed,
+  /// and the response was lost on the way back". Without a key the second case silently
+  /// files the injury twice — which is not a cosmetic duplicate, it double-counts in the
+  /// safety statistics and in anything reported to DOSH from them.
+  ///
+  /// Nullable, and unique only per company: reports filed from the UI before this existed
+  /// have none, and NULLs do not collide in a Postgres unique index, so any number of rows
+  /// may leave it empty.
+  clientRef String?
+
   companyId String
   siteId    String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -460,6 +475,7 @@ model Incident {
   links          IncidentLink[]
 
   @@unique([companyId, number])
+  @@unique([companyId, clientRef])
   @@index([companyId, stage])
   @@index([companyId, siteId])
   @@index([companyId, severityRank])

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  ArrowLeft, ArrowRight, Check, CloudUpload, FileText, Film, Image as ImageIcon,
+  ArrowLeft, ArrowRight, Check, CloudOff, CloudUpload, FileText, Film, Image as ImageIcon,
   LocateFixed, PenLine, Send, Trash2, UserPlus, X,
 } from 'lucide-react'
 import { api } from '@/api/client'
@@ -10,9 +10,10 @@ import type { AttachmentKind, IncidentSeverity, IncidentType, NewIncidentInput, 
 import { INCIDENT_TYPES, TYPE_LABEL } from '@/api/incidents'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useOrg } from '@/features/org/OrgContext'
-import { Alert, Badge, Breadcrumbs, Button, Card, Checkbox, Input, Select, Textarea } from '@/components/ui'
+import { Alert, Badge, Breadcrumbs, Button, Card, Checkbox, Input, LinkButton, Select, Textarea } from '@/components/ui'
 import { usePageTitle } from '@/app/pageTitle'
 import { severityKind, SITE_COORDS, TYPE_ICON, useActor } from './lib'
+import { enqueue, shouldRetry } from './outbox'
 import { StatusPill } from '@/components/ui'
 import { cn } from '@/lib/cn'
 
@@ -85,6 +86,9 @@ export function ReportIncidentPage() {
   const [draft, setDraft] = useState<Draft>(emptyDraft)
   const [resumeAvailable, setResumeAvailable] = useState(false)
   const [savedAt, setSavedAt] = useState<Date | null>(null)
+  // Set when the report could not be sent and was put in the outbox instead. It is a
+  // separate state from `error` because it is not one: the report is filed.
+  const [queued, setQueued] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [touchedNext, setTouchedNext] = useState(false)
@@ -182,12 +186,73 @@ export function ReportIncidentPage() {
       localStorage.removeItem(draftKey)
       navigate(`/incidents/${incident.id}`, { state: { created: true } })
     } catch (e) {
+      const code = e instanceof ApiError ? e.code : undefined
+
+      /*
+       * Could not reach the server, rather than the server saying no.
+       *
+       * The report is accepted rather than refused. Telling a supervisor standing in a yard
+       * to "try again" is asking them to remember, later, on their own, to reopen the app
+       * and resubmit an injury — and the one person least able to do that is the one dealing
+       * with the injury. So it goes in the outbox and is sent when there is signal.
+       *
+       * The key is generated here, once, and travels with the report for every attempt. That
+       * is what stops a replay filing the same injury twice; the server enforces it with a
+       * unique index on (companyId, clientRef).
+       */
+      if (shouldRetry(code)) {
+        const clientRef = crypto.randomUUID()
+        enqueue(user?.id ?? 'anonymous', { ...input, clientRef }, clientRef)
+        localStorage.removeItem(draftKey)
+        setQueued(true)
+        setSubmitting(false)
+        return
+      }
+
       setError(e instanceof ApiError ? e.message : 'Submission failed — your draft is safe, try again.')
       setSubmitting(false)
     }
   }
 
   const siteName = sites.find((s) => s.id === draft.siteId)?.name
+
+  /*
+   * The report could not be sent and is now in the outbox.
+   *
+   * Deliberately a confirmation rather than an error, because from the reporter's side the
+   * job is done: they filed it, it is kept, and it goes as soon as there is signal. Wording
+   * it as a failure would invite them to fill the whole thing in again, which is how one
+   * injury becomes two records.
+   *
+   * It replaces the form for the same reason - there is nothing left to do on this screen,
+   * and leaving the filled-in form on display invites a second submission.
+   */
+  if (queued) {
+    return (
+      <div className="mx-auto max-w-lg py-10">
+        <Breadcrumbs items={[{ label: 'Incidents', to: '/incidents' }, { label: 'Report saved' }]} />
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent-soft">
+          <CloudOff size={22} className="text-accent" aria-hidden="true" />
+        </div>
+        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-ink">Report saved</h1>
+        <p className="mt-2 text-sm text-ink-2">
+          There was no connection to send it, so it is being held on this device and will be
+          submitted automatically as soon as you are back online. You do not need to fill it
+          in again.
+        </p>
+        <p className="mt-3 rounded-lg border bg-sunken px-3 py-2.5 text-xs text-ink-2">
+          It is safe to close the app. Keep the phone signed in — the report is held for this
+          account and sends on its own next time SafeOps is open with a connection.
+        </p>
+        <div className="mt-6 flex flex-wrap gap-2">
+          <LinkButton to="/incidents" size="lg">Back to incidents</LinkButton>
+          <LinkButton to="/incidents/new" variant="secondary" size="lg" onClick={() => setQueued(false)}>
+            Report another
+          </LinkButton>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-3xl">

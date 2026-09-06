@@ -249,6 +249,13 @@ export interface NewIncidentInput {
   description: string
   attachments: Omit<IncidentAttachment, 'id' | 'at' | 'uploadedBy'>[]
   signature: string
+  /**
+   * Idempotency key, set only when the report is being sent from the offline outbox.
+   *
+   * The same key is presented on every attempt so the server can recognise a replay. See
+   * src/features/incidents/outbox.ts.
+   */
+  clientRef?: string
 }
 
 export type IncidentStatusFilter =
