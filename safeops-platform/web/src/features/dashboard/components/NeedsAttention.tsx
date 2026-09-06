@@ -131,7 +131,16 @@ export function NeedsAttention({
                         {r.owner && <> · {r.owner}</>}
                         {late && <span className="text-critical"> · {late}</span>}
                       </p>
-                      <p className="mt-0.5 truncate text-2xs text-muted">{r.detail}</p>
+                      {/*
+                        Wraps to a second line on a phone, truncates from sm up.
+                        `truncate` alone clipped this at 375px: "Valid until 2026-07-30 15:05
+                        and never closed out" needs 263px in a 238px column, and it is the
+                        tail that carries the reason — the row said when a permit expired and
+                        then cut off the part explaining why anyone should care. Two lines is
+                        cheap on a screen that scrolls vertically anyway, and on wider screens
+                        there is room for one line so the list stays scannable.
+                      */}
+                      <p className="mt-0.5 line-clamp-2 text-2xs text-muted sm:truncate">{r.detail}</p>
                     </div>
                     <ChevronRight size={14} className="mt-1 shrink-0 text-muted" />
                   </Link>
