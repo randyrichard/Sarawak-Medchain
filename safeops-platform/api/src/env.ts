@@ -75,18 +75,57 @@ const schema = z.object({
   RATE_LIMIT_PER_MIN: z.coerce.number().int().positive().max(100_000).default(3000),
 
   /*
-   * How many reverse proxies sit in front of this process.
+   * WHICH addresses are allowed to speak for a client via X-Forwarded-For.
    *
-   * Express walks X-Forwarded-For from the right and skips this many entries to find the
-   * client. The number must match the deployment exactly, and both directions are wrong in
-   * their own way: too low and every visitor is recorded as the proxy's address, which
-   * buckets the whole customer into one rate limit and fills the audit trail with a single
-   * IP; too high and a client can forge X-Forwarded-For and be believed, which is worse.
+   * This replaced a hop count, and the reason is that a hop count cannot do the job. It says
+   * how many entries to trust and never who is entitled to add them, so with any non-zero
+   * value Express treats whoever opened the socket as a legitimate proxy. Demonstrated
+   * against this API: three requests differing only in an X-Forwarded-For header produced
+   * three separate rate-limit buckets, so rotating that header yields unlimited fresh
+   * budgets - and since req.ip is also written to the audit trail and login history, the
+   * security log can be filled with addresses of the caller's choosing.
    *
-   * 1 is the bundled deployment: browser -> Caddy -> api.
-   * 2 once a CDN or WAF is added:  browser -> Cloudflare -> Caddy -> api.
+   * An address list closes it. X-Forwarded-For is believed only when the peer that sent it
+   * is on this list; from anyone else it is ignored and req.ip is the socket address, which
+   * cannot be forged over TCP.
+   *
+   * Accepts Express's keywords (loopback, linklocal, uniquelocal), plain addresses, and
+   * CIDR ranges, comma-separated. `false` trusts nothing and is correct when the process is
+   * reachable directly.
+   *
+   * The default covers the bundled deployment - Caddy reaches the API over the private
+   * compose network, and nothing on a public address is believed. A CDN in front does not
+   * change it: Cloudflare talks to Caddy, Caddy talks to this, and Caddy is still the peer.
+   * Name Cloudflare's ranges here only if it reaches this process directly.
    */
-  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
+  TRUST_PROXY: z.string().default('loopback,linklocal,uniquelocal'),
+
+  /*
+   * A secret the reverse proxy presents to prove it is the reverse proxy.
+   *
+   * TRUST_PROXY alone is not sufficient behind Docker, and that is not a subtlety - it was
+   * measured. Every connection arriving through a published port is source-NATed to the
+   * bridge gateway, 172.19.0.1 here, which is a private address and therefore matches
+   * `uniquelocal`. So the address list cannot tell Caddy on the compose network apart from
+   * anything else that can reach the port: after switching to the list, three requests
+   * differing only in an X-Forwarded-For header still produced three rate-limit buckets.
+   *
+   * An address cannot settle this because Docker rewrote it. A secret can. When this is set
+   * the API strips X-Forwarded-For from any request that does not carry the matching token,
+   * so a forged header from a client is discarded before anything reads req.ip, whatever
+   * address the packet appears to come from.
+   *
+   * Optional. Unset, the API falls back to TRUST_PROXY alone, which is correct when nothing
+   * NATs the proxy's address - and the boot check below refuses that combination in
+   * production, where it is far more likely to be an oversight than a decision.
+   */
+  PROXY_TOKEN: z.string().min(16).optional(),
+
+  /*
+   * Deliberately still declared, so that a deployment carrying the old variable fails loudly
+   * rather than silently reverting to the behaviour it was set for. See the check below.
+   */
+  TRUST_PROXY_HOPS: z.string().optional(),
 
   // Where incident evidence is written. This MUST be a persistent volume in production:
   // the default is inside the working directory, which a container platform discards on
@@ -106,6 +145,47 @@ if (!parsed.success) {
 const raw = parsed.data
 
 /*
+ * TRUST_PROXY_HOPS was a hop count, and a hop count cannot say who is entitled to set
+ * X-Forwarded-For - only how many entries to believe. Any non-zero value therefore treated
+ * whoever opened the socket as a proxy, so a client could name its own address and be
+ * believed, and both the rate limiter and the audit trail followed the header.
+ *
+ * Refused rather than ignored. A deployment that still carries the old variable was
+ * configured by somebody who believed it did something, and quietly dropping it would leave
+ * them thinking a control is in place while the process trusts a different set of peers.
+ */
+if (raw.TRUST_PROXY_HOPS !== undefined) {
+  // eslint-disable-next-line no-console
+  console.error(`
+TRUST_PROXY_HOPS is no longer used, and left as-is it would weaken this deployment.
+
+A hop count cannot distinguish a real proxy from a client claiming to be one, so any
+value above 0 let callers forge X-Forwarded-For, choosing both their own rate-limit
+bucket and the address written into the audit trail.
+
+Replace it with TRUST_PROXY, which lists the peers allowed to speak for a client:
+
+  TRUST_PROXY=loopback,linklocal,uniquelocal   the bundled stack: Caddy on the private
+                                               compose network. This is the default.
+  TRUST_PROXY=false                            nothing in front; trust no header
+  TRUST_PROXY=10.0.0.5,192.168.1.0/24          only these peers
+`)
+  process.exit(1)
+}
+
+/**
+ * The parsed trust-proxy setting, in the shape Express wants.
+ *
+ * `false` disables header trust entirely. Otherwise it is a list, and Express checks the
+ * peer against it before believing anything the peer forwarded.
+ */
+function parseTrustProxy(value: string): false | string[] {
+  const trimmed = value.trim()
+  if (trimmed === '' || trimmed.toLowerCase() === 'false') return false
+  return trimmed.split(',').map((v) => v.trim()).filter(Boolean)
+}
+
+/*
  * Half-configured mail is worse than none.
  *
  * With SMTP_URL set but no MAIL_FROM every send is rejected by the relay, and the run
@@ -113,6 +193,41 @@ const raw = parsed.data
  * boot, in keeping with the rest of this file: a misconfigured deploy fails loudly rather
  * than silently doing nothing useful every Monday.
  */
+/*
+ * Trusting forwarded headers in production without a way to authenticate the proxy.
+ *
+ * Behind Docker the address list cannot do this alone: published ports are source-NATed to
+ * the bridge gateway, a private address, so `uniquelocal` ends up trusting anything that can
+ * reach the port. Measured, not assumed - forged X-Forwarded-For headers still produced
+ * separate rate-limit buckets after the list was introduced.
+ *
+ * So in production either the proxy proves itself with PROXY_TOKEN, or header trust is
+ * turned off with TRUST_PROXY=false and every visitor is attributed to the proxy. Both are
+ * defensible. Trusting the header with no way to check who sent it is not, and it fails
+ * silently: the rate limiter keeps answering and the audit trail keeps filling, with
+ * whatever the caller chose to write in them.
+ */
+if (raw.NODE_ENV === 'production' && parseTrustProxy(raw.TRUST_PROXY) !== false && !raw.PROXY_TOKEN) {
+  // eslint-disable-next-line no-console
+  console.error(`
+TRUST_PROXY is set to trust forwarded headers, but PROXY_TOKEN is not set, so there is no
+way to tell the real proxy from a client claiming to be one. Behind Docker that is not
+theoretical: published ports are source-NATed to the bridge gateway, which is a private
+address, so the address list trusts anything that can reach the port. A caller can then
+choose its own rate-limit bucket and the address written into the audit trail.
+
+Pick one:
+
+  PROXY_TOKEN=<a long random value>   and set the same value in deploy/Caddyfile, which
+                                      sends it as X-SafeOps-Proxy. Generate one with:
+                                        openssl rand -hex 32
+
+  TRUST_PROXY=false                   no proxy in front, or you accept that every visitor
+                                      is recorded as the proxy's address
+`)
+  process.exit(1)
+}
+
 /**
  * A production deployment must know its own public address.
  *
@@ -278,6 +393,8 @@ function decodeKey(b64: string, label: string): string {
 export const env = {
   ...raw,
   isProd: raw.NODE_ENV === 'production',
+  /** Peers allowed to set X-Forwarded-For, in the shape Express's `trust proxy` expects. */
+  trustProxy: parseTrustProxy(raw.TRUST_PROXY),
   schedulerEnabled: raw.SCHEDULER_ENABLED === 'true' && raw.NODE_ENV !== 'test',
   jwtPrivateKey: decodeKey(raw.JWT_PRIVATE_KEY_B64, 'JWT_PRIVATE_KEY_B64'),
   jwtPublicKey: decodeKey(raw.JWT_PUBLIC_KEY_B64, 'JWT_PUBLIC_KEY_B64'),

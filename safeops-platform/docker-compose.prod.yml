@@ -108,8 +108,18 @@ services:
       SCHEDULER_ENABLED: 'true'
       SCHEDULER_INTERVAL_MIN: ${SCHEDULER_INTERVAL_MIN:-15}
       RATE_LIMIT_PER_MIN: ${RATE_LIMIT_PER_MIN:-3000}
-      # 1 for Caddy alone; 2 once Cloudflare or another CDN is in front. See docs/CLOUDFLARE.md.
-      TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-1}
+      # Which peers may set X-Forwarded-For. The default covers Caddy on this private
+      # compose network and refuses the header from anything on a public address, so a
+      # client cannot name its own rate-limit bucket or audit-trail entry. It does not
+      # need changing for Cloudflare: Cloudflare talks to Caddy, and Caddy is still the
+      # peer this process sees. See docs/CLOUDFLARE.md.
+      TRUST_PROXY: ${TRUST_PROXY:-loopback,linklocal,uniquelocal}
+      # Proves a request came through Caddy. Required in production whenever TRUST_PROXY is
+      # not `false`, because behind Docker the address alone cannot establish it: published
+      # ports are source-NATed to the bridge gateway, which the trust list accepts. Without
+      # it a caller reaching the API directly can choose its own rate-limit bucket and the
+      # address recorded in the audit trail. Generate with `openssl rand -hex 32`.
+      PROXY_TOKEN: ${PROXY_TOKEN:-}
       UPLOAD_DIR: /data/uploads
     volumes:
       - safeops_uploads:/data/uploads
@@ -163,6 +173,8 @@ services:
       # Nothing is lost. An empty site address is an invalid Caddyfile, so starting this
       # profile unconfigured still fails immediately and says so - verified by running it
       # with the variables unset.
+      # Sent to the API as X-SafeOps-Proxy so it can tell this proxy from a client.
+      PROXY_TOKEN: ${PROXY_TOKEN:-}
       SAFEOPS_APP_DOMAIN: ${SAFEOPS_APP_DOMAIN:-}
       SAFEOPS_API_DOMAIN: ${SAFEOPS_API_DOMAIN:-}
       ACME_EMAIL: ${ACME_EMAIL:-}

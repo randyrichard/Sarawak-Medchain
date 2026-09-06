@@ -73,9 +73,25 @@
 		# The API sets `trust proxy`, so this is what makes req.ip the real client rather
 		# than this proxy. Per-IP rate limiting depends on it: without these headers every
 		# user shares one bucket.
+		#
+		# Note this SETS X-Forwarded-For rather than appending to it, so a value a client
+		# invented is overwritten here with the address the connection actually came from.
 		header_up X-Forwarded-Proto {scheme}
 		header_up X-Forwarded-For {remote_host}
 		header_up X-Real-IP {remote_host}
+
+		# Proves to the API that this request came through this proxy.
+		#
+		# The overwrite above protects everything that arrives via Caddy. It does nothing
+		# for a request that reaches the API without passing through here, and behind Docker
+		# such a request is indistinguishable by address: published ports are source-NATed to
+		# the bridge gateway, a private address the API's trust list accepts. Measured -
+		# forged X-Forwarded-For headers produced separate rate-limit buckets on a direct
+		# connection even after the trust list was in place.
+		#
+		# So the API strips X-Forwarded-For from anything not carrying this token. Must match
+		# PROXY_TOKEN in .env.prod; generate with `openssl rand -hex 32`.
+		header_up X-SafeOps-Proxy {$PROXY_TOKEN}
 
 		# Health checks decide whether traffic is sent here at all, so they use the
 		# readiness endpoint, which reports on the database rather than just the process.

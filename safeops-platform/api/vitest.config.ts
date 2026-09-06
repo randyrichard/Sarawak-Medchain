@@ -28,6 +28,17 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   test: {
     /*
+     * Clears rate-limit counters before each file.
+     *
+     * Those counters are rows in Postgres now rather than process memory, which is the
+     * point of them — but it means the suite accumulates its own hits and eventually
+     * throttles itself, and the rows outlive the run so the next pass starts already over
+     * the limit. The limiter is left switched on and still counts every request a test
+     * makes; only state carried in from other files and earlier runs is cleared. See the
+     * file for the numbers this was diagnosed from.
+     */
+    setupFiles: ['./src/test/resetRateLimits.ts'],
+    /*
      * 30s. Sized for the slowest legitimate case - a process spawn plus a cold Prisma
      * client against a real database - with room for a loaded CI runner, and still short
      * enough that a genuine hang is caught rather than blocking a run indefinitely.

@@ -15,10 +15,16 @@ import { resolve } from 'node:path'
  */
 const server = resolve(process.cwd(), 'src/server.ts')
 
-/** A minimally valid production environment, with one value swapped per test. */
-function bootWith(overrides: Record<string, string>) {
-  const r = spawnSync('npx', ['tsx', server], {
-    env: {
+/**
+ * A minimally valid production environment, with one value swapped per test.
+ *
+ * An override of `undefined` removes the variable instead of setting it to an empty string.
+ * The two are genuinely different — an empty value is a malformed setting the schema
+ * rejects, an absent one is the deployment simply not having configured it — and only the
+ * second is what "somebody forgot this" looks like.
+ */
+function bootWith(overrides: Record<string, string | undefined>) {
+  const env: Record<string, string | undefined> = {
       ...process.env,
       NODE_ENV: 'production',
       // A real port: the schema rejects 0, and that rejection fires before the checks
@@ -31,8 +37,18 @@ function bootWith(overrides: Record<string, string>) {
       // the one under test.
       CORS_ORIGINS: 'https://app.safeops-pilot.my',
       APP_PUBLIC_URL: 'https://app.safeops-pilot.my',
+      // Production refuses to trust forwarded headers with no way to authenticate the
+      // proxy, and that check runs before most of the ones below. Without a valid value
+      // here every test in this file would assert against that message instead of the
+      // guard it is actually about — which is exactly what happened when the check was
+      // added. The guard itself is exercised in its own test at the end.
+      PROXY_TOKEN: 'fixture-proxy-token-long-enough-to-pass',
       ...overrides,
-    },
+  }
+  for (const [k, v] of Object.entries(env)) if (v === undefined) delete env[k]
+
+  const r = spawnSync('npx', ['tsx', server], {
+    env: env as NodeJS.ProcessEnv,
     encoding: 'utf8',
     shell: process.platform === 'win32',
     timeout: 25_000,
@@ -55,6 +71,38 @@ function bootWith(overrides: Record<string, string>) {
 const SPAWN_TIMEOUT = 30_000
 
 describe('production environment guards', { timeout: SPAWN_TIMEOUT }, () => {
+  it('refuses to trust forwarded headers with no way to authenticate the proxy', () => {
+    /*
+     * req.ip is the rate limiter's bucket key and the address written into the audit trail.
+     * Trusting X-Forwarded-For without being able to tell the proxy from a client means
+     * both follow whatever the caller wrote.
+     *
+     * An address list is not enough on its own behind Docker: published ports are
+     * source-NATed to the bridge gateway, a private address the list accepts, so a direct
+     * caller is indistinguishable from Caddy. Measured before this guard existed — forged
+     * headers produced separate rate-limit buckets on a direct connection.
+     */
+    const r = bootWith({ PROXY_TOKEN: undefined })
+    expect(r.status).toBe(1)
+    expect(r.said).toMatch(/PROXY_TOKEN/)
+    expect(r.said).toMatch(/rate-limit bucket|audit trail/i)
+  })
+
+  it('starts when header trust is switched off instead', () => {
+    // The other valid answer: no proxy in front, so no forwarded header is believed. Every
+    // visitor is then attributed to the address they actually connected from.
+    const r = bootWith({ PROXY_TOKEN: undefined, TRUST_PROXY: 'false' })
+    expect(r.said).not.toMatch(/PROXY_TOKEN is not set/)
+  })
+
+  it('refuses a token too short to be worth having', () => {
+    // An empty or token-shaped-but-trivial value would otherwise look configured while
+    // being guessable, which is worse than not setting it — that at least fails loudly.
+    const r = bootWith({ PROXY_TOKEN: 'short' })
+    expect(r.status).toBe(1)
+    expect(r.said).toMatch(/PROXY_TOKEN/)
+  })
+
   it('refuses an APP_PUBLIC_URL that is not https', () => {
     /*
      * Every link built from this carries a single-use credential in the URL - the

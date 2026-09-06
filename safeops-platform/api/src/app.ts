@@ -74,21 +74,60 @@ export function createApp() {
   const app = express()
 
   /*
-   * How far back along X-Forwarded-For to look for the real client.
+   * WHICH peers may speak for a client, rather than how many.
    *
-   * `req.ip` is not cosmetic here: it is the key the rate limiter buckets on, and it is
-   * written into the audit trail and the login history that a customer is buying. Get it
-   * wrong and both degrade silently — every visitor arrives as the same address, so one
-   * abusive session throttles a whole company, and the security log records the proxy for
-   * every action anybody ever took.
+   * `req.ip` is not cosmetic: it is the key the rate limiter buckets on, and it is written
+   * into the audit trail and the login history a customer is buying.
    *
-   * Hardcoded 1 was right for the bundled deployment (browser → Caddy → api) and becomes
-   * wrong the moment a CDN or WAF is put in front, which adds a hop. It is configuration
-   * rather than a constant because only the deployment knows its own shape, and because
-   * raising it blindly is worse than leaving it low: trusting more hops than exist lets a
-   * client forge X-Forwarded-For and be believed.
+   * This was a hop count, and a hop count is not capable of securing it — it says how many
+   * X-Forwarded-For entries to believe and never who was entitled to add them, so any
+   * non-zero value makes Express treat whoever opened the socket as a proxy. Measured
+   * against this API before the change: three requests differing only in an
+   * X-Forwarded-For header produced three separate rate-limit buckets. Rotating the header
+   * is therefore an unlimited supply of fresh rate-limit budgets, and the same header
+   * chooses what the audit trail records as the actor's address.
+   *
+   * An address list fixes it at the root. Express checks the peer against this list before
+   * believing anything it forwarded; from anyone else the header is ignored and req.ip is
+   * the socket address, which cannot be forged over an established TCP connection.
    */
-  app.set('trust proxy', env.TRUST_PROXY_HOPS)
+  app.set('trust proxy', env.trustProxy)
+
+  /*
+   * Discard X-Forwarded-For from anything that cannot prove it is the proxy.
+   *
+   * The address list above is necessary and, behind Docker, not sufficient - and that was
+   * measured rather than reasoned about. Every connection arriving through a published port
+   * is source-NATed to the bridge gateway (172.19.0.1 on this network), which is a private
+   * address and so matches `uniquelocal`. The list therefore cannot separate Caddy on the
+   * compose network from anything else able to reach the port: after switching from a hop
+   * count to the list, three requests differing only in a forged X-Forwarded-For still
+   * produced three separate rate-limit buckets.
+   *
+   * No address list can fix that, because Docker overwrote the address that would have
+   * distinguished them. A shared secret can. Caddy sets this header (see deploy/Caddyfile);
+   * a client cannot guess it, so its forged header is deleted here - before the rate
+   * limiter, the request logger, or anything else reads req.ip.
+   *
+   * Deleting rather than rejecting is deliberate. A request with a stray X-Forwarded-For is
+   * not necessarily hostile - corporate proxies add one - and refusing it would break
+   * legitimate traffic to protect a field we can simply ignore. Stripped, the request is
+   * served normally and attributed to the address it actually came from.
+   *
+   * Skipped entirely when no token is configured, which leaves TRUST_PROXY governing on its
+   * own. env.ts refuses that in production.
+   */
+  if (env.PROXY_TOKEN) {
+    app.use((req, _res, next) => {
+      if (req.get('x-safeops-proxy') !== env.PROXY_TOKEN) {
+        delete req.headers['x-forwarded-for']
+      }
+      // Never pass it upstream, whether it matched or not: it is a credential, and the
+      // request handlers below have no business seeing it.
+      delete req.headers['x-safeops-proxy']
+      next()
+    })
+  }
   app.disable('x-powered-by')
 
   app.use(helmet())

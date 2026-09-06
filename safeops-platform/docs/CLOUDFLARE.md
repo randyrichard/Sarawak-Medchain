@@ -33,7 +33,13 @@ the actor for every action anybody took.
 
 Nothing would have failed. That is what makes it worth doing before rather than after.
 
-**So: when you put Cloudflare in front, set `TRUST_PROXY_HOPS=2` in `.env.prod`.**
+**Putting Cloudflare in front does not change `TRUST_PROXY`.**
+
+The setting names the peers allowed to speak for a client, not how many hops there are.
+Cloudflare talks to Caddy; Caddy talks to the API over the private compose network. The peer
+this process sees is still Caddy, so the default `loopback,linklocal,uniquelocal` remains
+correct. Change it only if something on a public address reaches the API directly, in which
+case name that address rather than adding a count.
 
 Do not raise it speculatively. Trusting more hops than exist is worse than trusting too few:
 a client can send `X-Forwarded-For` themselves, and a process that skips past the real proxy
@@ -109,7 +115,7 @@ attack and merely surviving one.
 
 ## After it is live, check these
 
-1. `TRUST_PROXY_HOPS=2` is set, and the stack has been restarted.
+1. `TRUST_PROXY` is left at its default, unless something public reaches the API directly.
 2. Sign in, then Administration → Security → Login History. **The IP shown must be yours,
    not a Cloudflare address.** If it is Cloudflare's, hop count is wrong and the audit trail
    is being filled with the wrong actor.
