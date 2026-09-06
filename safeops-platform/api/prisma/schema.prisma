@@ -541,6 +541,10 @@ model IncidentAttachment {
   storedName   String  @unique
   mimeType     String
   sizeBytes    Int
+  /// SHA-256 of the bytes as written at upload, so a file can be shown to be the one that
+  /// was uploaded. Nullable: everything stored before this column existed has no digest,
+  /// and an absent digest means "unverifiable", never "verified".
+  checksum String?
   uploadedBy   String
   uploadedById String?
 
@@ -1056,6 +1060,10 @@ model AssetDocument {
   storedName   String?
   mimeType     String?
   sizeBytes    Int?
+  /// SHA-256 of the bytes as written at upload, so a file can be shown to be the one that
+  /// was uploaded. Nullable: everything stored before this column existed has no digest,
+  /// and an absent digest means "unverifiable", never "verified".
+  checksum String?
   uploadedBy   String?
   uploadedById String?
 
@@ -1589,6 +1597,10 @@ model PermitAttachment {
   storedName   String @unique
   mimeType     String
   sizeBytes    Int
+  /// SHA-256 of the bytes as written at upload, so a file can be shown to be the one that
+  /// was uploaded. Nullable: everything stored before this column existed has no digest,
+  /// and an absent digest means "unverifiable", never "verified".
+  checksum String?
   uploadedBy   String
   uploadedById String?
 

@@ -18,6 +18,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "db:verify": "tsx src/cli/verifyRestore.ts",
+    "files:verify": "tsx src/cli/verifyUploads.ts",
     "seed": "tsx prisma/seed.ts",
     "platform:grant": "tsx src/cli/grantPlatformAdmin.ts",
     "platform:revoke": "tsx src/cli/grantPlatformAdmin.ts --revoke",

@@ -637,6 +637,8 @@ export class IncidentService {
     storedName: string
     mimeType: string
     sizeBytes: number
+    /// SHA-256 of the bytes as written. See lib/fileIntegrity.ts.
+    checksum?: string
     /// The corrective action this file proves, when it is evidence for one. Null attaches
     /// it to the incident generally.
     actionId?: string

@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { sha256File } from '../lib/fileIntegrity.js'
 import { join, resolve } from 'node:path'
 import { accessSync, constants, existsSync, mkdirSync } from 'node:fs'
 import { Router } from 'express'
@@ -93,11 +94,20 @@ incidentExtrasRouter.post('/:id/attachments', (req, res, next) => {
       }
       const saved = []
       for (const f of files) {
+      /*
+       * Digest the bytes multer just wrote, before the row that points at them exists.
+       *
+       * Hashing here rather than while receiving means it reads the file back off disk once
+       * more, which is the cost of not having to reimplement multer's storage. It also means
+       * the digest covers what actually landed, not what was expected to.
+       */
+        const checksum = await sha256File(join(UPLOAD_DIR, f.filename))
         saved.push(await svc.addAttachment(callerOf(req), req.params.id, {
           originalName: f.originalname.slice(0, 255),
           storedName: f.filename,
           mimeType: f.mimetype,
           sizeBytes: f.size,
+          checksum,
           // Optional: a file can be evidence for one corrective action, or attached to
           // the incident generally. Same route, same allow-list, same storage.
           actionId: typeof req.body?.actionId === 'string' && req.body.actionId

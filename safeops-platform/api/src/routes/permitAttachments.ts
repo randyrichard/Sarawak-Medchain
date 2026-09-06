@@ -2,6 +2,7 @@ import { Router } from 'express'
 import multer from 'multer'
 import { z } from 'zod'
 import { randomUUID } from 'node:crypto'
+import { sha256File } from '../lib/fileIntegrity.js'
 import { existsSync, mkdirSync, accessSync, constants, unlink } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { env } from '../env.js'
@@ -112,6 +113,16 @@ permitAttachmentsRouter.post('/:id/attachments', (req, res, next) => {
       const files = (req.files ?? []) as Express.Multer.File[]
       if (files.length === 0) throw new PermitError('validation', 'Choose at least one file.')
 
+      /*
+       * Digest the bytes multer just wrote, before the row that points at them exists.
+       *
+       * Hashing here rather than while receiving means it reads the file back off disk once
+       * more, which is the cost of not having to reimplement multer's storage. It also means
+       * the digest covers what actually landed, not what was expected to.
+       */
+      const digests = new Map(await Promise.all(files.map(async (f) =>
+        [f.filename, await sha256File(join(UPLOAD_DIR, f.filename))] as const)))
+
       const saved = await prisma.$transaction(async (tx) => {
         const rows = await Promise.all(files.map((f) =>
           tx.permitAttachment.create({
@@ -122,6 +133,7 @@ permitAttachmentsRouter.post('/:id/attachments', (req, res, next) => {
               storedName: f.filename,
               mimeType: f.mimetype,
               sizeBytes: f.size,
+              checksum: digests.get(f.filename) ?? null,
               uploadedBy: caller.name,
               uploadedById: caller.userId,
             },

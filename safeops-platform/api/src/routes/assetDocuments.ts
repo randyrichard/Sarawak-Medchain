@@ -2,6 +2,7 @@ import { Router } from 'express'
 import multer from 'multer'
 import { z } from 'zod'
 import { randomUUID } from 'node:crypto'
+import { sha256File } from '../lib/fileIntegrity.js'
 import { existsSync, mkdirSync, accessSync, constants, unlink } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { env } from '../env.js'
@@ -135,6 +136,16 @@ assetDocumentsRouter.post('/:assetId/documents', (req, res, next) => {
         throw new EquipmentError('validation', 'A photo has to be an image.')
       }
 
+      /*
+       * Digest the bytes multer just wrote, before the rows that point at them exist.
+       *
+       * Outside the transaction on purpose: hashing a 10 MB file is slow enough that doing
+       * it with a transaction open would hold a database connection for the duration, for
+       * no benefit - the digest depends on the file, not on anything in the transaction.
+       */
+      const digests = new Map(await Promise.all(files.map(async (f) =>
+        [f.filename, await sha256File(join(UPLOAD_DIR, f.filename))] as const)))
+
       const saved = await prisma.$transaction(async (tx) => {
         const rows = await Promise.all(files.map((f) =>
           tx.assetDocument.create({
@@ -146,6 +157,7 @@ assetDocumentsRouter.post('/:assetId/documents', (req, res, next) => {
               storedName: f.filename,
               mimeType: f.mimetype,
               sizeBytes: f.size,
+              checksum: digests.get(f.filename) ?? null,
               uploadedBy: caller.name,
               uploadedById: caller.userId,
             },
