@@ -3,6 +3,7 @@ import rateLimit from 'express-rate-limit'
 import { z } from 'zod'
 import { env } from '../env.js'
 import { prisma } from '../lib/prisma.js'
+import { PrismaRateLimitStore } from '../lib/rateLimitStore.js'
 import { AuthError, AuthService, type RequestContext } from '../lib/authService.js'
 import { AccountService } from '../lib/accountService.js'
 import { requireAuth } from '../middleware/requireAuth.js'
@@ -42,6 +43,7 @@ function ctxOf(req: { ip?: string; headers: Record<string, unknown> }): RequestC
  * attempt each across thousands of accounts.
  */
 const loginLimiter = rateLimit({
+  store: new PrismaRateLimitStore(prisma, 'login'),
   windowMs: 15 * 60 * 1000,
   limit: 20,
   standardHeaders: 'draft-7',
@@ -55,6 +57,7 @@ const loginLimiter = rateLimit({
  * on a timer and across tabs, but it still bounds token-guessing and replay storms.
  */
 const refreshLimiter = rateLimit({
+  store: new PrismaRateLimitStore(prisma, 'refresh'),
   windowMs: 15 * 60 * 1000,
   limit: 120,
   standardHeaders: 'draft-7',
@@ -117,6 +120,7 @@ authRouter.post('/logout', async (req, res, next) => {
  * remaining value in trying.
  */
 const resetLimiter = rateLimit({
+  store: new PrismaRateLimitStore(prisma, 'reset'),
   windowMs: 15 * 60 * 1000,
   limit: 15,
   standardHeaders: 'draft-7',

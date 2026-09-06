@@ -2,6 +2,7 @@ import { Router } from 'express'
 import rateLimit from 'express-rate-limit'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
+import { PrismaRateLimitStore } from '../lib/rateLimitStore.js'
 import { ProvisioningService } from '../lib/provisioningService.js'
 import { SELLABLE_PLANS, formatMyr } from '../lib/planCatalog.js'
 import type { Caller } from '../lib/incidentService.js'
@@ -37,6 +38,7 @@ const ctxOf = (req: { ip?: string; get: (h: string) => string | undefined }) =>
  * mint a hundred tenants.
  */
 const provisionLimiter = rateLimit({
+  store: new PrismaRateLimitStore(prisma, 'platform'),
   windowMs: 60 * 60 * 1000,
   limit: 30,
   standardHeaders: 'draft-7',

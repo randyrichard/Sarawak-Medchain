@@ -2,6 +2,7 @@ import { Router } from 'express'
 import rateLimit from 'express-rate-limit'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
+import { PrismaRateLimitStore } from '../lib/rateLimitStore.js'
 import { OrgAdminService } from '../lib/orgAdminService.js'
 import type { Caller } from '../lib/incidentService.js'
 import { requireAuth } from '../middleware/requireAuth.js'
@@ -37,6 +38,7 @@ const COMPANY = z.object({ companyId: z.string().min(1) })
  * a few hundred addresses. Generous enough that onboarding a real site never touches it.
  */
 const inviteLimiter = rateLimit({
+  store: new PrismaRateLimitStore(prisma, 'orgadmin'),
   windowMs: 15 * 60 * 1000,
   limit: 60,
   standardHeaders: 'draft-7',

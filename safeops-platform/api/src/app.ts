@@ -5,6 +5,7 @@ import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 import { env } from './env.js'
 import { prisma } from './lib/prisma.js'
+import { PrismaRateLimitStore } from './lib/rateLimitStore.js'
 import { authRouter } from './routes/auth.js'
 import { incidentsRouter } from './routes/incidents.js'
 import { incidentExtrasRouter } from './routes/incidentExtras.js'
@@ -140,6 +141,7 @@ export function createApp() {
    * never be rate-limited into declaring the service dead.
    */
   app.use(rateLimit({
+    store: new PrismaRateLimitStore(prisma, 'global'),
     windowMs: 60_000,
     limit: env.RATE_LIMIT_PER_MIN,
     standardHeaders: 'draft-7',

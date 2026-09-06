@@ -8,6 +8,7 @@ import { Router } from 'express'
 import rateLimit from 'express-rate-limit'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
+import { PrismaRateLimitStore } from '../lib/rateLimitStore.js'
 import { AccountError, AccountService, LANDING_PAGES } from '../lib/accountService.js'
 import { requireAuth } from '../middleware/requireAuth.js'
 
@@ -25,6 +26,7 @@ const REFRESH_COOKIE = 'safeops_rt'
  * required, so this bounds an attacker who has a token but not the password.
  */
 const changeLimiter = rateLimit({
+  store: new PrismaRateLimitStore(prisma, 'account'),
   windowMs: 15 * 60 * 1000,
   limit: 10,
   standardHeaders: 'draft-7',

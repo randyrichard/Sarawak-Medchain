@@ -357,6 +357,34 @@ enum IncidentStage {
   draft
 }
 
+/// Rate-limit counters, one row per bucket (an IP, or an IP and a route).
+///
+/// In Postgres rather than in the API's memory, because an in-memory counter is not
+/// actually a limit: it resets on every deploy, crash and restart, and two API instances
+/// each keep their own, so the effective ceiling is the configured one multiplied by however
+/// many processes happen to be running.
+///
+/// Rows are disposable. Losing this table costs nothing but a window's worth of counting,
+/// which is why it carries no relations and is excluded from the tenant export - it is
+/// operational state, not customer data, and the keys are IP addresses.
+model RateLimit {
+  /// Whatever express-rate-limit hands us: usually an IP, prefixed per limiter.
+  key       String   @id
+  hits      Int      @default(0)
+  /// End of the current window. Past this, the next increment starts a new one.
+  ///
+  /// Timestamptz, unlike most DateTime columns here, because this one is written by raw SQL
+  /// and compared both in Postgres and in JavaScript. A plain `timestamp` has no offset, so
+  /// a JS Date sent through $queryRaw is serialised as local time, stored naively, and read
+  /// back as if it were UTC - on a UTC+8 machine that is an eight-hour error, and it makes
+  /// `NOW()` in SQL and `new Date()` in JS disagree about whether a window has ended.
+  /// Measured: written 09:37:39Z, read back 17:37:39Z.
+  expiresAt DateTime @db.Timestamptz(3)
+
+  /// Only used by the sweep that deletes finished windows.
+  @@index([expiresAt])
+}
+
 model Incident {
   id     String @id @default(cuid())
   /// Human reference (INC-####). Unique per tenant, not globally: two companies each
