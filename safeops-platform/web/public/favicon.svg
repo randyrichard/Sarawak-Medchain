@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="SafeOps">
+  <title>SafeOps</title>
+  <!--
+    The same mark the app shows beside the wordmark: a lucide ShieldCheck in white on the
+    brand accent (#2a78d6, the --accent token in src/styles/index.css). Kept as one flat
+    shape so it stays legible at 16px, where a tab actually renders it.
+  -->
+  <rect width="32" height="32" rx="7" fill="#2a78d6"/>
+  <g fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M16 6.2 24.4 9v6.1c0 4.9-3.4 9.4-8.4 10.7-5-1.3-8.4-5.8-8.4-10.7V9Z"/>
+    <path d="m12.6 15.7 2.5 2.5 4.5-4.6"/>
+  </g>
+</svg>

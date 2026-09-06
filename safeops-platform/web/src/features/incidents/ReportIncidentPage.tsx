@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, ArrowRight, Check, CloudUpload, FileText, Film, Image as ImageIcon,
   LocateFixed, PenLine, Send, Trash2, UserPlus, X,
@@ -10,7 +10,8 @@ import type { AttachmentKind, IncidentSeverity, IncidentType, NewIncidentInput, 
 import { INCIDENT_TYPES, TYPE_LABEL } from '@/api/incidents'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useOrg } from '@/features/org/OrgContext'
-import { Alert, Badge, Button, Card, Checkbox, Input, Select, Textarea } from '@/components/ui'
+import { Alert, Badge, Breadcrumbs, Button, Card, Checkbox, Input, Select, Textarea } from '@/components/ui'
+import { usePageTitle } from '@/app/pageTitle'
 import { severityKind, SITE_COORDS, TYPE_ICON, useActor } from './lib'
 import { StatusPill } from '@/components/ui'
 import { cn } from '@/lib/cn'
@@ -74,6 +75,7 @@ const kindOf = (name: string): AttachmentKind => {
 }
 
 export function ReportIncidentPage() {
+  usePageTitle('Report an incident')
   const { user } = useAuth()
   const { company, sites } = useOrg()
   const actor = useActor()
@@ -189,9 +191,12 @@ export function ReportIncidentPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <Link to="/incidents" className="mb-3 inline-flex items-center gap-1 text-xs font-semibold text-accent hover:underline">
-        <ArrowLeft size={13} /> All incidents
-      </Link>
+      <Breadcrumbs
+        items={[
+          { label: 'Incidents', to: '/incidents' },
+          { label: 'Report an incident' },
+        ]}
+      />
 
       <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
         <div>

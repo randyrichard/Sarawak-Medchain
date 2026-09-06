@@ -97,6 +97,36 @@ server {
         add_header Cache-Control "no-store, must-revalidate" always;
     }
 
+    # ---------------------------------------------------------------------------------------
+    # sitemap.xml, generated rather than shipped.
+    #
+    # A sitemap has to carry absolute URLs, and the bundle is built once and served from
+    # whatever domain it lands on - so a file committed to the repo would be wrong on every
+    # deployment but the one it was written for. Substituting APP_PUBLIC_URL at container
+    # start means it is right wherever the stack runs, or obviously wrong if that variable is.
+    #
+    # Only the three pages a crawler can actually reach are listed. Everything else needs a
+    # session, and listing signed-in routes would advertise paths that only ever answer with a
+    # redirect to sign-in. The credential-bearing routes are absent for the same reason
+    # robots.txt disallows them.
+    # ---------------------------------------------------------------------------------------
+    location = /sitemap.xml {
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()" always;
+        add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-BT0iGxctNSS3gHXyZrG/Hpgysy9VrpnUggJx7s45pwU='; style-src 'self' 'unsafe-inline'; style-src-elem 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ${CSP_CONNECT_SRC}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
+        add_header Cache-Control "public, max-age=3600" always;
+        default_type application/xml;
+        return 200 '<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>${APP_PUBLIC_URL}/login</loc><changefreq>monthly</changefreq><priority>1.0</priority></url>
+  <url><loc>${APP_PUBLIC_URL}/privacy</loc><changefreq>yearly</changefreq><priority>0.5</priority></url>
+  <url><loc>${APP_PUBLIC_URL}/terms</loc><changefreq>yearly</changefreq><priority>0.5</priority></url>
+</urlset>
+';
+    }
+
     # Client-side routing: /incidents/abc is a route, not a file.
     location / {
         try_files $uri $uri/ /index.html;

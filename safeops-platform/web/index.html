@@ -4,6 +4,72 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SafeOps — Safety Intelligence Platform</title>
+
+    <!--
+      There was no icon of any kind before this, so /favicon.ico fell through the SPA rewrite
+      and returned index.html with a text/html content type - a browser tab showed the blank
+      default page glyph. SVG is the primary because it stays sharp at every size and follows
+      the tab's own scaling; the theme-color is what colours the address bar on Android.
+    -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <meta name="theme-color" content="#2a78d6" />
+    <meta
+      name="description"
+      content="SafeOps is a safety intelligence platform for industrial operations: incident
+               reporting and investigation, permits to work, corrective actions, competency
+               and audit records in one place."
+    />
+
+    <!--
+      Structured data.
+
+      Scoped honestly: almost every page of this product is behind a sign-in, so no crawler
+      reaches it and none of this affects how the app itself is found. What it describes is
+      the product and the company, for the three pages that are public - the sign-in screen,
+      the PDPA notice and the terms - and for the link preview somebody gets when a SafeOps
+      URL is pasted into an email or a chat.
+
+      Deliberately absent: `url`, `logo` and `sameAs`, all of which must be absolute. This
+      deployment has no domain yet, and pointing structured data at a hostname that does not
+      resolve is worse than leaving the field out. Add them when DNS exists.
+
+      Also absent: any `offers`, `aggregateRating` or `review`. There is no published pricing
+      and there are no customer reviews, and inventing either in markup is the kind of claim
+      that gets a site penalised as well as being untrue.
+
+      This is a data block, not executable script - `type` is not JavaScript - so the
+      Content-Security-Policy `script-src` hash that covers the theme script below does not
+      apply to it and is not needed here.
+    -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "name": "SafeOps",
+            "description": "Safety intelligence software for industrial operations."
+          },
+          {
+            "@type": "SoftwareApplication",
+            "name": "SafeOps",
+            "applicationCategory": "BusinessApplication",
+            "applicationSubCategory": "Occupational health and safety management",
+            "operatingSystem": "Web browser",
+            "description": "Incident reporting and investigation, permit to work, corrective action tracking, competency records and audit management for industrial sites.",
+            "featureList": [
+              "Incident reporting and investigation",
+              "Permit to work",
+              "Corrective action tracking",
+              "Competency and training records",
+              "Audit and inspection management",
+              "Contractor and visitor management"
+            ]
+          }
+        ]
+      }
+    </script>
     <script>
       try {
         const t = localStorage.getItem('safeops.theme')

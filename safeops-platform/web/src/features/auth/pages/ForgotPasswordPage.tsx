@@ -4,7 +4,8 @@ import { ArrowLeft, MailCheck, Send } from 'lucide-react'
 import { authApi } from '@/api/authApi'
 import { explainNetworkFailure } from '@/api/networkError'
 import { ApiError } from '@/api/types'
-import { Alert, Button, Input } from '@/components/ui'
+import { Alert, Button, Input, LinkButton } from '@/components/ui'
+import { usePageTitle } from '@/app/pageTitle'
 import { AuthLayout } from './AuthLayout'
 
 /**
@@ -27,6 +28,7 @@ import { AuthLayout } from './AuthLayout'
  * different hat.
  */
 export function ForgotPasswordPage() {
+  usePageTitle('Forgot password')
   const [email, setEmail] = useState('')
   const [busy, setBusy] = useState(false)
   const [sent, setSent] = useState(false)
@@ -70,9 +72,9 @@ export function ForgotPasswordPage() {
             <span className="font-medium text-ink-2">Administration &rarr; Users</span>. If you
             are the administrator, contact SafeOps support.
           </p>
-          <Link to="/login">
-            <Button variant="secondary" size="lg" className="w-full">Back to sign in</Button>
-          </Link>
+          <LinkButton to="/login" variant="secondary" size="lg" className="w-full">
+            Back to sign in
+          </LinkButton>
         </div>
       </AuthLayout>
     )

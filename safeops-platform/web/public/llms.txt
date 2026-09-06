@@ -1,0 +1,30 @@
+# SafeOps
+
+> Safety intelligence software for industrial operations in Malaysia: incident reporting
+> and investigation, permit to work, corrective action tracking, competency and training
+> records, audits, and contractor and visitor management.
+
+SafeOps is a multi-tenant SaaS application, not a public website. Everything except the
+pages listed below sits behind authentication, so there is nothing else here to read or
+index. Each customer's data is isolated per tenant and includes personal and health-related
+information governed by Malaysia's Personal Data Protection Act 2010.
+
+## Pages
+
+- [Sign in](/login): the entry point. There is no public sign-up; accounts are created by
+  invitation from a customer's own administrator.
+- [Personal Data Protection Notice](/privacy): what personal data is collected, why, how
+  long it is kept, and how to exercise access and correction rights under the PDPA.
+- [Terms of Service](/terms): the terms the software is provided under.
+
+## Not available
+
+- No public pricing, trial sign-up, or self-service registration.
+- No customer list, case studies, or testimonials. The product is pre-launch and has no
+  completed customer deployments to describe.
+- No public API. The HTTP API is for the application's own front end and requires a session.
+
+## Contact
+
+Enquiries go through the sign-in page's administrator contact route. There is no public
+sales address published here yet.

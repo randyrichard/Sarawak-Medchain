@@ -13,8 +13,10 @@ import {
 import { ApiError } from '@/api/types'
 import { useOrg } from '@/features/org/OrgContext'
 import {
-  Alert, Badge, Button, Card, CardBody, Input, PageHeader, Select, Skeleton, StatusPill,
+  Alert, Badge, Breadcrumbs, Button, Card, CardBody, Input, PageHeader, Select, Skeleton,
+  StatusPill,
 } from '@/components/ui'
+import { usePageTitle } from '@/app/pageTitle'
 import { severityKind, fmtDate, fmtDateTime } from './lib'
 import {
   EMPTY_FILTERS, SORT_LABEL, activeFilterCount, applyChange, highSeverityCount,
@@ -38,6 +40,7 @@ import { cn } from '@/lib/cn'
 const PAGE_SIZE = 25
 
 export function IncidentBoardPage() {
+  usePageTitle('Incident board')
   const { company, sites } = useOrg()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
@@ -124,6 +127,12 @@ export function IncidentBoardPage() {
 
   return (
     <>
+      <Breadcrumbs
+        items={[
+          { label: 'Incidents', to: '/incidents' },
+          { label: 'Board' },
+        ]}
+      />
       <PageHeader
         title="Incident board"
         subtitle="What is serious, what is stuck, and what needs you today"

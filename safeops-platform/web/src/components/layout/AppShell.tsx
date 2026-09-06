@@ -9,6 +9,7 @@ import { useOrg } from '@/features/org/OrgContext'
 import { usePlatformAdmin } from '@/features/platform/usePlatformAdmin'
 import type { Capability } from '@/features/permissions/permissions'
 import { ErrorBoundary } from '@/app/ErrorBoundary'
+import { PageTitleContext, resolveTitle } from '@/app/pageTitle'
 import { Topbar } from './Topbar'
 import { Badge, FullPageSpinner } from '@/components/ui'
 
@@ -74,26 +75,26 @@ const NAV: NavItem[] = [
  * with a dozen tabs open had a dozen tabs with the same name.
  *
  * The label comes from the nav table rather than a second list, so a renamed screen renames
- * its title too. Deep routes fall back to their section: `/incidents/INC-2601` is titled
- * "Incidents", which is imprecise but true, and better than the alternative of naming every
- * route twice.
+ * its title too. That covers every section, and it is all a section page needs.
+ *
+ * A page that knows something more specific says so through `usePageTitle` — an incident
+ * detail page names the incident — and that wins when present. Without it a deep route falls
+ * back to its section, so `/incidents/INC-2601` is titled "Incidents": imprecise but true,
+ * and better than the alternative of leaving it as the product name.
  */
-function useDocumentTitle(pathname: string) {
+function useDocumentTitle(pathname: string, claimed: string | null) {
   useEffect(() => {
-    const match = NAV
-      .filter((item) => pathname === item.to || pathname.startsWith(`${item.to}/`))
-      .sort((a, b) => b.to.length - a.to.length)[0]
-
-    document.title = match && match.to !== '/'
-      ? `${match.label} · SafeOps`
-      : 'SafeOps — Safety Intelligence Platform'
-  }, [pathname])
+    document.title = resolveTitle(pathname, NAV, claimed)
+  }, [pathname, claimed])
 }
 
 export default function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false)
+  // What the current page calls itself, if it has said. See src/app/pageTitle.ts for why
+  // this is state up here rather than the page writing document.title itself.
+  const [claimedTitle, setClaimedTitle] = useState<string | null>(null)
   const location = useLocation()
-  useDocumentTitle(location.pathname)
+  useDocumentTitle(location.pathname, claimedTitle)
   return (
     <div className="flex h-full">
       {/*
@@ -157,7 +158,9 @@ export default function AppShell() {
                 shell stays usable. Keying by pathname clears the error on navigation. */}
             <ErrorBoundary key={location.pathname} scope="This screen">
               <Suspense fallback={<FullPageSpinner label="Loading…" />}>
-                <Outlet />
+                <PageTitleContext.Provider value={setClaimedTitle}>
+                  <Outlet />
+                </PageTitleContext.Provider>
               </Suspense>
             </ErrorBoundary>
           </div>

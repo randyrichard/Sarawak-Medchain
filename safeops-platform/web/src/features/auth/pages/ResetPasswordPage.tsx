@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { KeyRound } from 'lucide-react'
 import { authApi } from '@/api/authApi'
 import { ApiError } from '@/api/types'
-import { Alert, Button, PasswordInput } from '@/components/ui'
+import { Alert, Button, LinkButton, PasswordInput } from '@/components/ui'
+import { usePageTitle } from '@/app/pageTitle'
 import { policyProblem } from '../passwordPolicy'
 import { AuthLayout } from './AuthLayout'
 
 
 export function ResetPasswordPage() {
+  usePageTitle('Reset password')
   const [params] = useSearchParams()
   const token = params.get('token') ?? ''
   const navigate = useNavigate()
@@ -95,9 +97,9 @@ export function ResetPasswordPage() {
             Reset links are single-use and expire after 30 minutes. Ask your workspace
             administrator to issue a new one.
           </Alert>
-          <Link to="/login">
-            <Button variant="secondary" size="lg" className="w-full">Back to sign in</Button>
-          </Link>
+          <LinkButton to="/login" variant="secondary" size="lg" className="w-full">
+            Back to sign in
+          </LinkButton>
         </div>
       ) : (
         <form onSubmit={submit} className="mt-6 space-y-4" noValidate>

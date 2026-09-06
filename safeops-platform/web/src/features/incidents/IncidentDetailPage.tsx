@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
-  Archive, ArrowLeft, CalendarDays, CloudSun, MapPin, ShieldAlert, UserRound, Users,
+  Archive, CalendarDays, CloudSun, MapPin, ShieldAlert, UserRound, Users,
 } from 'lucide-react'
 import { api } from '@/api/client'
 import type { Incident } from '@/api/incidents'
 import { STAGE_LABEL, TYPE_LABEL } from '@/api/incidents'
 import { useOrg } from '@/features/org/OrgContext'
 import {
-  Alert, Avatar, Badge, Button, Card, CardBody, CardHeader, Dialog, Skeleton, StatusPill,
-  Tabs, type TabItem,
+  Alert, Avatar, Badge, Breadcrumbs, Button, Card, CardBody, CardHeader, Dialog, LinkButton,
+  Skeleton, StatusPill, Tabs, type TabItem,
 } from '@/components/ui'
+import { usePageTitle } from '@/app/pageTitle'
 import { fmtDate, fmtDateTime, severityKind, STAGE_COLOR, TYPE_ICON, useActor } from './lib'
 import { StageStepper } from './components/StageStepper'
 import { NextStepCard } from './components/NextStepCard'
@@ -37,6 +38,10 @@ export function IncidentDetailPage() {
   const [tab, setTab] = useState<Tab>('overview')
   const [archiveOpen, setArchiveOpen] = useState(false)
   const justCreated = (location.state as { created?: boolean } | null)?.created
+
+  // Names the tab after the incident once it has loaded; until then the shell's route-derived
+  // "Incidents" stands, which is the right thing to show while the record is still in flight.
+  usePageTitle(incident?.number)
 
   useEffect(() => {
     if (!id) return
@@ -70,12 +75,8 @@ export function IncidentDetailPage() {
           in the register and can be restored by an administrator.
         </p>
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-          <Link to="/incidents">
-            <Button variant="secondary" size="sm">Back to incidents</Button>
-          </Link>
-          <Link to="/">
-            <Button variant="ghost" size="sm">Go to dashboard</Button>
-          </Link>
+          <LinkButton to="/incidents" variant="secondary" size="sm">Back to incidents</LinkButton>
+          <LinkButton to="/" variant="ghost" size="sm">Go to dashboard</LinkButton>
         </div>
       </div>
     )
@@ -107,9 +108,12 @@ export function IncidentDetailPage() {
 
   return (
     <>
-      <Link to="/incidents" className="mb-3 inline-flex items-center gap-1 text-xs font-semibold text-accent hover:underline">
-        <ArrowLeft size={13} /> All incidents
-      </Link>
+      <Breadcrumbs
+        items={[
+          { label: 'Incidents', to: '/incidents' },
+          { label: incident.number },
+        ]}
+      />
 
       {justCreated && (
         <Alert tone="success" title={`${incident.number} submitted`} className="mb-4">

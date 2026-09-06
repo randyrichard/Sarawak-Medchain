@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { LogIn } from 'lucide-react'
 import { useAuth } from '../AuthContext'
+import { usePageTitle } from '@/app/pageTitle'
 import { safeInternalPath } from '../safeRedirect'
 import { loadPreferences } from '@/features/account/preferences'
 import { getPlatformInfo } from '@/features/platform/usePlatformAdmin'
@@ -65,6 +66,7 @@ export async function destination(from: string): Promise<string> {
 }
 
 export function LoginPage() {
+  usePageTitle('Sign in')
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()

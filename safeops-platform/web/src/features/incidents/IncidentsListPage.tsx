@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus, Search, ShieldAlert } from 'lucide-react'
 import { api } from '@/api/client'
 import type { Incident, IncidentSeverity, IncidentStatusFilter, IncidentType } from '@/api/incidents'
@@ -7,7 +7,8 @@ import { INCIDENT_TYPES, STAGE_LABEL, TYPE_LABEL } from '@/api/incidents'
 import { OVERDUE_AFTER_DAYS } from '@/api/mock/incidents'
 import { useOrg } from '@/features/org/OrgContext'
 import {
-  Alert, Badge, Button, Card, DataTable, EmptyState, PageHeader, Skeleton, StatusPill, type Column,
+  Alert, Badge, Button, Card, DataTable, EmptyState, LinkButton, PageHeader, Skeleton, StatusPill,
+  type Column,
 } from '@/components/ui'
 import { daysOpen, severityKind, STAGE_COLOR, TYPE_ICON } from './lib'
 import { cn } from '@/lib/cn'
@@ -235,9 +236,9 @@ export function IncidentsListPage() {
                 icon={ShieldAlert}
                 title="No incidents match these filters"
                 action={
-                  <Link to="/incidents/new">
-                    <Button size="sm" icon={<Plus size={14} />}>Report Incident</Button>
-                  </Link>
+                  <LinkButton to="/incidents/new" size="sm" icon={<Plus size={14} />}>
+                    Report Incident
+                  </LinkButton>
                 }
               >
                 Try widening the status or clearing the search — or report something you've seen.

@@ -1,4 +1,6 @@
-export { Button } from './Button'
+export { Button, buttonClasses, type Variant, type Size } from './Button'
+export { LinkButton } from './LinkButton'
+export { Breadcrumbs, type Crumb } from './Breadcrumbs'
 export { Card, CardHeader, CardBody } from './Card'
 export { Input, PasswordInput, Textarea, Select, Checkbox, FieldShell } from './Field'
 export { Badge, StatusPill, type StatusKind } from './Badge'

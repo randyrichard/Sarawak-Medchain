@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { ShieldCheck } from 'lucide-react'
 import { PRIVACY_NOTICE, TERMS_OF_SERVICE, type LegalDocument } from './documents'
+import { usePageTitle } from '@/app/pageTitle'
 
 /**
  * The privacy notice and terms, readable without an account.
@@ -16,6 +17,7 @@ import { PRIVACY_NOTICE, TERMS_OF_SERVICE, type LegalDocument } from './document
 export function LegalPage() {
   const { pathname } = useLocation()
   const doc: LegalDocument = pathname.startsWith('/terms') ? TERMS_OF_SERVICE : PRIVACY_NOTICE
+  usePageTitle(doc.title)
 
   return (
     <div className="min-h-full bg-page">

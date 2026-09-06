@@ -138,6 +138,10 @@ services:
       # the API on another origin, so connect-src has to name it; deriving it from the same
       # value the bundle was built against keeps the two from drifting apart.
       CSP_CONNECT_SRC: ${VITE_API_BASE_URL}
+      # Substituted into /sitemap.xml, which needs absolute URLs. Same variable the API builds
+      # invitation and report links from, so the sitemap cannot name a different host than the
+      # one people are actually sent to.
+      APP_PUBLIC_URL: ${APP_PUBLIC_URL:?set the public address users visit}
     ports:
       - '${BIND_HOST:-127.0.0.1}:${WEB_PORT:-8080}:8080'
 

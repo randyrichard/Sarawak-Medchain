@@ -6,6 +6,7 @@ import { ApiError } from '@/api/types'
 import { Alert, Button, Input, PasswordInput } from '@/components/ui'
 import { policyProblem } from '../passwordPolicy'
 import { AuthLayout } from './AuthLayout'
+import { usePageTitle } from '@/app/pageTitle'
 
 /**
  * Accepting an invitation.
@@ -28,6 +29,7 @@ interface Preview {
 }
 
 export function AcceptInvitationPage() {
+  usePageTitle('Accept invitation')
   const { token = '' } = useParams()
   const navigate = useNavigate()
 

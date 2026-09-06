@@ -1,16 +1,18 @@
-import { lazy } from 'react'
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { ThemeProvider } from './theme'
 import { AuthProvider } from '@/features/auth/AuthContext'
 import { OrgProvider } from '@/features/org/OrgContext'
 import { RequireAnonymous, RequireAuth, RequireCapability } from '@/features/auth/guards'
 import AppShell from '@/components/layout/AppShell'
+import { FullPageSpinner } from '@/components/ui'
 // Auth surface is the entry point — keep it eager so the login screen paints without a chunk fetch.
 import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { ResetPasswordPage } from '@/features/auth/pages/ResetPasswordPage'
 import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage'
 import { AcceptInvitationPage } from '@/features/auth/pages/AcceptInvitationPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { Canonical } from './Canonical'
 
 // Each business module is code-split into its own chunk, loaded on first visit.
 // The <Suspense> boundary lives in AppShell so the sidebar/topbar stay put while a page loads.
@@ -44,183 +46,216 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <BrowserRouter>
-          <Routes>
-            {/*
-              Fully public, outside both guards: an invitee has no session, and an
-              administrator checking the link while signed in must not be bounced away.
-            */}
-            <Route path="/accept-invitation/:token" element={<AcceptInvitationPage />} />
+          <Canonical />
+          {/*
+            Outer boundary for the lazy routes that are NOT inside AppShell — the legal
+            documents are the ones that matter.
 
-            {/*
-              The legal documents, outside every guard — including RequireAnonymous.
+            AppShell has its own <Suspense> so the sidebar stays put while a page chunk
+            loads, and it catches everything inside the signed-in app. Nothing caught the
+            routes above it. Clicking "Personal Data Protection Notice" on the sign-in
+            screen therefore suspended with no boundary and rendered the error fallback:
+            the URL changed to /privacy and the page never arrived. Only a full page load
+            reached the notice, which is not how anyone gets there.
 
-              PDPA section 7 requires the notice at or before the point of collection, so it
-              has to be readable by somebody who has not signed in and has not yet decided to.
-              Putting it behind RequireAnonymous as well would be a subtler version of the
-              same mistake: a signed-in employee could no longer read the notice that governs
-              the data already held about them.
-            */}
-            <Route path="/privacy" element={<LegalPage />} />
-            <Route path="/terms" element={<LegalPage />} />
+            That is worth more than a broken link. PDPA section 7 requires the notice at or
+            before the point of collection, and that footer link is the mechanism — it is on
+            every auth screen for exactly that reason. Found by clicking it.
+          */}
+          <Suspense fallback={<FullPageSpinner label="Loading…" />}>
+            <Routes>
+              {/*
+                Fully public, outside both guards: an invitee has no session, and an
+                administrator checking the link while signed in must not be bounced away.
+              */}
+              <Route path="/accept-invitation/:token" element={<AcceptInvitationPage />} />
 
-            {/* Public auth surface */}
-            <Route element={<RequireAnonymous />}>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            </Route>
+              {/*
+                The legal documents, outside every guard — including RequireAnonymous.
 
-            {/* Authenticated app */}
-            <Route element={<RequireAuth />}>
-              <Route
-                element={
-                  <OrgProvider>
-                    <AppShell />
-                  </OrgProvider>
-                }
-              >
-                <Route path="/" element={<DashboardPage />} />
-                <Route
-                  path="/incidents"
-                  element={
-                    <RequireCapability capability="incidents:manage">
-                      <IncidentsListPage />
-                    </RequireCapability>
-                  }
-                />
-                <Route
-                  path="/near-miss"
-                  element={
-                    <RequireCapability capability="reports:submit">
-                      <ReportNearMissPage />
-                    </RequireCapability>
-                  }
-                />
-                {/* Before /incidents/:id, or the board would be looked up as an incident. */}
-                <Route
-                  path="/incidents/board"
-                  element={
-                    <RequireCapability capability="dashboard:view">
-                      <IncidentBoardPage />
-                    </RequireCapability>
-                  }
-                />
-                <Route
-                  path="/incidents/new"
-                  element={
-                    <RequireCapability capability="reports:submit">
-                      <ReportIncidentPage />
-                    </RequireCapability>
-                  }
-                />
-                <Route
-                  path="/incidents/:id"
-                  element={
-                    <RequireCapability capability="incidents:manage">
-                      <IncidentDetailPage />
-                    </RequireCapability>
-                  }
-                />
-                <Route
-                  path="/actions"
-                  element={
-                    <RequireCapability capability="dashboard:view">
-                      <ActionsPage />
-                    </RequireCapability>
-                  }
-                />
-                <Route
-                  path="/assets"
-                  element={
-                    <RequireCapability capability="dashboard:view">
-                      <AssetsPage />
-                    </RequireCapability>
-                  }
-                />
-                <Route
-                  path="/audits"
-                  element={
-                    <RequireCapability capability="dashboard:view">
-                      <AuditsPage />
-                    </RequireCapability>
-                  }
-                />
-                <Route
-                  path="/training"
-                  element={
-                    <RequireCapability capability="dashboard:view">
-                      <TrainingPage />
-                    </RequireCapability>
-                  }
-                />
-                <Route
-                  path="/permits"
-                  element={
-                    <RequireCapability capability="dashboard:view">
-                      <PermitsPage />
-                    </RequireCapability>
-                  }
-                />
-                <Route
-                  path="/reports"
-                  element={
-                    <RequireCapability capability="dashboard:view">
-                      <ReportsPage />
-                    </RequireCapability>
-                  }
-                />
-                <Route
-                  path="/visitors"
-                  element={
-                    <RequireCapability capability="dashboard:view">
-                      <VisitorsPage />
-                    </RequireCapability>
-                  }
-                />
-                <Route
-                  path="/contractors"
-                  element={
-                    <RequireCapability capability="dashboard:view">
-                      <ContractorsPage />
-                    </RequireCapability>
-                  }
-                />
-                <Route
-                  path="/employees"
-                  element={
-                    <RequireCapability capability="dashboard:view">
-                      <EmployeesPage />
-                    </RequireCapability>
-                  }
-                />
-                <Route
-                  path="/admin"
-                  element={
-                    <RequireCapability capability="settings:manage">
-                      <AdminPage />
-                    </RequireCapability>
-                  }
-                />
-                <Route path="/notifications" element={<NotificationsPage />} />
-                <Route
-                  path="/organization"
-                  element={
-                    <RequireCapability capability="org:view">
-                      <OrganizationPage />
-                    </RequireCapability>
-                  }
-                />
-                {/*
-                  Re-authorized server-side on every call; the component renders a plain
-                  explanation rather than the console for anybody who is not SafeOps staff.
-                */}
-                <Route path="/platform" element={<PlatformRoute />} />
-                <Route path="/account" element={<AccountPage />} />
-                <Route path="/design" element={<StyleguidePage />} />
-                <Route path="*" element={<NotFoundPage />} />
+                PDPA section 7 requires the notice at or before the point of collection, so it
+                has to be readable by somebody who has not signed in and has not yet decided to.
+                Putting it behind RequireAnonymous as well would be a subtler version of the
+                same mistake: a signed-in employee could no longer read the notice that governs
+                the data already held about them.
+              */}
+              <Route path="/privacy" element={<LegalPage />} />
+              <Route path="/terms" element={<LegalPage />} />
+
+              {/* Public auth surface */}
+              <Route element={<RequireAnonymous />}>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               </Route>
-            </Route>
-          </Routes>
+
+              {/* Authenticated app */}
+              <Route element={<RequireAuth />}>
+                <Route
+                  element={
+                    <OrgProvider>
+                      <AppShell />
+                    </OrgProvider>
+                  }
+                >
+                  <Route path="/" element={<DashboardPage />} />
+                  <Route
+                    path="/incidents"
+                    element={
+                      <RequireCapability capability="incidents:manage">
+                        <IncidentsListPage />
+                      </RequireCapability>
+                    }
+                  />
+                  <Route
+                    path="/near-miss"
+                    element={
+                      <RequireCapability capability="reports:submit">
+                        <ReportNearMissPage />
+                      </RequireCapability>
+                    }
+                  />
+                  {/* Before /incidents/:id, or the board would be looked up as an incident. */}
+                  <Route
+                    path="/incidents/board"
+                    element={
+                      <RequireCapability capability="dashboard:view">
+                        <IncidentBoardPage />
+                      </RequireCapability>
+                    }
+                  />
+                  <Route
+                    path="/incidents/new"
+                    element={
+                      <RequireCapability capability="reports:submit">
+                        <ReportIncidentPage />
+                      </RequireCapability>
+                    }
+                  />
+                  <Route
+                    path="/incidents/:id"
+                    element={
+                      <RequireCapability capability="incidents:manage">
+                        <IncidentDetailPage />
+                      </RequireCapability>
+                    }
+                  />
+                  <Route
+                    path="/actions"
+                    element={
+                      <RequireCapability capability="dashboard:view">
+                        <ActionsPage />
+                      </RequireCapability>
+                    }
+                  />
+                  <Route
+                    path="/assets"
+                    element={
+                      <RequireCapability capability="dashboard:view">
+                        <AssetsPage />
+                      </RequireCapability>
+                    }
+                  />
+                  <Route
+                    path="/audits"
+                    element={
+                      <RequireCapability capability="dashboard:view">
+                        <AuditsPage />
+                      </RequireCapability>
+                    }
+                  />
+                  <Route
+                    path="/training"
+                    element={
+                      <RequireCapability capability="dashboard:view">
+                        <TrainingPage />
+                      </RequireCapability>
+                    }
+                  />
+                  <Route
+                    path="/permits"
+                    element={
+                      <RequireCapability capability="dashboard:view">
+                        <PermitsPage />
+                      </RequireCapability>
+                    }
+                  />
+                  <Route
+                    path="/reports"
+                    element={
+                      <RequireCapability capability="dashboard:view">
+                        <ReportsPage />
+                      </RequireCapability>
+                    }
+                  />
+                  <Route
+                    path="/visitors"
+                    element={
+                      <RequireCapability capability="dashboard:view">
+                        <VisitorsPage />
+                      </RequireCapability>
+                    }
+                  />
+                  <Route
+                    path="/contractors"
+                    element={
+                      <RequireCapability capability="dashboard:view">
+                        <ContractorsPage />
+                      </RequireCapability>
+                    }
+                  />
+                  <Route
+                    path="/employees"
+                    element={
+                      <RequireCapability capability="dashboard:view">
+                        <EmployeesPage />
+                      </RequireCapability>
+                    }
+                  />
+                  <Route
+                    path="/admin"
+                    element={
+                      <RequireCapability capability="settings:manage">
+                        <AdminPage />
+                      </RequireCapability>
+                    }
+                  />
+                  <Route path="/notifications" element={<NotificationsPage />} />
+                  <Route
+                    path="/organization"
+                    element={
+                      <RequireCapability capability="org:view">
+                        <OrganizationPage />
+                      </RequireCapability>
+                    }
+                  />
+                  {/*
+                    Re-authorized server-side on every call; the component renders a plain
+                    explanation rather than the console for anybody who is not SafeOps staff.
+                  */}
+                  <Route path="/platform" element={<PlatformRoute />} />
+                  <Route path="/account" element={<AccountPage />} />
+                  <Route path="/design" element={<StyleguidePage />} />
+                </Route>
+              </Route>
+
+              {/*
+                Unknown URLs, outside every guard.
+
+                This used to sit inside RequireAuth, which meant a signed-out visitor
+                following a mistyped or truncated link was redirected to the sign-in screen
+                rather than told the page does not exist — and a link cut in half by an email
+                client is the usual way somebody arrives here. That redirect reads as an
+                expired session, so people sign in, land on the dashboard, and never find out
+                the link they were sent was broken.
+
+                A splat scores below every other pattern in React Router's ranking, so this
+                matches only when nothing else does, wherever it is declared. The page itself
+                adapts to whether there is a session.
+              */}
+                <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Suspense>
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>
