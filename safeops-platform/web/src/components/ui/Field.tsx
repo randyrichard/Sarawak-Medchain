@@ -92,7 +92,18 @@ export const SuggestInput = forwardRef<HTMLInputElement, SuggestInputProps>(
     const listId = `${inputId}-options`
     return (
       <>
-        <Input ref={ref} id={inputId} list={options.length ? listId : undefined} {...rest} />
+        {/*
+          `pr-8` matches Select, so a typed value never runs under the chevron, and
+          `suggest-field` restyles the browser's own indicator to be that chevron. See
+          styles/index.css.
+        */}
+        <Input
+          ref={ref}
+          id={inputId}
+          list={options.length ? listId : undefined}
+          {...rest}
+          className={cn('suggest-field pr-8', rest.className)}
+        />
         {/*
           Rendered only when there is something to offer. An empty datalist makes some
           browsers show a flicker of empty dropdown on focus, which reads as broken.
