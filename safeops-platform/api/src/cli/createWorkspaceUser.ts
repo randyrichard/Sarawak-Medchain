@@ -376,6 +376,8 @@ Use a separate address for the workspace account.`,
   console.log(
     `\nOpened ${created.name} <${email}> as ${role} in ${company.name}.\n\n`
     + linkOrSent(delivery, token)
+    + 'Nothing above is a password. The JSON line is a log record and the id in it is\n'
+    + 'a database id; the link is the only way to set a password.\n'
     + `\nIt expires in ${RESET_TOKEN_TTL_MIN} minutes. Until it is used the account cannot be\n`
     + 'signed into, and nobody - including whoever ran this command - holds a working\n'
     + 'password for it.',
