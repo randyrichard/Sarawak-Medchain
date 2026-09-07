@@ -138,3 +138,16 @@ export function useOrg(): OrgValue {
   if (!ctx) throw new Error('useOrg must be used inside <OrgProvider>')
   return ctx
 }
+
+/**
+ * The sites this account is limited to, by name. Empty means organisation-wide.
+ *
+ * `sites` is already filtered to the membership's scope, so the names are simply what the
+ * reader can see - what makes it a *restriction* is siteIds being set at all. Both halves
+ * are needed: an unscoped account also has sites, and saying "nobody at these sites" to
+ * somebody who can see all of them would be noise.
+ */
+export function useSiteScope(): string[] {
+  const { membership, sites } = useOrg()
+  return membership && membership.siteIds.length > 0 ? sites.map((s) => s.name) : []
+}

@@ -18,12 +18,47 @@ import type { EquipmentHolderOption } from '@/api/equipmentHolders'
  * instead of showing headings that cannot be chosen. One implementation, so a fourth picker
  * cannot reintroduce it.
  */
+/**
+ * What an empty person picker should say.
+ *
+ * There are two reasons the list can be empty and they need opposite advice, which the old
+ * single sentence could not give. "Add people under Employees or Contractors" is right for
+ * a workspace whose registers really are empty. It is wrong - and expensively wrong - for a
+ * reader whose account is limited to one site while the people are at another: following it
+ * means adding duplicates of colleagues who are already on the register.
+ *
+ * That is not hypothetical. It is what a workspace with three employees at Bintulu Plant
+ * and an administrator scoped to LMG was told, and the message was the only thing on screen
+ * claiming to explain it.
+ *
+ * The scoped wording deliberately does not say anyone exists elsewhere. The client cannot
+ * see past its own scope and must not imply that it can; it says what is being filtered and
+ * leaves the conclusion to somebody who can look.
+ */
+export function personRegisterHint(siteScope: string[] = []): string {
+  if (siteScope.length === 0) {
+    return '— Add people under Employees or Contractors to pick them here —'
+  }
+  if (siteScope.length === 1) {
+    return `— Nobody at ${siteScope[0]}. Your account only covers that site, so anyone `
+      + 'at another is not listed —'
+  }
+  return `— Nobody at the ${siteScope.length} sites your account covers, so anyone at `
+    + 'another is not listed —'
+}
+
 export function PersonRegisterOptions({
   people,
-  emptyHint = '— Add people under Employees or Contractors to pick them here —',
+  siteScope = [],
+  emptyHint,
 }: {
   people: EquipmentHolderOption[]
-  /** Shown, disabled, when both registers are empty. */
+  /**
+   * Names of the sites the reader's account is limited to. Empty means organisation-wide,
+   * which is the common case and the one the original wording assumed.
+   */
+  siteScope?: string[]
+  /** Overrides the wording entirely. Rarely needed; the default explains both cases. */
   emptyHint?: string
 }) {
   const employees = people.filter((p) => p.kind === 'employee')
@@ -31,7 +66,7 @@ export function PersonRegisterOptions({
 
   if (employees.length === 0 && contractors.length === 0) {
     // Disabled: it explains the empty list rather than offering a choice.
-    return <option value="" disabled>{emptyHint}</option>
+    return <option value="" disabled>{emptyHint ?? personRegisterHint(siteScope)}</option>
   }
 
   return (

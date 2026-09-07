@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import { ASSET_CATEGORIES, CATEGORY_LABEL, type AssetCategory, type InspectionFrequency, FREQUENCY_LABEL } from '@/api/assets'
-import { useOrg } from '@/features/org/OrgContext'
+import { useOrg, useSiteScope } from '@/features/org/OrgContext'
 import { useDepartments } from '@/features/org/departments'
 import { usePeople, useActor } from '@/features/incidents/lib'
 import { Alert, Button, Dialog, Input, SuggestSelect, PersonRegisterOptions, Select, Textarea } from '@/components/ui'
@@ -14,6 +14,10 @@ export function NewAssetDialog({ open, onClose, onCreated }: { open: boolean; on
   const people = usePeople()
 
   const departments = useDepartments()
+
+
+  const siteScope = useSiteScope()
+
 
 
   const [name, setName] = useState('')
@@ -163,7 +167,7 @@ export function NewAssetDialog({ open, onClose, onCreated }: { open: boolean; on
           hint="Leave blank for pool equipment."
         >
           <option value="">Nobody yet (pool)</option>
-          <PersonRegisterOptions people={holders} />
+          <PersonRegisterOptions people={holders} siteScope={siteScope} />
         </Select>
 
         <label className="flex items-start gap-2 text-2xs text-ink">

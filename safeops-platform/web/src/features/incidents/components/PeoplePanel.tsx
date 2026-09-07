@@ -7,6 +7,7 @@ import {
 import { listEquipmentHolders, type EquipmentHolderOption } from '@/api/equipmentHolders'
 import { ApiError } from '@/api/types'
 import { Alert, Badge, Button, Card, CardBody, Dialog, Input, PersonRegisterOptions, Select, Skeleton, Textarea, hasRegisteredPeople } from '@/components/ui'
+import { useSiteScope } from '@/features/org/OrgContext'
 import { fmtDate } from '../lib'
 import { cn } from '@/lib/cn'
 
@@ -29,6 +30,7 @@ export function PeoplePanel({
   companyId: string
   canEdit: boolean
 }) {
+
   const [rows, setRows] = useState<IncidentPerson[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
@@ -163,6 +165,7 @@ function AddPersonDialog({
   onClose: () => void
   onAdded: () => void
 }) {
+  const siteScope = useSiteScope()
   const [role, setRole] = useState<IncidentPersonRole>('witness')
   /** "employee:<id>", "contractor:<id>", or "" for somebody outside every register. */
   const [who, setWho] = useState('')
@@ -261,7 +264,7 @@ function AddPersonDialog({
               ? 'Leave blank for somebody who is not on the books.'
               : 'Nobody is in your registers yet, so type their name below.'}>
             <option value="">Not in a register — type their name below</option>
-            <PersonRegisterOptions people={people} />
+            <PersonRegisterOptions people={people} siteScope={siteScope} />
           </Select>
         )}
 

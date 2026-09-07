@@ -7,6 +7,7 @@ import {
 import { listEquipmentHolders, type EquipmentHolderOption } from '@/api/equipmentHolders'
 import { ApiError } from '@/api/types'
 import { Alert, Badge, Button, Dialog, PersonRegisterOptions, Select, Skeleton } from '@/components/ui'
+import { useSiteScope } from '@/features/org/OrgContext'
 import { fmtDateTime } from '@/features/incidents/lib'
 
 /**
@@ -29,6 +30,7 @@ export function AssetHolderPanel({
   revision?: number
   onChanged?: () => void
 }) {
+
   const [holder, setHolder] = useState<AssetHolder | null | undefined>(undefined)
   const [permit, setPermit] = useState<AssetCurrentPermit | null | undefined>(undefined)
   const [error, setError] = useState<string | null>(null)
@@ -148,6 +150,7 @@ function AssignDialog({
   onClose: () => void
   onSaved: () => void
 }) {
+  const siteScope = useSiteScope()
   const [people, setPeople] = useState<EquipmentHolderOption[] | null>(null)
   const [chosen, setChosen] = useState('')
   const [busy, setBusy] = useState(false)
@@ -204,10 +207,12 @@ function AssignDialog({
            */
           <Select label="Hand it to" value={chosen} onChange={(e) => setChosen(e.target.value)}>
             <option value="">Choose a person…</option>
-            <PersonRegisterOptions
-              people={people}
-              emptyHint="— Nobody in the registers yet. Add them under Employees or Contractors —"
-            />
+            {/*
+              The override is gone: it stated one of the two reasons the list can be empty
+              as though it were the only one, which is exactly the message that sent
+              somebody to add colleagues they already had.
+            */}
+            <PersonRegisterOptions people={people} siteScope={siteScope} />
           </Select>
         )}
 
