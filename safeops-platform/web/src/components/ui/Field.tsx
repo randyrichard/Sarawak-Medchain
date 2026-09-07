@@ -63,6 +63,51 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 })
 
 /**
+ * A text field that offers what already exists, without refusing anything else.
+ *
+ * For the fields that name something the workspace has a register of - a department, a
+ * job title - where two things are both true: somebody typing "Maintanence" beside three
+ * existing "Maintenance" rows is a real cost, and a workspace that has not created any
+ * departments yet still has to be able to fill the field in.
+ *
+ * A `<select>` would solve the first and break the second, which is the trap the Owner
+ * picker was already in: a required field whose only options came from data a new
+ * workspace does not have yet, so the form could not be submitted at all. A datalist is
+ * the honest middle - the browser shows the known values as a dropdown the moment the
+ * field is focused, and typing a new one is still allowed and still saved.
+ *
+ * Deliberately not a custom popover. The native control is keyboard-accessible, filters as
+ * you type, and behaves the way the platform's own form controls do on a phone, which is
+ * where a lot of this product is used.
+ */
+export interface SuggestInputProps extends InputProps {
+  /** What the workspace already has. Never a restriction - only a shortcut. */
+  options: string[]
+}
+
+export const SuggestInput = forwardRef<HTMLInputElement, SuggestInputProps>(
+  function SuggestInput({ options, id, ...rest }, ref) {
+    const autoId = useId()
+    const inputId = id ?? autoId
+    const listId = `${inputId}-options`
+    return (
+      <>
+        <Input ref={ref} id={inputId} list={options.length ? listId : undefined} {...rest} />
+        {/*
+          Rendered only when there is something to offer. An empty datalist makes some
+          browsers show a flicker of empty dropdown on focus, which reads as broken.
+        */}
+        {options.length > 0 && (
+          <datalist id={listId}>
+            {options.map((o) => <option key={o} value={o} />)}
+          </datalist>
+        )}
+      </>
+    )
+  },
+)
+
+/**
  * A password field with a reveal toggle.
  *
  * Typing a long password blind, into a field that shows nothing but dots, is where sign-in

@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react'
-import { Input, Select, Textarea } from '@/components/ui'
+import { Input, SuggestInput, Select, Textarea } from '@/components/ui'
+import { useDepartments } from '@/features/org/departments'
 import { useOrg } from '@/features/org/OrgContext'
 
 /**
@@ -64,6 +65,8 @@ export function EmployeeForm({
   onChange: Dispatch<SetStateAction<EmployeeFormState>>
   disableSite?: boolean
 }) {
+  const departments = useDepartments()
+
   const { sites } = useOrg()
   const set = <K extends keyof EmployeeFormState>(k: K, v: EmployeeFormState[K]) =>
     onChange((s) => ({ ...s, [k]: v }))
@@ -83,7 +86,7 @@ export function EmployeeForm({
           <option value="">Choose a site…</option>
           {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </Select>
-        <Input label="Department" value={value.department} onChange={(e) => set('department', e.target.value)} />
+        <SuggestInput options={departments} label="Department" value={value.department} onChange={(e) => set('department', e.target.value)} />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">

@@ -4,13 +4,17 @@ import { ApiError } from '@/api/types'
 import type { AuditPriority, AuditTemplate, AuditType } from '@/api/audits'
 import { AUDIT_TYPES, AUDIT_TYPE_LABEL } from '@/api/audits'
 import { useOrg } from '@/features/org/OrgContext'
+import { useDepartments } from '@/features/org/departments'
 import { usePeople, useActor } from '@/features/incidents/lib'
-import { Alert, Badge, Button, Dialog, Input, Select, Textarea } from '@/components/ui'
+import { Alert, Badge, Button, Dialog, Input, SuggestInput, Select, Textarea } from '@/components/ui'
 
 export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
   const { company, sites } = useOrg()
   const actor = useActor()
   const people = usePeople()
+
+  const departments = useDepartments()
+
 
   const [templates, setTemplates] = useState<AuditTemplate[]>([])
   const [title, setTitle] = useState('')
@@ -121,7 +125,7 @@ export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; o
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <Input label="Department" value={department} onChange={(e) => setDepartment(e.target.value)} />
+              <SuggestInput options={departments} label="Department" value={department} onChange={(e) => setDepartment(e.target.value)} />
               <Select label="Lead auditor" required value={leadAuditor} onChange={(e) => setLeadAuditor(e.target.value)}>
                 <option value="" disabled>Select…</option>
                 {people.map((p) => <option key={p}>{p}</option>)}

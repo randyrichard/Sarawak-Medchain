@@ -10,7 +10,8 @@ import type { AttachmentKind, IncidentSeverity, IncidentType, NewIncidentInput, 
 import { INCIDENT_TYPES, TYPE_LABEL } from '@/api/incidents'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useOrg } from '@/features/org/OrgContext'
-import { Alert, Badge, Breadcrumbs, Button, Card, Checkbox, Input, LinkButton, Select, Textarea } from '@/components/ui'
+import { useDepartments } from '@/features/org/departments'
+import { Alert, Badge, Breadcrumbs, Button, Card, Checkbox, Input, SuggestInput, LinkButton, Select, Textarea } from '@/components/ui'
 import { usePageTitle } from '@/app/pageTitle'
 import { severityKind, SITE_COORDS, TYPE_ICON, useActor } from './lib'
 import { enqueue, shouldRetry } from './outbox'
@@ -82,6 +83,9 @@ export function ReportIncidentPage() {
   const actor = useActor()
   const navigate = useNavigate()
   const draftKey = `safeops.incidentDraft.${user?.id ?? 'anon'}`
+
+  const departments = useDepartments()
+
 
   const [draft, setDraft] = useState<Draft>(emptyDraft)
   const [resumeAvailable, setResumeAvailable] = useState(false)
@@ -380,7 +384,8 @@ export function ReportIncidentPage() {
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
               </Select>
-              <Input
+              <SuggestInput
+                options={departments}
                 label="Department" required placeholder="e.g. Warehouse & Stores"
                 value={draft.department} onChange={(e) => patch({ department: e.target.value })}
                 error={touchedNext && !draft.department.trim() ? 'Which department does this belong to?' : undefined}

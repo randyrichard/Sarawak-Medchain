@@ -7,6 +7,7 @@ import { adminApi } from '@/api/adminApi'
 import type { AdminUser } from '@/api/admin'
 import { ApiError } from '@/api/types'
 import { useOrg } from '@/features/org/OrgContext'
+import { forgetDepartments } from '@/features/org/departments'
 import {
   Alert, Badge, Button, Card, CardBody, CardHeader, Dialog, EmptyState, Input, Skeleton,
 } from '@/components/ui'
@@ -82,6 +83,12 @@ export function DepartmentsSection() {
         await orgAdminApi.createDepartment(company.id, {
           name: draft.name, code: draft.code, siteId: draft.siteId, managerUserId,
         })
+        /*
+         * The suggestion lists cache this workspace's departments, so without this a
+         * department created here is not offered by the incident, asset or permit forms
+         * until the page is reloaded - which reads as it not having saved.
+         */
+        forgetDepartments(company.id)
         say(`${draft.name} created.`)
       }
       setDialog({ open: false, editing: null })
