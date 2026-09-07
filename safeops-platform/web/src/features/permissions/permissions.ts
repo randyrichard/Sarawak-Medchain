@@ -82,7 +82,18 @@ const MATRIX: Record<Role, Capability[]> = {
     'dashboard:view', 'reports:submit',
     'incidents:view', 'permits:view', 'equipment:view', 'visitors:view',
     'training:view', 'workforce:view', 'reports:view',
-    'incidents:manage', 'actions:manage', 'analytics:view',
+    /*
+     * `compliance:manage` was missing, and the comment above claiming this role matches the
+     * server was checked against incidents and inspections but not audits. auditService puts
+     * safety_officer in MANAGE_ROLES - planning and conducting an audit is the job - so the
+     * Compliance screen was hidden from the person who does the walk, while the API would
+     * have served them throughout. The same shape of fault as the executive who could not
+     * open Incidents, found by serverAgreement.test.ts on its first run.
+     *
+     * Closing an audit stays out of reach: that is REVIEW_ROLES on the server, and this
+     * capability only decides whether the nav entry appears.
+     */
+    'incidents:manage', 'actions:manage', 'analytics:view', 'compliance:manage',
   ],
 
   /*
