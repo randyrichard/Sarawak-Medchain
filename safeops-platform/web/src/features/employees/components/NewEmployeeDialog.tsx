@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { employeesApi } from '@/api/employeesApi'
+import { forgetPeople } from '@/features/org/people'
 import { ApiError } from '@/api/types'
 import { useOrg } from '@/features/org/OrgContext'
 import { Alert, Button, Dialog } from '@/components/ui'
@@ -30,6 +31,12 @@ export function NewEmployeeDialog({
     setError(null)
     try {
       const created = await employeesApi.create(company.id, toEmployeePayload(form))
+      /*
+       * The people-pickers cache this workspace's names, so without this a person hired
+       * here does not appear in "assign owner" until the page is reloaded - which reads as
+       * the new employee not having saved.
+       */
+      forgetPeople(company.id)
       onCreated(created.name)
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Could not add that person.')

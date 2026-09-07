@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import {
   AlertTriangle, Ambulance, Car, CloudRain, Droplets, Flame, HardHat, HeartPulse,
   Leaf, ShieldAlert, Skull, Stethoscope, Wrench, type LucideIcon,
@@ -8,7 +8,7 @@ import type { StatusKind } from '@/components/ui'
 import type { Actor } from '@/api/incidents'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useOrg } from '@/features/org/OrgContext'
-import { EMPLOYEES, USERS } from '@/api/mock/fixtures'
+import { loadPeople } from '@/features/org/people'
 
 export const TYPE_ICON: Record<IncidentType, LucideIcon> = {
   near_miss: ShieldAlert,
@@ -79,23 +79,35 @@ export const fmtDate = (iso: string) =>
 /**
  * People available for assignment and @-mentions, scoped to the workspace in view.
  *
- * This was a module constant spanning every company in the fixture set, so Borneo's
- * "assign owner" dropdown offered Kenyalang's site agent. The server stores an owner as
- * free text, so nothing leaked *out* of a tenant — but a buyer who opens that dropdown
- * and reads a competitor's staff list will not wait for the explanation.
+ * Two bugs have lived here. The first was a module constant spanning every company in the
+ * fixture set, so Borneo's "assign owner" dropdown offered Kenyalang's site agent. The
+ * second was subtler and worse: the fix for the first still read the fixtures, and those
+ * are compiled out of a production build - so on a real deployment every picker in the
+ * product was empty, and because Owner is required, a corrective action could not be
+ * created at all. It looked correct in development, which is why it lasted.
+ *
+ * The names now come from the workforce register and the workspace's members. See
+ * features/org/people.ts for how, and why members are best-effort.
+ *
+ * Returns an empty array on the first render and fills in when the request lands, which is
+ * what every caller already tolerated - `people.map(...)` over nothing renders a select
+ * with only its placeholder.
  */
 export function usePeople(): string[] {
   const companyId = useOrg().company?.id ?? ''
-  return useMemo(
-    () =>
-      [
-        ...new Set([
-          ...USERS.filter((u) => u.memberships.some((m) => m.companyId === companyId)).map((u) => u.name),
-          ...EMPLOYEES.filter((e) => e.companyId === companyId).map((e) => e.name),
-        ]),
-      ].sort(),
-    [companyId],
-  )
+  const [people, setPeople] = useState<string[]>([])
+
+  useEffect(() => {
+    let live = true
+    void loadPeople(companyId).then((names) => {
+      // Guarded because switching workspace unmounts and remounts these dialogs, and a
+      // late answer for the previous company would otherwise offer its staff here.
+      if (live) setPeople(names)
+    })
+    return () => { live = false }
+  }, [companyId])
+
+  return people
 }
 
 /** The acting user, as the API's permission checks expect it. */
