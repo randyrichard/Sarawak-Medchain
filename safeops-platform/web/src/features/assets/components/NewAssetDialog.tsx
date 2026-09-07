@@ -38,7 +38,19 @@ export function NewAssetDialog({ open, onClose, onCreated }: { open: boolean; on
     if (!open || !company) return
     listEquipmentHolders(company.id)
       .then(setHolders)
-      .catch(() => setHolders([]))
+      .catch((e) => {
+        /*
+         * Said out loud, matching AssetHolderPanel and PeoplePanel.
+         *
+         * Swallowing this rendered the "add people under Employees or Contractors" hint,
+         * which is a statement about the customer's data - and it was wrong whenever the
+         * real cause was a failed request. That sends somebody to the workforce register
+         * to add people who are already there. equipmentHolders.ts deliberately does not
+         * swallow the error; two of its four callers did.
+         */
+        setHolders([])
+        setError(e instanceof ApiError ? e.message : 'Could not load the list of people.')
+      })
   }, [open, company])
 
   const submit = async () => {

@@ -58,7 +58,19 @@ export function NewVisitorDialog({
 
     listEquipmentHolders(company.id)
       .then((rows) => setHosts(rows.filter((r) => r.kind === 'employee')))
-      .catch(() => setHosts([]))
+      .catch((e) => {
+        /*
+         * Said out loud, matching AssetHolderPanel and PeoplePanel.
+         *
+         * Swallowing this rendered the "add people under Employees or Contractors" hint,
+         * which is a statement about the customer's data - and it was wrong whenever the
+         * real cause was a failed request. That sends somebody to the workforce register
+         * to add people who are already there. equipmentHolders.ts deliberately does not
+         * swallow the error; two of its four callers did.
+         */
+        setHosts([])
+        setError(e instanceof ApiError ? e.message : 'Could not load the list of people.')
+      })
   }, [open, company, sites])
 
   const submit = async () => {
