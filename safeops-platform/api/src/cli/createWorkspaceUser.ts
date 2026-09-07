@@ -29,12 +29,12 @@
 import { randomBytes } from 'node:crypto'
 import { hostname } from 'node:os'
 import { PrismaClient, type Role } from '@prisma/client'
-import { env } from '../env.js'
 import { hashPassword } from '../lib/password.js'
 import {
   generateResetToken, hashResetToken, resetTokenExpiry, RESET_TOKEN_TTL_MIN,
 } from '../lib/tokens.js'
 import { sendPasswordResetEmail } from '../lib/email/passwordResetDelivery.js'
+import { linkOrSent } from '../lib/email/resetLink.js'
 
 const db = new PrismaClient()
 
@@ -132,35 +132,6 @@ async function audit(entry: {
     // An audit failure must not swallow the operation's own result.
     console.error(`WARNING: could not write the audit record: ${e instanceof Error ? e.message : e}`)
   }
-}
-
-/**
- * What to print: "we emailed it", or the link itself.
- *
- * The link is printed only when the email did not go - otherwise there is no reason to put
- * a working credential on a terminal and into shell history as well as in somebody's inbox.
- *
- * The address is built from APP_PUBLIC_URL, which is the address the deployment believes
- * it is served at. That is frequently not the address the operator's own browser can
- * reach - a pilot box answering on localhost while APP_PUBLIC_URL names the eventual
- * public domain is the normal case, not an edge one - so the path is printed underneath.
- * A link to a hostname that does not resolve is indistinguishable from a broken token, and
- * that is a bad half hour to hand somebody.
- */
-function linkOrSent(
-  delivery: { delivered: boolean; showLink: boolean; reason?: string },
-  token: string,
-): string {
-  if (delivery.delivered) return 'A single-use link has been emailed to them.\n'
-  const path = `/reset-password?token=${encodeURIComponent(token)}`
-  return (
-    `${delivery.reason ? `Email was not sent: ${delivery.reason}\n\n` : ''}`
-    + 'Set a password with this single-use link:\n\n'
-    + `  ${env.appUrl}${path}\n\n`
-    + 'If that host is not the one your browser reaches this deployment at, keep the path\n'
-    + 'and change the host:\n\n'
-    + `  ${path}\n`
-  )
 }
 
 /** Issues a reset token, superseding any unused one, and returns the raw token. */

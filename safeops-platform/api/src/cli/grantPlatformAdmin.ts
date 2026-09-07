@@ -22,10 +22,10 @@
 import { randomBytes } from 'node:crypto'
 import { hostname } from 'node:os'
 import { PrismaClient } from '@prisma/client'
-import { env } from '../env.js'
 import { hashPassword } from '../lib/password.js'
 import { generateResetToken, hashResetToken, resetTokenExpiry, RESET_TOKEN_TTL_MIN } from '../lib/tokens.js'
 import { sendPasswordResetEmail } from '../lib/email/passwordResetDelivery.js'
+import { linkOrSent } from '../lib/email/resetLink.js'
 
 const db = new PrismaClient()
 
@@ -196,27 +196,6 @@ async function createFirstAdmin(email: string) {
     + linkOrSent(delivery, token)
     + `\nIt expires in ${RESET_TOKEN_TTL_MIN} minutes. Nobody, including\n`
     + 'whoever ran this command, holds a working password for the account until it is used.',
-  )
-}
-
-/**
- * What to print: "we emailed it", or the link itself.
- *
- * The link is printed only when the email did not go. Once a provider has accepted the
- * message there is no reason to also put a working credential on a terminal, into shell
- * history, and into whatever captures the output of a deployment script.
- */
-function linkOrSent(
-  delivery: { delivered: boolean; showLink: boolean; reason?: string },
-  token: string,
-): string {
-  if (delivery.delivered) {
-    return 'A single-use link has been emailed to them.\n'
-  }
-  return (
-    `${delivery.reason ? `Email was not sent: ${delivery.reason}\n\n` : ''}`
-    + 'Set a password with this single-use link:\n\n'
-    + `  ${env.appUrl}/reset-password?token=${encodeURIComponent(token)}\n`
   )
 }
 
