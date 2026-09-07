@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Check, Copy, Plus, Send, Trash2, Webhook as WebhookIcon } from 'lucide-react'
 import { api } from '@/api/client'
+import { API_BASE_URL } from '@/api/authApi'
 import { useOrg } from '@/features/org/OrgContext'
 import { ApiError } from '@/api/types'
 import type { ApiKey, RbacAction, Webhook } from '@/api/admin'
@@ -315,25 +316,47 @@ function UsagePanel() {
   )
 }
 
+/**
+ * The address this console is actually talking to.
+ *
+ * The reference used to hard-code https://api.safeops.app, which resolves to nothing - so
+ * the one command an integrator was most likely to copy could never have worked. A
+ * same-origin deployment leaves API_BASE_URL empty, in which case the origin is the answer.
+ */
+function apiBase(): string {
+  return API_BASE_URL || window.location.origin
+}
+
+/*
+ * Exactly what api/src/routes/v1.ts mounts, and nothing else.
+ *
+ * This list used to name nine endpoints, three of them writes, none of which existed - an
+ * API key authenticated no request at all, so every line described something no customer
+ * could call. Two are gone rather than built, and for a reason worth keeping: a key acts
+ * as `ceo`, chosen because it reads the whole workspace without unmasking anonymous
+ * reporters, and that role is deliberately not in MANAGE_ROLES. Updating an action or
+ * completing an inspection would therefore have refused every request, and the fix for
+ * that is not to hand a bearer token in somebody's CI configuration a manager's authority.
+ */
 const ENDPOINTS = [
   { method: 'GET', path: '/v1/incidents', desc: 'List incidents with filters' },
+  { method: 'GET', path: '/v1/incidents/{id}', desc: 'One incident in full' },
   { method: 'POST', path: '/v1/incidents', desc: 'Report a new incident' },
   { method: 'GET', path: '/v1/actions', desc: 'List corrective actions' },
-  { method: 'PATCH', path: '/v1/actions/{id}', desc: 'Update action status / progress' },
   { method: 'GET', path: '/v1/assets', desc: 'Asset register with health' },
-  { method: 'POST', path: '/v1/inspections/{id}/complete', desc: 'Submit an inspection' },
   { method: 'GET', path: '/v1/audits', desc: 'List audits & findings' },
   { method: 'GET', path: '/v1/training/matrix', desc: 'Competency matrix' },
   { method: 'GET', path: '/v1/certificates/{number}/verify', desc: 'Verify a certificate' },
 ]
 
+
 function DocsPanel() {
   return (
     <Card>
-      <CardHeader title="REST API reference" subtitle="Base URL https://api.safeops.app · Bearer token auth · JSON" />
+      <CardHeader title="REST API reference" subtitle={`Base URL ${apiBase()} · Bearer token auth · JSON`} />
       <CardBody className="space-y-1.5">
         <div className="rounded-lg border bg-sunken p-3 font-mono text-2xs text-ink-2">
-          curl https://api.safeops.app/v1/incidents \<br />&nbsp;&nbsp;-H "Authorization: Bearer sk_live_…"
+          curl {apiBase()}/v1/incidents \<br />&nbsp;&nbsp;-H "Authorization: Bearer sk_live_…"
         </div>
         {ENDPOINTS.map((e) => (
           <div key={e.path} className="flex items-center gap-3 rounded-lg border px-3.5 py-2">
@@ -342,7 +365,10 @@ function DocsPanel() {
             <span className="ml-auto text-2xs text-muted">{e.desc}</span>
           </div>
         ))}
-        <p className="pt-1 text-2xs text-muted">Every endpoint enforces the scopes on the calling API key and is rate-limited per key.</p>
+        <p className="pt-1 text-2xs text-muted">
+          Every endpoint enforces the scopes on the calling API key and is rate-limited per
+          key. A key reads its own workspace only — do not send a companyId.
+        </p>
       </CardBody>
     </Card>
   )

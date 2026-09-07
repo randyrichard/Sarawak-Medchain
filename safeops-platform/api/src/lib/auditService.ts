@@ -3,6 +3,7 @@ import type {
 } from '@prisma/client'
 // `Caller` is the verified identity shape shared by every module — see permitService.
 import { type Caller } from './incidentService.js'
+import { enqueueEvent } from './webhookService.js'
 import {
   AUDIT_TEMPLATES, AUDIT_TYPE_LABEL, BUILT_IN_TEMPLATE_IDS, SEVERITY_DUE_DAYS,
   SEVERITY_PRIORITY, type AuditTemplateShape, templateItemCount,
@@ -585,6 +586,30 @@ export class AuditService {
     })
 
     const detail = await this.getAuditDetail(caller, id)
+
+    /*
+     * One event per finding raised by this submission, and only the ones raised now.
+     *
+     * `detail.findings` is every finding on the audit, including any from an earlier
+     * submission, so it is filtered to those stamped by this run. Announcing the whole set
+     * each time would have a receiving system re-open findings it had already dealt with.
+     */
+    for (const f of detail.findings.filter((x) => x.raisedAt >= now)) {
+      await enqueueEvent(this.db, audit.companyId, 'audit.finding.raised', {
+        id: f.id,
+        code: f.code,
+        auditId: id,
+        auditCode: audit.code,
+        siteId: audit.siteId,
+        category: f.category,
+        severity: f.severity,
+        description: f.description,
+        raisedBy: f.raisedBy,
+        raisedAt: f.raisedAt.toISOString(),
+        actionCode: f.action?.code ?? null,
+      })
+    }
+
     return { audit: detail.audit, findings: detail.findings }
   }
 

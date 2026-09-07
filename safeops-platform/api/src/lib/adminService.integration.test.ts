@@ -5,6 +5,7 @@ import { AdminError, AdminService } from './adminService.js'
 import { CONNECTORS, SYSTEM_ROLES } from './adminCatalog.js'
 import { hashPassword } from './password.js'
 import type { Caller } from './incidentService.js'
+import { open } from './secretBox.js'
 
 /**
  * Integration tests — these run against a REAL PostgreSQL database, not a fake.
@@ -506,23 +507,52 @@ d('AdminService — integration (real Postgres)', () => {
     expect(created.secretMasked).toContain(created.secret.slice(-4))
 
     const row = await db.webhook.findUniqueOrThrow({ where: { id: created.id } })
-    expect(row.secretHash).toBe(createHash('sha256').update(created.secret).digest('hex'))
+    /*
+     * Sealed, not hashed - and the property that matters is unchanged: the plaintext is
+     * not in the row. This used to assert a SHA-256 digest, which was safer still and also
+     * made signing impossible, so no webhook could ever be delivered. It is now AES-256-GCM
+     * so the signer can read it back; what is stored is still not the secret.
+     */
+    expect(row.secretEnc).toMatch(/^v1\./)
+    expect(row.secretEnc).not.toContain(created.secret)
     expect(JSON.stringify(row)).not.toContain(created.secret)
+    // And it round-trips, because a secret that seals but does not open signs nothing.
+    expect(open(row.secretEnc)).toBe(created.secret)
 
     const listed = await svc.listWebhooks(admin, COMPANY)
     expect(JSON.stringify(listed)).not.toContain(created.secret)
   })
 
-  it('toggles a webhook and records a test delivery without calling out', async () => {
+  it('records a test delivery honestly when the endpoint is not there', async () => {
+    /*
+     * This test used to be called "records a test delivery without calling out" and
+     * asserted `success`, because `testWebhook` wrote a 200 into the row without making a
+     * request. hooks.example.com has never accepted a webhook from anybody; a green result
+     * for it was the console reporting something that had not happened.
+     *
+     * A real request now goes out, so the honest outcome for an endpoint that does not
+     * exist is a failure - and that is what the row has to say.
+     */
     const wh = await svc.createWebhook(admin, COMPANY, ctx, 'https://hooks.example.com/two', ['incident.closed'])
 
     const tested = await svc.testWebhook(admin, COMPANY, ctx, wh.id)
-    expect(tested.lastDelivery?.status).toBe('success')
+    expect(tested.lastDelivery?.status).toBe('failed')
+    expect(tested.testResult.ok).toBe(false)
 
+    /*
+     * A disabled webhook is refused rather than recorded as a failed delivery.
+     *
+     * This half of the test used to assert that testing a disabled webhook wrote
+     * `failed` and a 503 onto the row. That was the same fiction as the green result
+     * above, just pointing the other way: nothing was sent, so nothing was delivered or
+     * not delivered, and a delivery record for a webhook that is switched off is a lie
+     * about an event that did not occur. Saying "enable it first" is both true and
+     * actionable.
+     */
     const off = await svc.toggleWebhook(admin, COMPANY, ctx, wh.id)
     expect(off.active).toBe(false)
-    const testedOff = await svc.testWebhook(admin, COMPANY, ctx, wh.id)
-    expect(testedOff.lastDelivery?.status).toBe('failed')
+    await expect(svc.testWebhook(admin, COMPANY, ctx, wh.id))
+      .rejects.toMatchObject({ code: 'validation' })
   })
 
   // ── Integrations ───────────────────────────────────────────────────────────

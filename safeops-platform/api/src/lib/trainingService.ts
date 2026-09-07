@@ -1,6 +1,7 @@
 import type { DeliveryMode, Prisma, PrismaClient, Role } from '@prisma/client'
 // `Caller` is the verified identity shape shared by every module — see permitService.
 import { type Caller } from './incidentService.js'
+import { enqueueEvent } from './webhookService.js'
 import {
   BUILT_IN_COURSE_IDS, EXPIRING_WINDOW_DAYS, TRAINING_ACTION_DUE_DAYS, TRAINING_COURSES,
   courseApplies, type CourseShape,
@@ -748,6 +749,24 @@ export class TrainingService {
         include: { employee: true },
       }),
     ])
+
+    /*
+     * One event per certificate rather than one per session.
+     *
+     * A receiving system files competency against a person, so a session that qualified
+     * eleven people is eleven things to record. Batching them into a single event would
+     * make the receiver unpack an array to do what it was always going to do individually.
+     */
+    await Promise.all(certs.map((c) => enqueueEvent(this.db, session.companyId, 'certificate.issued', {
+        id: c.id,
+        number: c.number,
+        employeeId: c.employeeId,
+        employeeName: c.employee?.name ?? null,
+        courseName: c.courseName,
+        issueDate: c.issueDate.toISOString(),
+        expiryDate: c.expiryDate ? c.expiryDate.toISOString() : null,
+        issuedBy: c.issuedBy,
+      })))
 
     return {
       session: view,

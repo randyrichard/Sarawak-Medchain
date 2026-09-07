@@ -46,10 +46,10 @@ model User {
   /// inside any of them. Keeping it separate is also what stops a customer administrator
   /// granting it - the organisation console writes Membership.role and never touches this.
   platformAdmin Boolean @default(false)
-  mfaEnabled         Boolean @default(false)
+  mfaEnabled    Boolean @default(false)
   /// Shown in the admin console's user list. Additive and nullable — authentication
   /// does not read it, so every existing account is unaffected.
-  department         String?
+  department    String?
 
   /// Per-user settings that should follow the person between devices:
   /// { landingPage?: string, defaultSiteId?: string | null }.
@@ -59,15 +59,15 @@ model User {
   /// here — it belongs to the device, and round-tripping it through the server would make
   /// a dark-mode toggle wait on the network. Nullable, so every existing account keeps
   /// the defaults without a backfill.
-  preferences        Json?
+  preferences Json?
 
-  memberships   Membership[]
-  employee      Employee?
-  managedDepartments Department[] @relation("DepartmentManager")
-  invitations   Invitation[]
-  refreshTokens RefreshToken[]
-  loginAttempts LoginAttempt[]
-  resetTokens   PasswordResetToken[]
+  memberships        Membership[]
+  employee           Employee?
+  managedDepartments Department[]         @relation("DepartmentManager")
+  invitations        Invitation[]
+  refreshTokens      RefreshToken[]
+  loginAttempts      LoginAttempt[]
+  resetTokens        PasswordResetToken[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -163,19 +163,19 @@ model LoginAttempt {
 // so both must be real rows with foreign keys rather than client-side constants.
 
 model Company {
-  id        String     @id
-  name      String
+  id   String @id
+  name String
   /// Commercial tier. Free-text rather than an enum so existing rows keep the value they
   /// were created with; the recognised keys and their prices live in planCatalog.ts, which
   /// is the only place a price is written down.
-  plan      String     @default("enterprise")
+  plan String @default("enterprise")
 
   /// Whether the customer may use the product at all. Separate from subscriptionStatus:
   /// a company can be past due and still working, or paid up and suspended for cause.
-  status             String    @default("active")
+  status             String                 @default("active")
   /// trial | active | past_due | cancelled. Recorded here so a billing integration added
   /// later has somewhere to write without reshaping the tenant model.
-  subscriptionStatus String    @default("trial")
+  subscriptionStatus String                 @default("trial")
   /// Whatever the eventual payment provider calls this customer. Null until one exists.
   billingReference   String?
   /// Set when the company was created through the provisioning console rather than by hand.
@@ -183,78 +183,78 @@ model Company {
   provisionedBy      String?
   /// Shown in the company switcher. Additive: every existing row keeps a sensible
   /// default and nothing that reads Company today is affected.
-  industry     String @default("")
-  logoInitials String @default("")
-  sites       Site[]
-  incidents   Incident[]
-  actions     CorrectiveAction[]
-  permits     Permit[]
-  assets      Asset[]
-  inspections Inspection[]
-  audits      Audit[]
-  auditTemplates AuditTemplate[]
-  obligations    ComplianceObligation[]
-  documents      ComplianceDocument[]
-  employees      Employee[]
-  ppeIssues      PpeIssue[]
-  contractors    ContractorCompany[]
-  contractorWorkers ContractorWorker[]
-  courses        TrainingCourse[]
-  sessions       TrainingSession[]
-  certificates   Certificate[]
-  roleDefs       RoleDefinition[]
-  adminAudit     AdminAuditEntry[]
-  apiKeys        ApiKey[]
-  webhooks       Webhook[]
-  connectors     ConnectorConfig[]
-  securityPolicy SecurityPolicy?
-  orgSettings    OrgSettings?
-  invitations    Invitation[]
-  configItems    OrgConfigItem[]
-  retention      RetentionPolicy?
-  backups        Backup[]
-  notifications  Notification[]
-  createdAt   DateTime   @default(now())
-  visitors          Visitor[]
-  visitorBlacklist  VisitorBlacklist[]
-  reportSchedules ReportSchedule[]
-  reportRuns      ReportRun[]
+  industry           String                 @default("")
+  logoInitials       String                 @default("")
+  sites              Site[]
+  incidents          Incident[]
+  actions            CorrectiveAction[]
+  permits            Permit[]
+  assets             Asset[]
+  inspections        Inspection[]
+  audits             Audit[]
+  auditTemplates     AuditTemplate[]
+  obligations        ComplianceObligation[]
+  documents          ComplianceDocument[]
+  employees          Employee[]
+  ppeIssues          PpeIssue[]
+  contractors        ContractorCompany[]
+  contractorWorkers  ContractorWorker[]
+  courses            TrainingCourse[]
+  sessions           TrainingSession[]
+  certificates       Certificate[]
+  roleDefs           RoleDefinition[]
+  adminAudit         AdminAuditEntry[]
+  apiKeys            ApiKey[]
+  webhooks           Webhook[]
+  connectors         ConnectorConfig[]
+  securityPolicy     SecurityPolicy?
+  orgSettings        OrgSettings?
+  invitations        Invitation[]
+  configItems        OrgConfigItem[]
+  retention          RetentionPolicy?
+  backups            Backup[]
+  notifications      Notification[]
+  createdAt          DateTime               @default(now())
+  visitors           Visitor[]
+  visitorBlacklist   VisitorBlacklist[]
+  reportSchedules    ReportSchedule[]
+  reportRuns         ReportRun[]
 }
 
 model Site {
-  id        String     @id
+  id        String @id
   companyId String
   name      String
   /// Display fields for the organisation tree. Additive, with defaults.
-  short     String  @default("")
-  city      String  @default("")
-  timezone  String  @default("Asia/Kuching")
-  headcount Int     @default(0)
+  short     String @default("")
+  city      String @default("")
+  timezone  String @default("Asia/Kuching")
+  headcount Int    @default(0)
 
   /// Company's own reference for the site, e.g. "BTU-01". Not unique across tenants.
-  code         String @default("")
-  address      String @default("")
-  contactName  String @default("")
-  contactPhone String @default("")
+  code              String                 @default("")
+  address           String                 @default("")
+  contactName       String                 @default("")
+  contactPhone      String                 @default("")
   /// Deactivated rather than deleted: incidents, permits and assets point here, and a
   /// site that stops existing takes their history with it.
-  active       Boolean @default(true)
-  company     Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  incidents   Incident[]
-  actions     CorrectiveAction[]
-  permits     Permit[]
-  assets      Asset[]
-  inspections Inspection[]
-  audits      Audit[]
-  obligations ComplianceObligation[]
-  documents   ComplianceDocument[]
-  employees   Employee[]
+  active            Boolean                @default(true)
+  company           Company                @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  incidents         Incident[]
+  actions           CorrectiveAction[]
+  permits           Permit[]
+  assets            Asset[]
+  inspections       Inspection[]
+  audits            Audit[]
+  obligations       ComplianceObligation[]
+  documents         ComplianceDocument[]
+  employees         Employee[]
   contractorWorkers ContractorWorker[]
-  sessions    TrainingSession[]
-  departments Department[]
+  sessions          TrainingSession[]
+  departments       Department[]
+  visitors          Visitor[]
 
   @@index([companyId])
-  visitors Visitor[]
 }
 
 /// A department within a site. Employees carry the resolved department name for course
@@ -265,24 +265,24 @@ model Department {
   siteId String
   site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
 
-  name  String
-  code  String @default("")
+  name          String
+  code          String  @default("")
   /// The person accountable for this department. A real user, not a typed-in name: the
   /// visitor register showed what happens when identity is inferred from a display name.
   managerUserId String?
   manager       User?   @relation("DepartmentManager", fields: [managerUserId], references: [id], onDelete: SetNull)
   /// Deactivated departments disappear from pickers but stay readable on the incidents,
   /// permits and visitors that already reference them.
-  active Boolean @default(true)
+  active        Boolean @default(true)
 
   teams Team[]
 
-  createdAt DateTime @default(now())
+  createdAt DateTime   @default(now())
+  visitors  Visitor[]
+  incidents Incident[]
 
   @@index([siteId])
   @@index([siteId, active])
-  visitors Visitor[]
-  incidents Incident[]
 }
 
 model Team {
@@ -417,7 +417,7 @@ model Incident {
   severity    IncidentSeverity
   stage       IncidentStage    @default(reported)
 
-  department       String  @default("")
+  department       String      @default("")
   /// Set when the report names a department from the register rather than typing one.
   /// The text above is kept regardless, so a department being renamed or removed does not
   /// rewrite what the report said at the time.
@@ -425,7 +425,7 @@ model Incident {
   departmentRef    Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   location         String
   gps              String?
-  immediateActions String  @default("")
+  immediateActions String      @default("")
 
   /// Conditions at the time. Weather and shift are the two that turn up in causal analysis
   /// often enough to be worth structuring - night shift and heavy rain are not incidental.
@@ -444,19 +444,19 @@ model Incident {
   investigator String?
 
   /// The investigation proper.
-  leadInvestigator      String?
-  investigationTeam     String   @default("")
-  investigationStartedAt  DateTime?
+  leadInvestigator         String?
+  investigationTeam        String    @default("")
+  investigationStartedAt   DateTime?
   investigationCompletedAt DateTime?
   /// What happened. Distinct from the root cause: the direct cause is the unsafe act or
   /// condition, the underlying cause is why it was there.
-  directCause      String?
-  underlyingCause  String?
-  rootCause        String?
-  contributingFactors String?
-  recommendations  String?
+  directCause              String?
+  underlyingCause          String?
+  rootCause                String?
+  contributingFactors      String?
+  recommendations          String?
   /// Ishikawa categories: { manpower, machine, method, material, measurement, environment }
-  rcaFishbone      Json?
+  rcaFishbone              Json?
 
   /// Set during assessment; drives the high-risk flag on Mission Control.
   /// Seriousness as an orderable number, maintained on write.
@@ -572,7 +572,7 @@ model IncidentAttachment {
   /// SHA-256 of the bytes as written at upload, so a file can be shown to be the one that
   /// was uploaded. Nullable: everything stored before this column existed has no digest,
   /// and an absent digest means "unverifiable", never "verified".
-  checksum String?
+  checksum     String?
   uploadedBy   String
   uploadedById String?
 
@@ -584,7 +584,7 @@ model IncidentAttachment {
   actionId String?
   action   CorrectiveAction? @relation(fields: [actionId], references: [id], onDelete: Cascade)
 
-  createdAt    DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([incidentId])
   @@index([actionId])
@@ -630,14 +630,14 @@ enum CapaPriority {
 /// Corrective and preventive action. The SAIL replacement: every item has an owner
 /// and a target completion date, and closure requires verification by a manager.
 model CorrectiveAction {
-  id         String   @id @default(cuid())
+  id         String     @id @default(cuid())
   /// CA-#### — per tenant, same reasoning as Incident.number.
-  code String
+  code       String
   /// Null for actions raised outside an investigation — an audit finding, an inspection
   /// failure, or a manual entry. The Actions register (SAIL) is the union of both, so
   /// this must be optional or those items have nowhere to live.
   incidentId String?
-  incident   Incident? @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  incident   Incident?  @relation(fields: [incidentId], references: [id], onDelete: Cascade)
   /// Where the action came from, for filtering and reporting.
   source     CapaSource @default(incident)
 
@@ -660,9 +660,9 @@ model CorrectiveAction {
   /// Evidence the owner supplies when marking complete.
   /// Whether closing this action demands evidence. Set when the action is raised, because
   /// deciding after the fact that proof was needed is how actions get closed on a promise.
-  evidenceRequired Boolean @default(false)
-  evidenceNote String?
-  completedAt  DateTime?
+  evidenceRequired Boolean   @default(false)
+  evidenceNote     String?
+  completedAt      DateTime?
 
   /// Verification is a separate act by a manager — completing is not closing.
   verifiedBy String?
@@ -685,10 +685,11 @@ model CorrectiveAction {
 
   notes CapaNote[]
 
-  version   Int      @default(1)
+  version   Int                  @default(1)
   createdBy String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  evidence  IncidentAttachment[]
 
   @@unique([companyId, code])
   @@index([companyId, status])
@@ -701,7 +702,6 @@ model CorrectiveAction {
   @@index([owner])
   @@index([assetId])
   @@index([inspectionId])
-  evidence IncidentAttachment[]
 }
 
 // ─── Permit to Work ──────────────────────────────────────────────────────────
@@ -757,7 +757,7 @@ enum PermitSignatureRole {
 }
 
 model Permit {
-  id String @id @default(cuid())
+  id   String @id @default(cuid())
   /// Human reference (PTW-####). Per tenant, same reasoning as Incident.number.
   code String
 
@@ -772,14 +772,14 @@ model Permit {
   department  String     @default("")
   location    String
 
-  applicant   String
+  applicant           String
   /// Legacy free-text contractor name. Superseded by contractorCompanyId; retained so
   /// permits raised before the contractor register existed still read correctly.
-  contractor  String?
+  contractor          String?
   /// The engaged firm. Validated at assignment: a suspended contractor cannot be named.
   contractorCompanyId String?
   contractorCompany   ContractorCompany? @relation(fields: [contractorCompanyId], references: [id], onDelete: SetNull)
-  workerCount Int    @default(1)
+  workerCount         Int                @default(1)
 
   /// Pre-start briefing. A permit issued without one is the single most common finding
   /// in a post-incident review, so it is recorded rather than assumed.
@@ -816,10 +816,10 @@ model Permit {
   rejectionReason String?
   suspendedReason String?
 
-  closedBy String?
-  closedAt DateTime?
+  closedBy          String?
+  closedAt          DateTime?
   /// Site handed back clean, tools removed, isolations released.
-  handbackConfirmed Boolean @default(false)
+  handbackConfirmed Boolean   @default(false)
 
   /// Set when an incident occurred under this permit.
   linkedIncidentId String?
@@ -992,9 +992,9 @@ enum InspectionOutcome {
 }
 
 model Asset {
-  id String @id @default(cuid())
+  id    String @id @default(cuid())
   /// Human reference (AST-####). Per tenant, same reasoning as Incident.number.
-  code String
+  code  String
   /// Payload printed on the QR label. Separate from `code` so a label can be reissued
   /// without renumbering the asset, and so a stale label resolves to a clear 404.
   qrKey String
@@ -1027,8 +1027,8 @@ model Asset {
   critical Boolean @default(false)
 
   /// Who currently holds it. Exactly one of these, or neither for pool equipment.
-  assignedEmployeeId String?
-  assignedEmployee   Employee? @relation(fields: [assignedEmployeeId], references: [id], onDelete: SetNull)
+  assignedEmployeeId         String?
+  assignedEmployee           Employee?         @relation(fields: [assignedEmployeeId], references: [id], onDelete: SetNull)
   assignedContractorWorkerId String?
   assignedContractorWorker   ContractorWorker? @relation(fields: [assignedContractorWorkerId], references: [id], onDelete: SetNull)
 
@@ -1038,11 +1038,11 @@ model Asset {
   /// how the permit gate knows whether to demand a valid certificate.
   requiresCalibration Boolean @default(false)
 
-  calibrations Calibration[]
-  permitUsages PermitEquipment[]
-  workOrders   WorkOrder[]
+  calibrations  Calibration[]
+  permitUsages  PermitEquipment[]
+  workOrders    WorkOrder[]
   incidentLinks IncidentEquipment[]
-  events       AssetEvent[]
+  events        AssetEvent[]
 
   lastInspectedAt DateTime?
   /// Date the next inspection falls due. Rolled forward on completion so an asset can
@@ -1091,7 +1091,7 @@ model AssetDocument {
   /// SHA-256 of the bytes as written at upload, so a file can be shown to be the one that
   /// was uploaded. Nullable: everything stored before this column existed has no digest,
   /// and an absent digest means "unverifiable", never "verified".
-  checksum String?
+  checksum     String?
   uploadedBy   String?
   uploadedById String?
 
@@ -1102,7 +1102,7 @@ model AssetDocument {
 }
 
 model Inspection {
-  id String @id @default(cuid())
+  id   String @id @default(cuid())
   /// Human reference (INS-####). Per tenant.
   code String
 
@@ -1207,8 +1207,8 @@ model AuditTemplate {
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  name String
-  type AuditType @default(custom)
+  name     String
+  type     AuditType @default(custom)
   /// [{ title, items: [{ id, text, guidance? }] }]
   sections Json
 
@@ -1219,7 +1219,7 @@ model AuditTemplate {
 }
 
 model Audit {
-  id String @id @default(cuid())
+  id   String @id @default(cuid())
   /// Human reference (AUD-####). Per tenant.
   code String
 
@@ -1231,7 +1231,7 @@ model Audit {
   title      String
   type       AuditType
   customType String?
-  department String   @default("")
+  department String    @default("")
 
   leadAuditor String
   team        String[] @default([])
@@ -1272,7 +1272,7 @@ model Audit {
 }
 
 model AuditFinding {
-  id String @id @default(cuid())
+  id   String @id @default(cuid())
   /// Human reference (F-####). Per tenant.
   code String
 
@@ -1375,7 +1375,7 @@ model DocumentVersion {
   document   ComplianceDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   version String
-  note    String @default("")
+  note    String   @default("")
   by      String
   at      DateTime @default(now())
 
@@ -1462,16 +1462,16 @@ model Employee {
   emergencyContacts EmergencyContact[]
   ppeIssues         PpeIssue[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  visitorsHosted      Visitor[]        @relation("VisitorHost")
+  incidentAppearances IncidentPerson[] @relation("IncidentPeople")
 
   @@unique([companyId, employeeNo])
   @@index([companyId])
   @@index([companyId, siteId])
   @@index([name])
   @@index([companyId, medicalExpiry])
-  visitorsHosted Visitor[] @relation("VisitorHost")
-  incidentAppearances IncidentPerson[] @relation("IncidentPeople")
 }
 
 /// Who to call when someone is hurt. A separate table rather than two columns because
@@ -1483,7 +1483,7 @@ model EmergencyContact {
   employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   name         String
-  relationship String @default("")
+  relationship String  @default("")
   phone        String
   altPhone     String?
   /// The one to ring first. Exactly one per employee is kept primary by the service.
@@ -1507,8 +1507,8 @@ model PpeIssue {
   companyId  String
   company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  item String
-  size String @default("")
+  item         String
+  size         String  @default("")
   /// Serial or asset tag where the item carries one — harnesses and respirators do.
   serialNumber String?
 
@@ -1591,13 +1591,13 @@ model PermitJsaStep {
   permit   Permit @relation(fields: [permitId], references: [id], onDelete: Cascade)
 
   /// Display order. The sequence of the job, not a priority.
-  sequence Int    @default(0)
+  sequence Int @default(0)
 
-  step        String @default("")
-  hazard      String
-  risk        String @default("")
-  control     String
-  responsible String @default("")
+  step         String @default("")
+  hazard       String
+  risk         String @default("")
+  control      String
+  responsible  String @default("")
   /// Risk remaining once the control is in place. The number an approver actually judges.
   residualRisk String @default("")
 
@@ -1622,13 +1622,13 @@ model PermitAttachment {
   kind PermitAttachmentKind @default(other)
 
   originalName String
-  storedName   String @unique
+  storedName   String  @unique
   mimeType     String
   sizeBytes    Int
   /// SHA-256 of the bytes as written at upload, so a file can be shown to be the one that
   /// was uploaded. Nullable: everything stored before this column existed has no digest,
   /// and an absent digest means "unverifiable", never "verified".
-  checksum String?
+  checksum     String?
   uploadedBy   String
   uploadedById String?
 
@@ -1664,8 +1664,8 @@ model Calibration {
   /// When it lapses. An instrument past this reads numbers nobody should trust.
   expiresAt         DateTime
 
-  result   CalibrationResult @default(pass)
-  remarks  String?
+  result  CalibrationResult @default(pass)
+  remarks String?
 
   /// The scanned certificate, same storage contract as permit documents.
   documentName String?
@@ -1723,10 +1723,10 @@ model PermitExtension {
   newValidTo      DateTime
   reason          String
 
-  requestedBy String
-  requestedAt DateTime  @default(now())
-  approvedBy  String?
-  approvedAt  DateTime?
+  requestedBy    String
+  requestedAt    DateTime  @default(now())
+  approvedBy     String?
+  approvedAt     DateTime?
   rejectedReason String?
 
   @@index([permitId])
@@ -1755,11 +1755,11 @@ model ContractorCompany {
 
   name               String
   /// Companies Commission registration (SSM in Malaysia). Blank until supplied.
-  registrationNumber String @default("")
-  contactPerson      String @default("")
-  phone              String @default("")
+  registrationNumber String  @default("")
+  contactPerson      String  @default("")
+  phone              String  @default("")
   email              String?
-  address            String @default("")
+  address            String  @default("")
 
   /// Public liability / workmen's compensation expiry. The date that stops them working.
   insuranceExpiry DateTime?
@@ -1795,35 +1795,36 @@ model ContractorWorker {
   /// CW-#### per tenant.
   workerNo String
 
-  name String
+  name       String
   /// National ID or passport. The only identifier a contractor worker reliably carries,
   /// and what a gate check is done against.
   icPassport String @default("")
   position   String @default("")
 
   /// Fitness to work, same bar as an employee's.
-  medicalExpiry DateTime?
+  medicalExpiry   DateTime?
   /// Site induction. Lapses far more often than a medical because it is annual and
   /// nobody schedules it.
   inductionExpiry DateTime?
 
-  emergencyName     String  @default("")
-  emergencyPhone    String  @default("")
-  emergencyRelation String  @default("")
+  emergencyName     String @default("")
+  emergencyPhone    String @default("")
+  emergencyRelation String @default("")
 
   /// Gate state. Set by check-in and cleared by check-out, so "who is on site right now"
   /// is a query rather than a paper book in a cabin.
-  onSite       Boolean   @default(false)
-  checkedInAt  DateTime?
+  onSite      Boolean   @default(false)
+  checkedInAt DateTime?
 
   active Boolean @default(true)
 
-  certificates ContractorCertificate[]
+  certificates      ContractorCertificate[]
   permitAttendances PermitAttendee[]
   assignedAssets    Asset[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  incidentAppearances IncidentPerson[] @relation("IncidentPeople")
 
   @@unique([companyId, workerNo])
   @@index([companyId])
@@ -1831,7 +1832,6 @@ model ContractorWorker {
   @@index([companyId, medicalExpiry])
   @@index([companyId, inductionExpiry])
   @@index([companyId, onSite])
-  incidentAppearances IncidentPerson[] @relation("IncidentPeople")
 }
 
 /// Competency evidence supplied by the contractor.
@@ -1868,15 +1868,15 @@ model TrainingCourse {
   category    CourseCategory @default(custom)
   description String         @default("")
 
-  mandatory Boolean @default(false)
+  mandatory      Boolean        @default(false)
   /// Null means a one-time competency that never expires.
   validityMonths Int?
-  durationHours  Float   @default(1)
+  durationHours  Float          @default(1)
   deliveryModes  DeliveryMode[] @default([])
-  competency     String  @default("")
-  passMark       Int     @default(80)
+  competency     String         @default("")
+  passMark       Int            @default(80)
   /// Department keywords the course applies to. Empty means the whole workforce.
-  applies        String[] @default([])
+  applies        String[]       @default([])
 
   createdBy String
   createdAt DateTime @default(now())
@@ -1886,7 +1886,7 @@ model TrainingCourse {
 }
 
 model TrainingSession {
-  id String @id @default(cuid())
+  id   String @id @default(cuid())
   /// Human reference (SES-###). Per tenant.
   code String
 
@@ -1948,7 +1948,7 @@ model SessionEnrolment {
 /// A renewal is a new row; the current certificate for an employee and course is the
 /// most recently issued one, derived on read so a renewal supersedes automatically.
 model Certificate {
-  id String @id @default(cuid())
+  id     String @id @default(cuid())
   /// CERT-YYYY-####. Unique across the deployment because it is quoted externally and
   /// verified by anyone holding the number.
   number String @unique
@@ -2030,7 +2030,7 @@ model PlatformAuditEntry {
   id String @id @default(cuid())
 
   /// platform_admin_granted | platform_admin_revoked | platform_admin_bootstrapped
-  action String
+  action  String
   /// applied | no_change | refused
   outcome String
 
@@ -2040,7 +2040,7 @@ model PlatformAuditEntry {
   actor     String
   actorHost String @default("")
   /// How it was performed, so a future in-product path is distinguishable from the CLI.
-  source String @default("cli")
+  source    String @default("cli")
 
   targetEmail  String
   targetUserId String?
@@ -2086,22 +2086,51 @@ model ApiKey {
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  name String
+  name      String
   /// First characters of the key, shown so a human can tell two keys apart.
   prefix    String
   /// SHA-256 of the full secret. Never the secret itself.
-  tokenHash String  @unique
+  tokenHash String   @unique
   scopes    String[] @default([])
 
   lastUsedAt DateTime?
-  callsToday Int       @default(0)
   revoked    Boolean   @default(false)
   revokedAt  DateTime?
 
   createdBy String
   createdAt DateTime @default(now())
 
+  usage ApiUsageDay[]
+
   @@index([companyId, revoked])
+}
+
+/// One row per key per day: what the integration API actually served.
+///
+/// A rollup rather than a request log. The console wants "calls today" and a seven-day
+/// series, and keeping every request to answer that would be a second, larger, and far
+/// more sensitive dataset - request paths carry incident ids. Counts answer the question
+/// asked and carry nothing about who or what was read.
+///
+/// Replaces ApiKey.callsToday, which was set to 0 at issuance and never incremented, so
+/// the console's usage figure was always zero and its "reset at midnight" was nobody's
+/// job. A day-keyed row has no reset.
+model ApiUsageDay {
+  id        String @id @default(cuid())
+  apiKeyId  String
+  apiKey    ApiKey @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+  /// Denormalised so a company's whole series is one indexed read rather than a join
+  /// across every key it has ever issued. For the query, not for retention: these rows
+  /// cascade away with the key.
+  companyId String
+
+  /// UTC midnight of the day being counted, matching every other date-only value here.
+  day    DateTime
+  calls  Int      @default(0)
+  errors Int      @default(0)
+
+  @@unique([apiKeyId, day])
+  @@index([companyId, day])
 }
 
 model Webhook {
@@ -2109,22 +2138,65 @@ model Webhook {
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  url    String
-  events String[] @default([])
-  active Boolean  @default(true)
-  /// SHA-256 of the signing secret, for the same reason as ApiKey.tokenHash.
-  secretHash String
+  url        String
+  events     String[] @default([])
+  active     Boolean  @default(true)
+  /// The signing secret, sealed with AES-256-GCM. See secretBox.ts.
+  ///
+  /// Encrypted and not hashed, which is the opposite of ApiKey.tokenHash and deliberate:
+  /// a key is *verified* against what a caller presents, so a digest is enough and is
+  /// strictly safer. A webhook secret is used to *produce* an HMAC over every payload we
+  /// send, so this service has to be able to read it back. Hashing it - which is what this
+  /// column used to hold - meant no signature could ever be computed, which is one of the
+  /// reasons no webhook had ever been delivered.
+  secretEnc  String
   /// Last four characters, so the console can show which secret is configured.
-  secretTail String @default("")
+  secretTail String   @default("")
 
   lastDeliveryAt     DateTime?
   lastDeliveryStatus String?
   lastDeliveryCode   Int?
 
+  deliveries WebhookDelivery[]
+
   createdBy String
   createdAt DateTime @default(now())
 
   @@index([companyId])
+}
+
+/// One attempt-tracked delivery of one event to one endpoint.
+///
+/// A queue, not a log. Events are enqueued inside the transaction-adjacent path that
+/// produced them and sent by a sweep, because the alternative - posting inline - makes an
+/// incident report wait on a customer's endpoint and fail when it is down. The payload is
+/// frozen at enqueue time so a redelivery sends what the event said, not what the record
+/// says now.
+model WebhookDelivery {
+  id        String  @id @default(cuid())
+  webhookId String
+  webhook   Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  companyId String
+
+  event   String
+  /// The exact JSON body that will be signed and sent.
+  payload Json
+
+  /// pending | delivered | failed. `failed` is terminal: attempts are exhausted.
+  status        String   @default("pending")
+  attempts      Int      @default(0)
+  /// When this becomes sendable. Backoff moves it forward; a new row is due immediately.
+  nextAttemptAt DateTime @default(now())
+
+  lastStatusCode Int?
+  lastError      String?
+  deliveredAt    DateTime?
+
+  createdAt DateTime @default(now())
+
+  /// The sweep's only question: what is pending and due.
+  @@index([status, nextAttemptAt])
+  @@index([companyId, createdAt])
 }
 
 /// A third-party integration's connection state. Credentials supplied when connecting
@@ -2142,7 +2214,7 @@ model ConnectorConfig {
 
   connectedBy String?
   connectedAt DateTime?
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime  @updatedAt
 
   @@unique([companyId, connectorId])
 }
@@ -2152,14 +2224,14 @@ model SecurityPolicy {
   companyId String  @id
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  passwordMinLength  Int     @default(10)
-  requireUppercase   Boolean @default(true)
-  requireNumber      Boolean @default(true)
-  requireSymbol      Boolean @default(false)
-  passwordExpiryDays Int     @default(90)
-  lockoutThreshold   Int     @default(5)
-  sessionTimeoutHours Int    @default(12)
-  mfaRequired        Boolean @default(false)
+  passwordMinLength   Int     @default(10)
+  requireUppercase    Boolean @default(true)
+  requireNumber       Boolean @default(true)
+  requireSymbol       Boolean @default(false)
+  passwordExpiryDays  Int     @default(90)
+  lockoutThreshold    Int     @default(5)
+  sessionTimeoutHours Int     @default(12)
+  mfaRequired         Boolean @default(false)
 
   updatedAt DateTime @updatedAt
 }
@@ -2168,13 +2240,13 @@ model OrgSettings {
   companyId String  @id
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  displayName   String @default("")
-  legalName     String @default("")
-  industry      String @default("")
-  timezone      String @default("Asia/Kuching")
-  language      String @default("en-MY")
-  brandAccent   String @default("#2F6FED")
-  logoInitials  String @default("")
+  displayName  String @default("")
+  legalName    String @default("")
+  industry     String @default("")
+  timezone     String @default("Asia/Kuching")
+  language     String @default("en-MY")
+  brandAccent  String @default("#2F6FED")
+  logoInitials String @default("")
 
   updatedAt DateTime @updatedAt
 }
@@ -2319,9 +2391,9 @@ model WorkOrder {
 
   status MaintenanceStatus @default(open)
 
-  raisedBy   String
-  raisedAt   DateTime @default(now())
-  closedBy   String?
+  raisedBy    String
+  raisedAt    DateTime @default(now())
+  closedBy    String?
   closingNote String?
 
   @@unique([assetId, code])
@@ -2382,7 +2454,7 @@ model AssetEvent {
   assetId String
   asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
 
-  kind   AssetEventKind
+  kind    AssetEventKind
   /// One sentence, already written for a human. Rendered as-is.
   summary String
   detail  String?
@@ -2410,7 +2482,6 @@ enum AssetEventKind {
   permit
 }
 
-
 // ─── Visitor management ──────────────────────────────────────────────────────
 
 /// Somebody who is not staff and not a contractor worker, on site for a defined visit.
@@ -2419,7 +2490,7 @@ enum AssetEventKind {
 /// inside the fence. Everything else here - approvals, acknowledgements, badges - is
 /// machinery that keeps that answer true.
 model Visitor {
-  id String @id @default(cuid())
+  id   String @id @default(cuid())
   /// Human reference (VIS-####). Per tenant, same reasoning as Incident.number.
   code String
 
@@ -2428,24 +2499,24 @@ model Visitor {
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
   site      Site    @relation(fields: [siteId], references: [id], onDelete: Restrict)
 
-  name        String
+  name           String
   /// IC or passport. One column: which one it is varies by nationality and the register
   /// has to match on either when a blacklist is checked.
-  idNumber    String
-  nationality String @default("")
+  idNumber       String
+  nationality    String @default("")
   visitorCompany String @default("")
-  phone       String @default("")
-  email       String @default("")
-  vehicleNumber String @default("")
+  phone          String @default("")
+  email          String @default("")
+  vehicleNumber  String @default("")
 
   /// The person responsible for them while they are on site. Named from the workforce
   /// register, not typed, so the approval can actually reach somebody.
-  hostEmployeeId String?
-  hostEmployee   Employee? @relation("VisitorHost", fields: [hostEmployeeId], references: [id], onDelete: SetNull)
+  hostEmployeeId    String?
+  hostEmployee      Employee?   @relation("VisitorHost", fields: [hostEmployeeId], references: [id], onDelete: SetNull)
   /// Kept as text as well: a host who leaves the company must not erase who signed them in.
-  hostNameAtBooking String @default("")
-  departmentId String?
-  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  hostNameAtBooking String      @default("")
+  departmentId      String?
+  department        Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
 
   purpose String @default("")
 
@@ -2457,8 +2528,8 @@ model Visitor {
   status VisitorStatus @default(draft)
 
   /// Physical pass handed over at reception. Unique per site while it is out.
-  badgeNumber String?
-  badgeIssuedAt DateTime?
+  badgeNumber     String?
+  badgeIssuedAt   DateTime?
   badgeReturnedAt DateTime?
 
   /// Opaque payload printed on the pass. Separate from `code` so a pass can be reissued
@@ -2473,11 +2544,11 @@ model Visitor {
   // Site rules. Each is a timestamp rather than a boolean: "when did they acknowledge the
   // emergency procedure" is the question asked after an evacuation, and a boolean cannot
   // answer it.
-  inductionAt        DateTime?
-  ndaAt              DateTime?
-  safetyBriefingAt   DateTime?
+  inductionAt          DateTime?
+  ndaAt                DateTime?
+  safetyBriefingAt     DateTime?
   emergencyProcedureAt DateTime?
-  siteRulesAt        DateTime?
+  siteRulesAt          DateTime?
 
   approvedBy   String?
   approvedAt   DateTime?
@@ -2525,7 +2596,7 @@ enum VisitorStatus {
 
 /// One line of a visit's history. Written alongside the change that caused it.
 model VisitorEvent {
-  id        String @id @default(cuid())
+  id        String  @id @default(cuid())
   visitorId String
   visitor   Visitor @relation(fields: [visitorId], references: [id], onDelete: Cascade)
 
@@ -2561,7 +2632,7 @@ enum VisitorEventKind {
 ///
 /// Same storage contract as equipment documents and permit attachments.
 model VisitorDocument {
-  id        String @id @default(cuid())
+  id        String  @id @default(cuid())
   visitorId String
   visitor   Visitor @relation(fields: [visitorId], references: [id], onDelete: Cascade)
 
@@ -2588,32 +2659,31 @@ model VisitorDocument {
 /// column per match type rather than a type/value pair, so a row cannot claim to be a
 /// phone match and hold an IC number.
 model VisitorBlacklist {
-  id        String @id @default(cuid())
+  id        String  @id @default(cuid())
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  idNumber      String?
-  phone         String?
+  idNumber       String?
+  phone          String?
   visitorCompany String?
-  vehicleNumber String?
+  vehicleNumber  String?
 
-  reason String
+  reason    String
   /// Null means permanent. A date means it lapses on its own, which is what stops a
   /// blacklist becoming a list nobody dares prune.
   expiresAt DateTime?
 
-  active    Boolean  @default(true)
-  addedBy   String
-  addedAt   DateTime @default(now())
-  liftedBy  String?
-  liftedAt  DateTime?
+  active   Boolean   @default(true)
+  addedBy  String
+  addedAt  DateTime  @default(now())
+  liftedBy String?
+  liftedAt DateTime?
 
   @@index([companyId, active])
   @@index([idNumber])
   @@index([phone])
   @@index([vehicleNumber])
 }
-
 
 /// Somebody involved in an incident: a witness, an injured person, or the person whose
 /// act or omission is under investigation.
@@ -2630,11 +2700,11 @@ model IncidentPerson {
 
   /// At most one of these. Null on all three means somebody outside every register.
   employeeId         String?
-  employee           Employee? @relation("IncidentPeople", fields: [employeeId], references: [id], onDelete: SetNull)
+  employee           Employee?         @relation("IncidentPeople", fields: [employeeId], references: [id], onDelete: SetNull)
   contractorWorkerId String?
   contractorWorker   ContractorWorker? @relation("IncidentPeople", fields: [contractorWorkerId], references: [id], onDelete: SetNull)
   visitorId          String?
-  visitor            Visitor? @relation(fields: [visitorId], references: [id], onDelete: SetNull)
+  visitor            Visitor?          @relation(fields: [visitorId], references: [id], onDelete: SetNull)
 
   /// Always written, even when a register row is linked. The record of who was named
   /// outlives them leaving.
@@ -2642,12 +2712,12 @@ model IncidentPerson {
   company String @default("")
 
   /// Injury detail. Only meaningful for the injured role, nullable for everyone else.
-  injuryType    String?
-  bodyPart      String?
-  treatment     String?
-  daysLost      Int?
+  injuryType String?
+  bodyPart   String?
+  treatment  String?
+  daysLost   Int?
   /// What they saw, in their words.
-  statement     String?
+  statement  String?
 
   addedBy String
   addedAt DateTime @default(now())
@@ -2677,15 +2747,15 @@ model IncidentLink {
   incidentId String
   incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
 
-  kind IncidentLinkKind
+  kind        IncidentLinkKind
   /// The id of the linked row. Not a foreign key: it points at one of several tables, and
   /// a link that outlives a deleted permit is better than a cascade that erases the fact
   /// the incident referenced one.
-  targetId  String
+  targetId    String
   /// Denormalised so the link renders without four joins, and still reads correctly after
   /// the target is renamed or removed.
-  targetCode  String @default("")
-  targetLabel String @default("")
+  targetCode  String           @default("")
+  targetLabel String           @default("")
 
   note String?
 
@@ -2793,7 +2863,7 @@ model ReportRun {
 
   reportType ReportType
   /// scheduled | manual - a Run now is recorded the same as an automatic pass.
-  trigger    String    @default("scheduled")
+  trigger    String     @default("scheduled")
 
   /// The period the report covered, so a re-read knows what it was about.
   periodStart DateTime?
@@ -2803,8 +2873,8 @@ model ReportRun {
   completedAt DateTime?
   status      String    @default("running") // running | success | failed | delivered_partially
 
-  rowCount       Int    @default(0)
-  recipientCount Int    @default(0)
+  rowCount       Int     @default(0)
+  recipientCount Int     @default(0)
   /// Whether a provider actually accepted it. False when no mail provider is configured,
   /// which is recorded honestly rather than reported as sent.
   delivered      Boolean @default(false)
@@ -2827,11 +2897,11 @@ model ReportRun {
   provider       String?
 
   /// How many times delivery has been attempted. Bounded; see MAX_ATTEMPTS.
-  attempts       Int       @default(0)
-  lastAttemptAt  DateTime?
+  attempts        Int       @default(0)
+  lastAttemptAt   DateTime?
   /// When the next attempt becomes due. Null means no retry is owed - either it succeeded,
   /// or it failed permanently, or the attempts ran out.
-  nextAttemptAt  DateTime?
+  nextAttemptAt   DateTime?
   /// The exact email this run produced: subject, bodies and resolved recipients. A retry
   /// re-sends this, so the message that arrives always matches the stored PDF.
   deliveryPayload Json?
@@ -2871,8 +2941,8 @@ model Invitation {
   companyId String
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  email String
-  role  Role
+  email        String
+  role         Role
   /// Where the invitee lands. Validated against this tenant when the invitation is issued.
   siteIds      String[] @default([])
   departmentId String?

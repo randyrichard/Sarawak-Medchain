@@ -108,6 +108,12 @@ services:
       SCHEDULER_ENABLED: 'true'
       SCHEDULER_INTERVAL_MIN: ${SCHEDULER_INTERVAL_MIN:-15}
       RATE_LIMIT_PER_MIN: ${RATE_LIMIT_PER_MIN:-3000}
+      # The integration API's own ceiling, per key rather than per address.
+      API_KEY_RATE_LIMIT_PER_MIN: ${API_KEY_RATE_LIMIT_PER_MIN:-1000}
+      # Seals webhook signing secrets so they can be read back to sign each payload.
+      # Optional: without it the rest of the product works and webhooks cannot be created,
+      # with an explanation rather than a failure. Generate with: npm run keygen
+      WEBHOOK_SECRET_KEY_B64: ${WEBHOOK_SECRET_KEY_B64:-}
       # Which peers may set X-Forwarded-For. The default covers Caddy on this private
       # compose network and refuses the header from anything on a public address, so a
       # client cannot name its own rate-limit bucket or audit-trail entry. It does not

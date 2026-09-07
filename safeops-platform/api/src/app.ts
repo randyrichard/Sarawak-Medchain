@@ -32,6 +32,8 @@ import { orgAdminRouter, inviteRouter } from './routes/orgAdmin.js'
 import { platformRouter } from './routes/platform.js'
 import { ProvisioningError } from './lib/provisioningService.js'
 import { OrgAdminError } from './lib/orgAdminService.js'
+import { v1Router } from './routes/v1.js'
+import { hashApiKey } from './lib/apiKeyAuth.js'
 import { DashboardError } from './lib/dashboardService.js'
 import { AuthError } from './lib/authService.js'
 import { IncidentError } from './lib/incidentService.js'
@@ -204,6 +206,33 @@ export function createApp() {
   // /assets/:id/calibrations, /permits/:id/equipment and /incidents/:id/equipment, and
   // each of those parents is keyed on a path parameter that would otherwise capture the
   // segment. Same ordering rule as the incident extras below.
+  /*
+   * The integration API, on its own budget.
+   *
+   * Keyed on the presented key rather than the caller's address, because an integration is
+   * a program: it runs from one host and can go from idle to a tight loop between two
+   * ticks, which is a different shape of risk from the office-behind-one-NAT case the
+   * global ceiling above is sized for. Both apply; this is the tighter of the two.
+   *
+   * The bucket is the SHA-256 of what was presented, so a key never appears in a limiter
+   * row, and an unrecognised key is throttled the same as a real one - which is what stops
+   * the endpoint being used to search for valid keys. Requests with no bearer token at all
+   * fall back to the address, so they cannot all share one bucket.
+   */
+  app.use('/v1', rateLimit({
+    store: new PrismaRateLimitStore(prisma, 'apikey'),
+    windowMs: 60_000,
+    limit: env.API_KEY_RATE_LIMIT_PER_MIN,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    keyGenerator: (req) => {
+      const header = req.headers.authorization
+      const presented = header?.startsWith('Bearer ') ? header.slice(7).trim() : ''
+      return presented ? `k:${hashApiKey(presented)}` : `ip:${req.ip}`
+    },
+    message: { error: 'rate_limited', message: 'Too many requests for this API key.' },
+  }), v1Router)
+
   app.use('/', equipmentRouter)
   app.use('/auth', authRouter)
   // Mounted first: its literal paths would otherwise be captured by /incidents/:id

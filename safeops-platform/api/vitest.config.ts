@@ -38,6 +38,24 @@ export default defineConfig({
      * file for the numbers this was diagnosed from.
      */
     setupFiles: ['./src/test/resetRateLimits.ts'],
+
+    /*
+     * What the webhook tests need to exist at all.
+     *
+     * WEBHOOK_SECRET_KEY_B64 is a throwaway written out in full below rather than as an
+     * opaque base64 blob, so nobody can mistake it for something that was ever real. The
+     * product refuses to create a webhook without a sealing key, which is correct and also
+     * means the suite cannot test webhooks without one.
+     *
+     * WEBHOOK_ALLOW_PRIVATE_TARGETS lets a delivery reach a test server on 127.0.0.1,
+     * which is the only way to assert on a signature that actually arrived somewhere. It
+     * is refused outright when NODE_ENV is production - see env.ts - so it cannot leak out
+     * of here into a deployment.
+     */
+    env: {
+      WEBHOOK_SECRET_KEY_B64: Buffer.from('safeops-test-key-not-a-real-one!').toString('base64'),
+      WEBHOOK_ALLOW_PRIVATE_TARGETS: 'true',
+    },
     /*
      * 30s. Sized for the slowest legitimate case - a process spawn plus a cold Prisma
      * client against a real database - with room for a loaded CI runner, and still short

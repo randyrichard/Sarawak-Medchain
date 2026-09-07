@@ -15,6 +15,30 @@ const schema = z.object({
   // RS256 keypair, base64-encoded PEM. Generate with: npm run keygen
   JWT_PRIVATE_KEY_B64: z.string().min(1, 'JWT_PRIVATE_KEY_B64 is required (run: npm run keygen)'),
   JWT_PUBLIC_KEY_B64: z.string().min(1, 'JWT_PUBLIC_KEY_B64 is required (run: npm run keygen)'),
+
+  /*
+   * 32 random bytes, base64, that webhook signing secrets are sealed with. See secretBox.ts.
+   *
+   * Optional, and kept independent of the JWT keypair rather than derived from it. Deriving
+   * would have needed no configuration at all, which was tempting - but rotating the JWT
+   * keys is an ordinary thing to do (it invalidates sessions and everyone signs in again),
+   * and it must not also, silently, make every customer's webhook secret unreadable.
+   *
+   * Absent means webhooks cannot be created and none are delivered, both with an
+   * explanation rather than a failure. Everything else in the product works without it.
+   */
+  WEBHOOK_SECRET_KEY_B64: z.string().optional(),
+
+  /*
+   * Permits webhook delivery to private, loopback and link-local addresses, and over plain
+   * HTTP.
+   *
+   * Exists so the integration tests can deliver to a server on 127.0.0.1 and assert on
+   * what actually arrived - the only way to test a signature end to end. Refused in
+   * production below, because a deployment with this on is handing out the server-side
+   * request forgery primitive that webhookTarget.ts exists to prevent.
+   */
+  WEBHOOK_ALLOW_PRIVATE_TARGETS: z.enum(['true', 'false']).default('false'),
   JWT_ISSUER: z.string().default('safeops-api'),
   JWT_AUDIENCE: z.string().default('safeops-web'),
 
@@ -73,6 +97,20 @@ const schema = z.object({
    * customers whose traffic shape surprises us.
    */
   RATE_LIMIT_PER_MIN: z.coerce.number().int().positive().max(100_000).default(3000),
+
+  /*
+   * The integration API's budget, per key per minute.
+   *
+   * A separate ceiling from RATE_LIMIT_PER_MIN, and keyed on the key rather than the IP,
+   * because the two are protecting against different things. That one bounds a whole
+   * office sharing one NAT address; this one bounds one integration, whose traffic is a
+   * program's and can therefore go from nothing to a tight loop in an instant.
+   *
+   * 1000 is the figure the console's usage panel has always displayed, so it is the one an
+   * integrator has already been told. Tunable for a customer whose sync genuinely needs
+   * more.
+   */
+  API_KEY_RATE_LIMIT_PER_MIN: z.coerce.number().int().positive().max(100_000).default(1000),
 
   /*
    * WHICH addresses are allowed to speak for a client via X-Forwarded-For.
@@ -229,6 +267,25 @@ Pick one:
 }
 
 /**
+ * The SSRF waiver is a development tool and nothing else.
+ *
+ * With it on, a webhook may be pointed at 127.0.0.1, at the database container next door,
+ * or at a cloud provider's metadata endpoint - by any administrator of any tenant. It
+ * exists so integration tests can deliver to a local server and check what arrived. A
+ * production process that finds it set refuses to start rather than run with the hole
+ * open, because the failure it would otherwise cause is silent.
+ */
+if (raw.NODE_ENV === 'production' && raw.WEBHOOK_ALLOW_PRIVATE_TARGETS === 'true') {
+  // eslint-disable-next-line no-console
+  console.error(
+    'WEBHOOK_ALLOW_PRIVATE_TARGETS must not be set in production. It permits webhook '
+    + 'delivery to private, loopback and link-local addresses, which turns the webhook '
+    + 'feature into a server-side request forgery primitive. Remove it from the environment.',
+  )
+  process.exit(1)
+}
+
+/**
  * A production deployment must know its own public address.
  *
  * Refused at boot rather than discovered later: an invitation pointing at localhost is
@@ -380,6 +437,28 @@ if ((raw.RESEND_API_KEY || raw.SMTP_URL) && !raw.REPORT_EMAIL_FROM) {
   process.exit(1)
 }
 
+/**
+ * Decodes the webhook sealing key, or fails at boot.
+ *
+ * A key of the wrong length must not be discovered at the first delivery attempt, weeks
+ * after a deployment, by a customer whose endpoint went quiet.
+ */
+function decodeWebhookKey(b64: string | undefined): Buffer | null {
+  if (!b64) return null
+  const buf = Buffer.from(b64, 'base64')
+  // AES-256. Parsed here rather than in secretBox.ts so that module can import this one
+  // without the two forming a cycle.
+  if (buf.length !== 32) {
+    // eslint-disable-next-line no-console
+    console.error(
+      `WEBHOOK_SECRET_KEY_B64 must decode to exactly 32 bytes (got ${buf.length}). `
+      + 'Run: npm run keygen',
+    )
+    process.exit(1)
+  }
+  return buf
+}
+
 function decodeKey(b64: string, label: string): string {
   const pem = Buffer.from(b64, 'base64').toString('utf8')
   if (!pem.includes('-----BEGIN')) {
@@ -393,6 +472,8 @@ function decodeKey(b64: string, label: string): string {
 export const env = {
   ...raw,
   isProd: raw.NODE_ENV === 'production',
+  /** The webhook sealing key, decoded once. `null` when webhooks are not configured. */
+  webhookSecretKey: decodeWebhookKey(raw.WEBHOOK_SECRET_KEY_B64),
   /** Peers allowed to set X-Forwarded-For, in the shape Express's `trust proxy` expects. */
   trustProxy: parseTrustProxy(raw.TRUST_PROXY),
   schedulerEnabled: raw.SCHEDULER_ENABLED === 'true' && raw.NODE_ENV !== 'test',

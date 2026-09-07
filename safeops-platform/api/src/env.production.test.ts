@@ -43,6 +43,15 @@ function bootWith(overrides: Record<string, string | undefined>) {
       // guard it is actually about — which is exactly what happened when the check was
       // added. The guard itself is exercised in its own test at the end.
       PROXY_TOKEN: 'fixture-proxy-token-long-enough-to-pass',
+      /*
+       * The suite sets this to 'true' for itself - webhook delivery to 127.0.0.1 is the
+       * only way to test a signature end to end - and `...process.env` above carries it
+       * into the spawned process. Production refuses to start with it set, and that check
+       * runs before most of the ones below, so without this every test in this file would
+       * assert against the SSRF message instead of the guard it is about. Same shape as
+       * the PROXY_TOKEN note above; the guard itself has its own test at the end.
+       */
+      WEBHOOK_ALLOW_PRIVATE_TARGETS: 'false',
       ...overrides,
   }
   for (const [k, v] of Object.entries(env)) if (v === undefined) delete env[k]
@@ -239,6 +248,30 @@ describe('production environment guards', { timeout: SPAWN_TIMEOUT }, () => {
      */
     const r = bootWith({ DATABASE_URL: 'postgres://socket/safeops?host=/var/run/postgresql' })
     expect(r.said).not.toMatch(/require TLS/i)
+  })
+
+  it('refuses to start with webhook delivery to private addresses enabled', () => {
+    /*
+     * The waiver exists so integration tests can deliver to a server on 127.0.0.1. A
+     * production process running with it on would let any administrator of any tenant
+     * point a webhook at the database container beside it, an internal tool, or the cloud
+     * metadata endpoint that hands out this deployment's credentials - which is the
+     * server-side request forgery primitive webhookTarget.ts exists to prevent.
+     *
+     * Refused at boot rather than defended in depth, because the failure it would
+     * otherwise cause is completely silent: everything works, and one tenant can read the
+     * inside of the network.
+     */
+    const r = bootWith({ WEBHOOK_ALLOW_PRIVATE_TARGETS: 'true' })
+    expect(r.status).not.toBe(0)
+    expect(r.said).toMatch(/WEBHOOK_ALLOW_PRIVATE_TARGETS must not be set in production/i)
+    expect(r.said).toMatch(/server-side request forgery/i)
+  })
+
+  it('starts normally when the waiver is simply absent', () => {
+    // The default. Nothing about webhooks requires configuration to be safe.
+    const r = bootWith({ WEBHOOK_ALLOW_PRIVATE_TARGETS: undefined })
+    expect(r.said).not.toMatch(/WEBHOOK_ALLOW_PRIVATE_TARGETS/i)
   })
 
   it('does not reject a connection string it cannot parse', () => {

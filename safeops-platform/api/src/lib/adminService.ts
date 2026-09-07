@@ -13,6 +13,10 @@ import { generateResetToken, hashResetToken, resetTokenExpiry, RESET_TOKEN_TTL_M
 import { sendPasswordResetEmail } from './email/passwordResetDelivery.js'
 import { collectTenantExport } from './tenantExport.js'
 import { integrationAllowance, integrationsMessage } from './entitlements.js'
+import { callsTodayByKey, usageSeries } from './apiUsage.js'
+import { open, seal, secretBoxAvailable } from './secretBox.js'
+import { checkUrlShape, TARGET_MESSAGE } from './webhookTarget.js'
+import { deliver } from './webhookDelivery.js'
 
 export class AdminError extends Error {
   constructor(public code: string, message: string, public status = 400) {
@@ -819,6 +823,8 @@ export class AdminService {
       where: { companyId },
       orderBy: { createdAt: 'desc' },
     })
+    // One indexed read for the whole page rather than a count per key.
+    const today = await callsTodayByKey(this.db, keys.map((k) => k.id))
     return keys.map((k) => ({
       id: k.id,
       name: k.name,
@@ -829,7 +835,7 @@ export class AdminService {
       createdAt: k.createdAt,
       createdBy: k.createdBy,
       lastUsedAt: k.lastUsedAt,
-      callsToday: k.callsToday,
+      callsToday: today.get(k.id) ?? 0,
       revoked: k.revoked,
     }))
   }
@@ -927,11 +933,19 @@ export class AdminService {
   ) {
     this.requireAdmin(caller, companyId)
     const trimmed = url?.trim() ?? ''
-    // HTTPS only: a webhook carries incident data off the platform, and plaintext
-    // delivery would put it on the wire for anyone on the path.
-    if (!/^https:\/\//i.test(trimmed)) {
-      throw new AdminError('validation', 'Webhook URL must be HTTPS.')
-    }
+    /*
+     * HTTPS only, and not to an address inside this network.
+     *
+     * The first because a webhook carries incident data off the platform and plaintext
+     * delivery would put it on the wire for anyone on the path. The second because this
+     * service fetches the URL from inside its own network, so a literal `127.0.0.1` or
+     * `169.254.169.254` here is a request to read something the administrator cannot
+     * reach themselves. Checked again at delivery, against the resolved address rather
+     * than the text - see webhookTarget.ts - because a hostname can be pointed anywhere
+     * after it has been saved.
+     */
+    const shape = checkUrlShape(trimmed)
+    if (shape) throw new AdminError('validation', TARGET_MESSAGE[shape])
     if (!events || events.length === 0) {
       throw new AdminError('validation', 'Select at least one event.')
     }
@@ -944,13 +958,29 @@ export class AdminService {
       )
     }
 
+    /*
+     * Refused rather than created, when nothing can seal the secret.
+     *
+     * Creating it anyway would produce a webhook that can never sign a payload and would
+     * therefore never deliver - which is precisely the state this whole change exists to
+     * get out of.
+     */
+    if (!secretBoxAvailable()) {
+      throw new AdminError(
+        'not_configured',
+        'Webhooks are not configured on this deployment: WEBHOOK_SECRET_KEY_B64 is not set.',
+        503,
+      )
+    }
+
     const secret = `whsec_${randomBytes(24).toString('base64url')}`
     const created = await this.db.webhook.create({
       data: {
         companyId,
         url: trimmed,
         events,
-        secretHash: sha256(secret),
+        // Sealed, not hashed. This service has to read it back to sign every payload.
+        secretEnc: seal(secret),
         secretTail: secret.slice(-4),
         createdBy: caller.name,
       },
@@ -977,38 +1007,69 @@ export class AdminService {
   }
 
   /**
-   * Records a test delivery.
+   * Sends a real, signed test delivery and reports what happened.
    *
-   * No request actually leaves the server: firing at an arbitrary operator-supplied URL
-   * from inside the network is a server-side request forgery primitive, and outbound
-   * delivery belongs in a queue worker with an egress allow-list rather than in a
-   * synchronous admin endpoint.
+   * This used to write `success` and a 200 into the row without making a request, so the
+   * console showed a green delivery for an endpoint that may never have existed. Its
+   * comment explained why - firing at an operator-supplied URL from inside the network is
+   * a server-side request forgery primitive - and that reasoning still holds; what has
+   * changed is that the guard it asked for now exists. `deliver` resolves the hostname,
+   * refuses every private, loopback, link-local and metadata range, connects only to an
+   * address that passed, follows no redirects, and gives up after ten seconds.
+   *
+   * Sent inline rather than queued because the administrator is standing in front of the
+   * button waiting to find out whether their endpoint works, and an answer that arrives in
+   * the next sweep is not an answer. Real events go through the queue - see
+   * webhookService.ts.
    */
   async testWebhook(caller: Caller, companyId: string, ctx: AdminContext, id: string) {
     this.requireAdmin(caller, companyId)
     const wh = await this.db.webhook.findFirst({ where: { id, companyId } })
     if (!wh) throw new AdminError('not_found', 'Webhook not found.', 404)
+    if (!wh.active) {
+      throw new AdminError('validation', 'This webhook is disabled. Enable it to send a test.')
+    }
+
+    let outcome
+    try {
+      outcome = await deliver(
+        wh.url, open(wh.secretEnc), 'webhook.test', `test-${wh.id}`,
+        {
+          event: 'webhook.test',
+          companyId,
+          occurredAt: new Date().toISOString(),
+          data: { message: 'This is a test delivery from SafeOps.', webhookId: wh.id },
+        },
+      )
+    } catch (e) {
+      // The secret could not be opened. Reported as a failed delivery rather than a 500,
+      // because from the administrator's side that is what it is.
+      outcome = { ok: false, statusCode: undefined, error: (e as Error).message }
+    }
 
     const updated = await this.db.webhook.update({
       where: { id },
       data: {
         lastDeliveryAt: new Date(),
-        lastDeliveryStatus: wh.active ? 'success' : 'failed',
-        lastDeliveryCode: wh.active ? 200 : 503,
+        lastDeliveryStatus: outcome.ok ? 'success' : 'failed',
+        lastDeliveryCode: outcome.statusCode ?? null,
       },
     })
     await this.log(caller, companyId, ctx, 'Tested webhook', 'admin', updated.url)
-    return this.toWebhook(updated)
+    return { ...this.toWebhook(updated), testResult: outcome }
   }
 
+  /**
+   * What the integration API actually served.
+   *
+   * This used to return an empty series and a total of zero, with a comment explaining
+   * that inventing traffic would be worse than showing none - which was right, and stayed
+   * right for as long as no request was ever counted because no API key authenticated
+   * anything. Both halves are now real: see apiUsage.ts.
+   */
   async apiUsage(caller: Caller, companyId: string) {
     this.requireAdminRead(caller, companyId)
-    const keys = await this.db.apiKey.findMany({ where: { companyId }, select: { callsToday: true } })
-    const totalToday = keys.reduce((s, k) => s + k.callsToday, 0)
-
-    // No request metering yet, so the series is empty rather than invented. A chart of
-    // fabricated traffic is worse than an empty one — people plan against it.
-    return { series: [] as { label: string; calls: number; errors: number }[], totalToday, errorRate: 0 }
+    return usageSeries(this.db, companyId)
   }
 
   // ── Security ───────────────────────────────────────────────────────────────

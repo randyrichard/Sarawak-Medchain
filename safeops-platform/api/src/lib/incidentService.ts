@@ -1,5 +1,6 @@
 import type { Prisma, PrismaClient, Role } from '@prisma/client'
 import { AuthError } from './authService.js'
+import { enqueueEvent } from './webhookService.js'
 import {
   INCIDENT_SEVERITIES, INCIDENT_TYPES, LOST_TIME_SEVERITIES, SEVERITY_RANK,
 } from './incidentCatalog.js'
@@ -72,6 +73,24 @@ export function incidentScopeWhere(caller: Caller, companyId: string): Prisma.In
  * Mirrors the incident register's stats: an employee or supervisor sees the actions they
  * own, not the company's whole backlog.
  */
+/** What an `action.*` webhook carries. One shape, so both raising paths agree. */
+function actionPayload(a: {
+  id: string; code: string; title: string; owner: string; dueDate: Date
+  priority: string; status: string; siteId: string; incidentId: string | null
+}): Record<string, unknown> {
+  return {
+    id: a.id,
+    code: a.code,
+    title: a.title,
+    owner: a.owner,
+    dueDate: a.dueDate.toISOString(),
+    priority: a.priority,
+    status: a.status,
+    siteId: a.siteId,
+    incidentId: a.incidentId,
+  }
+}
+
 export function actionScopeWhere(caller: Caller, companyId: string): Prisma.CorrectiveActionWhereInput {
   const m = caller.roles.find((r) => r.companyId === companyId)
   if (!m) return { id: '__no_access__' }
@@ -445,7 +464,32 @@ export class IncidentService {
     }
 
     try {
-      return await this.createInTransaction(caller, input, departmentName)
+      const created = await this.createInTransaction(caller, input, departmentName)
+      /*
+       * Queued for any webhook subscribed to it, after the record is committed and without
+       * being awaited on the caller's behalf. Reporting an incident must not wait on, or be
+       * failed by, a notification - the record is the product and the webhook is a
+       * courtesy. `enqueueEvent` swallows its own failures for the same reason.
+       *
+       * Deliberately not on the raced path below: that returns an incident somebody else
+       * already filed, and it was announced when they filed it. Announcing it twice would
+       * make an offline browser's replay look like a second injury.
+       */
+      await enqueueEvent(this.db, input.companyId, 'incident.created', {
+        id: created.id,
+        number: created.number,
+        title: created.title,
+        type: created.type,
+        severity: created.severity,
+        siteId: created.siteId,
+        location: created.location,
+        occurredAt: created.occurredAt.toISOString(),
+        // Withheld on an anonymous report, exactly as it is withheld from the screen. A
+        // webhook is read by whatever system is on the other end, which is further from
+        // the HSE function than anyone `maskAnonymous` already hides it from.
+        reporter: created.anonymous ? null : created.reporter,
+      })
+      return created
     } catch (e) {
       // Someone else committed the same queued report first. Their row is the one that
       // exists, so return it: the caller asked for this report to be filed, and it is.
@@ -593,6 +637,18 @@ export class IncidentService {
       return updated
     })
 
+    if (payload.to === 'closed') {
+      await enqueueEvent(this.db, current.companyId, 'incident.closed', {
+        id: current.id,
+        number: current.number,
+        title: current.title,
+        severity: current.severity,
+        siteId: current.siteId,
+        closedBy: caller.name,
+        closeNote: payload.note ?? null,
+      })
+    }
+
     // Re-read with relations. The transaction returns the bare row, and the detail screen
     // renders whatever it is handed — so returning it directly made a case's corrective
     // actions, comments and attachments vanish from the screen on every stage change. The
@@ -709,7 +765,7 @@ export class IncidentService {
       throw new IncidentError('validation', 'A valid target completion date is required.')
     }
 
-    return this.db.$transaction(async (tx) => {
+    const raised = await this.db.$transaction(async (tx) => {
       const counter = await tx.counter.upsert({
         where: { companyId_kind: { companyId: incident.companyId, kind: 'capa' } },
         update: { next: { increment: 1 } },
@@ -760,6 +816,9 @@ export class IncidentService {
       })
       return action
     })
+
+    await enqueueEvent(this.db, incident.companyId, 'action.assigned', actionPayload(raised))
+    return raised
   }
 
   /**
@@ -834,7 +893,7 @@ export class IncidentService {
       throw new IncidentError('conflict', 'This action was updated by someone else. Reload to see the latest.', 409)
     }
 
-    return this.db.$transaction(async (tx) => {
+    const saved = await this.db.$transaction(async (tx) => {
       const updated = await tx.correctiveAction.update({
         where: { id: actionId },
         data: {
@@ -867,6 +926,19 @@ export class IncidentService {
       }
       return updated
     })
+
+    /*
+     * Verification is the event worth announcing, not every field change. It is the point
+     * at which somebody independent has confirmed the work was actually done - which is
+     * the thing a manager's dashboard on the other end of a webhook is waiting for.
+     */
+    if (patch.status === 'verified') {
+      await enqueueEvent(this.db, saved.companyId, 'action.verified', {
+        ...actionPayload(saved),
+        verifiedBy: caller.name,
+      })
+    }
+    return saved
   }
 
 
@@ -899,7 +971,7 @@ export class IncidentService {
     })
     if (!site) throw new IncidentError('validation', 'Unknown site for this workspace.')
 
-    return this.db.$transaction(async (tx) => {
+    const raised = await this.db.$transaction(async (tx) => {
       const counter = await tx.counter.upsert({
         where: { companyId_kind: { companyId: input.companyId, kind: 'capa' } },
         update: { next: { increment: 1 } },
@@ -922,6 +994,9 @@ export class IncidentService {
         },
       })
     })
+
+    await enqueueEvent(this.db, input.companyId, 'action.assigned', actionPayload(raised))
+    return raised
   }
 
   /** Actions across the workspace — the SAIL list, scoped and paginated. */

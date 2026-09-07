@@ -1,6 +1,7 @@
 import type { AssetCategory, Prisma, PrismaClient, Role } from '@prisma/client'
 // `Caller` is the verified identity shape shared by every module — see permitService.
 import { type Caller } from './incidentService.js'
+import { enqueueEvent } from './webhookService.js'
 import {
   ASSET_CATEGORIES, CATEGORY_LABEL, CHECKLISTS, DEFECT_DUE_DAYS, FREQUENCY_DAYS,
 } from './inspectionCatalog.js'
@@ -728,6 +729,27 @@ export class InspectionService {
       where: { id: inspection.id },
       include: { actions: { select: { code: true } } },
     })
+
+    /*
+     * Only the failures. A passed inspection is the expected outcome and announcing every
+     * one would bury the ones that matter in the receiving system - the whole value of an
+     * event stream over a nightly export is that what arrives is worth reacting to.
+     */
+    if (outcome === 'failed') {
+      await enqueueEvent(this.db, inspection.companyId, 'inspection.failed', {
+        id: full.id,
+        code: full.code,
+        assetId: asset.id,
+        assetCode: asset.code,
+        assetName: asset.name,
+        siteId: inspection.siteId,
+        inspector: caller.name,
+        completedAt: (full.completedAt ?? new Date()).toISOString(),
+        failedChecks: fails.length,
+        raisedActions: full.actions.map((a) => a.code),
+      })
+    }
+
     return this.toInspectionView(full, asset)
   }
 

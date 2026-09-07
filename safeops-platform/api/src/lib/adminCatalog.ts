@@ -191,4 +191,5 @@ export const BACKGROUND_JOBS = [
   { id: 'j2', name: 'Certificate expiry scan', schedule: 'Every 15 min', detail: 'Competency expiry bands at 90/60/30/7 days' },
   { id: 'j3', name: 'Score snapshot', schedule: 'Not scheduled', detail: 'Monthly score freeze — not yet implemented' },
   { id: 'j4', name: 'Workspace restore point', schedule: 'On demand', detail: 'In-database snapshot; disaster recovery uses pg_dump' },
+  { id: 'j6', name: 'Webhook delivery', schedule: 'Every 30 sec', detail: 'Sends queued events, and retries what failed' },
 ]

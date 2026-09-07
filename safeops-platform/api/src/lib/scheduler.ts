@@ -24,12 +24,28 @@ import type { PrismaClient } from '@prisma/client'
 import { CALIBRATED_CATEGORIES } from './equipmentService.js'
 import { ReportService } from './reportService.js'
 import { dueSlotKey, nextRunAt, type Frequency } from './reportSchedule.js'
+import { enqueueEvent, sweepDeliveries } from './webhookService.js'
 
 const MINUTE = 60_000
 const DAY = 86400_000
 
 /** How often the reminder sweep runs. Matches what the admin console advertises. */
 const SWEEP_INTERVAL_MS = 15 * MINUTE
+
+/*
+ * Webhook deliveries run on their own, much faster clock.
+ *
+ * Everything else this scheduler does is a reminder, and a reminder that arrives fourteen
+ * minutes late is still a reminder. A webhook is an event notification: a receiver told
+ * about an incident a quarter of an hour after it was reported has been told too late to
+ * act on it, and would have been better off polling. Thirty seconds is the difference
+ * between an integration that feels live and one nobody trusts.
+ *
+ * A separate timer rather than a separate process. The sweep takes what is due, marks its
+ * attempt before sending, and does nothing that a second instance running the same batch
+ * could corrupt beyond delivering a duplicate - see webhookService.ts.
+ */
+const DELIVERY_INTERVAL_MS = 30_000
 
 /** Days before a due date at which an action is chased. */
 const ACTION_REMINDER_DAYS = [7, 3, 1]
@@ -111,7 +127,7 @@ class Budget {
   }
 }
 
-export type JobId = 'j1' | 'j2' | 'j3' | 'j4' | 'j5'
+export type JobId = 'j1' | 'j2' | 'j3' | 'j4' | 'j5' | 'j6'
 
 /**
  * When each sweep last completed, in this process. Deliberately not persisted: after a
@@ -125,6 +141,7 @@ export const getLastRuns = (): Record<string, string | null> => ({
   j3: lastRuns.get('j3') ?? null,
   j4: lastRuns.get('j4') ?? null,
   j5: lastRuns.get('j5') ?? null,
+  j6: lastRuns.get('j6') ?? null,
 })
 
 /** UTC midnight, matching how every date-only value in this codebase is stored. */
@@ -133,7 +150,9 @@ const daysBetween = (a: Date, b: Date) => Math.round((utcDay(a).getTime() - utcD
 
 export class Scheduler {
   private timer: NodeJS.Timeout | null = null
+  private deliveryTimer: NodeJS.Timeout | null = null
   private running = false
+  private deliveringWebhooks = false
   /** Owns report generation and delivery; the sweep only decides what is due. */
   private readonly reports: ReportService
 
@@ -338,7 +357,24 @@ export class Scheduler {
         `${c.courseName} expires in ${days} days — ${c.employee?.name ?? 'employee'}`,
         `Certificate ${c.number} lapses on ${c.expiryDate.toISOString().slice(0, 10)}. Book a renewal.`,
         `/training?cert=${c.id}&expiring=${days}`,
-      )) raised++
+      )) {
+        raised++
+        /*
+         * Queued only when the notification was actually raised, which is what makes this
+         * idempotent. `raise` returns false when one already exists for the same href, so
+         * a sweep that runs every fifteen minutes announces each expiry band once rather
+         * than ninety-six times a day.
+         */
+        void enqueueEvent(this.db, c.companyId, 'certificate.expiring', {
+          id: c.id,
+          number: c.number,
+          courseName: c.courseName,
+          employeeId: c.employeeId,
+          employeeName: c.employee?.name ?? null,
+          expiryDate: c.expiryDate.toISOString(),
+          daysRemaining: days,
+        })
+      }
     }
     return raised
   }
@@ -918,10 +954,46 @@ export class Scheduler {
     this.timer = setInterval(() => void tick(), intervalMs)
     // Do not hold the event loop open on shutdown.
     this.timer.unref()
+
+    this.startDeliveries()
+  }
+
+  /**
+   * The webhook queue, on its own clock.
+   *
+   * Started by `start` and separable for the tests, which drive `sweepDeliveries` directly
+   * rather than waiting on a timer.
+   */
+  startDeliveries(intervalMs = DELIVERY_INTERVAL_MS) {
+    if (this.deliveryTimer) return
+    const tick = async () => {
+      if (this.deliveringWebhooks) return
+      this.deliveringWebhooks = true
+      try {
+        const n = await sweepDeliveries(this.db)
+        lastRuns.set('j6', new Date().toISOString())
+        if (n.attempted > 0) {
+          // eslint-disable-next-line no-console
+          console.log(
+            `[safeops-webhooks] ${n.attempted} attempted: `
+            + `${n.delivered} delivered, ${n.retrying} retrying, ${n.failed} failed`,
+          )
+        }
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('[safeops-webhooks] delivery sweep failed:', err)
+      } finally {
+        this.deliveringWebhooks = false
+      }
+    }
+    this.deliveryTimer = setInterval(() => void tick(), intervalMs)
+    this.deliveryTimer.unref()
   }
 
   stop() {
     if (this.timer) clearInterval(this.timer)
     this.timer = null
+    if (this.deliveryTimer) clearInterval(this.deliveryTimer)
+    this.deliveryTimer = null
   }
 }
