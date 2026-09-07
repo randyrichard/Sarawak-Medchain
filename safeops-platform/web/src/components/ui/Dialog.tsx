@@ -4,6 +4,34 @@ import { X } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { Button } from './Button'
 
+/**
+ * The classes that keep a dialog inside the window, named so they can be asserted.
+ *
+ * Exported because this suite has no DOM renderer and the component uses a portal, so the
+ * only alternatives were adding jsdom for one layout check or matching a regex against
+ * this file. These are the values the component renders, so a test reading them cannot
+ * drift from what ships.
+ *
+ * Each line is load-bearing:
+ *
+ *  - `max-h-full` on the panel: without it the panel grows to its content and, because the
+ *    wrapper centres it, overflows the top and the bottom at once - title and buttons both
+ *    unreachable, nothing scrollable.
+ *  - `min-h-0` on the body: a flex child will not shrink below its content without it, so
+ *    the panel keeps growing and the overflow rule never engages. The one most likely to
+ *    look redundant and be deleted.
+ *  - `shrink-0` on the header and footer: they are the title and the buttons, and they must
+ *    survive exactly the situation this exists for.
+ *  - `overscroll-contain`: a scroll reaching the end of the body stops there rather than
+ *    carrying on into the page behind.
+ */
+export const DIALOG_LAYOUT = {
+  panel: 'relative flex max-h-full w-full flex-col animate-scale-in rounded-xl border bg-surface shadow-modal',
+  header: 'flex shrink-0 items-start justify-between gap-4 px-5 pb-1 pt-4',
+  body: 'min-h-0 overflow-y-auto overscroll-contain px-5 py-3',
+  footer: 'flex shrink-0 justify-end gap-2 border-t px-5 py-3',
+} as const
+
 export function Dialog({
   open, onClose, title, description, children, footer, width = 'max-w-md',
 }: {
@@ -77,9 +105,9 @@ export function Dialog({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={cn('relative w-full animate-scale-in rounded-xl border bg-surface shadow-modal', width)}
+        className={cn(DIALOG_LAYOUT.panel, width)}
       >
-        <div className="flex items-start justify-between gap-4 px-5 pb-1 pt-4">
+        <div className={DIALOG_LAYOUT.header}>
           <div>
             <h2 className="text-base font-semibold tracking-tight text-ink">{title}</h2>
             {description && <p className="mt-0.5 text-xs text-muted">{description}</p>}
@@ -88,8 +116,8 @@ export function Dialog({
             <X size={16} />
           </button>
         </div>
-        {children && <div className="px-5 py-3">{children}</div>}
-        <div className="flex justify-end gap-2 border-t px-5 py-3">
+        {children && <div className={DIALOG_LAYOUT.body}>{children}</div>}
+        <div className={DIALOG_LAYOUT.footer}>
           {footer ?? <Button variant="secondary" onClick={onClose}>Close</Button>}
         </div>
       </div>
