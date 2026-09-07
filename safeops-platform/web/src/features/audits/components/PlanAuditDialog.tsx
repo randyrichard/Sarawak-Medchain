@@ -6,7 +6,7 @@ import { AUDIT_TYPES, AUDIT_TYPE_LABEL } from '@/api/audits'
 import { useOrg } from '@/features/org/OrgContext'
 import { useDepartments } from '@/features/org/departments'
 import { usePeople, useActor } from '@/features/incidents/lib'
-import { Alert, Badge, Button, Dialog, Input, SuggestInput, Select, Textarea } from '@/components/ui'
+import { Alert, Badge, Button, Dialog, Input, SuggestSelect, Select, Textarea } from '@/components/ui'
 
 export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
   const { company, sites } = useOrg()
@@ -125,7 +125,14 @@ export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; o
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <SuggestInput options={departments} label="Department" value={department} onChange={(e) => setDepartment(e.target.value)} />
+              <SuggestSelect
+                options={departments}
+                label="Department"
+                value={department}
+                onChange={setDepartment}
+                placeholder="Select a department…"
+                addLabel="Add a new department…"
+              />
               <Select label="Lead auditor" required value={leadAuditor} onChange={(e) => setLeadAuditor(e.target.value)}>
                 <option value="" disabled>Select…</option>
                 {people.map((p) => <option key={p}>{p}</option>)}

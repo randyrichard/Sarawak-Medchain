@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react'
-import { Input, SuggestInput, Select, Textarea } from '@/components/ui'
+import { Input, SuggestSelect, Select, Textarea } from '@/components/ui'
 import { useDepartments } from '@/features/org/departments'
 import { useOrg } from '@/features/org/OrgContext'
 
@@ -86,7 +86,14 @@ export function EmployeeForm({
           <option value="">Choose a site…</option>
           {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </Select>
-        <SuggestInput options={departments} label="Department" value={value.department} onChange={(e) => set('department', e.target.value)} />
+        <SuggestSelect
+          options={departments}
+          label="Department"
+          value={value.department}
+          onChange={(v) => set('department', v)}
+          placeholder="Select a department…"
+          addLabel="Add a new department…"
+        />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">

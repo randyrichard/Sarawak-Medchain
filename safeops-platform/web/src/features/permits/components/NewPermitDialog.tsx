@@ -8,7 +8,7 @@ import {
 import { useOrg } from '@/features/org/OrgContext'
 import { useDepartments } from '@/features/org/departments'
 import { usePeople } from '@/features/incidents/lib'
-import { Alert, Button, Dialog, Input, SuggestInput, Select, Textarea } from '@/components/ui'
+import { Alert, Button, Dialog, Input, SuggestSelect, Select, Textarea } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { PERMIT_TYPE_COLOR } from '../lib'
 
@@ -129,7 +129,14 @@ export function NewPermitDialog({
           <Select label="Site" required value={effectiveSite} onChange={(e) => setSiteId(e.target.value)}>
             {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </Select>
-          <SuggestInput options={departments} label="Department" value={department} onChange={(e) => setDepartment(e.target.value)} />
+          <SuggestSelect
+            options={departments}
+            label="Department"
+            value={department}
+            onChange={setDepartment}
+            placeholder="Select a department…"
+            addLabel="Add a new department…"
+          />
           <Input label="Exact location" required value={location} onChange={(e) => setLocation(e.target.value)}
             placeholder="e.g. Jetty 2, loading arm 3" />
           <Select label="Applicant" value={applicant} onChange={(e) => setApplicant(e.target.value)}>

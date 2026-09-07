@@ -63,60 +63,107 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 })
 
 /**
- * A text field that offers what already exists, without refusing anything else.
+ * A dropdown of what the workspace already has, with a way in for what it does not.
  *
- * For the fields that name something the workspace has a register of - a department, a
- * job title - where two things are both true: somebody typing "Maintanence" beside three
- * existing "Maintenance" rows is a real cost, and a workspace that has not created any
- * departments yet still has to be able to fill the field in.
+ * This is the same control as every other picker on the form - a real `<select>` - because
+ * that was the requirement, and the two earlier attempts at it both failed on the same
+ * point. A plain `<input list>` looked close once its indicator was restyled, but the panel
+ * it opens is browser chrome: a datalist popup and a select popup are drawn by different
+ * code paths and no stylesheet reaches either. Matching the closed state and not the open
+ * one is not matching.
  *
- * A `<select>` would solve the first and break the second, which is the trap the Owner
- * picker was already in: a required field whose only options came from data a new
- * workspace does not have yet, so the form could not be submitted at all. A datalist is
- * the honest middle - the browser shows the known values as a dropdown the moment the
- * field is focused, and typing a new one is still allowed and still saved.
+ * So the list is a select, and the escape hatch is an explicit option in it. Choosing
+ * "Add a new one" swaps in a text field, and what is typed there is saved exactly as it
+ * was before. That keeps the property this whole field depends on: Department is required
+ * on an incident, an asset and a corrective action, so a workspace on its first day - with
+ * nothing in any register yet - has to be able to answer. With no options at all the text
+ * field is simply what renders, and there is no empty dropdown to open.
  *
- * Deliberately not a custom popover. The native control is keyboard-accessible, filters as
- * you type, and behaves the way the platform's own form controls do on a phone, which is
- * where a lot of this product is used.
+ * A value that is not in the list keeps the field in text mode rather than silently
+ * dropping it. Editing an asset whose department was retired last year must not quietly
+ * blank the field, which is what a select alone would do.
  */
-export interface SuggestInputProps extends InputProps {
+const ADD_NEW = '__add_new__'
+
+export interface SuggestSelectProps {
+  label?: string
+  hint?: string
+  error?: string
+  required?: boolean
+  disabled?: boolean
+  value: string
+  onChange: (value: string) => void
   /** What the workspace already has. Never a restriction - only a shortcut. */
   options: string[]
+  placeholder?: string
+  /** Wording for the escape hatch, e.g. "Add a new department…". */
+  addLabel?: string
 }
 
-export const SuggestInput = forwardRef<HTMLInputElement, SuggestInputProps>(
-  function SuggestInput({ options, id, ...rest }, ref) {
-    const autoId = useId()
-    const inputId = id ?? autoId
-    const listId = `${inputId}-options`
+export function SuggestSelect({
+  label, hint, error, required, disabled, value, onChange, options,
+  placeholder, addLabel = 'Add a new one…',
+}: SuggestSelectProps) {
+  /*
+   * Typing mode is derived from the value on the first render and then held, so that
+   * clearing the box to retype does not throw the operator back to the dropdown mid-word.
+   */
+  const [typing, setTyping] = useState(() => Boolean(value) && !options.includes(value))
+  const showText = typing || options.length === 0
+
+  if (showText) {
     return (
-      <>
-        {/*
-          `pr-8` matches Select, so a typed value never runs under the chevron, and
-          `suggest-field` restyles the browser's own indicator to be that chevron. See
-          styles/index.css.
-        */}
+      <div className="space-y-1.5">
         <Input
-          ref={ref}
-          id={inputId}
-          list={options.length ? listId : undefined}
-          {...rest}
-          className={cn('suggest-field pr-8', rest.className)}
+          label={label}
+          hint={hint}
+          error={error}
+          required={required}
+          disabled={disabled}
+          value={value}
+          placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value)}
         />
         {/*
-          Rendered only when there is something to offer. An empty datalist makes some
-          browsers show a flicker of empty dropdown on focus, which reads as broken.
+          Only offered when there is a list to go back to. On a workspace with nothing in
+          the register yet this would be a button to an empty dropdown.
         */}
         {options.length > 0 && (
-          <datalist id={listId}>
-            {options.map((o) => <option key={o} value={o} />)}
-          </datalist>
+          <button
+            type="button"
+            className="text-2xs font-semibold text-accent hover:underline"
+            onClick={() => { setTyping(false); onChange('') }}
+          >
+            Choose from the list instead
+          </button>
         )}
-      </>
+      </div>
     )
-  },
-)
+  }
+
+  return (
+    <Select
+      label={label}
+      hint={hint}
+      error={error}
+      required={required}
+      disabled={disabled}
+      value={value}
+      onChange={(e) => {
+        if (e.target.value === ADD_NEW) {
+          setTyping(true)
+          onChange('')
+          return
+        }
+        onChange(e.target.value)
+      }}
+    >
+      <option value="" disabled>{placeholder ?? 'Select…'}</option>
+      {options.map((o) => <option key={o} value={o}>{o}</option>)}
+      <option value={ADD_NEW}>{addLabel}</option>
+    </Select>
+  )
+}
 
 /**
  * A password field with a reveal toggle.

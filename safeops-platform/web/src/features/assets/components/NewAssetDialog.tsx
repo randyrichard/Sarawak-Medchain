@@ -5,7 +5,7 @@ import { ASSET_CATEGORIES, CATEGORY_LABEL, type AssetCategory, type InspectionFr
 import { useOrg } from '@/features/org/OrgContext'
 import { useDepartments } from '@/features/org/departments'
 import { usePeople, useActor } from '@/features/incidents/lib'
-import { Alert, Button, Dialog, Input, SuggestInput, PersonRegisterOptions, Select, Textarea } from '@/components/ui'
+import { Alert, Button, Dialog, Input, SuggestSelect, PersonRegisterOptions, Select, Textarea } from '@/components/ui'
 import { listEquipmentHolders, type EquipmentHolderOption } from '@/api/equipmentHolders'
 
 export function NewAssetDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
@@ -135,7 +135,15 @@ export function NewAssetDialog({ open, onClose, onCreated }: { open: boolean; on
           </Select>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <SuggestInput options={departments} label="Department" required value={department} onChange={(e) => setDepartment(e.target.value)} />
+          <SuggestSelect
+            options={departments}
+            label="Department"
+            required
+            value={department}
+            onChange={setDepartment}
+            placeholder="Select a department…"
+            addLabel="Add a new department…"
+          />
           <Select label="Owner" required value={owner} onChange={(e) => setOwner(e.target.value)} hint="Becomes the default inspector.">
             <option value="" disabled>Select…</option>
             {people.map((p) => <option key={p}>{p}</option>)}

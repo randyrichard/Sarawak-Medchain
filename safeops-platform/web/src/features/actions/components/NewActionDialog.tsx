@@ -5,7 +5,7 @@ import type { ActionPriority } from '@/api/incidents'
 import { useOrg } from '@/features/org/OrgContext'
 import { useDepartments } from '@/features/org/departments'
 import { usePeople, useActor } from '@/features/incidents/lib'
-import { Alert, Button, Checkbox, Dialog, Input, SuggestInput, Select, Textarea } from '@/components/ui'
+import { Alert, Button, Checkbox, Dialog, Input, SuggestSelect, Select, Textarea } from '@/components/ui'
 
 /** Standalone corrective action (audit finding, inspection, MOC…). */
 export function NewActionDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
@@ -71,7 +71,15 @@ export function NewActionDialog({ open, onClose, onCreated }: { open: boolean; o
             <option value="" disabled>Select…</option>
             {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </Select>
-          <SuggestInput options={departments} label="Department" required value={department} onChange={(e) => setDepartment(e.target.value)} placeholder="e.g. Warehouse" />
+          <SuggestSelect
+            options={departments}
+            label="Department"
+            required
+            value={department}
+            onChange={setDepartment}
+            placeholder="Select a department…"
+            addLabel="Add a new department…"
+          />
         </div>
         <Select label="Source / root cause" value={rootCause} onChange={(e) => setRootCause(e.target.value)}>
           {['Inspection finding', 'Audit finding (ISO 45001)', 'Audit finding (CIMAH)', 'Compliance schedule', 'Management of change', 'Observation'].map((r) => (

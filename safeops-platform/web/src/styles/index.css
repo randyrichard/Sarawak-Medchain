@@ -198,50 +198,6 @@ select optgroup {
   background: transparent;
 }
 
-/*
- * The suggest field's dropdown mark, made to match Select's.
- *
- * A datalist input carries the browser's own indicator, and Chrome's is a small filled
- * triangle in a lighter box - beside four styled selects with a thin lucide chevron it
- * reads as a different kind of control, which is exactly what it must not be: it is the
- * same question, answered the same way, and only differs in accepting a value that is not
- * on the list.
- *
- * The native indicator is restyled rather than hidden and replaced. Hiding it and drawing
- * our own would cost the click-to-open behaviour - clicking the body of a datalist input
- * does not open the list, only the indicator does - so the arrow would become decoration
- * and the suggestions reachable only by typing, which is the opposite of the point.
- *
- * A mask rather than a background image, so the colour is var(--muted) and follows the
- * theme. An SVG background would need its stroke baked in and would be wrong in one of the
- * two themes.
- *
- * Firefox shows no indicator for a datalist at all and opens on focus instead. There is no
- * pseudo-element to style there, so this simply does not apply and the field looks like a
- * plain input - which is that browser's own convention rather than something to fight.
- */
-.suggest-field::-webkit-calendar-picker-indicator {
-  width: 14px;
-  height: 14px;
-  margin-inline-end: 1px;
-  opacity: 1;
-  cursor: pointer;
-  background-color: var(--muted);
-  background-image: none;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
-}
-
-.suggest-field::-webkit-calendar-picker-indicator:hover {
-  background-color: var(--ink-2);
-}
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
