@@ -1,0 +1,15 @@
+{
+  // What ships. Tests are excluded, mirroring api/tsconfig.build.json.
+  //
+  // `npm run build` type-checked the test files, so a test that needed a type the runtime
+  // does not - `@types/node`, for instance, which the production image has no reason to
+  // install - broke the production build rather than the test run. That is what happened:
+  // a test reading the server's source for a drift check used `process.cwd()`, compiled
+  // locally where the types were resolvable, and failed inside Docker. The image silently
+  // stayed on the previous build for two commits.
+  //
+  // Tests are still type-checked, by `npm run typecheck`, which uses the wider config. The
+  // separation is only about what the deployed artefact is allowed to depend on.
+  "extends": "./tsconfig.json",
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
+}
