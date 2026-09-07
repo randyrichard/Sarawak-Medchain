@@ -21,6 +21,7 @@
     "files:verify": "tsx src/cli/verifyUploads.ts",
     "seed": "tsx prisma/seed.ts",
     "platform:grant": "tsx src/cli/grantPlatformAdmin.ts",
+    "user:create": "tsx src/cli/createWorkspaceUser.ts",
     "platform:revoke": "tsx src/cli/grantPlatformAdmin.ts --revoke",
     "demo": "tsx prisma/demo.ts",
     "demo:reset": "tsx prisma/demo.ts --reset",
