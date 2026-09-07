@@ -57,17 +57,16 @@ export function NewVisitorDialog({
     setSiteId(sites[0]?.id ?? '')
 
     listEquipmentHolders(company.id)
-      .then((rows) => setHosts(rows.filter((r) => r.kind === 'employee')))
-      .catch((e) => {
+      .then(({ people, unavailable }) => {
+        setHosts(people.filter((r) => r.kind === 'employee'))
         /*
-         * Said out loud, matching AssetHolderPanel and PeoplePanel.
-         *
-         * Swallowing this rendered the "add people under Employees or Contractors" hint,
-         * which is a statement about the customer's data - and it was wrong whenever the
-         * real cause was a failed request. That sends somebody to the workforce register
-         * to add people who are already there. equipmentHolders.ts deliberately does not
-         * swallow the error; two of its four callers did.
+         * Only the workforce half matters here - a host is an employee - so an unreadable
+         * contractor register is not worth alarming somebody about on this form.
          */
+        const workforce = unavailable.find((u) => /workforce/i.test(u))
+        setError(workforce ?? null)
+      })
+      .catch((e) => {
         setHosts([])
         setError(e instanceof ApiError ? e.message : 'Could not load the list of people.')
       })

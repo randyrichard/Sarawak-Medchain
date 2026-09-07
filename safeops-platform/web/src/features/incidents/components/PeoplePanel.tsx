@@ -189,7 +189,11 @@ function AddPersonDialog({
     // The same helper the equipment and visitor pickers use — one implementation of
     // "everybody you could name", paged properly rather than asking for one large page.
     listEquipmentHolders(companyId)
-      .then(setPeople)
+      .then(({ people, unavailable }) => {
+        // Partial is better than nothing: offer what loaded and name what did not.
+        setPeople(people)
+        if (unavailable.length) setError(unavailable.join(' '))
+      })
       .catch((e) => {
         setPeople([])
         setError(e instanceof ApiError ? e.message : 'Could not load the list of people.')

@@ -36,9 +36,10 @@ describe('listEquipmentHolders', () => {
     employeesList.mockResolvedValue({ rows: REAL_EMPLOYEES, total: 3, page: 1, pageSize: 100 })
     listWorkers.mockResolvedValue({ rows: [], total: 0, page: 1, pageSize: 100 })
 
-    const people = await holders.listEquipmentHolders('sarawak-pilot-energy-sdn-bhd')
+    const { people, unavailable } = await holders.listEquipmentHolders('sarawak-pilot-energy-sdn-bhd')
     expect(people.map((p) => p.name)).toEqual(['Probe admin', 'Probe hse_manager', 'Rosli bin Ahmad'])
     expect(people.every((p) => p.kind === 'employee')).toBe(true)
+    expect(unavailable).toEqual([])
   })
 
   it('leaves out somebody who has left', async () => {
@@ -48,28 +49,48 @@ describe('listEquipmentHolders', () => {
     })
     listWorkers.mockResolvedValue({ rows: [], total: 0, page: 1, pageSize: 100 })
 
-    const people = await holders.listEquipmentHolders('acme')
+    const { people } = await holders.listEquipmentHolders('acme')
     expect(people.map((p) => p.name)).not.toContain('Left Last Year')
   })
 
-  it('rejects rather than returning an empty list when a register cannot be read', async () => {
+  it('still offers the employees when the contractor register cannot be read', async () => {
     /*
-     * The behaviour the module's own comment promises: a silently empty picker reads as
-     * "nobody works here", so the failure has to reach the caller. This is asserted because
-     * NewAssetDialog was swallowing it - `.catch(() => setHolders([]))` - which turned every
-     * transport failure into exactly the misleading empty list this was written to avoid.
+     * The two registers used to share a Promise.all, which is all-or-nothing: this exact
+     * case discarded three perfectly good employees and left a picker telling the customer
+     * to go and add people they already had. Nothing about the contractor register should
+     * be able to hide the workforce.
      */
     employeesList.mockResolvedValue({ rows: REAL_EMPLOYEES, total: 3, page: 1, pageSize: 100 })
     listWorkers.mockRejectedValue(new Error('contractors unavailable'))
 
-    await expect(holders.listEquipmentHolders('acme')).rejects.toThrow(/contractors/)
+    const { people, unavailable } = await holders.listEquipmentHolders('acme')
+    expect(people).toHaveLength(3)
+    // Reported, not swallowed. Losing half the list quietly is the other failure mode.
+    expect(unavailable).toHaveLength(1)
+    expect(unavailable[0]).toMatch(/contractor/i)
   })
 
-  it('rejects when the workforce register cannot be read', async () => {
+  it('still offers the contractors when the workforce register cannot be read', async () => {
     employeesList.mockRejectedValue(new Error('employees unavailable'))
-    listWorkers.mockResolvedValue({ rows: [], total: 0, page: 1, pageSize: 100 })
+    listWorkers.mockResolvedValue({
+      rows: [{ id: 'w1', name: 'Contract Welder', workerNo: 'CW-1', contractorName: 'Acme', position: 'Welder' }],
+      total: 1, page: 1, pageSize: 100,
+    })
 
-    await expect(holders.listEquipmentHolders('acme')).rejects.toThrow(/employees/)
+    const { people, unavailable } = await holders.listEquipmentHolders('acme')
+    expect(people.map((p) => p.name)).toEqual(['Contract Welder'])
+    expect(unavailable[0]).toMatch(/workforce/i)
+  })
+
+  it('reports both when neither register can be read', async () => {
+    // Empty, and says why twice - rather than an empty list that reads as "nobody works
+    // here", which is a claim about the customer's data and not about the request.
+    employeesList.mockRejectedValue(new Error('down'))
+    listWorkers.mockRejectedValue(new Error('down'))
+
+    const { people, unavailable } = await holders.listEquipmentHolders('acme')
+    expect(people).toEqual([])
+    expect(unavailable).toHaveLength(2)
   })
 
   it('walks past the first page of a large workforce', async () => {
@@ -79,7 +100,7 @@ describe('listEquipmentHolders', () => {
       .mockResolvedValueOnce({ rows: [{ id: '2', name: 'B', employeeNo: 'E2', active: true }], total: 2, page: 2, pageSize: 1 })
     listWorkers.mockResolvedValue({ rows: [], total: 0, page: 1, pageSize: 100 })
 
-    expect((await holders.listEquipmentHolders('acme')).map((p) => p.name)).toEqual(['A', 'B'])
+    expect((await holders.listEquipmentHolders('acme')).people.map((p) => p.name)).toEqual(['A', 'B'])
   })
 
   it('lists contractor workers alongside employees', async () => {
@@ -89,7 +110,7 @@ describe('listEquipmentHolders', () => {
       total: 1, page: 1, pageSize: 100,
     })
 
-    const people = await holders.listEquipmentHolders('acme')
+    const { people } = await holders.listEquipmentHolders('acme')
     expect(people.map((p) => `${p.kind}:${p.name}`))
       .toEqual(['contractor:Contract Welder', 'employee:Employee'])
   })

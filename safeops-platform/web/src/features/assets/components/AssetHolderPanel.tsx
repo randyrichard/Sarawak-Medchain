@@ -157,7 +157,11 @@ function AssignDialog({
     if (!open) return
     setChosen(''); setError(null); setPeople(null)
     listEquipmentHolders(companyId)
-      .then(setPeople)
+      .then(({ people, unavailable }) => {
+        // Partial is better than nothing: offer what loaded and name what did not.
+        setPeople(people)
+        if (unavailable.length) setError(unavailable.join(' '))
+      })
       .catch((e) => {
         // Said out loud. An empty picker reads as "nobody works here", which sends the
         // operator to raise a ticket about the workforce register instead of this.
