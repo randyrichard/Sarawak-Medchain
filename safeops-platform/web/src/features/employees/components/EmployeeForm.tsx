@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { Input, SuggestSelect, Select, Textarea } from '@/components/ui'
 import { useDepartments } from '@/features/org/departments'
+import { usePositions } from '@/features/org/registers'
 import { useOrg } from '@/features/org/OrgContext'
 
 /**
@@ -66,6 +67,7 @@ export function EmployeeForm({
   disableSite?: boolean
 }) {
   const departments = useDepartments()
+  const positions = usePositions()
 
   const { sites } = useOrg()
   const set = <K extends keyof EmployeeFormState>(k: K, v: EmployeeFormState[K]) =>
@@ -97,7 +99,14 @@ export function EmployeeForm({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <Input label="Position" value={value.position} onChange={(e) => set('position', e.target.value)} />
+        <SuggestSelect
+          options={positions}
+          label="Position"
+          value={value.position}
+          onChange={(v) => set('position', v)}
+          placeholder="Select a position…"
+          addLabel="Add a new position…"
+        />
         <Input label="Joined" type="date" value={value.hireDate} onChange={(e) => set('hireDate', e.target.value)} />
       </div>
 

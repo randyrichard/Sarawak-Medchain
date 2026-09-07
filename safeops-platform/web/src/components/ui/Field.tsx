@@ -98,11 +98,19 @@ export interface SuggestSelectProps {
   placeholder?: string
   /** Wording for the escape hatch, e.g. "Add a new department…". */
   addLabel?: string
+  /**
+   * Whether the placeholder is a choosable value rather than a prompt.
+   *
+   * For a filter, where "any" is a real answer and has to be reachable again after one is
+   * picked. On a form it stays disabled, so a required field cannot be emptied back into
+   * an invalid state by choosing the prompt.
+   */
+  allowEmpty?: boolean
 }
 
 export function SuggestSelect({
   label, hint, error, required, disabled, value, onChange, options,
-  placeholder, addLabel = 'Add a new one…',
+  placeholder, addLabel = 'Add a new one…', allowEmpty = false,
 }: SuggestSelectProps) {
   /*
    * Typing mode is derived from the value on the first render and then held, so that
@@ -158,7 +166,7 @@ export function SuggestSelect({
         onChange(e.target.value)
       }}
     >
-      <option value="" disabled>{placeholder ?? 'Select…'}</option>
+      <option value="" disabled={!allowEmpty}>{placeholder ?? 'Select…'}</option>
       {options.map((o) => <option key={o} value={o}>{o}</option>)}
       <option value={ADD_NEW}>{addLabel}</option>
     </Select>

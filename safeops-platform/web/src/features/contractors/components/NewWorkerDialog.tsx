@@ -3,7 +3,8 @@ import { contractorsApi } from '@/api/contractorsApi'
 import type { ContractorCompanyRow } from '@/api/contractors'
 import { ApiError } from '@/api/types'
 import { useOrg } from '@/features/org/OrgContext'
-import { Alert, Button, Dialog, Input, Select } from '@/components/ui'
+import { Alert, Button, Dialog, Input, SuggestSelect, Select } from '@/components/ui'
+import { usePositions } from '@/features/org/registers'
 
 interface FormState {
   contractorCompanyId: string
@@ -39,6 +40,8 @@ export function NewWorkerDialog({
   onCreated: (name: string) => void
 }) {
   const { company, site, sites } = useOrg()
+  const positions = usePositions()
+
   const [form, setForm] = useState<FormState>(empty(site?.id ?? ''))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -118,7 +121,14 @@ export function NewWorkerDialog({
         <div className="grid gap-3 sm:grid-cols-2">
           <Input label="IC / passport" value={form.icPassport} onChange={(e) => set('icPassport', e.target.value)}
             hint="What a gate check is done against." />
-          <Input label="Position" value={form.position} onChange={(e) => set('position', e.target.value)} />
+          <SuggestSelect
+            options={positions}
+            label="Position"
+            value={form.position}
+            onChange={(v) => set('position', v)}
+            placeholder="Select a position…"
+            addLabel="Add a new position…"
+          />
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">

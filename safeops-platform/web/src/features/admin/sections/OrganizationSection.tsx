@@ -4,6 +4,7 @@ import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import type { BusinessUnit, Holiday, JobPosition, OrgSettings, ShiftPattern } from '@/api/admin'
 import { useOrg } from '@/features/org/OrgContext'
+import { forgetPositions } from '@/features/org/registers'
 import {
   Alert, Avatar, Badge, Button, Card, CardBody, CardHeader, Dialog, Input, Select, Skeleton, Tabs,
   type TabItem,
@@ -173,11 +174,11 @@ function PositionsPanel() {
           <div key={p.id} className="flex items-center gap-3 rounded-lg border px-3.5 py-2.5">
             <div className="min-w-0 flex-1"><p className="text-sm font-medium text-ink">{p.title}</p><p className="text-2xs text-muted">{p.department}</p></div>
             <Badge tone="neutral">{p.headcount} est.</Badge>
-            <button onClick={() => void api.adminRemoveConfigItem(companyId, 'position', p.id, actor).then(load)} className="rounded p-1 text-muted hover:text-critical" aria-label="Remove"><Trash2 size={13} /></button>
+            <button onClick={() => void api.adminRemoveConfigItem(companyId, 'position', p.id, actor).then(() => { forgetPositions(companyId); load() })} className="rounded p-1 text-muted hover:text-critical" aria-label="Remove"><Trash2 size={13} /></button>
           </div>
         ))}
       </CardBody>
-      <AddItemDialog open={addOpen} kind="position" title="Add job position" fields={[{ key: 'title', label: 'Title' }, { key: 'department', label: 'Department' }, { key: 'headcount', label: 'Establishment headcount', type: 'number' }]} onClose={() => setAddOpen(false)} onAdded={() => { setAddOpen(false); load() }} />
+      <AddItemDialog open={addOpen} kind="position" title="Add job position" fields={[{ key: 'title', label: 'Title' }, { key: 'department', label: 'Department' }, { key: 'headcount', label: 'Establishment headcount', type: 'number' }]} onClose={() => setAddOpen(false)} onAdded={() => { setAddOpen(false); forgetPositions(companyId); load() }} />
     </Card>
   )
 }

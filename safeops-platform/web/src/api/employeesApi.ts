@@ -36,6 +36,12 @@ export const employeesApi = {
       .then((r) => r.departments)
   },
 
+  /** The job titles already in use, for the picker. See the service for why. */
+  positions(companyId: string): Promise<string[]> {
+    return request<{ positions: string[] }>(`/employees/positions?${qs({ companyId })}`)
+      .then((r) => r.positions)
+  },
+
   get(id: string): Promise<EmployeeDetail> {
     return request(`/employees/${id}`)
   },

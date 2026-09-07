@@ -5,7 +5,8 @@ import {
   type MaintenanceKind, type MaintenancePriority, type WorkOrder,
 } from '@/api/equipmentApi'
 import { ApiError } from '@/api/types'
-import { Alert, Badge, Button, Dialog, Input, Select, Skeleton, Textarea } from '@/components/ui'
+import { Alert, Badge, Button, Dialog, Input, SuggestSelect, Select, Skeleton, Textarea } from '@/components/ui'
+import { usePeople } from '@/features/incidents/lib'
 import { fmtDate } from '@/features/incidents/lib'
 import { cn } from '@/lib/cn'
 
@@ -160,6 +161,7 @@ function formatDowntime(minutes: number) {
 function RaiseDialog({
   open, assetId, onClose, onSaved,
 }: { open: boolean; assetId: string; onClose: () => void; onSaved: () => void }) {
+  const people = usePeople()
   const [kind, setKind] = useState<MaintenanceKind>('corrective')
   const [priority, setPriority] = useState<MaintenancePriority>('medium')
   const [description, setDescription] = useState('')
@@ -220,7 +222,14 @@ function RaiseDialog({
           onChange={(e) => setDescription(e.target.value)} />
 
         <div className="grid grid-cols-2 gap-3">
-          <Input label="Assigned to" value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)} />
+          <SuggestSelect
+            options={people}
+            label="Assigned to"
+            value={assignedTo}
+            onChange={setAssignedTo}
+            placeholder="Select a person…"
+            addLabel="Enter another name…"
+          />
           <Input label="Due by" type="date" value={dueAt} onChange={(e) => setDueAt(e.target.value)} />
         </div>
 

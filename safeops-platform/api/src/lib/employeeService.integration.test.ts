@@ -92,6 +92,29 @@ d('EmployeeService — integration (real Postgres)', () => {
     expect(new Set(made.map((m) => m.employeeNo)).size).toBe(8)
   })
 
+  it('lists the distinct job titles in use, for the position picker', async () => {
+    /*
+     * The curated register in OrgConfigItem is administrator-only, and on most workspaces
+     * it holds nothing at all - the deployment this was written for had an empty register
+     * and three employees carrying "Process Operator", "Op" and "Op". So this is the half
+     * that makes the picker useful on day one, and the half an HSE manager can read.
+     */
+    await svc.create(admin, COMPANY, newEmployee({ name: 'A', position: 'Process Operator' }))
+    await svc.create(admin, COMPANY, newEmployee({ name: 'B', position: 'Op' }))
+    await svc.create(admin, COMPANY, newEmployee({ name: 'C', position: 'Op' }))
+    // Blank rather than absent: a register with people whose title was never filled in
+    // must not offer an empty option.
+    await svc.create(admin, COMPANY, newEmployee({ name: 'D', position: '' }))
+
+    const titles = await svc.positions(admin, COMPANY)
+    expect(titles).toEqual(['Op', 'Process Operator'])
+  })
+
+  it("keeps one workspace's job titles out of another's", async () => {
+    await svc.create(admin, COMPANY, newEmployee({ name: 'Ours', position: 'Rigger' }))
+    await expect(svc.positions(outsider, COMPANY)).rejects.toMatchObject({ code: 'forbidden' })
+  })
+
   it('refuses a site belonging to another workspace', async () => {
     await expect(svc.create(admin, COMPANY, newEmployee({ siteId: 'not-our-site' })))
       .rejects.toMatchObject({ code: 'validation' })

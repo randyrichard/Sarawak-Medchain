@@ -12,8 +12,10 @@ import {
 } from '@/api/incidents'
 import { ApiError } from '@/api/types'
 import { useOrg } from '@/features/org/OrgContext'
+import { useDepartments } from '@/features/org/departments'
+import { usePeople } from './lib'
 import {
-  Alert, Badge, Breadcrumbs, Button, Card, CardBody, Input, PageHeader, Select, Skeleton,
+  Alert, Badge, Breadcrumbs, Button, Card, CardBody, Input, SuggestSelect, PageHeader, Select, Skeleton,
   StatusPill,
 } from '@/components/ui'
 import { usePageTitle } from '@/app/pageTitle'
@@ -47,6 +49,11 @@ export function IncidentBoardPage() {
 
   // Parsed by the module the tests cover, so the board and its tests cannot drift apart.
   const filters = useMemo<BoardFilters>(() => parseFilters(params), [params])
+
+  const departments = useDepartments()
+
+  const people = usePeople()
+
 
   const [board, setBoard] = useState<IncidentBoard | null>(null)
   const [rows, setRows] = useState<Incident[] | null>(null)
@@ -221,12 +228,28 @@ export function IncidentBoardPage() {
               ))}
             </Select>
 
-            <Input label="Department" value={filters.department}
-              placeholder="e.g. Maintenance"
-              onChange={(e) => patch({ department: e.target.value })} />
-            <Input label="Investigator" value={filters.investigator}
-              placeholder="Name"
-              onChange={(e) => patch({ investigator: e.target.value })} />
+            {/*
+              allowEmpty, unlike the same field on a form: "any department" is a real answer
+              to a filter and has to be reachable again after one has been picked.
+            */}
+            <SuggestSelect
+              options={departments}
+              label="Department"
+              value={filters.department}
+              onChange={(v) => patch({ department: v })}
+              placeholder="Any department"
+              addLabel="Type a name instead…"
+              allowEmpty
+            />
+            <SuggestSelect
+              options={people}
+              label="Investigator"
+              value={filters.investigator}
+              onChange={(v) => patch({ investigator: v })}
+              placeholder="Any investigator"
+              addLabel="Type a name instead…"
+              allowEmpty
+            />
             <Input label="From" type="date" value={filters.from}
               onChange={(e) => patch({ from: e.target.value })} />
             <Input label="To" type="date" value={filters.to}

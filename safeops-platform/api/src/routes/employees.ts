@@ -74,6 +74,16 @@ employeesRouter.get('/departments', async (req, res, next) => {
   }
 })
 
+employeesRouter.get('/positions', async (req, res, next) => {
+  try {
+    const companyId = String(req.query.companyId ?? '')
+    if (!companyId) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
+    res.json({ positions: await svc.positions(callerOf(req), companyId) })
+  } catch (e) {
+    next(e)
+  }
+})
+
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use a YYYY-MM-DD date.')
 
 const createBody = z.object({

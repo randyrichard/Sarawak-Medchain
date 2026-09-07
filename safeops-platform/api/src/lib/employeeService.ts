@@ -605,4 +605,25 @@ export class EmployeeService {
     })
     return rows.map((r) => r.department)
   }
+
+  /**
+   * The job titles already in use, for the same reason `departments` exists.
+   *
+   * The curated register lives in OrgConfigItem and is readable by administrators only, so
+   * an HSE manager filling in an employee record is refused it. This is the half that is
+   * theirs to see: it is drawn from the workforce they can already read, needs no extra
+   * privilege, and on a workspace that has never opened the register - which is most of
+   * them - it is the only source there is. Without it the field suggests nothing and
+   * "Process Operator" and "Op" go on accumulating side by side.
+   */
+  async positions(caller: Caller, companyId: string) {
+    this.membership(caller, companyId)
+    const rows = await this.db.employee.findMany({
+      where: { companyId, ...this.siteWhere(caller, companyId), position: { not: '' } },
+      select: { position: true },
+      distinct: ['position'],
+      orderBy: { position: 'asc' },
+    })
+    return rows.map((r) => r.position)
+  }
 }

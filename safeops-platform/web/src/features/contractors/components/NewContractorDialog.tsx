@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { contractorsApi } from '@/api/contractorsApi'
+import { forgetContractorCompanies } from '@/features/org/registers'
 import { ApiError } from '@/api/types'
 import { useOrg } from '@/features/org/OrgContext'
 import { Alert, Button, Dialog } from '@/components/ui'
@@ -28,6 +29,12 @@ export function NewContractorDialog({
     setError(null)
     try {
       const created = await contractorsApi.createCompany(company.id, toContractorPayload(form))
+      /*
+       * The pickers cache this workspace's contractor companies, so without this a newly added
+       * one is not offered by the forms that need it until the page is reloaded -
+       * which reads as it not having saved.
+       */
+      forgetContractorCompanies(company.id)
       onCreated(created.name)
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Could not add that contractor.')

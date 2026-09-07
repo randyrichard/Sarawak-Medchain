@@ -7,6 +7,7 @@ import {
 } from '@/api/permits'
 import { useOrg } from '@/features/org/OrgContext'
 import { useDepartments } from '@/features/org/departments'
+import { useContractorCompanies } from '@/features/org/registers'
 import { usePeople } from '@/features/incidents/lib'
 import { Alert, Button, Dialog, Input, SuggestSelect, Select, Textarea } from '@/components/ui'
 import { cn } from '@/lib/cn'
@@ -36,6 +37,7 @@ export function NewPermitDialog({
   const { company, site, sites } = useOrg()
   const people = usePeople()
   const departments = useDepartments()
+  const contractorCompanies = useContractorCompanies()
 
   const [type, setType] = useState<PermitType>('hot_work')
   const [title, setTitle] = useState('')
@@ -142,7 +144,14 @@ export function NewPermitDialog({
           <Select label="Applicant" value={applicant} onChange={(e) => setApplicant(e.target.value)}>
             {people.map((p) => <option key={p}>{p}</option>)}
           </Select>
-          <Input label="Contractor (if any)" value={contractor} onChange={(e) => setContractor(e.target.value)} />
+          <SuggestSelect
+            options={contractorCompanies}
+            label="Contractor (if any)"
+            value={contractor}
+            onChange={setContractor}
+            placeholder="Select a contractor…"
+            addLabel="Enter another contractor…"
+          />
           <Input label="Number of workers" inputMode="numeric" value={workerCount}
             onChange={(e) => setWorkerCount(e.target.value.replace(/\D/g, '').slice(0, 3))} />
         </div>
