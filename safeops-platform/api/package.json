@@ -22,6 +22,7 @@
     "seed": "tsx prisma/seed.ts",
     "platform:grant": "tsx src/cli/grantPlatformAdmin.ts",
     "user:create": "tsx src/cli/createWorkspaceUser.ts",
+    "mail:verify": "tsx src/cli/verifyMail.ts",
     "platform:revoke": "tsx src/cli/grantPlatformAdmin.ts --revoke",
     "demo": "tsx prisma/demo.ts",
     "demo:reset": "tsx prisma/demo.ts --reset",
