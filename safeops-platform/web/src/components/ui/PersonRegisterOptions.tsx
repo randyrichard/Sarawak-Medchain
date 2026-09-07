@@ -35,9 +35,17 @@ import type { EquipmentHolderOption } from '@/api/equipmentHolders'
  * see past its own scope and must not imply that it can; it says what is being filtered and
  * leaves the conclusion to somebody who can look.
  */
-export function personRegisterHint(siteScope: string[] = []): string {
+export function personRegisterHint(
+  siteScope: string[] = [],
+  /**
+   * Where to add somebody, when the registers really are empty. Named because it differs
+   * by picker: a visitor's host must be an employee, so sending reception to add a
+   * contractor worker would be advice that cannot work.
+   */
+  addUnder = 'Employees or Contractors',
+): string {
   if (siteScope.length === 0) {
-    return '— Add people under Employees or Contractors to pick them here —'
+    return `— Add people under ${addUnder} to pick them here —`
   }
   if (siteScope.length === 1) {
     return `— Nobody at ${siteScope[0]}. Your account only covers that site, so anyone `

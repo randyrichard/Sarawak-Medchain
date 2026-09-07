@@ -54,6 +54,24 @@ describe('personRegisterHint', () => {
     expect(hint).not.toContain('Miri Yard')
   })
 
+  it('names where to add somebody, because that differs by picker', () => {
+    /*
+     * A visitor's host must be an employee - a contractor worker cannot approve a visit -
+     * so sending reception to add one would be advice that cannot work. The default stays
+     * the broader wording for the pickers where both registers genuinely apply.
+     */
+    expect(personRegisterHint([], 'Employees')).toContain('Employees')
+    expect(personRegisterHint([], 'Employees')).not.toContain('Contractors')
+    expect(personRegisterHint()).toContain('Employees or Contractors')
+  })
+
+  it('ignores where-to-add when the reason is a site scope', () => {
+    // Adding somebody is not the fix in that case, so the advice does not appear at all.
+    const hint = personRegisterHint(['LMG'], 'Employees')
+    expect(hint).not.toMatch(/add /i)
+    expect(hint).toContain('LMG')
+  })
+
   it('is a single line in every case, because it renders inside an option', () => {
     for (const scope of [[], ['LMG'], ['LMG', 'Bintulu Plant']]) {
       expect(personRegisterHint(scope), JSON.stringify(scope)).not.toContain('\n')

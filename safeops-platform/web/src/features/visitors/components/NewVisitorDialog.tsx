@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { visitorsApi } from '@/api/visitorsApi'
 import { listEquipmentHolders, type EquipmentHolderOption } from '@/api/equipmentHolders'
 import { ApiError } from '@/api/types'
-import { useOrg } from '@/features/org/OrgContext'
-import { Alert, Button, Dialog, Input, Select, Textarea } from '@/components/ui'
+import { useOrg, useSiteScope } from '@/features/org/OrgContext'
+import { Alert, Button, Dialog, Input, Select, Textarea, personRegisterHint } from '@/components/ui'
 
 /**
  * Pre-registering a visit.
@@ -38,6 +38,7 @@ export function NewVisitorDialog({
   const [emergencyContactPhone, setEmergencyContactPhone] = useState('')
   const [notes, setNotes] = useState('')
 
+  const siteScope = useSiteScope()
   const [hosts, setHosts] = useState<EquipmentHolderOption[]>([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -151,6 +152,15 @@ export function NewVisitorDialog({
             onChange={(e) => setHostEmployeeId(e.target.value)}
             hint="Named hosts must approve before the visitor can enter.">
             <option value="">No host</option>
+            {/*
+              "No host" is a real choice here, not an empty state, so it cannot double as
+              the explanation. Without this the select offered exactly one option and said
+              nothing about why - which on a site-scoped account is the same silence that
+              sent somebody looking for a broken request for most of an afternoon.
+            */}
+            {hosts.length === 0 && (
+              <option value="" disabled>{personRegisterHint(siteScope, 'Employees')}</option>
+            )}
             {hosts.map((h) => (
               <option key={h.id} value={h.id}>
                 {h.name}{h.reference ? ` — ${h.reference}` : ''}
