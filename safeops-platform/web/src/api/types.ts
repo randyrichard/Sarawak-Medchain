@@ -13,11 +13,40 @@ export const ROLE_LABEL: Record<Role, string> = {
   employee: 'Employee',
 }
 
+/**
+ * What the workspace's plan permits, as decided by the server.
+ *
+ * The client never works this out for itself. Branch on these, not on `plan`: a component
+ * that asks `plan === 'premium'` breaks silently the day a plan is renamed or a third one
+ * appears, and it puts the commercial rules in two places that can disagree. Asking what
+ * the workspace may do keeps the server the only thing that decides.
+ *
+ * These are for showing the right thing - a disabled button with a reason beats a button
+ * that fails on click. They are not the enforcement; that is on the API, which refuses the
+ * write whatever the browser believes.
+ */
+export interface PlanEntitlements {
+  /** Active sites this workspace may run. `null` is no limit. */
+  maxSites: number | null
+  /** Whether API keys and webhooks may be created. */
+  integrations: boolean
+}
+
 export interface Company {
   id: string
   name: string
   industry: string
-  plan: 'trial' | 'standard' | 'enterprise'
+  /**
+   * The plan key as stored, for display.
+   *
+   * Deliberately a string. This was `'trial' | 'standard' | 'enterprise'` - a union that
+   * had never included `premium` and did include `trial`, which is a subscription status
+   * and not a plan at all. The server stores this as free text on purpose, so that rows
+   * created before a plan existed keep the value they were given; a closed union here
+   * could only ever be a copy of that list, drifting.
+   */
+  plan: string
+  entitlements: PlanEntitlements
   logoInitials: string
 }
 
@@ -103,16 +132,21 @@ export interface ActivityEvent {
 // ─── API error contract ──────────────────────────────────────────────────────
 
 export class ApiError extends Error {
-  constructor(
-    public code:
-      | 'invalid_credentials' | 'invalid_token' | 'expired_token'
-      | 'not_found' | 'forbidden' | 'validation'
-      // transport-level, raised by the HTTP client rather than the server
-      | 'network' | 'unauthenticated' | 'conflict' | 'request_failed'
-      // the build itself is wrong — no API configured, so nothing can be trusted
-      | 'misconfigured',
-    message: string,
-  ) {
+  /**
+   * The server's error code, or one the HTTP client raised itself.
+   *
+   * A string, not a union, because the value comes straight off the response body and the
+   * server's set is larger than any list kept here stayed. The union this replaces named
+   * ten codes and had already fallen five behind — `plan_limit`, `invalid_password`,
+   * `expired_refresh`, `invalid_refresh` and `refresh_reuse` all reach this constructor
+   * and none of them were in it. Nothing in the app branches on this today; everything
+   * displays `message`. When something does need to branch, comparing against a literal
+   * works on a string, and the compiler will not be quietly wrong about which ones exist.
+   *
+   * Raised by the client rather than the server: `network`, `unauthenticated`,
+   * `request_failed`, and `misconfigured` (no API configured, so nothing can be trusted).
+   */
+  constructor(public code: string, message: string) {
     super(message)
   }
 }

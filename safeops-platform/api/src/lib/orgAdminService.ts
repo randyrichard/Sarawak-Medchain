@@ -8,6 +8,7 @@ import { env } from '../env.js'
 import { getEmailProvider } from './email/index.js'
 import { EmailProviderError } from './email/provider.js'
 import { buildInvitationEmail } from './email/invitationEmail.js'
+import { siteAllowance, siteLimitMessage } from './entitlements.js'
 
 /**
  * Organisation administration: sites, departments and invitations.
@@ -186,6 +187,19 @@ export class OrgAdminService {
       select: { id: true },
     })
     if (clash) throw new OrgAdminError('validation', 'A site with that name already exists.')
+
+    /*
+     * The plan's site allowance.
+     *
+     * Checked here and not on the read path: a workspace already above its limit keeps
+     * every site it has, and every incident, permit and asset that points at one. Only
+     * opening another is refused. Deactivating a site is left ungated for the same reason
+     * - it is how an administrator gets back under the line without calling anyone.
+     */
+    const allowance = await siteAllowance(this.db, companyId)
+    if (allowance.atLimit) {
+      throw new OrgAdminError('plan_limit', siteLimitMessage(allowance), 403)
+    }
 
     const site = await this.db.site.create({
       data: {

@@ -12,6 +12,7 @@ import {
 import { generateResetToken, hashResetToken, resetTokenExpiry, RESET_TOKEN_TTL_MIN } from './tokens.js'
 import { sendPasswordResetEmail } from './email/passwordResetDelivery.js'
 import { collectTenantExport } from './tenantExport.js'
+import { integrationAllowance, integrationsMessage } from './entitlements.js'
 
 export class AdminError extends Error {
   constructor(public code: string, message: string, public status = 400) {
@@ -846,6 +847,13 @@ export class AdminService {
     this.requireAdmin(caller, companyId)
     if (!name?.trim()) throw new AdminError('validation', 'Give the key a descriptive name.')
 
+    // Issuing is gated by plan; revoking is not. A customer must always be able to turn
+    // off a key they already hold, whatever they are paying.
+    const api = await integrationAllowance(this.db, companyId)
+    if (!api.allowed) {
+      throw new AdminError('plan_limit', integrationsMessage(api.planLabel, 'API keys'), 403)
+    }
+
     const secret = `sk_live_${randomBytes(24).toString('base64url')}`
     const key = await this.db.apiKey.create({
       data: {
@@ -926,6 +934,14 @@ export class AdminService {
     }
     if (!events || events.length === 0) {
       throw new AdminError('validation', 'Select at least one event.')
+    }
+
+    // As with API keys: creating is gated, and disabling or deleting one never is.
+    const integrations = await integrationAllowance(this.db, companyId)
+    if (!integrations.allowed) {
+      throw new AdminError(
+        'plan_limit', integrationsMessage(integrations.planLabel, 'Webhooks'), 403,
+      )
     }
 
     const secret = `whsec_${randomBytes(24).toString('base64url')}`

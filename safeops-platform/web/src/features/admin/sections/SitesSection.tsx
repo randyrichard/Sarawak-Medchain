@@ -7,7 +7,7 @@ import {
   Alert, Badge, Button, Card, CardBody, CardHeader, Dialog, EmptyState, Input, Skeleton,
 } from '@/components/ui'
 import { TIMEZONES } from '@/api/reportsApi'
-import { siteInUseSummary } from '../lib'
+import { siteAllowanceLabel, siteAllowanceOf, siteInUseSummary, siteLimitNote } from '../lib'
 
 /**
  * Sites.
@@ -103,17 +103,51 @@ export function SitesSection() {
   const visible = (rows ?? []).filter((s) =>
     !needle || `${s.name} ${s.code} ${s.city}`.toLowerCase().includes(needle))
 
+  /*
+   * The plan's site allowance.
+   *
+   * Shown, and used to disable New site, so the limit is met as a sentence before it is met
+   * as a failed request. The rows are already loaded, so counting here costs nothing and
+   * needs no extra endpoint. The API refuses the write regardless of what this decides.
+   */
+  const allowance = siteAllowanceOf(rows, company?.entitlements)
+  const allowanceLabel = siteAllowanceLabel(allowance)
+  const planLabel = company ? company.plan.charAt(0).toUpperCase() + company.plan.slice(1) : ''
+
   return (
     <div className="space-y-3">
       <Card>
         <CardHeader
           title="Sites"
           subtitle="Every location this organisation operates. Deactivate rather than delete — records point here."
-          right={<Button size="sm" icon={<Plus size={14} />} onClick={openNew}>New site</Button>}
+          right={(
+            <div className="flex items-center gap-2">
+              {allowanceLabel && (
+                <Badge tone={allowance.atLimit ? 'warning' : 'neutral'}>{allowanceLabel}</Badge>
+              )}
+              <Button
+                size="sm"
+                icon={<Plus size={14} />}
+                onClick={openNew}
+                disabled={allowance.atLimit}
+                title={allowance.atLimit ? siteLimitNote(allowance, planLabel) : undefined}
+              >
+                New site
+              </Button>
+            </div>
+          )}
         />
         <CardBody className="space-y-3">
           {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
           {flash && <Alert tone="success" onDismiss={() => setFlash(null)}>{flash}</Alert>}
+
+          {/*
+            Not dismissible: it explains a disabled control, and an explanation the reader
+            can close leaves a button that looks broken for no stated reason.
+          */}
+          {allowance.atLimit && (
+            <Alert tone="warning">{siteLimitNote(allowance, planLabel)}</Alert>
+          )}
 
           <Input
             value={q}

@@ -1,30 +1,70 @@
 # PILOT PRICING NOTES
 
-Placeholders. **Nothing here is implemented in the product, and nothing here should be
-quoted to a customer yet.**
+**The prices here are hypotheses and should not be quoted to a customer yet.** The pilot
+exists to replace them with evidence. Until at least three companies have used SafeOps for
+a month and answered "what would you pay?", every number on this page is a guess.
 
-The pilot exists to replace the guesses below with evidence. Until at least three companies
-have used SafeOps for a month and answered "what would you pay?", every number on this page
-is a hypothesis.
+The *shape* of the offer, however, is now real — see below.
 
 ---
 
-## Why there is no pricing in the application
+## What the product actually enforces
 
-Deliberate, and worth keeping that way until after the pilot.
+Two plans, and the difference between them is enforced in code rather than described in a
+sales sentence. `api/src/lib/planCatalog.ts` is the only place any of it is written down.
 
-The platform console carries a plan field (`standard` / `premium`) and shows a monthly
-figure, because provisioning needs *something* to record. That is bookkeeping for you, not
-a price presented to a customer — there is no billing, no payment, no invoice, and no
-pricing page anywhere in the product.
+| | Standard — RM10,000/mo | Premium — RM15,000/mo |
+|---|---|---|
+| Active sites | 3 | unlimited |
+| Every HSE module, every user, scheduled report delivery | yes | yes |
+| API keys and webhooks | — | reserved, **but not working yet** |
+
+**Sell Premium on sites, and only on sites.** The API-key and webhook boundary is wired
+and tested, but the capability behind it is unfinished: nothing authenticates an issued
+`sk_live_` key, and no webhook has ever left the server — `testWebhook` records a success
+without making a request, on purpose, because firing at an operator-supplied URL from
+inside the network is an SSRF primitive. Quoting either as a Premium benefit today would
+be selling something that does not exist. The gate is kept because the line is in the
+right place and moving it later, once customers sit on both sides, is the expensive
+version.
+
+Both axes come from the reasoning further down this page: sites drive value and support
+load more than headcount does, and integrations are the work that does not scale. Email
+delivery is deliberately *not* an axis — it costs almost nothing and removes manual work
+on both sides, so every tier gets it.
+
+Three rules the implementation holds to, and they matter more than the numbers:
+
+1. **Limits apply when something is created, never when something is read.** A workspace
+   over its allowance keeps every site, key and record it has, and keeps them visible. A
+   safety system that hides incident history over a billing state has done something far
+   worse than fail to collect.
+2. **Turning something off is never gated.** Deactivating a site or revoking a key is how a
+   customer gets back under a limit.
+3. **Legacy and unrecognised plans get everything.** Companies that predate plans carry
+   `enterprise`; a plan key somebody typed by hand resolves to the same. A bookkeeping
+   mistake must not become that customer's outage.
+
+Changing what is on offer means editing that one file. It should not mean editing anything
+else.
+
+## What is still not implemented
+
+**There is no billing.** No payment, no invoice, no self-serve upgrade, no pricing page
+anywhere in the product. The plan is set by you in the platform console when you provision
+a company, and changed by you through the API. `subscriptionStatus` and `billingReference`
+exist on the company row so a payment provider added later has somewhere to write, and
+nothing reads them.
 
 Building billing before knowing the price would mean building it twice.
 
 ---
 
-## The shape, not the numbers
+## A three-tier shape to test against the two that exist
 
-Three tiers, sized by what actually drives cost and value:
+Not what is built. Standard and Premium above are the two the product enforces today; this
+is the shape worth *asking pilot customers about*, because a three-tier ladder is easier to
+sell against and the middle of it is roughly where Standard sits now.
 
 ### Starter
 One site. A single HSE team. Incidents, permits, corrective actions, basic reporting.

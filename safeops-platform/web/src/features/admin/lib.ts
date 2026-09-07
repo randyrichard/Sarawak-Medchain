@@ -72,6 +72,52 @@ export function siteInUseSummary(s: {
     : `Referenced by ${used.join(', ')}.`
 }
 
+/**
+ * The plan's site allowance, measured against what the console is showing.
+ *
+ * Counts active sites only, matching the server: a deactivated site keeps its history and
+ * stays listed, but it is not a location anyone operates, so it does not consume the
+ * allowance. Getting this wrong in either direction is worse than not showing it - a
+ * button enabled at the limit fails on click, and one disabled below it blocks work the
+ * customer has paid for.
+ *
+ * This decides what to show. The API decides what is allowed, and refuses the write
+ * whatever this returns.
+ */
+export interface SiteAllowance {
+  /** null when the plan sets no limit. */
+  limit: number | null
+  used: number
+  atLimit: boolean
+}
+
+export function siteAllowanceOf(
+  sites: { active: boolean }[] | null,
+  entitlements: { maxSites: number | null } | undefined,
+): SiteAllowance {
+  const limit = entitlements?.maxSites ?? null
+  const used = (sites ?? []).filter((s) => s.active).length
+  return { limit, used, atLimit: limit !== null && used >= limit }
+}
+
+/** "2 of 3 sites", or nothing at all when the plan does not limit them. */
+export function siteAllowanceLabel(a: SiteAllowance): string | null {
+  return a.limit === null ? null : `${a.used} of ${a.limit} sites`
+}
+
+/**
+ * Why the New site button is off, and what to do about it.
+ *
+ * Deliberately the same three facts the API's refusal carries - the plan, the number, and
+ * the two ways out - so an administrator who hits this in the console and an integrator
+ * who hits it through the API are told the same thing.
+ */
+export function siteLimitNote(a: SiteAllowance, planLabel: string): string {
+  return `${planLabel} includes ${a.limit} active ${a.limit === 1 ? 'site' : 'sites'}, `
+    + `and this workspace has ${a.used}. Deactivate a site you no longer operate, or move `
+    + 'to Premium for unlimited sites.'
+}
+
 /** The same, for a department. */
 export function departmentInUseSummary(d: {
   inUse: { incidents: number; visitors: number; teams: number }

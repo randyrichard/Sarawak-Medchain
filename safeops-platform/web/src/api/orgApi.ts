@@ -1,5 +1,5 @@
 import { request, qs } from './http'
-import type { Company, Department, Site, Team } from './types'
+import type { Company, Department, PlanEntitlements, Site, Team } from './types'
 
 /**
  * HTTP client for the organisation tree.
@@ -15,6 +15,7 @@ interface ServerCompany {
   plan: string
   industry: string
   logoInitials: string
+  entitlements?: PlanEntitlements
 }
 
 interface ServerSite {
@@ -32,7 +33,14 @@ function toCompany(c: ServerCompany): Company {
     id: c.id,
     name: c.name,
     industry: c.industry,
-    plan: (c.plan as Company['plan']) ?? 'enterprise',
+    plan: c.plan ?? '',
+    /*
+     * An API that has not been redeployed yet does not send this. Falling back to no
+     * limits keeps that customer working exactly as they did rather than showing them a
+     * limit nobody set - and the API is the enforcement either way, so an over-permissive
+     * guess in the browser buys nothing but a clearer error.
+     */
+    entitlements: c.entitlements ?? { maxSites: null, integrations: true },
     logoInitials: c.logoInitials,
   }
 }

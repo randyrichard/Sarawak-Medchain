@@ -65,6 +65,9 @@ platformRouter.get('/me', async (req, res, next) => {
           summary: p.summary,
           monthlyPriceMyr: p.monthlyPriceMyr,
           monthlyPrice: formatMyr(p.monthlyPriceMyr),
+          // What the operator is actually selling, so the console shows the difference
+          // between two plans rather than two prices.
+          entitlements: p.entitlements,
         }))
         : [],
     })

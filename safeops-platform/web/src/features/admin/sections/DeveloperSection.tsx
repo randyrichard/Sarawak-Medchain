@@ -15,6 +15,34 @@ import { cn } from '@/lib/cn'
 
 type Tab = 'keys' | 'webhooks' | 'usage' | 'docs'
 
+/**
+ * Why creating an integration is off, when it is.
+ *
+ * API keys and webhooks sit on the Premium side of the line. What is gated is issuing a
+ * new one: the panels still list what a workspace holds, and still revoke and disable -
+ * a plan must never be able to trap a customer with a credential they cannot turn off.
+ * The API enforces the same split; this only explains it before the click.
+ *
+ * Deliberately not an upsell. Neither capability is finished - see planCatalog.ts - and
+ * pushing somebody towards a paid plan to reach something that does not work yet is the
+ * one thing this notice must not do.
+ */
+function PlanGate({ thing, planLabel }: { thing: string; planLabel: string }) {
+  return (
+    <Alert tone="info" title={`${thing} are not available on ${planLabel}`}>
+      Anything already created here keeps working, and you can still revoke or disable it —
+      only creating a new one is unavailable.
+    </Alert>
+  )
+}
+
+/** The stored plan key, title-cased for a sentence. */
+function usePlanLabel(): string {
+  const { company } = useOrg()
+  if (!company?.plan) return 'your current plan'
+  return company.plan.charAt(0).toUpperCase() + company.plan.slice(1)
+}
+
 export function DeveloperSection() {
   const [tab, setTab] = useState<Tab>('keys')
   const tabs: TabItem<Tab>[] = [
@@ -42,6 +70,9 @@ function KeysPanel() {
   const [newOpen, setNewOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const integrations = company?.entitlements.integrations ?? true
+  const planLabel = usePlanLabel()
+
   const load = () => api.adminListApiKeys(companyId).then(setKeys)
   useEffect(() => { load() }, [])
 
@@ -54,9 +85,17 @@ function KeysPanel() {
   return (
     <div className="space-y-3">
       {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
+      {!integrations && <PlanGate thing="API keys" planLabel={planLabel} />}
       <div className="flex items-center justify-between">
         <p className="text-sm text-ink-2">Signed keys for the SafeOps REST API. Treat them like passwords.</p>
-        <Button size="sm" icon={<Plus size={13} />} onClick={() => setNewOpen(true)}>Generate key</Button>
+        <Button
+          size="sm"
+          icon={<Plus size={13} />}
+          onClick={() => setNewOpen(true)}
+          disabled={!integrations}
+        >
+          Generate key
+        </Button>
       </div>
       <Card>
         {keys === null ? <div className="space-y-3 p-5">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div> : (
@@ -164,6 +203,9 @@ function WebhooksPanel() {
   const [newOpen, setNewOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const integrations = company?.entitlements.integrations ?? true
+  const planLabel = usePlanLabel()
+
   const load = () => api.adminListWebhooks(companyId).then(setHooks)
   useEffect(() => { load() }, [])
 
@@ -175,9 +217,17 @@ function WebhooksPanel() {
   return (
     <div className="space-y-3">
       {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
+      {!integrations && <PlanGate thing="Webhooks" planLabel={planLabel} />}
       <div className="flex items-center justify-between">
         <p className="text-sm text-ink-2">Push real-time events to your endpoints over HTTPS.</p>
-        <Button size="sm" icon={<Plus size={13} />} onClick={() => setNewOpen(true)}>Add webhook</Button>
+        <Button
+          size="sm"
+          icon={<Plus size={13} />}
+          onClick={() => setNewOpen(true)}
+          disabled={!integrations}
+        >
+          Add webhook
+        </Button>
       </div>
       {hooks === null ? <Skeleton className="h-40 w-full rounded-xl" /> : hooks.map((wh) => (
         <Card key={wh.id} className="p-4">

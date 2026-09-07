@@ -1,6 +1,7 @@
 import type { PrismaClient } from '@prisma/client'
 // `Caller` is the verified identity shape shared by every module — see permitService.
 import { type Caller } from './incidentService.js'
+import { planFor } from './planCatalog.js'
 
 export class OrgError extends Error {
   constructor(public code: string, message: string, public status = 400) {
@@ -37,10 +38,26 @@ export class OrgService {
   async listCompanies(caller: Caller) {
     const ids = this.companyIds(caller)
     if (ids.length === 0) return []
-    return this.db.company.findMany({
+    const rows = await this.db.company.findMany({
       where: { id: { in: ids } },
       orderBy: { name: 'asc' },
+      /*
+       * Named rather than taking the whole row. Every signed-in member receives this, and
+       * the row also carries subscriptionStatus, billingReference and who provisioned the
+       * company - commercial state that belongs to the platform console, not to a safety
+       * officer's company switcher.
+       */
+      select: { id: true, name: true, industry: true, logoInitials: true, plan: true },
     })
+    /*
+     * The plan's limits travel with the company.
+     *
+     * Sent as capabilities rather than left for the client to infer from the plan key,
+     * because a client that branches on `plan === 'premium'` is a client that silently
+     * stops working the day a plan is renamed or added. The console asks what it may do,
+     * not what the customer is called - and the server stays the only place that decides.
+     */
+    return rows.map((c) => ({ ...c, entitlements: planFor(c.plan).entitlements }))
   }
 
   async listSites(caller: Caller, companyId: string) {

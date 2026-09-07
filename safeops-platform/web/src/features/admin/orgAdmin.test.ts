@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   canResendInvitation, departmentInUseSummary, invitationDelivery, invitationLink,
-  invitationState, siteInUseSummary,
+  invitationState, siteAllowanceLabel, siteAllowanceOf, siteInUseSummary, siteLimitNote,
 } from './lib'
 
 /**
@@ -128,5 +128,83 @@ describe('canResendInvitation', () => {
     // Past this the server refuses, so offering the button would be a lie.
     expect(canResendInvitation({ state: 'pending', attempts: 5, maxSends: 5 })).toBe(false)
     expect(canResendInvitation({ state: 'pending', attempts: 4, maxSends: 5 })).toBe(true)
+  })
+})
+
+/**
+ * The plan's site allowance.
+ *
+ * This decides whether New site is enabled, and it has to agree with the API's own count
+ * or the button lies in one direction or the other. The two cases that matter are the ones
+ * that are easy to get wrong: a deactivated site must not consume the allowance, and a
+ * workspace already above its limit must be reported honestly rather than clamped - it is
+ * a real state, reached by downgrading a customer or by grandfathering one in.
+ */
+describe('siteAllowanceOf', () => {
+  const sites = (active: number, inactive = 0) => [
+    ...Array.from({ length: active }, () => ({ active: true })),
+    ...Array.from({ length: inactive }, () => ({ active: false })),
+  ]
+
+  it('reports no limit when the plan sets none', () => {
+    const a = siteAllowanceOf(sites(9), { maxSites: null })
+    expect(a).toEqual({ limit: null, used: 9, atLimit: false })
+    expect(siteAllowanceLabel(a)).toBeNull()
+  })
+
+  it('counts up to the limit without reaching it', () => {
+    const a = siteAllowanceOf(sites(2), { maxSites: 3 })
+    expect(a.atLimit).toBe(false)
+    expect(siteAllowanceLabel(a)).toBe('2 of 3 sites')
+  })
+
+  it('is at the limit on the last one, not after it', () => {
+    // The third site is allowed; the fourth is what gets refused. Off by one here means
+    // either selling three and delivering two, or delivering four.
+    expect(siteAllowanceOf(sites(3), { maxSites: 3 }).atLimit).toBe(true)
+  })
+
+  it('does not count deactivated sites against the allowance', () => {
+    // How a customer at the limit opens a new site without calling anyone: retire the one
+    // that closed. The server counts the same way.
+    const a = siteAllowanceOf(sites(2, 5), { maxSites: 3 })
+    expect(a.used).toBe(2)
+    expect(a.atLimit).toBe(false)
+  })
+
+  it('reports a workspace above its limit as it is', () => {
+    // Reached by downgrading someone, or by a legacy tenant moving onto a plan. Nothing is
+    // taken away - the count is just told truthfully and the next one is refused.
+    const a = siteAllowanceOf(sites(6), { maxSites: 3 })
+    expect(a.used).toBe(6)
+    expect(a.atLimit).toBe(true)
+    expect(siteAllowanceLabel(a)).toBe('6 of 3 sites')
+  })
+
+  it('treats a still-loading list as empty rather than as at the limit', () => {
+    // rows is null until the fetch lands. Reading that as "at the limit" would disable the
+    // button for the first second of every visit.
+    expect(siteAllowanceOf(null, { maxSites: 3 })).toEqual({ limit: 3, used: 0, atLimit: false })
+  })
+
+  it('assumes no limit when the server sent no entitlements', () => {
+    // An API that has not been redeployed yet. The write is refused server-side either way,
+    // so the browser guessing generously only ever costs a clearer error message.
+    expect(siteAllowanceOf(sites(4), undefined).atLimit).toBe(false)
+  })
+})
+
+describe('siteLimitNote', () => {
+  it('names the plan, the number, and both ways out', () => {
+    const note = siteLimitNote({ limit: 3, used: 3, atLimit: true }, 'Standard')
+    expect(note).toContain('Standard')
+    expect(note).toContain('3 active sites')
+    expect(note).toContain('Deactivate')
+    expect(note).toContain('Premium')
+  })
+
+  it('reads correctly for a one-site plan', () => {
+    expect(siteLimitNote({ limit: 1, used: 1, atLimit: true }, 'Starter'))
+      .toContain('1 active site,')
   })
 })

@@ -4,7 +4,7 @@ import {
   platformApi,
   type PlatformCompany, type ProvisionResult,
 } from '@/api/platformApi'
-import { ApiError } from '@/api/types'
+import { ApiError, type PlanEntitlements } from '@/api/types'
 import {
   Alert, Badge, Button, Card, CardBody, CardHeader, Dialog, EmptyState, Input, Skeleton,
 } from '@/components/ui'
@@ -31,6 +31,12 @@ import { usePlatformInfo } from './usePlatformAdmin'
 const EMPTY = {
   companyName: '', industry: '', plan: '', adminName: '', adminEmail: '',
   siteName: '', siteCity: '', siteTimezone: 'Asia/Kuching',
+}
+
+/** A plan's enforced limits, as a line an operator can read out over the phone. */
+function planLimits(e: PlanEntitlements): string {
+  const sites = e.maxSites === null ? 'Unlimited sites' : `Up to ${e.maxSites} active sites`
+  return `${sites} · API keys and webhooks ${e.integrations ? 'included' : 'not included'}`
 }
 
 export function PlatformPage() {
@@ -264,6 +270,16 @@ export function PlatformPage() {
               </select>
               {/* What the customer is buying, so the operator picks by scope not by name. */}
               {selectedPlan && <span className="block text-2xs text-muted">{selectedPlan.summary}</span>}
+              {/*
+                The same thing again as the two facts the product actually enforces. The
+                summary sells; this is what the API will and will not allow, and it is the
+                half an operator needs when the customer asks what the difference is.
+              */}
+              {selectedPlan && (
+                <span className="block text-2xs font-semibold text-ink-2">
+                  {planLimits(selectedPlan.entitlements)}
+                </span>
+              )}
             </label>
           </div>
 

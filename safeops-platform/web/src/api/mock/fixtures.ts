@@ -26,8 +26,12 @@ const INCLUDE = import.meta.env.DEV || import.meta.env.VITE_DEMO_LOGINS === 'tru
 // primary demo tenant; Kenyalang Construction proves cross-tenant boundaries.
 
 export const COMPANIES: Company[] = INCLUDE ? [
-  { id: 'big', name: 'Borneo Industrial Group', industry: 'Diversified Industrial', plan: 'enterprise', logoInitials: 'BI' },
-  { id: 'kcs', name: 'Kenyalang Construction Sdn Bhd', industry: 'Construction', plan: 'standard', logoInitials: 'KC' },
+  // Entitlements are stated here rather than derived from the plan key, because this file
+  // is the credential-free demo's stand-in for the server and the server is what decides.
+  // Borneo Industrial is a legacy enterprise tenant, so nothing is limited; Kenyalang is on
+  // Standard with two of its three sites in use.
+  { id: 'big', name: 'Borneo Industrial Group', industry: 'Diversified Industrial', plan: 'enterprise', entitlements: { maxSites: null, integrations: true }, logoInitials: 'BI' },
+  { id: 'kcs', name: 'Kenyalang Construction Sdn Bhd', industry: 'Construction', plan: 'standard', entitlements: { maxSites: 3, integrations: false }, logoInitials: 'KC' },
 ] : []
 
 export const SITES: Site[] = INCLUDE ? [

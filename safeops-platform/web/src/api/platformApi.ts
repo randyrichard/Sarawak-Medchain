@@ -1,4 +1,5 @@
 import { request } from './http'
+import type { PlanEntitlements } from './types'
 
 /**
  * The SafeOps platform console.
@@ -16,6 +17,8 @@ export interface PlatformPlan {
   monthlyPriceMyr: number
   /** Pre-formatted server-side, so the console and any future invoice agree. */
   monthlyPrice: string
+  /** What the plan permits, so the operator picks by what differs rather than by price. */
+  entitlements: PlanEntitlements
 }
 
 export interface PlatformCompany {
