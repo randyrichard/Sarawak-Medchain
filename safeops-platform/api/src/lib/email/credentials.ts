@@ -147,3 +147,63 @@ export function resendPlaceholderProblem(key: string): string | null {
   }
   return null
 }
+
+/** The environment fields that decide whether mail can be sent. */
+export interface MailSettings {
+  RESEND_API_KEY?: string
+  SMTP_URL?: string
+  REPORT_EMAIL_FROM?: string
+}
+
+/**
+ * Which transport a configuration selects, carrying the values that made it selectable so
+ * the caller needs no assertion to use them.
+ */
+export type MailTransportChoice =
+  | { transport: 'resend'; key: string; from: string; problem: null }
+  | { transport: 'smtp'; url: string; from: string; problem: null }
+  | { transport: null; problem: string | null }
+
+/**
+ * The one place that decides whether a deployment can send mail.
+ *
+ * It was two places, and they disagreed. `env.mailConfigured` asked only whether the
+ * settings were present - a transport and a sender - while the provider factory also ran
+ * the checks above. On a deployment whose SMTP password was still `APP_PASSWORD` the first
+ * said yes and the second said no, so the Reports screen was told mail was wired while
+ * every send was correctly refused. That is the exact failure the checks above exist to
+ * prevent, surviving in the one code path that never asked them.
+ *
+ * Resend wins when both are configured, because an API key is not set by accident.
+ */
+export function mailTransportChoice(settings: MailSettings): MailTransportChoice {
+  const { RESEND_API_KEY, SMTP_URL, REPORT_EMAIL_FROM } = settings
+
+  if (!REPORT_EMAIL_FROM) {
+    return {
+      transport: null,
+      // Only a problem if somebody meant to send mail. A deployment with no transport at
+      // all has not misconfigured anything.
+      problem: RESEND_API_KEY || SMTP_URL
+        ? 'A mail transport is configured but REPORT_EMAIL_FROM is not, so every message '
+          + 'would be rejected for having no sender.'
+        : null,
+    }
+  }
+
+  if (RESEND_API_KEY) {
+    const problem = resendPlaceholderProblem(RESEND_API_KEY)
+    return problem
+      ? { transport: null, problem }
+      : { transport: 'resend', key: RESEND_API_KEY, from: REPORT_EMAIL_FROM, problem: null }
+  }
+
+  if (SMTP_URL) {
+    const problem = smtpPlaceholderProblem(SMTP_URL)
+    return problem
+      ? { transport: null, problem }
+      : { transport: 'smtp', url: SMTP_URL, from: REPORT_EMAIL_FROM, problem: null }
+  }
+
+  return { transport: null, problem: null }
+}

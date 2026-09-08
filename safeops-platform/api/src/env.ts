@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import { z } from 'zod'
+import { mailTransportChoice } from './lib/email/credentials.js'
 
 /**
  * Environment contract. The process refuses to start if anything required is missing or
@@ -480,8 +481,15 @@ export const env = {
   jwtPrivateKey: decodeKey(raw.JWT_PRIVATE_KEY_B64, 'JWT_PRIVATE_KEY_B64'),
   jwtPublicKey: decodeKey(raw.JWT_PUBLIC_KEY_B64, 'JWT_PUBLIC_KEY_B64'),
   corsOrigins: raw.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean),
-  /** One place that decides whether reports can actually be emailed. */
-  mailConfigured: Boolean((raw.RESEND_API_KEY || raw.SMTP_URL) && raw.REPORT_EMAIL_FROM),
+  /**
+   * Whether reports can actually be emailed, and why not when they cannot.
+   *
+   * This used to test only that the settings were present, which is a different question
+   * and gave a different answer: a deployment whose SMTP password was still the template
+   * value reported mail as configured here while the provider factory correctly refused to
+   * build one. Both now ask credentials.ts, so they cannot disagree again.
+   */
+  mail: mailTransportChoice(raw),
   /**
    * The one definition of "where this app lives", used by every outbound link.
    *

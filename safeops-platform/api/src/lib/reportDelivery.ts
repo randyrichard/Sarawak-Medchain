@@ -1,5 +1,7 @@
 import { env } from '../env.js'
-import { EmailProviderError, getEmailProvider, headerSafe } from './email/index.js'
+import {
+  EmailProviderError, emailConfiguration, getEmailProvider, headerSafe,
+} from './email/index.js'
 import type { ReportData } from './reportService.js'
 import type { RenderedReport } from './reportPdf.js'
 
@@ -42,7 +44,14 @@ export interface DeliveryResult {
 }
 
 export function mailProviderConfigured(): boolean {
-  return env.mailConfigured
+  /*
+   * Asked of the provider rather than of the environment. These were two different
+   * questions with two different answers - the environment said a transport was set, the
+   * provider said its credential was a placeholder - and this is the one the Reports screen
+   * shows, so it was the one telling somebody mail worked when it did not. Going through
+   * the factory also means a test that stubs the provider gets a consistent answer here.
+   */
+  return getEmailProvider() !== null
 }
 
 /**
@@ -220,9 +229,17 @@ export async function sendDeliveryPayload(input: {
     return {
       ...base,
       note: `Report generated (${pdf.fileName}, ${KB(pdf.bytes.length)}) for ${usable.length} `
-        + `recipient${usable.length === 1 ? '' : 's'}, but no email provider is configured. `
-        + 'Set RESEND_API_KEY (or SMTP_URL) and REPORT_EMAIL_FROM to enable delivery. '
-        + 'The PDF is available to download from the run history.'
+        + `recipient${usable.length === 1 ? '' : 's'}, but it could not be emailed. `
+        /*
+         * The specific reason when there is one. Telling somebody to "set SMTP_URL" on a
+         * deployment that has set SMTP_URL - and whose only fault is the password inside it
+         * - sends them to check a line that is already there and reads as a bug in the
+         * product rather than a value they still have to fill in.
+         */
+        + (emailConfiguration().problem
+          ?? 'No email provider is configured. Set RESEND_API_KEY (or SMTP_URL) and '
+            + 'REPORT_EMAIL_FROM to enable delivery.')
+        + ' The PDF is available to download from the run history.'
         + (malformed.length ? ` ${malformed.length} address(es) were not usable.` : ''),
       rejected: [...malformed, ...usable.map((r) => r.email)],
     }

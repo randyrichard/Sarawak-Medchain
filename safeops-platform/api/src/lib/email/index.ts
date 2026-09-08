@@ -1,7 +1,7 @@
 import { env } from '../../env.js'
 import { ResendEmailProvider } from './resendProvider.js'
 import { SmtpEmailProvider } from './smtpProvider.js'
-import { resendPlaceholderProblem, smtpPlaceholderProblem } from './credentials.js'
+import { mailTransportChoice } from './credentials.js'
 import type { EmailProvider } from './provider.js'
 
 export * from './provider.js'
@@ -31,50 +31,28 @@ export function getEmailProvider(): EmailProvider | null {
  * a placeholder" sends them to the line that is actually wrong.
  */
 export function providerOrProblem(): { provider: EmailProvider | null; problem: string | null } {
-  if (!env.REPORT_EMAIL_FROM) {
+  /*
+   * The choice is made in credentials.ts, not here, because it was also being made in
+   * env.ts and the two disagreed - see mailTransportChoice. A credential nobody replaced is
+   * not a configured transport: returning a provider for one is what made the failure
+   * invisible, with invitations and resets reported as emailed and the link withheld, and
+   * the refusal surfacing one message at a time at the relay.
+   */
+  const choice = mailTransportChoice(env)
+
+  if (choice.transport === 'resend') {
     return {
-      provider: null,
-      problem: env.RESEND_API_KEY || env.SMTP_URL
-        ? 'A mail transport is configured but REPORT_EMAIL_FROM is not, so every message '
-          + 'would be rejected for having no sender.'
-        : null,
+      provider: new ResendEmailProvider(choice.key, choice.from, env.MAIL_REPLY_TO),
+      problem: null,
     }
   }
-
-  if (env.RESEND_API_KEY) {
-    const problem = resendPlaceholderProblem(env.RESEND_API_KEY)
-    return problem
-      ? { provider: null, problem }
-      : {
-          provider: new ResendEmailProvider(
-            env.RESEND_API_KEY, env.REPORT_EMAIL_FROM, env.MAIL_REPLY_TO,
-          ),
-          problem: null,
-        }
+  if (choice.transport === 'smtp') {
+    return {
+      provider: new SmtpEmailProvider(choice.url, choice.from, env.MAIL_REPLY_TO),
+      problem: null,
+    }
   }
-
-  if (env.SMTP_URL) {
-    /*
-     * A credential nobody replaced is not a configured transport.
-     *
-     * Returning a provider here is what made the failure invisible: the product believed it
-     * could send, so invitations and resets were reported as emailed and the link was not
-     * offered, and the failure surfaced one message at a time at the relay. Reported as
-     * unconfigured, every one of those paths already does the right thing - see
-     * credentials.ts for why this is not a boot refusal.
-     */
-    const problem = smtpPlaceholderProblem(env.SMTP_URL)
-    return problem
-      ? { provider: null, problem }
-      : {
-          provider: new SmtpEmailProvider(
-            env.SMTP_URL, env.REPORT_EMAIL_FROM, env.MAIL_REPLY_TO,
-          ),
-          problem: null,
-        }
-  }
-
-  return { provider: null, problem: null }
+  return { provider: null, problem: choice.problem }
 }
 
 /** Test seam. Pass null to simulate an unconfigured deployment, undefined to restore. */
