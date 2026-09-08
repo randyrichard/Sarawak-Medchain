@@ -12,6 +12,7 @@ import { usePeople } from '@/features/incidents/lib'
 import { Alert, Button, Dialog, Input, SuggestSelect, Select, Textarea } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { PERMIT_TYPE_COLOR } from '../lib'
+import { PeopleOptions } from '@/features/org/PeopleOptions'
 
 /** Local datetime string for <input type="datetime-local">. */
 function localInput(d: Date) {
@@ -142,7 +143,7 @@ export function NewPermitDialog({
           <Input label="Exact location" required value={location} onChange={(e) => setLocation(e.target.value)}
             placeholder="e.g. Jetty 2, loading arm 3" />
           <Select label="Applicant" value={applicant} onChange={(e) => setApplicant(e.target.value)}>
-            {people.map((p) => <option key={p}>{p}</option>)}
+            <PeopleOptions people={people} />
           </Select>
           <SuggestSelect
             options={contractorCompanies}

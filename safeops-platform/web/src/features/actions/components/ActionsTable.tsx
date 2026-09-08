@@ -12,6 +12,7 @@ import { ProgressLine } from './ProgressLine'
 import { canEditItem, DERIVED_META, dueLabel, exportCsv, isManager } from '../lib'
 import { usePeople } from '@/features/incidents/lib'
 import { cn } from '@/lib/cn'
+import { PeopleOptions } from '@/features/org/PeopleOptions'
 
 type SortKey = 'due' | 'priority' | 'status' | 'owner' | 'site'
 type GroupKey = 'none' | 'site' | 'owner' | 'status' | 'priority'
@@ -223,7 +224,7 @@ export function ActionsTable({
       >
         <Select label="New owner" value={newOwner} onChange={(e) => setNewOwner(e.target.value)} hint="Each owner is notified.">
           <option value="" disabled>Select…</option>
-          {people.map((p) => <option key={p}>{p}</option>)}
+          <PeopleOptions people={people} />
         </Select>
       </Dialog>
     </>

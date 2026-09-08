@@ -9,6 +9,7 @@ import type {
 import { useActor, usePeople, SITE_COORDS } from '@/features/incidents/lib'
 import { Alert, Badge, Button, Checkbox, Input } from '@/components/ui'
 import { cn } from '@/lib/cn'
+import { PeopleOptions } from '@/features/org/PeopleOptions'
 
 interface DraftState {
   answers: Record<string, { result?: AuditAnswerResult; comment?: string; photoCount?: number }>
@@ -217,7 +218,7 @@ export function AuditRunner({
                               aria-label="Action owner"
                             >
                               <option value="" disabled>Action owner…</option>
-                              {people.map((p) => <option key={p}>{p}</option>)}
+                              <PeopleOptions people={people} />
                             </select>
                           </div>
                           <button

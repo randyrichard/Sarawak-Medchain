@@ -7,6 +7,7 @@ import { useDepartments } from '@/features/org/departments'
 import { usePeople, useActor } from '@/features/incidents/lib'
 import { Alert, Button, Dialog, Input, SuggestSelect, PersonRegisterOptions, Select, Textarea } from '@/components/ui'
 import { listEquipmentHolders, type EquipmentHolderOption } from '@/api/equipmentHolders'
+import { PeopleOptions } from '@/features/org/PeopleOptions'
 
 export function NewAssetDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
   const { company, sites } = useOrg()
@@ -146,7 +147,7 @@ export function NewAssetDialog({ open, onClose, onCreated }: { open: boolean; on
           />
           <Select label="Owner" required value={owner} onChange={(e) => setOwner(e.target.value)} hint="Becomes the default inspector.">
             <option value="" disabled>Select…</option>
-            {people.map((p) => <option key={p}>{p}</option>)}
+            <PeopleOptions people={people} />
           </Select>
         </div>
         <Input label="Exact location" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g. Compressor room, bay 2" />

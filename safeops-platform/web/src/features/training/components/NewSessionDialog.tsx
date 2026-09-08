@@ -7,6 +7,7 @@ import { useOrg } from '@/features/org/OrgContext'
 import { usePeople, useActor } from '@/features/incidents/lib'
 import { Alert, Avatar, Badge, Button, Dialog, Input, Select } from '@/components/ui'
 import { cn } from '@/lib/cn'
+import { PeopleOptions } from '@/features/org/PeopleOptions'
 
 export function NewSessionDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
   const { company, sites } = useOrg()
@@ -80,7 +81,7 @@ export function NewSessionDialog({ open, onClose, onCreated }: { open: boolean; 
         <div className="grid grid-cols-2 gap-3">
           <Select label="Trainer" required value={trainer} onChange={(e) => setTrainer(e.target.value)}>
             <option value="" disabled>Select…</option>
-            {people.map((p) => <option key={p}>{p}</option>)}
+            <PeopleOptions people={people} />
             <option>MRC Trainer</option>
           </Select>
           <Select label="Delivery" value={mode} onChange={(e) => setMode(e.target.value as DeliveryMode)}>

@@ -18,6 +18,7 @@ import { AssetPhotos } from './AssetPhotos'
 import { MaintenancePanel } from './MaintenancePanel'
 import { AssetTimeline } from './AssetTimeline'
 import { cn } from '@/lib/cn'
+import { PeopleOptions } from '@/features/org/PeopleOptions'
 
 interface Profile {
   asset: AssetView
@@ -296,7 +297,7 @@ export function AssetDrawer({
           {error && <Alert tone="critical">{error}</Alert>}
           <Input label="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           <Select label="Inspector" value={inspector} onChange={(e) => setInspector(e.target.value)} hint="They're notified immediately.">
-            {people.map((p) => <option key={p}>{p}</option>)}
+            <PeopleOptions people={people} />
           </Select>
         </div>
       </Dialog>

@@ -7,6 +7,7 @@ import { useOrg } from '@/features/org/OrgContext'
 import { useDepartments } from '@/features/org/departments'
 import { usePeople, useActor } from '@/features/incidents/lib'
 import { Alert, Badge, Button, Dialog, Input, SuggestSelect, Select, Textarea } from '@/components/ui'
+import { PeopleOptions } from '@/features/org/PeopleOptions'
 
 export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
   const { company, sites } = useOrg()
@@ -135,7 +136,7 @@ export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; o
               />
               <Select label="Lead auditor" required value={leadAuditor} onChange={(e) => setLeadAuditor(e.target.value)}>
                 <option value="" disabled>Select…</option>
-                {people.map((p) => <option key={p}>{p}</option>)}
+                <PeopleOptions people={people} />
               </Select>
             </div>
             <div>

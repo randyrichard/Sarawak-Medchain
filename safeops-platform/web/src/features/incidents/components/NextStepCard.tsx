@@ -6,6 +6,7 @@ import type { AdvancePayload, Incident, IncidentSeverity, RiskRating } from '@/a
 import { useOrg } from '@/features/org/OrgContext'
 import { Alert, Button, Card, CardBody, CardHeader, Checkbox, Dialog, Select, Textarea } from '@/components/ui'
 import { usePeople, useActor } from '../lib'
+import { PeopleOptions } from '@/features/org/PeopleOptions'
 
 const MANAGE = ['admin', 'hse_manager', 'safety_officer']
 const REVIEW = ['admin', 'hse_manager']
@@ -143,7 +144,7 @@ export function NextStepCard({ incident, onUpdate }: { incident: Incident; onUpd
           {incident.stage === 'assessment' && (
             <Select label="Lead investigator" required value={investigator} onChange={(e) => setInvestigator(e.target.value)} hint="They'll be notified immediately.">
               <option value="" disabled>Select…</option>
-              {people.map((p) => <option key={p}>{p}</option>)}
+              <PeopleOptions people={people} />
             </Select>
           )}
           {incident.stage === 'investigation' && (

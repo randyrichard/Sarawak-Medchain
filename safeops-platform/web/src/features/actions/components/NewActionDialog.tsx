@@ -6,6 +6,7 @@ import { useOrg } from '@/features/org/OrgContext'
 import { useDepartments } from '@/features/org/departments'
 import { usePeople, useActor } from '@/features/incidents/lib'
 import { Alert, Button, Checkbox, Dialog, Input, SuggestSelect, Select, Textarea } from '@/components/ui'
+import { PeopleOptions } from '@/features/org/PeopleOptions'
 
 /** Standalone corrective action (audit finding, inspection, MOC…). */
 export function NewActionDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
@@ -89,11 +90,11 @@ export function NewActionDialog({ open, onClose, onCreated }: { open: boolean; o
         <div className="grid grid-cols-2 gap-3">
           <Select label="Owner" required value={owner} onChange={(e) => setOwner(e.target.value)}>
             <option value="" disabled>Select…</option>
-            {people.map((p) => <option key={p}>{p}</option>)}
+            <PeopleOptions people={people} />
           </Select>
           <Select label="Reviewer" value={reviewer} onChange={(e) => setReviewer(e.target.value)} hint="Verifies completion evidence.">
             <option value="">HSE Manager (default)</option>
-            {people.map((p) => <option key={p}>{p}</option>)}
+            <PeopleOptions people={people} />
           </Select>
         </div>
         <div className="grid grid-cols-2 items-end gap-3">

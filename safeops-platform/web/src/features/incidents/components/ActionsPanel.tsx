@@ -9,6 +9,7 @@ import {
 } from '@/components/ui'
 import { usePeople, useActor } from '../lib'
 import { ListChecks } from 'lucide-react'
+import { PeopleOptions } from '@/features/org/PeopleOptions'
 
 const statusKind = (s: IncidentAction['status']) =>
   s === 'Verified' ? 'good' : s === 'Completed' ? 'info' : s === 'In Progress' ? 'warning' : 'serious'
@@ -177,7 +178,7 @@ export function ActionsPanel({ incident, onUpdate }: { incident: Incident; onUpd
           <div className="grid grid-cols-2 gap-3">
             <Select label="Owner" required value={owner} onChange={(e) => setOwner(e.target.value)}>
               <option value="" disabled>Select…</option>
-              {people.map((p) => <option key={p}>{p}</option>)}
+              <PeopleOptions people={people} />
             </Select>
             <Input label="Due date" required type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
           </div>

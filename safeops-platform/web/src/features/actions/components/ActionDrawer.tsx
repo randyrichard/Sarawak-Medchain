@@ -18,6 +18,7 @@ import { usePeople } from '@/features/incidents/lib'
 import { ProgressLine } from './ProgressLine'
 import { canEditItem, canVerifyItem, DERIVED_META, dueLabel, isManager } from '../lib'
 import { cn } from '@/lib/cn'
+import { PeopleOptions } from '@/features/org/PeopleOptions'
 
 export function ActionDrawer({
   item, actor, readOnly, onClose, onChanged,
@@ -458,11 +459,11 @@ export function ActionDrawer({
           {error && <Alert tone="critical">{error}</Alert>}
           <div className="grid grid-cols-2 gap-3">
             <Select label="Owner" value={owner} onChange={(e) => setOwner(e.target.value)}>
-              {people.map((p) => <option key={p}>{p}</option>)}
+              <PeopleOptions people={people} />
             </Select>
             <Select label="Reviewer" value={reviewer} onChange={(e) => setReviewer(e.target.value)}>
               <option value="">None</option>
-              {people.map((p) => <option key={p}>{p}</option>)}
+              <PeopleOptions people={people} />
             </Select>
           </div>
           <div className="grid grid-cols-2 gap-3">
