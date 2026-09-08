@@ -77,17 +77,56 @@ export function setAccessToken(token: string | null, expiresAt?: string) {
   accessExpiresAt = expiresAt ? Date.parse(expiresAt) : 0
 }
 
+/** Who a token belongs to, as the server states it in an auth response. */
+export interface SessionIdentity {
+  id: string
+  email: string
+  name: string
+  title: string | null
+  mustChangePassword?: boolean
+}
+
 interface AuthPayload {
   accessToken: string
   accessExpiresAt: string
-  user: {
-    id: string
-    email: string
-    name: string
-    title: string | null
-    mustChangePassword?: boolean
-  }
+  user: SessionIdentity
 }
+
+/**
+ * Whose session the tokens in this module belong to.
+ *
+ * The access token is memory-only and therefore per-tab, but the refresh token is an
+ * httpOnly cookie and therefore shared by every tab on the origin. So signing in as
+ * somebody else anywhere in the browser silently re-points every other tab: the next
+ * refresh returns a token for the new subject, and until this was recorded, nothing
+ * compared it to whoever the tab believed it was showing.
+ *
+ * What that looked like was a screen drawn for one person and answered for another - the
+ * full administrator navigation and avatar over an account with none of it, every click
+ * refused with no explanation. Not an escalation; the server authorised the token it was
+ * given and refused correctly. A lie told by the client about who it was.
+ */
+let sessionUserId: string | null = null
+
+/** Told when a refresh comes back for somebody else. Registered by AuthProvider. */
+let identityListener: (() => void) | null = null
+
+/**
+ * Subscribes to the session changing underneath this tab. One listener, because there is
+ * one place that owns session state; a second subscriber would mean two.
+ */
+export function onSessionIdentityChange(listener: (() => void) | null) {
+  identityListener = listener
+}
+
+/**
+ * The code raised when a refresh returns a different subject.
+ *
+ * Distinct from `unauthenticated` because the session is not gone and telling somebody it
+ * expired would send them to sign in again when they are already signed in - as somebody
+ * else, which is the part they need to be told.
+ */
+export const SESSION_CHANGED = 'session_changed'
 
 interface MePayload {
   user: AuthPayload['user']
@@ -134,6 +173,7 @@ export const authApi = {
       body: JSON.stringify({ email, password, rememberMe }),
     })
     setAccessToken(data.accessToken, data.accessExpiresAt)
+    sessionUserId = data.user.id
     // Roles are never taken from the login response body — they are read back from the
     // signed session so the client cannot influence its own authority.
     const me = await request<MePayload>('/auth/me')
@@ -149,12 +189,26 @@ export const authApi = {
     try {
       const data = await refreshOnce()
       setAccessToken(data.accessToken, data.accessExpiresAt)
+      sessionUserId = data.user.id
       const me = await request<MePayload>('/auth/me')
       return toUser(me.user, me.roles)
     } catch {
       setAccessToken(null)
+      sessionUserId = null
       return null
     }
+  },
+
+  /**
+   * Who the current tokens belong to, with their roles.
+   *
+   * Separate from `restore` because the caller already holds a valid access token and only
+   * needs to know whose it is. Going through `restore` would rotate the refresh cookie a
+   * second time for an answer the tab can already ask for.
+   */
+  async me(): Promise<User> {
+    const me = await request<MePayload>('/auth/me')
+    return toUser(me.user, me.roles)
   },
 
   async logout(): Promise<void> {
@@ -163,6 +217,7 @@ export const authApi = {
     } finally {
       // Drop the in-memory token even if the network call fails.
       setAccessToken(null)
+      sessionUserId = null
     }
   },
 
@@ -203,9 +258,41 @@ export const authApi = {
     return !accessToken || Date.now() > accessExpiresAt - 60_000
   },
 
+  /**
+   * Tops up the access token, and refuses to do it silently for a different person.
+   *
+   * The refresh cookie is shared across tabs, so this can legitimately succeed and hand
+   * back a token for somebody else entirely. The token is kept - it is the valid one for
+   * this browser now - but the caller is stopped rather than allowed to continue.
+   *
+   * Stopped, rather than allowed through, because of what this product records. Every
+   * request the callers make writes or reads a safety record attributed to whoever the
+   * token names: an incident, a corrective action, an audit answer, a permit signature.
+   * Letting a request that a supervisor started be completed as the storeman who signed in
+   * on the shared terminal a minute ago would put the wrong name in an audit trail that
+   * exists to be relied on afterwards. An error the person can retry is much cheaper than
+   * a record nobody can trust.
+   */
   async refreshIfNeeded(): Promise<void> {
     if (!this.needsRefresh()) return
     const data = await refreshOnce()
+
+    // Null on the very first refresh of a tab, which is not a change - there was nobody
+    // to change from.
+    const changed = sessionUserId !== null && data.user.id !== sessionUserId
+
+    sessionUserId = data.user.id
     setAccessToken(data.accessToken, data.accessExpiresAt)
+
+    if (changed) {
+      // Before the throw: the screen is showing the wrong person right now, and that is
+      // true whether or not anything catches this.
+      identityListener?.()
+      throw new ApiError(
+        SESSION_CHANGED,
+        `This browser is now signed in as ${data.user.name}, so that request was not sent. `
+        + 'The screen has been switched to that account.',
+      )
+    }
   },
 }

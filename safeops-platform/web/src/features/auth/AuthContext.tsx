@@ -2,11 +2,12 @@ import {
   createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode,
 } from 'react'
 import { api } from '@/api/client'
-import { authApi, isBackendConfigured } from '@/api/authApi'
+import { authApi, isBackendConfigured, onSessionIdentityChange } from '@/api/authApi'
 import { setAuthenticatedRoles } from '@/api/mock/identity'
 import type { User } from '@/api/types'
 import { clearPreferences, markFreshLogin } from '@/features/account/preferences'
 import { resetPlatformInfo } from '@/features/platform/usePlatformAdmin'
+import { forgetOrgCaches } from '@/features/org/caches'
 import { clearSession, loadSession, saveSession } from './session'
 
 type Status = 'restoring' | 'anonymous' | 'authenticated'
@@ -76,6 +77,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => { cancelled = true }
   }, [])
 
+  /**
+   * Follows the session when it changes underneath this tab.
+   *
+   * The access token is per-tab, but the refresh token is an httpOnly cookie shared by the
+   * whole origin, so signing in as somebody else in any tab re-points all of them at the
+   * next refresh. Nothing here noticed: this provider set `user` once, on login or restore,
+   * and never read it again. The result was a screen drawn for one account and answered for
+   * another - the administrator navigation and avatar over a session with neither, every
+   * click refused and nothing saying why.
+   *
+   * The server was never fooled; it authorised the token it was handed and refused
+   * correctly. The lie was the client's, about who it was showing.
+   *
+   * So this drops to the restoring spinner immediately rather than leaving the wrong name
+   * on screen for the length of a round trip, then asks who the tab is now.
+   */
+  useEffect(() => {
+    if (!BACKEND) return
+    onSessionIdentityChange(() => {
+      // Everything cached for the previous reader, cleared for the same reasons login
+      // clears it - none of it is theirs any more.
+      clearPreferences()
+      resetPlatformInfo()
+      forgetOrgCaches()
+
+      setUser(null)
+      setAuthenticatedRoles(null)
+      setStatus('restoring')
+
+      // The token is already the new one, so this needs no rotation - just the roles,
+      // which only /auth/me can answer.
+      authApi
+        .me()
+        .then((u) => {
+          setUser(u)
+          setAuthenticatedRoles(u.memberships.map((m) => m.role))
+          setStatus('authenticated')
+        })
+        .catch(() => {
+          setAuthenticatedRoles(null)
+          setStatus('anonymous')
+        })
+    })
+    return () => onSessionIdentityChange(null)
+  }, [])
+
   const login = useCallback(async (email: string, password: string, rememberMe = true) => {
     // Whoever was signed in before, their cached preferences must not leak into this session.
     clearPreferences()
@@ -92,6 +139,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
      * them back on the wall this change exists to remove.
      */
     resetPlatformInfo()
+    // Keyed by workspace but filtered by the reader - see forgetOrgCaches. Without this
+    // the next person to sign in on this browser inherits the previous one's pickers.
+    forgetOrgCaches()
     if (BACKEND) {
       const u = await authApi.login(email, password, rememberMe)
       markFreshLogin()
@@ -114,6 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // this, signing out and back in as somebody else would leave the previous user's
     // navigation drawn until a full reload.
     resetPlatformInfo()
+    forgetOrgCaches()
     if (BACKEND) {
       // Revoke server-side first; clearing local state alone would leave the session live.
       await authApi.logout().catch(() => {})

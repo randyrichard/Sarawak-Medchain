@@ -5,7 +5,7 @@
 // vertical. The two are identical; this module is where they should converge, and the
 // incident copy is left in place only because that module is not being touched here.
 
-import { API_BASE_URL, authApi, getAccessToken } from './authApi'
+import { API_BASE_URL, authApi, getAccessToken, SESSION_CHANGED } from './authApi'
 import { explainNetworkFailure } from './networkError'
 import { ApiError } from './types'
 
@@ -19,8 +19,16 @@ import { ApiError } from './types'
 export async function request<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
   try {
     await authApi.refreshIfNeeded()
-  } catch {
-    // Refresh failed — let the request proceed and surface the real 401 below.
+  } catch (e) {
+    /*
+     * A refresh that simply failed is not fatal: let the request go and surface the real
+     * 401 below, which says something more useful than a guess made here.
+     *
+     * A refresh that came back for somebody else is fatal, and must not be swallowed. The
+     * refresh cookie is shared by every tab, so the token now belongs to whoever signed in
+     * on this browser since - and sending the request would file it under their name.
+     */
+    if (e instanceof ApiError && e.code === SESSION_CHANGED) throw e
   }
 
   const isForm = init.body instanceof FormData
@@ -50,7 +58,10 @@ export async function request<T>(path: string, init: RequestInit = {}, retry = t
     try {
       await authApi.refreshIfNeeded()
       return await request<T>(path, init, false)
-    } catch {
+    } catch (e) {
+      // "Your session has expired" would be false here: it is alive and belongs to
+      // somebody else, which is the thing the reader has to be told.
+      if (e instanceof ApiError && e.code === SESSION_CHANGED) throw e
       throw new ApiError('unauthenticated', 'Your session has expired. Please sign in again.')
     }
   }
