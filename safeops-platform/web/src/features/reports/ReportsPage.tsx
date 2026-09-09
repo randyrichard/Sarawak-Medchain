@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   FileText, Download, Play, Plus, Pencil, Trash2, History, Clock, Mail, MailWarning,
-  AlertTriangle, Microscope, CheckCircle2, XCircle,
+  AlertTriangle, Microscope, CheckCircle2, XCircle, CalendarRange,
 } from 'lucide-react'
 import {
   reportsApi,
@@ -22,9 +22,13 @@ import { cn } from '@/lib/cn'
 /**
  * Reports.
  *
- * Two things an HSE manager wants on a Monday: what is overdue, and what is still being
- * investigated. Everything on this page is generated from current data on request - there
- * is no cached report, because a stale safety report is worse than none.
+ * Two things an HSE manager wants on a Monday - what is overdue, and what is still being
+ * investigated - and one they want at month end, which is the month they have just had.
+ *
+ * Everything here is generated from current data on request; there is no cached report,
+ * because a stale safety report is worse than none. The monthly summary is the exception
+ * that proves it: it covers a closed period, so re-running it tomorrow gives the same
+ * answer, which is the point of a document somebody files.
  */
 type View = 'reports' | 'schedules' | 'history'
 
@@ -40,6 +44,13 @@ const REPORT_CARDS: { type: ReportType; title: string; blurb: string; icon: type
     title: 'Open investigations',
     blurb: 'Incidents still under investigation, how long they have been open, and what is missing.',
     icon: Microscope,
+  },
+  {
+    type: 'monthly_summary',
+    title: 'Monthly safety summary',
+    blurb: 'The month just finished: what was reported, what it cost, and how many actions closed. '
+      + 'Always the last complete month, cut in the site timezone.',
+    icon: CalendarRange,
   },
 ]
 

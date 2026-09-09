@@ -8,7 +8,7 @@ import { blob, request, qs } from './http'
  * nobody received.
  */
 
-export type ReportType = 'overdue_actions' | 'open_investigations'
+export type ReportType = 'overdue_actions' | 'open_investigations' | 'monthly_summary'
 export type ReportFrequency = 'daily' | 'weekly' | 'monthly'
 
 export interface ReportColumn { key: string; label: string; width: number }

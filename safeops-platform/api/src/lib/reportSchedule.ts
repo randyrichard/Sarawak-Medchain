@@ -86,7 +86,7 @@ export function localParts(instant: Date, timeZone: string) {
  * approximate instant and the second corrects it. That second pass is what keeps a
  * schedule right across a daylight-saving boundary.
  */
-function instantForLocal(
+export function instantForLocal(
   y: number, mo: number, d: number, h: number, mi: number, timeZone: string,
 ): Date {
   const naive = Date.UTC(y, mo - 1, d, h, mi, 0, 0)

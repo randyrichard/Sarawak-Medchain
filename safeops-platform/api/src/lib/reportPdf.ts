@@ -112,8 +112,19 @@ export async function renderReportPdf(data: ReportData): Promise<RenderedReport>
   doc.fillColor(MUTED).fontSize(9).font('Helvetica')
   const scope = data.siteName ? `${data.companyName} · ${data.siteName}` : data.companyName
   doc.text(ascii(scope), PAGE.margin, PAGE.margin + 62)
+  /*
+   * A report covering a period has to say so on its face.
+   *
+   * This line only ever read "As at <end>", which is right for the two types answering
+   * "what is owed right now" and wrong for one covering a closed month. Printed, filed and
+   * read a year later, "As at 1 Oct" gives no clue the pages behind it are September's.
+   * The wording comes from the service because only that side knows which timezone the
+   * period was cut on.
+   */
   doc.text(
-    ascii(`As at ${fmtDateTime(data.periodEnd)}   Generated ${fmtDateTime(data.generatedAt)}`),
+    ascii(data.periodLabel
+      ? `${data.periodLabel}   Generated ${fmtDateTime(data.generatedAt)}`
+      : `As at ${fmtDateTime(data.periodEnd)}   Generated ${fmtDateTime(data.generatedAt)}`),
     PAGE.margin, PAGE.margin + 75,
   )
 
@@ -129,7 +140,14 @@ export async function renderReportPdf(data: ReportData): Promise<RenderedReport>
     doc.fillColor(MUTED).fontSize(7.5).font('Helvetica')
       .text(ascii(s.label.toUpperCase()), x, y, { width: boxW - 8, characterSpacing: 0.6 })
     // The headline number goes red only where a non-zero value is a problem.
-    const alarming = /overdue|no investigator|awaiting/i.test(s.label) && s.value !== '0' && s.value !== '—'
+    /*
+     * Red only where a non-zero value is a problem, which is not every count on a page.
+     * "Lost time" earns it. "Near misses" explicitly does not - a month with near misses
+     * in it is a month where people reported them, and colouring that like a failure
+     * teaches the wrong lesson to the person whose report it is.
+     */
+    const alarming = /overdue|no investigator|awaiting|lost time/i.test(s.label)
+      && s.value !== '0' && s.value !== '—'
     doc.fillColor(alarming ? CRITICAL : INK).fontSize(18).font('Helvetica-Bold')
       .text(ascii(s.value), x, y + 11, { width: boxW - 8 })
   })

@@ -2832,6 +2832,8 @@ model ReportSchedule {
 enum ReportType {
   overdue_actions
   open_investigations
+  /// A closed calendar month, rather than what is outstanding now.
+  monthly_summary
 }
 
 enum ReportFrequency {

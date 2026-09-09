@@ -12,7 +12,7 @@ import {
   canResumePending, decideRetry, idempotencyKeyFor, MAX_ATTEMPTS, STALE_PENDING_MINUTES,
 } from './reportRetry.js'
 import {
-  describeSchedule, isValidTimezone, nextRunAt, parseTimeOfDay,
+  describeSchedule, instantForLocal, isValidTimezone, localParts, nextRunAt, parseTimeOfDay,
   type Frequency,
 } from './reportSchedule.js'
 
@@ -44,7 +44,19 @@ const REPORT_ROLES: Role[] = ['admin', 'hse_manager', 'safety_officer', 'ceo']
 export const REPORT_TYPE_LABEL: Record<ReportType, string> = {
   overdue_actions: 'Overdue corrective actions',
   open_investigations: 'Open investigations',
+  monthly_summary: 'Monthly safety summary',
 }
+
+/**
+ * Incident types that cost somebody treatment or time.
+ *
+ * Deliberately not called "recordable", and deliberately not turned into a rate. Both are
+ * regulator-specific: OSHA recordability and DOSH's JKKP categories do not agree, and a
+ * frequency rate needs hours worked, which this product does not hold. Publishing an
+ * LTIFR off a headcount guess would be inventing a compliance number, so what is reported
+ * is a count of what happened, under a name that claims nothing.
+ */
+const INJURY_TYPES = ['first_aid', 'mtc', 'rwc', 'lti', 'fatality']
 
 /** Stages where an investigation is still owed work. Closed and archived are excluded. */
 const OPEN_INVESTIGATION_STAGES = [
@@ -68,6 +80,16 @@ export interface ReportData {
   generatedAt: Date
   periodStart: Date | null
   periodEnd: Date
+  /**
+   * The period, already worded, for reports that cover one.
+   *
+   * Built here rather than in the renderer because only this side knows the timezone the
+   * period was cut on. A local September starts at 16:00 UTC on 31 August, so a renderer
+   * formatting the raw instants in UTC - which is all it can do - would date September's
+   * report "31 August to 29 September". Undefined on the two types that answer "what is
+   * outstanding now", which cover no period at all.
+   */
+  periodLabel?: string
   /** The headline numbers, above the table. */
   summary: { label: string; value: string }[]
   columns: ReportColumn[]
@@ -133,9 +155,132 @@ export class ReportService {
     // whole company, which would put other sites' data in somebody's inbox.
     if (siteId && !site) throw new ReportError('validation', 'Unknown site for this workspace.')
 
-    return type === 'overdue_actions'
-      ? this.buildOverdueActions(companyId, company.name, siteId ?? null, site?.name ?? null)
-      : this.buildOpenInvestigations(companyId, company.name, siteId ?? null, site?.name ?? null)
+    const scope = [companyId, company.name, siteId ?? null, site?.name ?? null] as const
+    switch (type) {
+      case 'overdue_actions': return this.buildOverdueActions(...scope)
+      case 'monthly_summary': return this.buildMonthlySummary(...scope)
+      default: return this.buildOpenInvestigations(...scope)
+    }
+  }
+
+  /**
+   * The timezone a period should be cut on.
+   *
+   * A calendar month is a local idea, and cutting it in UTC would push the first eight
+   * hours of every Malaysian month into the previous report - an incident at 03:00 on
+   * 1 October filed under September. That is exactly the quiet misattribution a month-end
+   * review exists to catch, rather than to create.
+   *
+   * The site's own zone when the report is scoped to one, otherwise the company's earliest
+   * site, which is the closest thing to a head office the schema records. The last resort
+   * is the column's own default rather than UTC: every site row has a timezone, so
+   * reaching it at all means the workspace has no sites, and UTC would be a worse guess
+   * than the value every row in that table already carries.
+   */
+  private async periodTimezone(companyId: string, siteId: string | null): Promise<string> {
+    const site = await this.db.site.findFirst({
+      where: siteId ? { id: siteId, companyId } : { companyId },
+      orderBy: siteId ? undefined : { id: 'asc' },
+      select: { timezone: true },
+    })
+    return site?.timezone && isValidTimezone(site.timezone) ? site.timezone : 'Asia/Kuching'
+  }
+
+  /**
+   * The month that has just finished, in the workspace's own timezone.
+   *
+   * The last *complete* month, never the one in progress. A summary of a running month
+   * gives two readings of the same report - one on the 20th, one on the 3rd - that
+   * disagree, and only the second is one anybody can act on or file.
+   */
+  private async buildMonthlySummary(
+    companyId: string, companyName: string, siteId: string | null, siteName: string | null,
+  ): Promise<ReportData> {
+    const timezone = await this.periodTimezone(companyId, siteId)
+    const now = new Date()
+    const here = localParts(now, timezone)
+    const [y, m] = here.month === 1 ? [here.year - 1, 12] : [here.year, here.month - 1]
+
+    /*
+     * Midnight local on the first, to midnight local on the first of the next month. A
+     * half-open range, so an incident at 23:59:59.999 on the last day is inside it and one
+     * at 00:00 on the first of the next month is not - no gap between consecutive months
+     * and no incident counted in two of them.
+     */
+    const periodStart = instantForLocal(y, m, 1, 0, 0, timezone)
+    const periodEnd = instantForLocal(m === 12 ? y + 1 : y, m === 12 ? 1 : m + 1, 1, 0, 0, timezone)
+    const inPeriod = { gte: periodStart, lt: periodEnd }
+    const siteWhere = siteId ? { siteId } : {}
+
+    const [incidents, actionsRaised, actionsClosed] = await Promise.all([
+      this.db.incident.findMany({
+        where: { companyId, ...siteWhere, archived: false, occurredAt: inPeriod },
+        orderBy: [{ occurredAt: 'asc' }],
+        take: 2000,
+      }),
+      this.db.correctiveAction.count({ where: { companyId, ...siteWhere, createdAt: inPeriod } }),
+      this.db.correctiveAction.count({ where: { companyId, ...siteWhere, completedAt: inPeriod } }),
+    ])
+
+    const countOf = (...types: string[]) => incidents.filter((i) => types.includes(i.type)).length
+
+    // Formatted from a UTC-noon anchor for the chosen month, which cannot slip a day in
+    // either direction regardless of the zone the names are rendered for.
+    const anchor = new Date(Date.UTC(y, m - 1, 15, 12))
+    const monthName = new Intl.DateTimeFormat('en-GB', {
+      month: 'long', year: 'numeric', timeZone: 'UTC',
+    }).format(anchor)
+    const dayCount = new Date(Date.UTC(m === 12 ? y + 1 : y, m === 12 ? 0 : m, 0)).getUTCDate()
+
+    return {
+      type: 'monthly_summary',
+      title: `Monthly safety summary - ${monthName}`,
+      companyName,
+      siteName,
+      generatedAt: now,
+      periodStart,
+      periodEnd,
+      periodLabel: `1 to ${dayCount} ${monthName} (${timezone})`,
+      /*
+       * Five, because the renderer divides the page width evenly between them and a sixth
+       * leaves too little room for the label above the number.
+       *
+       * Near misses sit beside the injuries deliberately. A month with none of them is not
+       * a good month, it is a month nobody reported one - and a reader seeing the two
+       * counts together is far likelier to read it that way.
+       */
+      summary: [
+        { label: 'Incidents', value: String(incidents.length) },
+        { label: 'Lost time', value: String(countOf('lti', 'fatality')) },
+        { label: 'Injuries', value: String(countOf(...INJURY_TYPES)) },
+        { label: 'Near misses', value: String(countOf('near_miss')) },
+        { label: 'Actions closed', value: `${actionsClosed} of ${actionsRaised}` },
+      ],
+      columns: [
+        { key: 'number', label: 'Incident', width: 56 },
+        { key: 'occurred', label: 'Occurred', width: 54 },
+        { key: 'type', label: 'Type', width: 60 },
+        { key: 'severity', label: 'Severity', width: 56 },
+        { key: 'title', label: 'What happened', width: 168 },
+        { key: 'department', label: 'Department', width: 68 },
+        { key: 'stage', label: 'Stage', width: 62 },
+      ],
+      rows: incidents.map((i) => ({
+        number: i.number,
+        occurred: i.occurredAt.toISOString().slice(0, 10),
+        type: i.type.replace(/_/g, ' '),
+        severity: i.severity.replace(/_/g, ' '),
+        title: i.title,
+        department: i.department || '-',
+        stage: i.stage.replace(/_/g, ' '),
+      })),
+      /*
+       * Neither congratulation nor alarm. A month with nothing in it is either genuinely
+       * quiet or one nobody filed anything in, and this report cannot tell which - so it
+       * states what it knows and leaves the reading to somebody who was there.
+       */
+      emptyMessage: 'No incidents were recorded for this period.',
+    }
   }
 
   private async buildOverdueActions(
