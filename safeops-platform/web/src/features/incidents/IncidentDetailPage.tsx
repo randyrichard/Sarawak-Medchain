@@ -15,7 +15,6 @@ import { usePageTitle } from '@/app/pageTitle'
 import { fmtDate, fmtDateTime, severityKind, STAGE_COLOR, TYPE_ICON, useActor } from './lib'
 import { StageStepper } from './components/StageStepper'
 import { NextStepCard } from './components/NextStepCard'
-import { CaseTimeline } from './components/CaseTimeline'
 import { RcaPanel } from './components/RcaPanel'
 import { ActionsPanel } from './components/ActionsPanel'
 import { CommentsPanel } from './components/CommentsPanel'
@@ -24,7 +23,18 @@ import { IncidentEquipmentPanel } from './components/IncidentEquipmentPanel'
 import { PeoplePanel } from './components/PeoplePanel'
 import { InvestigationPanel } from './components/InvestigationPanel'
 
-type Tab = 'overview' | 'investigation' | 'actions' | 'discussion' | 'activity'
+/**
+ * One work surface at a time, in the wide column.
+ *
+ * People, equipment, evidence and the investigation checklist used to live in the right
+ * rail instead. That rail is a third of the width and stacks vertically, so on a case in
+ * investigation it stood 2349px tall while the tabbed column beside it held 261px - the
+ * page was 3.9 screens of scrolling and 89% of the wide column was empty. Every one of
+ * those panels is something a person works in rather than glances at, so they belong
+ * where the width is, and where only the open one is rendered.
+ */
+type Tab =
+  | 'overview' | 'investigation' | 'actions' | 'people' | 'evidence' | 'discussion' | 'activity'
 
 export function IncidentDetailPage() {
   const { id } = useParams()
@@ -98,12 +108,25 @@ export function IncidentDetailPage() {
   const TypeIcon = TYPE_ICON[incident.type]
   const siteName = sites.find((s) => s.id === incident.siteId)?.name ?? incident.siteId
 
+  /*
+   * Counts sit on the tab rather than inside it. With the panels no longer all on screen
+   * at once, the reason to open one is usually that something is in it - so a tab with
+   * nothing behind it should say so before it is clicked, not after.
+   */
   const tabs: TabItem<Tab>[] = [
     { value: 'overview', label: 'Overview' },
-    { value: 'investigation', label: 'Investigation & RCA' },
+    { value: 'investigation', label: 'Investigation' },
     { value: 'actions', label: 'Actions', badge: incident.actions.length > 0 ? <Badge tone="accent">{incident.actions.length}</Badge> : undefined },
+    /*
+     * One word, because two wrapped. "People & equipment" was the only tab tall enough to
+     * break the strip onto a second line, and the two panels behind it already head
+     * themselves "People involved" and "Equipment involved" - so the specificity is a
+     * click away rather than lost.
+     */
+    { value: 'people', label: 'Involved' },
+    { value: 'evidence', label: 'Evidence', badge: incident.attachments.length > 0 ? <Badge tone="neutral">{incident.attachments.length}</Badge> : undefined },
     { value: 'discussion', label: 'Discussion', badge: incident.comments.length > 0 ? <Badge tone="neutral">{incident.comments.length}</Badge> : undefined },
-    { value: 'activity', label: 'Activity log' },
+    { value: 'activity', label: 'History' },
   ]
 
   return (
@@ -158,7 +181,12 @@ export function IncidentDetailPage() {
         <StageStepper stage={incident.stage} />
       </Card>
 
-      <div className="grid gap-4 xl:grid-cols-3">
+      {/*
+        `items-start` matters more than it looks. A grid stretches its children to the
+        tallest of them, so the short column was a 2349px cell holding a 261px card - which
+        is how a rail came to set the height of a page whose actual content was one screen.
+      */}
+      <div className="grid gap-4 xl:grid-cols-3 xl:items-start">
         {/* Left: work area */}
         <div className="xl:col-span-2">
           <Card>
@@ -182,18 +210,55 @@ export function IncidentDetailPage() {
                       Findings appear here once the investigation records them.
                     </p>
                   )}
+                  {/*
+                    The severity checklist was in the rail while its own findings were
+                    here, so one investigation was split across two columns - and the half
+                    in the rail was 1107px tall in a third of the width. It reads as one
+                    thing now.
+                  */}
+                  <InvestigationPanel
+                    incidentId={incident.id}
+                    canEdit={incident.stage !== 'closed'}
+                    canSignOff={['admin', 'hse_manager'].includes(role ?? '')}
+                  />
                   <RcaPanel incident={incident} onUpdate={setIncident} />
                 </div>
               )}
               {tab === 'actions' && <ActionsPanel incident={incident} onUpdate={setIncident} />}
+              {/*
+                Who was involved, then what the event touched - the order an investigator
+                works in, and two registers that answer one question between them.
+              */}
+              {tab === 'people' && (
+                <div className="space-y-4">
+                  <PeoplePanel
+                    incidentId={incident.id}
+                    companyId={incident.companyId}
+                    canEdit={incident.stage !== 'closed'}
+                  />
+                  <IncidentEquipmentPanel
+                    incidentId={incident.id}
+                    companyId={incident.companyId}
+                    canEdit={incident.stage !== 'closed'}
+                  />
+                </div>
+              )}
+              {tab === 'evidence' && <EvidencePanel incident={incident} onUpdate={setIncident} />}
               {tab === 'discussion' && <CommentsPanel incident={incident} onUpdate={setIncident} />}
               {tab === 'activity' && <ActivityLog incident={incident} />}
             </CardBody>
           </Card>
         </div>
 
-        {/* Right: status + timeline */}
-        <div className="space-y-4">
+        {/*
+          Right: reference only - what to do next, and the facts of the case.
+
+          Both are read at a glance and neither is worked in, which is what earns them a
+          permanent column. Being short, they can also be pinned, so the next action stays
+          on screen while somebody scrolls a long tab beside it - the one thing the old
+          rail could never do, because the rail was the scroll.
+        */}
+        <div className="space-y-4 xl:sticky xl:top-4">
           <NextStepCard incident={incident} onUpdate={setIncident} />
 
           <Card>
@@ -215,35 +280,6 @@ export function IncidentDetailPage() {
             </CardBody>
           </Card>
 
-          <EvidencePanel incident={incident} onUpdate={setIncident} />
-
-          {/*
-            Above the timeline, alongside the evidence: which item failed is part of the
-            case file, not a footnote to it.
-          */}
-          {/*
-            Who was involved, then what else the event touched, then the causal analysis -
-            the order an investigator actually works in.
-          */}
-          <PeoplePanel
-            incidentId={incident.id}
-            companyId={incident.companyId}
-            canEdit={incident.stage !== 'closed'}
-          />
-
-          <IncidentEquipmentPanel
-            incidentId={incident.id}
-            companyId={incident.companyId}
-            canEdit={incident.stage !== 'closed'}
-          />
-
-          <InvestigationPanel
-            incidentId={incident.id}
-            canEdit={incident.stage !== 'closed'}
-            canSignOff={['admin', 'hse_manager'].includes(role ?? '')}
-          />
-
-          <CaseTimeline incident={incident} />
         </div>
       </div>
 
