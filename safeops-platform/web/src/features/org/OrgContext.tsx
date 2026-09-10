@@ -3,6 +3,7 @@ import {
 } from 'react'
 import { api } from '@/api/client'
 import type { Company, Membership, Role, Site } from '@/api/types'
+import type { AdminProject } from '@/api/orgAdminApi'
 import { useAuth } from '@/features/auth/AuthContext'
 import { loadPreferences, takeFreshLogin } from '@/features/account/preferences'
 import { can, type Capability } from '@/features/permissions/permissions'
@@ -14,6 +15,23 @@ interface OrgValue {
   loading: boolean
   companies: Company[]
   company: Company | null
+  /**
+   * Projects in this company, or empty when the workspace has none.
+   *
+   * Empty is a normal state, not a gap - projects arrived long after sites, and a customer
+   * who has not adopted them keeps every site and every record. The picker hides itself
+   * rather than showing an empty control nobody can use.
+   */
+  projects: AdminProject[]
+  /** null = every project, and the sites under none of them */
+  project: AdminProject | null
+  /**
+   * Sites the reader may see, narrowed to the selected project when there is one.
+   *
+   * Narrowed, never widened: this starts from the membership's own site scope, so choosing
+   * a project can only ever remove sites from the list. A project filter is a convenience,
+   * not a grant.
+   */
   sites: Site[]
   /** null = all sites the user can see in this company */
   site: Site | null
@@ -21,6 +39,7 @@ interface OrgValue {
   role: Role | null
   allowed: (capability: Capability) => boolean
   switchCompany: (companyId: string) => void
+  switchProject: (projectId: string | null) => void
   switchSite: (siteId: string | null) => void
 }
 
@@ -31,7 +50,9 @@ export function OrgProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
   const [companies, setCompanies] = useState<Company[]>([])
   const [sites, setSites] = useState<Site[]>([])
+  const [projects, setProjects] = useState<AdminProject[]>([])
   const [companyId, setCompanyId] = useState<string | null>(null)
+  const [projectId, setProjectId] = useState<string | null>(null)
   const [siteId, setSiteId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -53,7 +74,9 @@ export function OrgProvider({ children }: { children: ReactNode }) {
       setCompanyId(initial?.id ?? null)
       // A fresh sign-in starts at the user's default site; a reload keeps whatever site
       // they switched to. The site effect below validates the id against what they may see.
-      const restored = stored?.companyId === initial?.id ? (stored?.siteId ?? null) : null
+      const sameCompany = stored?.companyId === initial?.id
+      const restored = sameCompany ? (stored?.siteId ?? null) : null
+      setProjectId(sameCompany ? (stored?.projectId ?? null) : null)
       setSiteId(takeFreshLogin() ? prefs.defaultSiteId : restored)
     })
     return () => {
@@ -79,13 +102,29 @@ export function OrgProvider({ children }: { children: ReactNode }) {
     }
     let cancelled = false
     setLoading(true)
-    api.listSites(companyId).then((list) => {
+    /*
+     * Both halves, independently. A workspace with no projects - which is every existing
+     * one - must not have its site list held up or emptied by the project call, so a
+     * failure there costs the project picker and nothing else.
+     */
+    Promise.all([
+      api.listSites(companyId),
+      api.listProjects(companyId).catch(() => [] as AdminProject[]),
+    ]).then(([list, projectList]) => {
       if (cancelled) return
       const membership = user.memberships.find((m) => m.companyId === companyId)
       const scoped = membership && membership.siteIds.length > 0
         ? list.filter((s) => membership.siteIds.includes(s.id))
         : list
       setSites(scoped)
+      /*
+       * Cancelled projects are dropped from the picker but not from history: a report for
+       * a finished job still resolves its name through `projects` only while it is live,
+       * and through the record itself afterwards. Keeping them here would grow the picker
+       * forever with jobs nobody is working on.
+       */
+      setProjects(projectList.filter((p) => p.status !== 'cancelled'))
+      setProjectId((cur) => (cur && projectList.some((p) => p.id === cur) ? cur : null))
       setSiteId((cur) => (cur && scoped.some((s) => s.id === cur) ? cur : scoped.length === 1 ? scoped[0].id : null))
       setLoading(false)
     })
@@ -97,35 +136,62 @@ export function OrgProvider({ children }: { children: ReactNode }) {
   // Persist selection per user
   useEffect(() => {
     if (!user || !companyId) return
-    localStorage.setItem(`${ACTIVE_KEY}.${user.id}`, JSON.stringify({ companyId, siteId }))
-  }, [user, companyId, siteId])
+    localStorage.setItem(
+      `${ACTIVE_KEY}.${user.id}`, JSON.stringify({ companyId, projectId, siteId }),
+    )
+  }, [user, companyId, projectId, siteId])
 
   const value = useMemo<OrgValue>(() => {
     const company = companies.find((c) => c.id === companyId) ?? null
-    const site = sites.find((s) => s.id === siteId) ?? null
+    const project = projects.find((p) => p.id === projectId) ?? null
     const membership = user?.memberships.find((m) => m.companyId === companyId) ?? null
     const role = membership?.role ?? null
+
+    /*
+     * The project narrows the site list, and only ever narrows it. `sites` is already the
+     * membership's scope, so intersecting with the project's sites cannot hand anybody a
+     * site they could not otherwise see - which is what keeps this a filter rather than a
+     * second, weaker permission system.
+     */
+    const inProject = new Set(project?.sites.map((x) => x.id) ?? [])
+    const visibleSites = project ? sites.filter((s) => inProject.has(s.id)) : sites
+    const site = visibleSites.find((s) => s.id === siteId) ?? null
+
     return {
       loading,
       companies,
       company,
-      sites,
+      projects,
+      project,
+      sites: visibleSites,
       site,
       membership,
       role,
       allowed: (capability) => can(role, capability),
       switchCompany: (id) => {
         setCompanyId(id)
+        setProjectId(null)
+        setSiteId(null)
+      },
+      /*
+       * Changing project clears the site. Keeping it would leave a site selected that the
+       * new project does not contain, so the header would name one scope while the data
+       * came from another.
+       */
+      switchProject: (id) => {
+        setProjectId(id)
         setSiteId(null)
       },
       switchSite: (id) => setSiteId(id),
     }
-  }, [companies, sites, companyId, siteId, user, loading])
+  }, [companies, projects, sites, companyId, projectId, siteId, user, loading])
 
   return <OrgContext.Provider value={value}>{children}</OrgContext.Provider>
 }
 
-function safeParse(raw: string | null): { companyId?: string; siteId?: string | null } | null {
+function safeParse(
+  raw: string | null,
+): { companyId?: string; projectId?: string | null; siteId?: string | null } | null {
   try {
     return raw ? JSON.parse(raw) : null
   } catch {

@@ -87,6 +87,72 @@ orgAdminRouter.post('/sites/:id/status', requireAuth, async (req, res, next) => 
   } catch (e) { next(e) }
 })
 
+// ── Projects   ──────────────────────────────────────────────────────────────
+//
+// Reading the project list needs membership; writing needs an administrator, the same
+// split the service enforces. Every handler passes companyId through to the service, which
+// re-derives the caller's membership from the signed session - a companyId in a body can
+// therefore never widen what is touched.
+
+const PROJECT_BODY = z.object({
+  companyId: z.string().min(1),
+  name: z.string().min(1).max(160),
+  code: z.string().max(32).optional(),
+  client: z.string().max(160).optional(),
+  description: z.string().max(2000).optional(),
+  managerUserId: z.string().nullable().optional(),
+  // Dates arrive as plain strings and are parsed and range-checked in the service, where
+  // the start/end relationship can be validated as a pair.
+  startDate: z.string().max(40).nullable().optional(),
+  endDate: z.string().max(40).nullable().optional(),
+  status: z.enum(['planned', 'active', 'completed', 'suspended', 'cancelled']).optional(),
+})
+
+orgAdminRouter.get('/projects', requireAuth, async (req, res, next) => {
+  try {
+    const { companyId } = COMPANY.parse(req.query)
+    res.json({ rows: await svc.listProjects(callerOf(req), companyId) })
+  } catch (e) { next(e) }
+})
+
+orgAdminRouter.post('/projects', requireAuth, async (req, res, next) => {
+  try {
+    const { companyId, ...input } = PROJECT_BODY.parse(req.body)
+    res.status(201).json(await svc.createProject(callerOf(req), companyId, ctxOf(req), input))
+  } catch (e) { next(e) }
+})
+
+orgAdminRouter.patch('/projects/:id', requireAuth, async (req, res, next) => {
+  try {
+    const { companyId, ...patch } = PROJECT_BODY.partial({ name: true }).parse(req.body)
+    res.json(await svc.updateProject(callerOf(req), companyId, ctxOf(req), req.params.id, patch))
+  } catch (e) { next(e) }
+})
+
+/**
+ * Cancel, which is this product's archive. There is no DELETE here deliberately: a
+ * project's sites carry incidents, permits and assets, and no removal that keeps those
+ * readable is a delete.
+ */
+orgAdminRouter.post('/projects/:id/archive', requireAuth, async (req, res, next) => {
+  try {
+    const { companyId } = COMPANY.parse(req.body)
+    res.json(await svc.archiveProject(callerOf(req), companyId, ctxOf(req), req.params.id))
+  } catch (e) { next(e) }
+})
+
+/** Moves a site under a project, or out from under one. Null detaches. */
+orgAdminRouter.post('/sites/:id/project', requireAuth, async (req, res, next) => {
+  try {
+    const { companyId, projectId } = COMPANY.extend({
+      projectId: z.string().nullable(),
+    }).parse(req.body)
+    res.json(await svc.assignSiteToProject(
+      callerOf(req), companyId, ctxOf(req), req.params.id, projectId,
+    ))
+  } catch (e) { next(e) }
+})
+
 // ── Departments ──────────────────────────────────────────────────────────────
 
 orgAdminRouter.get('/departments', requireAuth, async (req, res, next) => {

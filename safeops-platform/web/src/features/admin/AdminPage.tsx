@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   Activity, Building2, DatabaseBackup, KeyRound, ScrollText, ShieldCheck, Plug, Users, UserCog,
-  MailPlus, MapPin, Network,
+  MailPlus, MapPin, Network, Briefcase,
 } from 'lucide-react'
 import { PageHeader } from '@/components/ui'
 import { cn } from '@/lib/cn'
@@ -16,12 +16,13 @@ import { IntegrationsSection } from './sections/IntegrationsSection'
 import { DeveloperSection } from './sections/DeveloperSection'
 import { BackupSection } from './sections/BackupSection'
 import { SitesSection } from './sections/SitesSection'
+import { ProjectsSection } from './sections/ProjectsSection'
 import { DepartmentsSection } from './sections/DepartmentsSection'
 import { InvitationsSection } from './sections/InvitationsSection'
 
 type Section =
   | 'overview' | 'users' | 'invitations' | 'roles' | 'organization' | 'security'
-  | 'sites' | 'departments' | 'audit' | 'integrations' | 'developer' | 'backup'
+  | 'projects' | 'sites' | 'departments' | 'audit' | 'integrations' | 'developer' | 'backup'
 
 const NAV: { id: Section; label: string; icon: typeof Activity; group: string }[] = [
   { id: 'overview', label: 'System Health', icon: Activity, group: 'Monitor' },
@@ -30,6 +31,7 @@ const NAV: { id: Section; label: string; icon: typeof Activity; group: string }[
   { id: 'roles', label: 'Roles & Permissions', icon: UserCog, group: 'People & Access' },
   { id: 'security', label: 'Security Center', icon: ShieldCheck, group: 'People & Access' },
   { id: 'organization', label: 'Organization', icon: Building2, group: 'Configuration' },
+  { id: 'projects', label: 'Projects', icon: Briefcase, group: 'Configuration' },
   { id: 'sites', label: 'Sites', icon: MapPin, group: 'Configuration' },
   { id: 'departments', label: 'Departments', icon: Network, group: 'Configuration' },
   { id: 'audit', label: 'Audit Log', icon: ScrollText, group: 'Governance' },
@@ -92,6 +94,7 @@ export function AdminPage() {
           {section === 'overview' && <OverviewSection />}
           {section === 'users' && <UsersSection />}
           {section === 'invitations' && <InvitationsSection />}
+          {section === 'projects' && <ProjectsSection />}
           {section === 'sites' && <SitesSection />}
           {section === 'departments' && <DepartmentsSection />}
           {section === 'roles' && <RolesSection />}

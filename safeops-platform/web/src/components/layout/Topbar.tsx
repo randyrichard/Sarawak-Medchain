@@ -6,7 +6,7 @@ import { useAuth } from '@/features/auth/AuthContext'
 import { useOrg } from '@/features/org/OrgContext'
 import { ROLE_LABEL } from '@/api/types'
 import { Avatar, Dropdown, DropdownItem, DropdownLabel, DropdownSeparator } from '@/components/ui'
-import { CompanySwitcher, SiteSwitcher } from './Switchers'
+import { CompanySwitcher, ProjectSwitcher, SiteSwitcher } from './Switchers'
 import { NotificationMenu } from './NotificationMenu'
 import { GlobalSearch } from './GlobalSearch'
 
@@ -51,6 +51,7 @@ export function Topbar({ menuButton }: { menuButton: ReactNode }) {
           <CompanySwitcher />
         </div>
         <span className="hidden text-muted md:inline">/</span>
+        <ProjectSwitcher />
         <SiteSwitcher />
       </div>
 

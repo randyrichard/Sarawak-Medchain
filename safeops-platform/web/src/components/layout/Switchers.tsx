@@ -1,6 +1,7 @@
-import { Building2, Check, ChevronsUpDown, Factory, Globe } from 'lucide-react'
+import { Briefcase, Building2, Check, ChevronsUpDown, Factory, Globe } from 'lucide-react'
 import { useOrg } from '@/features/org/OrgContext'
 import { ROLE_LABEL } from '@/api/types'
+import { PROJECT_STATUS_LABEL } from '@/api/orgAdminApi'
 import { Dropdown, DropdownItem, DropdownLabel, Skeleton } from '@/components/ui'
 import { cn } from '@/lib/cn'
 
@@ -84,10 +85,81 @@ export function CompanySwitcher() {
   )
 }
 
+/**
+ * Company -> Project -> Site, and the middle one only when it exists.
+ *
+ * Renders nothing at all for a workspace with no projects, which is every existing
+ * customer. An empty picker between the company and the site would be a control that
+ * cannot be used and a hierarchy level that is not there - worse than the two-level header
+ * it replaces. Adopting projects makes it appear; nobody has to be told about it.
+ */
+export function ProjectSwitcher() {
+  const { projects, project, switchProject, loading } = useOrg()
+  if (loading && projects.length === 0) return null
+  if (projects.length === 0) return null
+
+  /*
+   * The divider belongs to this component, not to the bar.
+   *
+   * A "/" placed in the Topbar between here and the site picker would still be drawn for
+   * the workspaces where this renders nothing - leaving "Acme / / LMG". Owning it means it
+   * appears and disappears with the control it separates.
+   */
+  return (
+    <>
+    <Dropdown align="start" width="w-80" trigger={(open) => (
+      <SwitcherButton
+        icon={<Briefcase size={14} />}
+        value={project ? project.name : `All projects (${projects.length})`}
+        open={open}
+      />
+    )}>
+      <DropdownLabel>Project</DropdownLabel>
+      <DropdownItem onSelect={() => switchProject(null)}>
+        <span className="flex w-full items-center justify-between">
+          <span className="font-medium text-ink">All projects</span>
+          {!project && <Check size={15} className="text-accent" />}
+        </span>
+      </DropdownItem>
+      {projects.map((p) => (
+        <DropdownItem key={p.id} onSelect={() => switchProject(p.id)}>
+          <span className="flex w-full items-center justify-between gap-2">
+            <span className="min-w-0">
+              <span className="block truncate font-medium text-ink">{p.name}</span>
+              <span className="block text-2xs text-muted">
+                {PROJECT_STATUS_LABEL[p.status]}
+                {p.code ? ` · ${p.code}` : ''}
+                {` · ${p.siteCount} site${p.siteCount === 1 ? '' : 's'}`}
+              </span>
+            </span>
+            {project?.id === p.id && <Check size={15} className="shrink-0 text-accent" />}
+          </span>
+        </DropdownItem>
+      ))}
+    </Dropdown>
+    <span className="hidden text-muted md:inline">/</span>
+    </>
+  )
+}
+
 export function SiteSwitcher() {
-  const { sites, site, switchSite, loading } = useOrg()
+  const { sites, site, switchSite, project, loading } = useOrg()
   if (loading && sites.length === 0) return <Skeleton className="h-8 w-32" />
-  if (sites.length === 0) return null
+  /*
+   * Two different empties, and only one of them is worth a control.
+   *
+   * No sites at all means nothing to choose. A project with no sites under it means the
+   * filter is hiding them, and a reader who has just picked that project needs to be told
+   * that rather than watching the picker vanish - otherwise the obvious conclusion is that
+   * their sites are gone.
+   */
+  if (sites.length === 0) {
+    return project ? (
+      <span className="hidden truncate text-2xs text-muted md:inline">
+        No sites in {project.name} yet
+      </span>
+    ) : null
+  }
   const allLabel = sites.length > 1 ? `All sites (${sites.length})` : sites[0].name
   return (
     <Dropdown align="start" width="w-72" trigger={(open) => (

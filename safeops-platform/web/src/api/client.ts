@@ -50,6 +50,7 @@ import { auditsApi } from './auditsApi'
 import { trainingApi } from './trainingApi'
 import { adminApi } from './adminApi'
 import { orgApi } from './orgApi'
+import { orgAdminApi, type AdminProject as OrgProject } from './orgAdminApi'
 import { notificationsApi } from './notificationsApi'
 import { activityApi } from './activityApi'
 import type {
@@ -80,6 +81,14 @@ export interface ApiClient {
   /** Companies for an explicit membership set — works for server-issued user ids. */
   listCompaniesByIds(companyIds: string[]): Promise<Company[]>
   listSites(companyId: string): Promise<Site[]>
+  /**
+   * Projects, for the Company -> Project -> Site filter.
+   *
+   * Readable by every member, not just administrators - it is the top of the filter
+   * everybody works in, and a name is not a permission. Writing one is admin-only and
+   * lives on orgAdminApi with the rest of the console.
+   */
+  listProjects(companyId: string): Promise<OrgProject[]>
   listDepartments(siteIds: string[]): Promise<Department[]>
   listTeams(departmentIds: string[]): Promise<Team[]>
   listEmployees(companyId: string): Promise<Employee[]>
@@ -597,6 +606,19 @@ class MockApiClient implements ApiClient {
     if (SERVER_ORG) return orgApi.listSites(companyId)
     await delay(LATENCY() / 2)
     return SITES.filter((s) => s.companyId === companyId)
+  }
+
+  /**
+   * The demo has no projects, and that is a real state rather than a gap.
+   *
+   * A workspace without projects keeps every site and every record; the picker simply does
+   * not appear. Returning an empty list here is what makes the credential-free demo behave
+   * like a customer who has not adopted projects yet.
+   */
+  async listProjects(companyId: string) {
+    if (SERVER_ORG) return orgAdminApi.listProjects(companyId)
+    await delay(LATENCY() / 2)
+    return []
   }
 
   async listDepartments(siteIds: string[]) {

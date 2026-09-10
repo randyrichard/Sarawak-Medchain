@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto'
-import type { PrismaClient, Prisma, Role } from '@prisma/client'
+import type { PrismaClient, Prisma, ProjectStatus, Role } from '@prisma/client'
 import type { Caller } from './incidentService.js'
 import { writeAdminAudit, type AdminContext } from './adminAudit.js'
 import { hashResetToken } from './tokens.js'
@@ -99,6 +99,36 @@ export const ROLE_CATALOG: { role: Role; label: string; summary: string }[] = [
 ]
 
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/
+
+/** The statuses a project may be set to, in the order a project moves through them. */
+export const PROJECT_STATUSES: ProjectStatus[] = [
+  'planned', 'active', 'completed', 'suspended', 'cancelled',
+]
+
+/**
+ * Project dates, validated as a pair.
+ *
+ * Checked together rather than field by field, because the only rule worth enforcing spans
+ * both: a project that ends before it starts is a typo somebody will otherwise discover
+ * from a report that covers no months. Either may be absent - a planned job often has
+ * neither, and an open-ended one has no end.
+ */
+function parseProjectDates(startRaw?: string | null, endRaw?: string | null) {
+  const parse = (v: string | null | undefined, what: string) => {
+    if (v === undefined || v === null || v === '') return null
+    const d = new Date(v)
+    if (Number.isNaN(d.getTime())) {
+      throw new OrgAdminError('validation', `The ${what} is not a valid date.`)
+    }
+    return d
+  }
+  const startDate = parse(startRaw, 'start date')
+  const endDate = parse(endRaw, 'end date')
+  if (startDate && endDate && endDate < startDate) {
+    throw new OrgAdminError('validation', 'The end date cannot be before the start date.')
+  }
+  return { startDate, endDate }
+}
 
 export class OrgAdminService {
   constructor(private db: PrismaClient) {}
@@ -451,7 +481,243 @@ export class OrgAdminService {
     return userId
   }
 
+
+  // ── Projects ───────────────────────────────────────────────────────────
+  //
+  // A project holds sites; sites hold the safety records. Nothing below writes a project
+  // id onto an incident, a permit or an action - a record's project is its site's project,
+  // resolved by join. Two stored answers to one question is how they come to disagree.
+
+  /**
+   * Every project in the workspace, with what hangs off it.
+   *
+   * Counts come from the sites, because that is where the records actually are, and an
+   * administrator deciding whether a project can be deleted needs to see the weight of it
+   * rather than guess.
+   */
+  async listProjects(caller: Caller, companyId: string) {
+    // Readable by anyone in the workspace, unlike the site and department lists beside it.
+    // A project is the top of the filter an HSE manager works in every day; gating it to
+    // administrators would leave everybody else filtering by an id they cannot resolve to
+    // a name. Writing one is still admin-only, below.
+    this.membership(caller, companyId)
+    const rows = await this.db.project.findMany({
+      where: { companyId },
+      orderBy: [{ status: 'asc' }, { name: 'asc' }],
+      include: {
+        manager: { select: { id: true, name: true } },
+        sites: { select: { id: true, name: true, active: true } },
+      },
+    })
+    return rows.map((p) => ({
+      id: p.id,
+      name: p.name,
+      // Absent reads as empty at the edge: a nullable column is a database concern, and
+      // every caller of this list wants a string it can render.
+      code: p.code ?? '',
+      client: p.client,
+      description: p.description,
+      status: p.status,
+      managerUserId: p.managerUserId,
+      managerName: p.manager?.name ?? null,
+      startDate: p.startDate?.toISOString() ?? null,
+      endDate: p.endDate?.toISOString() ?? null,
+      sites: p.sites.map((x) => ({ id: x.id, name: x.name, active: x.active })),
+      siteCount: p.sites.length,
+      createdAt: p.createdAt.toISOString(),
+      updatedAt: p.updatedAt.toISOString(),
+    }))
+  }
+
+  async createProject(caller: Caller, companyId: string, ctx: AdminContext, input: {
+    name: string; code?: string; client?: string; description?: string
+    managerUserId?: string | null; startDate?: string | null; endDate?: string | null
+    status?: ProjectStatus
+  }) {
+    this.requireAdmin(caller, companyId)
+    const name = input.name?.trim()
+    if (!name) throw new OrgAdminError('validation', 'The project needs a name.')
+
+    const code = input.code?.trim() ?? ''
+    await this.assertProjectNameFree(companyId, name)
+    await this.assertProjectCodeFree(companyId, code)
+    const managerUserId = await this.checkManager(companyId, input.managerUserId)
+    const { startDate, endDate } = parseProjectDates(input.startDate, input.endDate)
+
+    const project = await this.db.project.create({
+      data: {
+        companyId,
+        name,
+        code: code || null,
+        client: input.client?.trim() ?? '',
+        description: input.description?.trim() ?? '',
+        managerUserId,
+        startDate,
+        endDate,
+        status: input.status ?? 'planned',
+      },
+    })
+    await this.log(caller, companyId, ctx, 'Created project', project.name,
+      undefined, project.code || project.name)
+    return project
+  }
+
+  async updateProject(caller: Caller, companyId: string, ctx: AdminContext, id: string, patch: {
+    name?: string; code?: string; client?: string; description?: string
+    managerUserId?: string | null; startDate?: string | null; endDate?: string | null
+    status?: ProjectStatus
+  }) {
+    this.requireAdmin(caller, companyId)
+    const project = await this.findProject(companyId, id)
+
+    const data: Prisma.ProjectUpdateInput = {}
+    if (patch.name !== undefined) {
+      const name = patch.name.trim()
+      if (!name) throw new OrgAdminError('validation', 'The project needs a name.')
+      await this.assertProjectNameFree(companyId, name, id)
+      data.name = name
+    }
+    if (patch.code !== undefined) {
+      const code = patch.code.trim()
+      await this.assertProjectCodeFree(companyId, code, id)
+      data.code = code || null
+    }
+    if (patch.client !== undefined) data.client = patch.client.trim()
+    if (patch.description !== undefined) data.description = patch.description.trim()
+    if (patch.managerUserId !== undefined) {
+      const managerUserId = await this.checkManager(companyId, patch.managerUserId)
+      data.manager = managerUserId ? { connect: { id: managerUserId } } : { disconnect: true }
+    }
+    if (patch.startDate !== undefined || patch.endDate !== undefined) {
+      const { startDate, endDate } = parseProjectDates(
+        patch.startDate === undefined ? project.startDate?.toISOString() ?? null : patch.startDate,
+        patch.endDate === undefined ? project.endDate?.toISOString() ?? null : patch.endDate,
+      )
+      data.startDate = startDate
+      data.endDate = endDate
+    }
+    if (patch.status !== undefined) data.status = patch.status
+
+    const updated = await this.db.project.update({ where: { id }, data })
+    // One line per field that actually moved, so the trail says what changed rather than
+    // that something did.
+    for (const [field, before, after] of [
+      ['name', project.name, updated.name],
+      ['code', project.code ?? '', updated.code ?? ''],
+      ['client', project.client, updated.client],
+      ['status', project.status, updated.status],
+    ] as const) {
+      if (before !== after) {
+        await this.log(caller, companyId, ctx, `Changed project ${field}`, project.name,
+          before || '-', after || '-')
+      }
+    }
+    return updated
+  }
+
+  /**
+   * Archive, not delete.
+   *
+   * There is no hard delete here on purpose. A project's sites carry incidents, permits,
+   * assets and employees, and the only safe removal is one that leaves every one of them
+   * readable - which is what `cancelled` does. The database agrees: Site.projectId is
+   * ON DELETE SET NULL precisely so a project can never take a safety history with it.
+   */
+  async archiveProject(caller: Caller, companyId: string, ctx: AdminContext, id: string) {
+    this.requireAdmin(caller, companyId)
+    const project = await this.findProject(companyId, id)
+    if (project.status === 'cancelled') return { ...project, sitesRetained: 0 }
+
+    const updated = await this.db.project.update({
+      where: { id }, data: { status: 'cancelled' },
+    })
+    /*
+     * Sites are left pointing at the cancelled project rather than detached. Detaching
+     * would silently drop every historical report's grouping for records that were
+     * genuinely part of this job.
+     */
+    const sitesRetained = await this.db.site.count({ where: { companyId, projectId: id } })
+    await this.log(caller, companyId, ctx, 'Cancelled project', project.name,
+      project.status, 'cancelled')
+    return { ...updated, sitesRetained }
+  }
+
+  /**
+   * Moves a site under a project, or out from under one.
+   *
+   * The only write that changes which project a record is reported in, because a record's
+   * project is derived from its site. That makes it worth its own audited call rather than
+   * a field buried in a site patch - and worth saying in the log how many records moved
+   * with it.
+   */
+  async assignSiteToProject(
+    caller: Caller, companyId: string, ctx: AdminContext, siteId: string, projectId: string | null,
+  ) {
+    this.requireAdmin(caller, companyId)
+    const site = await this.findSite(companyId, siteId)
+    const before = site.projectId
+      ? await this.db.project.findFirst({ where: { id: site.projectId, companyId } })
+      : null
+
+    // Tenant check on the target, not just on the site. Without it an administrator could
+    // file their site under another company's project by passing its id.
+    const project = projectId ? await this.findProject(companyId, projectId) : null
+
+    const updated = await this.db.site.update({
+      where: { id: siteId }, data: { projectId: project?.id ?? null },
+    })
+    await this.log(
+      caller, companyId, ctx, project ? 'Moved site to project' : 'Removed site from project',
+      site.name, before?.name ?? '-', project?.name ?? '-',
+    )
+    return updated
+  }
+
+  private async findProject(companyId: string, id: string) {
+    const project = await this.db.project.findFirst({ where: { id, companyId } })
+    /*
+     * Scoped by companyId in the same query, never fetched then compared. A project id
+     * from another tenant has to be indistinguishable from one that does not exist, or
+     * the 404 becomes a way to enumerate other customers' projects.
+     */
+    if (!project) throw new OrgAdminError('not_found', 'Project not found.', 404)
+    return project
+  }
+
+  private async assertProjectNameFree(companyId: string, name: string, exceptId?: string) {
+    const clash = await this.db.project.findFirst({
+      where: {
+        companyId,
+        name: { equals: name, mode: 'insensitive' },
+        ...(exceptId ? { id: { not: exceptId } } : {}),
+      },
+      select: { id: true },
+    })
+    if (clash) throw new OrgAdminError('validation', 'A project with that name already exists.')
+  }
+
+  /**
+   * Blank codes do not collide with each other.
+   *
+   * The unique index is on (companyId, code), and Postgres treats '' as a value rather
+   * than as absent - so a second project without a code would violate it. Only a code
+   * somebody actually typed is checked here, and the empty case is left alone.
+   */
+  private async assertProjectCodeFree(companyId: string, code: string, exceptId?: string) {
+    if (!code) return
+    const clash = await this.db.project.findFirst({
+      where: {
+        companyId,
+        code: { equals: code, mode: 'insensitive' },
+        ...(exceptId ? { id: { not: exceptId } } : {}),
+      },
+      select: { id: true },
+    })
+    if (clash) throw new OrgAdminError('validation', `Another project already uses code "${code}".`)
+  }
+
   // ── Invitations ───────────────────────────────────────────────────────────
+
 
   async listInvitations(caller: Caller, companyId: string) {
     this.requireAdmin(caller, companyId)

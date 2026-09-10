@@ -64,6 +64,9 @@ model User {
   memberships        Membership[]
   employee           Employee?
   managedDepartments Department[]         @relation("DepartmentManager")
+  managedProjects    Project[]            @relation("ProjectManager")
+  managedSites       Site[]               @relation("SiteManager")
+  hseLedSites        Site[]               @relation("SiteHseLead")
   invitations        Invitation[]
   refreshTokens      RefreshToken[]
   loginAttempts      LoginAttempt[]
@@ -186,6 +189,7 @@ model Company {
   industry           String                 @default("")
   logoInitials       String                 @default("")
   sites              Site[]
+  projects           Project[]
   incidents          Incident[]
   actions            CorrectiveAction[]
   permits            Permit[]
@@ -221,6 +225,66 @@ model Company {
   reportRuns         ReportRun[]
 }
 
+/// Where a project stands commercially. Not a safety state - a suspended project's
+/// incidents stay exactly as readable as an active one's.
+enum ProjectStatus {
+  planned
+  active
+  completed
+  suspended
+  cancelled
+}
+
+/// A body of work a company runs, holding one or more sites.
+///
+/// Added because a contractor's safety picture is organised by the job, not by the yard:
+/// an HSE manager reports on "Construction Project A" and expects its sites underneath.
+/// Sites existed before projects did, so the link is optional in that direction - a
+/// workspace that has never created a project keeps every site, and every record hanging
+/// off one, exactly as it was.
+///
+/// Deliberately NOT denormalised onto incidents, permits, actions and the ten other
+/// tables that carry siteId. A record's project is its site's project, resolved by join.
+/// A copied projectId would be a second answer to the same question, and the two would
+/// disagree the first time a site was moved.
+model Project {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  name String
+  /// The company's own reference, e.g. "PRJ-2026-014". Unique per tenant when set, so two
+  /// projects cannot quietly share a code that people use to tell them apart.
+  ///
+  /// Nullable rather than defaulting to "", because the unique index below is what
+  /// enforces that. Postgres treats '' as a value, so a blank default made the second
+  /// uncoded project collide with the first; NULLs do not collide, which is the semantics
+  /// actually wanted - any number of projects may have no code.
+  code String?
+
+  client      String @default("")
+  description String @default("")
+
+  /// The person accountable, as a real account rather than a typed name - same reason as
+  /// Department.manager.
+  managerUserId String?
+  manager       User?   @relation("ProjectManager", fields: [managerUserId], references: [id], onDelete: SetNull)
+
+  startDate DateTime?
+  endDate   DateTime?
+
+  status ProjectStatus @default(planned)
+
+  sites           Site[]
+  reportSchedules ReportSchedule[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, code])
+  @@index([companyId, status])
+}
+
 model Site {
   id        String @id
   companyId String
@@ -232,13 +296,32 @@ model Site {
   headcount Int    @default(0)
 
   /// Company's own reference for the site, e.g. "BTU-01". Not unique across tenants.
-  code              String                 @default("")
-  address           String                 @default("")
-  contactName       String                 @default("")
-  contactPhone      String                 @default("")
+  code         String   @default("")
+  address      String   @default("")
+  contactName  String   @default("")
+  contactPhone String   @default("")
   /// Deactivated rather than deleted: incidents, permits and assets point here, and a
   /// site that stops existing takes their history with it.
-  active            Boolean                @default(true)
+  active       Boolean  @default(true)
+  /// Optional, and permanently so. Sites predate projects, and a workspace that never
+  /// adopts projects must keep working - so an unassigned site is a normal state, not a
+  /// half-migrated one. Cleared rather than cascaded when a project goes: deleting a
+  /// project must never take a site's incidents with it.
+  projectId    String?
+  project      Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  /// When this site's work runs. Distinct from the project's own dates: a project can
+  /// open a site late and close it early.
+  startDate DateTime?
+  endDate   DateTime?
+
+  /// Accountable people, as accounts rather than typed names. The existing contactName
+  /// and contactPhone are kept for the gatehouse or a contractor who has no login.
+  siteManagerUserId String?
+  siteManager       User?   @relation("SiteManager", fields: [siteManagerUserId], references: [id], onDelete: SetNull)
+  hseLeadUserId     String?
+  hseLead           User?   @relation("SiteHseLead", fields: [hseLeadUserId], references: [id], onDelete: SetNull)
+
   company           Company                @relation(fields: [companyId], references: [id], onDelete: Cascade)
   incidents         Incident[]
   actions           CorrectiveAction[]
@@ -255,6 +338,7 @@ model Site {
   visitors          Visitor[]
 
   @@index([companyId])
+  @@index([projectId])
 }
 
 /// A department within a site. Employees carry the resolved department name for course
@@ -2810,7 +2894,12 @@ model ReportSchedule {
   recipientUserIds String[] @default([])
 
   /// Site scope, empty for the whole company.
-  siteId String?
+  siteId    String?
+  /// Project scope, empty for the whole company. Independent of siteId rather than nested
+  /// under it: a schedule for a whole project is the common case, and one naming both is
+  /// simply the narrower of the two.
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   lastRunAt     DateTime?
   lastRunStatus String?

@@ -8,6 +8,34 @@ import { request, qs } from './http'
  * here scopes the request, it does not grant anything.
  */
 
+/** A project's status, in the order a job moves through them. */
+export type ProjectStatus = 'planned' | 'active' | 'completed' | 'suspended' | 'cancelled'
+
+export const PROJECT_STATUS_LABEL: Record<ProjectStatus, string> = {
+  planned: 'Planned',
+  active: 'Active',
+  completed: 'Completed',
+  suspended: 'Suspended',
+  cancelled: 'Cancelled',
+}
+
+export interface AdminProject {
+  id: string
+  name: string
+  code: string
+  client: string
+  description: string
+  status: ProjectStatus
+  managerUserId: string | null
+  managerName: string | null
+  startDate: string | null
+  endDate: string | null
+  sites: { id: string; name: string; active: boolean }[]
+  siteCount: number
+  createdAt: string
+  updatedAt: string
+}
+
 export interface AdminSite {
   id: string
   name: string
@@ -103,6 +131,60 @@ export const orgAdminApi = {
   setSiteActive(companyId: string, id: string, active: boolean): Promise<AdminSite> {
     return request(`/admin/sites/${id}/status`, {
       method: 'POST', body: JSON.stringify({ companyId, active }),
+    })
+  },
+
+  // ── Projects   ─
+  listProjects(companyId: string): Promise<AdminProject[]> {
+    return request<{ rows: AdminProject[] }>(`/admin/projects?${qs({ companyId })}`).then((r) => r.rows)
+  },
+
+  createProject(companyId: string, input: {
+    name: string; code?: string; client?: string; description?: string
+    managerUserId?: string | null; startDate?: string | null; endDate?: string | null
+    status?: ProjectStatus
+  }): Promise<AdminProject> {
+    return request('/admin/projects', {
+      method: 'POST', body: JSON.stringify({ companyId, ...input }),
+    })
+  },
+
+  updateProject(companyId: string, id: string, patch: Partial<{
+    name: string; code: string; client: string; description: string
+    managerUserId: string | null; startDate: string | null; endDate: string | null
+    status: ProjectStatus
+  }>): Promise<AdminProject> {
+    return request(`/admin/projects/${id}`, {
+      method: 'PATCH', body: JSON.stringify({ companyId, ...patch }),
+    })
+  },
+
+  /**
+   * Cancel, which is this product's archive - a project never deletes its sites.
+   *
+   * Returns the stored row rather than the shape `listProjects` maps, so it carries no
+   * `siteCount`. `sitesRetained` is the number that matters here anyway: it is what lets
+   * the caller say the sites survived, which is the whole reassurance of the action.
+   */
+  archiveProject(companyId: string, id: string): Promise<{
+    id: string; name: string; status: ProjectStatus; sitesRetained: number
+  }> {
+    return request(`/admin/projects/${id}/archive`, {
+      method: 'POST', body: JSON.stringify({ companyId }),
+    })
+  },
+
+  /**
+   * Moves a site under a project. Null detaches it.
+   *
+   * Returns the stored site row, not the console's mapped `AdminSite` - callers reload
+   * rather than splice this in, so the narrower type is the honest one.
+   */
+  assignSiteToProject(companyId: string, siteId: string, projectId: string | null): Promise<{
+    id: string; name: string; projectId: string | null
+  }> {
+    return request(`/admin/sites/${siteId}/project`, {
+      method: 'POST', body: JSON.stringify({ companyId, projectId }),
     })
   },
 
