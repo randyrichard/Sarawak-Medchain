@@ -18,13 +18,44 @@ export interface ReportData {
   title: string
   companyName: string
   siteName: string | null
+  /** The project this report covers, or null for the whole company. */
+  projectName?: string | null
   generatedAt: string
   periodStart: string | null
   periodEnd: string
+  /** The period in words, already cut in the workspace timezone by the server. */
+  periodLabel?: string
   summary: { label: string; value: string }[]
   columns: ReportColumn[]
   rows: Record<string, string>[]
   emptyMessage: string
+  /** Present on the monthly report, which is a document rather than a single table. */
+  sections?: ReportSection[]
+}
+
+/**
+ * One block of a multi-section report.
+ *
+ * Mirrors the server's shape exactly. `unavailable` is the one that matters: a section the
+ * deployment cannot compute says so in words, and must never be rendered as a zero.
+ */
+export interface ReportSection {
+  title: string
+  note?: string
+  stats?: { label: string; value: string }[]
+  columns?: ReportColumn[]
+  rows?: Record<string, string>[]
+  unavailable?: string
+  writeIn?: number
+}
+
+/** How a report is scoped. Everything is optional; the defaults are the common case. */
+export interface ReportScope {
+  siteId?: string
+  projectId?: string
+  /** 1-12 with its year. Both or neither; absent means the last complete month. */
+  month?: number
+  year?: number
 }
 
 export interface ReportRecipient {
@@ -52,6 +83,8 @@ export interface ReportSchedule {
   /** Recipients who have since left the workspace. Surfaced, not hidden. */
   unreachableRecipients: number
   siteId: string | null
+  /** The project this schedule covers, or null for the whole company. */
+  projectId: string | null
   lastRunAt: string | null
   lastRunStatus: string | null
   lastRunError: string | null
@@ -103,13 +136,13 @@ export const reportsApi = {
     return request('/reports/catalog')
   },
 
-  preview(companyId: string, type: ReportType, siteId?: string): Promise<ReportData> {
-    return request(`/reports/preview?${qs({ companyId, type, siteId })}`)
+  preview(companyId: string, type: ReportType, scope: ReportScope = {}): Promise<ReportData> {
+    return request(`/reports/preview?${qs({ companyId, type, ...scope })}`)
   },
 
   /** The same report as a PDF. Fetched as a blob so it carries the Authorization header. */
-  previewPdf(companyId: string, type: ReportType, siteId?: string): Promise<Blob> {
-    return blob(`/reports/preview.pdf?${qs({ companyId, type, siteId })}`)
+  previewPdf(companyId: string, type: ReportType, scope: ReportScope = {}): Promise<Blob> {
+    return blob(`/reports/preview.pdf?${qs({ companyId, type, ...scope })}`)
   },
 
   recipients(companyId: string): Promise<ReportRecipient[]> {
@@ -132,6 +165,7 @@ export const reportsApi = {
     timezone: string
     recipientUserIds: string[]
     siteId?: string | null
+    projectId?: string | null
     enabled?: boolean
   }): Promise<ReportSchedule> {
     return request('/reports/schedules', { method: 'POST', body: JSON.stringify(input) })
@@ -145,6 +179,7 @@ export const reportsApi = {
     timezone: string
     recipientUserIds: string[]
     siteId: string | null
+    projectId: string | null
     enabled: boolean
   }>): Promise<ReportSchedule> {
     return request(`/reports/schedules/${id}`, { method: 'PATCH', body: JSON.stringify(input) })

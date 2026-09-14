@@ -25,6 +25,8 @@ function callerOf(req: { auth?: { sub: string; name: string; roles: unknown } })
 const QUERY = z.object({
   companyId: z.string().min(1),
   siteId: z.string().optional(),
+  /** Narrows to one project's sites. Resolved and tenant-checked in the service. */
+  projectId: z.string().optional(),
   department: z.string().optional(),
   /** Plain YYYY-MM-DD; the service resolves them into an inclusive window. */
   from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),

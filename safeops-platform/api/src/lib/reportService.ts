@@ -63,6 +63,9 @@ const OPEN_INVESTIGATION_STAGES = [
   'reported', 'assessment', 'investigation', 'rca', 'actions', 'review', 'verification',
 ] as const
 
+/** A plain YYYY-MM-DD, which is what every table cell in a report wants. */
+const fmtIsoDate = (d: Date) => d.toISOString().slice(0, 10)
+
 const dayMs = 86_400_000
 const startOfToday = () => {
   const d = new Date()
@@ -77,6 +80,8 @@ export interface ReportData {
   title: string
   companyName: string
   siteName: string | null
+  /** The project this report covers, or null for the whole company. */
+  projectName?: string | null
   generatedAt: Date
   periodStart: Date | null
   periodEnd: Date
@@ -96,6 +101,70 @@ export interface ReportData {
   rows: Record<string, string>[]
   /** Said on the page when there is nothing to report, rather than an empty table. */
   emptyMessage: string
+  /**
+   * Further sections, for a report that is a document rather than a list.
+   *
+   * Optional, and absent on the two types that answer "what is outstanding now" - those
+   * are one table and adding an empty array to them would change nothing but their shape.
+   * A management report is several short sections instead, which is the difference between
+   * something an HSE manager forwards and something they have to summarise first.
+   */
+  sections?: ReportSection[]
+}
+
+/**
+ * One block of a multi-section report.
+ *
+ * Every part is optional because sections legitimately differ: some are figures, some are
+ * a table, some are a sentence, and some are a statement that the data does not exist.
+ * `unavailable` is the important one - a section that cannot be computed says so in its
+ * own words rather than rendering a zero, because "0 safety observations" and "this
+ * product does not record safety observations" are different claims and only one is true.
+ */
+export interface ReportSection {
+  title: string
+  /** A sentence or two of prose, for sections that summarise rather than tabulate. */
+  note?: string
+  /** Figures, laid out across the page. */
+  stats?: { label: string; value: string }[]
+  columns?: ReportColumn[]
+  rows?: Record<string, string>[]
+  /** Shown instead of figures when this deployment does not hold the data. */
+  unavailable?: string
+  /** Ruled empty space for somebody to write in after printing. */
+  writeIn?: number
+}
+
+/**
+ * Everything the monthly builder needs, resolved and tenant-checked once.
+ *
+ * `siteIds` is the only location filter the queries use. Null means the whole company; a
+ * list means exactly those sites, including the empty list.
+ */
+interface BuildScope {
+  companyId: string
+  companyName: string
+  siteId: string | null
+  siteName: string | null
+  projectName: string | null
+  siteIds: string[] | null
+  month: number | null
+  year: number | null
+}
+
+/** What a build is scoped to. Every field is optional; the defaults are the common case. */
+export interface ReportOptions {
+  siteId?: string | null
+  /** Narrows to a project's sites. Resolved here, never taken as a list from a caller. */
+  projectId?: string | null
+  /**
+   * The month to report on, 1-12 with its year. Both or neither.
+   *
+   * Absent means the last complete month, which is what a schedule wants. Naming one is
+   * for the person who missed a month, or who is assembling a year of them.
+   */
+  month?: number | null
+  year?: number | null
 }
 
 export class ReportService {
@@ -139,8 +208,9 @@ export class ReportService {
    * under a membership check.
    */
   async build(
-    companyId: string, type: ReportType, siteId?: string | null,
+    companyId: string, type: ReportType, opts: ReportOptions = {},
   ): Promise<ReportData> {
+    const siteId = opts.siteId ?? null
     const company = await this.db.company.findUnique({
       where: { id: companyId }, select: { name: true },
     })
@@ -155,11 +225,47 @@ export class ReportService {
     // whole company, which would put other sites' data in somebody's inbox.
     if (siteId && !site) throw new ReportError('validation', 'Unknown site for this workspace.')
 
-    const scope = [companyId, company.name, siteId ?? null, site?.name ?? null] as const
+    /*
+     * The project, resolved here and scoped by companyId in the same query.
+     *
+     * Same rule as the site above and for the same reason: an id from another tenant must
+     * be refused rather than ignored, or a report could be widened to somebody else's job
+     * by guessing an id. Its sites are read here so no caller ever supplies the list.
+     */
+    const project = opts.projectId
+      ? await this.db.project.findFirst({
+          where: { id: opts.projectId, companyId },
+          select: { name: true, code: true, sites: { select: { id: true } } },
+        })
+      : null
+    if (opts.projectId && !project) {
+      throw new ReportError('validation', 'Unknown project for this workspace.')
+    }
+
+    const scope: BuildScope = {
+      companyId,
+      companyName: company.name,
+      siteId,
+      siteName: site?.name ?? null,
+      projectName: project?.name ?? null,
+      /*
+       * A named site wins: it is the narrower of the two and, when both are given, already
+       * inside the project. Otherwise the project becomes its list of sites - and an empty
+       * list stays empty rather than being dropped, because a project with no sites
+       * reporting the whole company's incidents would be worse than reporting none.
+       */
+      siteIds: siteId ? [siteId] : project ? project.sites.map((x) => x.id) : null,
+      month: opts.month ?? null,
+      year: opts.year ?? null,
+    }
+
     switch (type) {
-      case 'overdue_actions': return this.buildOverdueActions(...scope)
-      case 'monthly_summary': return this.buildMonthlySummary(...scope)
-      default: return this.buildOpenInvestigations(...scope)
+      case 'overdue_actions':
+        return this.buildOverdueActions(companyId, company.name, siteId, site?.name ?? null)
+      case 'monthly_summary':
+        return this.buildMonthlySummary(scope)
+      default:
+        return this.buildOpenInvestigations(companyId, company.name, siteId, site?.name ?? null)
     }
   }
 
@@ -187,19 +293,46 @@ export class ReportService {
   }
 
   /**
-   * The month that has just finished, in the workspace's own timezone.
+   * The month a company has just had, as a document rather than a list.
    *
-   * The last *complete* month, never the one in progress. A summary of a running month
-   * gives two readings of the same report - one on the 20th, one on the 3rd - that
-   * disagree, and only the second is one anybody can act on or file.
+   * The other two report types answer "what is owed right now" and are one table. This one
+   * is what an HSE manager forwards to management: a period, a set of figures, and the
+   * sections underneath that explain them. The whole point of the feedback that prompted
+   * it was that assembling this by hand from six screens took a morning.
+   *
+   * Two rules run through every section. Nothing is invented - a figure this deployment
+   * does not collect says so in words rather than rendering a zero, because "0 safety
+   * observations" and "this product does not record safety observations" are different
+   * claims. And nothing is a rate: a frequency rate needs hours worked, which is not held
+   * here, and one derived from a headcount guess is a number somebody puts in front of a
+   * regulator.
    */
-  private async buildMonthlySummary(
-    companyId: string, companyName: string, siteId: string | null, siteName: string | null,
-  ): Promise<ReportData> {
+  private async buildMonthlySummary(scope: BuildScope): Promise<ReportData> {
+    const { companyId, companyName, siteId, siteName, projectName, siteIds } = scope
     const timezone = await this.periodTimezone(companyId, siteId)
     const now = new Date()
-    const here = localParts(now, timezone)
-    const [y, m] = here.month === 1 ? [here.year - 1, 12] : [here.year, here.month - 1]
+
+    /*
+     * The month, named or defaulted.
+     *
+     * A named month is validated rather than clamped: silently reporting December when
+     * somebody asked for month 13 produces a document with the wrong period on its face.
+     */
+    let y: number
+    let m: number
+    if (scope.month != null && scope.year != null) {
+      if (!Number.isInteger(scope.month) || scope.month < 1 || scope.month > 12) {
+        throw new ReportError('validation', 'Month must be between 1 and 12.')
+      }
+      if (!Number.isInteger(scope.year) || scope.year < 2000 || scope.year > 2200) {
+        throw new ReportError('validation', 'That year is out of range.')
+      }
+      y = scope.year
+      m = scope.month
+    } else {
+      const here = localParts(now, timezone)
+      ;[y, m] = here.month === 1 ? [here.year - 1, 12] : [here.year, here.month - 1]
+    }
 
     /*
      * Midnight local on the first, to midnight local on the first of the next month. A
@@ -210,37 +343,340 @@ export class ReportService {
     const periodStart = instantForLocal(y, m, 1, 0, 0, timezone)
     const periodEnd = instantForLocal(m === 12 ? y + 1 : y, m === 12 ? 1 : m + 1, 1, 0, 0, timezone)
     const inPeriod = { gte: periodStart, lt: periodEnd }
-    const siteWhere = siteId ? { siteId } : {}
 
-    const [incidents, actionsRaised, actionsClosed] = await Promise.all([
+    // The month before this one, for the comparison section.
+    const [py, pm] = m === 1 ? [y - 1, 12] : [y, m - 1]
+    const priorStart = instantForLocal(py, pm, 1, 0, 0, timezone)
+    const inPrior = { gte: priorStart, lt: periodStart }
+
+    // Null means the whole company; a list means exactly those sites, empty included.
+    const at = siteIds ? { siteId: { in: siteIds } } : {}
+    const where = { companyId, ...at }
+
+    const [
+      incidents, priorIncidents, sites,
+      actionsRaised, actionsClosed, actionsOpen, actionsOverdue, priorActionsClosed,
+      highPriority,
+      permits, inspections, audits, findings,
+    ] = await Promise.all([
       this.db.incident.findMany({
-        where: { companyId, ...siteWhere, archived: false, occurredAt: inPeriod },
+        where: { ...where, archived: false, occurredAt: inPeriod },
         orderBy: [{ occurredAt: 'asc' }],
         take: 2000,
       }),
-      this.db.correctiveAction.count({ where: { companyId, ...siteWhere, createdAt: inPeriod } }),
-      this.db.correctiveAction.count({ where: { companyId, ...siteWhere, completedAt: inPeriod } }),
+      this.db.incident.findMany({
+        where: { ...where, archived: false, occurredAt: inPrior },
+        select: { type: true },
+        take: 2000,
+      }),
+      this.db.site.findMany({
+        where: siteIds ? { companyId, id: { in: siteIds } } : { companyId },
+        select: { id: true, name: true },
+      }),
+
+      this.db.correctiveAction.count({ where: { ...where, createdAt: inPeriod } }),
+      this.db.correctiveAction.count({ where: { ...where, completedAt: inPeriod } }),
+      // Open *now*, not at month end - this is the backlog the reader has to act on today.
+      this.db.correctiveAction.count({
+        where: { ...where, status: { in: ['open', 'in_progress'] } },
+      }),
+      this.db.correctiveAction.count({
+        where: { ...where, ...overdueActionWhere() },
+      }),
+      this.db.correctiveAction.count({ where: { ...where, completedAt: inPrior } }),
+
+      this.db.correctiveAction.findMany({
+        where: {
+          ...where,
+          status: { in: ['open', 'in_progress'] },
+          priority: { in: ['Critical', 'High'] },
+        },
+        orderBy: [{ dueDate: 'asc' }],
+        include: { incident: { select: { number: true } } },
+        take: 40,
+      }),
+
+      this.db.permit.findMany({
+        where: { ...where, createdAt: inPeriod },
+        select: { type: true, status: true, siteId: true },
+        take: 2000,
+      }),
+      this.db.inspection.findMany({
+        where: { ...where, scheduledFor: inPeriod },
+        select: { status: true, outcome: true },
+        take: 2000,
+      }),
+      this.db.audit.findMany({
+        where: { ...where, scheduledFor: inPeriod },
+        select: { id: true, status: true },
+        take: 500,
+      }),
+      this.db.auditFinding.findMany({
+        where: { audit: { ...where, scheduledFor: inPeriod } },
+        select: { category: true, severity: true },
+        take: 2000,
+      }),
     ])
 
     const countOf = (...types: string[]) => incidents.filter((i) => types.includes(i.type)).length
+    const priorCountOf = (...types: string[]) =>
+      priorIncidents.filter((i) => types.includes(i.type)).length
 
-    // Formatted from a UTC-noon anchor for the chosen month, which cannot slip a day in
-    // either direction regardless of the zone the names are rendered for.
     const anchor = new Date(Date.UTC(y, m - 1, 15, 12))
     const monthName = new Intl.DateTimeFormat('en-GB', {
       month: 'long', year: 'numeric', timeZone: 'UTC',
     }).format(anchor)
     const dayCount = new Date(Date.UTC(m === 12 ? y + 1 : y, m === 12 ? 0 : m, 0)).getUTCDate()
 
+    const lostTime = countOf('lti', 'fatality')
+    const injuries = countOf(...INJURY_TYPES)
+    const nearMisses = countOf('near_miss')
+    const inspectionsDone = inspections.filter((i) => i.status === 'completed').length
+    const auditsDone = audits.filter((a) => a.status === 'completed').length
+    const permitsIssued = permits.length
+
+    /** A percentage, or N/A when the denominator is zero rather than a misleading 0%. */
+    const rate = (part: number, whole: number) =>
+      whole === 0 ? 'N/A' : `${Math.round((part / whole) * 100)}%`
+
+    /** "12 (up 3)" - a comparison only where a previous month exists to compare with. */
+    const trend = (current: number, before: number) => {
+      if (priorIncidents.length === 0 && before === 0) return String(current)
+      const diff = current - before
+      if (diff === 0) return `${current} (unchanged)`
+      return `${current} (${diff > 0 ? 'up' : 'down'} ${Math.abs(diff)})`
+    }
+
+    const tally = (values: string[]) => {
+      const counts = new Map<string, number>()
+      for (const v of values) counts.set(v, (counts.get(v) ?? 0) + 1)
+      return [...counts.entries()].sort((a, b) => b[1] - a[1])
+    }
+
+    const pretty = (v: string) => v.replace(/_/g, ' ')
+
+    /*
+     * The executive summary, written from the figures rather than templated around them.
+     *
+     * Deliberately flat in tone. A month with a lost-time injury in it should not be
+     * described as good because the action completion rate was high, and a quiet month
+     * should not be congratulated - this report cannot tell a genuinely quiet month from
+     * one nobody filed anything in.
+     */
+    const scopeLine = [companyName, projectName, siteName].filter(Boolean).join(' - ')
+    const executive = incidents.length === 0
+      ? `No incidents were recorded for ${scopeLine} during ${monthName}. `
+        + `${actionsRaised} corrective action(s) were raised and ${actionsClosed} closed. `
+        + 'A period with nothing recorded may be a quiet one or one where nothing was '
+        + 'reported; this summary cannot tell the two apart.'
+      : `${incidents.length} incident(s) were recorded for ${scopeLine} during ${monthName}, `
+        + `of which ${injuries} involved injury and ${lostTime} involved lost time. `
+        + `${nearMisses} near miss(es) were reported. `
+        + `${actionsRaised} corrective action(s) were raised and ${actionsClosed} closed; `
+        + `${actionsOpen} remain open, ${actionsOverdue} of them past their due date.`
+
+    const sections: ReportSection[] = [
+      {
+        title: '1. Executive summary',
+        note: executive,
+      },
+      {
+        title: '2. Safety performance overview',
+        stats: [
+          { label: 'Sites in scope', value: String(sites.length) },
+          { label: 'Incidents', value: String(incidents.length) },
+          { label: 'Injuries', value: String(injuries) },
+          { label: 'Permits issued', value: String(permitsIssued) },
+          { label: 'Inspections done', value: String(inspectionsDone) },
+        ],
+      },
+      {
+        title: '3. Incident summary',
+        note: incidents.length === 0
+          ? 'No incidents recorded for this period.'
+          : `By type, then by severity. Statuses are as at ${fmtIsoDate(now)}, not month end.`,
+        columns: [
+          { key: 'k', label: 'Category', width: 120 },
+          { key: 'v', label: 'Count', width: 40 },
+        ],
+        rows: [
+          ...tally(incidents.map((i) => TYPE_LABEL[i.type] ?? pretty(i.type)))
+            .map(([k, v]) => ({ k, v: String(v) })),
+          ...tally(incidents.map((i) => `Severity: ${SEVERITY_LABEL[i.severity] ?? pretty(i.severity)}`))
+            .map(([k, v]) => ({ k, v: String(v) })),
+          ...tally(incidents.map((i) => `Stage: ${pretty(i.stage)}`))
+            .map(([k, v]) => ({ k, v: String(v) })),
+        ],
+      },
+      {
+        title: '4. Near miss summary',
+        stats: [
+          { label: 'Near misses', value: String(nearMisses) },
+          { label: 'Share of incidents', value: rate(nearMisses, incidents.length) },
+          { label: 'Previous month', value: String(priorCountOf('near_miss')) },
+        ],
+        /*
+         * Said explicitly, because the obvious reading of a low number is the wrong one.
+         * Near misses are the one count where more is better.
+         */
+        note: 'A near miss is a reported warning rather than a loss. A month with few of '
+          + 'them is not necessarily a safer month than one with many.',
+      },
+      {
+        title: '5. Safety inspection summary',
+        stats: [
+          { label: 'Inspections done', value: String(inspectionsDone) },
+          { label: 'Scheduled', value: String(inspections.length) },
+          { label: 'Audits completed', value: String(auditsDone) },
+          { label: 'Findings raised', value: String(findings.length) },
+        ],
+        ...(findings.length > 0 ? {
+          columns: [
+            { key: 'k', label: 'Finding category', width: 120 },
+            { key: 'v', label: 'Count', width: 40 },
+          ],
+          rows: tally(findings.map((f) => f.category || 'Uncategorised'))
+            .map(([k, v]) => ({ k, v: String(v) })),
+        } : {}),
+      },
+      {
+        title: '6. Corrective action summary',
+        stats: [
+          { label: 'Raised', value: String(actionsRaised) },
+          { label: 'Closed', value: String(actionsClosed) },
+          { label: 'Open now', value: String(actionsOpen) },
+          { label: 'Overdue', value: String(actionsOverdue) },
+          { label: 'Closed vs raised', value: rate(actionsClosed, actionsRaised) },
+        ],
+        /*
+         * Named as what it is. "Completion rate" implies the closures belong to the same
+         * actions as the raises, which is not true of any real month - some closures are
+         * of work raised long before it.
+         */
+        note: 'Closed vs raised compares two counts within the month; the actions closed '
+          + 'are not necessarily the ones raised.',
+      },
+      {
+        title: '7. Permit to work summary',
+        stats: [
+          { label: 'Permits issued', value: String(permitsIssued) },
+          { label: 'Closed', value: String(permits.filter((p) => p.status === 'closed').length) },
+          { label: 'Still active', value: String(permits.filter((p) => p.status === 'active').length) },
+        ],
+        ...(permits.length > 0 ? {
+          columns: [
+            { key: 'k', label: 'Permit type', width: 120 },
+            { key: 'v', label: 'Count', width: 40 },
+          ],
+          rows: tally(permits.map((p) => pretty(p.type))).map(([k, v]) => ({ k, v: String(v) })),
+        } : {}),
+      },
+      {
+        title: '8. Safety observations',
+        /*
+         * The honest answer, and the reason this section exists at all rather than being
+         * dropped: a management report with a numbered section missing invites the question
+         * "where is 8", and a fabricated zero is worse than either.
+         *
+         * SafeOps has no proactive observation module - no behavioural observation cards,
+         * no safe/unsafe act logging. What it does have is audit findings graded
+         * Observation, which is a different thing recorded by a different person for a
+         * different reason, so it is reported under its own name.
+         */
+        unavailable: 'SafeOps does not currently record proactive safety observations '
+          + '(behavioural observation cards or safe/unsafe act logs), so no figure can be '
+          + 'given. The nearest recorded equivalent is audit findings graded Observation, '
+          + `of which there were ${findings.filter((f) => f.severity === 'Observation').length} `
+          + 'this period.',
+      },
+      {
+        title: '9. Trends against the previous month',
+        ...(priorIncidents.length === 0 && actionsRaised === 0 && priorActionsClosed === 0
+          ? {
+            unavailable: 'No data was recorded in the previous month, so there is nothing '
+              + 'to compare against. Trends appear once two consecutive months exist.',
+          }
+          : {
+            columns: [
+              { key: 'k', label: 'Measure', width: 120 },
+              { key: 'v', label: 'This month', width: 60 },
+              { key: 'p', label: 'Previous', width: 40 },
+            ],
+            rows: [
+              { k: 'Incidents', v: trend(incidents.length, priorIncidents.length), p: String(priorIncidents.length) },
+              { k: 'Injuries', v: trend(injuries, priorIncidents.filter((i) => INJURY_TYPES.includes(i.type)).length), p: String(priorIncidents.filter((i) => INJURY_TYPES.includes(i.type)).length) },
+              { k: 'Lost time', v: trend(lostTime, priorCountOf('lti', 'fatality')), p: String(priorCountOf('lti', 'fatality')) },
+              { k: 'Near misses', v: trend(nearMisses, priorCountOf('near_miss')), p: String(priorCountOf('near_miss')) },
+              { k: 'Actions closed', v: trend(actionsClosed, priorActionsClosed), p: String(priorActionsClosed) },
+            ],
+          }),
+      },
+      {
+        title: '10. Outstanding high priority actions',
+        note: highPriority.length === 0
+          ? 'No high or critical corrective actions are open.'
+          : 'Open actions graded High or Critical, oldest due date first.',
+        ...(highPriority.length > 0 ? {
+          columns: [
+            { key: 'code', label: 'Action', width: 50 },
+            { key: 'title', label: 'What is outstanding', width: 150 },
+            { key: 'owner', label: 'Owner', width: 70 },
+            { key: 'due', label: 'Due', width: 46 },
+            { key: 'priority', label: 'Priority', width: 40 },
+            { key: 'incident', label: 'Incident', width: 50 },
+          ],
+          rows: highPriority.map((a) => ({
+            code: a.code,
+            title: a.title,
+            owner: a.owner,
+            due: fmtIsoDate(a.dueDate),
+            priority: a.priority,
+            incident: a.incident?.number ?? '-',
+          })),
+        } : {}),
+      },
+      {
+        title: '11. Site performance',
+        ...(sites.length === 0
+          ? { unavailable: 'No sites are in scope for this report.' }
+          : {
+            columns: [
+              { key: 'site', label: 'Site', width: 110 },
+              { key: 'incidents', label: 'Incidents', width: 46 },
+              { key: 'injuries', label: 'Injuries', width: 42 },
+              { key: 'near', label: 'Near miss', width: 46 },
+              { key: 'permits', label: 'Permits', width: 42 },
+            ],
+            rows: sites.map((site) => {
+              const mine = incidents.filter((i) => i.siteId === site.id)
+              return {
+                site: site.name,
+                incidents: String(mine.length),
+                injuries: String(mine.filter((i) => INJURY_TYPES.includes(i.type)).length),
+                near: String(mine.filter((i) => i.type === 'near_miss').length),
+                permits: String(permits.filter((p) => p.siteId === site.id).length),
+              }
+            }),
+          }),
+      },
+      {
+        title: '12. Management comments / HSE remarks',
+        note: 'To be completed by the HSE manager before circulation.',
+        // Ruled lines rather than a blank gap, because a printed report gets written on.
+        writeIn: 5,
+      },
+    ]
+
     return {
       type: 'monthly_summary',
-      title: `Monthly safety summary - ${monthName}`,
+      title: `Monthly safety report - ${monthName}`,
       companyName,
       siteName,
       generatedAt: now,
       periodStart,
       periodEnd,
       periodLabel: `1 to ${dayCount} ${monthName} (${timezone})`,
+      projectName,
       /*
        * Five, because the renderer divides the page width evenly between them and a sixth
        * leaves too little room for the label above the number.
@@ -251,9 +687,9 @@ export class ReportService {
        */
       summary: [
         { label: 'Incidents', value: String(incidents.length) },
-        { label: 'Lost time', value: String(countOf('lti', 'fatality')) },
-        { label: 'Injuries', value: String(countOf(...INJURY_TYPES)) },
-        { label: 'Near misses', value: String(countOf('near_miss')) },
+        { label: 'Lost time', value: String(lostTime) },
+        { label: 'Injuries', value: String(injuries) },
+        { label: 'Near misses', value: String(nearMisses) },
         { label: 'Actions closed', value: `${actionsClosed} of ${actionsRaised}` },
       ],
       columns: [
@@ -267,13 +703,14 @@ export class ReportService {
       ],
       rows: incidents.map((i) => ({
         number: i.number,
-        occurred: i.occurredAt.toISOString().slice(0, 10),
-        type: i.type.replace(/_/g, ' '),
-        severity: i.severity.replace(/_/g, ' '),
+        occurred: fmtIsoDate(i.occurredAt),
+        type: TYPE_LABEL[i.type] ?? pretty(i.type),
+        severity: SEVERITY_LABEL[i.severity] ?? pretty(i.severity),
         title: i.title,
         department: i.department || '-',
-        stage: i.stage.replace(/_/g, ' '),
+        stage: pretty(i.stage),
       })),
+      sections,
       /*
        * Neither congratulation nor alarm. A month with nothing in it is either genuinely
        * quiet or one nobody filed anything in, and this report cannot tell which - so it
@@ -429,13 +866,17 @@ export class ReportService {
   }
 
   /** Build and render, without touching any schedule. Used by preview and Run now. */
-  async preview(caller: Caller, companyId: string, type: ReportType, siteId?: string | null) {
+  async preview(
+    caller: Caller, companyId: string, type: ReportType, opts: ReportOptions = {},
+  ) {
     this.require(caller, companyId, 'running reports')
-    return this.build(companyId, type, siteId)
+    return this.build(companyId, type, opts)
   }
 
-  async renderPdf(caller: Caller, companyId: string, type: ReportType, siteId?: string | null) {
-    const data = await this.preview(caller, companyId, type, siteId)
+  async renderPdf(
+    caller: Caller, companyId: string, type: ReportType, opts: ReportOptions = {},
+  ) {
+    const data = await this.preview(caller, companyId, type, opts)
     return { data, pdf: await renderReportPdf(data) }
   }
 
@@ -526,6 +967,8 @@ export class ReportService {
     timezone: string
     recipientUserIds: string[]
     siteId?: string | null
+    /** A schedule may cover a whole project, which is the common shape for a monthly one. */
+    projectId?: string | null
     enabled?: boolean
   }, ctx: { ip?: string; device?: string } = {}) {
     this.require(caller, companyId, 'creating report schedules')
@@ -537,6 +980,20 @@ export class ReportService {
         where: { id: input.siteId, companyId }, select: { id: true },
       })
       if (!site) throw new ReportError('validation', 'Unknown site for this workspace.')
+    }
+
+    /*
+     * The project is tenant-checked exactly like the site above.
+     *
+     * A schedule outlives the session that wrote it and mails a whole safety picture on a
+     * timer, so an id from another tenant stored here would keep sending somebody else's
+     * data every month until a human noticed.
+     */
+    if (input.projectId) {
+      const project = await this.db.project.findFirst({
+        where: { id: input.projectId, companyId }, select: { id: true },
+      })
+      if (!project) throw new ReportError('validation', 'Unknown project for this workspace.')
     }
 
     /*
@@ -566,6 +1023,7 @@ export class ReportService {
         timezone: input.timezone,
         recipientUserIds: resolved.map((r) => r.userId),
         siteId: input.siteId ?? null,
+        projectId: input.projectId ?? null,
         enabled,
         nextRunAt: enabled ? nextRunAt(input, new Date()) : null,
         createdBy: caller.name,
@@ -664,6 +1122,8 @@ export class ReportService {
     companyId: string
     reportType: ReportType
     siteId?: string | null
+    /** A schedule may be scoped to a project as well as, or instead of, a site. */
+    projectId?: string | null
     scheduleId?: string | null
     dueSlot?: string | null
     trigger: 'scheduled' | 'manual'
@@ -692,7 +1152,9 @@ export class ReportService {
     }
 
     try {
-      const data = await this.build(opts.companyId, opts.reportType, opts.siteId)
+      const data = await this.build(opts.companyId, opts.reportType, {
+        siteId: opts.siteId, projectId: opts.projectId,
+      })
       const pdf = await renderReportPdf(data)
       const recipients = await this.resolveRecipients(opts.companyId, opts.recipientUserIds)
 
@@ -972,11 +1434,13 @@ export class ReportService {
     reportType: ReportType
     siteId: string | null
     recipientUserIds: string[]
+    projectId?: string | null
   }, dueSlot: string) {
     return this.execute({
       companyId: schedule.companyId,
       reportType: schedule.reportType,
       siteId: schedule.siteId,
+      projectId: schedule.projectId ?? null,
       scheduleId: schedule.id,
       dueSlot,
       trigger: 'scheduled',
@@ -995,6 +1459,7 @@ export class ReportService {
       companyId: s.companyId,
       reportType: s.reportType,
       siteId: s.siteId,
+      projectId: s.projectId,
       scheduleId: s.id,
       dueSlot: null,
       trigger: 'manual',

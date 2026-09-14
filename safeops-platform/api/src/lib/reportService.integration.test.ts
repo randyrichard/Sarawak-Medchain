@@ -291,7 +291,7 @@ d('Scheduled reports — integration (real Postgres)', () => {
 
   it('refuses a site belonging to another company', async () => {
     // Silently widening to the whole company would put other sites' data in an inbox.
-    await expect(reports.build(COMPANY, 'overdue_actions', OTHER_SITE))
+    await expect(reports.build(COMPANY, 'overdue_actions', { siteId: OTHER_SITE }))
       .rejects.toThrow(/Unknown site/i)
   })
 
@@ -301,7 +301,7 @@ d('Scheduled reports — integration (real Postgres)', () => {
     const b = await incident(COMPANY, SITE_B)
     await action(b.id)
 
-    expect((await reports.build(COMPANY, 'overdue_actions', SITE_B)).rows).toHaveLength(1)
+    expect((await reports.build(COMPANY, 'overdue_actions', { siteId: SITE_B })).rows).toHaveLength(1)
   })
 
   // ── Authorisation ────────────────────────────────────────────────────────

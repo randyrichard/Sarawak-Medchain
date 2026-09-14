@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { env } from './../env.js'
-import type { ReportData } from './reportService.js'
+import type { ReportColumn, ReportData } from './reportService.js'
 
 /**
  * Server-side PDF rendering for scheduled reports.
@@ -110,7 +110,12 @@ export async function renderReportPdf(data: ReportData): Promise<RenderedReport>
     .text(ascii(data.title), PAGE.margin, PAGE.margin + 42)
 
   doc.fillColor(MUTED).fontSize(9).font('Helvetica')
-  const scope = data.siteName ? `${data.companyName} · ${data.siteName}` : data.companyName
+  /*
+   * Company, then project, then site - the hierarchy the reader navigated to get here, in
+   * the order they chose it. Each part appears only when it narrows something, so a
+   * company-wide report still reads as one line rather than as a trail of dashes.
+   */
+  const scope = [data.companyName, data.projectName, data.siteName].filter(Boolean).join(' \u00b7 ')
   doc.text(ascii(scope), PAGE.margin, PAGE.margin + 62)
   /*
    * A report covering a period has to say so on its face.
@@ -153,21 +158,28 @@ export async function renderReportPdf(data: ReportData): Promise<RenderedReport>
   })
   y += 44
 
-  // ── Table ───────────────────────────────────────────────────────────────────
-  if (data.rows.length === 0) {
-    doc.fillColor(MUTED).fontSize(10).font('Helvetica-Oblique')
-      .text(ascii(data.emptyMessage), PAGE.margin, y + 20, { width: CONTENT_WIDTH, align: 'center' })
-  } else {
-    const scale = CONTENT_WIDTH / data.columns.reduce((a, c) => a + c.width, 0)
-    const widths = data.columns.map((c) => c.width * scale)
+  const bottom = 841.89 - PAGE.margin - 26
+
+  /** A new page, resetting the cursor - used wherever a block will not fit below. */
+  const newPage = () => { doc.addPage(); y = PAGE.margin }
+
+  /**
+   * One table, drawn wherever the cursor is.
+   *
+   * Extracted so the sections below are not a second table implementation that drifts from
+   * this one on page breaks, column scaling or the red-value rule. The main table was the
+   * only caller when it was written inline; there are now a dozen.
+   */
+  const drawTable = (columns: ReportColumn[], rows: Record<string, string>[]) => {
+    const scale = CONTENT_WIDTH / columns.reduce((a, c) => a + c.width, 0)
+    const widths = columns.map((c) => c.width * scale)
     const rowH = 16
-    const bottom = 841.89 - PAGE.margin - 26
 
     const header = () => {
       doc.fillColor(ACCENT).rect(PAGE.margin, y, CONTENT_WIDTH, rowH).fill()
       doc.fillColor('#ffffff').fontSize(7.5).font('Helvetica-Bold')
       let x = PAGE.margin + 4
-      data.columns.forEach((c, i) => {
+      columns.forEach((c, i) => {
         doc.text(fit(doc, c.label.toUpperCase(), widths[i] - 8), x, y + 5, { width: widths[i] - 8, lineBreak: false })
         x += widths[i]
       })
@@ -177,11 +189,10 @@ export async function renderReportPdf(data: ReportData): Promise<RenderedReport>
     header()
     doc.font('Helvetica').fontSize(7.5)
 
-    data.rows.forEach((row, n) => {
+    rows.forEach((row, n) => {
       // Page breaks repeat the header, so page four is still readable on its own.
       if (y + rowH > bottom) {
-        doc.addPage()
-        y = PAGE.margin
+        newPage()
         header()
         doc.font('Helvetica').fontSize(7.5)
       }
@@ -189,7 +200,7 @@ export async function renderReportPdf(data: ReportData): Promise<RenderedReport>
         doc.fillColor('#f9fafb').rect(PAGE.margin, y, CONTENT_WIDTH, rowH).fill()
       }
       let x = PAGE.margin + 4
-      data.columns.forEach((c, i) => {
+      columns.forEach((c, i) => {
         const value = row[c.key] ?? ''
         // Days-overdue and severity read red so the eye finds them without reading.
         const hot = (c.key === 'overdue' && Number(value) > 0)
@@ -203,6 +214,91 @@ export async function renderReportPdf(data: ReportData): Promise<RenderedReport>
         .strokeColor('#e5e7eb').lineWidth(0.5).stroke()
       y += rowH
     })
+  }
+
+  // ── Table ───────────────────────────────────────────────────────────────────
+  if (data.rows.length === 0) {
+    doc.fillColor(MUTED).fontSize(10).font('Helvetica-Oblique')
+      .text(ascii(data.emptyMessage), PAGE.margin, y + 20, { width: CONTENT_WIDTH, align: 'center' })
+    y += 44
+  } else {
+    drawTable(data.columns, data.rows)
+  }
+
+  // ── Sections ────────────────────────────────────────────────────────────────
+  //
+  // Only a multi-section report has these; the two list reports end above.
+  for (const section of data.sections ?? []) {
+    // A heading stranded at the foot of a page with its content overleaf is the classic
+    // way a generated report stops looking like a document.
+    if (y + 70 > bottom) newPage()
+    else y += 16
+
+    doc.fillColor(INK).fontSize(10.5).font('Helvetica-Bold')
+      .text(ascii(section.title), PAGE.margin, y, { width: CONTENT_WIDTH })
+    y += 15
+    doc.moveTo(PAGE.margin, y).lineTo(PAGE.margin + CONTENT_WIDTH, y)
+      .strokeColor(RULE).lineWidth(0.5).stroke()
+    y += 8
+
+    if (section.note) {
+      doc.fillColor(INK).fontSize(8.5).font('Helvetica')
+      const text = ascii(section.note)
+      const h = doc.heightOfString(text, { width: CONTENT_WIDTH })
+      if (y + h > bottom) newPage()
+      doc.text(text, PAGE.margin, y, { width: CONTENT_WIDTH })
+      y += h + 6
+    }
+
+    if (section.unavailable) {
+      /*
+       * Set apart from ordinary prose, because it is a different kind of statement: not
+       * what the month was, but what this product does not know. Reading it as a figure is
+       * exactly the mistake it exists to prevent.
+       */
+      doc.fillColor(MUTED).fontSize(8.5).font('Helvetica-Oblique')
+      const text = ascii(section.unavailable)
+      const h = doc.heightOfString(text, { width: CONTENT_WIDTH - 12 })
+      if (y + h + 10 > bottom) newPage()
+      doc.rect(PAGE.margin, y - 2, 2.5, h + 6).fillColor(RULE).fill()
+      doc.fillColor(MUTED).text(text, PAGE.margin + 10, y, { width: CONTENT_WIDTH - 12 })
+      y += h + 8
+    }
+
+    if (section.stats && section.stats.length > 0) {
+      if (y + 34 > bottom) newPage()
+      const w = CONTENT_WIDTH / section.stats.length
+      section.stats.forEach((stat, i) => {
+        const x = PAGE.margin + i * w
+        doc.fillColor(MUTED).fontSize(7).font('Helvetica')
+          .text(ascii(stat.label.toUpperCase()), x, y, { width: w - 8, characterSpacing: 0.5 })
+        // Same rule as the header tiles: red only where a non-zero value is a problem.
+        const alarming = /overdue|lost time/i.test(stat.label)
+          && stat.value !== '0' && stat.value !== 'N/A'
+        doc.fillColor(alarming ? CRITICAL : INK).fontSize(13).font('Helvetica-Bold')
+          .text(ascii(stat.value), x, y + 9, { width: w - 8 })
+      })
+      y += 32
+    }
+
+    if (section.columns && section.rows && section.rows.length > 0) {
+      if (y + 40 > bottom) newPage()
+      drawTable(section.columns, section.rows)
+      y += 4
+    }
+
+    if (section.writeIn) {
+      // Ruled lines rather than a blank gap: a printed management report is written on,
+      // and an unruled space invites a paragraph squeezed into the margin.
+      const lineGap = 16
+      if (y + section.writeIn * lineGap > bottom) newPage()
+      for (let i = 0; i < section.writeIn; i++) {
+        y += lineGap
+        doc.moveTo(PAGE.margin, y).lineTo(PAGE.margin + CONTENT_WIDTH, y)
+          .strokeColor('#e5e7eb').lineWidth(0.5).stroke()
+      }
+      y += 6
+    }
   }
 
   // ── Footer on every page ────────────────────────────────────────────────────

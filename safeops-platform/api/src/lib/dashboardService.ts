@@ -40,6 +40,13 @@ const daysBetween = (from: Date, to: Date) => Math.round((to.getTime() - from.ge
 
 export interface DashboardFilters {
   companyId: string
+  /**
+   * Narrows to the sites in one project.
+   *
+   * Resolved to site ids on the server, never taken from the client as a list. A caller
+   * that could name the sites itself could name somebody else's.
+   */
+  projectId?: string | null
   siteId?: string | null
   department?: string | null
   /** Inclusive date window on when things happened. Defaults to the last 30 days. */
@@ -115,10 +122,25 @@ export class DashboardService {
    * Built once and spread, so a query cannot accidentally omit it. The company id comes
    * from the verified session's membership, never from the query string alone.
    */
-  private scope(f: DashboardFilters) {
+  /**
+   * The tenant and location clause every section starts from.
+   *
+   * A named site wins outright - it is the narrower of the two and already inside the
+   * project when both are given. Otherwise a project becomes the list of its sites.
+   *
+   * An empty list is passed through as an empty `in`, which matches nothing. That is the
+   * truthful answer for a project with no sites yet, and the alternative - omitting the
+   * clause - would silently widen a project view to the whole company, showing an HSE
+   * manager other jobs' incidents under this job's heading.
+   */
+  private scope(f: DashboardFilters, projectSiteIds: string[] | null) {
     return {
       companyId: f.companyId,
-      ...(f.siteId ? { siteId: f.siteId } : {}),
+      ...(f.siteId
+        ? { siteId: f.siteId }
+        : projectSiteIds
+          ? { siteId: { in: projectSiteIds } }
+          : {}),
     }
   }
 
@@ -144,7 +166,6 @@ export class DashboardService {
 
     const today = startOfToday()
     const { from, to } = this.window(f)
-    const scope = this.scope(f)
     const dept = this.dept(f)
     const vdept = this.visitorDept(f)
     const weekEnd = new Date(today.getTime() + 7 * DAY)
@@ -165,6 +186,25 @@ export class DashboardService {
       // A site id from another tenant must not silently widen the view to everything.
       throw new DashboardError('not_found', 'Site not found in this workspace.', 404)
     }
+
+    /*
+     * The project, resolved here rather than trusted from the caller.
+     *
+     * Scoped by companyId in the same query, so a project id from another tenant is
+     * indistinguishable from one that does not exist - the same rule the site check above
+     * follows, and the reason neither can be used to enumerate other customers.
+     */
+    const project = f.projectId
+      ? await this.db.project.findFirst({
+        where: { id: f.projectId, companyId: f.companyId },
+        select: { name: true, sites: { select: { id: true } } },
+      })
+      : null
+    if (f.projectId && !project) {
+      throw new DashboardError('not_found', 'Project not found in this workspace.', 404)
+    }
+    const projectSiteIds = project ? project.sites.map((x) => x.id) : null
+    const scope = this.scope(f, projectSiteIds)
 
     /*
      * Actions carry no department of their own.
@@ -605,6 +645,9 @@ export class DashboardService {
       scope: {
         companyName: company.name,
         siteName: site?.name ?? null,
+        // Named so the header can say which job is being shown rather than making the
+        // reader remember what they picked two screens ago.
+        projectName: project?.name ?? null,
         from: from.toISOString(),
         to: to.toISOString(),
         department: f.department ?? null,

@@ -1,17 +1,18 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   FileText, Download, Play, Plus, Pencil, Trash2, History, Clock, Mail, MailWarning,
-  AlertTriangle, Microscope, CheckCircle2, XCircle, CalendarRange,
+  AlertTriangle, Microscope, CheckCircle2, XCircle, CalendarRange, Printer,
 } from 'lucide-react'
 import {
   reportsApi,
-  type ReportData, type ReportRun, type ReportSchedule, type ReportType,
+  type ReportData, type ReportRun, type ReportSchedule, type ReportScope,
+  type ReportSection, type ReportType,
 } from '@/api/reportsApi'
 import { ApiError } from '@/api/types'
 import { useOrg } from '@/features/org/OrgContext'
 import { fmtDateTime } from '@/features/incidents/lib'
 import {
-  Alert, Badge, Button, Card, CardBody, PageHeader, Skeleton, Tabs, type TabItem,
+  Alert, Badge, Button, Card, CardBody, PageHeader, Select, Skeleton, Tabs, type TabItem,
 } from '@/components/ui'
 import { ScheduleDialog } from './components/ScheduleDialog'
 import {
@@ -55,11 +56,19 @@ const REPORT_CARDS: { type: ReportType; title: string; blurb: string; icon: type
 ]
 
 export function ReportsPage() {
-  const { company, role } = useOrg()
+  const { company, role, projects, sites } = useOrg()
   const [view, setView] = useState<View>('reports')
 
   const [preview, setPreview] = useState<ReportData | null>(null)
   const [previewing, setPreviewing] = useState<ReportType | null>(null)
+  /*
+   * The monthly report's own scope, kept separate from the header's project/site pickers.
+   *
+   * It starts from those - an HSE manager who has already narrowed to a job expects the
+   * report to follow - but it is then editable here, because assembling last quarter means
+   * changing the month three times without touching what the rest of the app is showing.
+   */
+  const [scope, setScope] = useState<ReportScope>({})
   const [schedules, setSchedules] = useState<ReportSchedule[] | null>(null)
   const [runs, setRuns] = useState<ReportRun[] | null>(null)
   const [mailConfigured, setMailConfigured] = useState<boolean | null>(null)
@@ -98,13 +107,17 @@ export function ReportsPage() {
 
   const say = (msg: string) => { setFlash(msg); setTimeout(() => setFlash(null), 6000) }
 
+  /** Only the monthly report is scoped; the other two answer "right now" for everyone. */
+  const scopeFor = (type: ReportType): ReportScope =>
+    type === 'monthly_summary' ? scope : {}
+
   const openPreview = async (type: ReportType) => {
     if (!company) return
     setPreviewing(type)
     setPreview(null)
     setError(null)
     try {
-      setPreview(await reportsApi.preview(company.id, type))
+      setPreview(await reportsApi.preview(company.id, type, scopeFor(type)))
     } catch (e) {
       setPreviewing(null)
       setError(e instanceof ApiError ? e.message : 'Could not build that report.')
@@ -232,16 +245,24 @@ export function ReportsPage() {
                     <c.icon size={14} className="text-accent" /> {c.title}
                   </p>
                   <p className="mt-1 text-2xs text-muted">{c.blurb}</p>
+                  {c.type === 'monthly_summary' && (
+                    <MonthlyScopeBar
+                      scope={scope}
+                      onChange={setScope}
+                      projects={projects}
+                      sites={sites}
+                    />
+                  )}
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     <Button size="sm" variant="secondary"
                       loading={previewing === c.type && !preview}
                       onClick={() => void openPreview(c.type)}>
-                      Preview
+                      {c.type === 'monthly_summary' ? 'Generate' : 'Preview'}
                     </Button>
                     {company && (
                       <Button size="sm" variant="ghost" icon={<Download size={11} />}
                         onClick={() => void download(
-                          () => reportsApi.previewPdf(company.id, c.type),
+                          () => reportsApi.previewPdf(company.id, c.type, scopeFor(c.type)),
                           `${c.type}.pdf`,
                         )}>
                         Download PDF
@@ -267,11 +288,30 @@ export function ReportsPage() {
                         <p className="text-sm font-semibold text-ink">{preview.title}</p>
                         <p className="text-2xs text-muted">
                           {preview.companyName}
+                          {preview.projectName && <> · {preview.projectName}</>}
                           {preview.siteName && <> · {preview.siteName}</>}
-                          {' · as at '}{fmtDateTime(preview.periodEnd)}
+                          {/*
+                            A report covering a period says which one. "As at" is right for
+                            the two that answer "what is owed now" and wrong for a month.
+                          */}
+                          {preview.periodLabel
+                            ? <> · {preview.periodLabel}</>
+                            : <>{' · as at '}{fmtDateTime(preview.periodEnd)}</>}
                         </p>
                       </div>
-                      <p className="text-2xs text-muted">{preview.rows.length} row(s)</p>
+                      <div className="flex items-center gap-2 print:hidden">
+                        <p className="text-2xs text-muted">{preview.rows.length} row(s)</p>
+                        {/*
+                          Prints the browser's own view. The page carries print rules that
+                          drop the shell, so what comes out is the report - and an HSE
+                          manager who wants a signed paper copy does not have to open the
+                          PDF first.
+                        */}
+                        <Button size="sm" variant="ghost" icon={<Printer size={11} />}
+                          onClick={() => window.print()}>
+                          Print
+                        </Button>
+                      </div>
                     </div>
 
                     <div className="mb-3 grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -322,6 +362,11 @@ export function ReportsPage() {
                         </table>
                       </div>
                     )}
+
+                    {/* A multi-section report continues below its table. */}
+                    {preview.sections?.map((section) => (
+                      <ReportSectionView key={section.title} section={section} />
+                    ))}
                   </>
                 )}
               </CardBody>
@@ -515,5 +560,164 @@ export function ReportsPage() {
         onSaved={() => { setDialog({ open: false, editing: null }); loadSchedules(); setView('schedules') }}
       />
     </>
+  )
+}
+
+/**
+ * What the monthly report covers: which job, which site, which month.
+ *
+ * Seeded from the header pickers so an HSE manager who has already narrowed to a project
+ * does not choose it twice, but editable here - assembling a quarter means changing the
+ * month three times, and doing that through the app-wide picker would drag every other
+ * screen along with it.
+ */
+function MonthlyScopeBar({
+  scope, onChange, projects, sites,
+}: {
+  scope: ReportScope
+  onChange: (s: ReportScope) => void
+  projects: { id: string; name: string }[]
+  sites: { id: string; name: string }[]
+}) {
+  const now = new Date()
+  /*
+   * Defaults to the month just finished, which is what the server does when asked for no
+   * month in particular. Shown rather than left blank so the control says what will happen.
+   */
+  const defaultMonth = now.getMonth() === 0 ? 12 : now.getMonth()
+  const defaultYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear()
+  const month = scope.month ?? defaultMonth
+  const year = scope.year ?? defaultYear
+
+  const MONTHS = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ]
+  // A short, fixed window. A safety record older than this is a data migration question,
+  // not a reporting one.
+  const years = Array.from({ length: 5 }, (_, i) => now.getFullYear() - i)
+
+  /** The sites offered narrow with the project, the same way the header pickers do. */
+  const project = projects.find((p) => p.id === scope.projectId)
+
+  return (
+    <div className="mt-3 grid gap-2 rounded-lg border bg-sunken p-2.5 sm:grid-cols-2">
+      {projects.length > 0 && (
+        <Select
+          label="Project"
+          value={scope.projectId ?? ''}
+          onChange={(e) => onChange({
+            ...scope,
+            projectId: e.target.value || undefined,
+            // The site is cleared with the project: keeping it would name a site the new
+            // project does not contain, and the report would disagree with its own heading.
+            siteId: undefined,
+          })}
+        >
+          <option value="">All projects</option>
+          {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </Select>
+      )}
+      <Select
+        label="Site"
+        value={scope.siteId ?? ''}
+        onChange={(e) => onChange({ ...scope, siteId: e.target.value || undefined })}
+        hint={project ? `Within ${project.name}` : undefined}
+      >
+        <option value="">{project ? 'All sites in this project' : 'All sites'}</option>
+        {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+      </Select>
+      <Select
+        label="Month"
+        value={String(month)}
+        onChange={(e) => onChange({ ...scope, month: Number(e.target.value), year })}
+      >
+        {MONTHS.map((label, i) => <option key={label} value={i + 1}>{label}</option>)}
+      </Select>
+      <Select
+        label="Year"
+        value={String(year)}
+        onChange={(e) => onChange({ ...scope, year: Number(e.target.value), month })}
+      >
+        {years.map((v) => <option key={v} value={v}>{v}</option>)}
+      </Select>
+    </div>
+  )
+}
+
+/**
+ * One section of a multi-section report.
+ *
+ * `unavailable` is styled unlike every figure on the page, on purpose. It is a statement
+ * about what this deployment does not record, and a reader who skims it as a number has
+ * been told something untrue.
+ */
+function ReportSectionView({ section }: { section: ReportSection }) {
+  return (
+    <section className="mt-5 break-inside-avoid">
+      <h3 className="border-b pb-1 text-sm font-semibold text-ink">{section.title}</h3>
+
+      {section.note && (
+        <p className="mt-2 text-xs leading-relaxed text-ink-2">{section.note}</p>
+      )}
+
+      {section.unavailable && (
+        <p className="mt-2 border-l-2 pl-3 text-xs italic leading-relaxed text-muted">
+          {section.unavailable}
+        </p>
+      )}
+
+      {section.stats && section.stats.length > 0 && (
+        <div className="mt-2.5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+          {section.stats.map((s) => (
+            <div key={s.label}>
+              <p className="text-2xs uppercase tracking-wide text-muted">{s.label}</p>
+              <p className={cn(
+                'text-lg font-bold',
+                // Same rule as everywhere else: red only where a non-zero value is a
+                // problem. Near misses are never red.
+                /overdue|lost time/i.test(s.label) && s.value !== '0' && s.value !== 'N/A'
+                  ? 'text-critical' : 'text-ink',
+              )}>{s.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {section.columns && section.rows && section.rows.length > 0 && (
+        <div className="mt-2.5 overflow-x-auto">
+          <table className="w-full text-2xs">
+            <thead>
+              <tr className="border-b text-left text-muted">
+                {section.columns.map((c) => (
+                  <th key={c.key} className="px-2 py-1.5 font-medium uppercase tracking-wide">
+                    {c.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {section.rows.map((r, i) => (
+                <tr key={i} className="border-b last:border-0">
+                  {section.columns!.map((c) => (
+                    <td key={c.key} className="px-2 py-1.5 text-ink">{r[c.key]}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {section.writeIn && (
+        // Ruled lines, because a printed management report is written on and an unruled
+        // gap invites a paragraph squeezed into the margin.
+        <div className="mt-2.5 space-y-4">
+          {Array.from({ length: section.writeIn }).map((_, i) => (
+            <div key={i} className="border-b" />
+          ))}
+        </div>
+      )}
+    </section>
   )
 }

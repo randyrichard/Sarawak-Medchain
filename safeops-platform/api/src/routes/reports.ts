@@ -53,6 +53,14 @@ const previewQuery = z.object({
   companyId: z.string().min(1),
   type: REPORT_TYPE,
   siteId: z.string().optional(),
+  /** Narrows to a project's sites. Resolved and tenant-checked in the service. */
+  projectId: z.string().optional(),
+  /*
+   * Which month to report on. Coerced because a query string carries text, and bounded
+   * here as well as in the service so an absurd value is refused before any query runs.
+   */
+  month: z.coerce.number().int().min(1).max(12).optional(),
+  year: z.coerce.number().int().min(2000).max(2200).optional(),
 })
 
 /** The report as data, for the on-screen preview. */
@@ -62,8 +70,8 @@ reportsRouter.get('/preview', async (req, res, next) => {
     if (!parsed.success) {
       return res.status(400).json({ error: 'validation', message: 'Invalid report request.' })
     }
-    const { companyId, type, siteId } = parsed.data
-    const data = await svc.preview(callerOf(req), companyId, type, siteId)
+    const { companyId, type, ...opts } = parsed.data
+    const data = await svc.preview(callerOf(req), companyId, type, opts)
     res.json({
       ...data,
       generatedAt: data.generatedAt.toISOString(),
@@ -82,8 +90,8 @@ reportsRouter.get('/preview.pdf', async (req, res, next) => {
     if (!parsed.success) {
       return res.status(400).json({ error: 'validation', message: 'Invalid report request.' })
     }
-    const { companyId, type, siteId } = parsed.data
-    const data = await svc.preview(callerOf(req), companyId, type, siteId)
+    const { companyId, type, ...opts } = parsed.data
+    const data = await svc.preview(callerOf(req), companyId, type, opts)
     const pdf = await renderReportPdf(data)
 
     res.setHeader('Content-Type', 'application/pdf')
@@ -133,6 +141,8 @@ const scheduleBody = z.object({
   timezone: z.string().max(64).default('Asia/Kuching'),
   recipientUserIds: z.array(z.string()).min(1),
   siteId: z.string().nullable().optional(),
+  /** A schedule may cover a whole project. Tenant-checked in the service, like siteId. */
+  projectId: z.string().nullable().optional(),
   enabled: z.boolean().optional(),
 })
 
@@ -160,6 +170,8 @@ const schedulePatch = z.object({
   timezone: z.string().max(64).optional(),
   recipientUserIds: z.array(z.string()).optional(),
   siteId: z.string().nullable().optional(),
+  /** A schedule may cover a whole project. Tenant-checked in the service, like siteId. */
+  projectId: z.string().nullable().optional(),
   enabled: z.boolean().optional(),
 })
 

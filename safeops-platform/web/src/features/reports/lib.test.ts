@@ -24,7 +24,7 @@ const run = (over: Partial<ReportRun> = {}): ReportRun => ({
 })
 
 const schedule = (over: Partial<ReportSchedule> = {}): ReportSchedule => ({
-  id: 's1', companyId: 'c1', name: 'Monday overdue actions',
+  id: 's1', companyId: 'c1', name: 'Monday overdue actions', projectId: null,
   reportType: 'overdue_actions', typeLabel: 'Overdue corrective actions',
   enabled: true, frequency: 'weekly', dayOfWeek: 1, timeOfDay: '08:00',
   timezone: 'Asia/Kuching', scheduleLabel: 'Every Monday at 08:00 Asia/Kuching',

@@ -24,7 +24,7 @@ export function ScheduleDialog({
   onClose: () => void
   onSaved: () => void
 }) {
-  const { company, sites } = useOrg()
+  const { company, sites, projects } = useOrg()
 
   const [name, setName] = useState('')
   const [reportType, setReportType] = useState<ReportType>('overdue_actions')
@@ -33,6 +33,7 @@ export function ScheduleDialog({
   const [timeOfDay, setTimeOfDay] = useState('08:00')
   const [timezone, setTimezone] = useState('Asia/Kuching')
   const [siteId, setSiteId] = useState('')
+  const [projectId, setProjectId] = useState('')
   const [chosen, setChosen] = useState<string[]>([])
 
   const [people, setPeople] = useState<ReportRecipient[] | null>(null)
@@ -51,6 +52,7 @@ export function ScheduleDialog({
       setTimeOfDay(editing.timeOfDay)
       setTimezone(editing.timezone)
       setSiteId(editing.siteId ?? '')
+      setProjectId(editing.projectId ?? '')
       setChosen(editing.recipientUserIds)
     } else {
       // The preset the product is actually for.
@@ -82,12 +84,13 @@ export function ScheduleDialog({
       if (editing) {
         await reportsApi.updateSchedule(editing.id, {
           name, frequency, dayOfWeek, timeOfDay, timezone,
-          recipientUserIds: chosen, siteId: siteId || null,
+          recipientUserIds: chosen, siteId: siteId || null, projectId: projectId || null,
         })
       } else {
         await reportsApi.createSchedule({
           companyId: company.id, name, reportType, frequency, dayOfWeek,
           timeOfDay, timezone, recipientUserIds: chosen, siteId: siteId || null,
+          projectId: projectId || null,
         })
       }
       onSaved()
@@ -160,6 +163,19 @@ export function ScheduleDialog({
           hint="The delivery time is local to this zone.">
           {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz}</option>)}
         </Select>
+
+        {/*
+          Offered only where projects exist. A workspace that has not adopted them would
+          otherwise get an empty control between two useful ones.
+        */}
+        {projects.length > 0 && (
+          <Select label="Project" value={projectId}
+            onChange={(e) => { setProjectId(e.target.value); setSiteId('') }}
+            hint="A monthly report for one job. Leave as all projects for the whole company.">
+            <option value="">All projects</option>
+            {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </Select>
+        )}
 
         <Select label="Site" value={siteId} onChange={(e) => setSiteId(e.target.value)}
           hint="Leave as all sites for a whole-company report.">

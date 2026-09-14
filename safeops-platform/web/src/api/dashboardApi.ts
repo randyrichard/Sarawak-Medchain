@@ -40,6 +40,8 @@ export interface DashboardOverview {
   scope: {
     companyName: string
     siteName: string | null
+    /** The project this view is narrowed to, or null for the whole company. */
+    projectName: string | null
     from: string
     to: string
     department: string | null
@@ -128,6 +130,8 @@ export interface DashboardOverview {
 
 export interface DashboardQuery {
   companyId: string
+  /** Narrows to one project's sites. The server resolves it; the client never sends a list. */
+  projectId?: string | null
   siteId?: string | null
   department?: string | null
   from?: string | null
@@ -138,6 +142,7 @@ export const dashboardApi = {
   overview(q: DashboardQuery): Promise<DashboardOverview> {
     return request(`/dashboard/overview?${qs({
       companyId: q.companyId,
+      projectId: q.projectId ?? undefined,
       siteId: q.siteId ?? undefined,
       department: q.department ?? undefined,
       from: q.from ?? undefined,

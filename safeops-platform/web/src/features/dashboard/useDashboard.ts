@@ -20,7 +20,7 @@ export interface DashboardFilterState {
 }
 
 export function useDashboard() {
-  const { company, site } = useOrg()
+  const { company, project, site } = useOrg()
   const [params, setParams] = useSearchParams()
 
   const filters = useMemo<DashboardFilterState>(() => ({
@@ -53,6 +53,12 @@ export function useDashboard() {
 
     dashboardApi.overview({
       companyId: company.id,
+      /*
+       * Sent even when a site is also chosen. The server treats the site as the narrower
+       * of the two and ignores the project then, but it still validates the id - so a
+       * project from another tenant is refused rather than quietly dropped here.
+       */
+      projectId: project?.id ?? null,
       siteId: site?.id ?? null,
       department: filters.department,
       from: filters.from,
@@ -71,7 +77,7 @@ export function useDashboard() {
       })
 
     return () => { cancelled = true }
-  }, [company, site, filters.department, filters.from, filters.to, nonce])
+  }, [company, project, site, filters.department, filters.from, filters.to, nonce])
 
   const setFilter = useCallback((patch: Partial<DashboardFilterState>) => {
     const next = new URLSearchParams(params)

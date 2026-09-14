@@ -22,7 +22,7 @@ const item = (over: Partial<AttentionItem> = {}): AttentionItem => ({
 const overview = (over: Partial<DashboardOverview> = {}): DashboardOverview => ({
   generatedAt: '2026-08-11T00:00:00.000Z',
   scope: {
-    companyName: 'Borneo Industrial Group', siteName: null,
+    companyName: 'Borneo Industrial Group', siteName: null, projectName: null,
     from: '2026-07-12T00:00:00.000Z', to: '2026-08-11T00:00:00.000Z',
     department: null,
     notes: { actionsFilteredByIncidentDepartment: false, reportsAreCompanyWide: true },
