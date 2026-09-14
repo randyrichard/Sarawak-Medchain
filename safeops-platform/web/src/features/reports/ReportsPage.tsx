@@ -56,7 +56,7 @@ const REPORT_CARDS: { type: ReportType; title: string; blurb: string; icon: type
 ]
 
 export function ReportsPage() {
-  const { company, role, projects, sites } = useOrg()
+  const { company, role, project, projects, site, sites } = useOrg()
   const [view, setView] = useState<View>('reports')
 
   const [preview, setPreview] = useState<ReportData | null>(null)
@@ -69,6 +69,22 @@ export function ReportsPage() {
    * changing the month three times without touching what the rest of the app is showing.
    */
   const [scope, setScope] = useState<ReportScope>({})
+
+  /*
+   * Seeded from the header pickers, once.
+   *
+   * An HSE manager who has already narrowed to a project expects the report to follow -
+   * having to choose the same job twice on the same screen reads as the filter not working.
+   * It is a starting point rather than a binding: the controls below stay editable, because
+   * assembling a quarter means changing the month three times without dragging every other
+   * screen along.
+   *
+   * Keyed on the ids so switching project in the header re-seeds, but typing in the report's
+   * own controls does not get overwritten on the next render.
+   */
+  useEffect(() => {
+    setScope((cur) => ({ ...cur, projectId: project?.id, siteId: site?.id }))
+  }, [project?.id, site?.id])
   const [schedules, setSchedules] = useState<ReportSchedule[] | null>(null)
   const [runs, setRuns] = useState<ReportRun[] | null>(null)
   const [mailConfigured, setMailConfigured] = useState<boolean | null>(null)
