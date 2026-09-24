@@ -129,45 +129,55 @@ export interface ConnectorSpec {
   category: 'identity' | 'communication' | 'erp' | 'hr' | 'developer' | 'data'
   description: string
   /**
-   * Only connectors that can actually be configured are listed. A directory advertising
-   * integrations that do not exist is a promise the product cannot keep at pilot.
+   * `planned` means the directory lists it and the product cannot yet deliver through it.
+   *
+   * Every connector here is currently planned. A stored config is written and never read
+   * by anything - no alert is posted to Slack or Teams, no directory is queried for
+   * sign-on - so presenting them as available asked a customer's IT for a production
+   * credential in exchange for nothing, and reported "Connected" afterwards. The first
+   * person to notice would have been an administrator asking why single sign-on did not
+   * work, in week one of a paid pilot.
+   *
+   * Listing them as planned keeps the roadmap visible, which is worth something in a sales
+   * conversation, without collecting a secret that goes nowhere.
    */
-  status: 'available'
+  status: 'available' | 'planned'
   fields: { key: string; label: string; placeholder: string; secret?: boolean }[]
 }
 
 /** The integration directory. What a tenant has connected is a ConnectorConfig row. */
 export const CONNECTORS: ConnectorSpec[] = [
   {
-    id: 'azure-ad', name: 'Microsoft Entra ID', category: 'identity', status: 'available',
+    id: 'azure-ad', name: 'Microsoft Entra ID', category: 'identity', status: 'planned',
     description: 'Single sign-on and automatic user provisioning from your directory.',
-    fields: [
-      { key: 'tenantId', label: 'Directory (tenant) ID', placeholder: '00000000-0000-0000-0000-000000000000' },
-      { key: 'clientId', label: 'Application (client) ID', placeholder: '00000000-0000-0000-0000-000000000000' },
-      { key: 'clientSecret', label: 'Client secret', placeholder: 'Value from Certificates & secrets', secret: true },
-    ],
+    // Fields return when the connector does. A planned integration that still renders a
+    // form invites somebody to hand over a production credential for something that has
+    // nowhere to send it.
+    fields: [],
   },
   {
-    id: 'slack', name: 'Slack', category: 'communication', status: 'available',
+    id: 'slack', name: 'Slack', category: 'communication', status: 'planned',
     description: 'Post incident and escalation alerts into a channel.',
-    fields: [
-      { key: 'webhookUrl', label: 'Incoming webhook URL', placeholder: 'https://hooks.slack.com/services/...', secret: true },
-      { key: 'channel', label: 'Default channel', placeholder: '#hse-alerts' },
-    ],
+    // Fields return when the connector does. A planned integration that still renders a
+    // form invites somebody to hand over a production credential for something that has
+    // nowhere to send it.
+    fields: [],
   },
   {
-    id: 'teams', name: 'Microsoft Teams', category: 'communication', status: 'available',
+    id: 'teams', name: 'Microsoft Teams', category: 'communication', status: 'planned',
     description: 'Send the same alerts to a Teams channel.',
-    fields: [
-      { key: 'webhookUrl', label: 'Connector webhook URL', placeholder: 'https://outlook.office.com/webhook/...', secret: true },
-    ],
+    // Fields return when the connector does. A planned integration that still renders a
+    // form invites somebody to hand over a production credential for something that has
+    // nowhere to send it.
+    fields: [],
   },
   {
-    id: 'powerbi', name: 'Power BI', category: 'data', status: 'available',
+    id: 'powerbi', name: 'Power BI', category: 'data', status: 'planned',
     description: 'Expose the safety dataset to your own reporting.',
-    fields: [
-      { key: 'workspaceId', label: 'Workspace ID', placeholder: '00000000-0000-0000-0000-000000000000' },
-    ],
+    // Fields return when the connector does. A planned integration that still renders a
+    // form invites somebody to hand over a production credential for something that has
+    // nowhere to send it.
+    fields: [],
   },
 ]
 

@@ -754,7 +754,14 @@ export class AdminService {
       const cfg = byId.get(spec.id)
       return {
         ...spec,
-        status: cfg?.connected ? 'connected' : 'available',
+        /*
+         * A planned connector stays planned even if a row says it was connected. Rows
+         * predate the reclassification: an administrator who pressed Connect before this
+         * was corrected has a ConnectorConfig saying so, and continuing to report that as
+         * live would keep the original promise going.
+         */
+        status: spec.status === 'planned' ? 'planned'
+          : cfg?.connected ? 'connected' : 'available',
         connectedAt: cfg?.connectedAt ?? null,
         connectedBy: cfg?.connectedBy ?? null,
         // Presence only — the console needs to know a secret is set, never what it is.
@@ -777,6 +784,20 @@ export class AdminService {
     this.requireAdmin(caller, companyId)
     const spec = CONNECTORS.find((c) => c.id === connectorId)
     if (!spec) throw new AdminError('not_found', 'Unknown integration.', 404)
+
+    /*
+     * Refused rather than stored. Accepting a credential for something that delivers
+     * nothing is the part that was actually wrong - the customer hands over a production
+     * secret, sees "Connected", and finds out in week one that no alert was ever sent.
+     */
+    if (spec.status === 'planned' && connected) {
+      throw new AdminError(
+        'validation',
+        `${spec.name} is on the roadmap but not built yet, so connecting it would do `
+        + 'nothing. It is listed here so you can see what is coming - we will tell you when '
+        + 'it is ready rather than accepting credentials for it now.',
+      )
+    }
 
     if (connected) {
       const missing = spec.fields.filter((f) => !config?.[f.key]?.trim())

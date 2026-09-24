@@ -557,42 +557,88 @@ d('AdminService — integration (real Postgres)', () => {
 
   // ── Integrations ───────────────────────────────────────────────────────────
 
+  /**
+   * Exercised against a fixture, because every shipped connector is currently `planned`.
+   *
+   * The redaction below is a security property of setConnector that outlives the catalog:
+   * it is what will run the first time a real connector ships. Deleting this test when the
+   * last available connector was reclassified would have quietly retired that guarantee at
+   * exactly the moment nothing was left to exercise it.
+   */
   it('connects an integration without storing the secret it was given', async () => {
-    const slack = CONNECTORS.find((c) => c.id === 'slack')!
-    expect(slack.fields.some((f) => f.secret)).toBe(true)
-
-    await expect(svc.setConnector(admin, COMPANY, ctx, 'slack', true, {}))
-      .rejects.toMatchObject({ code: 'validation' })
-
-    const secretUrl = 'https://hooks.slack.com/services/T000/B000/XXXXsecretXXXX'
-    const connected = await svc.setConnector(admin, COMPANY, ctx, 'slack', true, {
-      webhookUrl: secretUrl, channel: '#hse-alerts',
+    CONNECTORS.push({
+      id: 'itest-fixture', name: 'ITest Fixture', category: 'communication',
+      status: 'available',
+      description: 'Stands in for a connector that genuinely delivers.',
+      fields: [
+        { key: 'webhookUrl', label: 'Webhook URL', placeholder: 'https://...', secret: true },
+        { key: 'channel', label: 'Channel', placeholder: '#hse-alerts' },
+      ],
     })
-    expect(connected.status).toBe('connected')
-    // A secret field is reduced to a marker; a non-secret one is kept as configuration.
-    expect(connected.configSet.webhookUrl).toBe('set')
-    expect(connected.configSet.channel).toBe('#hse-alerts')
 
-    const row = await db.connectorConfig.findFirstOrThrow({
-      where: { companyId: COMPANY, connectorId: 'slack' },
-    })
-    expect(JSON.stringify(row)).not.toContain('XXXXsecretXXXX')
+    try {
+      await expect(svc.setConnector(admin, COMPANY, ctx, 'itest-fixture', true, {}))
+        .rejects.toMatchObject({ code: 'validation' })
 
-    const off = await svc.setConnector(admin, COMPANY, ctx, 'slack', false)
-    expect(off.status).toBe('available')
-    // The directory lists only connectors that can actually be configured, so anything
-    // else is simply unknown rather than "not available yet".
+      const secretUrl = 'https://hooks.example.test/T000/B000/XXXXsecretXXXX'
+      const connected = await svc.setConnector(admin, COMPANY, ctx, 'itest-fixture', true, {
+        webhookUrl: secretUrl, channel: '#hse-alerts',
+      })
+      expect(connected.status).toBe('connected')
+      // A secret field is reduced to a marker; a non-secret one is kept as configuration.
+      expect(connected.configSet.webhookUrl).toBe('set')
+      expect(connected.configSet.channel).toBe('#hse-alerts')
+
+      const row = await db.connectorConfig.findFirstOrThrow({
+        where: { companyId: COMPANY, connectorId: 'itest-fixture' },
+      })
+      expect(JSON.stringify(row)).not.toContain('XXXXsecretXXXX')
+
+      const off = await svc.setConnector(admin, COMPANY, ctx, 'itest-fixture', false)
+      expect(off.status).toBe('available')
+    } finally {
+      CONNECTORS.splice(CONNECTORS.findIndex((c) => c.id === 'itest-fixture'), 1)
+      await db.connectorConfig.deleteMany({ where: { companyId: COMPANY } })
+    }
+
+    // An id that is not in the directory is unknown, rather than "not available yet".
     await expect(svc.setConnector(admin, COMPANY, ctx, 'sap', true, {}))
       .rejects.toMatchObject({ code: 'not_found' })
   })
 
+  /**
+   * The original guarantee, strengthened rather than relaxed.
+   *
+   * It used to read: everything listed is available, and an available connector has fields.
+   * That was true of the catalog and false of the product - all four stored a config that
+   * nothing ever read, so "available" was advertising something the product could not do.
+   *
+   * The rule now has two halves, and a connector must satisfy one of them completely:
+   * either it is genuinely connectable, or it is marked planned, asks for nothing and
+   * refuses to connect. What is no longer permitted is the state that shipped - listed as
+   * available, offered a form, and wired to nothing.
+   */
   it('advertises no integration that cannot be connected', async () => {
     const list = await svc.listConnectors(admin, COMPANY)
     expect(list.length).toBeGreaterThan(0)
+
     for (const c of list) {
-      expect(['connected', 'available']).toContain(c.status)
-      // An available connector with no fields could never be configured.
-      if (c.status === 'available') expect(c.fields.length).toBeGreaterThan(0)
+      expect(['connected', 'available', 'planned']).toContain(c.status)
+
+      if (c.status === 'available') {
+        // An available connector with no fields could never be configured.
+        expect(c.fields.length, `${c.name} is available with no fields`).toBeGreaterThan(0)
+      }
+
+      if (c.status === 'planned') {
+        // No form, so nobody is invited to hand over a credential it cannot use...
+        expect(c.fields, `${c.name} is planned but asks for fields`).toEqual([])
+        // ...and the refusal is enforced by the service, not only by the interface.
+        await expect(
+          svc.setConnector(admin, COMPANY, ctx, c.id, true, {}),
+          `${c.name} is planned but accepted a connection`,
+        ).rejects.toMatchObject({ code: 'validation' })
+      }
     }
   })
 

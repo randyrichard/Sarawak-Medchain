@@ -378,6 +378,42 @@ if (raw.NODE_ENV === 'production') {
   }
 
   /*
+   * The address in the links must be an address allowed to call the API.
+   *
+   * Every invitation and reset link is built from APP_PUBLIC_URL. The page it opens then
+   * calls the API from that origin, so unless CORS_ORIGINS names it the browser refuses
+   * the call before any request is made - and the recipient sees a page that loads and
+   * then does nothing.
+   *
+   * Each value passes its own checks independently, which is exactly how this gets shipped:
+   * APP_PUBLIC_URL was pointed at the real domain while CORS_ORIGINS still said localhost,
+   * so the deployment booted cleanly and quietly minted dead invitations for a fortnight.
+   * The cost was an afternoon spent debugging a reset link that was never going to work.
+   *
+   * A warning rather than a refusal, deliberately. Running this stack in production mode on
+   * a laptop is how it gets verified before a customer sees it - the reserved-domain check
+   * above says so - and in that state the mismatch is expected and harmless. Bricking the
+   * one workflow that catches problems early would remove a check rather than add one.
+   */
+  const publicOrigin = (() => {
+    try { return new URL(url).origin } catch { return null }
+  })()
+  const allowedOrigins = raw.CORS_ORIGINS.split(',')
+    .map((o) => { try { return new URL(o.trim()).origin } catch { return null } })
+    .filter((o): o is string => !!o)
+
+  if (publicOrigin && allowedOrigins.length > 0 && !allowedOrigins.includes(publicOrigin)) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[safeops-api] LINKS ARE DEAD: APP_PUBLIC_URL is ${publicOrigin}, which is not in `
+      + `CORS_ORIGINS (${allowedOrigins.join(', ')}). Every invitation and password-reset `
+      + 'link opens a page that cannot reach this API, so nobody can accept one. Add that '
+      + 'origin to CORS_ORIGINS, or point APP_PUBLIC_URL at an address this deployment '
+      + 'actually serves.',
+    )
+  }
+
+  /*
    * A database reached across a network must be reached over TLS.
    *
    * The bundled deployment runs PostgreSQL as a container on a private compose network and

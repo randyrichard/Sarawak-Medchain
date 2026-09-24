@@ -49,7 +49,7 @@ export function IntegrationsSection() {
       {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
       <Card className="flex items-center gap-3 px-5 py-3.5">
         <Boxes size={18} className="text-accent" />
-        <p className="text-sm text-ink-2">A scalable connector framework. <span className="font-semibold text-ink">{connectors.filter((c) => c.status === 'connected').length} connected</span> · configuration is stored securely; third-party API calls are provisioned per environment.</p>
+        <p className="text-sm text-ink-2"><span className="font-semibold text-ink">{connectors.filter((c) => c.status === 'connected').length} connected</span> · items marked Planned are on the roadmap and cannot be connected yet. Secrets you enter are never stored — only the fact that a field is set.</p>
       </Card>
 
       {grouped.map(([cat, items]) => {
@@ -62,9 +62,17 @@ export function IntegrationsSection() {
                 <Card key={c.id} className="flex flex-col p-4">
                   <div className="flex items-start justify-between">
                     <p className="text-sm font-semibold text-ink">{c.name}</p>
+                    {/*
+                      Three states, not two. "Planned" was missing, so a connector the
+                      product cannot yet deliver through was labelled Available and
+                      offered a Connect button - which is how an administrator ends up
+                      handing over a directory credential for something that does nothing.
+                    */}
                     {c.status === 'connected'
                       ? <StatusPill kind="good" label="Connected" />
-                      : <Badge tone="neutral">Available</Badge>}
+                      : c.status === 'planned'
+                        ? <Badge tone="warning">Planned</Badge>
+                        : <Badge tone="neutral">Available</Badge>}
                   </div>
                   <p className="mt-1.5 flex-1 text-2xs leading-relaxed text-muted">{c.description}</p>
                   <p className="mt-2 text-2xs font-medium text-ink-2">{c.capability}</p>

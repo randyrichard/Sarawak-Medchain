@@ -99,7 +99,12 @@ export interface AuditFilters {
 
 // ─── Integrations ────────────────────────────────────────────────────────────
 
-export type ConnectorStatus = 'connected' | 'available'
+/**
+ * Three states. `planned` means the directory lists it and the product cannot deliver
+ * through it yet - the state that was missing, which is why a connector that does nothing
+ * was offered with a Connect button.
+ */
+export type ConnectorStatus = 'connected' | 'available' | 'planned'
 export type ConnectorCategory = 'identity' | 'communication' | 'erp' | 'hr' | 'developer' | 'data'
 
 export interface ConnectorField {
