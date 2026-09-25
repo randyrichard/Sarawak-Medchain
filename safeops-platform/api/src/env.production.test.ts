@@ -104,6 +104,20 @@ describe('production environment guards', { timeout: SPAWN_TIMEOUT }, () => {
     expect(r.said).not.toMatch(/PROXY_TOKEN is not set/)
   })
 
+  it('starts with header trust off and the empty token compose passes', () => {
+    // docker-compose.prod.yml sends PROXY_TOKEN as `${PROXY_TOKEN:-}`, so "unset" arrives
+    // as an empty string, not as a missing variable. That used to fail min(16) and put the
+    // API in a restart loop on exactly the configuration the case above approves.
+    const r = bootWith({ PROXY_TOKEN: '', TRUST_PROXY: 'false' })
+    expect(r.said).not.toMatch(/PROXY_TOKEN/)
+  })
+
+  it('still refuses an empty token when forwarded headers are trusted', () => {
+    const r = bootWith({ PROXY_TOKEN: '' })
+    expect(r.status).toBe(1)
+    expect(r.said).toMatch(/PROXY_TOKEN is not set/)
+  })
+
   it('refuses a token too short to be worth having', () => {
     // An empty or token-shaped-but-trivial value would otherwise look configured while
     // being guessable, which is worse than not setting it — that at least fails loudly.
