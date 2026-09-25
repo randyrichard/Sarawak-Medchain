@@ -8,14 +8,27 @@
 #
 #   deploy/deployment.sh
 #   deploy/deployment.sh --skip-backup     # first deploy only, when there is nothing to lose
+#   deploy/deployment.sh --behind-cdn      # passed to preflight.sh: DNS points at a CDN
 
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 SKIP_BACKUP=0
-[ "${1:-}" = "--skip-backup" ] && SKIP_BACKUP=1
+PREFLIGHT_ARGS=()
+for arg in "$@"; do
+  case "$arg" in
+    --skip-backup) SKIP_BACKUP=1 ;;
+    --behind-cdn)  PREFLIGHT_ARGS+=(--behind-cdn) ;;
+    *) die "unknown option: $arg" ;;
+  esac
+done
 
 require_docker
 require_env
+
+# Before anything is built or stopped: a deployment whose domains do not point here, or
+# whose app and API cannot share a cookie, boots cleanly and serves nobody.
+"$DEPLOY_DIR/preflight.sh" ${PREFLIGHT_ARGS[@]+"${PREFLIGHT_ARGS[@]}"} \
+  || die "pre-flight failed - fix the above, then deploy again. Nothing was changed."
 
 STAMP="$(date +%F-%H%M%S)"
 RELEASE_DIR="$ROOT/.releases"

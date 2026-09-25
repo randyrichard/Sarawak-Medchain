@@ -107,6 +107,7 @@ None of this can be done from the repository.
 - [ ] Send yourself an invitation and confirm it arrives, including spam placement
 
 ### 8. Deploy
+- [ ] `deploy/preflight.sh` reports **Ready.** (DNS points here, one registrable domain, no placeholders)
 - [ ] `docker compose -f docker-compose.prod.yml --env-file .env.prod --profile tls up -d --build`
 - [ ] Confirm nothing is restarting
 

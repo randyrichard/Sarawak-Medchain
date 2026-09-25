@@ -33,7 +33,11 @@ say "SafeOps health — $(date '+%F %H:%M:%S')"
 say ""
 
 # ── Containers ───────────────────────────────────────────────────────────────
-for svc in db api web; do
+SERVICES="db api web"
+# With a domain configured, Caddy is the only way in from outside - a stopped proxy is an
+# outage even while everything behind it is healthy.
+[ -n "${SAFEOPS_APP_DOMAIN:-}" ] && SERVICES="$SERVICES caddy"
+for svc in $SERVICES; do
   cid="$($DC ps -q "$svc" 2>/dev/null || true)"
   if [ -z "$cid" ]; then
     report_bad "$svc is not running"
