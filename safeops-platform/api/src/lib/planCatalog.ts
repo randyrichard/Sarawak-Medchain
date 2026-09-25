@@ -42,8 +42,8 @@ export interface PlanEntitlements {
    *
    * It is kept because the boundary is right and cheap to hold now, and because moving it
    * later, after customers exist on both sides, is the expensive version. It is NOT a
-   * reason to charge anyone the difference: sell Premium on sites until an API key opens
-   * a door.
+   * reason to charge anyone the difference. With no site cap on Standard, it is also the
+   * only thing Premium adds - so Premium has nothing to sell until an API key opens a door.
    */
   integrations: boolean
 }
@@ -67,10 +67,14 @@ export const PLANS: Record<string, Plan> = {
     key: 'standard',
     label: 'Standard',
     monthlyPriceMyr: 10_000,
-    summary: 'Every module and every user, across up to three sites. Incidents, '
-      + 'investigations, corrective actions, permits, equipment, visitors, training, audits, '
-      + 'contractors, and reports with scheduled email delivery.',
-    entitlements: { maxSites: 3, integrations: false },
+    // No site cap. It was 3, which contradicted the customer the pricing is aimed at -
+    // 500-2,000 people across two or more sites - and made RM10,000 a price few of them
+    // could actually buy. The allowance machinery in entitlements.ts is kept and tested,
+    // so a cap is one number here if the pilot argues for one.
+    summary: 'Every module and every user, across every site. Incidents, investigations, '
+      + 'corrective actions, permits, equipment, visitors, training, audits, contractors, '
+      + 'and reports with scheduled email delivery.',
+    entitlements: { maxSites: null, integrations: false },
     sellable: true,
   },
   premium: {
@@ -79,8 +83,8 @@ export const PLANS: Record<string, Plan> = {
     monthlyPriceMyr: 15_000,
     // Read by you in the provisioning console, not by a customer, so it says the awkward
     // half out loud.
-    summary: 'Everything in Standard, with no limit on sites. API keys and webhooks are '
-      + 'reserved to this plan but neither works yet — do not sell on them.',
+    summary: 'Everything in Standard, plus API keys and webhooks - which are reserved to '
+      + 'this plan but do not work yet. Until they do there is nothing to sell Premium on.',
     entitlements: { maxSites: null, integrations: true },
     sellable: true,
   },
