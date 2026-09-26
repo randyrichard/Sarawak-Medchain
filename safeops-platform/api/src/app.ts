@@ -50,6 +50,7 @@ import { SearchError } from './lib/searchService.js'
 import { EmployeeError } from './lib/employeeService.js'
 import { ContractorError } from './lib/contractorService.js'
 import { ToolboxError } from './lib/toolboxService.js'
+import { SiteComparisonError } from './lib/siteComparison.js'
 import { toolboxRouter } from './routes/toolbox.js'
 import { EquipmentError } from './lib/equipmentService.js'
 import { VisitorError } from './lib/visitorService.js'
@@ -289,6 +290,7 @@ export function createApp() {
       err instanceof EmployeeError ||
       err instanceof ContractorError ||
       err instanceof ToolboxError ||
+      err instanceof SiteComparisonError ||
       err instanceof EquipmentError ||
       err instanceof VisitorError ||
       err instanceof ReportError ||
