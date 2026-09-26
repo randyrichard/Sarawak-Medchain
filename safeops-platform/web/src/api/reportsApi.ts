@@ -8,13 +8,14 @@ import { blob, request, qs } from './http'
  * nobody received.
  */
 
-export type ReportType = 'overdue_actions' | 'open_investigations' | 'monthly_summary'
+export type ReportType =
+  | 'overdue_actions' | 'open_investigations' | 'monthly_summary' | 'weekly_actions' | 'site_activity'
 export type ReportFrequency = 'daily' | 'weekly' | 'monthly'
 
 export interface ReportColumn { key: string; label: string; width: number }
 
 export interface ReportData {
-  type: ReportType
+  type: ReportType | 'incident_summary'
   title: string
   companyName: string
   siteName: string | null
@@ -56,6 +57,8 @@ export interface ReportScope {
   /** 1-12 with its year. Both or neither; absent means the last complete month. */
   month?: number
   year?: number
+  /** site_activity: today, or the last seven days. */
+  period?: 'day' | 'week'
 }
 
 export interface ReportRecipient {

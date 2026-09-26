@@ -1,8 +1,9 @@
 import { Prisma, type PrismaClient, type ReportType, type Role } from '@prisma/client'
 import type { Caller } from './incidentService.js'
 import { overdueActionWhere } from './incidentService.js'
-import { SEVERITY_LABEL, TYPE_LABEL, stageLabel } from './incidentCatalog.js'
+import { SEVERITY_LABEL, TYPE_LABEL, isInjury, isLostTime, isNearMiss, stageLabel } from './incidentCatalog.js'
 import { renderReportPdf, readStoredReport } from './reportPdf.js'
+import { buildSiteActivity, buildWeeklyActions, type ActivityPeriod } from './reportSummaries.js'
 import {
   deliverReport, mailProviderConfigured, sendDeliveryPayload,
   type DeliveryPayload, type DeliveryResult,
@@ -45,6 +46,8 @@ export const REPORT_TYPE_LABEL: Record<ReportType, string> = {
   overdue_actions: 'Overdue corrective actions',
   open_investigations: 'Open investigations',
   monthly_summary: 'Monthly safety summary',
+  weekly_actions: 'Weekly corrective actions',
+  site_activity: 'Site activity summary',
 }
 
 /**
@@ -56,7 +59,6 @@ export const REPORT_TYPE_LABEL: Record<ReportType, string> = {
  * LTIFR off a headcount guess would be inventing a compliance number, so what is reported
  * is a count of what happened, under a name that claims nothing.
  */
-const INJURY_TYPES = ['first_aid', 'mtc', 'rwc', 'lti', 'fatality']
 
 /** Stages where an investigation is still owed work. Closed and archived are excluded. */
 const OPEN_INVESTIGATION_STAGES = [
@@ -76,7 +78,8 @@ export interface ReportColumn { key: string; label: string; width: number }
 
 /** What a built report contains, before it becomes a PDF. */
 export interface ReportData {
-  type: ReportType
+  /** A scheduled report type, or the one-incident summary, which is never scheduled. */
+  type: ReportType | 'incident_summary'
   title: string
   companyName: string
   siteName: string | null
@@ -165,6 +168,8 @@ export interface ReportOptions {
    */
   month?: number | null
   year?: number | null
+  /** site_activity only: today, or the last seven days. Absent means the last seven days. */
+  period?: ActivityPeriod | null
 }
 
 export class ReportService {
@@ -264,6 +269,11 @@ export class ReportService {
         return this.buildOverdueActions(companyId, company.name, siteId, site?.name ?? null)
       case 'monthly_summary':
         return this.buildMonthlySummary(scope)
+      case 'weekly_actions':
+        return buildWeeklyActions(this.db, scope)
+      case 'site_activity':
+        return buildSiteActivity(this.db, scope, opts.period ?? 'week',
+          await this.periodTimezone(companyId, siteId))
       default:
         return this.buildOpenInvestigations(companyId, company.name, siteId, site?.name ?? null)
     }
@@ -367,7 +377,7 @@ export class ReportService {
       }),
       this.db.incident.findMany({
         where: { ...where, archived: false, occurredAt: inPrior },
-        select: { type: true },
+        select: { type: true, severity: true },
         take: 2000,
       }),
       this.db.site.findMany({
@@ -425,19 +435,15 @@ export class ReportService {
       }),
     ])
 
-    const countOf = (...types: string[]) => incidents.filter((i) => types.includes(i.type)).length
-    const priorCountOf = (...types: string[]) =>
-      priorIncidents.filter((i) => types.includes(i.type)).length
-
     const anchor = new Date(Date.UTC(y, m - 1, 15, 12))
     const monthName = new Intl.DateTimeFormat('en-GB', {
       month: 'long', year: 'numeric', timeZone: 'UTC',
     }).format(anchor)
     const dayCount = new Date(Date.UTC(m === 12 ? y + 1 : y, m === 12 ? 0 : m, 0)).getUTCDate()
 
-    const lostTime = countOf('lti', 'fatality')
-    const injuries = countOf(...INJURY_TYPES)
-    const nearMisses = countOf('near_miss')
+    const lostTime = incidents.filter(isLostTime).length
+    const injuries = incidents.filter(isInjury).length
+    const nearMisses = incidents.filter(isNearMiss).length
     const inspectionsDone = inspections.filter((i) => i.status === 'completed').length
     const auditsDone = audits.filter((a) => a.status === 'completed').length
     const permitsIssued = permits.length
@@ -521,7 +527,7 @@ export class ReportService {
         stats: [
           { label: 'Near misses', value: String(nearMisses) },
           { label: 'Share of incidents', value: rate(nearMisses, incidents.length) },
-          { label: 'Previous month', value: String(priorCountOf('near_miss')) },
+          { label: 'Previous month', value: String(priorIncidents.filter(isNearMiss).length) },
         ],
         /*
          * Said explicitly, because the obvious reading of a low number is the wrong one.
@@ -627,9 +633,9 @@ export class ReportService {
             ],
             rows: [
               { k: 'Incidents', v: trend(incidents.length, priorIncidents.length), p: String(priorIncidents.length) },
-              { k: 'Injuries', v: trend(injuries, priorIncidents.filter((i) => INJURY_TYPES.includes(i.type)).length), p: String(priorIncidents.filter((i) => INJURY_TYPES.includes(i.type)).length) },
-              { k: 'Lost time', v: trend(lostTime, priorCountOf('lti', 'fatality')), p: String(priorCountOf('lti', 'fatality')) },
-              { k: 'Near misses', v: trend(nearMisses, priorCountOf('near_miss')), p: String(priorCountOf('near_miss')) },
+              { k: 'Injuries', v: trend(injuries, priorIncidents.filter(isInjury).length), p: String(priorIncidents.filter(isInjury).length) },
+              { k: 'Lost time', v: trend(lostTime, priorIncidents.filter(isLostTime).length), p: String(priorIncidents.filter(isLostTime).length) },
+              { k: 'Near misses', v: trend(nearMisses, priorIncidents.filter(isNearMiss).length), p: String(priorIncidents.filter(isNearMiss).length) },
               { k: 'Actions closed', v: trend(actionsClosed, priorActionsClosed), p: String(priorActionsClosed) },
             ],
           }),
@@ -675,7 +681,7 @@ export class ReportService {
               return {
                 site: site.name,
                 incidents: String(mine.length),
-                injuries: String(mine.filter((i) => INJURY_TYPES.includes(i.type)).length),
+                injuries: String(mine.filter(isInjury).length),
                 near: String(mine.filter((i) => i.type === 'near_miss').length),
                 permits: String(permits.filter((p) => p.siteId === site.id).length),
               }
@@ -1149,6 +1155,8 @@ export class ReportService {
     projectId?: string | null
     scheduleId?: string | null
     dueSlot?: string | null
+    /** site_activity: a daily schedule reports the day, anything else the last week. */
+    period?: ActivityPeriod | null
     trigger: 'scheduled' | 'manual'
     triggeredBy: string
     recipientUserIds: string[]
@@ -1176,7 +1184,7 @@ export class ReportService {
 
     try {
       const data = await this.build(opts.companyId, opts.reportType, {
-        siteId: opts.siteId, projectId: opts.projectId,
+        siteId: opts.siteId, projectId: opts.projectId, period: opts.period ?? null,
       })
       const pdf = await renderReportPdf(data)
       const recipients = await this.resolveRecipients(opts.companyId, opts.recipientUserIds)
@@ -1458,12 +1466,14 @@ export class ReportService {
     siteId: string | null
     recipientUserIds: string[]
     projectId?: string | null
+    frequency?: Frequency
   }, dueSlot: string) {
     return this.execute({
       companyId: schedule.companyId,
       reportType: schedule.reportType,
       siteId: schedule.siteId,
       projectId: schedule.projectId ?? null,
+      period: schedule.frequency === 'daily' ? 'day' : 'week',
       scheduleId: schedule.id,
       dueSlot,
       trigger: 'scheduled',
@@ -1483,6 +1493,7 @@ export class ReportService {
       reportType: s.reportType,
       siteId: s.siteId,
       projectId: s.projectId,
+      period: s.frequency === 'daily' ? 'day' : 'week',
       scheduleId: s.id,
       dueSlot: null,
       trigger: 'manual',

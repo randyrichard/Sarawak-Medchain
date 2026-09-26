@@ -7,6 +7,8 @@ import {
 } from '../lib/incidentCatalog.js'
 import { IncidentService, type Caller } from '../lib/incidentService.js'
 import { requireAuth } from '../middleware/requireAuth.js'
+import { IncidentSummaryService } from '../lib/incidentSummary.js'
+import { renderReportPdf } from '../lib/reportPdf.js'
 
 /**
  * The investigation half of the incident API: people, related records, causal analysis.
@@ -175,6 +177,31 @@ incidentInvestigationRouter.delete('/links/:linkId', async (req, res, next) => {
   try {
     await svc.removeLink(callerOf(req), req.params.linkId, ctxOf(req))
     res.status(204).end()
+  } catch (e) {
+    next(e)
+  }
+})
+
+// ── The one-page summary ─────────────────────────────────────────────────────
+
+const summaries = new IncidentSummaryService(prisma)
+
+incidentInvestigationRouter.get('/:id/summary', async (req, res, next) => {
+  try {
+    const data = await summaries.build(callerOf(req), req.params.id)
+    res.json({ ...data, generatedAt: data.generatedAt.toISOString(), periodEnd: data.periodEnd.toISOString(), periodStart: null })
+  } catch (e) {
+    next(e)
+  }
+})
+
+incidentInvestigationRouter.get('/:id/summary.pdf', async (req, res, next) => {
+  try {
+    const pdf = await renderReportPdf(await summaries.build(callerOf(req), req.params.id))
+    res.setHeader('Content-Type', 'application/pdf')
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(pdf.fileName)}"`)
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.send(pdf.bytes)
   } catch (e) {
     next(e)
   }

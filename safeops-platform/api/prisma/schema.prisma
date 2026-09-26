@@ -2925,6 +2925,10 @@ enum ReportType {
   open_investigations
   /// A closed calendar month, rather than what is outstanding now.
   monthly_summary
+  /// Every open corrective action, by department - the weekly SAIL for the HOD meeting.
+  weekly_actions
+  /// What happened on site in the last day or week: incidents, briefings, permits, actions.
+  site_activity
 }
 
 enum ReportFrequency {

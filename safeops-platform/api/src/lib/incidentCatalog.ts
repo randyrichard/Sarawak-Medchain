@@ -95,6 +95,26 @@ export const LOST_TIME_SEVERITIES: IncidentSeverity[] = [
   'lost_time_injury', 'fatality', 'catastrophic',
 ]
 
+/**
+ * How the reports count injuries, lost time and near misses - the same rule the incident
+ * board applies, in one place.
+ *
+ * The monthly report counted by type alone, against the pre-split scale ('first_aid',
+ * 'lti' ...). Every incident reported since the split carries type 'injury' and says how
+ * bad it was in severity, so a month of new lost-time injuries reported "Injuries 0, Lost
+ * time 0" while the board beside it counted them. The legacy types still count, because
+ * rows reported under the old scale still happened.
+ */
+const LEGACY_INJURY_TYPES = ['first_aid', 'mtc', 'rwc', 'lti', 'fatality']
+const INJURY_SEVERITIES: string[] = ['medical_treatment', 'restricted_work', 'lost_time_injury', 'fatality', 'catastrophic']
+type Counted = { type: string; severity: string }
+
+export const isInjury = (i: Counted) =>
+  i.type === 'injury' || LEGACY_INJURY_TYPES.includes(i.type) || INJURY_SEVERITIES.includes(i.severity)
+export const isLostTime = (i: Counted) =>
+  (LOST_TIME_SEVERITIES as string[]).includes(i.severity) || i.type === 'lti' || i.type === 'fatality'
+export const isNearMiss = (i: Counted) => i.severity === 'near_miss' || i.type === 'near_miss'
+
 /** Severities that oblige an investigation regardless of what anyone thinks of the event. */
 export const MANDATORY_INVESTIGATION: IncidentSeverity[] = [
   'restricted_work', 'lost_time_injury', 'environmental_major',
