@@ -18,14 +18,22 @@ const STORAGE_KEY = 'safeops.gettingStarted.hidden'
  * the card is dismissed, this does nothing on every subsequent dashboard load.
  */
 export function useGettingStarted() {
-  const { company, sites } = useOrg()
+  const { company, sites, allowed } = useOrg()
+  /*
+   * The checklist is setting up a workspace - adding sites, inviting people - and both of
+   * those live in Administration. Shown to anyone else it asked the user list for a count
+   * the API refuses them (three 403s on every dashboard load), read the refusal as "nobody
+   * has been invited", and offered an HSE manager an "Invite someone" button that opens a
+   * page telling them they do not have access.
+   */
+  const canSetUp = allowed('settings:manage')
   const [hidden, setHidden] = useState(
     () => typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEY) === '1',
   )
   const [progress, setProgress] = useState<GettingStartedProgress | null>(null)
 
   useEffect(() => {
-    if (hidden || !company) return
+    if (hidden || !company || !canSetUp) return
     let cancelled = false
 
     /*
@@ -57,12 +65,12 @@ export function useGettingStarted() {
     })
 
     return () => { cancelled = true }
-  }, [company, sites.length, hidden])
+  }, [company, sites.length, hidden, canSetUp])
 
   const dismiss = () => {
     setHidden(true)
     try { localStorage.setItem(STORAGE_KEY, '1') } catch { /* private mode: hidden for this tab only */ }
   }
 
-  return { progress: hidden ? null : progress, dismiss }
+  return { progress: hidden || !canSetUp ? null : progress, dismiss }
 }
