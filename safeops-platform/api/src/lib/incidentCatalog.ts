@@ -116,3 +116,24 @@ export const isLegacyType = (v: IncidentType) =>
   !!INCIDENT_TYPES.find((t) => t.value === v)?.legacy
 export const isLegacySeverity = (v: IncidentSeverity) =>
   !!INCIDENT_SEVERITIES.find((s) => s.value === v)?.legacy
+
+/**
+ * How a stage reads in a document. Reports printed "rca" and "closed" - the column values -
+ * in the table a customer hands to their client, where the web app has always said "Root
+ * Cause Analysis" and "Closed". Same words as web/src/api/incidents.ts.
+ */
+const STAGE_LABEL: Record<string, string> = {
+  reported: 'Reported',
+  assessment: 'Initial Assessment',
+  investigation: 'Investigation',
+  rca: 'Root Cause Analysis',
+  actions: 'Corrective Actions',
+  review: 'Manager Review',
+  verification: 'Verification',
+  closed: 'Closed',
+  draft: 'Draft',
+}
+
+export function stageLabel(stage: string): string {
+  return STAGE_LABEL[stage] ?? stage.replace(/_/g, ' ')
+}

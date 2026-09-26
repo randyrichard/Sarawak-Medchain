@@ -5,7 +5,7 @@ import {
 } from 'lucide-react'
 import { api } from '@/api/client'
 import type { Incident } from '@/api/incidents'
-import { STAGE_LABEL, TYPE_LABEL } from '@/api/incidents'
+import { STAGE_LABEL, SEVERITY_LABEL, TYPE_LABEL } from '@/api/incidents'
 import { useOrg } from '@/features/org/OrgContext'
 import {
   Alert, Avatar, Badge, Breadcrumbs, Button, Card, CardBody, CardHeader, Dialog, LinkButton,
@@ -155,7 +155,7 @@ export function IncidentDetailPage() {
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <span className="font-mono text-xs text-muted">{incident.number}</span>
-            <StatusPill kind={severityKind(incident.severity)} label={incident.severity} />
+            <StatusPill kind={severityKind(incident.severity)} label={SEVERITY_LABEL[incident.severity] ?? incident.severity} />
             <Badge tone="neutral">{TYPE_LABEL[incident.type]}</Badge>
             <span className="inline-flex items-center gap-1.5 text-xs text-ink-2">
               <span className="h-2 w-2 rounded-full" style={{ background: STAGE_COLOR[incident.stage] }} />

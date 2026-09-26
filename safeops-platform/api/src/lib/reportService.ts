@@ -1,7 +1,7 @@
 import { Prisma, type PrismaClient, type ReportType, type Role } from '@prisma/client'
 import type { Caller } from './incidentService.js'
 import { overdueActionWhere } from './incidentService.js'
-import { SEVERITY_LABEL, TYPE_LABEL } from './incidentCatalog.js'
+import { SEVERITY_LABEL, TYPE_LABEL, stageLabel } from './incidentCatalog.js'
 import { renderReportPdf, readStoredReport } from './reportPdf.js'
 import {
   deliverReport, mailProviderConfigured, sendDeliveryPayload,
@@ -504,7 +504,7 @@ export class ReportService {
             .map(([k, v]) => ({ k, v: String(v) })),
           ...tally(incidents.map((i) => `Severity: ${SEVERITY_LABEL[i.severity] ?? pretty(i.severity)}`))
             .map(([k, v]) => ({ k, v: String(v) })),
-          ...tally(incidents.map((i) => `Stage: ${pretty(i.stage)}`))
+          ...tally(incidents.map((i) => `Stage: ${stageLabel(i.stage)}`))
             .map(([k, v]) => ({ k, v: String(v) })),
         ],
       },
@@ -708,7 +708,7 @@ export class ReportService {
         severity: SEVERITY_LABEL[i.severity] ?? pretty(i.severity),
         title: i.title,
         department: i.department || '-',
-        stage: pretty(i.stage),
+        stage: stageLabel(i.stage),
       })),
       sections,
       /*
@@ -858,7 +858,7 @@ export class ReportService {
         // Anonymity is about the reporter, never the investigator, so nothing is withheld
         // here - but the flag is carried so a reader knows not to go looking for a name.
         investigator: i.leadInvestigator || i.investigator || (i.anonymous ? '— (anonymous report)' : '—'),
-        stage: i.stage.replace(/_/g, ' '),
+        stage: stageLabel(i.stage),
         outstanding: outstanding(i),
       })),
       emptyMessage: 'No investigations are open. Everything reported has been closed out.',

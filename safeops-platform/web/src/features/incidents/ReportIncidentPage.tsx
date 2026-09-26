@@ -7,7 +7,7 @@ import {
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import type { AttachmentKind, IncidentSeverity, IncidentType, NewIncidentInput, PersonInvolved } from '@/api/incidents'
-import { INCIDENT_TYPES, TYPE_LABEL } from '@/api/incidents'
+import { INCIDENT_TYPES, SEVERITY_LABEL, TYPE_LABEL } from '@/api/incidents'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useOrg } from '@/features/org/OrgContext'
 import { useDepartments } from '@/features/org/departments'
@@ -582,7 +582,7 @@ export function ReportIncidentPage() {
             {error && <Alert tone="critical" title="Couldn't submit">{error}</Alert>}
             <div className="rounded-xl border">
               <div className="flex flex-wrap items-center gap-2 border-b px-4 py-3">
-                <StatusPill kind={severityKind(draft.severity)} label={draft.severity} />
+                <StatusPill kind={severityKind(draft.severity)} label={SEVERITY_LABEL[draft.severity] ?? draft.severity} />
                 <Badge tone="accent">{TYPE_LABEL[draft.type]}</Badge>
                 <span className="text-2xs text-muted">number assigned on submit</span>
               </div>
