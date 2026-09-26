@@ -102,7 +102,7 @@ export default function App() {
                   <Route
                     path="/incidents"
                     element={
-                      <RequireCapability capability="incidents:manage">
+                      <RequireCapability capability="incidents:view">
                         <IncidentsListPage />
                       </RequireCapability>
                     }
@@ -135,7 +135,7 @@ export default function App() {
                   <Route
                     path="/incidents/:id"
                     element={
-                      <RequireCapability capability="incidents:manage">
+                      <RequireCapability capability="incidents:view">
                         <IncidentDetailPage />
                       </RequireCapability>
                     }
@@ -143,7 +143,7 @@ export default function App() {
                   <Route
                     path="/actions"
                     element={
-                      <RequireCapability capability="dashboard:view">
+                      <RequireCapability capability="actions:manage">
                         <ActionsPage />
                       </RequireCapability>
                     }
@@ -151,7 +151,7 @@ export default function App() {
                   <Route
                     path="/assets"
                     element={
-                      <RequireCapability capability="dashboard:view">
+                      <RequireCapability capability="equipment:view">
                         <AssetsPage />
                       </RequireCapability>
                     }
@@ -159,7 +159,7 @@ export default function App() {
                   <Route
                     path="/audits"
                     element={
-                      <RequireCapability capability="dashboard:view">
+                      <RequireCapability capability="compliance:manage">
                         <AuditsPage />
                       </RequireCapability>
                     }
@@ -167,7 +167,7 @@ export default function App() {
                   <Route
                     path="/training"
                     element={
-                      <RequireCapability capability="dashboard:view">
+                      <RequireCapability capability="training:view">
                         <TrainingPage />
                       </RequireCapability>
                     }
@@ -175,7 +175,7 @@ export default function App() {
                   <Route
                     path="/permits"
                     element={
-                      <RequireCapability capability="dashboard:view">
+                      <RequireCapability capability="permits:view">
                         <PermitsPage />
                       </RequireCapability>
                     }
@@ -183,7 +183,7 @@ export default function App() {
                   <Route
                     path="/reports"
                     element={
-                      <RequireCapability capability="dashboard:view">
+                      <RequireCapability capability="reports:view">
                         <ReportsPage />
                       </RequireCapability>
                     }
@@ -191,7 +191,7 @@ export default function App() {
                   <Route
                     path="/visitors"
                     element={
-                      <RequireCapability capability="dashboard:view">
+                      <RequireCapability capability="visitors:view">
                         <VisitorsPage />
                       </RequireCapability>
                     }
@@ -199,7 +199,7 @@ export default function App() {
                   <Route
                     path="/contractors"
                     element={
-                      <RequireCapability capability="dashboard:view">
+                      <RequireCapability capability="workforce:view">
                         <ContractorsPage />
                       </RequireCapability>
                     }
@@ -207,7 +207,7 @@ export default function App() {
                   <Route
                     path="/employees"
                     element={
-                      <RequireCapability capability="dashboard:view">
+                      <RequireCapability capability="workforce:view">
                         <EmployeesPage />
                       </RequireCapability>
                     }
