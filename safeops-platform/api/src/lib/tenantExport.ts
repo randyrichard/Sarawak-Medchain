@@ -190,6 +190,7 @@ export async function collectTenantExport(
   const viaPermit = { permit: { companyId } }
   const viaAsset = { asset: { companyId } }
   const viaVisitor = { visitor: { companyId } }
+  const viaMeeting = { meeting: { companyId } }
   const own = { companyId }
 
   const [
@@ -203,6 +204,7 @@ export async function collectTenantExport(
     employees, ppeIssues, courses, sessions, certificates,
     contractorCompanies, contractorWorkers,
     visitors, visitorDocuments, visitorBlacklist,
+    toolboxMeetings, toolboxGroups,
     reportRuns, adminAudit,
   ] = await db.$transaction([
     db.site.findMany({ where: own }),
@@ -248,6 +250,9 @@ export async function collectTenantExport(
     db.visitor.findMany({ where: own }),
     db.visitorDocument.findMany({ where: viaVisitor }),
     db.visitorBlacklist.findMany({ where: own }),
+
+    db.toolboxMeeting.findMany({ where: own }),
+    db.toolboxAttendanceGroup.findMany({ where: viaMeeting }),
 
     db.reportRun.findMany({ where: own }),
     db.adminAuditEntry.findMany({ where: own }),
@@ -306,6 +311,9 @@ export async function collectTenantExport(
     table('visitors', 'Visitor', visitors),
     table('visitor-documents', 'VisitorDocument', visitorDocuments),
     table('visitor-blacklist', 'VisitorBlacklist', visitorBlacklist),
+
+    table('toolbox-meetings', 'ToolboxMeeting', toolboxMeetings),
+    table('toolbox-attendance', 'ToolboxAttendanceGroup', toolboxGroups),
 
     table('report-runs', 'ReportRun', reportRuns),
     table('admin-audit-trail', 'AdminAuditEntry', adminAudit),

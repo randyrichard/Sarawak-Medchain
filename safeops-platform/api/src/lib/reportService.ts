@@ -358,6 +358,7 @@ export class ReportService {
       actionsRaised, actionsClosed, actionsOpen, actionsOverdue, priorActionsClosed,
       highPriority,
       permits, inspections, audits, findings,
+      toolboxMeetings,
     ] = await Promise.all([
       this.db.incident.findMany({
         where: { ...where, archived: false, occurredAt: inPeriod },
@@ -416,6 +417,12 @@ export class ReportService {
         select: { category: true, severity: true },
         take: 2000,
       }),
+      // Every site's daily briefing. A month is at most ~31 per site, so the cap is loose.
+      this.db.toolboxMeeting.findMany({
+        where: { ...where, heldAt: inPeriod },
+        select: { headcount: true, siteId: true },
+        take: 5000,
+      }),
     ])
 
     const countOf = (...types: string[]) => incidents.filter((i) => types.includes(i.type)).length
@@ -434,6 +441,7 @@ export class ReportService {
     const inspectionsDone = inspections.filter((i) => i.status === 'completed').length
     const auditsDone = audits.filter((a) => a.status === 'completed').length
     const permitsIssued = permits.length
+    const toolboxAttendance = toolboxMeetings.reduce((n, t) => n + t.headcount, 0)
 
     /** A percentage, or N/A when the denominator is zero rather than a misleading 0%. */
     const rate = (part: number, whole: number) =>
@@ -572,11 +580,26 @@ export class ReportService {
         } : {}),
       },
       {
-        title: '8. Safety observations',
+        title: '8. Toolbox meetings',
+        note: toolboxMeetings.length === 0
+          ? 'No daily toolbox meetings were recorded for this period.'
+          : `The daily site briefings recorded in SafeOps. Held on ${new Set(toolboxMeetings.map((t) => t.siteId)).size} `
+            + `of ${sites.length} site(s) in scope.`,
+        stats: [
+          { label: 'Meetings held', value: String(toolboxMeetings.length) },
+          { label: 'Total attendance', value: toolboxAttendance.toLocaleString('en-MY') },
+          {
+            label: 'Average attendance',
+            value: toolboxMeetings.length === 0 ? 'N/A' : String(Math.round(toolboxAttendance / toolboxMeetings.length)),
+          },
+        ],
+      },
+      {
+        title: '9. Safety observations',
         /*
          * The honest answer, and the reason this section exists at all rather than being
          * dropped: a management report with a numbered section missing invites the question
-         * "where is 8", and a fabricated zero is worse than either.
+         * "where is 9", and a fabricated zero is worse than either.
          *
          * SafeOps has no proactive observation module - no behavioural observation cards,
          * no safe/unsafe act logging. What it does have is audit findings graded
@@ -590,7 +613,7 @@ export class ReportService {
           + 'this period.',
       },
       {
-        title: '9. Trends against the previous month',
+        title: '10. Trends against the previous month',
         ...(priorIncidents.length === 0 && actionsRaised === 0 && priorActionsClosed === 0
           ? {
             unavailable: 'No data was recorded in the previous month, so there is nothing '
@@ -612,7 +635,7 @@ export class ReportService {
           }),
       },
       {
-        title: '10. Outstanding high priority actions',
+        title: '11. Outstanding high priority actions',
         note: highPriority.length === 0
           ? 'No high or critical corrective actions are open.'
           : 'Open actions graded High or Critical, oldest due date first.',
@@ -636,7 +659,7 @@ export class ReportService {
         } : {}),
       },
       {
-        title: '11. Site performance',
+        title: '12. Site performance',
         ...(sites.length === 0
           ? { unavailable: 'No sites are in scope for this report.' }
           : {
@@ -660,7 +683,7 @@ export class ReportService {
           }),
       },
       {
-        title: '12. Management comments / HSE remarks',
+        title: '13. Management comments / HSE remarks',
         note: 'To be completed by the HSE manager before circulation.',
         // Ruled lines rather than a blank gap, because a printed report gets written on.
         writeIn: 5,

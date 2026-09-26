@@ -26,6 +26,7 @@ export type Capability =
   | 'permits:view'
   | 'equipment:view'
   | 'visitors:view'
+  | 'toolbox:view'            // the daily site toolbox meeting register
   | 'training:view'
   | 'workforce:view'          // employee and contractor registers
   | 'reports:view'            // generated and scheduled reports
@@ -54,12 +55,12 @@ const MATRIX: Record<Role, Capability[]> = {
    */
   ceo: [
     'dashboard:view', 'reports:submit',
-    'incidents:view', 'permits:view', 'reports:view', 'analytics:view', 'org:view',
+    'incidents:view', 'permits:view', 'reports:view', 'toolbox:view', 'analytics:view', 'org:view',
   ],
 
   admin: [
     'dashboard:view', 'reports:submit',
-    'incidents:view', 'permits:view', 'equipment:view', 'visitors:view',
+    'incidents:view', 'permits:view', 'equipment:view', 'visitors:view', 'toolbox:view',
     'training:view', 'workforce:view', 'reports:view',
     'incidents:manage', 'actions:manage', 'analytics:view', 'compliance:manage',
     'org:view', 'org:manage', 'audit-log:view', 'settings:manage',
@@ -67,7 +68,7 @@ const MATRIX: Record<Role, Capability[]> = {
 
   hse_manager: [
     'dashboard:view', 'reports:submit',
-    'incidents:view', 'permits:view', 'equipment:view', 'visitors:view',
+    'incidents:view', 'permits:view', 'equipment:view', 'visitors:view', 'toolbox:view',
     'training:view', 'workforce:view', 'reports:view',
     'incidents:manage', 'actions:manage', 'analytics:view', 'compliance:manage',
     'org:view', 'audit-log:view',
@@ -80,7 +81,7 @@ const MATRIX: Record<Role, Capability[]> = {
    */
   safety_officer: [
     'dashboard:view', 'reports:submit',
-    'incidents:view', 'permits:view', 'equipment:view', 'visitors:view',
+    'incidents:view', 'permits:view', 'equipment:view', 'visitors:view', 'toolbox:view',
     'training:view', 'workforce:view', 'reports:view',
     /*
      * `compliance:manage` was missing, and the comment above claiming this role matches the
@@ -103,7 +104,7 @@ const MATRIX: Record<Role, Capability[]> = {
    */
   supervisor: [
     'dashboard:view', 'reports:submit',
-    'incidents:view', 'permits:view', 'visitors:view', 'equipment:view',
+    'incidents:view', 'permits:view', 'visitors:view', 'equipment:view', 'toolbox:view',
     'actions:manage',
   ],
 

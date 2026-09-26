@@ -49,6 +49,8 @@ import { AccountError } from './lib/accountService.js'
 import { SearchError } from './lib/searchService.js'
 import { EmployeeError } from './lib/employeeService.js'
 import { ContractorError } from './lib/contractorService.js'
+import { ToolboxError } from './lib/toolboxService.js'
+import { toolboxRouter } from './routes/toolbox.js'
 import { EquipmentError } from './lib/equipmentService.js'
 import { VisitorError } from './lib/visitorService.js'
 import { ReportError } from './lib/reportService.js'
@@ -245,6 +247,7 @@ export function createApp() {
   app.use('/assets', assetDocumentsRouter)
   app.use('/assets', inspectionsRouter)
   app.use('/visitors', visitorsRouter)
+  app.use('/toolbox', toolboxRouter)
   app.use('/reports', reportsRouter)
   app.use('/audits', auditsRouter)
   app.use('/training', trainingRouter)
@@ -285,6 +288,7 @@ export function createApp() {
       err instanceof SearchError ||
       err instanceof EmployeeError ||
       err instanceof ContractorError ||
+      err instanceof ToolboxError ||
       err instanceof EquipmentError ||
       err instanceof VisitorError ||
       err instanceof ReportError ||

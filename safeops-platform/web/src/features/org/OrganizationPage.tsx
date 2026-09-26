@@ -242,6 +242,7 @@ const CAPABILITY_LABEL: Record<string, string> = {
   'permits:view': 'See permits to work',
   'equipment:view': 'See equipment register',
   'visitors:view': 'See visitors on site',
+  'toolbox:view': 'See toolbox meetings',
   'training:view': 'See training records',
   'workforce:view': 'See workforce and contractor registers',
   'reports:view': 'See generated reports',
