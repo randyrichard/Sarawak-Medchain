@@ -121,18 +121,22 @@ export function ToolboxDialog({
           <legend className="mb-1.5 text-xs font-semibold text-ink">
             Attendance <span className="text-critical">*</span>
           </legend>
-          <p className="mb-2 text-2xs text-muted">One line per organisation - your own staff, then each contractor.</p>
+          <p className="mb-2 text-2xs text-muted">One line per organisation — your own staff, then each contractor.</p>
           <datalist id="toolbox-orgs">
             {organisations.map((o) => <option key={o} value={o} />)}
           </datalist>
           <ul className="space-y-2">
             {groups.map((g, i) => (
               <li key={i} className="flex items-center gap-2">
-                <Input
-                  aria-label={`Organisation ${i + 1}`} list="toolbox-orgs" placeholder="Organisation"
-                  value={g.organisation} maxLength={200} className="flex-1"
-                  onChange={(e) => patch(i, { organisation: e.target.value })}
-                />
+                {/* The wrapper takes the width: Input's own wrapper would otherwise size to content
+                    and cut a contractor's name off after twenty characters. */}
+                <div className="min-w-0 flex-1">
+                  <Input
+                    aria-label={`Organisation ${i + 1}`} list="toolbox-orgs" placeholder="Organisation"
+                    value={g.organisation} maxLength={200}
+                    onChange={(e) => patch(i, { organisation: e.target.value })}
+                  />
+                </div>
                 <Input
                   aria-label={`Headcount for ${g.organisation || `organisation ${i + 1}`}`}
                   type="number" inputMode="numeric" min={1} max={5000} step={1} placeholder="People"
@@ -163,7 +167,7 @@ export function ToolboxDialog({
 
         <Textarea
           label="Notes" rows={2} maxLength={5000} value={notes}
-          placeholder="Anything else - questions raised, follow-ups agreed"
+          placeholder="Anything else — questions raised, follow-ups agreed"
           onChange={(e) => setNotes(e.target.value)}
         />
       </div>

@@ -83,11 +83,11 @@ export function SiteComparison({
                     </td>
                     <td className="px-2 py-2 text-right">
                       {num(r.openIncidents)}
-                      {r.highRiskOpen > 0 && <span className="ml-1 text-2xs font-semibold text-critical">({r.highRiskOpen} high risk)</span>}
+                      {r.highRiskOpen > 0 && <p className="whitespace-nowrap text-2xs font-semibold text-critical">{r.highRiskOpen} high-risk</p>}
                     </td>
-                    <td className="px-2 py-2 text-right" title={`${r.nearMissesInRange} near miss(es), ${r.injuriesInRange} injur(ies)`}>
+                    <td className="px-2 py-2 text-right" title={`${r.nearMissesInRange} near miss${r.nearMissesInRange === 1 ? '' : 'es'}, ${r.injuriesInRange} ${r.injuriesInRange === 1 ? 'injury' : 'injuries'}`}>
                       {num(r.incidentsInRange)}
-                      {r.injuriesInRange > 0 && <span className="ml-1 text-2xs text-muted">{r.injuriesInRange} inj.</span>}
+                      {r.injuriesInRange > 0 && <p className="whitespace-nowrap text-2xs text-muted">{r.injuriesInRange} {r.injuriesInRange === 1 ? 'injury' : 'injuries'}</p>}
                     </td>
                     <td className="px-2 py-2 text-right">
                       {r.daysSinceLostTime === null

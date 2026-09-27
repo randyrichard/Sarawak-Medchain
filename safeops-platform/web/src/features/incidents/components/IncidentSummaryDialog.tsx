@@ -44,8 +44,8 @@ export function IncidentSummaryDialog({ incidentId, number, onClose }: {
     <Dialog
       open
       onClose={onClose}
-      title={`Incident summary - ${number}`}
-      description="Written from the record: every line comes from a field on this incident."
+      title={`Incident summary — ${number}`}
+      description="Prepared from the incident record — ready to share with management or your client."
       width="max-w-3xl"
       footer={
         <>

@@ -215,7 +215,7 @@ d('Summaries — integration (real Postgres)', () => {
   describe('the incident summary', () => {
     it('writes the incident up from its record', async () => {
       const r = await summaries.build(hse, incidentId)
-      expect(r.title).toBe('Incident summary - INC-S1')
+      expect(r.title).toBe('Incident summary — INC-S1')
       const note = r.sections?.find((s) => s.title === 'Summary')?.note ?? ''
       expect(note).toContain('INC-S1, an Injury incident of Minor severity, occurred at Pipe rack 3, Site A on ')
       expect(note).toContain('1 person was recorded as involved, 1 injured.')
@@ -223,7 +223,7 @@ d('Summaries — integration (real Postgres)', () => {
       expect(note).toContain('2 corrective actions raised, 0 completed, 1 overdue.')
       const people = r.sections?.find((s) => s.title === 'People involved')
       expect(people?.rows?.[0]).toMatchObject({ name: 'Ali Hassan', injury: 'Abrasion', body: 'Forearm' })
-      expect(r.rows.find((x) => x.k === 'Lead investigator')?.v).toBe('Azlan Mahmud')
+      expect(r.sections?.find((s) => s.title === 'Investigation')?.rows?.find((x) => x.k === 'Lead investigator')?.v).toBe('Azlan Mahmud')
     })
 
     it('says what is missing rather than leaving a gap', async () => {

@@ -1,7 +1,8 @@
 import { Prisma, type PrismaClient, type ReportType, type Role } from '@prisma/client'
 import type { Caller } from './incidentService.js'
 import { overdueActionWhere } from './incidentService.js'
-import { SEVERITY_LABEL, TYPE_LABEL, isInjury, isLostTime, isNearMiss, stageLabel } from './incidentCatalog.js'
+import { docDate, humanize, isInjury, isLostTime, isNearMiss, severityName, stageLabel, typeName } from './incidentCatalog.js'
+import { PERMIT_TYPE_LABEL } from './permitCatalog.js'
 import { renderReportPdf, readStoredReport, storeReportPdf } from './reportPdf.js'
 import { buildSiteActivity, buildWeeklyActions, type ActivityPeriod } from './reportSummaries.js'
 import {
@@ -66,7 +67,7 @@ const OPEN_INVESTIGATION_STAGES = [
 ] as const
 
 /** A plain YYYY-MM-DD, which is what every table cell in a report wants. */
-const fmtIsoDate = (d: Date) => d.toISOString().slice(0, 10)
+const fmtIsoDate = (d: Date) => docDate(d)
 
 const dayMs = 86_400_000
 const startOfToday = () => {
@@ -113,6 +114,10 @@ export interface ReportData {
    * something an HSE manager forwards and something they have to summarise first.
    */
   sections?: ReportSection[]
+  /** IANA zone the document's times are printed in. Absent prints UTC. */
+  timezone?: string
+  /** Replaces the default footer line, for a document meant to leave the company. */
+  footer?: string
 }
 
 /**
@@ -264,9 +269,17 @@ export class ReportService {
       year: opts.year ?? null,
     }
 
+    // Every document prints its times in the workspace's zone, not UTC.
+    const data = await this.buildType(type, scope, opts)
+    data.timezone ??= await this.periodTimezone(companyId, siteId)
+    return data
+  }
+
+  private async buildType(type: ReportType, scope: BuildScope, opts: ReportOptions): Promise<ReportData> {
+    const { companyId, companyName, siteId, siteName } = scope
     switch (type) {
       case 'overdue_actions':
-        return this.buildOverdueActions(companyId, company.name, siteId, site?.name ?? null)
+        return this.buildOverdueActions(companyId, companyName, siteId, siteName)
       case 'monthly_summary':
         return this.buildMonthlySummary(scope)
       case 'weekly_actions':
@@ -275,7 +288,7 @@ export class ReportService {
         return buildSiteActivity(this.db, scope, opts.period ?? 'week',
           await this.periodTimezone(companyId, siteId))
       default:
-        return this.buildOpenInvestigations(companyId, company.name, siteId, site?.name ?? null)
+        return this.buildOpenInvestigations(companyId, companyName, siteId, siteName)
     }
   }
 
@@ -467,7 +480,6 @@ export class ReportService {
       return [...counts.entries()].sort((a, b) => b[1] - a[1])
     }
 
-    const pretty = (v: string) => v.replace(/_/g, ' ')
 
     /*
      * The executive summary, written from the figures rather than templated around them.
@@ -478,16 +490,20 @@ export class ReportService {
      * one nobody filed anything in.
      */
     const scopeLine = [companyName, projectName, siteName].filter(Boolean).join(' - ')
+    // Counted words rather than "incident(s)", which reads as a template on a document a
+    // managing director is handed.
+    const n = (count: number, one: string, many = `${one}s`) => `${count} ${count === 1 ? one : many}`
+    const were = (count: number) => (count === 1 ? 'was' : 'were')
     const executive = incidents.length === 0
       ? `No incidents were recorded for ${scopeLine} during ${monthName}. `
-        + `${actionsRaised} corrective action(s) were raised and ${actionsClosed} closed. `
+        + `${n(actionsRaised, 'corrective action')} ${were(actionsRaised)} raised and ${actionsClosed} closed. `
         + 'A period with nothing recorded may be a quiet one or one where nothing was '
         + 'reported; this summary cannot tell the two apart.'
-      : `${incidents.length} incident(s) were recorded for ${scopeLine} during ${monthName}, `
+      : `${n(incidents.length, 'incident')} ${were(incidents.length)} recorded for ${scopeLine} during ${monthName}, `
         + `of which ${injuries} involved injury and ${lostTime} involved lost time. `
-        + `${nearMisses} near miss(es) were reported. `
-        + `${actionsRaised} corrective action(s) were raised and ${actionsClosed} closed; `
-        + `${actionsOpen} remain open, ${actionsOverdue} of them past their due date.`
+        + `${n(nearMisses, 'near miss', 'near misses')} ${were(nearMisses)} reported. `
+        + `${n(actionsRaised, 'corrective action')} ${were(actionsRaised)} raised and ${actionsClosed} closed; `
+        + `${actionsOpen} ${actionsOpen === 1 ? 'remains' : 'remain'} open, ${actionsOverdue} of them past the due date.`
 
     const sections: ReportSection[] = [
       {
@@ -514,9 +530,9 @@ export class ReportService {
           { key: 'v', label: 'Count', width: 40 },
         ],
         rows: [
-          ...tally(incidents.map((i) => TYPE_LABEL[i.type] ?? pretty(i.type)))
+          ...tally(incidents.map((i) => typeName(i.type)))
             .map(([k, v]) => ({ k, v: String(v) })),
-          ...tally(incidents.map((i) => `Severity: ${SEVERITY_LABEL[i.severity] ?? pretty(i.severity)}`))
+          ...tally(incidents.map((i) => `Severity: ${severityName(i.severity)}`))
             .map(([k, v]) => ({ k, v: String(v) })),
           ...tally(incidents.map((i) => `Stage: ${stageLabel(i.stage)}`))
             .map(([k, v]) => ({ k, v: String(v) })),
@@ -582,7 +598,7 @@ export class ReportService {
             { key: 'k', label: 'Permit type', width: 120 },
             { key: 'v', label: 'Count', width: 40 },
           ],
-          rows: tally(permits.map((p) => pretty(p.type))).map(([k, v]) => ({ k, v: String(v) })),
+          rows: tally(permits.map((p) => PERMIT_TYPE_LABEL[p.type] ?? humanize(p.type))).map(([k, v]) => ({ k, v: String(v) })),
         } : {}),
       },
       {
@@ -590,7 +606,7 @@ export class ReportService {
         note: toolboxMeetings.length === 0
           ? 'No daily toolbox meetings were recorded for this period.'
           : `The daily site briefings recorded in SafeOps. Held on ${new Set(toolboxMeetings.map((t) => t.siteId)).size} `
-            + `of ${sites.length} site(s) in scope.`,
+            + `of ${sites.length} ${sites.length === 1 ? 'site' : 'sites'} in scope.`,
         stats: [
           { label: 'Meetings held', value: String(toolboxMeetings.length) },
           { label: 'Total attendance', value: toolboxAttendance.toLocaleString('en-MY') },
@@ -732,9 +748,9 @@ export class ReportService {
       ],
       rows: incidents.map((i) => ({
         number: i.number,
-        occurred: fmtIsoDate(i.occurredAt),
-        type: TYPE_LABEL[i.type] ?? pretty(i.type),
-        severity: SEVERITY_LABEL[i.severity] ?? pretty(i.severity),
+        occurred: docDate(i.occurredAt, timezone),
+        type: typeName(i.type),
+        severity: severityName(i.severity),
         title: i.title,
         department: i.department || '-',
         stage: stageLabel(i.stage),
@@ -809,12 +825,12 @@ export class ReportService {
         incident: r.incident?.number ?? '—',
         owner: r.owner,
         department: r.incident?.department || '—',
-        due: r.dueDate.toISOString().slice(0, 10),
+        due: docDate(r.dueDate),
         overdue: String(daysOverdue(r.dueDate)),
         priority: r.priority,
         status: r.evidenceRequired && r.evidence.length === 0
-          ? `${r.status.replace(/_/g, ' ')} · evidence due`
-          : r.status.replace(/_/g, ' '),
+          ? `${humanize(r.status)} · evidence due`
+          : humanize(r.status),
       })),
       emptyMessage: 'No corrective actions are overdue. Nothing to chase.',
     }
@@ -879,9 +895,9 @@ export class ReportService {
       rows: rows.map((i) => ({
         number: i.number,
         title: i.title,
-        type: TYPE_LABEL[i.type] ?? i.type,
-        severity: SEVERITY_LABEL[i.severity] ?? i.severity,
-        occurred: i.occurredAt.toISOString().slice(0, 10),
+        type: typeName(i.type),
+        severity: severityName(i.severity),
+        occurred: docDate(i.occurredAt),
         days: String(daysOpen(i.occurredAt)),
         department: i.department || '—',
         // Anonymity is about the reporter, never the investigator, so nothing is withheld

@@ -157,3 +157,28 @@ const STAGE_LABEL: Record<string, string> = {
 export function stageLabel(stage: string): string {
   return STAGE_LABEL[stage] ?? stage.replace(/_/g, ' ')
 }
+
+/**
+ * Labels as a document prints them.
+ *
+ * The catalogue marks superseded values "(legacy)" so the product can steer new reports
+ * away from them. That note is for the people configuring SafeOps, not for a client
+ * reading an incident summary - "Critical (legacy)" on a customer's document reads as a
+ * defect in the document. A value the catalogue does not know is shown in words rather
+ * than as its code ("unsafe_condition" -> "Unsafe condition").
+ */
+export const humanize = (v: string) => {
+  const t = v.replace(/_/g, ' ').trim()
+  return t.charAt(0).toUpperCase() + t.slice(1)
+}
+const dropLegacy = (label: string) => label.replace(/\s*\(legacy\)$/i, '')
+export const typeName = (v: string) => dropLegacy((TYPE_LABEL as Record<string, string>)[v] ?? humanize(v))
+export const severityName = (v: string) => dropLegacy((SEVERITY_LABEL as Record<string, string>)[v] ?? humanize(v))
+
+/**
+ * A date as a document prints it: "30 Sept 2026". Tables printed ISO dates ("2026-09-30")
+ * beneath a header reading "27 Sept 2026, 17:04" - two formats on one page. Due dates are
+ * stored as UTC midnight, so they format in UTC; an instant passes its site's zone.
+ */
+export const docDate = (d: Date, timeZone = 'UTC') =>
+  new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone }).format(d)
