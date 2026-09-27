@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { Building2, RefreshCw } from 'lucide-react'
 import {
@@ -32,6 +33,13 @@ export function DashboardPage() {
   const platformAdmin = usePlatformAdmin()
   const { data, loading, error, filters, setFilter, clearFilters, refresh, filtered } = useDashboard()
   const { progress: gettingStarted, dismiss: dismissGettingStarted } = useGettingStarted()
+  /*
+   * Bumped by the Refresh button only. The comparison used to follow the overview's
+   * generatedAt, which changes from nothing to a time as the page first loads - so it
+   * fetched every site's figures twice on every visit.
+   */
+  const [compareTick, setCompareTick] = useState(0)
+  const refreshAll = () => { refresh(); setCompareTick((n) => n + 1) }
 
   /*
    * This dashboard is tenant-scoped, and some people belong to no tenant.
@@ -91,7 +99,7 @@ export function DashboardPage() {
                 size="sm"
                 variant="secondary"
                 icon={<RefreshCw size={12} />}
-                onClick={refresh}
+                onClick={refreshAll}
               >
                 Refresh
               </Button>
@@ -182,7 +190,7 @@ export function DashboardPage() {
           projectId={project?.id ?? null}
           from={filters.from}
           to={filters.to}
-          refresh={data ? Date.parse(data.generatedAt) : 0}
+          refresh={compareTick}
           onOpenSite={switchSite}
         />
       )}
