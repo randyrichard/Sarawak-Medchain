@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus, Search, ShieldAlert } from 'lucide-react'
 import { api } from '@/api/client'
 import type { Incident, IncidentSeverity, IncidentStatusFilter, IncidentType } from '@/api/incidents'
-import { INCIDENT_TYPES, STAGE_LABEL, TYPE_LABEL } from '@/api/incidents'
+import { INCIDENT_TYPES, STAGE_LABEL, SEVERITY_LABEL, TYPE_LABEL } from '@/api/incidents'
 import { OVERDUE_AFTER_DAYS } from '@/api/mock/incidents'
 import { useOrg } from '@/features/org/OrgContext'
 import {
@@ -94,7 +94,7 @@ export function IncidentsListPage() {
     {
       key: 'severity',
       header: 'Severity',
-      render: (i) => <StatusPill kind={severityKind(i.severity)} label={i.severity} />,
+      render: (i) => <StatusPill kind={severityKind(i.severity)} label={SEVERITY_LABEL[i.severity] ?? i.severity} />,
     },
     {
       key: 'stage',

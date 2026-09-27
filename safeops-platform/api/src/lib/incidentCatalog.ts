@@ -95,6 +95,26 @@ export const LOST_TIME_SEVERITIES: IncidentSeverity[] = [
   'lost_time_injury', 'fatality', 'catastrophic',
 ]
 
+/**
+ * How the reports count injuries, lost time and near misses - the same rule the incident
+ * board applies, in one place.
+ *
+ * The monthly report counted by type alone, against the pre-split scale ('first_aid',
+ * 'lti' ...). Every incident reported since the split carries type 'injury' and says how
+ * bad it was in severity, so a month of new lost-time injuries reported "Injuries 0, Lost
+ * time 0" while the board beside it counted them. The legacy types still count, because
+ * rows reported under the old scale still happened.
+ */
+const LEGACY_INJURY_TYPES = ['first_aid', 'mtc', 'rwc', 'lti', 'fatality']
+const INJURY_SEVERITIES: string[] = ['medical_treatment', 'restricted_work', 'lost_time_injury', 'fatality', 'catastrophic']
+type Counted = { type: string; severity: string }
+
+export const isInjury = (i: Counted) =>
+  i.type === 'injury' || LEGACY_INJURY_TYPES.includes(i.type) || INJURY_SEVERITIES.includes(i.severity)
+export const isLostTime = (i: Counted) =>
+  (LOST_TIME_SEVERITIES as string[]).includes(i.severity) || i.type === 'lti' || i.type === 'fatality'
+export const isNearMiss = (i: Counted) => i.severity === 'near_miss' || i.type === 'near_miss'
+
 /** Severities that oblige an investigation regardless of what anyone thinks of the event. */
 export const MANDATORY_INVESTIGATION: IncidentSeverity[] = [
   'restricted_work', 'lost_time_injury', 'environmental_major',
@@ -116,3 +136,24 @@ export const isLegacyType = (v: IncidentType) =>
   !!INCIDENT_TYPES.find((t) => t.value === v)?.legacy
 export const isLegacySeverity = (v: IncidentSeverity) =>
   !!INCIDENT_SEVERITIES.find((s) => s.value === v)?.legacy
+
+/**
+ * How a stage reads in a document. Reports printed "rca" and "closed" - the column values -
+ * in the table a customer hands to their client, where the web app has always said "Root
+ * Cause Analysis" and "Closed". Same words as web/src/api/incidents.ts.
+ */
+const STAGE_LABEL: Record<string, string> = {
+  reported: 'Reported',
+  assessment: 'Initial Assessment',
+  investigation: 'Investigation',
+  rca: 'Root Cause Analysis',
+  actions: 'Corrective Actions',
+  review: 'Manager Review',
+  verification: 'Verification',
+  closed: 'Closed',
+  draft: 'Draft',
+}
+
+export function stageLabel(stage: string): string {
+  return STAGE_LABEL[stage] ?? stage.replace(/_/g, ' ')
+}

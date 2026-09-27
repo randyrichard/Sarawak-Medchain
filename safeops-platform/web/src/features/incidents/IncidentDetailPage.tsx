@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
-  Archive, CalendarDays, CloudSun, MapPin, ShieldAlert, UserRound, Users,
+  Archive, CalendarDays, FileText, CloudSun, MapPin, ShieldAlert, UserRound, Users,
 } from 'lucide-react'
 import { api } from '@/api/client'
 import type { Incident } from '@/api/incidents'
-import { STAGE_LABEL, TYPE_LABEL } from '@/api/incidents'
+import { STAGE_LABEL, SEVERITY_LABEL, TYPE_LABEL } from '@/api/incidents'
 import { useOrg } from '@/features/org/OrgContext'
 import {
   Alert, Avatar, Badge, Breadcrumbs, Button, Card, CardBody, CardHeader, Dialog, LinkButton,
@@ -22,6 +22,8 @@ import { EvidencePanel } from './components/EvidencePanel'
 import { IncidentEquipmentPanel } from './components/IncidentEquipmentPanel'
 import { PeoplePanel } from './components/PeoplePanel'
 import { InvestigationPanel } from './components/InvestigationPanel'
+import { IncidentSummaryDialog } from './components/IncidentSummaryDialog'
+import { isBackendConfigured } from '@/api/authApi'
 
 /**
  * One work surface at a time, in the wide column.
@@ -47,6 +49,7 @@ export function IncidentDetailPage() {
   const [missing, setMissing] = useState(false)
   const [tab, setTab] = useState<Tab>('overview')
   const [archiveOpen, setArchiveOpen] = useState(false)
+  const [summaryOpen, setSummaryOpen] = useState(false)
   const justCreated = (location.state as { created?: boolean } | null)?.created
 
   // Names the tab after the incident once it has loaded; until then the shell's route-derived
@@ -155,7 +158,7 @@ export function IncidentDetailPage() {
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <span className="font-mono text-xs text-muted">{incident.number}</span>
-            <StatusPill kind={severityKind(incident.severity)} label={incident.severity} />
+            <StatusPill kind={severityKind(incident.severity)} label={SEVERITY_LABEL[incident.severity] ?? incident.severity} />
             <Badge tone="neutral">{TYPE_LABEL[incident.type]}</Badge>
             <span className="inline-flex items-center gap-1.5 text-xs text-ink-2">
               <span className="h-2 w-2 rounded-full" style={{ background: STAGE_COLOR[incident.stage] }} />
@@ -169,10 +172,20 @@ export function IncidentDetailPage() {
             </span>
           </div>
         </div>
-        {role === 'admin' && incident.stage !== 'closed' && (
-          <Button variant="ghost" size="sm" icon={<Archive size={13} />} onClick={() => setArchiveOpen(true)}>
-            Archive
-          </Button>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {isBackendConfigured() && (
+            <Button variant="secondary" size="sm" icon={<FileText size={13} />} onClick={() => setSummaryOpen(true)}>
+              Summary
+            </Button>
+          )}
+          {role === 'admin' && incident.stage !== 'closed' && (
+            <Button variant="ghost" size="sm" icon={<Archive size={13} />} onClick={() => setArchiveOpen(true)}>
+              Archive
+            </Button>
+          )}
+        </div>
+        {summaryOpen && (
+          <IncidentSummaryDialog incidentId={incident.id} number={incident.number} onClose={() => setSummaryOpen(false)} />
         )}
       </div>
 

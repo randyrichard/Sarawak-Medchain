@@ -104,6 +104,18 @@ const PAIRS: { capability: Capability; file: string; constant: string; what: str
     constant: 'GATE_ROLES',
     what: 'signing visitors through the gate',
   },
+  {
+    capability: 'analytics:view',
+    file: 'siteComparison',
+    constant: 'COMPARE_ROLES',
+    what: 'comparing every site side by side',
+  },
+  {
+    capability: 'toolbox:view',
+    file: 'toolboxService',
+    constant: 'VIEW_ROLES',
+    what: 'reading the daily toolbox meeting register',
+  },
 ]
 
 d('the navigation and the API agree about roles', () => {

@@ -29,9 +29,9 @@ export const COMPANIES: Company[] = INCLUDE ? [
   // Entitlements are stated here rather than derived from the plan key, because this file
   // is the credential-free demo's stand-in for the server and the server is what decides.
   // Borneo Industrial is a legacy enterprise tenant, so nothing is limited; Kenyalang is on
-  // Standard with two of its three sites in use.
+  // Standard, which has no site cap but no API keys or webhooks.
   { id: 'big', name: 'Borneo Industrial Group', industry: 'Diversified Industrial', plan: 'enterprise', entitlements: { maxSites: null, integrations: true }, logoInitials: 'BI' },
-  { id: 'kcs', name: 'Kenyalang Construction Sdn Bhd', industry: 'Construction', plan: 'standard', entitlements: { maxSites: 3, integrations: false }, logoInitials: 'KC' },
+  { id: 'kcs', name: 'Kenyalang Construction Sdn Bhd', industry: 'Construction', plan: 'standard', entitlements: { maxSites: null, integrations: false }, logoInitials: 'KC' },
 ] : []
 
 export const SITES: Site[] = INCLUDE ? [

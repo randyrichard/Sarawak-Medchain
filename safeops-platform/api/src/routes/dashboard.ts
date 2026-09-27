@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
+import { SiteComparisonService } from '../lib/siteComparison.js'
 import { DashboardService } from '../lib/dashboardService.js'
 import type { Caller } from '../lib/incidentService.js'
 import { requireAuth } from '../middleware/requireAuth.js'
@@ -43,6 +44,18 @@ dashboardRouter.get('/overview', async (req, res, next) => {
      * browser.
      */
     res.json(await svc.overview(callerOf(req), q))
+  } catch (e) {
+    next(e)
+  }
+})
+
+/** Every site side by side - the "wider view" of the dashboard. */
+const siteComparison = new SiteComparisonService(prisma)
+
+dashboardRouter.get('/sites', async (req, res, next) => {
+  try {
+    const q = QUERY.parse(req.query)
+    res.json(await siteComparison.compare(callerOf(req), q))
   } catch (e) {
     next(e)
   }

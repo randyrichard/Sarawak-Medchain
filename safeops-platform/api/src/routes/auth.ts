@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { Router } from 'express'
 import rateLimit from 'express-rate-limit'
 import { z } from 'zod'
@@ -55,11 +56,26 @@ const loginLimiter = rateLimit({
  * Refresh is unauthenticated at the HTTP layer — it is gated only by the cookie — so it
  * needs its own ceiling. The limit is looser than login because legitimate clients refresh
  * on a timer and across tabs, but it still bounds token-guessing and replay storms.
+ *
+ * Counted per refresh token, not per IP. Every page load refreshes once, and a customer's
+ * site sits behind one NAT address, so a per-IP budget of 120 was shared by everybody on
+ * the site: the 121st page load in fifteen minutes - a handful of people working normally,
+ * never mind a 350-person toolbox meeting - answered 429 and signed that person out. The
+ * token is 32 random bytes, so there is nothing to guess; what is worth bounding is one
+ * token replayed in a storm, and that is exactly what keying on it bounds. A request with
+ * no cookie is refused before it does any work, and falls back to the address. The global
+ * per-IP limiter in app.ts still applies to all of it.
  */
 const refreshLimiter = rateLimit({
   store: new PrismaRateLimitStore(prisma, 'refresh'),
   windowMs: 15 * 60 * 1000,
   limit: 120,
+  keyGenerator: (req) => {
+    const raw = req.cookies?.[REFRESH_COOKIE]
+    return typeof raw === 'string' && raw
+      ? `rt:${createHash('sha256').update(raw).digest('hex')}`
+      : `ip:${req.ip}`
+  },
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'rate_limited', message: 'Too many requests. Try again shortly.' },

@@ -138,7 +138,38 @@ export interface DashboardQuery {
   to?: string | null
 }
 
+/** One site's row in the side-by-side comparison. */
+export interface SiteComparisonRow {
+  siteId: string
+  siteName: string
+  city: string
+  openIncidents: number
+  highRiskOpen: number
+  incidentsInRange: number
+  nearMissesInRange: number
+  injuriesInRange: number
+  /** Null when the site has no lost-time case on record. */
+  daysSinceLostTime: number | null
+  lastLostTimeAt: string | null
+  overdueActions: number
+  openActions: number
+  activePermits: number
+  toolboxToday: boolean
+  toolboxHeadcount: number
+  visitorsOnSite: number
+  attention: string[]
+}
+
 export const dashboardApi = {
+  sites(q: Pick<DashboardQuery, 'companyId' | 'projectId' | 'from' | 'to'>): Promise<{ from: string; to: string; rows: SiteComparisonRow[] }> {
+    return request(`/dashboard/sites?${qs({
+      companyId: q.companyId,
+      projectId: q.projectId ?? undefined,
+      from: q.from ?? undefined,
+      to: q.to ?? undefined,
+    })}`)
+  },
+
   overview(q: DashboardQuery): Promise<DashboardOverview> {
     return request(`/dashboard/overview?${qs({
       companyId: q.companyId,

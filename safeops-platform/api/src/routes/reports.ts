@@ -29,7 +29,9 @@ function callerOf(req: { auth?: { sub: string; name: string; roles: unknown } })
 const ctxOf = (req: { ip?: string; get: (h: string) => string | undefined }) =>
   ({ ip: req.ip, device: req.get('user-agent') ?? '' })
 
-const REPORT_TYPE = z.enum(['overdue_actions', 'open_investigations', 'monthly_summary'])
+const REPORT_TYPE = z.enum([
+  'overdue_actions', 'open_investigations', 'monthly_summary', 'weekly_actions', 'site_activity',
+])
 const FREQUENCY = z.enum(['daily', 'weekly', 'monthly'])
 
 // ── Catalogue and configuration ──────────────────────────────────────────────
@@ -61,6 +63,8 @@ const previewQuery = z.object({
    */
   month: z.coerce.number().int().min(1).max(12).optional(),
   year: z.coerce.number().int().min(2000).max(2200).optional(),
+  /** site_activity: today, or the last seven days. */
+  period: z.enum(['day', 'week']).optional(),
 })
 
 /** The report as data, for the on-screen preview. */

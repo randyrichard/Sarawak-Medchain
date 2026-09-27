@@ -142,6 +142,8 @@ export function ScheduleDialog({
           <option value="overdue_actions">Overdue corrective actions</option>
           <option value="open_investigations">Open investigations</option>
           <option value="monthly_summary">Monthly safety summary</option>
+          <option value="weekly_actions">Weekly corrective actions (by department)</option>
+          <option value="site_activity">Site activity summary (daily schedule = the day, otherwise the week)</option>
         </Select>
 
         <div className="grid gap-3 sm:grid-cols-3">

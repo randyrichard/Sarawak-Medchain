@@ -2,7 +2,7 @@ import { Suspense, useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, ClipboardList, FileText, ListChecks, GraduationCap, ShieldCheck, Bell,
-  Building2, Boxes, Menu, X, Lock, SlidersHorizontal, HardHat, UserCheck, ShieldAlert, Users,
+  Building2, Boxes, Menu, X, Lock, SlidersHorizontal, HardHat, UserCheck, ShieldAlert, Users, Megaphone,
 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useOrg } from '@/features/org/OrgContext'
@@ -57,6 +57,7 @@ const NAV: NavItem[] = [
   { to: '/assets', label: 'Assets', icon: Boxes, capability: 'equipment:view' },
   { to: '/permits', label: 'Permits', icon: HardHat, capability: 'permits:view' },
   { to: '/visitors', label: 'Visitors', icon: UserCheck, capability: 'visitors:view' },
+  { to: '/toolbox', label: 'Toolbox meetings', icon: Megaphone, capability: 'toolbox:view' },
   { to: '/reports', label: 'Reports', icon: FileText, capability: 'reports:view' },
   { to: '/audits', label: 'Compliance', icon: ShieldCheck, capability: 'compliance:manage' },
   { to: '/training', label: 'Training', icon: GraduationCap, capability: 'training:view' },

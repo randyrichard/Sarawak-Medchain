@@ -34,6 +34,13 @@ require_env() {
   set -a; . "./$ENV_FILE"; set +a
   : "${POSTGRES_USER:?POSTGRES_USER is not set in $ENV_FILE}"
   : "${POSTGRES_DB:=safeops}"
+  # Caddy is the only thing listening on 80/443, and it runs under the `tls` profile. A
+  # bare `up` leaves it stopped: the stack reports healthy on loopback and nobody outside
+  # the machine can reach it. So a configured domain turns the profile on for every script
+  # here; leave SAFEOPS_APP_DOMAIN empty when something else terminates TLS.
+  if [ -n "${SAFEOPS_APP_DOMAIN:-}" ]; then
+    DC="$DC --profile tls"
+  fi
 }
 
 # Waits for the API to report ready rather than merely alive: readiness checks the

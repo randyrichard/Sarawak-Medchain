@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   FileText, Download, Play, Plus, Pencil, Trash2, History, Clock, Mail, MailWarning,
-  AlertTriangle, Microscope, CheckCircle2, XCircle, CalendarRange, Printer,
+  AlertTriangle, Microscope, CheckCircle2, XCircle, CalendarRange, Printer, Activity, ListChecks,
 } from 'lucide-react'
 import {
   reportsApi,
   type ReportData, type ReportRun, type ReportSchedule, type ReportScope,
-  type ReportSection, type ReportType,
+  type ReportType,
 } from '@/api/reportsApi'
 import { ApiError } from '@/api/types'
 import { useOrg } from '@/features/org/OrgContext'
@@ -18,6 +18,7 @@ import { ScheduleDialog } from './components/ScheduleDialog'
 import {
   canDownloadRun, canManageReports, deliveryBadge, recipientSummary, runFlashMessage,
 } from './lib'
+import { ReportSectionView } from './components/ReportSectionView'
 import { cn } from '@/lib/cn'
 
 /**
@@ -47,6 +48,20 @@ const REPORT_CARDS: { type: ReportType; title: string; blurb: string; icon: type
     icon: Microscope,
   },
   {
+    type: 'weekly_actions',
+    title: 'Weekly corrective actions',
+    blurb: 'Every open action by department, overdue first, with owners and due dates - the weekly '
+      + 'list for the heads-of-department meeting. Schedule it for Friday morning.',
+    icon: ListChecks,
+  },
+  {
+    type: 'site_activity',
+    title: 'Site activity summary',
+    blurb: 'What happened on site today or over the last 7 days: incidents, toolbox meetings, '
+      + 'permits, inspections and actions - for a manager or a shift handover.',
+    icon: Activity,
+  },
+  {
     type: 'monthly_summary',
     title: 'Monthly safety summary',
     blurb: 'The month just finished: what was reported, what it cost, and how many actions closed. '
@@ -69,6 +84,7 @@ export function ReportsPage() {
    * changing the month three times without touching what the rest of the app is showing.
    */
   const [scope, setScope] = useState<ReportScope>({})
+  const [activityPeriod, setActivityPeriod] = useState<'day' | 'week'>('day')
 
   /*
    * Seeded from the header pickers, once.
@@ -123,9 +139,16 @@ export function ReportsPage() {
 
   const say = (msg: string) => { setFlash(msg); setTimeout(() => setFlash(null), 6000) }
 
-  /** Only the monthly report is scoped; the other two answer "right now" for everyone. */
+  /**
+   * The monthly report takes the whole scope. The two summaries follow the site or project
+   * chosen - a head of department wants their site's list - but not a month; the two
+   * original reports answer "right now" for everyone.
+   */
   const scopeFor = (type: ReportType): ReportScope =>
-    type === 'monthly_summary' ? scope : {}
+    type === 'monthly_summary' ? scope
+      : type === 'weekly_actions' ? { siteId: scope.siteId, projectId: scope.projectId }
+        : type === 'site_activity' ? { siteId: scope.siteId, projectId: scope.projectId, period: activityPeriod }
+          : {}
 
   const openPreview = async (type: ReportType) => {
     if (!company) return
@@ -261,6 +284,24 @@ export function ReportsPage() {
                     <c.icon size={14} className="text-accent" /> {c.title}
                   </p>
                   <p className="mt-1 text-2xs text-muted">{c.blurb}</p>
+                  {c.type === 'site_activity' && (
+                    <div className="mt-3 inline-flex rounded-lg border p-0.5" role="group" aria-label="Period">
+                      {(['day', 'week'] as const).map((p) => (
+                        <button
+                          key={p}
+                          type="button"
+                          aria-pressed={activityPeriod === p}
+                          onClick={() => setActivityPeriod(p)}
+                          className={cn(
+                            'rounded-md px-2.5 py-1 text-2xs font-medium',
+                            activityPeriod === p ? 'bg-accent-soft text-accent' : 'text-muted hover:text-ink',
+                          )}
+                        >
+                          {p === 'day' ? 'Today' : 'Last 7 days'}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   {c.type === 'monthly_summary' && (
                     <MonthlyScopeBar
                       scope={scope}
@@ -658,82 +699,5 @@ function MonthlyScopeBar({
         {years.map((v) => <option key={v} value={v}>{v}</option>)}
       </Select>
     </div>
-  )
-}
-
-/**
- * One section of a multi-section report.
- *
- * `unavailable` is styled unlike every figure on the page, on purpose. It is a statement
- * about what this deployment does not record, and a reader who skims it as a number has
- * been told something untrue.
- */
-function ReportSectionView({ section }: { section: ReportSection }) {
-  return (
-    <section className="mt-5 break-inside-avoid">
-      <h3 className="border-b pb-1 text-sm font-semibold text-ink">{section.title}</h3>
-
-      {section.note && (
-        <p className="mt-2 text-xs leading-relaxed text-ink-2">{section.note}</p>
-      )}
-
-      {section.unavailable && (
-        <p className="mt-2 border-l-2 pl-3 text-xs italic leading-relaxed text-muted">
-          {section.unavailable}
-        </p>
-      )}
-
-      {section.stats && section.stats.length > 0 && (
-        <div className="mt-2.5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-          {section.stats.map((s) => (
-            <div key={s.label}>
-              <p className="text-2xs uppercase tracking-wide text-muted">{s.label}</p>
-              <p className={cn(
-                'text-lg font-bold',
-                // Same rule as everywhere else: red only where a non-zero value is a
-                // problem. Near misses are never red.
-                /overdue|lost time/i.test(s.label) && s.value !== '0' && s.value !== 'N/A'
-                  ? 'text-critical' : 'text-ink',
-              )}>{s.value}</p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {section.columns && section.rows && section.rows.length > 0 && (
-        <div className="mt-2.5 overflow-x-auto">
-          <table className="w-full text-2xs">
-            <thead>
-              <tr className="border-b text-left text-muted">
-                {section.columns.map((c) => (
-                  <th key={c.key} className="px-2 py-1.5 font-medium uppercase tracking-wide">
-                    {c.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {section.rows.map((r, i) => (
-                <tr key={i} className="border-b last:border-0">
-                  {section.columns!.map((c) => (
-                    <td key={c.key} className="px-2 py-1.5 text-ink">{r[c.key]}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {section.writeIn && (
-        // Ruled lines, because a printed management report is written on and an unruled
-        // gap invites a paragraph squeezed into the margin.
-        <div className="mt-2.5 space-y-4">
-          {Array.from({ length: section.writeIn }).map((_, i) => (
-            <div key={i} className="border-b" />
-          ))}
-        </div>
-      )}
-    </section>
   )
 }

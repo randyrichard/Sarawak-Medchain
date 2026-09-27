@@ -4,14 +4,17 @@ import { OrgAdminService, OrgAdminError } from './orgAdminService.js'
 import { AdminService, AdminError } from './adminService.js'
 import { OrgService } from './orgService.js'
 import { siteAllowance } from './entitlements.js'
+import { PLANS } from './planCatalog.js'
 import type { Caller } from './incidentService.js'
 
 /**
  * Plan limits, against a REAL PostgreSQL database.
  *
- * Standard and Premium differ by two things the product enforces: how many sites a
- * workspace may run, and whether it may create API keys and webhooks. Everything else -
- * every module, every user, scheduled report delivery - is the same on both, deliberately.
+ * Standard and Premium differ by one thing the product enforces: whether a workspace may
+ * create API keys and webhooks. Neither sellable plan caps sites today, but the allowance
+ * is kept - a cap is one number in planCatalog.ts - so it is exercised here through a plan
+ * that exists only in this file. Everything else - every module, every user, scheduled
+ * report delivery - is the same on both, deliberately.
  *
  * What is tested here is mostly the edges, because the happy path is one comparison and
  * the edges are where a billing limit does real damage:
@@ -34,7 +37,11 @@ const STD = 'ent-itest-standard'
 const PRM = 'ent-itest-premium'
 const LGC = 'ent-itest-legacy'
 const UNK = 'ent-itest-unknown'
-const ALL = [STD, PRM, LGC, UNK]
+const CAP = 'ent-itest-capped'
+const ALL = [STD, PRM, LGC, UNK, CAP]
+
+/** A plan that caps sites, registered for this file only. No sellable plan does today. */
+const CAPPED_PLAN = 'itest-capped'
 
 const ctx = { ip: '10.0.0.9', device: 'vitest' }
 
@@ -51,12 +58,17 @@ async function clearSites() {
 
 d('Plan entitlements — integration (real Postgres)', () => {
   beforeAll(async () => {
+    PLANS[CAPPED_PLAN] = {
+      key: CAPPED_PLAN, label: 'Capped', monthlyPriceMyr: 0, summary: 'Test only.',
+      entitlements: { maxSites: 3, integrations: false }, sellable: false,
+    }
     for (const [id, plan, name] of [
       [STD, 'standard', 'Ent Standard Co'],
       [PRM, 'premium', 'Ent Premium Co'],
       [LGC, 'enterprise', 'Ent Legacy Co'],
       // A plan key nobody recognises: the shape a hand-edited row takes.
       [UNK, 'platinum', 'Ent Unknown Co'],
+      [CAP, CAPPED_PLAN, 'Ent Capped Co'],
     ]) {
       await db.company.upsert({
         where: { id }, update: { plan }, create: { id, name, plan },
@@ -70,6 +82,7 @@ d('Plan entitlements — integration (real Postgres)', () => {
     await db.webhook.deleteMany({ where: { companyId: { in: ALL } } })
     await clearSites()
     await db.company.deleteMany({ where: { id: { in: ALL } } })
+    delete PLANS[CAPPED_PLAN]
     await db.$disconnect()
   })
 
@@ -78,19 +91,26 @@ d('Plan entitlements — integration (real Postgres)', () => {
   // ── Sites ──────────────────────────────────────────────────────────────────
 
   describe('the site allowance', () => {
-    it('lets a Standard workspace open every site it pays for', async () => {
-      for (const name of ['Plant One', 'Plant Two', 'Plant Three']) {
+    it('does not limit a Standard workspace', async () => {
+      for (const name of ['A', 'B', 'C', 'D', 'E', 'F']) {
         await expect(orgAdmin.createSite(adminOf(STD), STD, ctx, { name })).resolves.toBeTruthy()
       }
-      expect(await db.site.count({ where: { companyId: STD } })).toBe(3)
+      expect(await siteAllowance(db, STD)).toMatchObject({ limit: null, used: 6, atLimit: false })
+    })
+
+    it('lets a capped workspace open every site it pays for', async () => {
+      for (const name of ['Plant One', 'Plant Two', 'Plant Three']) {
+        await expect(orgAdmin.createSite(adminOf(CAP), CAP, ctx, { name })).resolves.toBeTruthy()
+      }
+      expect(await db.site.count({ where: { companyId: CAP } })).toBe(3)
     })
 
     it('refuses the one after the last one, and says what to do about it', async () => {
       for (const name of ['A', 'B', 'C']) {
-        await orgAdmin.createSite(adminOf(STD), STD, ctx, { name })
+        await orgAdmin.createSite(adminOf(CAP), CAP, ctx, { name })
       }
 
-      const err = await orgAdmin.createSite(adminOf(STD), STD, ctx, { name: 'D' })
+      const err = await orgAdmin.createSite(adminOf(CAP), CAP, ctx, { name: 'D' })
         .catch((e) => e)
       expect(err).toBeInstanceOf(OrgAdminError)
       expect(err.code).toBe('plan_limit')
@@ -99,28 +119,28 @@ d('Plan entitlements — integration (real Postgres)', () => {
       expect(err.status).toBe(403)
       // A refusal an administrator cannot act on is a support ticket. It names the plan,
       // the number, and both ways forward.
-      expect(err.message).toContain('Standard')
+      expect(err.message).toContain('Capped')
       expect(err.message).toContain('3')
       expect(err.message).toMatch(/Deactivate/i)
       expect(err.message).toContain('Premium')
 
       // Refused, not partially applied.
-      expect(await db.site.count({ where: { companyId: STD } })).toBe(3)
+      expect(await db.site.count({ where: { companyId: CAP } })).toBe(3)
     })
 
     it('frees the allowance when a site is deactivated', async () => {
       for (const name of ['A', 'B', 'C']) {
-        await orgAdmin.createSite(adminOf(STD), STD, ctx, { name })
+        await orgAdmin.createSite(adminOf(CAP), CAP, ctx, { name })
       }
-      const c = await db.site.findFirstOrThrow({ where: { companyId: STD, name: 'C' } })
+      const c = await db.site.findFirstOrThrow({ where: { companyId: CAP, name: 'C' } })
 
       // Deactivating is never gated - it is how a customer at the limit gets back under it.
-      await orgAdmin.setSiteActive(adminOf(STD), STD, ctx, c.id, false)
+      await orgAdmin.setSiteActive(adminOf(CAP), CAP, ctx, c.id, false)
 
-      await expect(orgAdmin.createSite(adminOf(STD), STD, ctx, { name: 'D' }))
+      await expect(orgAdmin.createSite(adminOf(CAP), CAP, ctx, { name: 'D' }))
         .resolves.toBeTruthy()
       // The deactivated site is still there. Nothing was deleted to make room.
-      expect(await db.site.count({ where: { companyId: STD } })).toBe(4)
+      expect(await db.site.count({ where: { companyId: CAP } })).toBe(4)
     })
 
     it('does not limit a Premium workspace', async () => {
@@ -141,11 +161,11 @@ d('Plan entitlements — integration (real Postgres)', () => {
     })
 
     it('leaves a workspace above its limit whole, and visible', async () => {
-      // The real path to this: a customer on Premium with six sites moves to Standard.
+      // The real path to this: a customer on Premium with six sites moves to a capped plan.
       for (const name of ['A', 'B', 'C', 'D', 'E', 'F']) {
         await orgAdmin.createSite(adminOf(PRM), PRM, ctx, { name })
       }
-      await db.company.update({ where: { id: PRM }, data: { plan: 'standard' } })
+      await db.company.update({ where: { id: PRM }, data: { plan: CAPPED_PLAN } })
 
       try {
         // Every site still listed, by the console and by the app's own reader. A plan
@@ -157,7 +177,7 @@ d('Plan entitlements — integration (real Postgres)', () => {
         const allowance = await siteAllowance(db, PRM)
         expect(allowance).toMatchObject({ limit: 3, used: 6, atLimit: true })
         await expect(orgAdmin.createSite(adminOf(PRM), PRM, ctx, { name: 'G' }))
-          .rejects.toThrow(/Standard/)
+          .rejects.toThrow(/Capped/)
 
         // And they can still retire what they have.
         const a = await db.site.findFirstOrThrow({ where: { companyId: PRM, name: 'A' } })

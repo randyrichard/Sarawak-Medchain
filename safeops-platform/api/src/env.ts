@@ -158,7 +158,11 @@ const schema = z.object({
    * NATs the proxy's address - and the boot check below refuses that combination in
    * production, where it is far more likely to be an oversight than a decision.
    */
-  PROXY_TOKEN: z.string().min(16).optional(),
+  //
+  // Empty reads as unset. docker-compose.prod.yml passes `${PROXY_TOKEN:-}`, so a stack
+  // with TRUST_PROXY=false - a documented, valid configuration - hands the API an empty
+  // string, and min(16) then refused to boot the one setup that needs no token at all.
+  PROXY_TOKEN: z.preprocess((v) => (v === '' ? undefined : v), z.string().min(16).optional()),
 
   /*
    * Deliberately still declared, so that a deployment carrying the old variable fails loudly

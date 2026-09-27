@@ -15,18 +15,23 @@ sales sentence. `api/src/lib/planCatalog.ts` is the only place any of it is writ
 
 | | Standard — RM10,000/mo | Premium — RM15,000/mo |
 |---|---|---|
-| Active sites | 3 | unlimited |
+| Active sites | unlimited | unlimited |
 | Every HSE module, every user, scheduled report delivery | yes | yes |
 | API keys and webhooks | — | reserved, **but not working yet** |
 
-**Sell Premium on sites, and only on sites.** The API-key and webhook boundary is wired
-and tested, but the capability behind it is unfinished: nothing authenticates an issued
-`sk_live_` key, and no webhook has ever left the server — `testWebhook` records a success
-without making a request, on purpose, because firing at an operator-supplied URL from
-inside the network is an SSRF primitive. Quoting either as a Premium benefit today would
-be selling something that does not exist. The gate is kept because the line is in the
-right place and moving it later, once customers sit on both sides, is the expensive
-version.
+**Quote Standard. There is nothing to sell Premium on yet.** Standard used to cap at three
+sites, which contradicted the customer this pricing is aimed at (500–2,000 people across
+two or more sites): the RM10,000 figure was one most of them could not actually buy. The
+cap is gone. The site-allowance machinery stays, tested, so a cap is one number in
+`planCatalog.ts` if the pilot argues for one.
+
+That leaves API keys and webhooks as Premium's only difference, and the capability behind
+them is unfinished: nothing authenticates an issued `sk_live_` key, and no webhook has ever
+left the server — `testWebhook` records a success without making a request, on purpose,
+because firing at an operator-supplied URL from inside the network is an SSRF primitive.
+Quoting either as a Premium benefit today would be selling something that does not exist.
+The gate is kept because the line is in the right place and moving it later, once
+customers sit on both sides, is the expensive version.
 
 Both axes come from the reasoning further down this page: sites drive value and support
 load more than headcount does, and integrations are the work that does not scale. Email

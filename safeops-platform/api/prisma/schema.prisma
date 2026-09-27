@@ -221,6 +221,7 @@ model Company {
   createdAt          DateTime               @default(now())
   visitors           Visitor[]
   visitorBlacklist   VisitorBlacklist[]
+  toolboxMeetings    ToolboxMeeting[]
   reportSchedules    ReportSchedule[]
   reportRuns         ReportRun[]
 }
@@ -336,6 +337,7 @@ model Site {
   sessions          TrainingSession[]
   departments       Department[]
   visitors          Visitor[]
+  toolboxMeetings   ToolboxMeeting[]
 
   @@index([companyId])
   @@index([projectId])
@@ -2923,6 +2925,10 @@ enum ReportType {
   open_investigations
   /// A closed calendar month, rather than what is outstanding now.
   monthly_summary
+  /// Every open corrective action, by department - the weekly SAIL for the HOD meeting.
+  weekly_actions
+  /// What happened on site in the last day or week: incidents, briefings, permits, actions.
+  site_activity
 }
 
 enum ReportFrequency {
@@ -3087,4 +3093,55 @@ model Invitation {
   @@index([companyId, email])
   @@index([companyId, createdAt])
   @@index([userId])
+}
+
+/// The daily toolbox meeting for a whole site.
+///
+/// Distinct from the toolbox talk on a permit, which briefs the named crew of one job. This
+/// is the mass pre-shift meeting - on a multi-contractor site, hundreds of people from
+/// several firms at once - so attendance is a headcount per organisation rather than a
+/// list of names nobody could type. The site safety officer records it; the register is
+/// what an auditor or a client asks for when they want proof the briefing happened.
+model ToolboxMeeting {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  siteId    String
+  site      Site    @relation(fields: [siteId], references: [id])
+
+  /// TBM-#### per tenant, quoted when the register is handed to a client.
+  number String
+
+  heldAt  DateTime
+  ledBy   String
+  topic   String
+  /// What was said about today's work: the hazards, the controls, the lessons shared.
+  hazards String   @default("")
+  notes   String   @default("")
+
+  /// Sum of the groups, stored so the register and the reports count without a join.
+  headcount Int @default(0)
+
+  recordedBy   String
+  recordedById String
+
+  groups ToolboxAttendanceGroup[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, number])
+  @@index([companyId, heldAt])
+  @@index([siteId, heldAt])
+}
+
+/// Who was there, as a headcount per organisation: the tenant's own staff, each contractor.
+model ToolboxAttendanceGroup {
+  id           String         @id @default(cuid())
+  meetingId    String
+  meeting      ToolboxMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  organisation String
+  count        Int
+
+  @@index([meetingId])
 }

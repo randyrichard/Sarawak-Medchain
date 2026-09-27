@@ -12,6 +12,7 @@ import { DashboardFilters } from './components/DashboardFilters'
 import { GettingStarted } from './components/GettingStarted'
 import { useGettingStarted } from './useGettingStarted'
 import { NeedsAttention } from './components/NeedsAttention'
+import { SiteComparison } from './components/SiteComparison'
 import {
   ActionsPanel, EquipmentPanel, IncidentPanel, PermitPanel, ReportPanel, VisitorPanel,
 } from './components/ModulePanels'
@@ -27,7 +28,7 @@ import { headline, kpiCards, scopeCaveats, scopeSummary } from './lib'
  */
 export function DashboardPage() {
   const { user } = useAuth()
-  const { loading: orgLoading, companies } = useOrg()
+  const { loading: orgLoading, companies, company, project, site, sites, allowed, switchSite } = useOrg()
   const platformAdmin = usePlatformAdmin()
   const { data, loading, error, filters, setFilter, clearFilters, refresh, filtered } = useDashboard()
   const { progress: gettingStarted, dismiss: dismissGettingStarted } = useGettingStarted()
@@ -170,6 +171,21 @@ export function DashboardPage() {
             </Link>
           ))}
       </div>
+
+      {/*
+        The wider view: every site side by side, when the dashboard is looking at more than
+        one. Hidden once a single site is chosen - the tiles above are then that site.
+      */}
+      {company && !site && sites.length > 1 && allowed('analytics:view') && (
+        <SiteComparison
+          companyId={company.id}
+          projectId={project?.id ?? null}
+          from={filters.from}
+          to={filters.to}
+          refresh={data ? Date.parse(data.generatedAt) : 0}
+          onOpenSite={switchSite}
+        />
+      )}
 
       {/* ── What needs attention ───────────────────────────────────────────── */}
       <div className="mt-3 grid gap-3 xl:grid-cols-3">

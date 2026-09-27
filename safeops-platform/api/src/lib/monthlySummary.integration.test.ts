@@ -384,7 +384,7 @@ d('the report as a document', () => {
       { month: 3, year: 2026 })
 
     expect(data.rows).toHaveLength(0)
-    expect(data.sections).toHaveLength(12)
+    expect(data.sections).toHaveLength(13)
     expect(data.sections?.every((x) =>
       x.note || x.stats || x.rows || x.unavailable || x.writeIn)).toBe(true)
   })

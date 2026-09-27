@@ -126,6 +126,20 @@ This has to come first. Caddy proves control of both names to obtain a certifica
 starting before DNS resolves means a failed challenge and a rate-limit counter you did not
 need to spend. Ports 80 and 443 must be reachable from the internet for the same reason.
 
+Then run the pre-flight on the server. It checks that both names resolve **to this
+server**, that the app and API share a registrable domain, that `APP_PUBLIC_URL`,
+`VITE_API_BASE_URL`, `CORS_ORIGINS` and `COOKIE_DOMAIN` agree with each other, and that no
+template placeholder (including an SMTP password still reading `APP_PASSWORD`) is left.
+It starts nothing and prints no secret:
+
+```bash
+deploy/preflight.sh                # add --behind-cdn if the names point at Cloudflare
+```
+
+`deploy/deployment.sh` runs it first on every deploy and stops before building if it fails.
+Every script in `deploy/` also turns on `--profile tls` by itself whenever
+`SAFEOPS_APP_DOMAIN` is set, so a restart or rollback does not leave Caddy stopped.
+
 ### 6. Start the stack
 
 ```bash
