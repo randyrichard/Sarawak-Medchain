@@ -48,7 +48,24 @@ const CONTENT_WIDTH = 595.28 - PAGE.margin * 2
 export interface RenderedReport {
   bytes: Buffer
   fileName: string
-  storedName: string
+}
+
+/**
+ * Keeps a rendered report on the upload volume, for a report run's history.
+ *
+ * Separate from rendering on purpose. Rendering used to write every PDF to disk, so each
+ * click of an on-screen "Download PDF" - an incident summary with injuries and names in it,
+ * a management report - left a copy on the server that nothing referenced, nothing listed
+ * and nothing ever deleted. Only a report run keeps its file, because the History tab and
+ * the email retry both read it back; a download is streamed and forgotten.
+ */
+export function storeReportPdf(bytes: Buffer): string {
+  if (!existsSync(UPLOAD_DIR)) mkdirSync(UPLOAD_DIR, { recursive: true })
+  // A UUID on disk, the readable name only for display - the same contract as every other
+  // stored file in the platform.
+  const storedName = `${randomUUID()}.pdf`
+  writeFileSync(join(UPLOAD_DIR, storedName), bytes)
+  return storedName
 }
 
 /**
@@ -81,14 +98,10 @@ function fit(doc: PDFKit.PDFDocument, text: string, width: number): string {
 }
 
 /**
- * Renders the report and writes it to the upload directory.
- *
- * Returns the bytes as well as the stored name so a caller can attach it to an email
- * without reading it back off disk.
+ * Renders the report to bytes. Writes nothing - see `storeReportPdf` for the one caller
+ * that needs to keep the file.
  */
 export async function renderReportPdf(data: ReportData): Promise<RenderedReport> {
-  if (!existsSync(UPLOAD_DIR)) mkdirSync(UPLOAD_DIR, { recursive: true })
-
   const doc = new PDFDocument({ size: PAGE.size, margin: PAGE.margin, bufferPages: true })
   const chunks: Buffer[] = []
   doc.on('data', (c: Buffer) => chunks.push(c))
@@ -321,10 +334,5 @@ export async function renderReportPdf(data: ReportData): Promise<RenderedReport>
 
   const stamp = data.generatedAt.toISOString().slice(0, 10)
   const fileName = `${data.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-${stamp}.pdf`
-  // A UUID on disk, the readable name only for display - the same contract as every other
-  // stored file in the platform.
-  const storedName = `${randomUUID()}.pdf`
-  writeFileSync(join(UPLOAD_DIR, storedName), bytes)
-
-  return { bytes, fileName, storedName }
+  return { bytes, fileName }
 }

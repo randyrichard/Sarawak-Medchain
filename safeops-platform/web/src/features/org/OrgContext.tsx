@@ -55,12 +55,23 @@ export function OrgProvider({ children }: { children: ReactNode }) {
   const [projectId, setProjectId] = useState<string | null>(null)
   const [siteId, setSiteId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  /*
+   * Whether the companies request has answered for the current user.
+   *
+   * The sites effect below treats "no company" as "nothing to load" and clears `loading`.
+   * On a page load it ran before the companies request had answered - companyId is null
+   * then because it is not known yet, not because there is none - so `loading` went false,
+   * every guarded page mounted, the company arrived, `loading` went true again (unmounting
+   * the page behind a spinner) and the page mounted a second time, repeating every request.
+   */
+  const [companiesLoaded, setCompaniesLoaded] = useState(false)
 
   // Load companies when the user changes
   useEffect(() => {
     if (!user) return
     let cancelled = false
     setLoading(true)
+    setCompaniesLoaded(false)
     // Driven by the user's memberships rather than a fixture lookup by id: in backend
     // mode the id is issued by the server and does not exist in the mock user list.
     Promise.all([
@@ -78,6 +89,7 @@ export function OrgProvider({ children }: { children: ReactNode }) {
       const restored = sameCompany ? (stored?.siteId ?? null) : null
       setProjectId(sameCompany ? (stored?.projectId ?? null) : null)
       setSiteId(takeFreshLogin() ? prefs.defaultSiteId : restored)
+      setCompaniesLoaded(true)
     })
     return () => {
       cancelled = true
@@ -97,7 +109,8 @@ export function OrgProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user) return
     if (!companyId) {
-      setLoading(false)
+      // Only once the companies have answered: before that, null means "not known yet".
+      if (companiesLoaded) setLoading(false)
       return
     }
     let cancelled = false
@@ -131,7 +144,7 @@ export function OrgProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true
     }
-  }, [user, companyId])
+  }, [user, companyId, companiesLoaded])
 
   // Persist selection per user
   useEffect(() => {

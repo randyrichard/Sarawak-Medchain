@@ -2,6 +2,9 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { PrismaClient } from '@prisma/client'
 import { ReportService } from './reportService.js'
 import { IncidentSummaryService } from './incidentSummary.js'
+import { renderReportPdf } from './reportPdf.js'
+import { existsSync, readdirSync } from 'node:fs'
+import { join, resolve } from 'node:path'
 import type { Caller } from './incidentService.js'
 
 /**
@@ -89,6 +92,10 @@ d('Summaries — integration (real Postgres)', () => {
   })
 
   afterAll(async () => {
+    await db.reportRun.deleteMany({ where: { companyId: COMPANY } })
+    await db.reportSchedule.deleteMany({ where: { companyId: COMPANY } })
+    await db.membership.deleteMany({ where: { companyId: COMPANY } })
+    await db.user.deleteMany({ where: { email: { endsWith: '@sum-itest.local' } } })
     await db.toolboxMeeting.deleteMany({ where: { companyId: COMPANY } })
     await db.correctiveAction.deleteMany({ where: { companyId: COMPANY } })
     await db.incidentPerson.deleteMany({ where: { incident: { companyId: COMPANY } } })
@@ -172,6 +179,36 @@ d('Summaries — integration (real Postgres)', () => {
       expect(figure('Injuries')).toBe('1')
       expect(figure('Lost time')).toBe('1')
       expect(figure('Near misses')).toBe('1')
+    })
+  })
+
+  describe('what a PDF leaves on the server', () => {
+    const UPLOADS = resolve(process.cwd(), process.env.UPLOAD_DIR ?? 'uploads')
+    const pdfsOnDisk = () => (existsSync(UPLOADS) ? readdirSync(UPLOADS).filter((f) => f.endsWith('.pdf')) : [])
+
+    it('keeps no copy of an on-screen download', async () => {
+      const before = pdfsOnDisk().length
+      // The report "Download PDF" button and the incident summary's, exactly as their routes do it.
+      const report = await reports.renderPdf(hse, COMPANY, 'weekly_actions')
+      const incident = await renderReportPdf(await summaries.build(hse, incidentId))
+      expect(report.pdf.bytes.subarray(0, 5).toString()).toBe('%PDF-')
+      expect(incident.bytes.subarray(0, 5).toString()).toBe('%PDF-')
+      expect(pdfsOnDisk().length).toBe(before)
+    })
+
+    it('still keeps the file of a report run, which History downloads later', async () => {
+      const user = await db.user.create({
+        data: { email: `run-${Date.now()}@sum-itest.local`, name: 'Recipient', passwordHash: 'x', status: 'active' },
+      })
+      await db.membership.create({ data: { userId: user.id, companyId: COMPANY, role: 'hse_manager' } })
+      const schedule = await reports.createSchedule(hse, COMPANY, {
+        name: 'Friday SAIL', reportType: 'weekly_actions', frequency: 'weekly', dayOfWeek: 5,
+        timeOfDay: '08:00', timezone: 'Asia/Kuching', recipientUserIds: [user.id],
+      })
+      await reports.runNow(hse, schedule.id)
+      const run = await db.reportRun.findFirstOrThrow({ where: { scheduleId: schedule.id } })
+      expect(run.storedName).toBeTruthy()
+      expect(existsSync(join(UPLOADS, run.storedName!))).toBe(true)
     })
   })
 
