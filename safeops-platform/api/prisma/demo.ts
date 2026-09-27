@@ -605,16 +605,37 @@ async function seedAssets(companyId: CompanyId) {
 }
 
 async function seedPermits(companyId: CompanyId) {
+  const workforce = await db.employee.findMany({
+    where: { companyId, active: true },
+    orderBy: { createdAt: 'asc' },
+    select: { id: true, name: true, siteId: true },
+  })
+
   for (const p of PERMITS[companyId]) {
     const issued = p.status === 'approved' || p.status === 'active' || p.status === 'closed'
     const approvedAt = new Date(Date.now() + (p.fromHours - 0.5) * HOUR)
+    /*
+     * Work that has started went through the gate the product enforces: a named crew, a
+     * toolbox talk, and every person's acknowledgement. The demo used to seed "Work In
+     * Progress" permits with none of it - a live hot-work job with nobody named and no
+     * briefing, on the screen a prospect is shown, next to text saying that cannot happen.
+     * An approved permit that has not started is named but not yet briefed, which is the
+     * honest state and shows the "Not ready to start" check doing its job.
+     */
+    const started = p.status === 'active' || p.status === 'closed'
+    const toolboxAt = started ? new Date(Date.now() + (p.fromHours - 0.25) * HOUR) : null
+    const crew = issued
+      ? [...workforce.filter((e) => e.siteId === p.site), ...workforce.filter((e) => e.siteId !== p.site)].slice(0, 3)
+      : []
 
     const permit = await db.permit.create({
       data: {
         code: `PTW-${await nextRef(companyId, 'permit', 4401)}`,
         companyId, siteId: p.site, type: p.type, title: p.title,
         description: `${p.title}. Scope agreed at the pre-job briefing.`,
-        department: p.dept, location: p.location, applicant: p.applicant, workerCount: 3,
+        department: p.dept, location: p.location, applicant: p.applicant, workerCount: Math.max(crew.length, 1),
+        toolboxAt,
+        toolboxBy: started ? 'Amirul Hassan' : null,
         validFrom: new Date(Date.now() + p.fromHours * HOUR),
         validTo: new Date(Date.now() + p.toHours * HOUR),
         status: p.status,
@@ -643,6 +664,20 @@ async function seedPermits(companyId: CompanyId) {
         }
       }),
     })
+
+    if (crew.length > 0) {
+      await db.permitAttendee.createMany({
+        data: crew.map((e, i) => ({
+          permitId: permit.id,
+          employeeId: e.id,
+          role: i === 0 ? 'supervisor' as const : 'worker' as const,
+          nameAtAssignment: e.name,
+          addedBy: p.applicant,
+          addedAt: approvedAt,
+          toolboxAckAt: toolboxAt,
+        })),
+      })
+    }
 
     if (p.gasTest) {
       await db.gasTest.create({
