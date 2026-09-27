@@ -2,7 +2,7 @@ import { Prisma, type PrismaClient, type ReportType, type Role } from '@prisma/c
 import type { Caller } from './incidentService.js'
 import { overdueActionWhere } from './incidentService.js'
 import { SEVERITY_LABEL, TYPE_LABEL, isInjury, isLostTime, isNearMiss, stageLabel } from './incidentCatalog.js'
-import { renderReportPdf, readStoredReport } from './reportPdf.js'
+import { renderReportPdf, readStoredReport, storeReportPdf } from './reportPdf.js'
 import { buildSiteActivity, buildWeeklyActions, type ActivityPeriod } from './reportSummaries.js'
 import {
   deliverReport, mailProviderConfigured, sendDeliveryPayload,
@@ -1187,6 +1187,8 @@ export class ReportService {
         siteId: opts.siteId, projectId: opts.projectId, period: opts.period ?? null,
       })
       const pdf = await renderReportPdf(data)
+      // The one place a PDF is kept: History downloads it and the email retry re-reads it.
+      const storedName = storeReportPdf(pdf.bytes)
       const recipients = await this.resolveRecipients(opts.companyId, opts.recipientUserIds)
 
       /*
@@ -1209,7 +1211,7 @@ export class ReportService {
         data: {
           rowCount: data.rows.length,
           recipientCount: recipients.length,
-          storedName: pdf.storedName,
+          storedName,
           originalName: pdf.fileName,
           sizeBytes: pdf.bytes.length,
           periodEnd: data.periodEnd,
