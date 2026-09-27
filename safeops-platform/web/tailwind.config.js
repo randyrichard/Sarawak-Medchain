@@ -40,6 +40,9 @@ export default {
         // a silent failure, since Tailwind does not complain about a class it has not heard
         // of. Its accent and critical counterparts were already listed.
         'warning-soft': 'var(--warning-soft)',
+        // Same story as warning-soft: --good-soft existed and was never exposed, so every
+        // `bg-good-soft` in the app rendered transparent.
+        'good-soft': 'var(--good-soft)',
         serious: 'var(--serious)',
         critical: 'var(--critical)',
         'critical-soft': 'var(--critical-soft)',

@@ -15,7 +15,7 @@
 import type { PrismaClient } from '@prisma/client'
 import { IncidentService, type Caller } from './incidentService.js'
 import { PERSON_ROLE_LABEL } from './incidentInvestigation.js'
-import { SEVERITY_LABEL, TYPE_LABEL, stageLabel } from './incidentCatalog.js'
+import { docDate, humanize, severityName, stageLabel, typeName } from './incidentCatalog.js'
 import type { ReportData } from './reportService.js'
 
 const DAY = 86_400_000
@@ -47,10 +47,10 @@ export class IncidentSummaryService {
     const fmt = (d: Date) => new Intl.DateTimeFormat('en-GB', {
       day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz,
     }).format(d)
-    const fmtDate = (d: Date) => d.toISOString().slice(0, 10)
+    const fmtDate = (d: Date) => docDate(d)
 
-    const type = TYPE_LABEL[inc.type] ?? inc.type.replace(/_/g, ' ')
-    const severity = SEVERITY_LABEL[inc.severity] ?? inc.severity.replace(/_/g, ' ')
+    const type = typeName(inc.type)
+    const severity = severityName(inc.severity)
     const stage = stageLabel(inc.stage)
     const siteName = site?.name ?? ''
     // IncidentService has already masked the name for anyone below HSE manager; those who
@@ -91,7 +91,7 @@ export class IncidentSummaryService {
     ].join(' ')
 
     const facts: [string, string][] = [
-      ['Incident', `${inc.number} - ${inc.title}`],
+      ['Incident', `${inc.number} — ${inc.title}`],
       ['Type', type],
       ['Severity', severity + (inc.highRisk ? ' (high risk)' : '')],
       ['Site', siteName],
@@ -102,17 +102,21 @@ export class IncidentSummaryService {
       ['Conditions', [inc.shift && `Shift: ${inc.shift}`, inc.weather && `Weather: ${inc.weather}`].filter(Boolean).join(' · ') || 'Not recorded'],
       ['Emergency response', inc.emergencyResponseActivated ? 'Activated' : 'Not activated'],
       ['Stage', closed ? `Closed${inc.closedAt ? ` ${fmt(inc.closedAt)}` : ''}` : stage],
-      ['Lead investigator', inc.leadInvestigator || 'Not yet assigned'],
     ]
 
     const text = (v: string | null | undefined) => (v && v.trim() ? v.trim() : NOT_RECORDED)
 
     return {
       type: 'incident_summary',
-      title: `Incident summary - ${inc.number}`,
+      title: `Incident summary — ${inc.number}`,
       companyName: company?.name ?? '',
       siteName: siteName || null,
       generatedAt: new Date(),
+      // The document's times in the site's own zone, and a footer fit for a client: this
+      // is the page an HSE manager sends out, so "not for external distribution" was wrong.
+      timezone: tz,
+      periodLabel: `Occurred ${fmt(inc.occurredAt)}`,
+      footer: `Confidential - incident summary prepared by ${company?.name ?? 'the company'} using SafeOps`,
       periodStart: null,
       periodEnd: new Date(),
       summary: [
@@ -157,13 +161,19 @@ export class IncidentSummaryService {
         },
         {
           title: 'Investigation',
-          note: [
-            `Team: ${inc.investigationTeam?.trim() || 'not recorded'}.`,
-            `Direct cause: ${text(inc.directCause)}`,
-            `Root cause: ${text(inc.rootCause)}`,
-            `Contributing factors: ${text(inc.contributingFactors)}`,
-            `Recommendations: ${text(inc.recommendations)}`,
-          ].join('\n'),
+          // A table rather than a paragraph: each finding is read, and checked, on its own.
+          columns: [
+            { key: 'k', label: 'Finding', width: 110 },
+            { key: 'v', label: 'Recorded', width: 405 },
+          ],
+          rows: [
+            { k: 'Lead investigator', v: inc.leadInvestigator || 'Not yet assigned' },
+            { k: 'Team', v: text(inc.investigationTeam) },
+            { k: 'Direct cause', v: text(inc.directCause) },
+            { k: 'Root cause', v: text(inc.rootCause) },
+            { k: 'Contributing factors', v: text(inc.contributingFactors) },
+            { k: 'Recommendations', v: text(inc.recommendations) },
+          ],
         },
         {
           title: 'Corrective actions',
@@ -183,7 +193,7 @@ export class IncidentSummaryService {
                 title: a.title,
                 owner: a.owner,
                 due: fmtDate(a.dueDate),
-                status: isLate ? 'Overdue' : a.status.replace(/_/g, ' '),
+                status: isLate ? 'Overdue' : humanize(a.status),
               }
             }),
           } : {}),

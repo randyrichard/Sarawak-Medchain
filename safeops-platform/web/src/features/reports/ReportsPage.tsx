@@ -50,7 +50,7 @@ const REPORT_CARDS: { type: ReportType; title: string; blurb: string; icon: type
   {
     type: 'weekly_actions',
     title: 'Weekly corrective actions',
-    blurb: 'Every open action by department, overdue first, with owners and due dates - the weekly '
+    blurb: 'Every open action by department, overdue first, with owners and due dates — the weekly '
       + 'list for the heads-of-department meeting. Schedule it for Friday morning.',
     icon: ListChecks,
   },
@@ -58,7 +58,7 @@ const REPORT_CARDS: { type: ReportType; title: string; blurb: string; icon: type
     type: 'site_activity',
     title: 'Site activity summary',
     blurb: 'What happened on site today or over the last 7 days: incidents, toolbox meetings, '
-      + 'permits, inspections and actions - for a manager or a shift handover.',
+      + 'permits, inspections and actions — for a manager or a shift handover.',
     icon: Activity,
   },
   {

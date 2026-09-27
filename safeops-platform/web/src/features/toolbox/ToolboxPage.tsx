@@ -84,10 +84,10 @@ export function ToolboxPage() {
     {
       key: 'headcount', header: 'Attendance', align: 'right', width: '120px',
       render: (m) => (
-        <span title={m.groups.map((g) => `${g.organisation}: ${g.count}`).join('\n')}>
-          <span className="font-semibold text-ink">{m.headcount.toLocaleString()}</span>
-          <span className="text-2xs text-muted"> · {m.groups.length} org{m.groups.length === 1 ? '' : 's'}</span>
-        </span>
+        <div title={m.groups.map((g) => `${g.organisation}: ${g.count}`).join('\n')}>
+          <p className="font-semibold text-ink">{m.headcount.toLocaleString()}</p>
+          <p className="whitespace-nowrap text-2xs text-muted">{m.groups.length} organisation{m.groups.length === 1 ? '' : 's'}</p>
+        </div>
       ),
     },
   ]
@@ -96,7 +96,7 @@ export function ToolboxPage() {
     <>
       <PageHeader
         title="Toolbox meetings"
-        subtitle="The daily site briefing, on record - what was covered, who led it, and who was there"
+        subtitle="The daily site briefing on record — what was covered, who led it and who attended"
         right={canRecord && (
           <Button icon={<Plus size={15} />} onClick={() => setEditing('new')}>Record meeting</Button>
         )}
@@ -124,7 +124,7 @@ export function ToolboxPage() {
                   key={s.siteId}
                   className={cn(
                     'flex items-center justify-between gap-2 rounded-lg border px-3 py-2',
-                    s.held ? 'border-good/40 bg-good-soft/30' : 'border-warning/40 bg-warning-soft',
+                    s.held ? 'border-good/40 bg-good-soft' : 'border-warning/40 bg-warning-soft',
                   )}
                 >
                   <span className="flex min-w-0 items-center gap-2">
@@ -175,7 +175,7 @@ export function ToolboxPage() {
             empty={
               <EmptyState icon={Megaphone} title={q || from || to ? 'No meetings match these filters' : 'No toolbox meetings recorded yet'}>
                 {canRecord
-                  ? 'Record this morning\'s briefing - the topic, who led it, and a headcount for each firm that attended.'
+                  ? 'Record this morning\'s briefing — the topic, who led it and a headcount for each organisation that attended.'
                   : 'Meetings recorded by your site safety team will appear here.'}
               </EmptyState>
             }

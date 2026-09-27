@@ -83,18 +83,12 @@ function ascii(text: string): string {
     .replace(/[‘’]/g, "'")
     .replace(/[“”]/g, '"')
     .replace(/[–—]/g, '-')
+    .replace(/\r\n?/g, '\n')
     // Anything else outside WinAnsi becomes a question mark rather than a box, so a
     // Chinese or Malay name is visibly transliterated instead of silently corrupted.
-    .replace(/[^ -ÿ]/g, '?')
-}
-
-/** A cell that would overflow its column is cut, never wrapped mid-table. */
-function fit(doc: PDFKit.PDFDocument, text: string, width: number): string {
-  const clean = ascii(text)
-  if (doc.widthOfString(clean) <= width) return clean
-  let out = clean
-  while (out.length > 1 && doc.widthOfString(`${out}...`) > width) out = out.slice(0, -1)
-  return `${out}...`
+    // Newlines are kept: they are how a multi-line field is laid out, and replacing them
+    // printed "Team: not recorded.?Direct cause: ..." on a document sent to a client.
+    .replace(/[^\n -ÿ]/g, '?')
 }
 
 /**
@@ -111,8 +105,17 @@ export async function renderReportPdf(data: ReportData): Promise<RenderedReport>
     doc.on('error', reject)
   })
 
-  const fmtDateTime = (d: Date) =>
-    `${d.toISOString().slice(0, 10)} ${d.toISOString().slice(11, 16)} UTC`
+  /*
+   * In the workspace's own timezone. These were printed in UTC, so a report generated at
+   * 9am in Kuching said "01:00 UTC" - correct, and not what anybody reading it thinks in.
+   */
+  const tz = data.timezone ?? 'UTC'
+  const fmtDateTime = (d: Date) => {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz,
+    }).format(d)
+    return tz === 'UTC' ? `${parts} UTC` : parts
+  }
 
   // ── Header ──────────────────────────────────────────────────────────────────
   doc.fillColor(ACCENT).fontSize(17).font('Helvetica-Bold').text(BRAND, PAGE.margin, PAGE.margin)
@@ -186,31 +189,54 @@ export async function renderReportPdf(data: ReportData): Promise<RenderedReport>
   const drawTable = (columns: ReportColumn[], rows: Record<string, string>[]) => {
     const scale = CONTENT_WIDTH / columns.reduce((a, c) => a + c.width, 0)
     const widths = columns.map((c) => c.width * scale)
-    const rowH = 16
+    const PAD = 5
+    /*
+     * Cells wrap rather than being cut. Truncating to one line printed "No department
+     * rec...", "Kuching Assemb..." and even header labels like "DEPARTME..." - and a cut
+     * measured a hair too wide wrapped anyway and ran into the row below. A long value is
+     * capped at three lines, so one essay-length title cannot take a page.
+     */
+    const MAX_LINES = 3
+    const cell = (text: string, w: number) => {
+      const clean = ascii(text)
+      const lineH = doc.currentLineHeight(true)
+      if (doc.heightOfString(clean, { width: w }) <= lineH * MAX_LINES + 0.5) return clean
+      let out = clean
+      while (out.length > 1 && doc.heightOfString(`${out}...`, { width: w }) > lineH * MAX_LINES + 0.5) {
+        out = out.slice(0, -1)
+      }
+      return `${out.trimEnd()}...`
+    }
+    const heightOf = (texts: string[]) =>
+      Math.max(...texts.map((t, i) => doc.heightOfString(t, { width: widths[i] - 8 }))) + PAD * 2
 
     const header = () => {
-      doc.fillColor(ACCENT).rect(PAGE.margin, y, CONTENT_WIDTH, rowH).fill()
-      doc.fillColor('#ffffff').fontSize(7.5).font('Helvetica-Bold')
+      doc.fontSize(7.5).font('Helvetica-Bold')
+      const labels = columns.map((c, i) => cell(c.label.toUpperCase(), widths[i] - 8))
+      const h = Math.max(16, heightOf(labels))
+      doc.fillColor(ACCENT).rect(PAGE.margin, y, CONTENT_WIDTH, h).fill()
+      doc.fillColor('#ffffff')
       let x = PAGE.margin + 4
-      columns.forEach((c, i) => {
-        doc.text(fit(doc, c.label.toUpperCase(), widths[i] - 8), x, y + 5, { width: widths[i] - 8, lineBreak: false })
+      labels.forEach((label, i) => {
+        doc.text(label, x, y + PAD, { width: widths[i] - 8 })
         x += widths[i]
       })
-      y += rowH
+      y += h
+      doc.font('Helvetica').fontSize(7.5)
     }
 
     header()
-    doc.font('Helvetica').fontSize(7.5)
 
     rows.forEach((row, n) => {
+      const texts = columns.map((c, i) => cell(row[c.key] ?? '', widths[i] - 8))
+      const h = Math.max(16, heightOf(texts))
       // Page breaks repeat the header, so page four is still readable on its own.
-      if (y + rowH > bottom) {
+      if (y + h > bottom) {
         newPage()
         header()
-        doc.font('Helvetica').fontSize(7.5)
       }
       if (n % 2 === 1) {
-        doc.fillColor('#f9fafb').rect(PAGE.margin, y, CONTENT_WIDTH, rowH).fill()
+        doc.fillColor('#f9fafb').rect(PAGE.margin, y, CONTENT_WIDTH, h).fill()
       }
       let x = PAGE.margin + 4
       columns.forEach((c, i) => {
@@ -219,13 +245,12 @@ export async function renderReportPdf(data: ReportData): Promise<RenderedReport>
         const hot = (c.key === 'overdue' && Number(value) > 0)
           || (c.key === 'days' && Number(value) > 30)
           || /fatal|catastroph|critical|lost time/i.test(value)
-        doc.fillColor(hot ? CRITICAL : INK)
-          .text(fit(doc, value, widths[i] - 8), x, y + 5, { width: widths[i] - 8, lineBreak: false })
+        doc.fillColor(hot ? CRITICAL : INK).text(texts[i], x, y + PAD, { width: widths[i] - 8 })
         x += widths[i]
       })
-      doc.moveTo(PAGE.margin, y + rowH).lineTo(PAGE.margin + CONTENT_WIDTH, y + rowH)
+      doc.moveTo(PAGE.margin, y + h).lineTo(PAGE.margin + CONTENT_WIDTH, y + h)
         .strokeColor('#e5e7eb').lineWidth(0.5).stroke()
-      y += rowH
+      y += h
     })
   }
 
@@ -242,9 +267,21 @@ export async function renderReportPdf(data: ReportData): Promise<RenderedReport>
   //
   // Only a multi-section report has these; the two list reports end above.
   for (const section of data.sections ?? []) {
-    // A heading stranded at the foot of a page with its content overleaf is the classic
-    // way a generated report stops looking like a document.
-    if (y + 70 > bottom) newPage()
+    /*
+     * A heading stranded at the foot of a page with its content overleaf is the classic
+     * way a generated report stops looking like a document. The space kept is what the
+     * section's first block needs - all of a short section, the start of a long table - not
+     * a fixed guess, which left "6. Corrective action summary" alone at the bottom of a page
+     * and a report's sign-off lines alone on the last one.
+     */
+    doc.fontSize(8.5).font('Helvetica')
+    const noteH = section.note ? doc.heightOfString(ascii(section.note), { width: CONTENT_WIDTH }) + 6 : 0
+    const unavailableH = section.unavailable ? doc.heightOfString(ascii(section.unavailable), { width: CONTENT_WIDTH - 12 }) + 8 : 0
+    const statsH = section.stats && section.stats.length > 0 ? 32 : 0
+    const tableH = section.columns && section.rows && section.rows.length > 0 ? 16 + Math.min(section.rows.length, 3) * 16 : 0
+    const writeInH = section.writeIn ? section.writeIn * 16 + 4 : 0
+    const needed = 16 + 23 + noteH + unavailableH + statsH + tableH + writeInH
+    if (y + needed > bottom) newPage()
     else y += 16
 
     doc.fillColor(INK).fontSize(10.5).font('Helvetica-Bold')
@@ -322,7 +359,7 @@ export async function renderReportPdf(data: ReportData): Promise<RenderedReport>
     doc.moveTo(PAGE.margin, fy - 6).lineTo(PAGE.margin + CONTENT_WIDTH, fy - 6)
       .strokeColor(RULE).lineWidth(0.5).stroke()
     doc.fillColor(MUTED).fontSize(7).font('Helvetica')
-      .text(ascii(`Generated automatically by ${BRAND} - ${data.companyName} - not for external distribution`),
+      .text(ascii(data.footer ?? `Generated automatically by ${BRAND} - ${data.companyName} - not for external distribution`),
         PAGE.margin, fy, { width: CONTENT_WIDTH * 0.75, lineBreak: false })
       .text(`Page ${i + 1} of ${range.count}`,
         PAGE.margin + CONTENT_WIDTH * 0.75, fy,

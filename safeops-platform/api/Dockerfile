@@ -57,6 +57,12 @@ RUN apk add --no-cache postgresql16-client openssl
 # at start with "permission denied" and nothing else. Done while still root, because it
 # lands outside /app.
 COPY --chmod=0755 api/docker-entrypoint.sh /usr/local/bin/safeops-entrypoint
+# Line endings are stripped for the same reason. Git on Windows checks shell scripts out
+# with CRLF unless told otherwise, the shebang becomes "/bin/sh\r", and the container
+# restarts forever with exit code 127 ("not found") and no other message.
+# .gitattributes pins *.sh to LF; this keeps an image built from a checkout made before
+# that rule, or with it overridden, from failing the same way.
+RUN sed -i 's/\r$//' /usr/local/bin/safeops-entrypoint
 
 # Evidence lives here. Mount a volume over it: without one, every uploaded photograph is
 # discarded when the container is replaced.

@@ -15,7 +15,8 @@
  */
 import type { PrismaClient } from '@prisma/client'
 import { overdueActionWhere } from './incidentService.js'
-import { SEVERITY_LABEL, TYPE_LABEL, isInjury, isNearMiss, stageLabel } from './incidentCatalog.js'
+import { docDate, humanize, isInjury, isNearMiss, severityName, stageLabel, typeName } from './incidentCatalog.js'
+import { PERMIT_STATUS_LABEL, PERMIT_TYPE_LABEL } from './permitCatalog.js'
 import { instantForLocal, localParts } from './reportSchedule.js'
 import type { ReportData } from './reportService.js'
 
@@ -35,9 +36,8 @@ export type ActivityPeriod = 'day' | 'week'
 
 const utcDay = (d: Date) => Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())
 const startOfTodayUtc = () => new Date(utcDay(new Date()))
-const iso = (d: Date) => d.toISOString().slice(0, 10)
+const iso = (d: Date) => docDate(d)
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
-const pretty = (v: string) => v.replace(/_/g, ' ')
 
 /** Whole days an action is past its due date, or negative days until it is due. */
 const daysLate = (due: Date) => Math.round((startOfTodayUtc().getTime() - utcDay(due)) / DAY)
@@ -299,8 +299,8 @@ export async function buildSiteActivity(
     rows: incidents.map((i) => ({
       number: i.number,
       occurred: fmt(i.occurredAt, true),
-      type: TYPE_LABEL[i.type] ?? pretty(i.type),
-      severity: SEVERITY_LABEL[i.severity] ?? pretty(i.severity),
+      type: typeName(i.type),
+      severity: severityName(i.severity),
       site: i.site?.name ?? '',
       title: i.title,
       stage: stageLabel(i.stage),
@@ -342,7 +342,8 @@ export async function buildSiteActivity(
             { key: 'status', label: 'Status', width: 70 },
           ],
           rows: permitsIssued.map((p) => ({
-            code: p.code, type: pretty(p.type), site: p.site?.name ?? '', title: p.title, status: pretty(p.status),
+            code: p.code, type: PERMIT_TYPE_LABEL[p.type] ?? humanize(p.type), site: p.site?.name ?? '', title: p.title,
+            status: PERMIT_STATUS_LABEL[p.status] ?? humanize(p.status),
           })),
         } : {}),
       },
