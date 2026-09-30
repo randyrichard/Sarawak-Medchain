@@ -20,7 +20,7 @@
  */
 import type { PrismaClient, PermitAttendeeRole, PermitType } from '@prisma/client'
 import { PermitError } from './permitService.js'
-import type { Caller } from './incidentService.js'
+import type { Caller } from '../domain/caller.js'
 
 /** Roles on a permit that put someone in the work. Standby stays outside by definition. */
 const INSIDE_ROLES: PermitAttendeeRole[] = ['worker', 'receiver', 'supervisor', 'gas_tester']

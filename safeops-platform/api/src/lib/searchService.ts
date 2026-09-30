@@ -12,8 +12,9 @@
  * screens it links to is a data leak with a magnifying-glass icon.
  */
 import type { PrismaClient } from '@prisma/client'
-import { actionScopeWhere, incidentScopeWhere, type Caller } from './incidentService.js'
-import { DomainError } from './errors.js'
+import { actionScopeWhere, incidentScopeWhere } from '../domain/access.js'
+import { type Caller, membershipOf } from '../domain/caller.js'
+import { DomainError } from '../domain/errors.js'
 
 export class SearchError extends DomainError {}
 
@@ -56,10 +57,9 @@ export class SearchService {
   constructor(private db: PrismaClient) {}
 
   private membership(caller: Caller, companyId: string) {
-    const m = caller.roles.find((r) => r.companyId === companyId)
-    if (!m) throw new SearchError('forbidden', 'You do not have access to this workspace.', 403)
-    return m
+    return membershipOf(caller, companyId, SearchError)
   }
+
 
   /**
    * Site restriction, matching the module services: an empty `siteIds` means every site in

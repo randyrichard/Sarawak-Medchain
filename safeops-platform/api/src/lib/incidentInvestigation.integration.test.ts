@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import { PrismaClient } from '@prisma/client'
 import { InvestigationService, completionBlockers } from './incidentInvestigation.js'
-import { IncidentService, type Caller } from './incidentService.js'
+import { IncidentService } from './incidentService.js'
+import { type Caller } from '../domain/caller.js'
 import { SEVERITY_RANK, LOST_TIME_SEVERITIES } from './incidentCatalog.js'
 
 /**

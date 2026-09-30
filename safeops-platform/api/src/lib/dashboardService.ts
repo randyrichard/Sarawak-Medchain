@@ -1,14 +1,12 @@
 import type { PrismaClient, Prisma, IncidentSeverity } from '@prisma/client'
-import type { Caller } from './incidentService.js'
-import {
-  overdueActionWhere, actionScopeWhere, incidentScopeWhere,
-  INVESTIGATING_STAGES, AWAITING_REVIEW_STAGES,
-} from './incidentService.js'
+import { membershipOf, type Caller } from '../domain/caller.js'
+import { INVESTIGATING_STAGES, AWAITING_REVIEW_STAGES } from './incidentService.js'
+import { overdueActionWhere, actionScopeWhere, incidentScopeWhere } from '../domain/access.js'
 import { SEVERITY_LABEL, SEVERITY_RANK } from './incidentCatalog.js'
 import { assessFitness, CALIBRATED_CATEGORIES, DUE_WARN_DAYS } from './equipmentService.js'
 import { ON_SITE_STATUSES, overdueBy } from './visitorService.js'
 import { REVIEW_CHAIN } from './permitReview.js'
-import { DomainError } from './errors.js'
+import { DomainError } from '../domain/errors.js'
 
 /**
  * The morning dashboard.
@@ -92,12 +90,9 @@ export class DashboardService {
   constructor(private db: PrismaClient) {}
 
   private membership(caller: Caller, companyId: string) {
-    const m = caller.roles.find((r) => r.companyId === companyId)
-    if (!m) {
-      throw new DashboardError('forbidden', 'You do not have access to this workspace.', 403)
-    }
-    return m
+    return membershipOf(caller, companyId, DashboardError)
   }
+
 
   /**
    * Resolve the requested window.

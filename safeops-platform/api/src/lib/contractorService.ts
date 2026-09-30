@@ -16,8 +16,8 @@
  * than a paper book in a gate cabin — the question asked first in an evacuation.
  */
 import { Prisma, type PrismaClient, type Role } from '@prisma/client'
-import type { Caller } from './incidentService.js'
-import { DomainError } from './errors.js'
+import { membershipOf, type Caller } from '../domain/caller.js'
+import { DomainError } from '../domain/errors.js'
 
 export class ContractorError extends DomainError {}
 
@@ -98,10 +98,9 @@ export class ContractorService {
   constructor(private db: PrismaClient) {}
 
   private membership(caller: Caller, companyId: string) {
-    const m = caller.roles.find((r) => r.companyId === companyId)
-    if (!m) throw new ContractorError('forbidden', 'You do not have access to this workspace.', 403)
-    return m
+    return membershipOf(caller, companyId, ContractorError)
   }
+
 
   private requireRole(caller: Caller, companyId: string, allowed: Role[], doing: string) {
     const m = this.membership(caller, companyId)

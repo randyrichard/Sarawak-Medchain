@@ -4,8 +4,9 @@ import { prisma } from '../lib/prisma.js'
 import {
   COMPLIANCE_FILTERS, CONTRACTOR_SORTS, ContractorError, ContractorService, WORKER_SORTS,
 } from '../lib/contractorService.js'
-import { requireAuth } from '../middleware/requireAuth.js'
-import { callerOf } from '../middleware/caller.js'
+import { requireAuth } from '../http/requireAuth.js'
+import { callerOf } from '../http/caller.js'
+import { asyncRoute } from '../http/asyncRoute.js'
 
 const svc = new ContractorService(prisma)
 export const contractorsRouter = Router()
@@ -31,33 +32,25 @@ const listCompaniesQuery = z.object({
   dir: z.enum(['asc', 'desc']).optional(),
 })
 
-contractorsRouter.get('/', async (req, res, next) => {
-  try {
-    const parsed = listCompaniesQuery.safeParse(req.query)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'Invalid query parameters.' })
-    }
-    const { companyId, ...opts } = parsed.data
-    res.json({ rows: await svc.listCompanies(callerOf(req), companyId, opts) })
-  } catch (e) {
-    next(e)
+contractorsRouter.get('/', asyncRoute(async (req, res) => {
+  const parsed = listCompaniesQuery.safeParse(req.query)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'Invalid query parameters.' })
   }
-})
+  const { companyId, ...opts } = parsed.data
+  res.json({ rows: await svc.listCompanies(callerOf(req), companyId, opts) })
+}))
 
 /*
  * Literal paths first. Express matches in declaration order, so /contractors/stats and
  * /contractors/workers must be registered before /contractors/:id or they are treated
  * as a contractor whose id is "stats".
  */
-contractorsRouter.get('/stats', async (req, res, next) => {
-  try {
-    const companyId = String(req.query.companyId ?? '')
-    if (!companyId) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
-    res.json(await svc.stats(callerOf(req), companyId))
-  } catch (e) {
-    next(e)
-  }
-})
+contractorsRouter.get('/stats', asyncRoute(async (req, res) => {
+  const companyId = String(req.query.companyId ?? '')
+  if (!companyId) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
+  res.json(await svc.stats(callerOf(req), companyId))
+}))
 
 const listWorkersQuery = z.object({
   companyId: z.string().min(1),
@@ -74,21 +67,17 @@ const listWorkersQuery = z.object({
   dir: z.enum(['asc', 'desc']).optional(),
 })
 
-contractorsRouter.get('/workers', async (req, res, next) => {
-  try {
-    const parsed = listWorkersQuery.safeParse(req.query)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'Invalid query parameters.' })
-    }
-    const { onSite, ...rest } = parsed.data
-    res.json(await svc.listWorkers(callerOf(req), {
-      ...rest,
-      onSite: onSite === undefined ? undefined : onSite === 'true',
-    }))
-  } catch (e) {
-    next(e)
+contractorsRouter.get('/workers', asyncRoute(async (req, res) => {
+  const parsed = listWorkersQuery.safeParse(req.query)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'Invalid query parameters.' })
   }
-})
+  const { onSite, ...rest } = parsed.data
+  res.json(await svc.listWorkers(callerOf(req), {
+    ...rest,
+    onSite: onSite === undefined ? undefined : onSite === 'true',
+  }))
+}))
 
 const workerBody = z.object({
   companyId: z.string().min(1),
@@ -104,21 +93,17 @@ const workerBody = z.object({
   emergencyRelation: z.string().max(80).optional(),
 })
 
-contractorsRouter.post('/workers', async (req, res, next) => {
-  try {
-    const parsed = workerBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: 'validation',
-        message: parsed.error.issues[0]?.message ?? 'Invalid worker payload.',
-      })
-    }
-    const { companyId, ...input } = parsed.data
-    res.status(201).json(await svc.createWorker(callerOf(req), companyId, input, ctxOf(req)))
-  } catch (e) {
-    next(e)
+contractorsRouter.post('/workers', asyncRoute(async (req, res) => {
+  const parsed = workerBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'validation',
+      message: parsed.error.issues[0]?.message ?? 'Invalid worker payload.',
+    })
   }
-})
+  const { companyId, ...input } = parsed.data
+  res.status(201).json(await svc.createWorker(callerOf(req), companyId, input, ctxOf(req)))
+}))
 
 const workerPatch = z.object({
   contractorCompanyId: z.string().min(1).optional(),
@@ -133,48 +118,32 @@ const workerPatch = z.object({
   emergencyRelation: z.string().max(80).optional(),
 })
 
-contractorsRouter.patch('/workers/:workerId', async (req, res, next) => {
-  try {
-    const parsed = workerPatch.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: 'validation',
-        message: parsed.error.issues[0]?.message ?? 'Invalid worker payload.',
-      })
-    }
-    res.json(await svc.updateWorker(callerOf(req), req.params.workerId, parsed.data, ctxOf(req)))
-  } catch (e) {
-    next(e)
+contractorsRouter.patch('/workers/:workerId', asyncRoute(async (req, res) => {
+  const parsed = workerPatch.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'validation',
+      message: parsed.error.issues[0]?.message ?? 'Invalid worker payload.',
+    })
   }
-})
+  res.json(await svc.updateWorker(callerOf(req), req.params.workerId, parsed.data, ctxOf(req)))
+}))
 
-contractorsRouter.post('/workers/:workerId/status', async (req, res, next) => {
-  try {
-    const parsed = z.object({ active: z.boolean() }).safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'active must be true or false.' })
-    }
-    res.json(await svc.setWorkerActive(callerOf(req), req.params.workerId, parsed.data.active, ctxOf(req)))
-  } catch (e) {
-    next(e)
+contractorsRouter.post('/workers/:workerId/status', asyncRoute(async (req, res) => {
+  const parsed = z.object({ active: z.boolean() }).safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'active must be true or false.' })
   }
-})
+  res.json(await svc.setWorkerActive(callerOf(req), req.params.workerId, parsed.data.active, ctxOf(req)))
+}))
 
-contractorsRouter.post('/workers/:workerId/check-in', async (req, res, next) => {
-  try {
-    res.json(await svc.checkIn(callerOf(req), req.params.workerId, ctxOf(req)))
-  } catch (e) {
-    next(e)
-  }
-})
+contractorsRouter.post('/workers/:workerId/check-in', asyncRoute(async (req, res) => {
+  res.json(await svc.checkIn(callerOf(req), req.params.workerId, ctxOf(req)))
+}))
 
-contractorsRouter.post('/workers/:workerId/check-out', async (req, res, next) => {
-  try {
-    res.json(await svc.checkOut(callerOf(req), req.params.workerId, ctxOf(req)))
-  } catch (e) {
-    next(e)
-  }
-})
+contractorsRouter.post('/workers/:workerId/check-out', asyncRoute(async (req, res) => {
+  res.json(await svc.checkOut(callerOf(req), req.params.workerId, ctxOf(req)))
+}))
 
 const certificateBody = z.object({
   name: z.string().min(1).max(200),
@@ -184,47 +153,31 @@ const certificateBody = z.object({
   reference: z.string().max(120).optional(),
 })
 
-contractorsRouter.post('/workers/:workerId/certificates', async (req, res, next) => {
-  try {
-    const parsed = certificateBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: 'validation',
-        message: parsed.error.issues[0]?.message ?? 'Invalid competency payload.',
-      })
-    }
-    res.status(201).json(await svc.addCertificate(callerOf(req), req.params.workerId, parsed.data, ctxOf(req)))
-  } catch (e) {
-    next(e)
+contractorsRouter.post('/workers/:workerId/certificates', asyncRoute(async (req, res) => {
+  const parsed = certificateBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'validation',
+      message: parsed.error.issues[0]?.message ?? 'Invalid competency payload.',
+    })
   }
-})
+  res.status(201).json(await svc.addCertificate(callerOf(req), req.params.workerId, parsed.data, ctxOf(req)))
+}))
 
-contractorsRouter.delete('/certificates/:certificateId', async (req, res, next) => {
-  try {
-    await svc.removeCertificate(callerOf(req), req.params.certificateId, ctxOf(req))
-    res.status(204).end()
-  } catch (e) {
-    next(e)
-  }
-})
+contractorsRouter.delete('/certificates/:certificateId', asyncRoute(async (req, res) => {
+  await svc.removeCertificate(callerOf(req), req.params.certificateId, ctxOf(req))
+  res.status(204).end()
+}))
 
-contractorsRouter.delete('/workers/:workerId', async (req, res, next) => {
-  try {
-    await svc.removeWorker(callerOf(req), req.params.workerId, ctxOf(req))
-    res.status(204).end()
-  } catch (e) {
-    next(e)
-  }
-})
+contractorsRouter.delete('/workers/:workerId', asyncRoute(async (req, res) => {
+  await svc.removeWorker(callerOf(req), req.params.workerId, ctxOf(req))
+  res.status(204).end()
+}))
 
 /** Registered after the /workers literals so it cannot capture them. */
-contractorsRouter.get('/workers/:workerId', async (req, res, next) => {
-  try {
-    res.json(await svc.getWorker(callerOf(req), req.params.workerId))
-  } catch (e) {
-    next(e)
-  }
-})
+contractorsRouter.get('/workers/:workerId', asyncRoute(async (req, res) => {
+  res.json(await svc.getWorker(callerOf(req), req.params.workerId))
+}))
 
 // ── Contractor company mutations ─────────────────────────────────────────────
 
@@ -239,21 +192,17 @@ const companyBody = z.object({
   insuranceExpiry: isoDate.optional(),
 })
 
-contractorsRouter.post('/', async (req, res, next) => {
-  try {
-    const parsed = companyBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: 'validation',
-        message: parsed.error.issues[0]?.message ?? 'Invalid contractor payload.',
-      })
-    }
-    const { companyId, ...input } = parsed.data
-    res.status(201).json(await svc.createCompany(callerOf(req), companyId, input, ctxOf(req)))
-  } catch (e) {
-    next(e)
+contractorsRouter.post('/', asyncRoute(async (req, res) => {
+  const parsed = companyBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'validation',
+      message: parsed.error.issues[0]?.message ?? 'Invalid contractor payload.',
+    })
   }
-})
+  const { companyId, ...input } = parsed.data
+  res.status(201).json(await svc.createCompany(callerOf(req), companyId, input, ctxOf(req)))
+}))
 
 const companyPatch = z.object({
   name: z.string().min(1).max(200).optional(),
@@ -266,37 +215,25 @@ const companyPatch = z.object({
   status: z.enum(['active', 'suspended']).optional(),
 })
 
-contractorsRouter.patch('/:id', async (req, res, next) => {
-  try {
-    const parsed = companyPatch.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: 'validation',
-        message: parsed.error.issues[0]?.message ?? 'Invalid contractor payload.',
-      })
-    }
-    res.json(await svc.updateCompany(callerOf(req), req.params.id, parsed.data, ctxOf(req)))
-  } catch (e) {
-    next(e)
+contractorsRouter.patch('/:id', asyncRoute(async (req, res) => {
+  const parsed = companyPatch.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'validation',
+      message: parsed.error.issues[0]?.message ?? 'Invalid contractor payload.',
+    })
   }
-})
+  res.json(await svc.updateCompany(callerOf(req), req.params.id, parsed.data, ctxOf(req)))
+}))
 
-contractorsRouter.delete('/:id', async (req, res, next) => {
-  try {
-    await svc.removeCompany(callerOf(req), req.params.id, ctxOf(req))
-    res.status(204).end()
-  } catch (e) {
-    next(e)
-  }
-})
+contractorsRouter.delete('/:id', asyncRoute(async (req, res) => {
+  await svc.removeCompany(callerOf(req), req.params.id, ctxOf(req))
+  res.status(204).end()
+}))
 
 /** Registered last: the parameterised path must not capture /stats or /workers. */
-contractorsRouter.get('/:id', async (req, res, next) => {
-  try {
-    res.json(await svc.getCompany(callerOf(req), req.params.id))
-  } catch (e) {
-    next(e)
-  }
-})
+contractorsRouter.get('/:id', asyncRoute(async (req, res) => {
+  res.json(await svc.getCompany(callerOf(req), req.params.id))
+}))
 
 export { ContractorError }

@@ -5,7 +5,7 @@ import { AdminService, AdminError } from './adminService.js'
 import { OrgService } from './orgService.js'
 import { siteAllowance } from './entitlements.js'
 import { PLANS } from './planCatalog.js'
-import type { Caller } from './incidentService.js'
+import type { Caller } from '../domain/caller.js'
 
 /**
  * Plan limits, against a REAL PostgreSQL database.

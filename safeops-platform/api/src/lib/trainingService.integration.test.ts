@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { PrismaClient } from '@prisma/client'
 import { TrainingError, TrainingService } from './trainingService.js'
 import { TRAINING_COURSES, courseApplies } from './trainingCatalog.js'
-import type { Caller } from './incidentService.js'
+import type { Caller } from '../domain/caller.js'
 
 /**
  * Integration tests — these run against a REAL PostgreSQL database, not a fake.

@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto'
 import type { PrismaClient, Role } from '@prisma/client'
-import type { Caller } from './incidentService.js'
+import type { Caller } from '../domain/caller.js'
 import { writeAdminAudit, type AdminContext } from './adminAudit.js'
 import { hashResetToken } from './tokens.js'
 import { hashPassword } from './password.js'
@@ -8,7 +8,7 @@ import { OrgAdminService, INVITE_TTL_DAYS, invitationUrl } from './orgAdminServi
 import {
   COMPANY_STATUSES, SUBSCRIPTION_STATUSES, formatMyr, isSellablePlan, planFor,
 } from './planCatalog.js'
-import { DomainError } from './errors.js'
+import { DomainError } from '../domain/errors.js'
 
 /**
  * Creating a customer.

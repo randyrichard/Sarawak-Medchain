@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest'
 import { PrismaClient } from '@prisma/client'
 import { ReportService } from './reportService.js'
-import { IncidentService, type Caller } from './incidentService.js'
+import { IncidentService } from './incidentService.js'
+import { type Caller } from '../domain/caller.js'
 
 /**
  * The monthly safety summary, against a REAL PostgreSQL database.

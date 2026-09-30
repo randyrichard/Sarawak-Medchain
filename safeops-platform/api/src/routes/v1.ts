@@ -1,14 +1,14 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
-import { requireApiKey } from '../middleware/requireApiKey.js'
-import {
-  INCIDENT_STATUS_FILTERS, IncidentService, SORT_KEYS, type Caller,
-} from '../lib/incidentService.js'
+import { requireApiKey } from '../http/requireApiKey.js'
+import { INCIDENT_STATUS_FILTERS, IncidentService, SORT_KEYS } from '../lib/incidentService.js'
+import { type Caller } from '../domain/caller.js'
 import { InspectionService } from '../lib/inspectionService.js'
 import { AuditService } from '../lib/auditService.js'
 import { TrainingService } from '../lib/trainingService.js'
 import { INCIDENT_SEVERITIES, INCIDENT_TYPES } from '../lib/incidentCatalog.js'
+import { asyncRoute } from '../http/asyncRoute.js'
 
 /** The same catalogue the report form is built from, so the two cannot drift apart. */
 const TYPE_VALUES = z.enum(INCIDENT_TYPES.map((t) => t.value) as [string, ...string[]])
@@ -96,23 +96,19 @@ const incidentListQuery = z.object({
   siteId: z.string().optional(),
 })
 
-v1Router.get('/incidents', async (req, res, next) => {
-  try {
-    const named = rejectsCompanyId(req)
-    if (named) return bad(res, named)
-    const parsed = incidentListQuery.safeParse(req.query)
-    if (!parsed.success) return bad(res, 'Invalid query parameters.')
-    res.json(await incidents.list(callerOf(req), { ...parsed.data, companyId: companyOf(req) }))
-  } catch (e) { next(e) }
-})
+v1Router.get('/incidents', asyncRoute(async (req, res) => {
+  const named = rejectsCompanyId(req)
+  if (named) return bad(res, named)
+  const parsed = incidentListQuery.safeParse(req.query)
+  if (!parsed.success) return bad(res, 'Invalid query parameters.')
+  res.json(await incidents.list(callerOf(req), { ...parsed.data, companyId: companyOf(req) }))
+}))
 
-v1Router.get('/incidents/:id', async (req, res, next) => {
-  try {
-    // The service scopes by the caller's membership, so an id from another workspace
-    // resolves to a 404 rather than a row.
-    res.json(await incidents.get(callerOf(req), req.params.id))
-  } catch (e) { next(e) }
-})
+v1Router.get('/incidents/:id', asyncRoute(async (req, res) => {
+  // The service scopes by the caller's membership, so an id from another workspace
+  // resolves to a 404 rather than a row.
+  res.json(await incidents.get(callerOf(req), req.params.id))
+}))
 
 const incidentCreateBody = z.object({
   siteId: z.string().min(1),
@@ -140,20 +136,18 @@ const incidentCreateBody = z.object({
   clientRef: z.string().uuid().optional(),
 })
 
-v1Router.post('/incidents', async (req, res, next) => {
-  try {
-    const named = rejectsCompanyId(req)
-    if (named) return bad(res, named)
-    const parsed = incidentCreateBody.safeParse(req.body)
-    if (!parsed.success) {
-      return bad(res, parsed.error.issues[0]?.message ?? 'Invalid incident payload.')
-    }
-    const created = await incidents.create(callerOf(req), {
-      ...parsed.data, companyId: companyOf(req),
-    })
-    res.status(201).json(created)
-  } catch (e) { next(e) }
-})
+v1Router.post('/incidents', asyncRoute(async (req, res) => {
+  const named = rejectsCompanyId(req)
+  if (named) return bad(res, named)
+  const parsed = incidentCreateBody.safeParse(req.body)
+  if (!parsed.success) {
+    return bad(res, parsed.error.issues[0]?.message ?? 'Invalid incident payload.')
+  }
+  const created = await incidents.create(callerOf(req), {
+    ...parsed.data, companyId: companyOf(req),
+  })
+  res.status(201).json(created)
+}))
 
 // ── Corrective actions ───────────────────────────────────────────────────────
 
@@ -165,19 +159,17 @@ const actionListQuery = z.object({
   overdue: z.enum(['true', 'false']).optional(),
 })
 
-v1Router.get('/actions', async (req, res, next) => {
-  try {
-    const named = rejectsCompanyId(req)
-    if (named) return bad(res, named)
-    const parsed = actionListQuery.safeParse(req.query)
-    if (!parsed.success) return bad(res, 'Invalid query parameters.')
-    const { overdue, ...rest } = parsed.data
-    res.json(await incidents.listActions(callerOf(req), companyOf(req), {
-      ...rest,
-      ...(overdue === undefined ? {} : { overdue: overdue === 'true' }),
-    }))
-  } catch (e) { next(e) }
-})
+v1Router.get('/actions', asyncRoute(async (req, res) => {
+  const named = rejectsCompanyId(req)
+  if (named) return bad(res, named)
+  const parsed = actionListQuery.safeParse(req.query)
+  if (!parsed.success) return bad(res, 'Invalid query parameters.')
+  const { overdue, ...rest } = parsed.data
+  res.json(await incidents.listActions(callerOf(req), companyOf(req), {
+    ...rest,
+    ...(overdue === undefined ? {} : { overdue: overdue === 'true' }),
+  }))
+}))
 
 // ── Assets ───────────────────────────────────────────────────────────────────
 
@@ -190,19 +182,17 @@ const assetListQuery = z.object({
   bucket: z.enum(['all', 'overdue', 'due_week', 'high_risk', 'defects']).optional(),
 })
 
-v1Router.get('/assets', async (req, res, next) => {
-  try {
-    const named = rejectsCompanyId(req)
-    if (named) return bad(res, named)
-    const parsed = assetListQuery.safeParse(req.query)
-    if (!parsed.success) return bad(res, 'Invalid query parameters.')
-    res.json(await inspections.listAssets(callerOf(req), {
-      ...parsed.data,
-      category: parsed.data.category as never,
-      companyId: companyOf(req),
-    }))
-  } catch (e) { next(e) }
-})
+v1Router.get('/assets', asyncRoute(async (req, res) => {
+  const named = rejectsCompanyId(req)
+  if (named) return bad(res, named)
+  const parsed = assetListQuery.safeParse(req.query)
+  if (!parsed.success) return bad(res, 'Invalid query parameters.')
+  res.json(await inspections.listAssets(callerOf(req), {
+    ...parsed.data,
+    category: parsed.data.category as never,
+    companyId: companyOf(req),
+  }))
+}))
 
 // ── Audits ───────────────────────────────────────────────────────────────────
 
@@ -214,20 +204,18 @@ const auditListQuery = z.object({
   type: z.string().max(40).optional(),
 })
 
-v1Router.get('/audits', async (req, res, next) => {
-  try {
-    const named = rejectsCompanyId(req)
-    if (named) return bad(res, named)
-    const parsed = auditListQuery.safeParse(req.query)
-    if (!parsed.success) return bad(res, 'Invalid query parameters.')
-    res.json(await audits.listAudits(callerOf(req), {
-      ...parsed.data,
-      status: parsed.data.status as never,
-      type: parsed.data.type as never,
-      companyId: companyOf(req),
-    }))
-  } catch (e) { next(e) }
-})
+v1Router.get('/audits', asyncRoute(async (req, res) => {
+  const named = rejectsCompanyId(req)
+  if (named) return bad(res, named)
+  const parsed = auditListQuery.safeParse(req.query)
+  if (!parsed.success) return bad(res, 'Invalid query parameters.')
+  res.json(await audits.listAudits(callerOf(req), {
+    ...parsed.data,
+    status: parsed.data.status as never,
+    type: parsed.data.type as never,
+    companyId: companyOf(req),
+  }))
+}))
 
 // -- Training ----------------------------------------------------------------
 
@@ -237,13 +225,11 @@ v1Router.get('/audits', async (req, res, next) => {
  * The one training read a key can serve. `trainingMatrix` admits `ceo` among its
  * organisation-wide roles, so it answers for the whole workspace rather than a slice.
  */
-v1Router.get('/training/matrix', async (req, res, next) => {
-  try {
-    const named = rejectsCompanyId(req)
-    if (named) return bad(res, named)
-    res.json(await training.trainingMatrix(callerOf(req), companyOf(req)))
-  } catch (e) { next(e) }
-})
+v1Router.get('/training/matrix', asyncRoute(async (req, res) => {
+  const named = rejectsCompanyId(req)
+  if (named) return bad(res, named)
+  res.json(await training.trainingMatrix(callerOf(req), companyOf(req)))
+}))
 
 // ── Certificate verification ─────────────────────────────────────────────────
 
@@ -256,8 +242,6 @@ v1Router.get('/training/matrix', async (req, res, next) => {
  * service returns only what is printed on the document, which the person asking is already
  * looking at, so there is nothing here to scope.
  */
-v1Router.get('/certificates/:number/verify', async (req, res, next) => {
-  try {
-    res.json(await training.verifyCertificate(req.params.number))
-  } catch (e) { next(e) }
-})
+v1Router.get('/certificates/:number/verify', asyncRoute(async (req, res) => {
+  res.json(await training.verifyCertificate(req.params.number))
+}))

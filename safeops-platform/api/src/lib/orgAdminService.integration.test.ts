@@ -6,7 +6,7 @@ import {
 import { setEmailProviderForTests } from './email/index.js'
 import { EmailProviderError, type EmailMessage, type EmailProvider } from './email/provider.js'
 import { OrgService } from './orgService.js'
-import type { Caller } from './incidentService.js'
+import type { Caller } from '../domain/caller.js'
 import { verifyPassword } from './password.js'
 import { hashResetToken } from './tokens.js'
 import { randomBytes } from 'node:crypto'

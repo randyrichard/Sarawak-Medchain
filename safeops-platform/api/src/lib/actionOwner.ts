@@ -1,5 +1,4 @@
 import type { Prisma, PrismaClient } from '@prisma/client'
-import type { Caller } from './incidentService.js'
 
 /**
  * Who owns a corrective action.
@@ -17,24 +16,10 @@ import type { Caller } from './incidentService.js'
  * nobody or more than one person - so nothing that was visible to its owner before is
  * hidden from them, and nothing linked to one person is visible to another who shares
  * their name.
+ *
+ * This file links an action to its account when it is raised. The ownership rule itself
+ * - ownedByWhere, isOwnedBy - is access policy and lives in domain/access.ts.
  */
-
-/** Actions the caller owns. Wrapped in AND so it composes with any OR a caller adds. */
-export function ownedByWhere(caller: Caller): Prisma.CorrectiveActionWhereInput {
-  return {
-    AND: [{
-      OR: [
-        { ownerId: caller.userId },
-        { ownerId: null, owner: caller.name },
-      ],
-    }],
-  }
-}
-
-/** The same rule for a row already loaded. */
-export function isOwnedBy(action: { owner: string; ownerId: string | null }, caller: Caller): boolean {
-  return action.ownerId ? action.ownerId === caller.userId : action.owner === caller.name
-}
 
 type Db = PrismaClient | Prisma.TransactionClient
 

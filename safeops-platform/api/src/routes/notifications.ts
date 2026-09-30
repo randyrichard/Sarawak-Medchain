@@ -2,8 +2,9 @@ import { Router } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
 import { NotificationError, NotificationService } from '../lib/notificationService.js'
-import { requireAuth } from '../middleware/requireAuth.js'
-import { callerOf } from '../middleware/caller.js'
+import { requireAuth } from '../http/requireAuth.js'
+import { callerOf } from '../http/caller.js'
+import { asyncRoute } from '../http/asyncRoute.js'
 
 const svc = new NotificationService(prisma)
 export const notificationsRouter = Router()
@@ -12,17 +13,13 @@ notificationsRouter.use(requireAuth)
 
 const companyQuery = z.object({ companyId: z.string().min(1) })
 
-notificationsRouter.get('/', async (req, res, next) => {
-  try {
-    const parsed = companyQuery.safeParse(req.query)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
-    }
-    res.json(await svc.list(callerOf(req), parsed.data.companyId))
-  } catch (e) {
-    next(e)
+notificationsRouter.get('/', asyncRoute(async (req, res) => {
+  const parsed = companyQuery.safeParse(req.query)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
   }
-})
+  res.json(await svc.list(callerOf(req), parsed.data.companyId))
+}))
 
 const createBody = z.object({
   companyId: z.string().min(1),
@@ -32,46 +29,34 @@ const createBody = z.object({
   href: z.string().max(500).optional(),
 })
 
-notificationsRouter.post('/', async (req, res, next) => {
-  try {
-    const parsed = createBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: 'validation',
-        message: parsed.error.issues[0]?.message ?? 'Invalid notification payload.',
-      })
-    }
-    const { companyId, ...input } = parsed.data
-    res.status(201).json(await svc.create(callerOf(req), companyId, input))
-  } catch (e) {
-    next(e)
+notificationsRouter.post('/', asyncRoute(async (req, res) => {
+  const parsed = createBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'validation',
+      message: parsed.error.issues[0]?.message ?? 'Invalid notification payload.',
+    })
   }
-})
+  const { companyId, ...input } = parsed.data
+  res.status(201).json(await svc.create(callerOf(req), companyId, input))
+}))
 
 // Literal before parameterised: /read-all must not be taken for a notification id.
-notificationsRouter.post('/read-all', async (req, res, next) => {
-  try {
-    const parsed = companyQuery.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
-    }
-    res.json(await svc.markAllRead(callerOf(req), parsed.data.companyId))
-  } catch (e) {
-    next(e)
+notificationsRouter.post('/read-all', asyncRoute(async (req, res) => {
+  const parsed = companyQuery.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
   }
-})
+  res.json(await svc.markAllRead(callerOf(req), parsed.data.companyId))
+}))
 
-notificationsRouter.post('/:id/read', async (req, res, next) => {
-  try {
-    const parsed = companyQuery.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
-    }
-    await svc.markRead(callerOf(req), parsed.data.companyId, req.params.id)
-    res.status(204).end()
-  } catch (e) {
-    next(e)
+notificationsRouter.post('/:id/read', asyncRoute(async (req, res) => {
+  const parsed = companyQuery.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
   }
-})
+  await svc.markRead(callerOf(req), parsed.data.companyId, req.params.id)
+  res.status(204).end()
+}))
 
 export { NotificationError }

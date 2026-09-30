@@ -4,7 +4,7 @@ import { burnEquivalentWork, verifyPassword } from './password.js'
 import {
   generateRefreshToken, hashRefreshToken, newFamilyId, refreshExpiry, signAccessToken,
 } from './tokens.js'
-import { DomainError } from './errors.js'
+import { DomainError } from '../domain/errors.js'
 
 export class AuthError extends DomainError {
   constructor(code: string, message: string, status = 401) {

@@ -6,7 +6,7 @@ import { IncidentService } from './incidentService.js'
 import { ProvisioningService } from './provisioningService.js'
 import { collectTenantExport } from './tenantExport.js'
 import { hashPassword } from './password.js'
-import type { Caller } from './incidentService.js'
+import type { Caller } from '../domain/caller.js'
 
 /**
  * The workspace export, against a real database.

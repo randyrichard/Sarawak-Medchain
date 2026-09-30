@@ -5,7 +5,7 @@ import { InspectionService } from './inspectionService.js'
 import { PermitService } from './permitService.js'
 import { PermitReviewService } from './permitReview.js'
 import { IncidentService } from './incidentService.js'
-import type { Caller } from './incidentService.js'
+import type { Caller } from '../domain/caller.js'
 
 /**
  * Integration tests against a REAL PostgreSQL database.

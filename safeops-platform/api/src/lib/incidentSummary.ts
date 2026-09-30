@@ -13,7 +13,8 @@
  * nobody anything they could not already open.
  */
 import type { PrismaClient } from '@prisma/client'
-import { IncidentService, type Caller } from './incidentService.js'
+import { IncidentService } from './incidentService.js'
+import { type Caller } from '../domain/caller.js'
 import { PERSON_ROLE_LABEL } from './incidentInvestigation.js'
 import { docDate, humanize, severityName, stageLabel, typeName } from './incidentCatalog.js'
 import type { ReportData } from './reportService.js'

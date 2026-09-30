@@ -8,10 +8,11 @@ import { join, resolve } from 'node:path'
 import { env } from '../env.js'
 import { prisma } from '../lib/prisma.js'
 import { EquipmentError } from '../lib/equipmentService.js'
-import type { Caller } from '../lib/incidentService.js'
-import { requireAuth } from '../middleware/requireAuth.js'
+import type { Caller } from '../domain/caller.js'
+import { requireAuth } from '../http/requireAuth.js'
 import type { Role } from '@prisma/client'
-import { callerOf } from '../middleware/caller.js'
+import { callerOf } from '../http/caller.js'
+import { asyncRoute } from '../http/asyncRoute.js'
 
 /**
  * Equipment photos, manuals and scanned certificates.
@@ -101,18 +102,14 @@ const toView = (d: {
   isImage: !!d.mimeType?.startsWith('image/'),
 })
 
-assetDocumentsRouter.get('/:assetId/documents', async (req, res, next) => {
-  try {
-    await assetFor(callerOf(req), req.params.assetId)
-    const rows = await prisma.assetDocument.findMany({
-      where: { assetId: req.params.assetId },
-      orderBy: { createdAt: 'desc' },
-    })
-    res.json({ rows: rows.map(toView) })
-  } catch (e) {
-    next(e)
-  }
-})
+assetDocumentsRouter.get('/:assetId/documents', asyncRoute(async (req, res) => {
+  await assetFor(callerOf(req), req.params.assetId)
+  const rows = await prisma.assetDocument.findMany({
+    where: { assetId: req.params.assetId },
+    orderBy: { createdAt: 'desc' },
+  })
+  res.json({ rows: rows.map(toView) })
+}))
 
 assetDocumentsRouter.post('/:assetId/documents', (req, res, next) => {
   upload.array('files', 5)(req, res, async (err) => {
@@ -180,67 +177,59 @@ assetDocumentsRouter.post('/:assetId/documents', (req, res, next) => {
 })
 
 /** Download. Authorisation is re-checked, so a stored name alone grants nothing. */
-assetDocumentsRouter.get('/documents/:documentId', async (req, res, next) => {
-  try {
-    const doc = await prisma.assetDocument.findUnique({
-      where: { id: req.params.documentId },
-      include: { asset: { select: { companyId: true } } },
-    })
-    if (!doc) throw new EquipmentError('not_found', 'Document not found.', 404)
-    if (!callerOf(req).roles.some((r) => r.companyId === doc.asset.companyId)) {
-      throw new EquipmentError('forbidden', 'You do not have access to this workspace.', 403)
-    }
-    if (!doc.storedName) {
-      throw new EquipmentError('not_found', 'This record has no file behind it.', 404)
-    }
-
-    res.setHeader('Content-Type', doc.mimeType ?? 'application/octet-stream')
-    // Forced download rather than inline: a PDF rendered in-origin can script. The client
-    // fetches it as a blob and builds its own object URL for previews.
-    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(doc.originalName ?? doc.name)}"`)
-    res.setHeader('X-Content-Type-Options', 'nosniff')
-    res.sendFile(join(UPLOAD_DIR, doc.storedName), (err) => {
-      if (err && !res.headersSent) {
-        res.status(404).json({ error: 'not_found', message: 'File is missing from storage.' })
-      }
-    })
-  } catch (e) {
-    next(e)
+assetDocumentsRouter.get('/documents/:documentId', asyncRoute(async (req, res) => {
+  const doc = await prisma.assetDocument.findUnique({
+    where: { id: req.params.documentId },
+    include: { asset: { select: { companyId: true } } },
+  })
+  if (!doc) throw new EquipmentError('not_found', 'Document not found.', 404)
+  if (!callerOf(req).roles.some((r) => r.companyId === doc.asset.companyId)) {
+    throw new EquipmentError('forbidden', 'You do not have access to this workspace.', 403)
   }
-})
-
-assetDocumentsRouter.delete('/documents/:documentId', async (req, res, next) => {
-  try {
-    const caller = callerOf(req)
-    const doc = await prisma.assetDocument.findUnique({
-      where: { id: req.params.documentId },
-      include: { asset: { select: { id: true, companyId: true } } },
-    })
-    if (!doc) throw new EquipmentError('not_found', 'Document not found.', 404)
-    const m = caller.roles.find((r) => r.companyId === doc.asset.companyId)
-    if (!m) throw new EquipmentError('forbidden', 'You do not have access to this workspace.', 403)
-    if (!WRITE_ROLES.includes(m.role)) {
-      throw new EquipmentError('forbidden', 'Your role does not permit changing equipment files.', 403)
-    }
-
-    await prisma.$transaction(async (tx) => {
-      await tx.assetDocument.delete({ where: { id: doc.id } })
-      await tx.assetEvent.create({
-        data: {
-          assetId: doc.asset.id,
-          kind: 'created',
-          summary: `${doc.kind === 'photo' ? 'Photo' : 'Document'} removed: ${doc.originalName ?? doc.name}`,
-          actor: caller.name, actorRole: m.role,
-        },
-      })
-    })
-
-    // Best effort: the row is the record, the blob is a cache of it. A file left behind is
-    // untidy; a row pointing at a deleted file is a broken download.
-    if (doc.storedName) unlink(join(UPLOAD_DIR, doc.storedName), () => {})
-
-    res.status(204).end()
-  } catch (e) {
-    next(e)
+  if (!doc.storedName) {
+    throw new EquipmentError('not_found', 'This record has no file behind it.', 404)
   }
-})
+
+  res.setHeader('Content-Type', doc.mimeType ?? 'application/octet-stream')
+  // Forced download rather than inline: a PDF rendered in-origin can script. The client
+  // fetches it as a blob and builds its own object URL for previews.
+  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(doc.originalName ?? doc.name)}"`)
+  res.setHeader('X-Content-Type-Options', 'nosniff')
+  res.sendFile(join(UPLOAD_DIR, doc.storedName), (err) => {
+    if (err && !res.headersSent) {
+      res.status(404).json({ error: 'not_found', message: 'File is missing from storage.' })
+    }
+  })
+}))
+
+assetDocumentsRouter.delete('/documents/:documentId', asyncRoute(async (req, res) => {
+  const caller = callerOf(req)
+  const doc = await prisma.assetDocument.findUnique({
+    where: { id: req.params.documentId },
+    include: { asset: { select: { id: true, companyId: true } } },
+  })
+  if (!doc) throw new EquipmentError('not_found', 'Document not found.', 404)
+  const m = caller.roles.find((r) => r.companyId === doc.asset.companyId)
+  if (!m) throw new EquipmentError('forbidden', 'You do not have access to this workspace.', 403)
+  if (!WRITE_ROLES.includes(m.role)) {
+    throw new EquipmentError('forbidden', 'Your role does not permit changing equipment files.', 403)
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.assetDocument.delete({ where: { id: doc.id } })
+    await tx.assetEvent.create({
+      data: {
+        assetId: doc.asset.id,
+        kind: 'created',
+        summary: `${doc.kind === 'photo' ? 'Photo' : 'Document'} removed: ${doc.originalName ?? doc.name}`,
+        actor: caller.name, actorRole: m.role,
+      },
+    })
+  })
+
+  // Best effort: the row is the record, the blob is a cache of it. A file left behind is
+  // untidy; a row pointing at a deleted file is a broken download.
+  if (doc.storedName) unlink(join(UPLOAD_DIR, doc.storedName), () => {})
+
+  res.status(204).end()
+}))

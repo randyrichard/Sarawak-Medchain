@@ -4,8 +4,9 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
 import { PrismaRateLimitStore } from '../lib/rateLimitStore.js'
 import { OrgAdminService } from '../lib/orgAdminService.js'
-import { requireAuth } from '../middleware/requireAuth.js'
-import { callerOf } from '../middleware/caller.js'
+import { requireAuth } from '../http/requireAuth.js'
+import { callerOf } from '../http/caller.js'
+import { asyncRoute } from '../http/asyncRoute.js'
 
 /**
  * Organisation administration.
@@ -54,33 +55,25 @@ const SITE_BODY = z.object({
   contactPhone: z.string().max(40).optional(),
 })
 
-orgAdminRouter.get('/sites', requireAuth, async (req, res, next) => {
-  try {
-    const { companyId } = COMPANY.parse(req.query)
-    res.json({ rows: await svc.listSites(callerOf(req), companyId) })
-  } catch (e) { next(e) }
-})
+orgAdminRouter.get('/sites', requireAuth, asyncRoute(async (req, res) => {
+  const { companyId } = COMPANY.parse(req.query)
+  res.json({ rows: await svc.listSites(callerOf(req), companyId) })
+}))
 
-orgAdminRouter.post('/sites', requireAuth, async (req, res, next) => {
-  try {
-    const { companyId, ...input } = SITE_BODY.parse(req.body)
-    res.status(201).json(await svc.createSite(callerOf(req), companyId, ctxOf(req), input))
-  } catch (e) { next(e) }
-})
+orgAdminRouter.post('/sites', requireAuth, asyncRoute(async (req, res) => {
+  const { companyId, ...input } = SITE_BODY.parse(req.body)
+  res.status(201).json(await svc.createSite(callerOf(req), companyId, ctxOf(req), input))
+}))
 
-orgAdminRouter.patch('/sites/:id', requireAuth, async (req, res, next) => {
-  try {
-    const { companyId, ...patch } = SITE_BODY.partial({ name: true }).parse(req.body)
-    res.json(await svc.updateSite(callerOf(req), companyId, ctxOf(req), req.params.id, patch))
-  } catch (e) { next(e) }
-})
+orgAdminRouter.patch('/sites/:id', requireAuth, asyncRoute(async (req, res) => {
+  const { companyId, ...patch } = SITE_BODY.partial({ name: true }).parse(req.body)
+  res.json(await svc.updateSite(callerOf(req), companyId, ctxOf(req), req.params.id, patch))
+}))
 
-orgAdminRouter.post('/sites/:id/status', requireAuth, async (req, res, next) => {
-  try {
-    const { companyId, active } = COMPANY.extend({ active: z.boolean() }).parse(req.body)
-    res.json(await svc.setSiteActive(callerOf(req), companyId, ctxOf(req), req.params.id, active))
-  } catch (e) { next(e) }
-})
+orgAdminRouter.post('/sites/:id/status', requireAuth, asyncRoute(async (req, res) => {
+  const { companyId, active } = COMPANY.extend({ active: z.boolean() }).parse(req.body)
+  res.json(await svc.setSiteActive(callerOf(req), companyId, ctxOf(req), req.params.id, active))
+}))
 
 // ── Projects   ──────────────────────────────────────────────────────────────
 //
@@ -103,147 +96,117 @@ const PROJECT_BODY = z.object({
   status: z.enum(['planned', 'active', 'completed', 'suspended', 'cancelled']).optional(),
 })
 
-orgAdminRouter.get('/projects', requireAuth, async (req, res, next) => {
-  try {
-    const { companyId } = COMPANY.parse(req.query)
-    res.json({ rows: await svc.listProjects(callerOf(req), companyId) })
-  } catch (e) { next(e) }
-})
+orgAdminRouter.get('/projects', requireAuth, asyncRoute(async (req, res) => {
+  const { companyId } = COMPANY.parse(req.query)
+  res.json({ rows: await svc.listProjects(callerOf(req), companyId) })
+}))
 
-orgAdminRouter.post('/projects', requireAuth, async (req, res, next) => {
-  try {
-    const { companyId, ...input } = PROJECT_BODY.parse(req.body)
-    res.status(201).json(await svc.createProject(callerOf(req), companyId, ctxOf(req), input))
-  } catch (e) { next(e) }
-})
+orgAdminRouter.post('/projects', requireAuth, asyncRoute(async (req, res) => {
+  const { companyId, ...input } = PROJECT_BODY.parse(req.body)
+  res.status(201).json(await svc.createProject(callerOf(req), companyId, ctxOf(req), input))
+}))
 
-orgAdminRouter.patch('/projects/:id', requireAuth, async (req, res, next) => {
-  try {
-    const { companyId, ...patch } = PROJECT_BODY.partial({ name: true }).parse(req.body)
-    res.json(await svc.updateProject(callerOf(req), companyId, ctxOf(req), req.params.id, patch))
-  } catch (e) { next(e) }
-})
+orgAdminRouter.patch('/projects/:id', requireAuth, asyncRoute(async (req, res) => {
+  const { companyId, ...patch } = PROJECT_BODY.partial({ name: true }).parse(req.body)
+  res.json(await svc.updateProject(callerOf(req), companyId, ctxOf(req), req.params.id, patch))
+}))
 
 /**
  * Cancel, which is this product's archive. There is no DELETE here deliberately: a
  * project's sites carry incidents, permits and assets, and no removal that keeps those
  * readable is a delete.
  */
-orgAdminRouter.post('/projects/:id/archive', requireAuth, async (req, res, next) => {
-  try {
-    const { companyId } = COMPANY.parse(req.body)
-    res.json(await svc.archiveProject(callerOf(req), companyId, ctxOf(req), req.params.id))
-  } catch (e) { next(e) }
-})
+orgAdminRouter.post('/projects/:id/archive', requireAuth, asyncRoute(async (req, res) => {
+  const { companyId } = COMPANY.parse(req.body)
+  res.json(await svc.archiveProject(callerOf(req), companyId, ctxOf(req), req.params.id))
+}))
 
 /** Moves a site under a project, or out from under one. Null detaches. */
-orgAdminRouter.post('/sites/:id/project', requireAuth, async (req, res, next) => {
-  try {
-    const { companyId, projectId } = COMPANY.extend({
-      projectId: z.string().nullable(),
-    }).parse(req.body)
-    res.json(await svc.assignSiteToProject(
-      callerOf(req), companyId, ctxOf(req), req.params.id, projectId,
-    ))
-  } catch (e) { next(e) }
-})
+orgAdminRouter.post('/sites/:id/project', requireAuth, asyncRoute(async (req, res) => {
+  const { companyId, projectId } = COMPANY.extend({
+    projectId: z.string().nullable(),
+  }).parse(req.body)
+  res.json(await svc.assignSiteToProject(
+    callerOf(req), companyId, ctxOf(req), req.params.id, projectId,
+  ))
+}))
 
 // ── Departments ──────────────────────────────────────────────────────────────
 
-orgAdminRouter.get('/departments', requireAuth, async (req, res, next) => {
-  try {
-    const { companyId, siteId } = COMPANY.extend({ siteId: z.string().optional() }).parse(req.query)
-    res.json({ rows: await svc.listDepartments(callerOf(req), companyId, siteId) })
-  } catch (e) { next(e) }
-})
+orgAdminRouter.get('/departments', requireAuth, asyncRoute(async (req, res) => {
+  const { companyId, siteId } = COMPANY.extend({ siteId: z.string().optional() }).parse(req.query)
+  res.json({ rows: await svc.listDepartments(callerOf(req), companyId, siteId) })
+}))
 
-orgAdminRouter.post('/departments', requireAuth, async (req, res, next) => {
-  try {
-    const { companyId, ...input } = COMPANY.extend({
-      name: z.string().min(1).max(120),
-      siteId: z.string().min(1),
-      code: z.string().max(24).optional(),
-      managerUserId: z.string().nullable().optional(),
-    }).parse(req.body)
-    res.status(201).json(await svc.createDepartment(callerOf(req), companyId, ctxOf(req), input))
-  } catch (e) { next(e) }
-})
+orgAdminRouter.post('/departments', requireAuth, asyncRoute(async (req, res) => {
+  const { companyId, ...input } = COMPANY.extend({
+    name: z.string().min(1).max(120),
+    siteId: z.string().min(1),
+    code: z.string().max(24).optional(),
+    managerUserId: z.string().nullable().optional(),
+  }).parse(req.body)
+  res.status(201).json(await svc.createDepartment(callerOf(req), companyId, ctxOf(req), input))
+}))
 
-orgAdminRouter.patch('/departments/:id', requireAuth, async (req, res, next) => {
-  try {
-    const { companyId, ...patch } = COMPANY.extend({
-      name: z.string().min(1).max(120).optional(),
-      code: z.string().max(24).optional(),
-      managerUserId: z.string().nullable().optional(),
-    }).parse(req.body)
-    res.json(await svc.updateDepartment(callerOf(req), companyId, ctxOf(req), req.params.id, patch))
-  } catch (e) { next(e) }
-})
+orgAdminRouter.patch('/departments/:id', requireAuth, asyncRoute(async (req, res) => {
+  const { companyId, ...patch } = COMPANY.extend({
+    name: z.string().min(1).max(120).optional(),
+    code: z.string().max(24).optional(),
+    managerUserId: z.string().nullable().optional(),
+  }).parse(req.body)
+  res.json(await svc.updateDepartment(callerOf(req), companyId, ctxOf(req), req.params.id, patch))
+}))
 
-orgAdminRouter.post('/departments/:id/status', requireAuth, async (req, res, next) => {
-  try {
-    const { companyId, active } = COMPANY.extend({ active: z.boolean() }).parse(req.body)
-    res.json(
-      await svc.setDepartmentActive(callerOf(req), companyId, ctxOf(req), req.params.id, active),
-    )
-  } catch (e) { next(e) }
-})
+orgAdminRouter.post('/departments/:id/status', requireAuth, asyncRoute(async (req, res) => {
+  const { companyId, active } = COMPANY.extend({ active: z.boolean() }).parse(req.body)
+  res.json(
+    await svc.setDepartmentActive(callerOf(req), companyId, ctxOf(req), req.params.id, active),
+  )
+}))
 
 // ── Invitations ──────────────────────────────────────────────────────────────
 
-orgAdminRouter.get('/invitations', requireAuth, async (req, res, next) => {
-  try {
-    const { companyId } = COMPANY.parse(req.query)
-    res.json({ rows: await svc.listInvitations(callerOf(req), companyId) })
-  } catch (e) { next(e) }
-})
+orgAdminRouter.get('/invitations', requireAuth, asyncRoute(async (req, res) => {
+  const { companyId } = COMPANY.parse(req.query)
+  res.json({ rows: await svc.listInvitations(callerOf(req), companyId) })
+}))
 
-orgAdminRouter.post('/invitations', inviteLimiter, requireAuth, async (req, res, next) => {
-  try {
-    const { companyId, ...input } = COMPANY.extend({
-      email: z.string().min(3).max(200),
-      name: z.string().max(120).optional(),
-      role: z.string().min(1),
-      siteIds: z.array(z.string()).optional(),
-      departmentId: z.string().nullable().optional(),
-    }).parse(req.body)
-    res.status(201).json(await svc.createInvitation(callerOf(req), companyId, ctxOf(req), input))
-  } catch (e) { next(e) }
-})
+orgAdminRouter.post('/invitations', inviteLimiter, requireAuth, asyncRoute(async (req, res) => {
+  const { companyId, ...input } = COMPANY.extend({
+    email: z.string().min(3).max(200),
+    name: z.string().max(120).optional(),
+    role: z.string().min(1),
+    siteIds: z.array(z.string()).optional(),
+    departmentId: z.string().nullable().optional(),
+  }).parse(req.body)
+  res.status(201).json(await svc.createInvitation(callerOf(req), companyId, ctxOf(req), input))
+}))
 
-orgAdminRouter.post('/invitations/:id/resend', inviteLimiter, requireAuth, async (req, res, next) => {
-  try {
-    const { companyId } = COMPANY.parse(req.body)
-    res.json(await svc.resendInvitation(callerOf(req), companyId, ctxOf(req), req.params.id))
-  } catch (e) { next(e) }
-})
+orgAdminRouter.post('/invitations/:id/resend', inviteLimiter, requireAuth, asyncRoute(async (req, res) => {
+  const { companyId } = COMPANY.parse(req.body)
+  res.json(await svc.resendInvitation(callerOf(req), companyId, ctxOf(req), req.params.id))
+}))
 
-orgAdminRouter.post('/invitations/:id/revoke', requireAuth, async (req, res, next) => {
-  try {
-    const { companyId } = COMPANY.parse(req.body)
-    res.json(await svc.revokeInvitation(callerOf(req), companyId, ctxOf(req), req.params.id))
-  } catch (e) { next(e) }
-})
+orgAdminRouter.post('/invitations/:id/revoke', requireAuth, asyncRoute(async (req, res) => {
+  const { companyId } = COMPANY.parse(req.body)
+  res.json(await svc.revokeInvitation(callerOf(req), companyId, ctxOf(req), req.params.id))
+}))
 
 // ── User access ──────────────────────────────────────────────────────────────
 
-orgAdminRouter.get('/role-catalog', requireAuth, async (req, res, next) => {
-  try {
-    const { companyId } = COMPANY.parse(req.query)
-    res.json({ rows: await svc.roleCatalog(callerOf(req), companyId) })
-  } catch (e) { next(e) }
-})
+orgAdminRouter.get('/role-catalog', requireAuth, asyncRoute(async (req, res) => {
+  const { companyId } = COMPANY.parse(req.query)
+  res.json({ rows: await svc.roleCatalog(callerOf(req), companyId) })
+}))
 
-orgAdminRouter.patch('/users/:id/access', requireAuth, async (req, res, next) => {
-  try {
-    const { companyId, ...patch } = COMPANY.extend({
-      role: z.string().optional(),
-      siteIds: z.array(z.string()).optional(),
-      departmentId: z.string().nullable().optional(),
-    }).parse(req.body)
-    res.json(await svc.setUserAccess(callerOf(req), companyId, ctxOf(req), req.params.id, patch))
-  } catch (e) { next(e) }
-})
+orgAdminRouter.patch('/users/:id/access', requireAuth, asyncRoute(async (req, res) => {
+  const { companyId, ...patch } = COMPANY.extend({
+    role: z.string().optional(),
+    siteIds: z.array(z.string()).optional(),
+    departmentId: z.string().nullable().optional(),
+  }).parse(req.body)
+  res.json(await svc.setUserAccess(callerOf(req), companyId, ctxOf(req), req.params.id, patch))
+}))
 
 // ── Accepting an invitation (no session yet) ─────────────────────────────────
 
@@ -254,18 +217,14 @@ orgAdminRouter.patch('/users/:id/access', requireAuth, async (req, res, next) =>
  */
 export const inviteRouter = Router()
 
-inviteRouter.get('/:token', async (req, res, next) => {
-  try {
-    res.json(await svc.previewInvitation(req.params.token))
-  } catch (e) { next(e) }
-})
+inviteRouter.get('/:token', asyncRoute(async (req, res) => {
+  res.json(await svc.previewInvitation(req.params.token))
+}))
 
-inviteRouter.post('/:token/accept', async (req, res, next) => {
-  try {
-    const body = z.object({
-      password: z.string().min(1),
-      name: z.string().max(120).optional(),
-    }).parse(req.body)
-    res.json(await svc.acceptInvitation(req.params.token, body))
-  } catch (e) { next(e) }
-})
+inviteRouter.post('/:token/accept', asyncRoute(async (req, res) => {
+  const body = z.object({
+    password: z.string().min(1),
+    name: z.string().max(120).optional(),
+  }).parse(req.body)
+  res.json(await svc.acceptInvitation(req.params.token, body))
+}))

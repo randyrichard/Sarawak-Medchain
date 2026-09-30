@@ -4,10 +4,11 @@ import { prisma } from '../lib/prisma.js'
 import {
   INCIDENT_STATUS_FILTERS, IncidentError, IncidentService,
 } from '../lib/incidentService.js'
-import { requireAuth } from '../middleware/requireAuth.js'
+import { requireAuth } from '../http/requireAuth.js'
 import { INCIDENT_SEVERITIES, INCIDENT_TYPES } from '../lib/incidentCatalog.js'
 import { SORT_KEYS } from '../lib/incidentService.js'
-import { callerOf } from '../middleware/caller.js'
+import { callerOf } from '../http/caller.js'
+import { asyncRoute } from '../http/asyncRoute.js'
 
 /** One list, used to build the report form and to validate what comes back from it. */
 const TYPE_VALUES = z.enum(
@@ -52,43 +53,31 @@ const listQuery = z.object({
   siteId: z.string().optional(),
 })
 
-incidentsRouter.get('/', async (req, res, next) => {
-  try {
-    const parsed = listQuery.safeParse(req.query)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'Invalid query parameters.' })
-    }
-    // The two tri-state flags arrive as strings; absent stays undefined, which the
-    // service reads as "either" rather than false.
-    const { anonymous, emergencyResponse, ...rest } = parsed.data
-    res.json(await svc.list(callerOf(req), {
-      ...rest,
-      ...(anonymous === undefined ? {} : { anonymous: anonymous === 'true' }),
-      ...(emergencyResponse === undefined ? {} : { emergencyResponse: emergencyResponse === 'true' }),
-    }))
-  } catch (e) {
-    next(e)
+incidentsRouter.get('/', asyncRoute(async (req, res) => {
+  const parsed = listQuery.safeParse(req.query)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'Invalid query parameters.' })
   }
-})
+  // The two tri-state flags arrive as strings; absent stays undefined, which the
+  // service reads as "either" rather than false.
+  const { anonymous, emergencyResponse, ...rest } = parsed.data
+  res.json(await svc.list(callerOf(req), {
+    ...rest,
+    ...(anonymous === undefined ? {} : { anonymous: anonymous === 'true' }),
+    ...(emergencyResponse === undefined ? {} : { emergencyResponse: emergencyResponse === 'true' }),
+  }))
+}))
 
-incidentsRouter.get('/stats', async (req, res, next) => {
-  try {
-    const companyId = String(req.query.companyId ?? '')
-    if (!companyId) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
-    const siteId = req.query.siteId ? String(req.query.siteId) : undefined
-    res.json(await svc.stats(callerOf(req), companyId, siteId))
-  } catch (e) {
-    next(e)
-  }
-})
+incidentsRouter.get('/stats', asyncRoute(async (req, res) => {
+  const companyId = String(req.query.companyId ?? '')
+  if (!companyId) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
+  const siteId = req.query.siteId ? String(req.query.siteId) : undefined
+  res.json(await svc.stats(callerOf(req), companyId, siteId))
+}))
 
-incidentsRouter.get('/:id', async (req, res, next) => {
-  try {
-    res.json(await svc.get(callerOf(req), req.params.id))
-  } catch (e) {
-    next(e)
-  }
-})
+incidentsRouter.get('/:id', asyncRoute(async (req, res) => {
+  res.json(await svc.get(callerOf(req), req.params.id))
+}))
 
 const createBody = z.object({
   companyId: z.string().min(1),
@@ -133,20 +122,16 @@ const createBody = z.object({
   clientRef: z.string().uuid().optional(),
 })
 
-incidentsRouter.post('/', async (req, res, next) => {
-  try {
-    const parsed = createBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: 'validation',
-        message: parsed.error.issues[0]?.message ?? 'Invalid incident payload.',
-      })
-    }
-    res.status(201).json(await svc.create(callerOf(req), parsed.data))
-  } catch (e) {
-    next(e)
+incidentsRouter.post('/', asyncRoute(async (req, res) => {
+  const parsed = createBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'validation',
+      message: parsed.error.issues[0]?.message ?? 'Invalid incident payload.',
+    })
   }
-})
+  res.status(201).json(await svc.create(callerOf(req), parsed.data))
+}))
 
 const advanceBody = z.object({
   to: z.string().min(1),
@@ -158,16 +143,12 @@ const advanceBody = z.object({
   expectedVersion: z.number().int().optional(),
 })
 
-incidentsRouter.post('/:id/advance', async (req, res, next) => {
-  try {
-    const parsed = advanceBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'Invalid stage transition payload.' })
-    }
-    res.json(await svc.advance(callerOf(req), req.params.id, parsed.data))
-  } catch (e) {
-    next(e)
+incidentsRouter.post('/:id/advance', asyncRoute(async (req, res) => {
+  const parsed = advanceBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'Invalid stage transition payload.' })
   }
-})
+  res.json(await svc.advance(callerOf(req), req.params.id, parsed.data))
+}))
 
 export { IncidentError }

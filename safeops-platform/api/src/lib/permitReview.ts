@@ -20,7 +20,7 @@ import type { PrismaClient, Role, PermitStatus } from '@prisma/client'
 import { PermitError } from './permitService.js'
 import { activationBlockers } from './permitCatalog.js'
 import { equipmentBlockers } from './equipmentService.js'
-import type { Caller } from './incidentService.js'
+import { membershipOf, type Caller } from '../domain/caller.js'
 
 /**
  * Who may sign each stage.
@@ -55,10 +55,9 @@ export class PermitReviewService {
   constructor(private db: PrismaClient) {}
 
   private membership(caller: Caller, companyId: string) {
-    const m = caller.roles.find((r) => r.companyId === companyId)
-    if (!m) throw new PermitError('forbidden', 'You do not have access to this workspace.', 403)
-    return m
+    return membershipOf(caller, companyId, PermitError)
   }
+
 
   /** Timeline entry plus tenant audit entry — the permit's record and the platform's. */
   private async record(

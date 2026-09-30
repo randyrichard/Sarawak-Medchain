@@ -3,8 +3,9 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
 import { InspectionError, InspectionService } from '../lib/inspectionService.js'
 import { ASSET_CATEGORIES, CHECKLISTS } from '../lib/inspectionCatalog.js'
-import { requireAuth } from '../middleware/requireAuth.js'
-import { callerOf } from '../middleware/caller.js'
+import { requireAuth } from '../http/requireAuth.js'
+import { callerOf } from '../http/caller.js'
+import { asyncRoute } from '../http/asyncRoute.js'
 
 const svc = new InspectionService(prisma)
 export const inspectionsRouter = Router()
@@ -20,16 +21,12 @@ const ASSET_CATEGORY = z.enum(ASSET_CATEGORIES)
 // registered before /:idOrQr or that route swallows them and looks up an asset named
 // "stats" — the same bug the incident module hit with /actions/list.
 
-inspectionsRouter.get('/stats', async (req, res, next) => {
-  try {
-    const companyId = String(req.query.companyId ?? '')
-    if (!companyId) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
-    const siteId = req.query.siteId ? String(req.query.siteId) : undefined
-    res.json(await svc.assetStats(callerOf(req), companyId, siteId))
-  } catch (e) {
-    next(e)
-  }
-})
+inspectionsRouter.get('/stats', asyncRoute(async (req, res) => {
+  const companyId = String(req.query.companyId ?? '')
+  if (!companyId) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
+  const siteId = req.query.siteId ? String(req.query.siteId) : undefined
+  res.json(await svc.assetStats(callerOf(req), companyId, siteId))
+}))
 
 /** The checklist templates. Served so the runner renders what the server will validate. */
 inspectionsRouter.get('/checklists', (_req, res) => {
@@ -45,17 +42,13 @@ const inspectionQuery = z.object({
   status: z.enum(['all', 'scheduled', 'overdue', 'completed', 'failed']).optional(),
 })
 
-inspectionsRouter.get('/inspections', async (req, res, next) => {
-  try {
-    const parsed = inspectionQuery.safeParse(req.query)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'Invalid query parameters.' })
-    }
-    res.json(await svc.listInspections(callerOf(req), parsed.data))
-  } catch (e) {
-    next(e)
+inspectionsRouter.get('/inspections', asyncRoute(async (req, res) => {
+  const parsed = inspectionQuery.safeParse(req.query)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'Invalid query parameters.' })
   }
-})
+  res.json(await svc.listInspections(callerOf(req), parsed.data))
+}))
 
 const answerSchema = z.object({
   itemId: z.string().min(1).max(80),
@@ -73,20 +66,16 @@ const completeBody = z.object({
   signature: z.string().min(1).max(200),
 })
 
-inspectionsRouter.post('/inspections/:inspectionId/complete', async (req, res, next) => {
-  try {
-    const parsed = completeBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: 'validation',
-        message: parsed.error.issues[0]?.message ?? 'Invalid inspection result.',
-      })
-    }
-    res.json(await svc.completeInspection(callerOf(req), req.params.inspectionId, parsed.data))
-  } catch (e) {
-    next(e)
+inspectionsRouter.post('/inspections/:inspectionId/complete', asyncRoute(async (req, res) => {
+  const parsed = completeBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'validation',
+      message: parsed.error.issues[0]?.message ?? 'Invalid inspection result.',
+    })
   }
-})
+  res.json(await svc.completeInspection(callerOf(req), req.params.inspectionId, parsed.data))
+}))
 
 const assetQuery = z.object({
   companyId: z.string().min(1),
@@ -99,17 +88,13 @@ const assetQuery = z.object({
   bucket: z.enum(['all', 'overdue', 'due_week', 'high_risk', 'defects']).optional(),
 })
 
-inspectionsRouter.get('/', async (req, res, next) => {
-  try {
-    const parsed = assetQuery.safeParse(req.query)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'Invalid query parameters.' })
-    }
-    res.json(await svc.listAssets(callerOf(req), parsed.data))
-  } catch (e) {
-    next(e)
+inspectionsRouter.get('/', asyncRoute(async (req, res) => {
+  const parsed = assetQuery.safeParse(req.query)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'Invalid query parameters.' })
   }
-})
+  res.json(await svc.listAssets(callerOf(req), parsed.data))
+}))
 
 const createBody = z.object({
   companyId: z.string().min(1),
@@ -134,49 +119,37 @@ const createBody = z.object({
   assignedContractorWorkerId: z.string().optional(),
 })
 
-inspectionsRouter.post('/', async (req, res, next) => {
-  try {
-    const parsed = createBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: 'validation',
-        message: parsed.error.issues[0]?.message ?? 'Invalid asset payload.',
-      })
-    }
-    res.status(201).json(await svc.createAsset(callerOf(req), parsed.data))
-  } catch (e) {
-    next(e)
+inspectionsRouter.post('/', asyncRoute(async (req, res) => {
+  const parsed = createBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'validation',
+      message: parsed.error.issues[0]?.message ?? 'Invalid asset payload.',
+    })
   }
-})
+  res.status(201).json(await svc.createAsset(callerOf(req), parsed.data))
+}))
 
 // ── Parameterised paths ──────────────────────────────────────────────────────
 
 /** Resolves by id, QR payload or printed code — the field scan lands here. */
-inspectionsRouter.get('/:idOrQr', async (req, res, next) => {
-  try {
-    res.json(await svc.getAssetProfile(callerOf(req), req.params.idOrQr))
-  } catch (e) {
-    next(e)
-  }
-})
+inspectionsRouter.get('/:idOrQr', asyncRoute(async (req, res) => {
+  res.json(await svc.getAssetProfile(callerOf(req), req.params.idOrQr))
+}))
 
 const scheduleBody = z.object({
   date: z.string().min(1).max(40),
   inspector: z.string().min(1).max(200),
 })
 
-inspectionsRouter.post('/:assetId/inspections', async (req, res, next) => {
-  try {
-    const parsed = scheduleBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'Date and inspector are required.' })
-    }
-    res.status(201).json(await svc.scheduleInspection(
-      callerOf(req), req.params.assetId, parsed.data.date, parsed.data.inspector,
-    ))
-  } catch (e) {
-    next(e)
+inspectionsRouter.post('/:assetId/inspections', asyncRoute(async (req, res) => {
+  const parsed = scheduleBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'Date and inspector are required.' })
   }
-})
+  res.status(201).json(await svc.scheduleInspection(
+    callerOf(req), req.params.assetId, parsed.data.date, parsed.data.inspector,
+  ))
+}))
 
 export { InspectionError }

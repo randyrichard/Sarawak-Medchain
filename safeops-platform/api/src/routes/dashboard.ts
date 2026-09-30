@@ -3,8 +3,9 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
 import { SiteComparisonService } from '../lib/siteComparison.js'
 import { DashboardService } from '../lib/dashboardService.js'
-import { requireAuth } from '../middleware/requireAuth.js'
-import { callerOf } from '../middleware/caller.js'
+import { requireAuth } from '../http/requireAuth.js'
+import { callerOf } from '../http/caller.js'
+import { asyncRoute } from '../http/asyncRoute.js'
 
 /**
  * The operational dashboard.
@@ -29,29 +30,21 @@ const QUERY = z.object({
   to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 })
 
-dashboardRouter.get('/overview', async (req, res, next) => {
-  try {
-    const q = QUERY.parse(req.query)
-    /*
-     * companyId is checked against the session's memberships inside the service, not
-     * trusted from the query string. Passing another tenant's id is a 403, not a wider
-     * view - which is the whole point of doing the aggregation here rather than in the
-     * browser.
-     */
-    res.json(await svc.overview(callerOf(req), q))
-  } catch (e) {
-    next(e)
-  }
-})
+dashboardRouter.get('/overview', asyncRoute(async (req, res) => {
+  const q = QUERY.parse(req.query)
+  /*
+   * companyId is checked against the session's memberships inside the service, not
+   * trusted from the query string. Passing another tenant's id is a 403, not a wider
+   * view - which is the whole point of doing the aggregation here rather than in the
+   * browser.
+   */
+  res.json(await svc.overview(callerOf(req), q))
+}))
 
 /** Every site side by side - the "wider view" of the dashboard. */
 const siteComparison = new SiteComparisonService(prisma)
 
-dashboardRouter.get('/sites', async (req, res, next) => {
-  try {
-    const q = QUERY.parse(req.query)
-    res.json(await siteComparison.compare(callerOf(req), q))
-  } catch (e) {
-    next(e)
-  }
-})
+dashboardRouter.get('/sites', asyncRoute(async (req, res) => {
+  const q = QUERY.parse(req.query)
+  res.json(await siteComparison.compare(callerOf(req), q))
+}))

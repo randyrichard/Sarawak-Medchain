@@ -31,7 +31,7 @@ import { dashboardRouter } from './routes/dashboard.js'
 import { orgAdminRouter, inviteRouter } from './routes/orgAdmin.js'
 import { platformRouter } from './routes/platform.js'
 import { v1Router } from './routes/v1.js'
-import { DomainError } from './lib/errors.js'
+import { DomainError } from './domain/errors.js'
 import { hashApiKey } from './lib/apiKeyAuth.js'
 import { toolboxRouter } from './routes/toolbox.js'
 

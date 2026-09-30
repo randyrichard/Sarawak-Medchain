@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { PrismaClient } from '@prisma/client'
-import { IncidentService, type Caller } from './incidentService.js'
+import { IncidentService } from './incidentService.js'
+import { type Caller } from '../domain/caller.js'
 import { SearchService } from './searchService.js'
 import { resolveOwnerId } from './actionOwner.js'
 

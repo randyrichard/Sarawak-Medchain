@@ -16,9 +16,9 @@
  *    an auditor's question and a coroner's question.
  */
 import { Prisma, type PrismaClient } from '@prisma/client'
-import type { Caller } from './incidentService.js'
+import { membershipOf, type Caller } from '../domain/caller.js'
 import type { Role } from '@prisma/client'
-import { DomainError } from './errors.js'
+import { DomainError } from '../domain/errors.js'
 
 export class EmployeeError extends DomainError {}
 
@@ -78,10 +78,9 @@ export class EmployeeService {
   constructor(private db: PrismaClient) {}
 
   private membership(caller: Caller, companyId: string) {
-    const m = caller.roles.find((r) => r.companyId === companyId)
-    if (!m) throw new EmployeeError('forbidden', 'You do not have access to this workspace.', 403)
-    return m
+    return membershipOf(caller, companyId, EmployeeError)
   }
+
 
   private requireRole(caller: Caller, companyId: string, allowed: Role[], doing: string) {
     const m = this.membership(caller, companyId)

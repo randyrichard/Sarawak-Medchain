@@ -4,8 +4,9 @@ import { prisma } from '../lib/prisma.js'
 import {
   EMPLOYEE_SORTS, EmployeeError, EmployeeService, MEDICAL_FILTERS,
 } from '../lib/employeeService.js'
-import { requireAuth } from '../middleware/requireAuth.js'
-import { callerOf } from '../middleware/caller.js'
+import { requireAuth } from '../http/requireAuth.js'
+import { callerOf } from '../http/caller.js'
+import { asyncRoute } from '../http/asyncRoute.js'
 
 const svc = new EmployeeService(prisma)
 export const employeesRouter = Router()
@@ -33,51 +34,35 @@ const listQuery = z.object({
   dir: z.enum(['asc', 'desc']).optional(),
 })
 
-employeesRouter.get('/', async (req, res, next) => {
-  try {
-    const parsed = listQuery.safeParse(req.query)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'Invalid query parameters.' })
-    }
-    res.json(await svc.list(callerOf(req), parsed.data))
-  } catch (e) {
-    next(e)
+employeesRouter.get('/', asyncRoute(async (req, res) => {
+  const parsed = listQuery.safeParse(req.query)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'Invalid query parameters.' })
   }
-})
+  res.json(await svc.list(callerOf(req), parsed.data))
+}))
 
 /*
  * Literal paths are registered before the parameterised one below, or Express matches
  * /employees/stats as an employee whose id is "stats".
  */
-employeesRouter.get('/stats', async (req, res, next) => {
-  try {
-    const companyId = String(req.query.companyId ?? '')
-    if (!companyId) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
-    res.json(await svc.stats(callerOf(req), companyId))
-  } catch (e) {
-    next(e)
-  }
-})
+employeesRouter.get('/stats', asyncRoute(async (req, res) => {
+  const companyId = String(req.query.companyId ?? '')
+  if (!companyId) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
+  res.json(await svc.stats(callerOf(req), companyId))
+}))
 
-employeesRouter.get('/departments', async (req, res, next) => {
-  try {
-    const companyId = String(req.query.companyId ?? '')
-    if (!companyId) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
-    res.json({ departments: await svc.departments(callerOf(req), companyId) })
-  } catch (e) {
-    next(e)
-  }
-})
+employeesRouter.get('/departments', asyncRoute(async (req, res) => {
+  const companyId = String(req.query.companyId ?? '')
+  if (!companyId) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
+  res.json({ departments: await svc.departments(callerOf(req), companyId) })
+}))
 
-employeesRouter.get('/positions', async (req, res, next) => {
-  try {
-    const companyId = String(req.query.companyId ?? '')
-    if (!companyId) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
-    res.json({ positions: await svc.positions(callerOf(req), companyId) })
-  } catch (e) {
-    next(e)
-  }
-})
+employeesRouter.get('/positions', asyncRoute(async (req, res) => {
+  const companyId = String(req.query.companyId ?? '')
+  if (!companyId) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
+  res.json({ positions: await svc.positions(callerOf(req), companyId) })
+}))
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use a YYYY-MM-DD date.')
 
@@ -95,21 +80,17 @@ const createBody = z.object({
   medicalNotes: z.string().max(2000).optional(),
 })
 
-employeesRouter.post('/', async (req, res, next) => {
-  try {
-    const parsed = createBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: 'validation',
-        message: parsed.error.issues[0]?.message ?? 'Invalid employee payload.',
-      })
-    }
-    const { companyId, ...input } = parsed.data
-    res.status(201).json(await svc.create(callerOf(req), companyId, input, ctxOf(req)))
-  } catch (e) {
-    next(e)
+employeesRouter.post('/', asyncRoute(async (req, res) => {
+  const parsed = createBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'validation',
+      message: parsed.error.issues[0]?.message ?? 'Invalid employee payload.',
+    })
   }
-})
+  const { companyId, ...input } = parsed.data
+  res.status(201).json(await svc.create(callerOf(req), companyId, input, ctxOf(req)))
+}))
 
 const patchBody = z.object({
   siteId: z.string().min(1).optional(),
@@ -124,41 +105,29 @@ const patchBody = z.object({
   medicalNotes: z.string().max(2000).nullable().optional(),
 })
 
-employeesRouter.patch('/:id', async (req, res, next) => {
-  try {
-    const parsed = patchBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: 'validation',
-        message: parsed.error.issues[0]?.message ?? 'Invalid employee payload.',
-      })
-    }
-    res.json(await svc.update(callerOf(req), req.params.id, parsed.data, ctxOf(req)))
-  } catch (e) {
-    next(e)
+employeesRouter.patch('/:id', asyncRoute(async (req, res) => {
+  const parsed = patchBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'validation',
+      message: parsed.error.issues[0]?.message ?? 'Invalid employee payload.',
+    })
   }
-})
+  res.json(await svc.update(callerOf(req), req.params.id, parsed.data, ctxOf(req)))
+}))
 
-employeesRouter.post('/:id/status', async (req, res, next) => {
-  try {
-    const parsed = z.object({ active: z.boolean() }).safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'active must be true or false.' })
-    }
-    res.json(await svc.setActive(callerOf(req), req.params.id, parsed.data.active, ctxOf(req)))
-  } catch (e) {
-    next(e)
+employeesRouter.post('/:id/status', asyncRoute(async (req, res) => {
+  const parsed = z.object({ active: z.boolean() }).safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'active must be true or false.' })
   }
-})
+  res.json(await svc.setActive(callerOf(req), req.params.id, parsed.data.active, ctxOf(req)))
+}))
 
-employeesRouter.delete('/:id', async (req, res, next) => {
-  try {
-    await svc.remove(callerOf(req), req.params.id, ctxOf(req))
-    res.status(204).end()
-  } catch (e) {
-    next(e)
-  }
-})
+employeesRouter.delete('/:id', asyncRoute(async (req, res) => {
+  await svc.remove(callerOf(req), req.params.id, ctxOf(req))
+  res.status(204).end()
+}))
 
 // ── Emergency contacts ───────────────────────────────────────────────────────
 
@@ -170,29 +139,21 @@ const contactBody = z.object({
   isPrimary: z.boolean().optional(),
 })
 
-employeesRouter.post('/:id/contacts', async (req, res, next) => {
-  try {
-    const parsed = contactBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: 'validation',
-        message: parsed.error.issues[0]?.message ?? 'Invalid contact payload.',
-      })
-    }
-    res.status(201).json(await svc.addContact(callerOf(req), req.params.id, parsed.data, ctxOf(req)))
-  } catch (e) {
-    next(e)
+employeesRouter.post('/:id/contacts', asyncRoute(async (req, res) => {
+  const parsed = contactBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'validation',
+      message: parsed.error.issues[0]?.message ?? 'Invalid contact payload.',
+    })
   }
-})
+  res.status(201).json(await svc.addContact(callerOf(req), req.params.id, parsed.data, ctxOf(req)))
+}))
 
-employeesRouter.delete('/contacts/:contactId', async (req, res, next) => {
-  try {
-    await svc.removeContact(callerOf(req), req.params.contactId, ctxOf(req))
-    res.status(204).end()
-  } catch (e) {
-    next(e)
-  }
-})
+employeesRouter.delete('/contacts/:contactId', asyncRoute(async (req, res) => {
+  await svc.removeContact(callerOf(req), req.params.contactId, ctxOf(req))
+  res.status(204).end()
+}))
 
 // ── PPE ──────────────────────────────────────────────────────────────────────
 
@@ -204,39 +165,27 @@ const ppeBody = z.object({
   notes: z.string().max(1000).optional(),
 })
 
-employeesRouter.post('/:id/ppe', async (req, res, next) => {
-  try {
-    const parsed = ppeBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: 'validation',
-        message: parsed.error.issues[0]?.message ?? 'Invalid PPE payload.',
-      })
-    }
-    res.status(201).json(await svc.issuePpe(callerOf(req), req.params.id, parsed.data, ctxOf(req)))
-  } catch (e) {
-    next(e)
+employeesRouter.post('/:id/ppe', asyncRoute(async (req, res) => {
+  const parsed = ppeBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'validation',
+      message: parsed.error.issues[0]?.message ?? 'Invalid PPE payload.',
+    })
   }
-})
+  res.status(201).json(await svc.issuePpe(callerOf(req), req.params.id, parsed.data, ctxOf(req)))
+}))
 
-employeesRouter.post('/ppe/:issueId/return', async (req, res, next) => {
-  try {
-    res.json(await svc.returnPpe(callerOf(req), req.params.issueId, ctxOf(req)))
-  } catch (e) {
-    next(e)
-  }
-})
+employeesRouter.post('/ppe/:issueId/return', asyncRoute(async (req, res) => {
+  res.json(await svc.returnPpe(callerOf(req), req.params.issueId, ctxOf(req)))
+}))
 
 /**
  * Registered last on purpose. Express matches in declaration order, so this parameterised
  * path must come after /stats, /departments and the /contacts and /ppe literals.
  */
-employeesRouter.get('/:id', async (req, res, next) => {
-  try {
-    res.json(await svc.get(callerOf(req), req.params.id))
-  } catch (e) {
-    next(e)
-  }
-})
+employeesRouter.get('/:id', asyncRoute(async (req, res) => {
+  res.json(await svc.get(callerOf(req), req.params.id))
+}))
 
 export { EmployeeError }

@@ -5,7 +5,7 @@ import { IncidentSummaryService } from './incidentSummary.js'
 import { renderReportPdf } from './reportPdf.js'
 import { existsSync, readdirSync } from 'node:fs'
 import { join, resolve } from 'node:path'
-import type { Caller } from './incidentService.js'
+import type { Caller } from '../domain/caller.js'
 
 /**
  * The three summaries, against a REAL PostgreSQL database.

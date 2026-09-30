@@ -3,8 +3,9 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
 import { AuditError, AuditService } from '../lib/auditService.js'
 import { AUDIT_TYPES } from '../lib/auditCatalog.js'
-import { requireAuth } from '../middleware/requireAuth.js'
-import { callerOf } from '../middleware/caller.js'
+import { requireAuth } from '../http/requireAuth.js'
+import { callerOf } from '../http/caller.js'
+import { asyncRoute } from '../http/asyncRoute.js'
 
 const svc = new AuditService(prisma)
 export const auditsRouter = Router()
@@ -26,17 +27,13 @@ const companyQuery = z.object({ companyId: z.string().min(1) })
 // registered before /:id — otherwise that route captures them and looks up an audit
 // called "templates". This is the bug the incident module hit with /actions/list.
 
-auditsRouter.get('/templates', async (req, res, next) => {
-  try {
-    const parsed = companyQuery.safeParse(req.query)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
-    }
-    res.json(await svc.listTemplates(callerOf(req), parsed.data.companyId))
-  } catch (e) {
-    next(e)
+auditsRouter.get('/templates', asyncRoute(async (req, res) => {
+  const parsed = companyQuery.safeParse(req.query)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
   }
-})
+  res.json(await svc.listTemplates(callerOf(req), parsed.data.companyId))
+}))
 
 const templateBody = z.object({
   companyId: z.string().min(1),
@@ -44,81 +41,61 @@ const templateBody = z.object({
   items: z.array(z.string().max(500)).min(1).max(200),
 })
 
-auditsRouter.post('/templates', async (req, res, next) => {
-  try {
-    const parsed = templateBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: 'validation',
-        message: 'A template needs a name and at least 3 checklist items.',
-      })
-    }
-    const { companyId, name, items } = parsed.data
-    res.status(201).json(await svc.createTemplate(callerOf(req), companyId, name, items))
-  } catch (e) {
-    next(e)
+auditsRouter.post('/templates', asyncRoute(async (req, res) => {
+  const parsed = templateBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'validation',
+      message: 'A template needs a name and at least 3 checklist items.',
+    })
   }
-})
+  const { companyId, name, items } = parsed.data
+  res.status(201).json(await svc.createTemplate(callerOf(req), companyId, name, items))
+}))
 
-auditsRouter.get('/stats', async (req, res, next) => {
-  try {
-    const parsed = companyQuery.safeParse(req.query)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
-    }
-    res.json(await svc.auditStats(callerOf(req), parsed.data.companyId))
-  } catch (e) {
-    next(e)
+auditsRouter.get('/stats', asyncRoute(async (req, res) => {
+  const parsed = companyQuery.safeParse(req.query)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
   }
-})
+  res.json(await svc.auditStats(callerOf(req), parsed.data.companyId))
+}))
 
 const findingsQuery = z.object({
   companyId: z.string().min(1),
   severity: SEVERITY.optional(),
 })
 
-auditsRouter.get('/findings', async (req, res, next) => {
-  try {
-    const parsed = findingsQuery.safeParse(req.query)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'Invalid query parameters.' })
-    }
-    res.json(await svc.listFindings(callerOf(req), parsed.data.companyId, parsed.data.severity))
-  } catch (e) {
-    next(e)
+auditsRouter.get('/findings', asyncRoute(async (req, res) => {
+  const parsed = findingsQuery.safeParse(req.query)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'Invalid query parameters.' })
   }
-})
+  res.json(await svc.listFindings(callerOf(req), parsed.data.companyId, parsed.data.severity))
+}))
 
-auditsRouter.get('/obligations', async (req, res, next) => {
-  try {
-    const parsed = companyQuery.safeParse(req.query)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
-    }
-    res.json(await svc.listObligations(callerOf(req), parsed.data.companyId))
-  } catch (e) {
-    next(e)
+auditsRouter.get('/obligations', asyncRoute(async (req, res) => {
+  const parsed = companyQuery.safeParse(req.query)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
   }
-})
+  res.json(await svc.listObligations(callerOf(req), parsed.data.companyId))
+}))
 
 const renewBody = z.object({
   nextDue: z.string().min(1).max(40),
   note: z.string().max(2000).optional(),
 })
 
-auditsRouter.post('/obligations/:id/renew', async (req, res, next) => {
-  try {
-    const parsed = renewBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'A new due date is required.' })
-    }
-    res.json(await svc.renewObligation(
-      callerOf(req), req.params.id, parsed.data.nextDue, parsed.data.note,
-    ))
-  } catch (e) {
-    next(e)
+auditsRouter.post('/obligations/:id/renew', asyncRoute(async (req, res) => {
+  const parsed = renewBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'A new due date is required.' })
   }
-})
+  res.json(await svc.renewObligation(
+    callerOf(req), req.params.id, parsed.data.nextDue, parsed.data.note,
+  ))
+}))
 
 const documentsQuery = z.object({
   companyId: z.string().min(1),
@@ -126,18 +103,14 @@ const documentsQuery = z.object({
   kind: DOC_KIND.optional(),
 })
 
-auditsRouter.get('/documents', async (req, res, next) => {
-  try {
-    const parsed = documentsQuery.safeParse(req.query)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'Invalid query parameters.' })
-    }
-    const { companyId, q, kind } = parsed.data
-    res.json(await svc.listDocuments(callerOf(req), companyId, q, kind))
-  } catch (e) {
-    next(e)
+auditsRouter.get('/documents', asyncRoute(async (req, res) => {
+  const parsed = documentsQuery.safeParse(req.query)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'Invalid query parameters.' })
   }
-})
+  const { companyId, q, kind } = parsed.data
+  res.json(await svc.listDocuments(callerOf(req), companyId, q, kind))
+}))
 
 const documentBody = z.object({
   docId: z.string().min(1).nullable().optional(),
@@ -149,29 +122,21 @@ const documentBody = z.object({
   note: z.string().max(2000).optional(),
 })
 
-auditsRouter.post('/documents', async (req, res, next) => {
-  try {
-    const parsed = documentBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: 'validation',
-        message: parsed.error.issues[0]?.message ?? 'Invalid document payload.',
-      })
-    }
-    const { docId, ...input } = parsed.data
-    res.status(201).json(await svc.addDocumentVersion(callerOf(req), docId ?? null, input))
-  } catch (e) {
-    next(e)
+auditsRouter.post('/documents', asyncRoute(async (req, res) => {
+  const parsed = documentBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'validation',
+      message: parsed.error.issues[0]?.message ?? 'Invalid document payload.',
+    })
   }
-})
+  const { docId, ...input } = parsed.data
+  res.status(201).json(await svc.addDocumentVersion(callerOf(req), docId ?? null, input))
+}))
 
-auditsRouter.post('/documents/:id/approve', async (req, res, next) => {
-  try {
-    res.json(await svc.approveDocument(callerOf(req), req.params.id))
-  } catch (e) {
-    next(e)
-  }
-})
+auditsRouter.post('/documents/:id/approve', asyncRoute(async (req, res) => {
+  res.json(await svc.approveDocument(callerOf(req), req.params.id))
+}))
 
 const listQuery = z.object({
   companyId: z.string().min(1),
@@ -183,17 +148,13 @@ const listQuery = z.object({
   type: AUDIT_TYPE.optional(),
 })
 
-auditsRouter.get('/', async (req, res, next) => {
-  try {
-    const parsed = listQuery.safeParse(req.query)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'Invalid query parameters.' })
-    }
-    res.json(await svc.listAudits(callerOf(req), parsed.data))
-  } catch (e) {
-    next(e)
+auditsRouter.get('/', asyncRoute(async (req, res) => {
+  const parsed = listQuery.safeParse(req.query)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'Invalid query parameters.' })
   }
-})
+  res.json(await svc.listAudits(callerOf(req), parsed.data))
+}))
 
 const createBody = z.object({
   companyId: z.string().min(1),
@@ -210,38 +171,26 @@ const createBody = z.object({
   priority: z.enum(['High', 'Medium', 'Low']).optional(),
 })
 
-auditsRouter.post('/', async (req, res, next) => {
-  try {
-    const parsed = createBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: 'validation',
-        message: parsed.error.issues[0]?.message ?? 'Invalid audit payload.',
-      })
-    }
-    res.status(201).json(await svc.createAudit(callerOf(req), parsed.data))
-  } catch (e) {
-    next(e)
+auditsRouter.post('/', asyncRoute(async (req, res) => {
+  const parsed = createBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'validation',
+      message: parsed.error.issues[0]?.message ?? 'Invalid audit payload.',
+    })
   }
-})
+  res.status(201).json(await svc.createAudit(callerOf(req), parsed.data))
+}))
 
 // ── Parameterised paths ──────────────────────────────────────────────────────
 
-auditsRouter.get('/:id', async (req, res, next) => {
-  try {
-    res.json(await svc.getAuditDetail(callerOf(req), req.params.id))
-  } catch (e) {
-    next(e)
-  }
-})
+auditsRouter.get('/:id', asyncRoute(async (req, res) => {
+  res.json(await svc.getAuditDetail(callerOf(req), req.params.id))
+}))
 
-auditsRouter.post('/:id/start', async (req, res, next) => {
-  try {
-    res.json(await svc.startAudit(callerOf(req), req.params.id))
-  } catch (e) {
-    next(e)
-  }
-})
+auditsRouter.post('/:id/start', asyncRoute(async (req, res) => {
+  res.json(await svc.startAudit(callerOf(req), req.params.id))
+}))
 
 const answerSchema = z.object({
   itemId: z.string().min(1).max(120),
@@ -267,27 +216,19 @@ const completeBody = z.object({
   gps: z.string().max(120).optional(),
 })
 
-auditsRouter.post('/:id/complete', async (req, res, next) => {
-  try {
-    const parsed = completeBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: 'validation',
-        message: parsed.error.issues[0]?.message ?? 'Invalid audit result.',
-      })
-    }
-    res.json(await svc.completeAudit(callerOf(req), req.params.id, parsed.data))
-  } catch (e) {
-    next(e)
+auditsRouter.post('/:id/complete', asyncRoute(async (req, res) => {
+  const parsed = completeBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'validation',
+      message: parsed.error.issues[0]?.message ?? 'Invalid audit result.',
+    })
   }
-})
+  res.json(await svc.completeAudit(callerOf(req), req.params.id, parsed.data))
+}))
 
-auditsRouter.post('/:id/close', async (req, res, next) => {
-  try {
-    res.json(await svc.closeAudit(callerOf(req), req.params.id))
-  } catch (e) {
-    next(e)
-  }
-})
+auditsRouter.post('/:id/close', asyncRoute(async (req, res) => {
+  res.json(await svc.closeAudit(callerOf(req), req.params.id))
+}))
 
 export { AuditError }

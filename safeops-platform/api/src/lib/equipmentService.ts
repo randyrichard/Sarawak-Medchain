@@ -12,8 +12,8 @@
  * that job had not run would report an overdue instrument as fit for use.
  */
 import { type AssetEventKind, type AssetStatus, type PrismaClient, type Role, type AssetCategory } from '@prisma/client'
-import type { Caller } from './incidentService.js'
-import { DomainError } from './errors.js'
+import { membershipOf, type Caller } from '../domain/caller.js'
+import { DomainError } from '../domain/errors.js'
 
 export class EquipmentError extends DomainError {}
 
@@ -212,10 +212,9 @@ export class EquipmentService {
   constructor(private db: PrismaClient) {}
 
   private membership(caller: Caller, companyId: string) {
-    const m = caller.roles.find((r) => r.companyId === companyId)
-    if (!m) throw new EquipmentError('forbidden', 'You do not have access to this workspace.', 403)
-    return m
+    return membershipOf(caller, companyId, EquipmentError)
   }
+
 
   private requireRole(caller: Caller, companyId: string, doing: string) {
     const m = this.membership(caller, companyId)

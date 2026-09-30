@@ -18,13 +18,12 @@
  * claiming a number of days the product cannot vouch for.
  */
 import type { Prisma, PrismaClient, Role } from '@prisma/client'
-import {
-  actionScopeWhere, incidentScopeWhere, overdueActionWhere, type Caller,
-} from './incidentService.js'
+import { actionScopeWhere, incidentScopeWhere, overdueActionWhere } from '../domain/access.js'
+import { type Caller } from '../domain/caller.js'
 import { LOST_TIME_SEVERITIES, isInjury, isNearMiss } from './incidentCatalog.js'
 import { ON_SITE_STATUSES } from './visitorService.js'
 import { ToolboxService } from './toolboxService.js'
-import { DomainError } from './errors.js'
+import { DomainError } from '../domain/errors.js'
 
 export class SiteComparisonError extends DomainError {}
 

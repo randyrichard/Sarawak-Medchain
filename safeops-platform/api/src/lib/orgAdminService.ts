@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto'
 import type { PrismaClient, Prisma, ProjectStatus, Role } from '@prisma/client'
-import type { Caller } from './incidentService.js'
+import { membershipOf, type Caller } from '../domain/caller.js'
 import { writeAdminAudit, type AdminContext } from './adminAudit.js'
 import { hashResetToken } from './tokens.js'
 import { hashPassword, validatePasswordStrength } from './password.js'
@@ -9,7 +9,7 @@ import { getEmailProvider } from './email/index.js'
 import { EmailProviderError } from './email/provider.js'
 import { buildInvitationEmail } from './email/invitationEmail.js'
 import { siteAllowance, siteLimitMessage } from './entitlements.js'
-import { DomainError } from './errors.js'
+import { DomainError } from '../domain/errors.js'
 
 /**
  * Organisation administration: sites, departments and invitations.
@@ -135,12 +135,9 @@ export class OrgAdminService {
   constructor(private db: PrismaClient) {}
 
   private membership(caller: Caller, companyId: string) {
-    const m = caller.roles.find((r) => r.companyId === companyId)
-    if (!m) {
-      throw new OrgAdminError('forbidden', 'You do not have access to this workspace.', 403)
-    }
-    return m
+    return membershipOf(caller, companyId, OrgAdminError)
   }
+
 
   /**
    * Configuring the organisation is administrator-only.

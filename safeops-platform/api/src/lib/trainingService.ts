@@ -1,12 +1,12 @@
 import type { DeliveryMode, Prisma, PrismaClient, Role } from '@prisma/client'
 // `Caller` is the verified identity shape shared by every module — see permitService.
-import { type Caller } from './incidentService.js'
+import { type Caller, membershipOf } from '../domain/caller.js'
 import { enqueueEvent } from './webhookService.js'
 import {
   BUILT_IN_COURSE_IDS, EXPIRING_WINDOW_DAYS, TRAINING_ACTION_DUE_DAYS, TRAINING_COURSES,
   courseApplies, type CourseShape,
 } from './trainingCatalog.js'
-import { DomainError } from './errors.js'
+import { DomainError } from '../domain/errors.js'
 import { resolveOwnerId } from './actionOwner.js'
 
 /** Roles permitted to author courses and escalate a competency gap. */
@@ -79,10 +79,9 @@ export class TrainingService {
   // ── Authorisation ──────────────────────────────────────────────────────────
 
   private membership(caller: Caller, companyId: string) {
-    const m = caller.roles.find((r) => r.companyId === companyId)
-    if (!m) throw new TrainingError('forbidden', 'You do not have access to this workspace.', 403)
-    return m
+    return membershipOf(caller, companyId, TrainingError)
   }
+
 
   private requireRole(caller: Caller, companyId: string, allowed: Role[], what: string) {
     const m = this.membership(caller, companyId)
