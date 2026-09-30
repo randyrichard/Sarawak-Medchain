@@ -1,6 +1,5 @@
-import { API_BASE_URL, authApi, getAccessToken, SESSION_CHANGED } from './authApi'
-import { explainNetworkFailure } from './networkError'
-import { ApiError } from './types'
+import { API_BASE_URL } from './authApi'
+import { request } from './http'
 import type {
   FiveWhys, Incident, IncidentAction, IncidentAttachment, IncidentComment,
   IncidentTimelineEntry, RcaCause,
@@ -194,69 +193,9 @@ export function toIncident(s: ServerIncident): Incident {
   }
 }
 
-/**
- * Single request helper.
- *
- * Refreshes a stale access token before the call rather than after a 401, so a normal
- * user action never fails on an expired token. A 401 that still comes back means the
- * session is genuinely gone, and one retry is attempted before giving up.
- */
-async function request<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
-  try {
-    await authApi.refreshIfNeeded()
-  } catch (e) {
-    /*
-     * A refresh that simply failed is not fatal: let the request go and surface the real
-     * 401 below, which says something more useful than a guess made here.
-     *
-     * A refresh that came back for somebody else is fatal, and must not be swallowed. The
-     * refresh cookie is shared by every tab, so the token now belongs to whoever signed in
-     * on this browser since - and sending the request would file it under their name.
-     */
-    if (e instanceof ApiError && e.code === SESSION_CHANGED) throw e
-  }
-
-  const isForm = init.body instanceof FormData
-  let res: Response
-  try {
-    res = await fetch(`${API_BASE_URL}${path}`, {
-      ...init,
-      credentials: 'include',
-      headers: {
-        ...(isForm ? {} : { 'Content-Type': 'application/json' }),
-        ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}),
-        ...init.headers,
-      },
-    })
-  } catch {
-    /*
-     * Network-level failure. Same explanation as the shared helper in http.ts — this module
-     * carries its own copy of that request logic from the first vertical, and the two must
-     * not drift on what they tell somebody when a request cannot be made at all.
-     */
-    throw new ApiError('network', explainNetworkFailure())
-  }
-
-  if (res.status === 401 && retry) {
-    try {
-      await authApi.refreshIfNeeded()
-      return await request<T>(path, init, false)
-    } catch (e) {
-      // "Your session has expired" would be false here: it is alive and belongs to
-      // somebody else, which is the thing the reader has to be told.
-      if (e instanceof ApiError && e.code === SESSION_CHANGED) throw e
-      throw new ApiError('unauthenticated', 'Your session has expired. Please sign in again.')
-    }
-  }
-
-  if (res.status === 204) return undefined as T
-
-  const body = await res.json().catch(() => ({}))
-  if (!res.ok) {
-    throw new ApiError(body.error ?? 'request_failed', body.message ?? 'Something went wrong.')
-  }
-  return body as T
-}
+// Requests go through the shared helper in http.ts. This module used to carry its own
+// copy of it - including the session-refresh and wrong-account handling - kept in step by
+// hand.
 
 const qs = (params: Record<string, string | number | boolean | undefined | null>) => {
   const p = new URLSearchParams()
