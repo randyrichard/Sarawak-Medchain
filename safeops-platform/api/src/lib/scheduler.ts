@@ -1103,4 +1103,22 @@ export class Scheduler {
     if (this.deliveryTimer) clearInterval(this.deliveryTimer)
     this.deliveryTimer = null
   }
+
+  /**
+   * Stops the timers, then waits for a pass or a webhook sweep already in flight to
+   * finish - up to `timeoutMs`. Resolves true when idle, false when time ran out.
+   *
+   * stop() alone let a shutdown cut a pass in half: a report mid-send, reminders half
+   * raised. Recovery exists for a crash, but a deploy is not a crash and should not be
+   * treated as one.
+   */
+  async drain(timeoutMs: number): Promise<boolean> {
+    this.stop()
+    const deadline = Date.now() + timeoutMs
+    while (this.running || this.deliveringWebhooks) {
+      if (Date.now() >= deadline) return false
+      await new Promise((r) => setTimeout(r, 100))
+    }
+    return true
+  }
 }

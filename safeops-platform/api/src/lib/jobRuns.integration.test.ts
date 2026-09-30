@@ -58,6 +58,18 @@ d('job history — integration (real Postgres)', () => {
     expect((await readJobRuns(db)).reports).toMatchObject({ lastOk: true, failureCount: 1, runCount: 2, lastError: null })
   })
 
+  it('lets a shutdown finish the pass in flight instead of cutting it off', async () => {
+    const s = new Scheduler(db)
+    s.start(60 * 60_000) // the first pass begins immediately
+    await new Promise((r) => setTimeout(r, 20)) // let it get going
+    expect(await s.drain(60_000)).toBe(true)
+    // The whole pass completed and was recorded - not just whatever job it was on.
+    const runs = await readJobRuns(db)
+    for (const job of ['reminders', 'expiry', 'equipment', 'visitors', 'reports'] as const) {
+      expect(runs[job]?.lastOk, job).toBe(true)
+    }
+  })
+
   it('never lets a failed write break the job it describes', async () => {
     const broken = new PrismaClient({ datasources: { db: { url: 'postgresql://nobody:nothing@127.0.0.1:1/none' } } })
     try {

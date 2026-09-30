@@ -158,6 +158,11 @@ services:
     environment:
       <<: *api-env
       SCHEDULER_ENABLED: 'true'
+      # Sweeps run one after another, so the worker needs a handful of connections, not the
+      # API's pool. Applied on top of DATABASE_URL, a managed one included.
+      WORKER_DB_POOL_SIZE: ${WORKER_DB_POOL_SIZE:-5}
+    # A stop waits for a report or sweep already in flight (up to 25 s) before exiting.
+    stop_grace_period: 30s
     volumes:
       # Scheduled reports write their PDFs here, and the API serves them from here.
       - safeops_uploads:/data/uploads
