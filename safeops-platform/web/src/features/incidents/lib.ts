@@ -116,6 +116,7 @@ export function useActor(): Actor {
   const { role, membership } = useOrg()
   return {
     name: user?.name ?? 'Unknown',
+    userId: user?.id,
     role: role ?? 'employee',
     siteIds: membership?.siteIds ?? [],
   }

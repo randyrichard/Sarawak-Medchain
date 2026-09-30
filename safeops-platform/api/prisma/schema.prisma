@@ -790,6 +790,8 @@ model CorrectiveAction {
   @@index([incidentId])
   @@index([dueDate])
   @@index([owner])
+  /// Account-first ownership: see api/src/lib/actionOwner.ts.
+  @@index([companyId, ownerId])
   @@index([assetId])
   @@index([inspectionId])
 }

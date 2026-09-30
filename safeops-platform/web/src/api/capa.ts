@@ -59,6 +59,8 @@ export interface CapaItem {
   rootCause?: string // RCA category (linked) or finding source (standalone)
 
   owner: string
+  /** The owner's account, when linked. Decides ownership ahead of the name. */
+  ownerId?: string | null
   reviewer?: string
   priority: ActionPriority
   dueDate: string

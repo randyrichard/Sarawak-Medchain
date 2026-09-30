@@ -404,6 +404,7 @@ function toCapaItem(a: IncidentAction & { companyId?: string; siteId?: string; i
     department: '',
     incidentId: a.incidentId ?? null,
     owner: a.owner,
+    ownerId: a.ownerId ?? null,
     priority: a.priority,
     dueDate: a.dueDate,
     createdAt: a.createdAt ?? a.dueDate,

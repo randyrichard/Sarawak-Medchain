@@ -66,6 +66,24 @@ async function purge() {
   await db.employee.deleteMany({ where: { companyId: COMPANY } })
   await db.notification.deleteMany({ where: { companyId: COMPANY } })
   await db.adminAuditEntry.deleteMany({ where: { companyId: COMPANY } })
+  await db.membership.deleteMany({ where: { companyId: COMPANY } })
+  await db.user.deleteMany({ where: { id: { in: OWNER_ACCOUNTS } } })
+}
+
+/**
+ * Owner accounts for the assignment tests. An owner id is honoured only for a member of
+ * the workspace - an id from nowhere is not trusted - so these are real members.
+ */
+const OWNER_ACCOUNTS = ['user-amirul', 'user-gone']
+async function ownerAccount(id: string, name: string) {
+  await db.user.upsert({
+    where: { id }, update: { name },
+    create: { id, email: `${id}@inv-itest.local`, name, passwordHash: 'x' },
+  })
+  await db.membership.upsert({
+    where: { userId_companyId: { userId: id, companyId: COMPANY } },
+    update: {}, create: { userId: id, companyId: COMPANY, role: 'employee' },
+  })
 }
 
 d('Incident investigation — integration (real Postgres)', () => {
@@ -535,6 +553,7 @@ d('Incident investigation — integration (real Postgres)', () => {
 
   it('addresses the assignment notification to the owner, not the workspace', async () => {
     const i = await newIncident()
+    await ownerAccount('user-amirul', 'Amirul Hassan')
     await incidents.addAction(admin, i.id, {
       title: 'Fit an isolator', owner: 'Amirul Hassan', ownerId: 'user-amirul',
       dueDate: new Date(Date.now() + 7 * 86400_000).toISOString().slice(0, 10),
@@ -551,10 +570,13 @@ d('Incident investigation — integration (real Postgres)', () => {
 
   it('keeps the name so the notification reads correctly after the account changes', async () => {
     const i = await newIncident()
+    await ownerAccount('user-gone', 'Named At The Time')
     await incidents.addAction(admin, i.id, {
       title: 'X', owner: 'Named At The Time', ownerId: 'user-gone',
       dueDate: new Date(Date.now() + 7 * 86400_000).toISOString().slice(0, 10),
     })
+    // The account changes after the fact; the notification keeps the name it was sent under.
+    await db.user.update({ where: { id: 'user-gone' }, data: { name: 'Renamed Later' } })
     const [n] = await db.notification.findMany({
       where: { companyId: COMPANY, recipientUserId: 'user-gone' },
     })

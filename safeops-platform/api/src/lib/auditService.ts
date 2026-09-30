@@ -9,6 +9,7 @@ import {
   SEVERITY_PRIORITY, type AuditTemplateShape, templateItemCount,
 } from './auditCatalog.js'
 import { DomainError } from './errors.js'
+import { resolveOwnerId } from './actionOwner.js'
 
 /** Roles permitted to plan, close and sign off audits, and to approve documents. */
 const REVIEW_ROLES: Role[] = ['admin', 'hse_manager']
@@ -525,6 +526,7 @@ export class AuditService {
             title: `${fi.severity} finding: ${description.slice(0, 90)}`,
             detail: `${category} — "${text}". ${description}`,
             owner: fi.owner.trim(),
+            ownerId: await resolveOwnerId(tx, audit.companyId, fi.owner),
             dueDate,
             priority: SEVERITY_PRIORITY[fi.severity],
             createdBy: caller.name,

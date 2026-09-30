@@ -71,6 +71,7 @@ interface ServerAction {
   title: string
   detail: string
   owner: string
+  ownerId?: string | null
   dueDate: string
   priority: IncidentAction['priority']
   status: string
@@ -104,6 +105,7 @@ function toAction(a: ServerAction): IncidentAction {
     title: a.title,
     causeId: null,
     owner: a.owner,
+    ownerId: a.ownerId ?? null,
     dueDate: a.dueDate.slice(0, 10),
     priority: a.priority,
     status: ACTION_STATUS[a.status] ?? 'Open',

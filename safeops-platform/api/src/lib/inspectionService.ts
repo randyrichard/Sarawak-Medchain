@@ -6,6 +6,7 @@ import {
   ASSET_CATEGORIES, CATEGORY_LABEL, CHECKLISTS, DEFECT_DUE_DAYS, FREQUENCY_DAYS,
 } from './inspectionCatalog.js'
 import { DomainError } from './errors.js'
+import { resolveOwnerId } from './actionOwner.js'
 
 /** Roles permitted to register assets and schedule inspections. */
 const MANAGE_ROLES: Role[] = ['admin', 'hse_manager', 'safety_officer']
@@ -678,6 +679,7 @@ export class InspectionService {
             title: `Defect: ${label} — ${asset.name}`,
             detail: fail.comment?.trim() ?? '',
             owner: asset.owner,
+            ownerId: await resolveOwnerId(tx, asset.companyId, asset.owner),
             dueDate,
             priority: 'High',
             createdBy: caller.name,
