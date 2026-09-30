@@ -3,6 +3,9 @@ import multer from 'multer'
 import { z } from 'zod'
 import { randomUUID } from 'node:crypto'
 import { sha256File } from '../lib/fileIntegrity.js'
+import {
+  ALLOWED_UPLOAD_TYPES, attachmentDisposition, discardUploads, settleUploadTypes,
+} from '../lib/uploadSafety.js'
 import { existsSync, mkdirSync, accessSync, constants, unlink } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { env } from '../env.js'
@@ -39,13 +42,7 @@ try {
   process.exit(1)
 }
 
-const ALLOWED_MIME = new Map<string, string>([
-  ['image/jpeg', '.jpg'],
-  ['image/png', '.png'],
-  ['image/webp', '.webp'],
-  ['image/heic', '.heic'],
-  ['application/pdf', '.pdf'],
-])
+const ALLOWED_MIME = ALLOWED_UPLOAD_TYPES
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024
 
@@ -118,6 +115,7 @@ assetDocumentsRouter.post('/:assetId/documents', (req, res, next) => {
       // file the server correctly refused.
       return res.status(400).json({ error: 'validation', message: (err as Error).message })
     }
+    const written = (req.files ?? []) as Express.Multer.File[]
     try {
       const caller = callerOf(req)
       const { asset, role } = await assetFor(caller, req.params.assetId, true)
@@ -125,6 +123,10 @@ assetDocumentsRouter.post('/:assetId/documents', (req, res, next) => {
       const kind = z.enum(KINDS).catch('other').parse(req.body?.kind)
       const files = (req.files ?? []) as Express.Multer.File[]
       if (files.length === 0) throw new EquipmentError('validation', 'Choose at least one file.')
+      const mismatch = await settleUploadTypes(UPLOAD_DIR, files)
+      if (mismatch) {
+        throw new EquipmentError('validation', `${mismatch.originalname.slice(0, 120)} is not the kind of file its name says it is.`)
+      }
       if (kind === 'photo' && files.some((f) => !f.mimetype.startsWith('image/'))) {
         throw new EquipmentError('validation', 'A photo has to be an image.')
       }
@@ -171,6 +173,9 @@ assetDocumentsRouter.post('/:assetId/documents', (req, res, next) => {
 
       res.status(201).json({ rows: saved.map(toView) })
     } catch (e) {
+      // Nothing points at these yet: the rows are written in one transaction, so either
+      // they all exist or none do.
+      await discardUploads(UPLOAD_DIR, written)
       next(e)
     }
   })
@@ -193,7 +198,7 @@ assetDocumentsRouter.get('/documents/:documentId', asyncRoute(async (req, res) =
   res.setHeader('Content-Type', doc.mimeType ?? 'application/octet-stream')
   // Forced download rather than inline: a PDF rendered in-origin can script. The client
   // fetches it as a blob and builds its own object URL for previews.
-  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(doc.originalName ?? doc.name)}"`)
+  res.setHeader('Content-Disposition', attachmentDisposition(doc.originalName ?? doc.name, doc.mimeType ?? 'application/octet-stream'))
   res.setHeader('X-Content-Type-Options', 'nosniff')
   res.sendFile(join(UPLOAD_DIR, doc.storedName), (err) => {
     if (err && !res.headersSent) {

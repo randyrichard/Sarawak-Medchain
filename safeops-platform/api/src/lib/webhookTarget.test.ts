@@ -69,6 +69,41 @@ describe('isPublicAddress', () => {
     expect(isPublicAddress('::127.0.0.1')).toBe(false)
   })
 
+  it('refuses the same addresses in the hex spelling a URL parser produces', () => {
+    /*
+     * `new URL('https://[::ffff:127.0.0.1]/')` reports its hostname as `[::ffff:7f00:1]`,
+     * and the dotted-quad pattern this guard used to rely on never matched that form:
+     * loopback and the metadata address both read as public.
+     */
+    for (const ip of ['::ffff:7f00:1', '::ffff:a9fe:a9fe', '::ffff:a00:1', '0:0:0:0:0:ffff:c0a8:1', '::7f00:1']) {
+      expect(isPublicAddress(ip), ip).toBe(false)
+    }
+  })
+
+  it('refuses private IPv4 addresses carried by NAT64 and 6to4', () => {
+    for (const ip of ['64:ff9b::7f00:1', '64:ff9b::169.254.169.254', '2002:7f00:1::', '2002:a9fe:a9fe::1', '64:ff9b:1::1']) {
+      expect(isPublicAddress(ip), ip).toBe(false)
+    }
+  })
+
+  it('refuses documentation, discard and Teredo ranges', () => {
+    for (const ip of ['2001:db8::1', '100::1', '2001:0:4136:e378::1']) {
+      expect(isPublicAddress(ip), ip).toBe(false)
+    }
+  })
+
+  it('still accepts public IPv6, including public IPv4 carried inside it', () => {
+    for (const ip of ['2001:4860:4860::8888', '2a00:1450:4001:80b::200e', '::ffff:8.8.8.8', '64:ff9b::8.8.8.8', '2002:808:808::1']) {
+      expect(isPublicAddress(ip), ip).toBe(true)
+    }
+  })
+
+  it('refuses a malformed IPv6 address rather than guessing', () => {
+    for (const ip of ['1::2::3', '12345::1', '1:2:3:4:5:6:7:8:9']) {
+      expect(isPublicAddress(ip), ip).toBe(false)
+    }
+  })
+
   it('refuses a bracketed or zone-suffixed form of a blocked address', () => {
     expect(isPublicAddress('[::1]')).toBe(false)
     expect(isPublicAddress('fe80::1%eth0')).toBe(false)
@@ -106,6 +141,8 @@ describe('checkUrlShape', () => {
       'https://10.0.0.1/x',
       'https://169.254.169.254/latest/meta-data/',
       'https://[::1]/x',
+      'https://[::ffff:127.0.0.1]/x',
+      'https://[::ffff:169.254.169.254]/latest/meta-data/',
     ]) {
       expect(checkUrlShape(u), u).toBe('private_address')
     }

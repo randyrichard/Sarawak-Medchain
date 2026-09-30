@@ -3,6 +3,7 @@ import { env } from '../env.js'
 import { burnEquivalentWork, verifyPassword } from './password.js'
 import {
   generateRefreshToken, hashRefreshToken, newFamilyId, refreshExpiry, signAccessToken,
+  type AccessClaims,
 } from './tokens.js'
 import { DomainError } from '../domain/errors.js'
 
@@ -34,13 +35,47 @@ export class AuthService {
     })
   }
 
-  private async issueSession(user: User, ctx: RequestContext, familyId = newFamilyId()) {
+  /**
+   * The roles a session may carry: every membership in a workspace that is not suspended.
+   *
+   * Suspending a customer in the platform console used to stop only their API keys
+   * (apiKeyAuth.ts). Sessions were minted from every membership regardless, so the people
+   * of a suspended customer went on signing in, refreshing and working as before - the
+   * suspension closed the programmatic door and left the browser one open. Every service
+   * authorises against the roles in the token, so leaving a suspended workspace out of the
+   * token closes it everywhere at once, from the next sign-in or refresh: at most one
+   * access-token lifetime after the suspension.
+   *
+   * Only memberships in suspended workspaces are dropped. Somebody who also belongs to a
+   * workspace in good standing keeps that one. Somebody whose only workspaces are suspended
+   * is told so rather than signed in to an empty shell - after their password has been
+   * checked, so the answer reveals nothing to someone who does not hold it.
+   */
+  private async sessionRoles(user: User): Promise<AccessClaims['roles']> {
     const memberships = await this.db.membership.findMany({ where: { userId: user.id } })
+    const active = new Set((await this.db.company.findMany({
+      where: { id: { in: memberships.map((m) => m.companyId) }, status: 'active' },
+      select: { id: true },
+    })).map((c) => c.id))
+    const live = memberships.filter((m) => active.has(m.companyId))
+    if (memberships.length > 0 && live.length === 0 && !user.platformAdmin) {
+      throw new AuthError(
+        'workspace_suspended',
+        "Your organisation's SafeOps workspace is suspended. Contact your administrator.",
+        403,
+      )
+    }
+    return live.map((m) => ({ companyId: m.companyId, role: m.role, siteIds: m.siteIds }))
+  }
+
+  private async issueSession(
+    user: User, ctx: RequestContext, roles: AccessClaims['roles'], familyId = newFamilyId(),
+  ) {
     const { token: accessToken, expiresAt: accessExpiresAt } = signAccessToken({
       sub: user.id,
       email: user.email,
       name: user.name,
-      roles: memberships.map((m) => ({ companyId: m.companyId, role: m.role, siteIds: m.siteIds })),
+      roles,
       mustChangePassword: user.mustChangePassword,
     })
 
@@ -106,6 +141,14 @@ export class AuthService {
       throw new AuthError('invalid_credentials', GENERIC_FAILURE)
     }
 
+    let roles: AccessClaims['roles']
+    try {
+      roles = await this.sessionRoles(user)
+    } catch (e) {
+      await this.record(email, 'workspace_suspended', ctx, user.id)
+      throw e
+    }
+
     // Success clears the lockout counter.
     await this.db.user.update({
       where: { id: user.id },
@@ -118,7 +161,7 @@ export class AuthService {
     })
     await this.record(email, 'success', ctx, user.id)
 
-    const session = await this.issueSession(user, ctx)
+    const session = await this.issueSession(user, ctx, roles)
     return { ...session, user: this.publicUser(user) }
   }
 
@@ -153,13 +196,29 @@ export class AuthService {
       throw new AuthError('invalid_refresh', 'Session is invalid. Please sign in again.')
     }
 
+    const roles = await this.sessionRoles(user)
+
     // Issuing the successor and revoking its predecessor must be atomic. If the process
     // died between the two writes, the consumed token would remain valid alongside the new
     // one — two live tokens in a family that reuse detection assumes has exactly one.
     const refreshToken = generateRefreshToken()
-    const memberships = await this.db.membership.findMany({ where: { userId: user.id } })
 
-    await this.db.$transaction(async (tx) => {
+    const won = await this.db.$transaction(async (tx) => {
+      /*
+       * Consumed conditionally, and first.
+       *
+       * The check above read `revokedAt` before this transaction began, so two requests
+       * presenting the same token at the same moment both passed it, and both went on to
+       * mint a successor: two live tokens in one family, and a stolen token replayed in
+       * the same instant as the real one was never detected. Only one of them can update
+       * the row from "not revoked"; the other updates nothing and is treated exactly as a
+       * replay one second later would be.
+       */
+      const consumed = await tx.refreshToken.updateMany({
+        where: { id: existing.id, revokedAt: null },
+        data: { revokedAt: new Date(), revokedReason: 'rotated' },
+      })
+      if (consumed.count === 0) return false
       const successor = await tx.refreshToken.create({
         data: {
           userId: user.id,
@@ -172,15 +231,23 @@ export class AuthService {
       })
       await tx.refreshToken.update({
         where: { id: existing.id },
-        data: { revokedAt: new Date(), revokedReason: 'rotated', replacedById: successor.id },
+        data: { replacedById: successor.id },
       })
+      return true
     })
+    if (!won) {
+      await this.db.refreshToken.updateMany({
+        where: { familyId: existing.familyId, revokedAt: null },
+        data: { revokedAt: new Date(), revokedReason: 'reuse_detected' },
+      })
+      throw new AuthError('refresh_reuse', 'Session is invalid. Please sign in again.')
+    }
 
     const { token: accessToken, expiresAt: accessExpiresAt } = signAccessToken({
       sub: user.id,
       email: user.email,
       name: user.name,
-      roles: memberships.map((m) => ({ companyId: m.companyId, role: m.role, siteIds: m.siteIds })),
+      roles,
       mustChangePassword: user.mustChangePassword,
     })
 

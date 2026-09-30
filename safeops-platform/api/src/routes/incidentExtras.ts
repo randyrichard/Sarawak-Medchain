@@ -1,5 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import { sha256File } from '../lib/fileIntegrity.js'
+import {
+  ALLOWED_UPLOAD_TYPES, attachmentDisposition, discardUploads, settleUploadTypes,
+} from '../lib/uploadSafety.js'
 import { join, resolve } from 'node:path'
 import { accessSync, constants, existsSync, mkdirSync } from 'node:fs'
 import { Router } from 'express'
@@ -47,13 +50,7 @@ try {
  * executable or scriptable served back to a browser is a stored-XSS vector, and an
  * allow-list fails safe where a deny-list does not.
  */
-const ALLOWED_MIME = new Map<string, string>([
-  ['image/jpeg', '.jpg'],
-  ['image/png', '.png'],
-  ['image/webp', '.webp'],
-  ['image/heic', '.heic'],
-  ['application/pdf', '.pdf'],
-])
+const ALLOWED_MIME = ALLOWED_UPLOAD_TYPES
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024 // 10 MB
 
@@ -84,10 +81,20 @@ incidentExtrasRouter.post('/:id/attachments', (req, res, next) => {
         message: tooBig ? 'Each file must be 10 MB or smaller.' : msg,
       })
     }
+    const files = (req.files as Express.Multer.File[]) ?? []
+    // Files a row now points at. Everything else this request wrote is removed on failure.
+    const kept = new Set<string>()
     try {
-      const files = (req.files as Express.Multer.File[]) ?? []
       if (files.length === 0) {
         return res.status(400).json({ error: 'validation', message: 'No file was received.' })
+      }
+      const mismatch = await settleUploadTypes(UPLOAD_DIR, files)
+      if (mismatch) {
+        await discardUploads(UPLOAD_DIR, files)
+        return res.status(400).json({
+          error: 'invalid_upload',
+          message: `${mismatch.originalname.slice(0, 120)} is not the kind of file its name says it is.`,
+        })
       }
       const saved = []
       for (const f of files) {
@@ -110,9 +117,11 @@ incidentExtrasRouter.post('/:id/attachments', (req, res, next) => {
           actionId: typeof req.body?.actionId === 'string' && req.body.actionId
             ? req.body.actionId : undefined,
         }))
+        kept.add(f.filename)
       }
       res.status(201).json({ attachments: saved })
     } catch (e) {
+      await discardUploads(UPLOAD_DIR, files.filter((f) => !kept.has(f.filename)))
       next(e)
     }
   })
@@ -123,7 +132,7 @@ incidentExtrasRouter.get('/attachments/:attachmentId', asyncRoute(async (req, re
   const att = await svc.getAttachment(callerOf(req), req.params.attachmentId)
   // Force download rather than inline rendering: a PDF rendered in-origin can script.
   res.setHeader('Content-Type', att.mimeType)
-  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(att.originalName)}"`)
+  res.setHeader('Content-Disposition', attachmentDisposition(att.originalName, att.mimeType))
   res.setHeader('X-Content-Type-Options', 'nosniff')
   res.sendFile(join(UPLOAD_DIR, att.storedName), (err) => {
     if (err && !res.headersSent) res.status(404).json({ error: 'not_found', message: 'File is missing from storage.' })

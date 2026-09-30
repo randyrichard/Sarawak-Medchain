@@ -14,6 +14,7 @@ function makeDb() {
   const memberships: any[] = []
   const refreshTokens: any[] = []
   const loginAttempts: any[] = []
+  const companies: any[] = [{ id: 'big', status: 'active' }]
   let seq = 0
 
   const matches = (row: any, where: any) =>
@@ -30,6 +31,11 @@ function makeDb() {
     },
     membership: {
       findMany: async ({ where }: any) => memberships.filter((m) => matches(m, where)),
+    },
+    company: {
+      findMany: async ({ where }: any) => companies
+        .filter((c) => where.id.in.includes(c.id) && c.status === where.status)
+        .map((c) => ({ id: c.id })),
     },
     refreshToken: {
       create: async ({ data }: any) => {
@@ -64,7 +70,7 @@ function makeDb() {
     $transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn(db),
   }
 
-  return { db: db as unknown as PrismaClient, users, memberships, refreshTokens, loginAttempts }
+  return { db: db as unknown as PrismaClient, users, memberships, refreshTokens, loginAttempts, companies }
 }
 
 const PASSWORD = 'SafeOpsPlatform2026'
@@ -270,5 +276,49 @@ describe('logout', () => {
   it('is a no-op for a missing or unknown token', async () => {
     await expect(auth.logout(undefined)).resolves.toBeUndefined()
     await expect(auth.logout('bogus')).resolves.toBeUndefined()
+  })
+})
+
+describe('suspended workspaces', () => {
+  /*
+   * Suspending a customer used to stop only their API keys. Their people went on signing
+   * in and refreshing with full roles, because sessions were minted from every membership
+   * whatever the state of the workspace behind it.
+   */
+  it('refuses to sign in somebody whose only workspace is suspended, and says why', async () => {
+    store.companies[0].status = 'suspended'
+    const err = await auth.login('hse@demo.safeops.app', PASSWORD, ctx).catch((e) => e)
+    expect(err).toBeInstanceOf(AuthError)
+    expect(err.code).toBe('workspace_suspended')
+    expect(err.status).toBe(403)
+    expect(store.loginAttempts.at(-1)?.outcome).toBe('workspace_suspended')
+    expect(store.refreshTokens).toHaveLength(0)
+  })
+
+  it('does not tell someone without the password that the workspace is suspended', async () => {
+    store.companies[0].status = 'suspended'
+    const err = await auth.login('hse@demo.safeops.app', 'wrong-password', ctx).catch((e) => e)
+    expect(err.code).toBe('invalid_credentials')
+  })
+
+  it('keeps the workspaces in good standing and drops the suspended one', async () => {
+    store.companies.push({ id: 'kcs', status: 'suspended' })
+    store.memberships.push({ id: 'm-2', userId: 'u-hse', companyId: 'kcs', role: 'admin', siteIds: [] })
+    const res = await auth.login('hse@demo.safeops.app', PASSWORD, ctx)
+    expect(verifyAccessToken(res.accessToken)?.roles).toEqual([{ companyId: 'big', role: 'hse_manager', siteIds: [] }])
+  })
+
+  it('ends a signed-in session at its next refresh', async () => {
+    const { refreshToken } = await auth.login('hse@demo.safeops.app', PASSWORD, ctx)
+    store.companies[0].status = 'suspended'
+    const err = await auth.refresh(refreshToken, ctx).catch((e) => e)
+    expect(err.code).toBe('workspace_suspended')
+  })
+
+  it('lets them back in when the suspension is lifted', async () => {
+    store.companies[0].status = 'suspended'
+    await expect(auth.login('hse@demo.safeops.app', PASSWORD, ctx)).rejects.toBeInstanceOf(AuthError)
+    store.companies[0].status = 'active'
+    await expect(auth.login('hse@demo.safeops.app', PASSWORD, ctx)).resolves.toBeTruthy()
   })
 })
