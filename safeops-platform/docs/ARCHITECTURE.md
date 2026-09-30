@@ -9,7 +9,9 @@ remembering them.
 ```
 api/src/
 ├── app.ts            composition root: Express app, middleware order, routers, error handler
-├── server.ts         process entry: listen, scheduler start, graceful shutdown
+├── server.ts         API process: listen, graceful shutdown (runs jobs only if
+│                     SCHEDULER_ENABLED=true, i.e. a single-process install)
+├── worker.ts         worker process: the scheduler - sweeps, reports, webhooks
 ├── env.ts            validated environment (refuses to start on a bad config)
 │
 ├── domain/           innermost. Pure rules; imports nothing else in src/
@@ -22,6 +24,7 @@ api/src/
 │   ├── *Service.ts   one per module: business rules, role checks, Prisma queries
 │   ├── *Catalog.ts   labels, enums and classifiers per module
 │   ├── scheduler.ts  reminder sweeps, report runs, webhook queue
+│   ├── jobRuns.ts    job history in the JobRun table, read by System Health
 │   ├── leaderLock.ts one-replica-at-a-time guard for background work
 │   ├── email/        mail providers (Resend, SMTP)
 │   └── …             PDFs, tokens, rate-limit store, secret box, webhooks
@@ -34,7 +37,8 @@ api/src/
 │
 ├── routes/           outermost. One router per module: parse with Zod, call a
 │                     service, answer. May import everything above
-├── cli/              operator commands (seed, create-admin, verify-evidence…)
+├── cli/              operator commands (seed, create-admin, verify-evidence…) and
+│                     workerHealth, the worker container's health check
 └── test/             shared test helpers
 ```
 
@@ -104,7 +108,11 @@ Do these one at a time, each as its own pull request, each proven by the existin
    - response shaping.
 
    Do it when a module next needs a feature, not as a standalone rewrite.
-3. **Move the scheduler to its own process** (same image, a second compose service), so API
-   replicas scale on traffic and sweeps scale on data. `leaderLock` already makes more than
-   one instance safe.
+3. ~~**Move the scheduler to its own process.**~~ **Done.** In production the `worker`
+   service runs the jobs (`node dist/worker.js`, same image) and the API has
+   `SCHEDULER_ENABLED=false`.
+   - Job history lives in the `JobRun` table, so any replica reports it.
+   - The worker's health check requires both the webhook sweep and the reminder pass to be
+     recent.
+   - `deploy/` scripts start, stop, restore and roll back the worker with the API.
 4. **Express 5**, which forwards rejected promises natively. After that, `asyncRoute` can go.

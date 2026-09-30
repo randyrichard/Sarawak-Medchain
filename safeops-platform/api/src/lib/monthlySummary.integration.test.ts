@@ -236,9 +236,15 @@ d('monthly safety summary', () => {
 
   it('counts actions raised and closed within the same month', async () => {
     const parent = await incidentAt('2026-09-06T02:00:00.000Z')
-    await incidents.addAction(admin, parent.id, {
+    const action = await incidents.addAction(admin, parent.id, {
       title: 'Fit a guard', owner: 'ITest Owner', dueDate: '2026-09-20',
     } as never)
+    /*
+     * Raised in September, explicitly. createdAt comes from the database's clock, which the
+     * faked JavaScript clock above does not reach - so this only passed while the real date
+     * was still September in Kuching, and failed from 1 October onwards.
+     */
+    await db.correctiveAction.update({ where: { id: action.id }, data: { createdAt: new Date('2026-09-06T03:00:00.000Z') } })
 
     const data = await reports.preview(admin, COMPANY, 'monthly_summary')
 

@@ -3163,3 +3163,25 @@ model ToolboxAttendanceGroup {
 
   @@index([meetingId])
 }
+
+/// When each background job last ran, and how it went.
+///
+/// Written by whichever process runs the scheduler - the worker in production - so every
+/// API replica reports the same thing on System Health. It used to live in the memory of
+/// the process that ran the job, which a separate worker (or a second replica holding no
+/// lock) could not see.
+model JobRun {
+  /// The job's key, e.g. "reminders" - see JOBS in src/lib/jobRuns.ts.
+  job            String    @id
+  lastStartedAt  DateTime?
+  lastFinishedAt DateTime?
+  lastOk         Boolean   @default(true)
+  /// The first line of the last failure, for the operator. Never a stack or a payload.
+  lastError      String?
+  lastDurationMs Int?
+  /// Which process ran it (hostname:pid), so two workers are distinguishable in the log.
+  instance       String?
+  runCount       Int       @default(0)
+  failureCount   Int       @default(0)
+  updatedAt      DateTime  @updatedAt
+}

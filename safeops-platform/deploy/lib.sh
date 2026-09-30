@@ -66,3 +66,13 @@ confirm() {
   read -r -p "$1 [y/N] " reply
   [[ "$reply" =~ ^[Yy]$ ]] || die "cancelled"
 }
+
+# The worker starts once the API is healthy and logs "scheduler running" a moment later;
+# asking once, immediately, reported a healthy stack as broken.
+worker_started() {
+  for _ in $(seq 1 15); do
+    $DC logs --tail=50 worker 2>/dev/null | grep -q 'scheduler running' && return 0
+    sleep 2
+  done
+  return 1
+}

@@ -79,8 +79,8 @@ info "verifying the deployment"
 
 $DC ps --format '  {{.Service}}  {{.Status}}'
 
-if ! $DC logs api 2>&1 | tail -50 | grep -q 'scheduler running'; then
-  warn "the scheduler did not report starting — reminders will not fire. Check: $DC logs api"
+if ! worker_started; then
+  warn "the worker did not report starting — reminders will not fire. Check: $DC logs worker"
 fi
 
 MIGRATIONS_PENDING=$($DC exec -T api npx prisma migrate status 2>&1 | grep -ci 'not yet been applied' || true)

@@ -202,4 +202,9 @@ export const BACKGROUND_JOBS = [
   { id: 'j3', name: 'Score snapshot', schedule: 'Not scheduled', detail: 'Monthly score freeze — not yet implemented' },
   { id: 'j4', name: 'Workspace restore point', schedule: 'On demand', detail: 'In-database snapshot; disaster recovery uses pg_dump' },
   { id: 'j6', name: 'Webhook delivery', schedule: 'Every 30 sec', detail: 'Sends queued events, and retries what failed' },
+  // Jobs the scheduler always ran but System Health never listed, so a failure in any of
+  // them - a scheduled report that stopped sending, say - was invisible to the operator.
+  { id: 'j7', name: 'Equipment sweep', schedule: 'Every 15 min', detail: 'Calibration lapses, maintenance due, out-of-service equipment' },
+  { id: 'j8', name: 'Visitor sweep', schedule: 'Every 15 min', detail: 'Expired visits, overdue visitors, badges not returned' },
+  { id: 'j9', name: 'Scheduled reports', schedule: 'Every 15 min', detail: 'Runs due report schedules and retries stalled deliveries' },
 ]

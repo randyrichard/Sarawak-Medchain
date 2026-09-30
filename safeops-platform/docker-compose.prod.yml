@@ -71,7 +71,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    environment:
+    environment: &api-env
       NODE_ENV: production
       PORT: 4000
       # connection_limit is explicit on purpose. Prisma otherwise sizes the pool from the
@@ -105,7 +105,9 @@ services:
       MAIL_REPLY_TO: ${MAIL_REPLY_TO:-}
       ACCESS_TOKEN_TTL_MIN: ${ACCESS_TOKEN_TTL_MIN:-15}
       REFRESH_TOKEN_TTL_DAYS: ${REFRESH_TOKEN_TTL_DAYS:-30}
-      SCHEDULER_ENABLED: 'true'
+      # Background jobs run in the worker service below, not in the API. Set 'true' only
+      # when running the API without a worker (a single-process install).
+      SCHEDULER_ENABLED: 'false'
       SCHEDULER_INTERVAL_MIN: ${SCHEDULER_INTERVAL_MIN:-15}
       RATE_LIMIT_PER_MIN: ${RATE_LIMIT_PER_MIN:-3000}
       # The integration API's own ceiling, per key rather than per address.
@@ -137,6 +139,41 @@ services:
     # thing terminating TLS is on another host.
     ports:
       - '${BIND_HOST:-127.0.0.1}:${API_PORT:-4000}:4000'
+
+  # Reminder sweeps, scheduled reports and webhook delivery. Same image as the API, a
+  # different command, no published port. Split out so API replicas scale on traffic and
+  # background work on data, and so a slow sweep never shares an event loop with requests.
+  # A second worker is safe (each pass takes a Postgres advisory lock) but only stands by.
+  worker:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    command: ['node', 'dist/worker.js']
+    restart: unless-stopped
+    logging: *logging
+    depends_on:
+      # The API container applies migrations on start; the worker waits for it.
+      api:
+        condition: service_healthy
+    environment:
+      <<: *api-env
+      SCHEDULER_ENABLED: 'true'
+      # Sweeps run one after another, so the worker needs a handful of connections, not the
+      # API's pool. Applied on top of DATABASE_URL, a managed one included.
+      WORKER_DB_POOL_SIZE: ${WORKER_DB_POOL_SIZE:-5}
+    # A stop waits for a report or sweep already in flight (up to 25 s) before exiting.
+    stop_grace_period: 30s
+    volumes:
+      # Scheduled reports write their PDFs here, and the API serves them from here.
+      - safeops_uploads:/data/uploads
+    # The image's HEALTHCHECK probes the API's HTTP port, which the worker does not have.
+    # Healthy while jobs keep being recorded: see api/src/cli/workerHealth.ts.
+    healthcheck:
+      test: ['CMD', 'node', 'dist/cli/workerHealth.js']
+      interval: 60s
+      timeout: 15s
+      start_period: 120s
+      retries: 3
 
   web:
     build:

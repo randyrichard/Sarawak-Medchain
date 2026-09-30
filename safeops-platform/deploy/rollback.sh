@@ -43,9 +43,10 @@ docker image inspect "$API_IMAGE" >/dev/null 2>&1 \
 
 confirm "Roll the application back to ${GIT_SHA:-that image}? The database is NOT touched."
 
-# Stop before swapping, so no request is served by a half-swapped stack.
+# Stop before swapping, so no request is served by a half-swapped stack. The worker runs
+# the same code as the API and must not outlive it.
 info "stopping the application"
-$DC stop api web
+$DC stop api worker web
 
 info "starting the previous images"
 docker run -d --rm --name safeops-rollback-check "$API_IMAGE" true >/dev/null 2>&1 || true
@@ -56,7 +57,7 @@ docker rm -f safeops-rollback-check >/dev/null 2>&1 || true
 docker tag "$API_IMAGE" safeops-api:rollback
 [ -n "${WEB_IMAGE:-}" ] && docker tag "$WEB_IMAGE" safeops-web:rollback
 
-API_IMAGE_OVERRIDE=safeops-api:rollback $DC up -d --no-build api web \
+API_IMAGE_OVERRIDE=safeops-api:rollback $DC up -d --no-build api worker web \
   || die "the rollback failed to start. The database is untouched — investigate before retrying."
 
 wait_for_ready 60

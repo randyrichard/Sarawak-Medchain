@@ -721,6 +721,24 @@ d('AdminService — integration (real Postgres)', () => {
     expect(health.usersOnline).toBeGreaterThanOrEqual(0)
   })
 
+  it('reports every scheduled job from the shared history, failures included', async () => {
+    // Written as the worker would: a different process from the one answering here.
+    const { recordJobRun } = await import('./jobRuns.js')
+    await db.jobRun.deleteMany({})
+    await recordJobRun(db, 'reminders', new Date())
+    await recordJobRun(db, 'reports', new Date(), new Error('relay refused the connection'))
+
+    const jobs = (await svc.systemHealth(admin, COMPANY)).jobs
+    const byName = (name: string) => jobs.find((j) => j.name === name)
+    expect(byName('Reminder & escalation sweep')).toMatchObject({ status: 'ok' })
+    expect(byName('Reminder & escalation sweep')?.lastRun).toBeTruthy()
+    // Listed now, and a failure shows as one rather than hiding behind "ok".
+    expect(byName('Scheduled reports')).toMatchObject({ status: 'failed' })
+    expect(byName('Equipment sweep')?.lastRun).toBeNull() // never run: says so
+    expect(byName('Visitor sweep')).toBeTruthy()
+    await db.jobRun.deleteMany({})
+  })
+
   // ── Backup & restore ───────────────────────────────────────────────────────
 
   it('exports only the caller’s own workspace', async () => {

@@ -26,6 +26,7 @@ import { ReportService } from './reportService.js'
 import { dueSlotKey, nextRunAt, type Frequency } from './reportSchedule.js'
 import { enqueueEvent, sweepDeliveries } from './webhookService.js'
 import { LOCK_SCHEDULER_SWEEP, LOCK_WEBHOOK_DELIVERY, withLeaderLock } from './leaderLock.js'
+import { recordJobRun, type JobKey } from './jobRuns.js'
 
 const MINUTE = 60_000
 const DAY = 86400_000
@@ -131,23 +132,6 @@ class Budget {
     this.used.set(companyId, (this.used.get(companyId) ?? 0) + 1)
   }
 }
-
-export type JobId = 'j1' | 'j2' | 'j3' | 'j4' | 'j5' | 'j6'
-
-/**
- * When each sweep last completed, in this process. Deliberately not persisted: after a
- * restart the honest answer is that this process has not run it yet, and the admin
- * console renders exactly that rather than inventing a timestamp.
- */
-const lastRuns = new Map<JobId, string>()
-export const getLastRuns = (): Record<string, string | null> => ({
-  j1: lastRuns.get('j1') ?? null,
-  j2: lastRuns.get('j2') ?? null,
-  j3: lastRuns.get('j3') ?? null,
-  j4: lastRuns.get('j4') ?? null,
-  j5: lastRuns.get('j5') ?? null,
-  j6: lastRuns.get('j6') ?? null,
-})
 
 /** UTC midnight, matching how every date-only value in this codebase is stored. */
 const utcDay = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
@@ -932,6 +916,22 @@ export class Scheduler {
     return ran
   }
 
+  /**
+   * Runs one job of the pass and records the outcome in JobRun, success or failure.
+   * A failure is recorded and then rethrown, so the pass stops exactly as it did before.
+   */
+  private async job<T>(key: JobKey, run: () => Promise<T>): Promise<T> {
+    const started = new Date()
+    try {
+      const value = await run()
+      await recordJobRun(this.db, key, started)
+      return value
+    } catch (err) {
+      await recordJobRun(this.db, key, started, err)
+      throw err
+    }
+  }
+
   /** One full pass. Safe to call directly; that is how the tests drive it. */
   async runOnce(now = new Date()): Promise<{
     actions: number; inspections: number; certificates: number; medicals: number
@@ -940,41 +940,47 @@ export class Scheduler {
     overdueVisitors: number; outstandingBadges: number; expiredVisits: number
     reports: number
   }> {
-    const actions = await this.sweepActions(now)
-    const inspections = await this.sweepInspections(now)
-    lastRuns.set('j1', new Date().toISOString())
+    const { actions, inspections } = await this.job('reminders', async () => ({
+      actions: await this.sweepActions(now),
+      inspections: await this.sweepInspections(now),
+    }))
 
-    const certificates = await this.sweepCertificates(now)
-    const medicals = await this.sweepMedicals(now)
-    const contractors = await this.sweepContractors(now)
-    const permits = await this.sweepPermits(now)
-    lastRuns.set('j2', new Date().toISOString())
+    const { certificates, medicals, contractors, permits } = await this.job('expiry', async () => ({
+      certificates: await this.sweepCertificates(now),
+      medicals: await this.sweepMedicals(now),
+      contractors: await this.sweepContractors(now),
+      permits: await this.sweepPermits(now),
+    }))
 
-    const calibrations = await this.sweepCalibrations(now)
-    const maintenance = await this.sweepMaintenance(now)
-    const outOfService = await this.sweepOutOfService()
-    lastRuns.set('j3', new Date().toISOString())
+    const { calibrations, maintenance, outOfService } = await this.job('equipment', async () => ({
+      calibrations: await this.sweepCalibrations(now),
+      maintenance: await this.sweepMaintenance(now),
+      outOfService: await this.sweepOutOfService(),
+    }))
 
     // Expiry first: a visit that has quietly lapsed is not an overdue visitor, and
     // sweeping in the other order would chase somebody who was never on site.
-    const expiredVisits = await this.sweepExpiredVisits(now)
-    const overdueVisitors = await this.sweepOverdueVisitors(now)
-    const outstandingBadges = await this.sweepOutstandingBadges()
-    lastRuns.set('j4', new Date().toISOString())
+    const { expiredVisits, overdueVisitors, outstandingBadges } = await this.job('visitors', async () => ({
+      expiredVisits: await this.sweepExpiredVisits(now),
+      overdueVisitors: await this.sweepOverdueVisitors(now),
+      outstandingBadges: await this.sweepOutstandingBadges(),
+    }))
 
     // Last in the pass: the report reads the results of everything above it, so it should
     // see this pass's notifications rather than last pass's.
-    const reports = await this.sweepScheduledReports(now)
-    /*
-     * Recovery runs after the reports sweep, on the same pass.
-     *
-     * A delivery interrupted by a restart, or one waiting out a backoff, is picked up here
-     * rather than by a timer of its own - the report system already has exactly one thing
-     * that decides when work happens, and a second would be a second set of locking to get
-     * wrong. Whether a message may actually be sent again is decided in reportRetry.ts.
-     */
-    const recovered = await this.reports.recoverStalledDeliveries(now)
-    lastRuns.set('j5', new Date().toISOString())
+    const { reports, recovered } = await this.job('reports', async () => ({
+      reports: await this.sweepScheduledReports(now),
+      /*
+       * Recovery runs after the reports sweep, on the same pass.
+       *
+       * A delivery interrupted by a restart, or one waiting out a backoff, is picked up
+       * here rather than by a timer of its own - the report system already has exactly one
+       * thing that decides when work happens, and a second would be a second set of
+       * locking to get wrong. Whether a message may actually be sent again is decided in
+       * reportRetry.ts.
+       */
+      recovered: await this.reports.recoverStalledDeliveries(now),
+    }))
 
     return {
       actions, inspections, certificates, medicals, contractors, permits,
@@ -1063,9 +1069,16 @@ export class Scheduler {
       if (this.deliveringWebhooks) return
       this.deliveringWebhooks = true
       try {
-        const n = await this.deliverIfLeader()
+        const started = new Date()
+        let n: Awaited<ReturnType<Scheduler['deliverIfLeader']>>
+        try {
+          n = await this.deliverIfLeader()
+        } catch (err) {
+          await recordJobRun(this.db, 'webhooks', started, err)
+          throw err
+        }
         if (!n) return
-        lastRuns.set('j6', new Date().toISOString())
+        await recordJobRun(this.db, 'webhooks', started)
         if (n.attempted > 0) {
           // eslint-disable-next-line no-console
           console.log(
@@ -1089,5 +1102,23 @@ export class Scheduler {
     this.timer = null
     if (this.deliveryTimer) clearInterval(this.deliveryTimer)
     this.deliveryTimer = null
+  }
+
+  /**
+   * Stops the timers, then waits for a pass or a webhook sweep already in flight to
+   * finish - up to `timeoutMs`. Resolves true when idle, false when time ran out.
+   *
+   * stop() alone let a shutdown cut a pass in half: a report mid-send, reminders half
+   * raised. Recovery exists for a crash, but a deploy is not a crash and should not be
+   * treated as one.
+   */
+  async drain(timeoutMs: number): Promise<boolean> {
+    this.stop()
+    const deadline = Date.now() + timeoutMs
+    while (this.running || this.deliveringWebhooks) {
+      if (Date.now() >= deadline) return false
+      await new Promise((r) => setTimeout(r, 100))
+    }
+    return true
   }
 }

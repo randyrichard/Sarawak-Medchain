@@ -1,4 +1,4 @@
-import { getLastRuns } from './scheduler.js'
+import { readJobRuns } from './jobRuns.js'
 import { createHash, randomBytes } from 'node:crypto'
 import { Prisma } from '@prisma/client'
 import type { PrismaClient, Role } from '@prisma/client'
@@ -1350,14 +1350,21 @@ export class AdminService {
 
     const storageUsedKb = await this.tenantSizeKb(companyId)
 
-    // The sweeps report when this process last completed them; the backup job reports the
-    // newest snapshot. A job with no last-run has genuinely not run, and says so.
-    const sweeps = getLastRuns()
-    const jobs = BACKGROUND_JOBS.map((j) => ({
-      ...j,
-      lastRun: j.id === 'j4' ? (lastBackup?.at.toISOString() ?? null) : (sweeps[j.id] ?? null),
-      status: j.id === 'j4' && !retention.autoBackupDaily ? 'failed' : 'ok',
-    }))
+    // The sweeps report their last run from JobRun, which whichever process ran them wrote;
+    // the backup job reports the newest snapshot. A job with no last-run has genuinely not
+    // run, and says so.
+    const runs = await readJobRuns(this.db)
+    const sweepOf: Record<string, keyof typeof runs> = {
+      j1: 'reminders', j2: 'expiry', j6: 'webhooks', j7: 'equipment', j8: 'visitors', j9: 'reports',
+    }
+    const jobs = BACKGROUND_JOBS.map((j) => {
+      const run = sweepOf[j.id] ? runs[sweepOf[j.id]] : null
+      return {
+        ...j,
+        lastRun: j.id === 'j4' ? (lastBackup?.at.toISOString() ?? null) : (run?.lastFinishedAt ?? null),
+        status: (j.id === 'j4' && !retention.autoBackupDaily) || run?.lastOk === false ? 'failed' : 'ok',
+      }
+    })
 
     const alerts: { id: string; severity: 'critical' | 'warning' | 'info'; text: string; at: string }[] = []
     if (failedWebhooks > 0) {

@@ -85,8 +85,16 @@ d('Summaries — integration (real Postgres)', () => {
     await action('CA-S4', { siteId: SITE_B, dueDate: daysFromNow(20) }) // other site
     await action('CA-S5', { status: 'completed', completedAt: daysFromNow(-1) }) // closed this week
 
+    /*
+     * Held earlier *today in the site's time zone* - the "today" report is cut in site
+     * time. This was "an hour ago", which in the first hour after Kuching midnight
+     * (16:00-17:00 UTC) is yesterday there, so the test failed every day in that window.
+     * Kuching is UTC+8 all year; half the time since its midnight, at most an hour.
+     */
+    const sinceKuchingMidnight = (Date.now() + 8 * 3600_000) % 86_400_000
     await db.toolboxMeeting.create({
-      data: { companyId: COMPANY, siteId: SITE_A, number: 'TBM-S1', heldAt: new Date(Date.now() - 3600_000),
+      data: { companyId: COMPANY, siteId: SITE_A, number: 'TBM-S1',
+        heldAt: new Date(Date.now() - Math.min(3600_000, sinceKuchingMidnight / 2)),
         ledBy: 'Azlan', topic: 'Tool tethering', headcount: 210, recordedBy: 'x', recordedById: 'x' },
     })
   })
