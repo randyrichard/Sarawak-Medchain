@@ -10,7 +10,7 @@
  */
 import { PrismaClient } from '@prisma/client'
 import { AdminService } from '../src/lib/adminService.js'
-import type { Caller } from '../src/lib/incidentService.js'
+import type { Caller } from '../src/domain/caller.js'
 
 const db = new PrismaClient()
 const admin = new AdminService(db)
