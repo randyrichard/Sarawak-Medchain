@@ -11,6 +11,7 @@ import { canIssuePermits } from './lib'
 import { PermitCard } from './components/PermitCard'
 import { PermitDrawer } from './components/PermitDrawer'
 import { NewPermitDialog } from './components/NewPermitDialog'
+import { pollWhileVisible } from '@/lib/poll'
 
 type StatusChip = NonNullable<PermitFilters['status']>
 
@@ -55,8 +56,7 @@ export function PermitsPage() {
 
   // Permits are time-critical: re-derive remaining time every 30s without a full refetch.
   useEffect(() => {
-    const id = setInterval(() => { if (company) refresh() }, 30_000)
-    return () => clearInterval(id)
+    return pollWhileVisible(() => { if (company) refresh() }, 30_000)
   }, [company, refresh])
 
   const setParam = (k: string, v: string) => {

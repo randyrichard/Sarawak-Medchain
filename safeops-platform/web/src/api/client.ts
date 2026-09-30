@@ -39,11 +39,9 @@ import type {
 import {
   ACTIVITY, COMPANIES, DEPARTMENTS, EMPLOYEES, NOTIFICATIONS, SITES, TEAMS, USERS,
 } from './mock/fixtures'
-import { buildDashboard } from './mock/dashboard'
 import { buildInsights, buildPriorities } from './priorities'
 import { incidentsApi } from './incidentsApi'
 import { assertRealAuth, isBackendConfigured } from './authApi'
-import { PermitStore } from './mock/permits'
 import { permitsApi } from './permitsApi'
 import { inspectionsApi } from './inspectionsApi'
 import { auditsApi } from './auditsApi'
@@ -56,9 +54,8 @@ import { activityApi } from './activityApi'
 import type {
   GasTest, IsolationPoint, NewPermitInput, PermitFilters, PermitStats, PermitView,
 } from './permits'
-import { IncidentStore } from './mock/incidents'
-import { AdminStore } from './mock/admin'
 import { delay } from '@/lib/time'
+import type { DemoStores } from './mock/demo'
 
 /** Best-effort device label from the current browser (used for login history). */
 function deviceLabel(): string {
@@ -513,9 +510,14 @@ class MockApiClient implements ApiClient {
   private demoNotify = (kind: AppNotification['kind'], title: string, detail: string) =>
     this.pushNotification('', kind, title, detail)
 
-  private incidents = new IncidentStore(this.demoNotify)
-  private admin = new AdminStore(this.demoNotify)
-  private permits = new PermitStore(this.demoNotify)
+  /**
+   * The demo stores, loaded and built on first use - which only ever happens with no API
+   * configured. A production build never downloads them. See mock/demo.ts.
+   */
+  private demoStores?: Promise<DemoStores>
+  private demo(): Promise<DemoStores> {
+    return (this.demoStores ??= import('./mock/demo').then((m) => m.createDemoStores(this.demoNotify)))
+  }
   /** Permits already warned about, so the 30-second board refresh does not re-alert. */
   private permitReminders = new Set<string>()
 
@@ -534,14 +536,14 @@ class MockApiClient implements ApiClient {
     const user = this.users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase())
     if (!user || user.password !== password) {
       // capture the failed attempt in the security login history
-      this.admin.recordLogin(user?.id ?? '', user?.name ?? email.trim(), email.trim(), 'failed', deviceLabel())
+      ;(await this.demo()).admin.recordLogin(user?.id ?? '', user?.name ?? email.trim(), email.trim(), 'failed', deviceLabel())
       throw new ApiError('invalid_credentials', 'Email or password is incorrect.')
     }
     // session lifetime is governed by the admin security policy (real setting)
-    const ttlHours = this.admin.getSecurity().sessionTimeoutHours
+    const ttlHours = (await this.demo()).admin.getSecurity().sessionTimeoutHours
     const exp = Date.now() + ttlHours * 60 * 60 * 1000
     const session: Session = { token: encodeToken({ sub: user.id, exp }), userId: user.id, expiresAt: exp }
-    this.admin.recordLogin(user.id, user.name, user.email, 'success', deviceLabel())
+    ;(await this.demo()).admin.recordLogin(user.id, user.name, user.email, 'success', deviceLabel())
     const { password: _pw, ...safe } = user
     return { session, user: safe }
   }
@@ -640,7 +642,7 @@ class MockApiClient implements ApiClient {
   }
 
   async getDashboard(companyId: string, siteId: string | null, scopeLabel: string) {
-    const live = this.incidents.liveStats(companyId, siteId)
+    const live = (await this.demo()).incidents.liveStats(companyId, siteId)
     if (SERVER_INCIDENTS) {
       // Mission Control must agree with the module a click away. Every figure the
       // dashboard overlay accepts is taken from the module that owns it, so a headline
@@ -678,7 +680,7 @@ class MockApiClient implements ApiClient {
         if (a.overdue) overdueBySite.set(a.siteId, (overdueBySite.get(a.siteId) ?? 0) + 1)
       }
 
-      const dash = buildDashboard(companyId, siteId, scopeLabel, {
+      const dash = (await import('./mock/demo')).buildDashboard(companyId, siteId, scopeLabel, {
         ...live,
         openIncidents: s.open,
         highRisk: s.highRisk,
@@ -739,7 +741,7 @@ class MockApiClient implements ApiClient {
       return { ...dash, activity, priorities, ...(insights.length > 0 ? { insights } : {}) }
     }
     await delay(650 + Math.random() * 350)
-    return buildDashboard(companyId, siteId, scopeLabel, live)
+    return (await import('./mock/demo')).buildDashboard(companyId, siteId, scopeLabel, live)
   }
 
   // ── incidents ──────────────────────────────────────────────────────────────
@@ -749,13 +751,13 @@ class MockApiClient implements ApiClient {
       return drainRows((page, pageSize) => incidentsApi.list(companyId, { ...filters, page, pageSize }))
     }
     await delay(LATENCY())
-    return this.incidents.list(companyId, filters)
+    return (await this.demo()).incidents.list(companyId, filters)
   }
 
   async getIncident(id: string) {
     if (SERVER_INCIDENTS) return incidentsApi.get(id)
     await delay(LATENCY() / 2)
-    return this.incidents.get(id)
+    return (await this.demo()).incidents.get(id)
   }
 
   async createIncident(input: NewIncidentInput, actor: Actor) {
@@ -778,7 +780,7 @@ class MockApiClient implements ApiClient {
       })
     }
     await delay(LATENCY())
-    return this.incidents.create(input, actor)
+    return (await this.demo()).incidents.create(input, actor)
   }
 
   async advanceIncident(id: string, payload: AdvancePayload, actor: Actor) {
@@ -794,13 +796,13 @@ class MockApiClient implements ApiClient {
       })
     }
     await delay(LATENCY() / 2)
-    return this.incidents.advance(id, payload, actor)
+    return (await this.demo()).incidents.advance(id, payload, actor)
   }
 
   async saveIncidentRca(id: string, causes: RcaCause[], fiveWhys: FiveWhys, actor: Actor) {
     if (SERVER_INCIDENTS) return incidentsApi.saveRca(id, causes, fiveWhys)
     await delay(LATENCY() / 2)
-    return this.incidents.saveRca(id, causes, fiveWhys, actor)
+    return (await this.demo()).incidents.saveRca(id, causes, fiveWhys, actor)
   }
 
   async addIncidentAction(id: string, input: Pick<IncidentAction, 'title' | 'causeId' | 'owner' | 'dueDate' | 'priority' | 'evidenceRequired'>, actor: Actor) {
@@ -811,7 +813,7 @@ class MockApiClient implements ApiClient {
       return incidentsApi.get(id) // re-read so the caller sees the authoritative row
     }
     await delay(LATENCY() / 2)
-    return this.incidents.addAction(id, input, actor)
+    return (await this.demo()).incidents.addAction(id, input, actor)
   }
 
   async updateIncidentAction(id: string, actionId: string, patch: { status?: IncidentAction['status']; evidenceNote?: string }, actor: Actor) {
@@ -820,7 +822,7 @@ class MockApiClient implements ApiClient {
       return incidentsApi.get(id)
     }
     await delay(LATENCY() / 2)
-    return this.incidents.updateAction(id, actionId, patch, actor)
+    return (await this.demo()).incidents.updateAction(id, actionId, patch, actor)
   }
 
   async addIncidentComment(id: string, text: string, mentions: string[], actor: Actor) {
@@ -829,7 +831,7 @@ class MockApiClient implements ApiClient {
       return incidentsApi.get(id) // re-read so the caller sees the authoritative row
     }
     await delay(LATENCY() / 2)
-    return this.incidents.addComment(id, text, mentions, actor)
+    return (await this.demo()).incidents.addComment(id, text, mentions, actor)
   }
 
   async addIncidentAttachment(id: string, att: Omit<IncidentAttachment, 'id' | 'at' | 'uploadedBy'>, actor: Actor, file?: File) {
@@ -838,13 +840,13 @@ class MockApiClient implements ApiClient {
       return incidentsApi.get(id)
     }
     await delay(LATENCY() / 2)
-    return this.incidents.addAttachment(id, att, actor)
+    return (await this.demo()).incidents.addAttachment(id, att, actor)
   }
 
   async archiveIncident(id: string, actor: Actor) {
     if (SERVER_INCIDENTS) return incidentsApi.archive(id)
     await delay(LATENCY() / 2)
-    this.incidents.archive(id, actor)
+    ;(await this.demo()).incidents.archive(id, actor)
   }
 
   // ── CAPA ───────────────────────────────────────────────────────────────────
@@ -858,7 +860,7 @@ class MockApiClient implements ApiClient {
   async listCapa(companyId: string, filters: CapaFilters, actor: Actor) {
     if (SERVER_INCIDENTS) return filterCapa(await this.serverCapa(companyId), filters)
     await delay(LATENCY())
-    return this.incidents.listCapa(companyId, filters, actor)
+    return (await this.demo()).incidents.listCapa(companyId, filters, actor)
   }
 
   async capaStats(companyId: string, actor: Actor) {
@@ -878,7 +880,7 @@ class MockApiClient implements ApiClient {
       }
     }
     await delay(LATENCY() / 2)
-    return this.incidents.capaStats(companyId, actor)
+    return (await this.demo()).incidents.capaStats(companyId, actor)
   }
 
   async getCapa(actionId: string) {
@@ -895,7 +897,7 @@ class MockApiClient implements ApiClient {
       } as never)
     }
     await delay(LATENCY() / 3)
-    return this.incidents.getCapa(actionId)
+    return (await this.demo()).incidents.getCapa(actionId)
   }
 
   async addStandaloneAction(input: NewStandaloneAction, actor: Actor) {
@@ -907,7 +909,7 @@ class MockApiClient implements ApiClient {
       return toCapaItem({ ...a, companyId: input.companyId, siteId: input.siteId })
     }
     await delay(LATENCY() / 2)
-    return this.incidents.addStandaloneAction(input, actor)
+    return (await this.demo()).incidents.addStandaloneAction(input, actor)
   }
 
   async updateCapa(actionId: string, patch: CapaPatch, actor: Actor) {
@@ -918,7 +920,7 @@ class MockApiClient implements ApiClient {
       return toCapaItem(a)
     }
     await delay(LATENCY() / 3)
-    return this.incidents.updateCapa(actionId, patch, actor)
+    return (await this.demo()).incidents.updateCapa(actionId, patch, actor)
   }
 
   async cancelCapa(actionId: string, reason: string, actor: Actor) {
@@ -926,7 +928,7 @@ class MockApiClient implements ApiClient {
       return toCapaItem(await incidentsApi.updateAction(actionId, { status: 'Cancelled', evidenceNote: reason }))
     }
     await delay(LATENCY() / 3)
-    return this.incidents.cancelCapa(actionId, reason, actor)
+    return (await this.demo()).incidents.cancelCapa(actionId, reason, actor)
   }
 
   async addCapaNote(actionId: string, text: string, mentions: string[], actor: Actor) {
@@ -935,13 +937,13 @@ class MockApiClient implements ApiClient {
       return this.getCapa(actionId) // re-read so the caller sees the authoritative row
     }
     await delay(LATENCY() / 3)
-    return this.incidents.addCapaNote(actionId, text, mentions, actor)
+    return (await this.demo()).incidents.addCapaNote(actionId, text, mentions, actor)
   }
 
   async capaAnalytics(companyId: string) {
     if (SERVER_INCIDENTS) {
       const a = await incidentsApi.actionAnalytics(companyId)
-      const mock = this.incidents.capaAnalytics(companyId)
+      const mock = (await this.demo()).incidents.capaAnalytics(companyId)
       // Real counts where the server has them; the trend/ranking panels keep their
       // illustrative shape until the analytics endpoint reports them.
       return {
@@ -953,7 +955,7 @@ class MockApiClient implements ApiClient {
       }
     }
     await delay(LATENCY())
-    return this.incidents.capaAnalytics(companyId)
+    return (await this.demo()).incidents.capaAnalytics(companyId)
   }
 
   // ── assets & inspections ───────────────────────────────────────────────────
@@ -961,13 +963,13 @@ class MockApiClient implements ApiClient {
   async listAssets(companyId: string, filters: AssetFilters) {
     if (SERVER_INSPECTIONS) return inspectionsApi.listAssets(companyId, filters)
     await delay(LATENCY())
-    return this.incidents.listAssets(companyId, filters)
+    return (await this.demo()).incidents.listAssets(companyId, filters)
   }
 
   async getAssetProfile(idOrQr: string) {
     if (SERVER_INSPECTIONS) return inspectionsApi.getAssetProfile(idOrQr)
     await delay(LATENCY() / 2)
-    return this.incidents.getAssetProfile(idOrQr)
+    return (await this.demo()).incidents.getAssetProfile(idOrQr)
   }
 
   async createAsset(input: NewAssetInput, actor: Actor) {
@@ -978,7 +980,7 @@ class MockApiClient implements ApiClient {
       return a
     }
     await delay(LATENCY() / 2)
-    return this.incidents.createAsset(input, actor)
+    return (await this.demo()).incidents.createAsset(input, actor)
   }
 
   async scheduleInspection(assetId: string, date: string, inspector: string, actor: Actor) {
@@ -989,7 +991,7 @@ class MockApiClient implements ApiClient {
       return i
     }
     await delay(LATENCY() / 2)
-    return this.incidents.scheduleInspection(assetId, date, inspector, actor)
+    return (await this.demo()).incidents.scheduleInspection(assetId, date, inspector, actor)
   }
 
   async completeInspection(inspectionId: string, input: CompleteInspectionInput, actor: Actor) {
@@ -1007,19 +1009,19 @@ class MockApiClient implements ApiClient {
       return i
     }
     await delay(LATENCY() / 2)
-    return this.incidents.completeInspection(inspectionId, input, actor)
+    return (await this.demo()).incidents.completeInspection(inspectionId, input, actor)
   }
 
   async listInspections(companyId: string, filters: InspectionFilters) {
     if (SERVER_INSPECTIONS) return inspectionsApi.listInspections(companyId, filters)
     await delay(LATENCY())
-    return this.incidents.listInspections(companyId, filters)
+    return (await this.demo()).incidents.listInspections(companyId, filters)
   }
 
   async assetStats(companyId: string) {
     if (SERVER_INSPECTIONS) return inspectionsApi.assetStats(companyId)
     await delay(LATENCY() / 2)
-    return this.incidents.assetStats(companyId)
+    return (await this.demo()).incidents.assetStats(companyId)
   }
 
   // ── audits & compliance ────────────────────────────────────────────────────
@@ -1027,25 +1029,25 @@ class MockApiClient implements ApiClient {
   async listAuditTemplates(companyId: string) {
     if (SERVER_AUDITS) return auditsApi.listTemplates(companyId)
     await delay(LATENCY() / 3)
-    return this.incidents.listTemplates()
+    return (await this.demo()).incidents.listTemplates()
   }
 
   async createAuditTemplate(companyId: string, name: string, items: string[], actor: Actor) {
     if (SERVER_AUDITS) return auditsApi.createTemplate(companyId, name, items)
     await delay(LATENCY() / 2)
-    return this.incidents.createTemplate(name, items, actor)
+    return (await this.demo()).incidents.createTemplate(name, items, actor)
   }
 
   async listAudits(companyId: string, filters: AuditFilters) {
     if (SERVER_AUDITS) return auditsApi.listAudits(companyId, filters)
     await delay(LATENCY())
-    return this.incidents.listAudits(companyId, filters)
+    return (await this.demo()).incidents.listAudits(companyId, filters)
   }
 
   async getAuditDetail(id: string) {
     if (SERVER_AUDITS) return auditsApi.getAuditDetail(id)
     await delay(LATENCY() / 2)
-    return this.incidents.getAuditDetail(id)
+    return (await this.demo()).incidents.getAuditDetail(id)
   }
 
   async createAudit(input: NewAuditInput, actor: Actor) {
@@ -1056,13 +1058,13 @@ class MockApiClient implements ApiClient {
       return a
     }
     await delay(LATENCY() / 2)
-    return this.incidents.createAudit(input, actor)
+    return (await this.demo()).incidents.createAudit(input, actor)
   }
 
   async startAudit(id: string, actor: Actor) {
     if (SERVER_AUDITS) return auditsApi.startAudit(id)
     await delay(LATENCY() / 3)
-    return this.incidents.startAudit(id, actor)
+    return (await this.demo()).incidents.startAudit(id, actor)
   }
 
   async completeAudit(id: string, input: CompleteAuditInput, actor: Actor) {
@@ -1079,7 +1081,7 @@ class MockApiClient implements ApiClient {
       return r
     }
     await delay(LATENCY() / 2)
-    return this.incidents.completeAudit(id, input, actor)
+    return (await this.demo()).incidents.completeAudit(id, input, actor)
   }
 
   async closeAudit(id: string, actor: Actor) {
@@ -1090,19 +1092,19 @@ class MockApiClient implements ApiClient {
       return a
     }
     await delay(LATENCY() / 3)
-    return this.incidents.closeAudit(id, actor)
+    return (await this.demo()).incidents.closeAudit(id, actor)
   }
 
   async listFindings(companyId: string, severity?: string) {
     if (SERVER_AUDITS) return auditsApi.listFindings(companyId, severity)
     await delay(LATENCY() / 2)
-    return this.incidents.listFindings(companyId, severity)
+    return (await this.demo()).incidents.listFindings(companyId, severity)
   }
 
   async listObligations(companyId: string) {
     if (SERVER_AUDITS) return auditsApi.listObligations(companyId)
     await delay(LATENCY() / 2)
-    return this.incidents.listObligations(companyId)
+    return (await this.demo()).incidents.listObligations(companyId)
   }
 
   async renewObligation(id: string, nextDue: string, note: string, actor: Actor) {
@@ -1113,13 +1115,13 @@ class MockApiClient implements ApiClient {
       return o
     }
     await delay(LATENCY() / 3)
-    return this.incidents.renewObligation(id, nextDue, note, actor)
+    return (await this.demo()).incidents.renewObligation(id, nextDue, note, actor)
   }
 
   async listDocuments(companyId: string, q?: string, kind?: DocKind | '') {
     if (SERVER_AUDITS) return auditsApi.listDocuments(companyId, q, kind)
     await delay(LATENCY() / 2)
-    return this.incidents.listDocuments(companyId, q, kind)
+    return (await this.demo()).incidents.listDocuments(companyId, q, kind)
   }
 
   async addDocumentVersion(docId: string | null, input: { name: string; kind: DocKind; sizeKb: number; note: string; companyId: string; siteId: string | null }, actor: Actor) {
@@ -1130,7 +1132,7 @@ class MockApiClient implements ApiClient {
       return d
     }
     await delay(LATENCY() / 2)
-    return this.incidents.addDocumentVersion(docId, input, actor)
+    return (await this.demo()).incidents.addDocumentVersion(docId, input, actor)
   }
 
   async approveDocument(id: string, actor: Actor) {
@@ -1141,13 +1143,13 @@ class MockApiClient implements ApiClient {
       return d
     }
     await delay(LATENCY() / 3)
-    return this.incidents.approveDocument(id, actor)
+    return (await this.demo()).incidents.approveDocument(id, actor)
   }
 
   async auditStats(companyId: string) {
     if (SERVER_AUDITS) return auditsApi.auditStats(companyId)
     await delay(LATENCY() / 2)
-    return this.incidents.auditStats(companyId)
+    return (await this.demo()).incidents.auditStats(companyId)
   }
 
   // ── training & competency ──────────────────────────────────────────────────
@@ -1155,7 +1157,7 @@ class MockApiClient implements ApiClient {
   async listCourses(companyId: string) {
     if (SERVER_TRAINING) return trainingApi.listCourses(companyId)
     await delay(LATENCY() / 2)
-    return this.incidents.listCourses(companyId)
+    return (await this.demo()).incidents.listCourses(companyId)
   }
 
   async createCourse(companyId: string, input: NewCourseInput, actor: Actor) {
@@ -1167,25 +1169,25 @@ class MockApiClient implements ApiClient {
       return c
     }
     await delay(LATENCY() / 2)
-    return this.incidents.createCourse(input, actor)
+    return (await this.demo()).incidents.createCourse(input, actor)
   }
 
   async trainingMatrix(companyId: string, actor: Actor) {
     if (SERVER_TRAINING) return trainingApi.matrix(companyId)
     await delay(LATENCY())
-    return this.incidents.trainingMatrix(companyId, actor)
+    return (await this.demo()).incidents.trainingMatrix(companyId, actor)
   }
 
   async getEmployeeTraining(employeeId: string) {
     if (SERVER_TRAINING) return trainingApi.employeeProfile(employeeId)
     await delay(LATENCY() / 2)
-    return this.incidents.getEmployeeTraining(employeeId)
+    return (await this.demo()).incidents.getEmployeeTraining(employeeId)
   }
 
   async listSessions(companyId: string, filters: SessionFilters) {
     if (SERVER_TRAINING) return trainingApi.listSessions(companyId, filters)
     await delay(LATENCY())
-    return this.incidents.listSessions(companyId, filters)
+    return (await this.demo()).incidents.listSessions(companyId, filters)
   }
 
   async createSession(input: NewSessionInput, actor: Actor) {
@@ -1196,13 +1198,13 @@ class MockApiClient implements ApiClient {
       return s
     }
     await delay(LATENCY() / 2)
-    return this.incidents.createSession(input, actor)
+    return (await this.demo()).incidents.createSession(input, actor)
   }
 
   async enrollSession(sessionId: string, employeeIds: string[], actor: Actor) {
     if (SERVER_TRAINING) return trainingApi.enrollSession(sessionId, employeeIds)
     await delay(LATENCY() / 3)
-    return this.incidents.enrollSession(sessionId, employeeIds, actor)
+    return (await this.demo()).incidents.enrollSession(sessionId, employeeIds, actor)
   }
 
   async completeSession(sessionId: string, input: CompleteSessionInput, actor: Actor) {
@@ -1217,19 +1219,19 @@ class MockApiClient implements ApiClient {
       return r
     }
     await delay(LATENCY() / 2)
-    return this.incidents.completeSession(sessionId, input, actor)
+    return (await this.demo()).incidents.completeSession(sessionId, input, actor)
   }
 
   async listCertificates(companyId: string, filters: TrainingFilters, actor: Actor) {
     if (SERVER_TRAINING) return trainingApi.listCertificates(companyId, filters)
     await delay(LATENCY() / 2)
-    return this.incidents.listCertificates(companyId, filters, actor)
+    return (await this.demo()).incidents.listCertificates(companyId, filters, actor)
   }
 
   async verifyCertificate(codeOrKey: string) {
     if (SERVER_TRAINING) return trainingApi.verifyCertificate(codeOrKey)
     await delay(LATENCY() / 3)
-    return this.incidents.verifyCertificate(codeOrKey)
+    return (await this.demo()).incidents.verifyCertificate(codeOrKey)
   }
 
   async raiseTrainingAction(employeeId: string, courseId: string, actor: Actor) {
@@ -1239,13 +1241,13 @@ class MockApiClient implements ApiClient {
       return a
     }
     await delay(LATENCY() / 2)
-    return this.incidents.raiseTrainingAction(employeeId, courseId, actor)
+    return (await this.demo()).incidents.raiseTrainingAction(employeeId, courseId, actor)
   }
 
   async trainingStats(companyId: string) {
     if (SERVER_TRAINING) return trainingApi.stats(companyId)
     await delay(LATENCY() / 2)
-    return this.incidents.trainingStats(companyId)
+    return (await this.demo()).incidents.trainingStats(companyId)
   }
 
   // ── administration ─────────────────────────────────────────────────────────
@@ -1254,11 +1256,11 @@ class MockApiClient implements ApiClient {
 
   async adminListUsers(companyId: string, filters: { q?: string; status?: string; role?: string }) {
     if (SERVER_ADMIN) return adminApi.listUsers(companyId, filters)
-    await delay(LATENCY()); return this.admin.listUsers(companyId, filters)
+    await delay(LATENCY()); return (await this.demo()).admin.listUsers(companyId, filters)
   }
   async adminGetUser(companyId: string, id: string) {
     if (SERVER_ADMIN) return adminApi.getUser(companyId, id)
-    await delay(LATENCY() / 3); return this.admin.getUser(id)
+    await delay(LATENCY() / 3); return (await this.demo()).admin.getUser(id)
   }
   async adminCreateUser(companyId: string, input: NewUserInput, actor: AdminActor) {
     if (SERVER_ADMIN) {
@@ -1268,11 +1270,11 @@ class MockApiClient implements ApiClient {
         `Role: ${u.role}.`)
       return u
     }
-    await delay(LATENCY() / 2); return this.admin.createUser(companyId, input, actor)
+    await delay(LATENCY() / 2); return (await this.demo()).admin.createUser(companyId, input, actor)
   }
   async adminSetUserStatus(companyId: string, id: string, status: AdminUser['status'], actor: AdminActor) {
     if (SERVER_ADMIN) return adminApi.setUserStatus(companyId, id, status)
-    await delay(LATENCY() / 3); return this.admin.setUserStatus(id, status, actor)
+    await delay(LATENCY() / 3); return (await this.demo()).admin.setUserStatus(id, status, actor)
   }
   async adminResetPassword(companyId: string, id: string, actor: AdminActor) {
     if (SERVER_ADMIN) {
@@ -1285,15 +1287,15 @@ class MockApiClient implements ApiClient {
     }
     // The credential-free demo has no mail transport, so it always hands the link back.
     await delay(LATENCY() / 3)
-    return { ...this.admin.resetPassword(id, actor), emailed: false }
+    return { ...(await this.demo()).admin.resetPassword(id, actor), emailed: false }
   }
   async adminForcePasswordReset(companyId: string, id: string, actor: AdminActor) {
     if (SERVER_ADMIN) return adminApi.forcePasswordReset(companyId, id)
-    await delay(LATENCY() / 3); return this.admin.forcePasswordReset(id, actor)
+    await delay(LATENCY() / 3); return (await this.demo()).admin.forcePasswordReset(id, actor)
   }
   async adminToggleMfa(companyId: string, id: string, actor: AdminActor) {
     if (SERVER_ADMIN) return adminApi.toggleMfa(companyId, id)
-    await delay(LATENCY() / 3); return this.admin.toggleMfa(id, actor)
+    await delay(LATENCY() / 3); return (await this.demo()).admin.toggleMfa(id, actor)
   }
   async adminBulkImport(companyId: string, csv: string, actor: AdminActor) {
     if (SERVER_ADMIN) {
@@ -1302,146 +1304,146 @@ class MockApiClient implements ApiClient {
         `${r.skipped} duplicate(s) skipped.`)
       return r
     }
-    await delay(LATENCY()); return this.admin.bulkImportUsers(companyId, csv, actor)
+    await delay(LATENCY()); return (await this.demo()).admin.bulkImportUsers(companyId, csv, actor)
   }
   async adminUserDevices(companyId: string, id: string) {
     if (SERVER_ADMIN) return adminApi.userDevices(companyId, id)
-    await delay(LATENCY() / 3); return this.admin.getUserDevices(id)
+    await delay(LATENCY() / 3); return (await this.demo()).admin.getUserDevices(id)
   }
   async adminUserLoginHistory(companyId: string, id: string) {
     if (SERVER_ADMIN) return adminApi.userLoginHistory(companyId, id)
-    await delay(LATENCY() / 3); return this.admin.getUserLoginHistory(id)
+    await delay(LATENCY() / 3); return (await this.demo()).admin.getUserLoginHistory(id)
   }
 
   async adminListRoles(companyId: string) {
     if (SERVER_ADMIN) return adminApi.listRoles(companyId)
-    await delay(LATENCY() / 2); return this.admin.listRoles()
+    await delay(LATENCY() / 2); return (await this.demo()).admin.listRoles()
   }
   async adminToggleRolePermission(companyId: string, roleId: string, module: RbacModule, action: RbacAction, actor: AdminActor) {
     if (SERVER_ADMIN) return adminApi.toggleRolePermission(companyId, roleId, module, action)
-    await delay(LATENCY() / 3); return this.admin.toggleRolePermission(roleId, module, action, actor)
+    await delay(LATENCY() / 3); return (await this.demo()).admin.toggleRolePermission(roleId, module, action, actor)
   }
   async adminCreateRole(companyId: string, name: string, cloneFrom: string, actor: AdminActor) {
     if (SERVER_ADMIN) return adminApi.createRole(companyId, name, cloneFrom)
-    await delay(LATENCY() / 2); return this.admin.createRole(name, cloneFrom, actor)
+    await delay(LATENCY() / 2); return (await this.demo()).admin.createRole(name, cloneFrom, actor)
   }
   async adminDeleteRole(companyId: string, roleId: string, actor: AdminActor) {
     if (SERVER_ADMIN) return adminApi.deleteRole(companyId, roleId)
-    await delay(LATENCY() / 3); this.admin.deleteRole(roleId, actor)
+    await delay(LATENCY() / 3); (await this.demo()).admin.deleteRole(roleId, actor)
   }
 
   async adminListAudit(companyId: string, filters: AdminAuditFilters) {
     // The server path is paged; drain hands back every page it could reach and warns to
     // the console when its own ceiling stopped it, exactly as the other list screens do.
     if (SERVER_ADMIN) return (await adminApi.listAudit(companyId, filters)).rows
-    await delay(LATENCY() / 2); return this.admin.listAudit(filters)
+    await delay(LATENCY() / 2); return (await this.demo()).admin.listAudit(filters)
   }
   async adminGetSecurity(companyId: string) {
     if (SERVER_ADMIN) return adminApi.getSecurity(companyId)
-    await delay(LATENCY() / 3); return this.admin.getSecurity()
+    await delay(LATENCY() / 3); return (await this.demo()).admin.getSecurity()
   }
   async adminUpdateSecurity(companyId: string, patch: Partial<SecuritySettings>, actor: AdminActor) {
     if (SERVER_ADMIN) return adminApi.updateSecurity(companyId, patch)
-    await delay(LATENCY() / 3); return this.admin.updateSecurity(patch, actor)
+    await delay(LATENCY() / 3); return (await this.demo()).admin.updateSecurity(patch, actor)
   }
   async adminLoginHistory(companyId: string) {
     if (SERVER_ADMIN) return adminApi.loginHistory(companyId)
-    await delay(LATENCY() / 2); return this.admin.listLoginHistory()
+    await delay(LATENCY() / 2); return (await this.demo()).admin.listLoginHistory()
   }
   async adminSecurityCenter(companyId: string) {
     if (SERVER_ADMIN) return adminApi.securityCenter(companyId)
-    await delay(LATENCY() / 2); return this.admin.securityCenter(companyId)
+    await delay(LATENCY() / 2); return (await this.demo()).admin.securityCenter(companyId)
   }
 
   async adminListConnectors(companyId: string) {
     if (SERVER_ADMIN) return adminApi.listConnectors(companyId)
-    await delay(LATENCY() / 2); return this.admin.listConnectors()
+    await delay(LATENCY() / 2); return (await this.demo()).admin.listConnectors()
   }
   async adminSetConnector(companyId: string, id: string, connected: boolean, config: Record<string, string> | undefined, actor: AdminActor) {
     if (SERVER_ADMIN) return adminApi.setConnector(companyId, id, connected, config)
-    await delay(LATENCY() / 2); return this.admin.setConnector(id, connected, config, actor)
+    await delay(LATENCY() / 2); return (await this.demo()).admin.setConnector(id, connected, config, actor)
   }
   async adminListApiKeys(companyId: string) {
     if (SERVER_ADMIN) return adminApi.listApiKeys(companyId)
-    await delay(LATENCY() / 2); return this.admin.listApiKeys()
+    await delay(LATENCY() / 2); return (await this.demo()).admin.listApiKeys()
   }
   async adminCreateApiKey(companyId: string, name: string, scopes: RbacAction[], actor: AdminActor) {
     if (SERVER_ADMIN) return adminApi.createApiKey(companyId, name, scopes)
-    await delay(LATENCY() / 2); return this.admin.createApiKey(name, scopes, actor)
+    await delay(LATENCY() / 2); return (await this.demo()).admin.createApiKey(name, scopes, actor)
   }
   async adminRevokeApiKey(companyId: string, id: string, actor: AdminActor) {
     if (SERVER_ADMIN) return adminApi.revokeApiKey(companyId, id)
-    await delay(LATENCY() / 3); return this.admin.revokeApiKey(id, actor)
+    await delay(LATENCY() / 3); return (await this.demo()).admin.revokeApiKey(id, actor)
   }
   async adminListWebhooks(companyId: string) {
     if (SERVER_ADMIN) return adminApi.listWebhooks(companyId)
-    await delay(LATENCY() / 2); return this.admin.listWebhooks()
+    await delay(LATENCY() / 2); return (await this.demo()).admin.listWebhooks()
   }
   async adminCreateWebhook(companyId: string, url: string, events: string[], actor: AdminActor) {
     if (SERVER_ADMIN) return adminApi.createWebhook(companyId, url, events)
-    await delay(LATENCY() / 2); return this.admin.createWebhook(url, events, actor)
+    await delay(LATENCY() / 2); return (await this.demo()).admin.createWebhook(url, events, actor)
   }
   async adminToggleWebhook(companyId: string, id: string, actor: AdminActor) {
     if (SERVER_ADMIN) return adminApi.toggleWebhook(companyId, id)
-    await delay(LATENCY() / 3); return this.admin.toggleWebhook(id, actor)
+    await delay(LATENCY() / 3); return (await this.demo()).admin.toggleWebhook(id, actor)
   }
   async adminTestWebhook(companyId: string, id: string, actor: AdminActor) {
     if (SERVER_ADMIN) return adminApi.testWebhook(companyId, id)
-    await delay(LATENCY()); return this.admin.testWebhook(id, actor)
+    await delay(LATENCY()); return (await this.demo()).admin.testWebhook(id, actor)
   }
   async adminApiUsage(companyId: string) {
     if (SERVER_ADMIN) return adminApi.apiUsage(companyId)
-    await delay(LATENCY() / 2); return this.admin.apiUsage()
+    await delay(LATENCY() / 2); return (await this.demo()).admin.apiUsage()
   }
 
   async adminGetOrgSettings(companyId: string) {
     if (SERVER_ADMIN) return adminApi.getOrgSettings(companyId)
-    await delay(LATENCY() / 3); return this.admin.getOrgSettings(companyId)
+    await delay(LATENCY() / 3); return (await this.demo()).admin.getOrgSettings(companyId)
   }
   async adminUpdateOrgSettings(companyId: string, patch: Partial<OrgSettings>, actor: AdminActor) {
     if (SERVER_ADMIN) return adminApi.updateOrgSettings(companyId, patch)
-    await delay(LATENCY() / 3); return this.admin.updateOrgSettings(companyId, patch, actor)
+    await delay(LATENCY() / 3); return (await this.demo()).admin.updateOrgSettings(companyId, patch, actor)
   }
   async adminListPositions(companyId: string) {
     if (SERVER_ADMIN) return adminApi.listConfig<JobPosition>(companyId, 'position')
-    await delay(LATENCY() / 3); return this.admin.listPositions()
+    await delay(LATENCY() / 3); return (await this.demo()).admin.listPositions()
   }
   async adminListShifts(companyId: string) {
     if (SERVER_ADMIN) return adminApi.listConfig<ShiftPattern>(companyId, 'shift')
-    await delay(LATENCY() / 3); return this.admin.listShifts()
+    await delay(LATENCY() / 3); return (await this.demo()).admin.listShifts()
   }
   async adminListHolidays(companyId: string) {
     if (SERVER_ADMIN) return adminApi.listConfig<Holiday>(companyId, 'holiday')
-    await delay(LATENCY() / 3); return this.admin.listHolidays()
+    await delay(LATENCY() / 3); return (await this.demo()).admin.listHolidays()
   }
   async adminListUnits(companyId: string) {
     if (SERVER_ADMIN) return adminApi.listConfig<BusinessUnit>(companyId, 'unit')
-    await delay(LATENCY() / 3); return this.admin.listUnits()
+    await delay(LATENCY() / 3); return (await this.demo()).admin.listUnits()
   }
   async adminAddConfigItem(companyId: string, kind: 'position' | 'shift' | 'holiday' | 'unit', data: Record<string, string>, actor: AdminActor) {
     if (SERVER_ADMIN) return adminApi.addConfigItem(companyId, kind, data)
-    await delay(LATENCY() / 3); this.admin.addConfigItem(kind, data, actor)
+    await delay(LATENCY() / 3); (await this.demo()).admin.addConfigItem(kind, data, actor)
   }
   async adminRemoveConfigItem(companyId: string, kind: 'position' | 'shift' | 'holiday' | 'unit', id: string, actor: AdminActor) {
     if (SERVER_ADMIN) return adminApi.removeConfigItem(companyId, kind, id)
-    await delay(LATENCY() / 3); this.admin.removeConfigItem(kind, id, actor)
+    await delay(LATENCY() / 3); (await this.demo()).admin.removeConfigItem(kind, id, actor)
   }
 
   async adminSystemHealth(companyId: string) {
     if (SERVER_ADMIN) return adminApi.systemHealth(companyId)
-    await delay(LATENCY() / 2); return this.admin.systemHealth()
+    await delay(LATENCY() / 2); return (await this.demo()).admin.systemHealth()
   }
   async adminGetRetention(companyId: string) {
     if (SERVER_ADMIN) return adminApi.getRetention(companyId)
-    await delay(LATENCY() / 3); return this.admin.getRetention()
+    await delay(LATENCY() / 3); return (await this.demo()).admin.getRetention()
   }
   async adminUpdateRetention(companyId: string, patch: Partial<RetentionSettings>, actor: AdminActor) {
     if (SERVER_ADMIN) return adminApi.updateRetention(companyId, patch)
-    await delay(LATENCY() / 3); return this.admin.updateRetention(patch, actor)
+    await delay(LATENCY() / 3); return (await this.demo()).admin.updateRetention(patch, actor)
   }
   async adminListBackups(companyId: string) {
     if (SERVER_ADMIN) return adminApi.listBackups(companyId)
-    await delay(LATENCY() / 2); return this.admin.listBackups()
+    await delay(LATENCY() / 2); return (await this.demo()).admin.listBackups()
   }
   async adminCreateBackup(companyId: string, actor: AdminActor, note: string) {
     if (SERVER_ADMIN) {
@@ -1450,7 +1452,7 @@ class MockApiClient implements ApiClient {
         `${r.backup.sizeKb} KB snapshot — restorable and downloadable.`)
       return r
     }
-    await delay(LATENCY()); return this.admin.createBackup(actor, note)
+    await delay(LATENCY()); return (await this.demo()).admin.createBackup(actor, note)
   }
   async adminRestoreBackup(companyId: string, id: string, actor: AdminActor) {
     if (SERVER_ADMIN) {
@@ -1459,7 +1461,7 @@ class MockApiClient implements ApiClient {
         `${r.restored} row(s) reinstated. A snapshot of the previous state was taken first.`)
       return
     }
-    await delay(LATENCY()); this.admin.restoreBackup(id, actor)
+    await delay(LATENCY()); (await this.demo()).admin.restoreBackup(id, actor)
   }
 
   /**
@@ -1479,22 +1481,22 @@ class MockApiClient implements ApiClient {
 
   async listPermits(companyId: string, filters: PermitFilters) {
     if (SERVER_PERMITS) return permitsApi.list(companyId, filters)
-    await delay(LATENCY()); return this.permits.list(companyId, filters)
+    await delay(LATENCY()); return (await this.demo()).permits.list(companyId, filters)
   }
 
   async getPermit(id: string) {
     if (SERVER_PERMITS) return permitsApi.get(id)
-    await delay(LATENCY() / 2); return this.permits.get(id)
+    await delay(LATENCY() / 2); return (await this.demo()).permits.get(id)
   }
 
   async permitStats(companyId: string, siteId: string | null) {
     if (SERVER_PERMITS) return permitsApi.stats(companyId, siteId)
-    await delay(LATENCY() / 2); return this.permits.stats(companyId, siteId)
+    await delay(LATENCY() / 2); return (await this.demo()).permits.stats(companyId, siteId)
   }
 
   async createPermit(input: NewPermitInput, actor: Actor) {
     if (SERVER_PERMITS) return permitsApi.create(input)
-    await delay(LATENCY()); return this.permits.create(input, actor)
+    await delay(LATENCY()); return (await this.demo()).permits.create(input, actor)
   }
 
   async submitPermit(id: string, actor: Actor) {
@@ -1503,7 +1505,7 @@ class MockApiClient implements ApiClient {
       this.pushNotification(p.companyId, 'system', `Permit ${p.code} awaiting approval`, `${p.typeLabel} — ${p.location}`)
       return p
     }
-    await delay(LATENCY() / 2); return this.permits.submit(id, actor)
+    await delay(LATENCY() / 2); return (await this.demo()).permits.submit(id, actor)
   }
 
   async approvePermit(id: string, statement: string, actor: Actor) {
@@ -1513,7 +1515,7 @@ class MockApiClient implements ApiClient {
         `${p.typeLabel} at ${p.location}. Valid until ${fmtClock(p.validTo)}.`)
       return p
     }
-    await delay(LATENCY() / 2); return this.permits.approve(id, statement, actor)
+    await delay(LATENCY() / 2); return (await this.demo()).permits.approve(id, statement, actor)
   }
 
   async rejectPermit(id: string, reason: string, actor: Actor) {
@@ -1522,12 +1524,12 @@ class MockApiClient implements ApiClient {
       this.pushNotification(p.companyId, 'system', `Permit ${p.code} rejected`, reason)
       return p
     }
-    await delay(LATENCY() / 2); return this.permits.reject(id, reason, actor)
+    await delay(LATENCY() / 2); return (await this.demo()).permits.reject(id, reason, actor)
   }
 
   async activatePermit(id: string, actor: Actor) {
     if (SERVER_PERMITS) return permitsApi.activate(id)
-    await delay(LATENCY() / 3); return this.permits.activate(id, actor)
+    await delay(LATENCY() / 3); return (await this.demo()).permits.activate(id, actor)
   }
 
   async suspendPermit(id: string, reason: string, actor: Actor) {
@@ -1536,22 +1538,22 @@ class MockApiClient implements ApiClient {
       this.pushNotification(p.companyId, 'incident', `Permit ${p.code} suspended`, `${reason} — work must stop immediately.`)
       return p
     }
-    await delay(LATENCY() / 3); return this.permits.suspend(id, reason, actor)
+    await delay(LATENCY() / 3); return (await this.demo()).permits.suspend(id, reason, actor)
   }
 
   async resumePermit(id: string, actor: Actor) {
     if (SERVER_PERMITS) return permitsApi.resume(id)
-    await delay(LATENCY() / 3); return this.permits.resume(id, actor)
+    await delay(LATENCY() / 3); return (await this.demo()).permits.resume(id, actor)
   }
 
   async closePermit(id: string, input: { handbackConfirmed: boolean; statement: string }, actor: Actor) {
     if (SERVER_PERMITS) return permitsApi.close(id, input)
-    await delay(LATENCY() / 2); return this.permits.close(id, input, actor)
+    await delay(LATENCY() / 2); return (await this.demo()).permits.close(id, input, actor)
   }
 
   async confirmPermitControl(permitId: string, controlId: string, confirmed: boolean, actor: Actor) {
     if (SERVER_PERMITS) return permitsApi.confirmControl(permitId, controlId, confirmed)
-    await delay(120); return this.permits.confirmControl(permitId, controlId, confirmed, actor)
+    await delay(120); return (await this.demo()).permits.confirmControl(permitId, controlId, confirmed, actor)
   }
 
   async addPermitGasTest(permitId: string, reading: Omit<GasTest, 'id' | 'testedAt' | 'testedBy' | 'pass'>, actor: Actor) {
@@ -1566,17 +1568,17 @@ class MockApiClient implements ApiClient {
       }
       return p
     }
-    await delay(LATENCY() / 2); return this.permits.addGasTest(permitId, reading, actor)
+    await delay(LATENCY() / 2); return (await this.demo()).permits.addGasTest(permitId, reading, actor)
   }
 
   async addPermitIsolation(permitId: string, input: Pick<IsolationPoint, 'description' | 'tagId'>, actor: Actor) {
     if (SERVER_PERMITS) return permitsApi.addIsolation(permitId, input)
-    await delay(LATENCY() / 2); return this.permits.addIsolation(permitId, input, actor)
+    await delay(LATENCY() / 2); return (await this.demo()).permits.addIsolation(permitId, input, actor)
   }
 
   async releasePermitIsolation(permitId: string, isolationId: string, actor: Actor) {
     if (SERVER_PERMITS) return permitsApi.releaseIsolation(permitId, isolationId)
-    await delay(LATENCY() / 2); return this.permits.releaseIsolation(permitId, isolationId, actor)
+    await delay(LATENCY() / 2); return (await this.demo()).permits.releaseIsolation(permitId, isolationId, actor)
   }
 
   /**
@@ -1585,7 +1587,7 @@ class MockApiClient implements ApiClient {
    */
   async sweepPermitExpiry(companyId: string) {
     if (!SERVER_PERMITS) {
-      this.permits.sweepExpiring()
+      ;(await this.demo()).permits.sweepExpiring()
       return
     }
     if (!companyId) return
