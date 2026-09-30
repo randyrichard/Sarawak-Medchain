@@ -25,6 +25,7 @@ import { CALIBRATED_CATEGORIES } from './equipmentService.js'
 import { ReportService } from './reportService.js'
 import { dueSlotKey, nextRunAt, type Frequency } from './reportSchedule.js'
 import { enqueueEvent, sweepDeliveries } from './webhookService.js'
+import { LOCK_SCHEDULER_SWEEP, LOCK_WEBHOOK_DELIVERY, withLeaderLock } from './leaderLock.js'
 
 const MINUTE = 60_000
 const DAY = 86400_000
@@ -921,6 +922,33 @@ export class Scheduler {
   }
 
   /**
+   * One reminder-and-report pass, if no other instance is running one.
+   *
+   * The timers call this rather than runOnce. With more than one API replica each would
+   * otherwise sweep independently: the notification dedupe is check-then-insert, so two
+   * concurrent passes can both find a reminder missing and both raise it. Returns null
+   * when another instance holds the pass.
+   */
+  async sweepIfLeader(now = new Date()) {
+    const r = await withLeaderLock(this.db, LOCK_SCHEDULER_SWEEP, () => this.runOnce(now))
+    return r.ran ? r.value : null
+  }
+
+  /**
+   * One webhook-delivery sweep, if no other instance is running one.
+   *
+   * sweepDeliveries reads every pending, due delivery and sends it. Two instances reading
+   * together would each send the same event - and a receiver cannot tell a duplicate
+   * incident alert from a second incident. Returns null when another instance holds it.
+   */
+  async deliverIfLeader(now = new Date()) {
+    const r = await withLeaderLock(
+      this.db, LOCK_WEBHOOK_DELIVERY, () => sweepDeliveries(this.db, now), 5 * 60_000,
+    )
+    return r.ran ? r.value : null
+  }
+
+  /**
    * Begins sweeping. The first pass runs immediately so a freshly started instance is
    * current rather than fifteen minutes behind.
    */
@@ -930,7 +958,9 @@ export class Scheduler {
       if (this.running) return // a slow pass must not overlap the next tick
       this.running = true
       try {
-        const n = await this.runOnce()
+        const n = await this.sweepIfLeader()
+        // Another instance holds the pass this time; it is doing the work.
+        if (!n) return
         // Every sweep counted: a total that silently omits one makes a flood from that
         // sweep invisible in the logs, which is exactly when you need to see it.
         const total = n.actions + n.inspections + n.certificates + n.medicals + n.contractors + n.permits
@@ -970,7 +1000,8 @@ export class Scheduler {
       if (this.deliveringWebhooks) return
       this.deliveringWebhooks = true
       try {
-        const n = await sweepDeliveries(this.db)
+        const n = await this.deliverIfLeader()
+        if (!n) return
         lastRuns.set('j6', new Date().toISOString())
         if (n.attempted > 0) {
           // eslint-disable-next-line no-console

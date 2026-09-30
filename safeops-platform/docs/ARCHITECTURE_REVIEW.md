@@ -91,7 +91,7 @@ Ordered by what they would cost in production.
 | 5 | Error handling | 23 copy-pasted error classes, and `app.ts` listed all 23 in an `instanceof` chain | A new module not added to the list returns every 403/404 as a 500 | **Fixed**: `DomainError` base plus a guard test |
 | 6 | Route boilerplate | Identical `callerOf` in 23 route files | Identity extraction is security-relevant; 23 copies can drift | **Fixed**: `middleware/caller.ts` |
 | 7 | Web request helper | `incidentsApi.ts` carried a verbatim copy of `http.ts`'s `request()`, including session-refresh and wrong-account handling | A security fix to one copy misses the other | **Fixed**: uses the shared helper |
-| 8 | Scheduler placement | Timers run inside the API process | A second API replica runs every sweep twice. Report runs are safe (unique `(scheduleId, dueSlot)`), but notification dedupe is check-then-insert, so two replicas can race and duplicate | Open: see 4.2 |
+| 8 | Scheduler placement | Timers run inside the API process, so every replica ran every sweep. Notification dedupe is check-then-insert, so two replicas racing could raise duplicates, and the webhook queue read the same pending rows on each replica, sending every webhook twice | Duplicate reminders and duplicate webhooks as soon as a second replica runs | **Fixed**: each pass runs under a Postgres advisory lock (`lib/leaderLock.ts`), so exactly one replica sweeps and the lock is released even if that replica dies. Moving the scheduler to its own service (4.2 step 3) is still open |
 | 9 | Hybrid mock/real client | `MockApiClient` is both the demo and a production path; production modules (`org/people.ts`, `org/departments.ts`, `AttendanceRunner`, `InspectionRunner`) import demo fixtures directly as their no-API fallback | ~4k lines of fixtures ship in every production bundle (main chunk 404 KB / 115 KB gz). The fallbacks filter by the demo's company ids, so they don't show demo data to a real tenant, but every feature carries two code paths to maintain | Open: see 4.3 |
 | 10 | Route try/catch | 290 hand-written `try { … } catch (e) { next(e) }` blocks (Express 4 doesn't forward async rejections) | Noise; a forgotten wrapper hangs the request | Open: see 4.1 |
 | 11 | Board action counts | `board()` counts overdue actions company-wide, while `stats()` narrows them to the owner for employees and supervisors | An employee's board shows a company-wide overdue count | Open: needs a product decision, not a refactor |
@@ -115,8 +115,9 @@ export const asyncRoute =
 
 ### 4.2 Scheduler out of the web process
 
-1. Guard `runOnce` with a Postgres advisory lock (`pg_try_advisory_lock(<const>)`). Only
-   the replica holding it sweeps. This is a single change.
+1. ~~Guard each pass with a Postgres advisory lock.~~ **Done**: `withLeaderLock` takes
+   `pg_try_advisory_xact_lock` in a holding transaction. The replica that gets it runs the
+   pass, and the others skip that tick.
 2. Make notification dedupe atomic: a partial unique index on `(companyId, href)` for
    scheduler-raised kinds, with inserts using `ON CONFLICT DO NOTHING`. Existing duplicate
    rows must be cleaned up in the migration first.
