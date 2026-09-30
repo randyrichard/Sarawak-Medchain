@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import { PrismaClient } from '@prisma/client'
 import { ToolboxService, ToolboxError, type ToolboxInput } from './toolboxService.js'
 import { ReportService } from './reportService.js'
-import type { Caller } from './incidentService.js'
+import type { Caller } from '../domain/caller.js'
 
 /**
  * The daily site toolbox meeting, against a REAL PostgreSQL database.

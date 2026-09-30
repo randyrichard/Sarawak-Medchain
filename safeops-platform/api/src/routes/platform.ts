@@ -5,8 +5,9 @@ import { prisma } from '../lib/prisma.js'
 import { PrismaRateLimitStore } from '../lib/rateLimitStore.js'
 import { ProvisioningService } from '../lib/provisioningService.js'
 import { SELLABLE_PLANS, formatMyr } from '../lib/planCatalog.js'
-import { requireAuth } from '../middleware/requireAuth.js'
-import { callerOf } from '../middleware/caller.js'
+import { requireAuth } from '../http/requireAuth.js'
+import { callerOf } from '../http/caller.js'
+import { asyncRoute } from '../http/asyncRoute.js'
 
 /**
  * The SafeOps platform console.
@@ -48,32 +49,28 @@ const provisionLimiter = rateLimit({
  * uses this to decide whether to show the navigation entry at all, and a forbidden here
  * would be an error on every ordinary customer's first page load.
  */
-platformRouter.get('/me', async (req, res, next) => {
-  try {
-    const platformAdmin = await svc.isPlatformAdmin(callerOf(req))
-    res.json({
-      platformAdmin,
-      plans: platformAdmin
-        ? SELLABLE_PLANS.map((p) => ({
-          key: p.key,
-          label: p.label,
-          summary: p.summary,
-          monthlyPriceMyr: p.monthlyPriceMyr,
-          monthlyPrice: formatMyr(p.monthlyPriceMyr),
-          // What the operator is actually selling, so the console shows the difference
-          // between two plans rather than two prices.
-          entitlements: p.entitlements,
-        }))
-        : [],
-    })
-  } catch (e) { next(e) }
-})
+platformRouter.get('/me', asyncRoute(async (req, res) => {
+  const platformAdmin = await svc.isPlatformAdmin(callerOf(req))
+  res.json({
+    platformAdmin,
+    plans: platformAdmin
+      ? SELLABLE_PLANS.map((p) => ({
+        key: p.key,
+        label: p.label,
+        summary: p.summary,
+        monthlyPriceMyr: p.monthlyPriceMyr,
+        monthlyPrice: formatMyr(p.monthlyPriceMyr),
+        // What the operator is actually selling, so the console shows the difference
+        // between two plans rather than two prices.
+        entitlements: p.entitlements,
+      }))
+      : [],
+  })
+}))
 
-platformRouter.get('/companies', async (req, res, next) => {
-  try {
-    res.json({ rows: await svc.listCompanies(callerOf(req)) })
-  } catch (e) { next(e) }
-})
+platformRouter.get('/companies', asyncRoute(async (req, res) => {
+  res.json({ rows: await svc.listCompanies(callerOf(req)) })
+}))
 
 const PROVISION = z.object({
   companyName: z.string().min(1).max(160),
@@ -86,21 +83,17 @@ const PROVISION = z.object({
   siteTimezone: z.string().max(64).optional(),
 })
 
-platformRouter.post('/companies', provisionLimiter, async (req, res, next) => {
-  try {
-    const input = PROVISION.parse(req.body)
-    res.status(201).json(await svc.provisionCompany(callerOf(req), ctxOf(req), input))
-  } catch (e) { next(e) }
-})
+platformRouter.post('/companies', provisionLimiter, asyncRoute(async (req, res) => {
+  const input = PROVISION.parse(req.body)
+  res.status(201).json(await svc.provisionCompany(callerOf(req), ctxOf(req), input))
+}))
 
-platformRouter.patch('/companies/:id', async (req, res, next) => {
-  try {
-    const patch = z.object({
-      plan: z.string().max(40).optional(),
-      status: z.string().max(40).optional(),
-      subscriptionStatus: z.string().max(40).optional(),
-      billingReference: z.string().max(200).nullable().optional(),
-    }).parse(req.body)
-    res.json(await svc.setCompanyStatus(callerOf(req), ctxOf(req), req.params.id, patch))
-  } catch (e) { next(e) }
-})
+platformRouter.patch('/companies/:id', asyncRoute(async (req, res) => {
+  const patch = z.object({
+    plan: z.string().max(40).optional(),
+    status: z.string().max(40).optional(),
+    subscriptionStatus: z.string().max(40).optional(),
+    billingReference: z.string().max(200).nullable().optional(),
+  }).parse(req.body)
+  res.json(await svc.setCompanyStatus(callerOf(req), ctxOf(req), req.params.id, patch))
+}))

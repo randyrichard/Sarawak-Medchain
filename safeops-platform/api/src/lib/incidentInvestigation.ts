@@ -1,9 +1,10 @@
 import type {
   IncidentLinkKind, IncidentPersonRole, PrismaClient, Role,
 } from '@prisma/client'
-import { incidentScopeWhere, type Caller } from './incidentService.js'
+import { incidentScopeWhere } from '../domain/access.js'
+import { type Caller, membershipOf } from '../domain/caller.js'
 import { MANDATORY_INVESTIGATION } from './incidentCatalog.js'
-import { DomainError } from './errors.js'
+import { DomainError } from '../domain/errors.js'
 
 /**
  * The investigation half of incident management: who was involved, what else the event
@@ -93,10 +94,9 @@ export class InvestigationService {
   constructor(private db: PrismaClient) {}
 
   private membership(caller: Caller, companyId: string) {
-    const m = caller.roles.find((r) => r.companyId === companyId)
-    if (!m) throw new InvestigationError('forbidden', 'You do not have access to this workspace.', 403)
-    return m
+    return membershipOf(caller, companyId, InvestigationError)
   }
+
 
   private require(caller: Caller, companyId: string, roles: Role[], doing: string) {
     const m = this.membership(caller, companyId)

@@ -8,9 +8,10 @@ import { join, resolve } from 'node:path'
 import { env } from '../env.js'
 import { prisma } from '../lib/prisma.js'
 import { PermitError } from '../lib/permitService.js'
-import type { Caller } from '../lib/incidentService.js'
-import { requireAuth } from '../middleware/requireAuth.js'
-import { callerOf } from '../middleware/caller.js'
+import type { Caller } from '../domain/caller.js'
+import { requireAuth } from '../http/requireAuth.js'
+import { callerOf } from '../http/caller.js'
+import { asyncRoute } from '../http/asyncRoute.js'
 
 /**
  * Permit documents: method statements, JSAs, gas test sheets, isolation certificates
@@ -78,18 +79,14 @@ async function permitFor(caller: Caller, permitId: string) {
   return permit
 }
 
-permitAttachmentsRouter.get('/:id/attachments', async (req, res, next) => {
-  try {
-    await permitFor(callerOf(req), req.params.id)
-    const rows = await prisma.permitAttachment.findMany({
-      where: { permitId: req.params.id },
-      orderBy: { createdAt: 'desc' },
-    })
-    res.json({ rows })
-  } catch (e) {
-    next(e)
-  }
-})
+permitAttachmentsRouter.get('/:id/attachments', asyncRoute(async (req, res) => {
+  await permitFor(callerOf(req), req.params.id)
+  const rows = await prisma.permitAttachment.findMany({
+    where: { permitId: req.params.id },
+    orderBy: { createdAt: 'desc' },
+  })
+  res.json({ rows })
+}))
 
 permitAttachmentsRouter.post('/:id/attachments', (req, res, next) => {
   upload.array('files', 5)(req, res, async (err) => {
@@ -153,64 +150,56 @@ permitAttachmentsRouter.post('/:id/attachments', (req, res, next) => {
 })
 
 /** Download. Authorisation is re-checked, so a stored name alone grants nothing. */
-permitAttachmentsRouter.get('/attachments/:attachmentId', async (req, res, next) => {
-  try {
-    const att = await prisma.permitAttachment.findUnique({
-      where: { id: req.params.attachmentId },
-      include: { permit: { select: { companyId: true } } },
-    })
-    if (!att) throw new PermitError('not_found', 'Attachment not found.', 404)
-    if (!callerOf(req).roles.some((r) => r.companyId === att.permit.companyId)) {
-      throw new PermitError('forbidden', 'You do not have access to this workspace.', 403)
-    }
-
-    res.setHeader('Content-Type', att.mimeType)
-    // Forced download rather than inline: a PDF rendered in-origin can script.
-    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(att.originalName)}"`)
-    res.setHeader('X-Content-Type-Options', 'nosniff')
-    res.sendFile(join(UPLOAD_DIR, att.storedName), (err) => {
-      if (err && !res.headersSent) {
-        res.status(404).json({ error: 'not_found', message: 'File is missing from storage.' })
-      }
-    })
-  } catch (e) {
-    next(e)
+permitAttachmentsRouter.get('/attachments/:attachmentId', asyncRoute(async (req, res) => {
+  const att = await prisma.permitAttachment.findUnique({
+    where: { id: req.params.attachmentId },
+    include: { permit: { select: { companyId: true } } },
+  })
+  if (!att) throw new PermitError('not_found', 'Attachment not found.', 404)
+  if (!callerOf(req).roles.some((r) => r.companyId === att.permit.companyId)) {
+    throw new PermitError('forbidden', 'You do not have access to this workspace.', 403)
   }
-})
 
-permitAttachmentsRouter.delete('/attachments/:attachmentId', async (req, res, next) => {
-  try {
-    const caller = callerOf(req)
-    const att = await prisma.permitAttachment.findUnique({
-      where: { id: req.params.attachmentId },
-      include: { permit: { select: { id: true, companyId: true, status: true } } },
-    })
-    if (!att) throw new PermitError('not_found', 'Attachment not found.', 404)
-    if (!caller.roles.some((r) => r.companyId === att.permit.companyId)) {
-      throw new PermitError('forbidden', 'You do not have access to this workspace.', 403)
+  res.setHeader('Content-Type', att.mimeType)
+  // Forced download rather than inline: a PDF rendered in-origin can script.
+  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(att.originalName)}"`)
+  res.setHeader('X-Content-Type-Options', 'nosniff')
+  res.sendFile(join(UPLOAD_DIR, att.storedName), (err) => {
+    if (err && !res.headersSent) {
+      res.status(404).json({ error: 'not_found', message: 'File is missing from storage.' })
     }
-    if (['closed', 'archived'].includes(att.permit.status)) {
-      throw new PermitError('validation', 'This permit is closed. Its documents are part of the record.')
-    }
+  })
+}))
 
-    await prisma.$transaction(async (tx) => {
-      await tx.permitAttachment.delete({ where: { id: att.id } })
-      await tx.permitEvent.create({
-        data: {
-          permitId: att.permit.id,
-          action: 'Document removed',
-          detail: att.originalName,
-          actor: caller.name,
-        },
-      })
-    })
-
-    // Best effort: the row is the record, the blob is a cache of it. A file left behind
-    // is untidy; a row pointing at a deleted file is a broken download.
-    unlink(join(UPLOAD_DIR, att.storedName), () => {})
-
-    res.status(204).end()
-  } catch (e) {
-    next(e)
+permitAttachmentsRouter.delete('/attachments/:attachmentId', asyncRoute(async (req, res) => {
+  const caller = callerOf(req)
+  const att = await prisma.permitAttachment.findUnique({
+    where: { id: req.params.attachmentId },
+    include: { permit: { select: { id: true, companyId: true, status: true } } },
+  })
+  if (!att) throw new PermitError('not_found', 'Attachment not found.', 404)
+  if (!caller.roles.some((r) => r.companyId === att.permit.companyId)) {
+    throw new PermitError('forbidden', 'You do not have access to this workspace.', 403)
   }
-})
+  if (['closed', 'archived'].includes(att.permit.status)) {
+    throw new PermitError('validation', 'This permit is closed. Its documents are part of the record.')
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.permitAttachment.delete({ where: { id: att.id } })
+    await tx.permitEvent.create({
+      data: {
+        permitId: att.permit.id,
+        action: 'Document removed',
+        detail: att.originalName,
+        actor: caller.name,
+      },
+    })
+  })
+
+  // Best effort: the row is the record, the blob is a cache of it. A file left behind
+  // is untidy; a row pointing at a deleted file is a broken download.
+  unlink(join(UPLOAD_DIR, att.storedName), () => {})
+
+  res.status(204).end()
+}))

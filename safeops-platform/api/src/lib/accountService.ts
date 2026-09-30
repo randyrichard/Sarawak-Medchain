@@ -12,7 +12,7 @@ import {
   generateResetToken, hashRefreshToken, hashResetToken, resetTokenExpiry, RESET_TOKEN_TTL_MIN,
 } from './tokens.js'
 import { sendPasswordResetEmail } from './email/passwordResetDelivery.js'
-import { DomainError } from './errors.js'
+import { DomainError } from '../domain/errors.js'
 
 export class AccountError extends DomainError {}
 

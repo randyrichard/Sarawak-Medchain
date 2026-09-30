@@ -10,8 +10,9 @@ import { Router } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
 import { EquipmentError, EquipmentService } from '../lib/equipmentService.js'
-import { requireAuth } from '../middleware/requireAuth.js'
-import { callerOf } from '../middleware/caller.js'
+import { requireAuth } from '../http/requireAuth.js'
+import { callerOf } from '../http/caller.js'
+import { asyncRoute } from '../http/asyncRoute.js'
 
 const svc = new EquipmentService(prisma)
 export const equipmentRouter = Router()
@@ -28,21 +29,13 @@ const auth = requireAuth
 
 // ── Calibration ──────────────────────────────────────────────────────────────
 
-equipmentRouter.get('/assets/:assetId/calibrations', auth, async (req, res, next) => {
-  try {
-    res.json(await svc.listCalibrations(callerOf(req), req.params.assetId))
-  } catch (e) {
-    next(e)
-  }
-})
+equipmentRouter.get('/assets/:assetId/calibrations', auth, asyncRoute(async (req, res) => {
+  res.json(await svc.listCalibrations(callerOf(req), req.params.assetId))
+}))
 
-equipmentRouter.get('/assets/:assetId/fitness', auth, async (req, res, next) => {
-  try {
-    res.json(await svc.fitness(callerOf(req), req.params.assetId))
-  } catch (e) {
-    next(e)
-  }
-})
+equipmentRouter.get('/assets/:assetId/fitness', auth, asyncRoute(async (req, res) => {
+  res.json(await svc.fitness(callerOf(req), req.params.assetId))
+}))
 
 const calibrationBody = z.object({
   calibratedAt: z.string().min(1).max(40),
@@ -53,62 +46,46 @@ const calibrationBody = z.object({
   remarks: z.string().max(2000).optional(),
 })
 
-equipmentRouter.post('/assets/:assetId/calibrations', auth, async (req, res, next) => {
-  try {
-    const parsed = calibrationBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: 'validation',
-        message: 'A certificate number and both dates are required.',
-      })
-    }
-    res.status(201).json(await svc.recordCalibration(
-      callerOf(req), req.params.assetId, parsed.data,
-      { ip: req.ip, device: req.get('user-agent') ?? '' },
-    ))
-  } catch (e) {
-    next(e)
+equipmentRouter.post('/assets/:assetId/calibrations', auth, asyncRoute(async (req, res) => {
+  const parsed = calibrationBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'validation',
+      message: 'A certificate number and both dates are required.',
+    })
   }
-})
+  res.status(201).json(await svc.recordCalibration(
+    callerOf(req), req.params.assetId, parsed.data,
+    { ip: req.ip, device: req.get('user-agent') ?? '' },
+  ))
+}))
 
 // ── Permit link ──────────────────────────────────────────────────────────────
 
 /** What could be booked onto this permit, fit and unfit alike, each with its verdict. */
-equipmentRouter.get('/permits/:permitId/equipment/selectable', auth, async (req, res, next) => {
-  try {
-    res.json(await svc.selectableFor(callerOf(req), req.params.permitId))
-  } catch (e) {
-    next(e)
-  }
-})
+equipmentRouter.get('/permits/:permitId/equipment/selectable', auth, asyncRoute(async (req, res) => {
+  res.json(await svc.selectableFor(callerOf(req), req.params.permitId))
+}))
 
-equipmentRouter.get('/permits/:permitId/equipment', auth, async (req, res, next) => {
-  try {
-    res.json(await svc.listForPermit(callerOf(req), req.params.permitId))
-  } catch (e) {
-    next(e)
-  }
-})
+equipmentRouter.get('/permits/:permitId/equipment', auth, asyncRoute(async (req, res) => {
+  res.json(await svc.listForPermit(callerOf(req), req.params.permitId))
+}))
 
 const bookBody = z.object({
   assetId: z.string().min(1),
   purpose: z.string().max(300).optional(),
 })
 
-equipmentRouter.post('/permits/:permitId/equipment', auth, async (req, res, next) => {
-  try {
-    const parsed = bookBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'Choose a piece of equipment.' })
-    }
-    res.status(201).json(await svc.addToPermit(
-      callerOf(req), req.params.permitId, parsed.data.assetId, parsed.data.purpose,
-      { ip: req.ip, device: req.get('user-agent') ?? '' },
-    ))
-  } catch (e) {
-    next(e)
+equipmentRouter.post('/permits/:permitId/equipment', auth, asyncRoute(async (req, res) => {
+  const parsed = bookBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'Choose a piece of equipment.' })
   }
-})
+  res.status(201).json(await svc.addToPermit(
+    callerOf(req), req.params.permitId, parsed.data.assetId, parsed.data.purpose,
+    { ip: req.ip, device: req.get('user-agent') ?? '' },
+  ))
+}))
 
 // -- Register ----------------------------------------------------------------
 
@@ -130,80 +107,52 @@ const updateBody = z.object({
   assignedContractorWorkerId: z.string().nullable().optional(),
 })
 
-equipmentRouter.patch('/assets/:assetId', auth, async (req, res, next) => {
-  try {
-    const parsed = updateBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'That equipment update is not valid.' })
-    }
-    res.json(await svc.updateAsset(
-      callerOf(req), req.params.assetId, parsed.data,
-      { ip: req.ip, device: req.get('user-agent') ?? '' },
-    ))
-  } catch (e) {
-    next(e)
+equipmentRouter.patch('/assets/:assetId', auth, asyncRoute(async (req, res) => {
+  const parsed = updateBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'That equipment update is not valid.' })
   }
-})
+  res.json(await svc.updateAsset(
+    callerOf(req), req.params.assetId, parsed.data,
+    { ip: req.ip, device: req.get('user-agent') ?? '' },
+  ))
+}))
 
 /** Who is holding it, and what live permit it is on. Both nullable. */
-equipmentRouter.get('/assets/:assetId/holder', auth, async (req, res, next) => {
-  try {
-    res.json(await svc.holderOf(callerOf(req), req.params.assetId))
-  } catch (e) {
-    next(e)
-  }
-})
+equipmentRouter.get('/assets/:assetId/holder', auth, asyncRoute(async (req, res) => {
+  res.json(await svc.holderOf(callerOf(req), req.params.assetId))
+}))
 
-equipmentRouter.get('/assets/:assetId/current-permit', auth, async (req, res, next) => {
-  try {
-    res.json(await svc.currentPermit(callerOf(req), req.params.assetId))
-  } catch (e) {
-    next(e)
-  }
-})
+equipmentRouter.get('/assets/:assetId/current-permit', auth, asyncRoute(async (req, res) => {
+  res.json(await svc.currentPermit(callerOf(req), req.params.assetId))
+}))
 
 // -- Dashboard ---------------------------------------------------------------
 
-equipmentRouter.get('/equipment/dashboard', auth, async (req, res, next) => {
-  try {
-    const companyId = String(req.query.companyId ?? '')
-    if (!companyId) {
-      return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
-    }
-    const siteId = req.query.siteId ? String(req.query.siteId) : undefined
-    res.json(await svc.dashboard(callerOf(req), companyId, siteId))
-  } catch (e) {
-    next(e)
+equipmentRouter.get('/equipment/dashboard', auth, asyncRoute(async (req, res) => {
+  const companyId = String(req.query.companyId ?? '')
+  if (!companyId) {
+    return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
   }
-})
+  const siteId = req.query.siteId ? String(req.query.siteId) : undefined
+  res.json(await svc.dashboard(callerOf(req), companyId, siteId))
+}))
 
 // -- Timeline ----------------------------------------------------------------
 
-equipmentRouter.get('/assets/:assetId/timeline', auth, async (req, res, next) => {
-  try {
-    res.json(await svc.timeline(callerOf(req), req.params.assetId))
-  } catch (e) {
-    next(e)
-  }
-})
+equipmentRouter.get('/assets/:assetId/timeline', auth, asyncRoute(async (req, res) => {
+  res.json(await svc.timeline(callerOf(req), req.params.assetId))
+}))
 
-equipmentRouter.get('/assets/:assetId/incidents', auth, async (req, res, next) => {
-  try {
-    res.json(await svc.incidentsFor(callerOf(req), req.params.assetId))
-  } catch (e) {
-    next(e)
-  }
-})
+equipmentRouter.get('/assets/:assetId/incidents', auth, asyncRoute(async (req, res) => {
+  res.json(await svc.incidentsFor(callerOf(req), req.params.assetId))
+}))
 
 // -- Maintenance -------------------------------------------------------------
 
-equipmentRouter.get('/assets/:assetId/work-orders', auth, async (req, res, next) => {
-  try {
-    res.json(await svc.listWorkOrders(callerOf(req), req.params.assetId))
-  } catch (e) {
-    next(e)
-  }
-})
+equipmentRouter.get('/assets/:assetId/work-orders', auth, asyncRoute(async (req, res) => {
+  res.json(await svc.listWorkOrders(callerOf(req), req.params.assetId))
+}))
 
 const workOrderBody = z.object({
   kind: z.enum(['preventive', 'corrective', 'emergency']),
@@ -214,23 +163,19 @@ const workOrderBody = z.object({
   takeOutOfService: z.boolean().optional(),
 })
 
-equipmentRouter.post('/assets/:assetId/work-orders', auth, async (req, res, next) => {
-  try {
-    const parsed = workOrderBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: 'validation',
-        message: 'Choose the kind of work and describe what needs doing.',
-      })
-    }
-    res.status(201).json(await svc.raiseWorkOrder(
-      callerOf(req), req.params.assetId, parsed.data,
-      { ip: req.ip, device: req.get('user-agent') ?? '' },
-    ))
-  } catch (e) {
-    next(e)
+equipmentRouter.post('/assets/:assetId/work-orders', auth, asyncRoute(async (req, res) => {
+  const parsed = workOrderBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'validation',
+      message: 'Choose the kind of work and describe what needs doing.',
+    })
   }
-})
+  res.status(201).json(await svc.raiseWorkOrder(
+    callerOf(req), req.params.assetId, parsed.data,
+    { ip: req.ip, device: req.get('user-agent') ?? '' },
+  ))
+}))
 
 const workOrderPatch = z.object({
   status: z.enum(['open', 'in_progress', 'completed', 'cancelled']).optional(),
@@ -243,73 +188,53 @@ const workOrderPatch = z.object({
   returnToService: z.boolean().optional(),
 })
 
-equipmentRouter.patch('/work-orders/:workOrderId', auth, async (req, res, next) => {
-  try {
-    const parsed = workOrderPatch.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'That work order update is not valid.' })
-    }
-    res.json(await svc.updateWorkOrder(
-      callerOf(req), req.params.workOrderId, parsed.data,
-      { ip: req.ip, device: req.get('user-agent') ?? '' },
-    ))
-  } catch (e) {
-    next(e)
+equipmentRouter.patch('/work-orders/:workOrderId', auth, asyncRoute(async (req, res) => {
+  const parsed = workOrderPatch.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'That work order update is not valid.' })
   }
-})
+  res.json(await svc.updateWorkOrder(
+    callerOf(req), req.params.workOrderId, parsed.data,
+    { ip: req.ip, device: req.get('user-agent') ?? '' },
+  ))
+}))
 
 // -- Incident link -----------------------------------------------------------
 
-equipmentRouter.get('/incidents/:incidentId/equipment', auth, async (req, res, next) => {
-  try {
-    res.json(await svc.listForIncident(callerOf(req), req.params.incidentId))
-  } catch (e) {
-    next(e)
-  }
-})
+equipmentRouter.get('/incidents/:incidentId/equipment', auth, asyncRoute(async (req, res) => {
+  res.json(await svc.listForIncident(callerOf(req), req.params.incidentId))
+}))
 
 const linkBody = z.object({
   assetId: z.string().min(1),
   involvement: z.string().max(2000).optional(),
 })
 
-equipmentRouter.post('/incidents/:incidentId/equipment', auth, async (req, res, next) => {
-  try {
-    const parsed = linkBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'Choose a piece of equipment.' })
-    }
-    res.status(201).json(await svc.linkToIncident(
-      callerOf(req), req.params.incidentId, parsed.data.assetId, parsed.data.involvement,
-      { ip: req.ip, device: req.get('user-agent') ?? '' },
-    ))
-  } catch (e) {
-    next(e)
+equipmentRouter.post('/incidents/:incidentId/equipment', auth, asyncRoute(async (req, res) => {
+  const parsed = linkBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'Choose a piece of equipment.' })
   }
-})
+  res.status(201).json(await svc.linkToIncident(
+    callerOf(req), req.params.incidentId, parsed.data.assetId, parsed.data.involvement,
+    { ip: req.ip, device: req.get('user-agent') ?? '' },
+  ))
+}))
 
-equipmentRouter.delete('/incidents/equipment/:linkId', auth, async (req, res, next) => {
-  try {
-    await svc.unlinkFromIncident(
-      callerOf(req), req.params.linkId,
-      { ip: req.ip, device: req.get('user-agent') ?? '' },
-    )
-    res.status(204).end()
-  } catch (e) {
-    next(e)
-  }
-})
+equipmentRouter.delete('/incidents/equipment/:linkId', auth, asyncRoute(async (req, res) => {
+  await svc.unlinkFromIncident(
+    callerOf(req), req.params.linkId,
+    { ip: req.ip, device: req.get('user-agent') ?? '' },
+  )
+  res.status(204).end()
+}))
 
-equipmentRouter.delete('/permits/equipment/:linkId', auth, async (req, res, next) => {
-  try {
-    await svc.removeFromPermit(
-      callerOf(req), req.params.linkId,
-      { ip: req.ip, device: req.get('user-agent') ?? '' },
-    )
-    res.status(204).end()
-  } catch (e) {
-    next(e)
-  }
-})
+equipmentRouter.delete('/permits/equipment/:linkId', auth, asyncRoute(async (req, res) => {
+  await svc.removeFromPermit(
+    callerOf(req), req.params.linkId,
+    { ip: req.ip, device: req.get('user-agent') ?? '' },
+  )
+  res.status(204).end()
+}))
 
 export { EquipmentError }

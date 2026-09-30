@@ -14,7 +14,7 @@
  *    handover.
  */
 import type { PrismaClient } from '@prisma/client'
-import { overdueActionWhere } from './incidentService.js'
+import { overdueActionWhere } from '../domain/access.js'
 import { docDate, humanize, isInjury, isNearMiss, severityName, stageLabel, typeName } from './incidentCatalog.js'
 import { PERMIT_STATUS_LABEL, PERMIT_TYPE_LABEL } from './permitCatalog.js'
 import { instantForLocal, localParts } from './reportSchedule.js'

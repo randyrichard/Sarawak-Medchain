@@ -1,6 +1,6 @@
 import { Prisma, type PrismaClient, type ReportType, type Role } from '@prisma/client'
-import type { Caller } from './incidentService.js'
-import { overdueActionWhere } from './incidentService.js'
+import { membershipOf, type Caller } from '../domain/caller.js'
+import { overdueActionWhere } from '../domain/access.js'
 import { docDate, humanize, isInjury, isLostTime, isNearMiss, severityName, stageLabel, typeName } from './incidentCatalog.js'
 import { PERMIT_TYPE_LABEL } from './permitCatalog.js'
 import { renderReportPdf, readStoredReport, storeReportPdf } from './reportPdf.js'
@@ -17,7 +17,7 @@ import {
   describeSchedule, instantForLocal, isValidTimezone, localParts, nextRunAt, parseTimeOfDay,
   type Frequency,
 } from './reportSchedule.js'
-import { DomainError } from './errors.js'
+import { DomainError } from '../domain/errors.js'
 
 /**
  * Scheduled reports.
@@ -182,10 +182,9 @@ export class ReportService {
   constructor(private db: PrismaClient) {}
 
   private membership(caller: Caller, companyId: string) {
-    const m = caller.roles.find((r) => r.companyId === companyId)
-    if (!m) throw new ReportError('forbidden', 'You do not have access to this workspace.', 403)
-    return m
+    return membershipOf(caller, companyId, ReportError)
   }
+
 
   private require(caller: Caller, companyId: string, doing: string) {
     const m = this.membership(caller, companyId)

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import type { PrismaClient, Role, VisitorEventKind, VisitorStatus } from '@prisma/client'
-import type { Caller } from './incidentService.js'
-import { DomainError } from './errors.js'
+import { membershipOf, type Caller } from '../domain/caller.js'
+import { DomainError } from '../domain/errors.js'
 
 /**
  * Visitor management.
@@ -144,10 +144,9 @@ export class VisitorService {
   constructor(private db: PrismaClient) {}
 
   private membership(caller: Caller, companyId: string) {
-    const m = caller.roles.find((r) => r.companyId === companyId)
-    if (!m) throw new VisitorError('forbidden', 'You do not have access to this workspace.', 403)
-    return m
+    return membershipOf(caller, companyId, VisitorError)
   }
+
 
   private require(caller: Caller, companyId: string, roles: Role[], doing: string) {
     const m = this.membership(caller, companyId)

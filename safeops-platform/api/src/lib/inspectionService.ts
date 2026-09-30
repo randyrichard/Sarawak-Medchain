@@ -1,11 +1,11 @@
 import type { AssetCategory, Prisma, PrismaClient, Role } from '@prisma/client'
 // `Caller` is the verified identity shape shared by every module — see permitService.
-import { type Caller } from './incidentService.js'
+import { type Caller, membershipOf } from '../domain/caller.js'
 import { enqueueEvent } from './webhookService.js'
 import {
   ASSET_CATEGORIES, CATEGORY_LABEL, CHECKLISTS, DEFECT_DUE_DAYS, FREQUENCY_DAYS,
 } from './inspectionCatalog.js'
-import { DomainError } from './errors.js'
+import { DomainError } from '../domain/errors.js'
 import { resolveOwnerId } from './actionOwner.js'
 
 /** Roles permitted to register assets and schedule inspections. */
@@ -90,10 +90,9 @@ export class InspectionService {
   // ── Authorisation ──────────────────────────────────────────────────────────
 
   private membership(caller: Caller, companyId: string) {
-    const m = caller.roles.find((r) => r.companyId === companyId)
-    if (!m) throw new InspectionError('forbidden', 'You do not have access to this workspace.', 403)
-    return m
+    return membershipOf(caller, companyId, InspectionError)
   }
+
 
   private requireManager(caller: Caller, companyId: string, what: string) {
     const m = this.membership(caller, companyId)

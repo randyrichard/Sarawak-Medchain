@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client'
 import { AdminError, AdminService } from './adminService.js'
 import { CONNECTORS, SYSTEM_ROLES } from './adminCatalog.js'
 import { hashPassword } from './password.js'
-import type { Caller } from './incidentService.js'
+import type { Caller } from '../domain/caller.js'
 import { open } from './secretBox.js'
 
 /**

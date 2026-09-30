@@ -8,8 +8,9 @@ import { z } from 'zod'
 import { env } from '../env.js'
 import { prisma } from '../lib/prisma.js'
 import { IncidentService } from '../lib/incidentService.js'
-import { requireAuth } from '../middleware/requireAuth.js'
-import { callerOf } from '../middleware/caller.js'
+import { requireAuth } from '../http/requireAuth.js'
+import { callerOf } from '../http/caller.js'
+import { asyncRoute } from '../http/asyncRoute.js'
 
 const svc = new IncidentService(prisma)
 export const incidentExtrasRouter = Router()
@@ -118,20 +119,16 @@ incidentExtrasRouter.post('/:id/attachments', (req, res, next) => {
 })
 
 /** Download. Authorisation is re-checked, so a stored name alone grants nothing. */
-incidentExtrasRouter.get('/attachments/:attachmentId', async (req, res, next) => {
-  try {
-    const att = await svc.getAttachment(callerOf(req), req.params.attachmentId)
-    // Force download rather than inline rendering: a PDF rendered in-origin can script.
-    res.setHeader('Content-Type', att.mimeType)
-    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(att.originalName)}"`)
-    res.setHeader('X-Content-Type-Options', 'nosniff')
-    res.sendFile(join(UPLOAD_DIR, att.storedName), (err) => {
-      if (err && !res.headersSent) res.status(404).json({ error: 'not_found', message: 'File is missing from storage.' })
-    })
-  } catch (e) {
-    next(e)
-  }
-})
+incidentExtrasRouter.get('/attachments/:attachmentId', asyncRoute(async (req, res) => {
+  const att = await svc.getAttachment(callerOf(req), req.params.attachmentId)
+  // Force download rather than inline rendering: a PDF rendered in-origin can script.
+  res.setHeader('Content-Type', att.mimeType)
+  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(att.originalName)}"`)
+  res.setHeader('X-Content-Type-Options', 'nosniff')
+  res.sendFile(join(UPLOAD_DIR, att.storedName), (err) => {
+    if (err && !res.headersSent) res.status(404).json({ error: 'not_found', message: 'File is missing from storage.' })
+  })
+}))
 
 // ── Comments ─────────────────────────────────────────────────────────────────
 
@@ -140,18 +137,14 @@ const commentBody = z.object({
   mentions: z.array(z.string().max(120)).max(20).optional(),
 })
 
-incidentExtrasRouter.post('/:id/comments', async (req, res, next) => {
-  try {
-    const parsed = commentBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'A comment body is required.' })
-    }
-    const c = await svc.addComment(callerOf(req), req.params.id, parsed.data.body, parsed.data.mentions ?? [])
-    res.status(201).json(c)
-  } catch (e) {
-    next(e)
+incidentExtrasRouter.post('/:id/comments', asyncRoute(async (req, res) => {
+  const parsed = commentBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'A comment body is required.' })
   }
-})
+  const c = await svc.addComment(callerOf(req), req.params.id, parsed.data.body, parsed.data.mentions ?? [])
+  res.status(201).json(c)
+}))
 
 // ── Corrective actions ───────────────────────────────────────────────────────
 
@@ -167,20 +160,16 @@ const actionBody = z.object({
   evidenceRequired: z.boolean().optional(),
 })
 
-incidentExtrasRouter.post('/:id/actions', async (req, res, next) => {
-  try {
-    const parsed = actionBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: 'validation',
-        message: parsed.error.issues[0]?.message ?? 'Invalid action payload.',
-      })
-    }
-    res.status(201).json(await svc.addAction(callerOf(req), req.params.id, parsed.data))
-  } catch (e) {
-    next(e)
+incidentExtrasRouter.post('/:id/actions', asyncRoute(async (req, res) => {
+  const parsed = actionBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'validation',
+      message: parsed.error.issues[0]?.message ?? 'Invalid action payload.',
+    })
   }
-})
+  res.status(201).json(await svc.addAction(callerOf(req), req.params.id, parsed.data))
+}))
 
 const actionPatch = z.object({
   status: z.enum(['open', 'in_progress', 'completed', 'verified', 'cancelled']).optional(),
@@ -189,17 +178,13 @@ const actionPatch = z.object({
   expectedVersion: z.number().int().optional(),
 })
 
-incidentExtrasRouter.patch('/actions/:actionId', async (req, res, next) => {
-  try {
-    const parsed = actionPatch.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'Invalid action update.' })
-    }
-    res.json(await svc.updateAction(callerOf(req), req.params.actionId, parsed.data))
-  } catch (e) {
-    next(e)
+incidentExtrasRouter.patch('/actions/:actionId', asyncRoute(async (req, res) => {
+  const parsed = actionPatch.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'Invalid action update.' })
   }
-})
+  res.json(await svc.updateAction(callerOf(req), req.params.actionId, parsed.data))
+}))
 
 
 // ── Root cause analysis ──────────────────────────────────────────────────────
@@ -217,61 +202,41 @@ const rcaBody = z.object({
   }),
 })
 
-incidentExtrasRouter.put('/:id/rca', async (req, res, next) => {
-  try {
-    const parsed = rcaBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'Invalid root cause payload.' })
-    }
-    res.json(await svc.saveRca(callerOf(req), req.params.id, parsed.data))
-  } catch (e) {
-    next(e)
+incidentExtrasRouter.put('/:id/rca', asyncRoute(async (req, res) => {
+  const parsed = rcaBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'Invalid root cause payload.' })
   }
-})
+  res.json(await svc.saveRca(callerOf(req), req.params.id, parsed.data))
+}))
 
-incidentExtrasRouter.post('/:id/rca/approve', async (req, res, next) => {
-  try {
-    res.json(await svc.approveRca(callerOf(req), req.params.id))
-  } catch (e) {
-    next(e)
-  }
-})
+incidentExtrasRouter.post('/:id/rca/approve', asyncRoute(async (req, res) => {
+  res.json(await svc.approveRca(callerOf(req), req.params.id))
+}))
 
 // ── Archive ──────────────────────────────────────────────────────────────────
 
-incidentExtrasRouter.post('/:id/archive', async (req, res, next) => {
-  try {
-    res.json(await svc.archive(callerOf(req), req.params.id))
-  } catch (e) {
-    next(e)
-  }
-})
+incidentExtrasRouter.post('/:id/archive', asyncRoute(async (req, res) => {
+  res.json(await svc.archive(callerOf(req), req.params.id))
+}))
 
 // ── Action notes & analytics ─────────────────────────────────────────────────
 
-incidentExtrasRouter.get('/actions/analytics', async (req, res, next) => {
-  try {
-    const companyId = String(req.query.companyId ?? '')
-    if (!companyId) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
-    res.json(await svc.actionAnalytics(callerOf(req), companyId))
-  } catch (e) {
-    next(e)
-  }
-})
+incidentExtrasRouter.get('/actions/analytics', asyncRoute(async (req, res) => {
+  const companyId = String(req.query.companyId ?? '')
+  if (!companyId) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
+  res.json(await svc.actionAnalytics(callerOf(req), companyId))
+}))
 
 
-incidentExtrasRouter.post('/actions/:actionId/notes', async (req, res, next) => {
-  try {
-    const parsed = commentBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'A note body is required.' })
-    }
-    const n = await svc.addActionNote(callerOf(req), req.params.actionId, parsed.data.body, parsed.data.mentions ?? [])
-    res.status(201).json(n)
-  } catch (e) {
-    next(e)
+incidentExtrasRouter.post('/actions/:actionId/notes', asyncRoute(async (req, res) => {
+  const parsed = commentBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'A note body is required.' })
   }
-})
+  const n = await svc.addActionNote(callerOf(req), req.params.actionId, parsed.data.body, parsed.data.mentions ?? [])
+  res.status(201).json(n)
+}))
 
 const standaloneBody = z.object({
   companyId: z.string().min(1),
@@ -285,20 +250,16 @@ const standaloneBody = z.object({
 })
 
 /** Action raised outside an investigation. Mounted before /:id to stay reachable. */
-incidentExtrasRouter.post('/actions', async (req, res, next) => {
-  try {
-    const parsed = standaloneBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: 'validation',
-        message: parsed.error.issues[0]?.message ?? 'Invalid action payload.',
-      })
-    }
-    res.status(201).json(await svc.createStandaloneAction(callerOf(req), parsed.data))
-  } catch (e) {
-    next(e)
+incidentExtrasRouter.post('/actions', asyncRoute(async (req, res) => {
+  const parsed = standaloneBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'validation',
+      message: parsed.error.issues[0]?.message ?? 'Invalid action payload.',
+    })
   }
-})
+  res.status(201).json(await svc.createStandaloneAction(callerOf(req), parsed.data))
+}))
 
 const actionsQuery = z.object({
   companyId: z.string().min(1),
@@ -310,28 +271,20 @@ const actionsQuery = z.object({
   source: z.string().optional(),
 })
 
-incidentExtrasRouter.get('/actions/list', async (req, res, next) => {
-  try {
-    const parsed = actionsQuery.safeParse(req.query)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'Invalid query parameters.' })
-    }
-    const { companyId, ...opts } = parsed.data
-    res.json(await svc.listActions(callerOf(req), companyId, opts))
-  } catch (e) {
-    next(e)
+incidentExtrasRouter.get('/actions/list', asyncRoute(async (req, res) => {
+  const parsed = actionsQuery.safeParse(req.query)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'Invalid query parameters.' })
   }
-})
+  const { companyId, ...opts } = parsed.data
+  res.json(await svc.listActions(callerOf(req), companyId, opts))
+}))
 
 /**
  * Registered last on purpose. Express matches routes in declaration order, so this
  * parameterised path must come after the literal /actions/list and /actions/analytics
  * or it captures them and treats "list" as an action id.
  */
-incidentExtrasRouter.get('/actions/:actionId', async (req, res, next) => {
-  try {
-    res.json(await svc.getAction(callerOf(req), req.params.actionId))
-  } catch (e) {
-    next(e)
-  }
-})
+incidentExtrasRouter.get('/actions/:actionId', asyncRoute(async (req, res) => {
+  res.json(await svc.getAction(callerOf(req), req.params.actionId))
+}))

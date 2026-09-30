@@ -3,7 +3,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import { Prisma } from '@prisma/client'
 import type { PrismaClient, Role } from '@prisma/client'
 // `Caller` is the verified identity shape shared by every module — see permitService.
-import { type Caller } from './incidentService.js'
+import { type Caller, membershipOf } from '../domain/caller.js'
 import { hashPassword } from './password.js'
 import {
   BACKGROUND_JOBS, CONNECTORS, MODULE_LABEL, RBAC_ACTIONS, RBAC_MODULES, SYSTEM_ROLES,
@@ -17,7 +17,7 @@ import { callsTodayByKey, usageSeries } from './apiUsage.js'
 import { open, seal, secretBoxAvailable } from './secretBox.js'
 import { checkUrlShape, TARGET_MESSAGE } from './webhookTarget.js'
 import { deliver } from './webhookDelivery.js'
-import { DomainError } from './errors.js'
+import { DomainError } from '../domain/errors.js'
 
 export class AdminError extends DomainError {}
 
@@ -41,10 +41,9 @@ export class AdminService {
   // ── Authorisation ──────────────────────────────────────────────────────────
 
   private membership(caller: Caller, companyId: string) {
-    const m = caller.roles.find((r) => r.companyId === companyId)
-    if (!m) throw new AdminError('forbidden', 'You do not have access to this workspace.', 403)
-    return m
+    return membershipOf(caller, companyId, AdminError)
   }
+
 
   /**
    * Administration is admin-only, and the role comes from the verified session rather

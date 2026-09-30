@@ -89,18 +89,18 @@ Ordered by what they would cost in production.
 | 3 | Scheduler duplicate check | `notification.findFirst({companyId, href})` per candidate, and `href` wasn't indexed | Each of up to ~5,000 checks per sweep scanned the tenant's whole notification history, which only grows | **Fixed**: `@@index([companyId, href])` |
 | 4 | Schema drift | Five indexes created by migrations were missing from `schema.prisma` | The next `prisma migrate dev` would generate a migration **dropping** them | **Fixed**: declared; `migrate diff` now clean |
 | 5 | Error handling | 23 copy-pasted error classes, and `app.ts` listed all 23 in an `instanceof` chain | A new module not added to the list returns every 403/404 as a 500 | **Fixed**: `DomainError` base plus a guard test |
-| 6 | Route boilerplate | Identical `callerOf` in 23 route files | Identity extraction is security-relevant; 23 copies can drift | **Fixed**: `middleware/caller.ts` |
+| 6 | Route boilerplate | Identical `callerOf` in 23 route files | Identity extraction is security-relevant; 23 copies can drift | **Fixed**: `http/caller.ts` (was `middleware/caller.ts`) |
 | 7 | Web request helper | `incidentsApi.ts` carried a verbatim copy of `http.ts`'s `request()`, including session-refresh and wrong-account handling | A security fix to one copy misses the other | **Fixed**: uses the shared helper |
 | 8 | Scheduler placement | Timers run inside the API process, so every replica ran every sweep. Notification dedupe is check-then-insert, so two replicas racing could raise duplicates, and the webhook queue read the same pending rows on each replica, sending every webhook twice | Duplicate reminders and duplicate webhooks as soon as a second replica runs | **Fixed**: each pass runs under a Postgres advisory lock (`lib/leaderLock.ts`), so exactly one replica sweeps and the lock is released even if that replica dies. Moving the scheduler to its own service (4.2 step 3) is still open |
 | 9 | Hybrid mock/real client | `MockApiClient` is both the demo and a production path; production modules (`org/people.ts`, `org/departments.ts`, `AttendanceRunner`, `InspectionRunner`) import demo fixtures directly as their no-API fallback | ~4k lines of fixtures ship in every production bundle (main chunk 404 KB / 115 KB gz). The fallbacks filter by the demo's company ids, so they don't show demo data to a real tenant, but every feature carries two code paths to maintain | Open: see 4.3 |
-| 10 | Route try/catch | 290 hand-written `try { … } catch (e) { next(e) }` blocks (Express 4 doesn't forward async rejections) | Noise; a forgotten wrapper hangs the request | Open: see 4.1 |
+| 10 | Route try/catch | 290 hand-written `try { … } catch (e) { next(e) }` blocks (Express 4 doesn't forward async rejections) | Noise; a forgotten wrapper hangs the request | **Fixed**: `http/asyncRoute.ts`; 284 handlers converted, 3 keep a `try` whose `catch` does real work. See `docs/ARCHITECTURE.md` |
 | 11 | Board action counts | `board()` counts overdue actions company-wide, while `stats()` narrows them to the owner for employees and supervisors | An employee's board shows a company-wide overdue count | Open: needs a product decision, not a refactor |
 | 12 | Rate-limit hot row | All users behind one NAT share one `RateLimit` row, updated on every request | Row-lock contention at scale | Acceptable for pilot; move to Redis when running more than one replica |
 | 13 | Legacy `safeops/` | Superseded prototype in the tree | Confuses newcomers and search results | Recommend deleting (owner's call) |
 
 ## 4. Refactoring strategies (next steps, in order)
 
-### 4.1 Async route wrapper (low risk, mechanical)
+### 4.1 Async route wrapper (low risk, mechanical) — done, see docs/ARCHITECTURE.md
 
 Add `asyncRoute(fn)` that forwards rejections to `next`, then convert one router per PR.
 Better still, move to Express 5, which forwards rejected promises natively. Its breaking

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import { PrismaClient } from '@prisma/client'
-import { IncidentService, type Caller } from './incidentService.js'
+import { IncidentService } from './incidentService.js'
+import { type Caller } from '../domain/caller.js'
 
 /**
  * Integration tests against a REAL PostgreSQL database.

@@ -18,9 +18,9 @@
  * its briefing as one that did not.
  */
 import { Prisma, type PrismaClient, type Role } from '@prisma/client'
-import type { Caller } from './incidentService.js'
+import { membershipOf, type Caller } from '../domain/caller.js'
 import { instantForLocal, isValidTimezone, localParts } from './reportSchedule.js'
-import { DomainError } from './errors.js'
+import { DomainError } from '../domain/errors.js'
 
 export class ToolboxError extends DomainError {}
 
@@ -78,10 +78,9 @@ export class ToolboxService {
   constructor(private db: PrismaClient) {}
 
   private membership(caller: Caller, companyId: string) {
-    const m = caller.roles.find((r) => r.companyId === companyId)
-    if (!m) throw new ToolboxError('forbidden', 'You do not have access to this workspace.', 403)
-    return m
+    return membershipOf(caller, companyId, ToolboxError)
   }
+
 
   private requireRole(caller: Caller, companyId: string, allowed: Role[], doing: string) {
     const m = this.membership(caller, companyId)

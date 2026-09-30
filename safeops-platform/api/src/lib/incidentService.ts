@@ -4,20 +4,18 @@ import { enqueueEvent } from './webhookService.js'
 import {
   INCIDENT_SEVERITIES, INCIDENT_TYPES, LOST_TIME_SEVERITIES, SEVERITY_RANK,
 } from './incidentCatalog.js'
-import { DomainError } from './errors.js'
-import { isOwnedBy, ownedByWhere, resolveOwnerId } from './actionOwner.js'
+import { DomainError } from '../domain/errors.js'
+import { membershipOf, type Caller } from '../domain/caller.js'
+import { resolveOwnerId } from './actionOwner.js'
+import {
+  incidentScopeWhere, isOwnedBy, overdueActionWhere, ownedByWhere, startOfToday,
+} from '../domain/access.js'
 
 /** Roles permitted to triage and progress an investigation. */
 const MANAGE_ROLES: Role[] = ['admin', 'hse_manager', 'safety_officer']
 /** Roles permitted to review, verify and close. */
 const REVIEW_ROLES: Role[] = ['admin', 'hse_manager']
 
-/** The caller's verified identity, derived from the signed access token — never from the body. */
-export interface Caller {
-  userId: string
-  name: string
-  roles: { companyId: string; role: Role; siteIds: string[] }[]
-}
 
 export class IncidentError extends DomainError {}
 
@@ -38,39 +36,6 @@ function dateRange(from?: string, to?: string): Prisma.DateTimeFilter | undefine
   return { ...(gte ? { gte } : {}), ...(lte ? { lte } : {}) }
 }
 
-/**
- * What counts as an overdue corrective action.
- *
- * One definition, exported so the register, the board count and the scheduled report all
- * mean the same thing by "overdue". Completed, verified and cancelled actions are excluded
- * - an action closed last week is not overdue, and a report that says otherwise is the
- * fastest way to lose a reader's trust. Measured against UTC midnight so an action due
- * today is not overdue for the whole of today.
- */
-/**
- * Which incidents a caller may see, as a free function.
- *
- * Exported so the dashboard applies exactly the same row scope the register does. Without
- * it an employee's dashboard would total every incident in the company while the list one
- * click away showed only their own - and the wider number is the one that leaks.
- */
-export function incidentScopeWhere(caller: Caller, companyId: string): Prisma.IncidentWhereInput {
-  const m = caller.roles.find((r) => r.companyId === companyId)
-  if (!m) return { id: '__no_access__' }
-  if (['admin', 'hse_manager', 'ceo'].includes(m.role)) return {}
-  if (m.role === 'safety_officer' || m.role === 'supervisor') {
-    return m.siteIds.length > 0 ? { siteId: { in: m.siteIds } } : {}
-  }
-  // employee
-  return { reporterId: caller.userId }
-}
-
-/**
- * Which corrective actions a caller may see.
- *
- * Mirrors the incident register's stats: an employee or supervisor sees the actions they
- * own, not the company's whole backlog.
- */
 /** What an `action.*` webhook carries. One shape, so both raising paths agree. */
 function actionPayload(a: {
   id: string; code: string; title: string; owner: string; dueDate: Date
@@ -86,19 +51,6 @@ function actionPayload(a: {
     status: a.status,
     siteId: a.siteId,
     incidentId: a.incidentId,
-  }
-}
-
-export function actionScopeWhere(caller: Caller, companyId: string): Prisma.CorrectiveActionWhereInput {
-  const m = caller.roles.find((r) => r.companyId === companyId)
-  if (!m) return { id: '__no_access__' }
-  return ['employee', 'supervisor'].includes(m.role) ? ownedByWhere(caller) : {}
-}
-
-export function overdueActionWhere(): Prisma.CorrectiveActionWhereInput {
-  return {
-    dueDate: { lt: startOfToday() },
-    status: { in: ['open', 'in_progress'] },
   }
 }
 
@@ -169,18 +121,6 @@ export type IncidentStatusFilter = (typeof INCIDENT_STATUS_FILTERS)[number]
 /** An open incident older than this reads as overdue. Matches the register's chip label. */
 export const OVERDUE_AFTER_DAYS = 14
 
-/**
- * Today at UTC midnight — the boundary an action's due date is measured against.
- *
- * Due dates are date-only, stored at UTC midnight. Comparing them with `now` makes
- * everything due today overdue from one second past midnight, which is why the Overdue
- * chip and the Overdue list disagreed by exactly the actions due today.
- */
-function startOfToday(): Date {
-  const n = new Date()
-  return new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate()))
-}
-
 const ORDERED_STAGES = [
   'reported', 'assessment', 'investigation', 'rca', 'actions', 'review', 'verification', 'closed',
 ] as const
@@ -229,10 +169,9 @@ export class IncidentService {
    * passing a different companyId, because we look it up rather than trust it.
    */
   private membership(caller: Caller, companyId: string) {
-    const m = caller.roles.find((r) => r.companyId === companyId)
-    if (!m) throw new IncidentError('forbidden', 'You do not have access to this workspace.', 403)
-    return m
+    return membershipOf(caller, companyId, IncidentError)
   }
+
 
   private requireRole(caller: Caller, companyId: string, allowed: Role[]) {
     const m = this.membership(caller, companyId)

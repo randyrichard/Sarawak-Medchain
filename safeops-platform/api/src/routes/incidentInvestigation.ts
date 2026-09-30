@@ -6,10 +6,11 @@ import {
   INCIDENT_SEVERITIES, INCIDENT_TYPES, SHIFTS, WEATHER,
 } from '../lib/incidentCatalog.js'
 import { IncidentService } from '../lib/incidentService.js'
-import { requireAuth } from '../middleware/requireAuth.js'
+import { requireAuth } from '../http/requireAuth.js'
 import { IncidentSummaryService } from '../lib/incidentSummary.js'
 import { renderReportPdf } from '../lib/reportPdf.js'
-import { callerOf } from '../middleware/caller.js'
+import { callerOf } from '../http/caller.js'
+import { asyncRoute } from '../http/asyncRoute.js'
 
 /**
  * The investigation half of the incident API: people, related records, causal analysis.
@@ -46,42 +47,30 @@ incidentInvestigationRouter.get('/catalog', (_req, res) => {
 })
 
 /** The incident board: counts, breakdowns and the recurring root causes. */
-incidentInvestigationRouter.get('/board', async (req, res, next) => {
-  try {
-    const companyId = String(req.query.companyId ?? '')
-    if (!companyId) {
-      return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
-    }
-    const siteId = req.query.siteId ? String(req.query.siteId) : undefined
-    res.json(await incidents.board(callerOf(req), companyId, siteId))
-  } catch (e) {
-    next(e)
+incidentInvestigationRouter.get('/board', asyncRoute(async (req, res) => {
+  const companyId = String(req.query.companyId ?? '')
+  if (!companyId) {
+    return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
   }
-})
+  const siteId = req.query.siteId ? String(req.query.siteId) : undefined
+  res.json(await incidents.board(callerOf(req), companyId, siteId))
+}))
 
 /** What has gone wrong around a given permit, contractor, visitor or asset. */
-incidentInvestigationRouter.get('/linked/:kind/:targetId', async (req, res, next) => {
-  try {
-    const kind = LINK_KIND.safeParse(req.params.kind)
-    const companyId = String(req.query.companyId ?? '')
-    if (!kind.success || !companyId) {
-      return res.status(400).json({ error: 'validation', message: 'Unknown record kind.' })
-    }
-    res.json(await svc.incidentsFor(callerOf(req), companyId, kind.data, req.params.targetId))
-  } catch (e) {
-    next(e)
+incidentInvestigationRouter.get('/linked/:kind/:targetId', asyncRoute(async (req, res) => {
+  const kind = LINK_KIND.safeParse(req.params.kind)
+  const companyId = String(req.query.companyId ?? '')
+  if (!kind.success || !companyId) {
+    return res.status(400).json({ error: 'validation', message: 'Unknown record kind.' })
   }
-})
+  res.json(await svc.incidentsFor(callerOf(req), companyId, kind.data, req.params.targetId))
+}))
 
 // ── People ───────────────────────────────────────────────────────────────────
 
-incidentInvestigationRouter.get('/:id/people', async (req, res, next) => {
-  try {
-    res.json({ rows: await svc.listPeople(callerOf(req), req.params.id) })
-  } catch (e) {
-    next(e)
-  }
-})
+incidentInvestigationRouter.get('/:id/people', asyncRoute(async (req, res) => {
+  res.json({ rows: await svc.listPeople(callerOf(req), req.params.id) })
+}))
 
 const personBody = z.object({
   role: PERSON_ROLE,
@@ -97,20 +86,16 @@ const personBody = z.object({
   statement: z.string().max(8000).optional(),
 })
 
-incidentInvestigationRouter.post('/:id/people', async (req, res, next) => {
-  try {
-    const parsed = personBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: 'validation',
-        message: 'Choose a role, and name the person or pick them from a register.',
-      })
-    }
-    res.status(201).json(await svc.addPerson(callerOf(req), req.params.id, parsed.data, ctxOf(req)))
-  } catch (e) {
-    next(e)
+incidentInvestigationRouter.post('/:id/people', asyncRoute(async (req, res) => {
+  const parsed = personBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'validation',
+      message: 'Choose a role, and name the person or pick them from a register.',
+    })
   }
-})
+  res.status(201).json(await svc.addPerson(callerOf(req), req.params.id, parsed.data, ctxOf(req)))
+}))
 
 const personPatch = z.object({
   statement: z.string().max(8000).optional(),
@@ -120,36 +105,24 @@ const personPatch = z.object({
   daysLost: z.number().int().min(0).max(10_000).optional(),
 })
 
-incidentInvestigationRouter.patch('/people/:personId', async (req, res, next) => {
-  try {
-    const parsed = personPatch.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'That update is not valid.' })
-    }
-    res.json(await svc.updatePerson(callerOf(req), req.params.personId, parsed.data, ctxOf(req)))
-  } catch (e) {
-    next(e)
+incidentInvestigationRouter.patch('/people/:personId', asyncRoute(async (req, res) => {
+  const parsed = personPatch.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'That update is not valid.' })
   }
-})
+  res.json(await svc.updatePerson(callerOf(req), req.params.personId, parsed.data, ctxOf(req)))
+}))
 
-incidentInvestigationRouter.delete('/people/:personId', async (req, res, next) => {
-  try {
-    await svc.removePerson(callerOf(req), req.params.personId, ctxOf(req))
-    res.status(204).end()
-  } catch (e) {
-    next(e)
-  }
-})
+incidentInvestigationRouter.delete('/people/:personId', asyncRoute(async (req, res) => {
+  await svc.removePerson(callerOf(req), req.params.personId, ctxOf(req))
+  res.status(204).end()
+}))
 
 // ── Related records ──────────────────────────────────────────────────────────
 
-incidentInvestigationRouter.get('/:id/links', async (req, res, next) => {
-  try {
-    res.json({ rows: await svc.listLinks(callerOf(req), req.params.id) })
-  } catch (e) {
-    next(e)
-  }
-})
+incidentInvestigationRouter.get('/:id/links', asyncRoute(async (req, res) => {
+  res.json({ rows: await svc.listLinks(callerOf(req), req.params.id) })
+}))
 
 const linkBody = z.object({
   kind: LINK_KIND,
@@ -157,61 +130,41 @@ const linkBody = z.object({
   note: z.string().max(2000).optional(),
 })
 
-incidentInvestigationRouter.post('/:id/links', async (req, res, next) => {
-  try {
-    const parsed = linkBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'Choose a record to link.' })
-    }
-    res.status(201).json(await svc.addLink(callerOf(req), req.params.id, parsed.data, ctxOf(req)))
-  } catch (e) {
-    next(e)
+incidentInvestigationRouter.post('/:id/links', asyncRoute(async (req, res) => {
+  const parsed = linkBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'Choose a record to link.' })
   }
-})
+  res.status(201).json(await svc.addLink(callerOf(req), req.params.id, parsed.data, ctxOf(req)))
+}))
 
-incidentInvestigationRouter.delete('/links/:linkId', async (req, res, next) => {
-  try {
-    await svc.removeLink(callerOf(req), req.params.linkId, ctxOf(req))
-    res.status(204).end()
-  } catch (e) {
-    next(e)
-  }
-})
+incidentInvestigationRouter.delete('/links/:linkId', asyncRoute(async (req, res) => {
+  await svc.removeLink(callerOf(req), req.params.linkId, ctxOf(req))
+  res.status(204).end()
+}))
 
 // ── The one-page summary ─────────────────────────────────────────────────────
 
 const summaries = new IncidentSummaryService(prisma)
 
-incidentInvestigationRouter.get('/:id/summary', async (req, res, next) => {
-  try {
-    const data = await summaries.build(callerOf(req), req.params.id)
-    res.json({ ...data, generatedAt: data.generatedAt.toISOString(), periodEnd: data.periodEnd.toISOString(), periodStart: null })
-  } catch (e) {
-    next(e)
-  }
-})
+incidentInvestigationRouter.get('/:id/summary', asyncRoute(async (req, res) => {
+  const data = await summaries.build(callerOf(req), req.params.id)
+  res.json({ ...data, generatedAt: data.generatedAt.toISOString(), periodEnd: data.periodEnd.toISOString(), periodStart: null })
+}))
 
-incidentInvestigationRouter.get('/:id/summary.pdf', async (req, res, next) => {
-  try {
-    const pdf = await renderReportPdf(await summaries.build(callerOf(req), req.params.id))
-    res.setHeader('Content-Type', 'application/pdf')
-    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(pdf.fileName)}"`)
-    res.setHeader('X-Content-Type-Options', 'nosniff')
-    res.send(pdf.bytes)
-  } catch (e) {
-    next(e)
-  }
-})
+incidentInvestigationRouter.get('/:id/summary.pdf', asyncRoute(async (req, res) => {
+  const pdf = await renderReportPdf(await summaries.build(callerOf(req), req.params.id))
+  res.setHeader('Content-Type', 'application/pdf')
+  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(pdf.fileName)}"`)
+  res.setHeader('X-Content-Type-Options', 'nosniff')
+  res.send(pdf.bytes)
+}))
 
 // ── The investigation ────────────────────────────────────────────────────────
 
-incidentInvestigationRouter.get('/:id/investigation', async (req, res, next) => {
-  try {
-    res.json(await svc.getInvestigation(callerOf(req), req.params.id))
-  } catch (e) {
-    next(e)
-  }
-})
+incidentInvestigationRouter.get('/:id/investigation', asyncRoute(async (req, res) => {
+  res.json(await svc.getInvestigation(callerOf(req), req.params.id))
+}))
 
 const investigationBody = z.object({
   leadInvestigator: z.string().max(200).optional(),
@@ -224,24 +177,16 @@ const investigationBody = z.object({
   fishbone: z.record(z.array(z.string().max(500))).optional(),
 })
 
-incidentInvestigationRouter.put('/:id/investigation', async (req, res, next) => {
-  try {
-    const parsed = investigationBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'That investigation update is not valid.' })
-    }
-    res.json(await svc.saveInvestigation(callerOf(req), req.params.id, parsed.data, ctxOf(req)))
-  } catch (e) {
-    next(e)
+incidentInvestigationRouter.put('/:id/investigation', asyncRoute(async (req, res) => {
+  const parsed = investigationBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'That investigation update is not valid.' })
   }
-})
+  res.json(await svc.saveInvestigation(callerOf(req), req.params.id, parsed.data, ctxOf(req)))
+}))
 
-incidentInvestigationRouter.post('/:id/investigation/complete', async (req, res, next) => {
-  try {
-    res.json(await svc.completeInvestigation(callerOf(req), req.params.id, ctxOf(req)))
-  } catch (e) {
-    next(e)
-  }
-})
+incidentInvestigationRouter.post('/:id/investigation/complete', asyncRoute(async (req, res) => {
+  res.json(await svc.completeInvestigation(callerOf(req), req.params.id, ctxOf(req)))
+}))
 
 export { InvestigationError }

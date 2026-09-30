@@ -2,13 +2,13 @@ import type {
   AuditStatus, AuditType, DocKind, FindingSeverity, Prisma, PrismaClient, Role,
 } from '@prisma/client'
 // `Caller` is the verified identity shape shared by every module — see permitService.
-import { type Caller } from './incidentService.js'
+import { type Caller, membershipOf } from '../domain/caller.js'
 import { enqueueEvent } from './webhookService.js'
 import {
   AUDIT_TEMPLATES, AUDIT_TYPE_LABEL, BUILT_IN_TEMPLATE_IDS, SEVERITY_DUE_DAYS,
   SEVERITY_PRIORITY, type AuditTemplateShape, templateItemCount,
 } from './auditCatalog.js'
-import { DomainError } from './errors.js'
+import { DomainError } from '../domain/errors.js'
 import { resolveOwnerId } from './actionOwner.js'
 
 /** Roles permitted to plan, close and sign off audits, and to approve documents. */
@@ -86,10 +86,9 @@ export class AuditService {
   // ── Authorisation ──────────────────────────────────────────────────────────
 
   private membership(caller: Caller, companyId: string) {
-    const m = caller.roles.find((r) => r.companyId === companyId)
-    if (!m) throw new AuditError('forbidden', 'You do not have access to this workspace.', 403)
-    return m
+    return membershipOf(caller, companyId, AuditError)
   }
+
 
   private requireReviewer(caller: Caller, companyId: string, what: string) {
     const m = this.membership(caller, companyId)

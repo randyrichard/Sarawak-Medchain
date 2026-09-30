@@ -10,7 +10,8 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
 import { PrismaRateLimitStore } from '../lib/rateLimitStore.js'
 import { AccountError, AccountService, LANDING_PAGES } from '../lib/accountService.js'
-import { requireAuth } from '../middleware/requireAuth.js'
+import { requireAuth } from '../http/requireAuth.js'
+import { asyncRoute } from '../http/asyncRoute.js'
 
 const svc = new AccountService(prisma)
 export const accountRouter = Router()
@@ -36,30 +37,22 @@ const changeLimiter = rateLimit({
 
 // ── Preferences ──────────────────────────────────────────────────────────────
 
-accountRouter.get('/preferences', async (req, res, next) => {
-  try {
-    res.json(await svc.getPreferences(req.auth!.sub))
-  } catch (e) {
-    next(e)
-  }
-})
+accountRouter.get('/preferences', asyncRoute(async (req, res) => {
+  res.json(await svc.getPreferences(req.auth!.sub))
+}))
 
 const preferencesBody = z.object({
   landingPage: z.enum(LANDING_PAGES).optional(),
   defaultSiteId: z.string().max(120).nullable().optional(),
 })
 
-accountRouter.patch('/preferences', async (req, res, next) => {
-  try {
-    const parsed = preferencesBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: 'Those are not settings we recognise.' })
-    }
-    res.json(await svc.updatePreferences(req.auth!.sub, parsed.data))
-  } catch (e) {
-    next(e)
+accountRouter.patch('/preferences', asyncRoute(async (req, res) => {
+  const parsed = preferencesBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'Those are not settings we recognise.' })
   }
-})
+  res.json(await svc.updatePreferences(req.auth!.sub, parsed.data))
+}))
 
 // ── Password ─────────────────────────────────────────────────────────────────
 
@@ -68,26 +61,22 @@ const passwordBody = z.object({
   newPassword: z.string().min(1).max(200),
 })
 
-accountRouter.post('/password', changeLimiter, async (req, res, next) => {
-  try {
-    const parsed = passwordBody.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({
-        error: 'validation',
-        message: 'Enter your current password and a new one.',
-      })
-    }
-    const result = await svc.changePassword(
-      req.auth!.sub,
-      parsed.data.currentPassword,
-      parsed.data.newPassword,
-      // Passed so this browser's session survives; every other device is signed out.
-      req.cookies?.[REFRESH_COOKIE],
-    )
-    res.json(result)
-  } catch (e) {
-    next(e)
+accountRouter.post('/password', changeLimiter, asyncRoute(async (req, res) => {
+  const parsed = passwordBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'validation',
+      message: 'Enter your current password and a new one.',
+    })
   }
-})
+  const result = await svc.changePassword(
+    req.auth!.sub,
+    parsed.data.currentPassword,
+    parsed.data.newPassword,
+    // Passed so this browser's session survives; every other device is signed out.
+    req.cookies?.[REFRESH_COOKIE],
+  )
+  res.json(result)
+}))
 
 export { AccountError }

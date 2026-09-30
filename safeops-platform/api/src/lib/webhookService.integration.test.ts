@@ -5,7 +5,7 @@ import { enqueueEvent, sweepDeliveries, MAX_ATTEMPTS } from './webhookService.js
 import { verifySignature, SIGNATURE_HEADER, EVENT_HEADER } from './webhookDelivery.js'
 import { seal } from './secretBox.js'
 import { IncidentService } from './incidentService.js'
-import type { Caller } from './incidentService.js'
+import type { Caller } from '../domain/caller.js'
 
 /**
  * Webhook delivery, end to end, against a real database and a real HTTP receiver.

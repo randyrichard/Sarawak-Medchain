@@ -2,7 +2,8 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from
 import { PrismaClient } from '@prisma/client'
 import { ReportService } from './reportService.js'
 import { Scheduler } from './scheduler.js'
-import { IncidentService, type Caller } from './incidentService.js'
+import { IncidentService } from './incidentService.js'
+import { type Caller } from '../domain/caller.js'
 import { dueSlotKey } from './reportSchedule.js'
 import { EmailProviderError, setEmailProviderForTests, type EmailMessage, type EmailProvider } from './email/index.js'
 

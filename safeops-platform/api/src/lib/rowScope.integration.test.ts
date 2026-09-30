@@ -5,7 +5,7 @@ import { InvestigationService } from './incidentInvestigation.js'
 import { SearchService } from './searchService.js'
 import { EmployeeService } from './employeeService.js'
 import { NotificationService, visibleToRole } from './notificationService.js'
-import type { Caller } from './incidentService.js'
+import type { Caller } from '../domain/caller.js'
 
 /**
  * Row-level scope, on the paths that reach a record without going through its module's

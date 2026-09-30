@@ -1,7 +1,7 @@
 import type { PrismaClient } from '@prisma/client'
 // `Caller` is the verified identity shape shared by every module — see permitService.
-import { type Caller } from './incidentService.js'
-import { DomainError } from './errors.js'
+import { type Caller, membershipOf } from '../domain/caller.js'
+import { DomainError } from '../domain/errors.js'
 
 export class ActivityError extends DomainError {}
 
@@ -37,10 +37,9 @@ export class ActivityService {
   constructor(private db: PrismaClient) {}
 
   private membership(caller: Caller, companyId: string) {
-    const m = caller.roles.find((r) => r.companyId === companyId)
-    if (!m) throw new ActivityError('forbidden', 'You do not have access to this workspace.', 403)
-    return m
+    return membershipOf(caller, companyId, ActivityError)
   }
+
 
   /**
    * Recent activity across the workspace.

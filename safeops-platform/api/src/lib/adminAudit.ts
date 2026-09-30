@@ -1,5 +1,5 @@
 import type { PrismaClient } from '@prisma/client'
-import type { Caller } from './incidentService.js'
+import type { Caller } from '../domain/caller.js'
 
 /**
  * The administrative audit trail.

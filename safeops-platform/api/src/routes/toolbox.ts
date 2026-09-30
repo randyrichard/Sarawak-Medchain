@@ -2,8 +2,9 @@ import { Router } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
 import { ToolboxService } from '../lib/toolboxService.js'
-import { requireAuth } from '../middleware/requireAuth.js'
-import { callerOf } from '../middleware/caller.js'
+import { requireAuth } from '../http/requireAuth.js'
+import { callerOf } from '../http/caller.js'
+import { asyncRoute } from '../http/asyncRoute.js'
 
 const svc = new ToolboxService(prisma)
 export const toolboxRouter = Router()
@@ -43,82 +44,54 @@ const body = z.object({
   })).max(50),
 })
 
-toolboxRouter.get('/', async (req, res, next) => {
-  try {
-    const parsed = listQuery.safeParse(req.query)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: parsed.error.issues[0]?.message ?? 'Invalid query parameters.' })
-    }
-    res.json(await svc.list(callerOf(req), parsed.data))
-  } catch (e) {
-    next(e)
+toolboxRouter.get('/', asyncRoute(async (req, res) => {
+  const parsed = listQuery.safeParse(req.query)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: parsed.error.issues[0]?.message ?? 'Invalid query parameters.' })
   }
-})
+  res.json(await svc.list(callerOf(req), parsed.data))
+}))
 
 // Literal paths before /:id, or "today" would be looked up as a meeting id.
-toolboxRouter.get('/today', async (req, res, next) => {
-  try {
-    const parsed = companyOnly.safeParse(req.query)
-    if (!parsed.success) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
-    res.json(await svc.today(callerOf(req), parsed.data.companyId))
-  } catch (e) {
-    next(e)
-  }
-})
+toolboxRouter.get('/today', asyncRoute(async (req, res) => {
+  const parsed = companyOnly.safeParse(req.query)
+  if (!parsed.success) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
+  res.json(await svc.today(callerOf(req), parsed.data.companyId))
+}))
 
-toolboxRouter.get('/organisations', async (req, res, next) => {
-  try {
-    const parsed = companyOnly.safeParse(req.query)
-    if (!parsed.success) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
-    res.json({ rows: await svc.organisations(callerOf(req), parsed.data.companyId) })
-  } catch (e) {
-    next(e)
-  }
-})
+toolboxRouter.get('/organisations', asyncRoute(async (req, res) => {
+  const parsed = companyOnly.safeParse(req.query)
+  if (!parsed.success) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
+  res.json({ rows: await svc.organisations(callerOf(req), parsed.data.companyId) })
+}))
 
-toolboxRouter.get('/:id', async (req, res, next) => {
-  try {
-    const parsed = companyOnly.safeParse(req.query)
-    if (!parsed.success) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
-    res.json(await svc.get(callerOf(req), parsed.data.companyId, req.params.id))
-  } catch (e) {
-    next(e)
-  }
-})
+toolboxRouter.get('/:id', asyncRoute(async (req, res) => {
+  const parsed = companyOnly.safeParse(req.query)
+  if (!parsed.success) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
+  res.json(await svc.get(callerOf(req), parsed.data.companyId, req.params.id))
+}))
 
-toolboxRouter.post('/', async (req, res, next) => {
-  try {
-    const parsed = body.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: parsed.error.issues[0]?.message ?? 'Invalid toolbox meeting.' })
-    }
-    const { companyId, ...input } = parsed.data
-    res.status(201).json(await svc.create(callerOf(req), companyId, input, ctxOf(req)))
-  } catch (e) {
-    next(e)
+toolboxRouter.post('/', asyncRoute(async (req, res) => {
+  const parsed = body.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: parsed.error.issues[0]?.message ?? 'Invalid toolbox meeting.' })
   }
-})
+  const { companyId, ...input } = parsed.data
+  res.status(201).json(await svc.create(callerOf(req), companyId, input, ctxOf(req)))
+}))
 
-toolboxRouter.put('/:id', async (req, res, next) => {
-  try {
-    const parsed = body.safeParse(req.body)
-    if (!parsed.success) {
-      return res.status(400).json({ error: 'validation', message: parsed.error.issues[0]?.message ?? 'Invalid toolbox meeting.' })
-    }
-    const { companyId, ...input } = parsed.data
-    res.json(await svc.update(callerOf(req), companyId, req.params.id, input, ctxOf(req)))
-  } catch (e) {
-    next(e)
+toolboxRouter.put('/:id', asyncRoute(async (req, res) => {
+  const parsed = body.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: parsed.error.issues[0]?.message ?? 'Invalid toolbox meeting.' })
   }
-})
+  const { companyId, ...input } = parsed.data
+  res.json(await svc.update(callerOf(req), companyId, req.params.id, input, ctxOf(req)))
+}))
 
-toolboxRouter.delete('/:id', async (req, res, next) => {
-  try {
-    const parsed = companyOnly.safeParse(req.query)
-    if (!parsed.success) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
-    await svc.remove(callerOf(req), parsed.data.companyId, req.params.id, ctxOf(req))
-    res.status(204).end()
-  } catch (e) {
-    next(e)
-  }
-})
+toolboxRouter.delete('/:id', asyncRoute(async (req, res) => {
+  const parsed = companyOnly.safeParse(req.query)
+  if (!parsed.success) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
+  await svc.remove(callerOf(req), parsed.data.companyId, req.params.id, ctxOf(req))
+  res.status(204).end()
+}))

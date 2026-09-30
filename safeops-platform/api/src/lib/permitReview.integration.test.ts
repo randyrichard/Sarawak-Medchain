@@ -4,7 +4,7 @@ import { PermitService } from './permitService.js'
 import { PermitReviewService } from './permitReview.js'
 import { PermitPeopleService } from './permitPeople.js'
 import { EmployeeService } from './employeeService.js'
-import type { Caller } from './incidentService.js'
+import type { Caller } from '../domain/caller.js'
 
 /**
  * Integration tests against a REAL PostgreSQL database.

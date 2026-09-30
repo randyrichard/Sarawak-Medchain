@@ -2,14 +2,14 @@ import type { Prisma, PrismaClient, PermitStatus, PermitType, Role } from '@pris
 // `Caller` is the verified identity shape shared by every module. It is defined next to
 // the first service that needed it; importing the type keeps one definition rather than a
 // second that can silently drift.
-import { type Caller } from './incidentService.js'
+import { type Caller, membershipOf } from '../domain/caller.js'
 import {
   GAS_LIMITS, GAS_TEST_REQUIRED, ISOLATION_REQUIRED, PERMIT_CONTROLS, PERMIT_MAX_HOURS,
   SEPARATE_APPROVER_REQUIRED,
   PERMIT_STATUS_LABEL, PERMIT_TYPES, PERMIT_TYPE_LABEL, gasTestPasses, activationBlockers,
 } from './permitCatalog.js'
 import { equipmentBlockers } from './equipmentService.js'
-import { DomainError } from './errors.js'
+import { DomainError } from '../domain/errors.js'
 
 /**
  * Issuing authority: who may approve, reject, suspend, resume and close a permit.
@@ -88,10 +88,9 @@ export class PermitService {
    * session, not from the request.
    */
   private membership(caller: Caller, companyId: string) {
-    const m = caller.roles.find((r) => r.companyId === companyId)
-    if (!m) throw new PermitError('forbidden', 'You do not have access to this workspace.', 403)
-    return m
+    return membershipOf(caller, companyId, PermitError)
   }
+
 
   private requireIssuer(caller: Caller, companyId: string) {
     const m = this.membership(caller, companyId)

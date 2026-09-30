@@ -11,9 +11,10 @@ import { join } from 'node:path'
  */
 describe('service errors', () => {
   it('all extend DomainError', () => {
-    const dir = join(__dirname)
+    // The services live in lib/; this base class lives in domain/.
+    const dir = join(__dirname, '..', 'lib')
     const offenders = readdirSync(dir)
-      .filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts') && f !== 'errors.ts')
+      .filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'))
       .filter((f) => /class \w+Error extends Error \{[^}]*public status/s.test(readFileSync(join(dir, f), 'utf8')))
     expect(offenders).toEqual([])
   })

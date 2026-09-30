@@ -1,4 +1,4 @@
-import type { Caller } from '../lib/incidentService.js'
+import type { Caller } from '../domain/caller.js'
 
 /**
  * The caller as every service expects it, built from the verified access token.
