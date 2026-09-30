@@ -832,7 +832,9 @@ export class IncidentService {
     expectedVersion?: number
   }) {
     const action = await this.db.correctiveAction.findUnique({ where: { id: actionId } })
-    if (!action) throw new IncidentError('not_found', 'Action not found.', 404)
+    if (!action || !caller.roles.some((r) => r.companyId === action.companyId)) {
+      throw new IncidentError('not_found', 'Action not found.', 404)
+    }
 
     const m = this.membership(caller, action.companyId)
     const isOwner = action.owner === caller.name
@@ -1144,8 +1146,7 @@ export class IncidentService {
 
   async addActionNote(caller: Caller, actionId: string, body: string, mentions: string[] = []) {
     const action = await this.db.correctiveAction.findUnique({ where: { id: actionId } })
-    if (!action) throw new IncidentError('not_found', 'Action not found.', 404)
-    this.membership(caller, action.companyId)
+    await this.assertActionVisible(caller, action)
     if (!body?.trim()) throw new IncidentError('validation', 'A note cannot be empty.')
 
     return this.db.capaNote.create({
@@ -1164,9 +1165,47 @@ export class IncidentService {
       where: { id: actionId },
       include: { notes: { orderBy: { createdAt: 'asc' } } },
     })
-    if (!action) throw new IncidentError('not_found', 'Action not found.', 404)
-    this.membership(caller, action.companyId)
-    return action
+    await this.assertActionVisible(caller, action)
+    return action!
+  }
+
+  /**
+   * Whether the caller may open one corrective action - the same rows the register and
+   * the incident page already show them, and no others.
+   *
+   * The register narrows employees and supervisors to the actions they own, but a direct
+   * fetch by id checked only the tenant, and action ids are not secret: every action
+   * reminder is broadcast to the whole workspace carrying /actions/<id> in its link, so
+   * every employee's notification feed hands them the ids. With those, any employee could
+   * read - and write notes onto - any action in the company through the API.
+   *
+   * Visible when the caller:
+   *   - holds a role the register shows every action to (admin, HSE manager, safety
+   *     officer, executive), or
+   *   - owns it - the register's rule for employees and supervisors, or
+   *   - can open the incident it was raised on, where the incident page already lists it.
+   *
+   * Another workspace's action is "not found" rather than "forbidden", as for incidents:
+   * a 403 for a real id beside a 404 for an invented one says which ids exist.
+   */
+  private async assertActionVisible(
+    caller: Caller,
+    action: { companyId: string; owner: string; incidentId: string | null } | null,
+  ): Promise<void> {
+    if (!action || !caller.roles.some((r) => r.companyId === action.companyId)) {
+      throw new IncidentError('not_found', 'Action not found.', 404)
+    }
+    const m = this.membership(caller, action.companyId)
+    if (!['employee', 'supervisor'].includes(m.role)) return
+    if (action.owner === caller.name) return
+    if (action.incidentId) {
+      const incident = await this.db.incident.findFirst({
+        where: { id: action.incidentId, archived: false, ...this.scopeWhere(caller, action.companyId) },
+        select: { id: true },
+      })
+      if (incident) return
+    }
+    throw new IncidentError('forbidden', 'You do not have access to this action.', 403)
   }
 
   // ── Action analytics ───────────────────────────────────────────────────────
