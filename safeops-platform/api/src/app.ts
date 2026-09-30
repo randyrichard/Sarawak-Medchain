@@ -30,32 +30,10 @@ import { contractorsRouter } from './routes/contractors.js'
 import { dashboardRouter } from './routes/dashboard.js'
 import { orgAdminRouter, inviteRouter } from './routes/orgAdmin.js'
 import { platformRouter } from './routes/platform.js'
-import { ProvisioningError } from './lib/provisioningService.js'
-import { OrgAdminError } from './lib/orgAdminService.js'
 import { v1Router } from './routes/v1.js'
+import { DomainError } from './lib/errors.js'
 import { hashApiKey } from './lib/apiKeyAuth.js'
-import { DashboardError } from './lib/dashboardService.js'
-import { AuthError } from './lib/authService.js'
-import { IncidentError } from './lib/incidentService.js'
-import { PermitError } from './lib/permitService.js'
-import { InspectionError } from './lib/inspectionService.js'
-import { AuditError } from './lib/auditService.js'
-import { TrainingError } from './lib/trainingService.js'
-import { AdminError } from './lib/adminService.js'
-import { OrgError } from './lib/orgService.js'
-import { NotificationError } from './lib/notificationService.js'
-import { ActivityError } from './lib/activityService.js'
-import { AccountError } from './lib/accountService.js'
-import { SearchError } from './lib/searchService.js'
-import { EmployeeError } from './lib/employeeService.js'
-import { ContractorError } from './lib/contractorService.js'
-import { ToolboxError } from './lib/toolboxService.js'
-import { SiteComparisonError } from './lib/siteComparison.js'
 import { toolboxRouter } from './routes/toolbox.js'
-import { EquipmentError } from './lib/equipmentService.js'
-import { VisitorError } from './lib/visitorService.js'
-import { ReportError } from './lib/reportService.js'
-import { InvestigationError } from './lib/incidentInvestigation.js'
 
 /**
  * Removes single-use credentials from a path before it is logged.
@@ -274,31 +252,9 @@ export function createApp() {
 
   // Central error handler: clients get a stable code, details stay in the server log.
   app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    if (
-      err instanceof AuthError ||
-      err instanceof IncidentError ||
-      err instanceof PermitError ||
-      err instanceof InspectionError ||
-      err instanceof AuditError ||
-      err instanceof TrainingError ||
-      err instanceof AdminError ||
-      err instanceof OrgError ||
-      err instanceof NotificationError ||
-      err instanceof ActivityError ||
-      err instanceof AccountError ||
-      err instanceof SearchError ||
-      err instanceof EmployeeError ||
-      err instanceof ContractorError ||
-      err instanceof ToolboxError ||
-      err instanceof SiteComparisonError ||
-      err instanceof EquipmentError ||
-      err instanceof VisitorError ||
-      err instanceof ReportError ||
-      err instanceof InvestigationError ||
-      err instanceof DashboardError ||
-      err instanceof OrgAdminError ||
-      err instanceof ProvisioningError
-    ) {
+    // Every service refuses through a DomainError subclass (lib/errors.ts), so a new
+    // module is answered correctly without being registered here.
+    if (err instanceof DomainError) {
       return res.status(err.status).json({ error: err.code, message: err.message })
     }
 

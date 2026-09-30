@@ -8,6 +8,7 @@ import { OrgAdminService, INVITE_TTL_DAYS, invitationUrl } from './orgAdminServi
 import {
   COMPANY_STATUSES, SUBSCRIPTION_STATUSES, formatMyr, isSellablePlan, planFor,
 } from './planCatalog.js'
+import { DomainError } from './errors.js'
 
 /**
  * Creating a customer.
@@ -23,9 +24,9 @@ import {
  * which rows were real.
  */
 
-export class ProvisioningError extends Error {
-  constructor(public code: string, message: string, public status = 400) {
-    super(message)
+export class ProvisioningError extends DomainError {
+  constructor(code: string, message: string, status = 400) {
+    super(code, message, status)
     this.name = 'ProvisioningError'
   }
 }

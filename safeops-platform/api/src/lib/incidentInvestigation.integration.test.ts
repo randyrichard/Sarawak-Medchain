@@ -440,6 +440,18 @@ d('Incident investigation — integration (real Postgres)', () => {
     expect(board.bySite[0].name).toBe('Investigation Site')
   })
 
+  it('merges free text that differs only by surrounding spaces, and leaves blanks out', async () => {
+    await newIncident({ department: 'Maintenance' })
+    await newIncident({ department: ' Maintenance ' })
+    await newIncident({ department: '' })
+
+    const board = await incidents.board(admin, COMPANY)
+    expect(board.byDepartment).toEqual([{ name: 'Maintenance', value: 2 }])
+    // Every incident counts toward the total, including the one with no department.
+    expect(board.total).toBe(3)
+    expect(board.bySite).toEqual([{ name: 'Investigation Site', value: 3 }])
+  })
+
   it('refuses the board to somebody outside the workspace', async () => {
     const outsider: Caller = {
       userId: 'inv-outsider', name: 'Outsider',

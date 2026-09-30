@@ -13,12 +13,9 @@
  */
 import type { PrismaClient } from '@prisma/client'
 import { actionScopeWhere, incidentScopeWhere, type Caller } from './incidentService.js'
+import { DomainError } from './errors.js'
 
-export class SearchError extends Error {
-  constructor(public code: string, message: string, public status = 400) {
-    super(message)
-  }
-}
+export class SearchError extends DomainError {}
 
 export type SearchKind =
   | 'incident' | 'action' | 'permit' | 'asset' | 'audit' | 'certificate' | 'visitor'

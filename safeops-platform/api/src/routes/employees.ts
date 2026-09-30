@@ -4,19 +4,14 @@ import { prisma } from '../lib/prisma.js'
 import {
   EMPLOYEE_SORTS, EmployeeError, EmployeeService, MEDICAL_FILTERS,
 } from '../lib/employeeService.js'
-import type { Caller } from '../lib/incidentService.js'
 import { requireAuth } from '../middleware/requireAuth.js'
+import { callerOf } from '../middleware/caller.js'
 
 const svc = new EmployeeService(prisma)
 export const employeesRouter = Router()
 
 // Identity always comes from the verified token, never from the request body.
 employeesRouter.use(requireAuth)
-
-function callerOf(req: { auth?: { sub: string; name: string; roles: unknown } }): Caller {
-  const a = req.auth!
-  return { userId: a.sub, name: a.name, roles: a.roles as Caller['roles'] }
-}
 
 function ctxOf(req: { ip?: string; headers: Record<string, unknown> }) {
   return { ip: req.ip, device: String(req.headers['user-agent'] ?? '').slice(0, 300) }

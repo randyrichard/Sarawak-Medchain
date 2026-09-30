@@ -10,6 +10,7 @@ import { prisma } from '../lib/prisma.js'
 import { PermitError } from '../lib/permitService.js'
 import type { Caller } from '../lib/incidentService.js'
 import { requireAuth } from '../middleware/requireAuth.js'
+import { callerOf } from '../middleware/caller.js'
 
 /**
  * Permit documents: method statements, JSAs, gas test sheets, isolation certificates
@@ -23,11 +24,6 @@ import { requireAuth } from '../middleware/requireAuth.js'
 export const permitAttachmentsRouter = Router()
 
 permitAttachmentsRouter.use(requireAuth)
-
-function callerOf(req: { auth?: { sub: string; name: string; roles: unknown } }): Caller {
-  const a = req.auth!
-  return { userId: a.sub, name: a.name, roles: a.roles as Caller['roles'] }
-}
 
 const UPLOAD_DIR = resolve(process.cwd(), env.UPLOAD_DIR)
 if (!existsSync(UPLOAD_DIR)) mkdirSync(UPLOAD_DIR, { recursive: true })

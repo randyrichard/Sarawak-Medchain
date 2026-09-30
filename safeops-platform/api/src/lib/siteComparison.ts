@@ -24,12 +24,9 @@ import {
 import { LOST_TIME_SEVERITIES, isInjury, isNearMiss } from './incidentCatalog.js'
 import { ON_SITE_STATUSES } from './visitorService.js'
 import { ToolboxService } from './toolboxService.js'
+import { DomainError } from './errors.js'
 
-export class SiteComparisonError extends Error {
-  constructor(public code: string, message: string, public status = 400) {
-    super(message)
-  }
-}
+export class SiteComparisonError extends DomainError {}
 
 /** The people who manage more than one site's safety - and the executive above them. */
 const COMPARE_ROLES: Role[] = ['admin', 'hse_manager', 'safety_officer', 'ceo']
@@ -112,10 +109,13 @@ export class SiteComparisonService {
     const [openInc, highRisk, inRange, lastLti, overdue, openAct, permits, visitors, today] = await Promise.all([
       this.db.incident.groupBy({ by: ['siteId'], where: { ...incidents, stage: { notIn: ['closed', 'draft'] } }, _count: true }),
       this.db.incident.groupBy({ by: ['siteId'], where: { ...incidents, stage: { notIn: ['closed', 'draft'] }, highRisk: true }, _count: true }),
-      this.db.incident.findMany({
+      // One row per (site, type, severity) rather than one per incident: the classifiers
+      // below only need those three, and a busy workspace no longer loads (or, past a
+      // cap, silently truncates) every incident in the window to count them.
+      this.db.incident.groupBy({
+        by: ['siteId', 'type', 'severity'],
         where: { ...incidents, occurredAt: { gte: from, lte: to } },
-        select: { siteId: true, type: true, severity: true },
-        take: 20000,
+        _count: { _all: true },
       }),
       this.db.incident.groupBy({
         by: ['siteId'],
@@ -141,8 +141,20 @@ export class SiteComparisonService {
     const toolboxBy = new Map(today.sites.map((s) => [s.siteId, s]))
     const todayUtc = utcDay(now)
 
+    // Per-site incident counts for the window, bucketed once instead of re-scanning the
+    // whole result for every site.
+    const rangeBy = new Map<string, { total: number; nearMisses: number; injuries: number }>()
+    for (const g of inRange) {
+      const c = rangeBy.get(g.siteId) ?? { total: 0, nearMisses: 0, injuries: 0 }
+      const n = g._count._all
+      c.total += n
+      if (isNearMiss(g)) c.nearMisses += n
+      if (isInjury(g)) c.injuries += n
+      rangeBy.set(g.siteId, c)
+    }
+
     const rows: SiteRow[] = sites.map((s) => {
-      const mine = inRange.filter((i) => i.siteId === s.id)
+      const mine = rangeBy.get(s.id) ?? { total: 0, nearMisses: 0, injuries: 0 }
       const lti = ltiBy.get(s.id) ?? null
       const tb = toolboxBy.get(s.id)
       const row: SiteRow = {
@@ -151,9 +163,9 @@ export class SiteComparisonService {
         city: s.city,
         openIncidents: openBy.get(s.id) ?? 0,
         highRiskOpen: riskBy.get(s.id) ?? 0,
-        incidentsInRange: mine.length,
-        nearMissesInRange: mine.filter(isNearMiss).length,
-        injuriesInRange: mine.filter(isInjury).length,
+        incidentsInRange: mine.total,
+        nearMissesInRange: mine.nearMisses,
+        injuriesInRange: mine.injuries,
         daysSinceLostTime: lti ? Math.max(0, Math.round((todayUtc - utcDay(lti)) / DAY)) : null,
         lastLostTimeAt: lti ? lti.toISOString() : null,
         overdueActions: overdueBy.get(s.id) ?? 0,

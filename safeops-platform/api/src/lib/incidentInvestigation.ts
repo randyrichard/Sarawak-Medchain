@@ -3,6 +3,7 @@ import type {
 } from '@prisma/client'
 import { incidentScopeWhere, type Caller } from './incidentService.js'
 import { MANDATORY_INVESTIGATION } from './incidentCatalog.js'
+import { DomainError } from './errors.js'
 
 /**
  * The investigation half of incident management: who was involved, what else the event
@@ -12,9 +13,9 @@ import { MANDATORY_INVESTIGATION } from './incidentCatalog.js'
  * PermitService - the case file and the workflow are different concerns, and the file was
  * already long enough that a reader could not hold it in their head.
  */
-export class InvestigationError extends Error {
-  constructor(public code: string, message: string, public status = 400) {
-    super(message)
+export class InvestigationError extends DomainError {
+  constructor(code: string, message: string, status = 400) {
+    super(code, message, status)
     this.name = 'InvestigationError'
   }
 }

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import type { PrismaClient, Role, VisitorEventKind, VisitorStatus } from '@prisma/client'
 import type { Caller } from './incidentService.js'
+import { DomainError } from './errors.js'
 
 /**
  * Visitor management.
@@ -10,9 +11,9 @@ import type { Caller } from './incidentService.js'
  * keeps that answer true, and every one of them is enforced here rather than on the screen
  * - a blacklist checked only by the client is not a blacklist.
  */
-export class VisitorError extends Error {
-  constructor(public code: string, message: string, public status = 400) {
-    super(message)
+export class VisitorError extends DomainError {
+  constructor(code: string, message: string, status = 400) {
+    super(code, message, status)
     this.name = 'VisitorError'
   }
 }

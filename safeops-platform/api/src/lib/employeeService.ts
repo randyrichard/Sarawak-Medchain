@@ -18,12 +18,9 @@
 import { Prisma, type PrismaClient } from '@prisma/client'
 import type { Caller } from './incidentService.js'
 import type { Role } from '@prisma/client'
+import { DomainError } from './errors.js'
 
-export class EmployeeError extends Error {
-  constructor(public code: string, message: string, public status = 400) {
-    super(message)
-  }
-}
+export class EmployeeError extends DomainError {}
 
 /** Roles that may change the register. Everyone else reads it. */
 const WRITE_ROLES: Role[] = ['admin', 'hse_manager']

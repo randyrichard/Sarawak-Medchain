@@ -2,12 +2,9 @@ import type { PrismaClient } from '@prisma/client'
 // `Caller` is the verified identity shape shared by every module — see permitService.
 import { type Caller } from './incidentService.js'
 import { planFor } from './planCatalog.js'
+import { DomainError } from './errors.js'
 
-export class OrgError extends Error {
-  constructor(public code: string, message: string, public status = 400) {
-    super(message)
-  }
-}
+export class OrgError extends DomainError {}
 
 /**
  * The organisation tree: companies, sites, departments and teams.

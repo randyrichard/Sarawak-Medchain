@@ -4,10 +4,11 @@ import { burnEquivalentWork, verifyPassword } from './password.js'
 import {
   generateRefreshToken, hashRefreshToken, newFamilyId, refreshExpiry, signAccessToken,
 } from './tokens.js'
+import { DomainError } from './errors.js'
 
-export class AuthError extends Error {
-  constructor(public code: string, message: string, public status = 401) {
-    super(message)
+export class AuthError extends DomainError {
+  constructor(code: string, message: string, status = 401) {
+    super(code, message, status)
   }
 }
 

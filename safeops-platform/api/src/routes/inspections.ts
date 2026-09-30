@@ -2,20 +2,15 @@ import { Router } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
 import { InspectionError, InspectionService } from '../lib/inspectionService.js'
-import type { Caller } from '../lib/incidentService.js'
 import { ASSET_CATEGORIES, CHECKLISTS } from '../lib/inspectionCatalog.js'
 import { requireAuth } from '../middleware/requireAuth.js'
+import { callerOf } from '../middleware/caller.js'
 
 const svc = new InspectionService(prisma)
 export const inspectionsRouter = Router()
 
 // Identity always comes from the verified token, never from the request body.
 inspectionsRouter.use(requireAuth)
-
-function callerOf(req: { auth?: { sub: string; name: string; roles: unknown } }): Caller {
-  const a = req.auth!
-  return { userId: a.sub, name: a.name, roles: a.roles as Caller['roles'] }
-}
 
 const MAX_PAGE_SIZE = 200
 const ASSET_CATEGORY = z.enum(ASSET_CATEGORIES)

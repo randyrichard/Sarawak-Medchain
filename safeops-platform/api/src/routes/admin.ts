@@ -5,23 +5,18 @@ import { join, resolve } from 'node:path'
 import archiver from 'archiver'
 import { prisma } from '../lib/prisma.js'
 import { AdminError, AdminService, type AdminContext } from '../lib/adminService.js'
-import type { Caller } from '../lib/incidentService.js'
 import { RBAC_ACTIONS, RBAC_MODULES, WEBHOOK_EVENTS } from '../lib/adminCatalog.js'
 import { requireAuth } from '../middleware/requireAuth.js'
 import {
   buildReadme, MANIFEST_COLUMNS, safeEntryName, toCsv, uniqueEntryName,
 } from '../lib/tenantExport.js'
 import { env } from '../env.js'
+import { callerOf } from '../middleware/caller.js'
 
 const svc = new AdminService(prisma)
 export const adminRouter = Router()
 
 adminRouter.use(requireAuth)
-
-function callerOf(req: { auth?: { sub: string; name: string; roles: unknown } }): Caller {
-  const a = req.auth!
-  return { userId: a.sub, name: a.name, roles: a.roles as Caller['roles'] }
-}
 
 /**
  * Request context for the audit trail. Taken from the connection and the user agent —

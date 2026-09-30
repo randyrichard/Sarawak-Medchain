@@ -20,12 +20,9 @@
 import { Prisma, type PrismaClient, type Role } from '@prisma/client'
 import type { Caller } from './incidentService.js'
 import { instantForLocal, isValidTimezone, localParts } from './reportSchedule.js'
+import { DomainError } from './errors.js'
 
-export class ToolboxError extends Error {
-  constructor(public code: string, message: string, public status = 400) {
-    super(message)
-  }
-}
+export class ToolboxError extends DomainError {}
 
 /**
  * Who may read the register. The people who run the briefing, the managers above them,

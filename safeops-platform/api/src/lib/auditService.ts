@@ -8,17 +8,14 @@ import {
   AUDIT_TEMPLATES, AUDIT_TYPE_LABEL, BUILT_IN_TEMPLATE_IDS, SEVERITY_DUE_DAYS,
   SEVERITY_PRIORITY, type AuditTemplateShape, templateItemCount,
 } from './auditCatalog.js'
+import { DomainError } from './errors.js'
 
 /** Roles permitted to plan, close and sign off audits, and to approve documents. */
 const REVIEW_ROLES: Role[] = ['admin', 'hse_manager']
 /** Roles permitted to manage controlled documents. */
 const MANAGE_ROLES: Role[] = ['admin', 'hse_manager', 'safety_officer']
 
-export class AuditError extends Error {
-  constructor(public code: string, message: string, public status = 400) {
-    super(message)
-  }
-}
+export class AuditError extends DomainError {}
 
 const DAY = 86400_000
 

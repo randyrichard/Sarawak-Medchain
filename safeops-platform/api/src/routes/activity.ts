@@ -2,18 +2,13 @@ import { Router } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
 import { ActivityError, ActivityService } from '../lib/activityService.js'
-import type { Caller } from '../lib/incidentService.js'
 import { requireAuth } from '../middleware/requireAuth.js'
+import { callerOf } from '../middleware/caller.js'
 
 const svc = new ActivityService(prisma)
 export const activityRouter = Router()
 
 activityRouter.use(requireAuth)
-
-function callerOf(req: { auth?: { sub: string; name: string; roles: unknown } }): Caller {
-  const a = req.auth!
-  return { userId: a.sub, name: a.name, roles: a.roles as Caller['roles'] }
-}
 
 const query = z.object({
   companyId: z.string().min(1),

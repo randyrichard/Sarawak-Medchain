@@ -17,12 +17,9 @@ import { callsTodayByKey, usageSeries } from './apiUsage.js'
 import { open, seal, secretBoxAvailable } from './secretBox.js'
 import { checkUrlShape, TARGET_MESSAGE } from './webhookTarget.js'
 import { deliver } from './webhookDelivery.js'
+import { DomainError } from './errors.js'
 
-export class AdminError extends Error {
-  constructor(public code: string, message: string, public status = 400) {
-    super(message)
-  }
-}
+export class AdminError extends DomainError {}
 
 const DAY = 86400_000
 

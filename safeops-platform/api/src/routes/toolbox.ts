@@ -2,19 +2,14 @@ import { Router } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
 import { ToolboxService } from '../lib/toolboxService.js'
-import type { Caller } from '../lib/incidentService.js'
 import { requireAuth } from '../middleware/requireAuth.js'
+import { callerOf } from '../middleware/caller.js'
 
 const svc = new ToolboxService(prisma)
 export const toolboxRouter = Router()
 
 // Identity always comes from the verified token, never from the request body.
 toolboxRouter.use(requireAuth)
-
-function callerOf(req: { auth?: { sub: string; name: string; roles: unknown } }): Caller {
-  const a = req.auth!
-  return { userId: a.sub, name: a.name, roles: a.roles as Caller['roles'] }
-}
 
 function ctxOf(req: { ip?: string; headers: Record<string, unknown> }) {
   return { ip: req.ip, device: String(req.headers['user-agent'] ?? '').slice(0, 300) }

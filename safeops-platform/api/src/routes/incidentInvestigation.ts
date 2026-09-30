@@ -5,10 +5,11 @@ import { InvestigationError, InvestigationService } from '../lib/incidentInvesti
 import {
   INCIDENT_SEVERITIES, INCIDENT_TYPES, SHIFTS, WEATHER,
 } from '../lib/incidentCatalog.js'
-import { IncidentService, type Caller } from '../lib/incidentService.js'
+import { IncidentService } from '../lib/incidentService.js'
 import { requireAuth } from '../middleware/requireAuth.js'
 import { IncidentSummaryService } from '../lib/incidentSummary.js'
 import { renderReportPdf } from '../lib/reportPdf.js'
+import { callerOf } from '../middleware/caller.js'
 
 /**
  * The investigation half of the incident API: people, related records, causal analysis.
@@ -22,11 +23,6 @@ const incidents = new IncidentService(prisma)
 export const incidentInvestigationRouter = Router()
 
 incidentInvestigationRouter.use(requireAuth)
-
-function callerOf(req: { auth?: { sub: string; name: string; roles: unknown } }): Caller {
-  const a = req.auth!
-  return { userId: a.sub, name: a.name, roles: a.roles as Caller['roles'] }
-}
 
 const ctxOf = (req: { ip?: string; get: (h: string) => string | undefined }) =>
   ({ ip: req.ip, device: req.get('user-agent') ?? '' })
