@@ -33,7 +33,7 @@ say "SafeOps health — $(date '+%F %H:%M:%S')"
 say ""
 
 # ── Containers ───────────────────────────────────────────────────────────────
-SERVICES="db api web"
+SERVICES="db api worker web"
 # With a domain configured, Caddy is the only way in from outside - a stopped proxy is an
 # outage even while everything behind it is healthy.
 [ -n "${SAFEOPS_APP_DOMAIN:-}" ] && SERVICES="$SERVICES caddy"
@@ -77,15 +77,16 @@ curl -fsS --max-time 5 "http://localhost:${WEB_PORT}/" >/dev/null 2>&1 \
 # ── Scheduler ────────────────────────────────────────────────────────────────
 # Reminders are the product's central promise. A stack that is up but not sweeping is
 # quietly failing at the thing the customer bought.
-if $DC logs --since 24h api 2>/dev/null | grep -q 'scheduler running'; then
+# The jobs run in the worker service (docker-compose.prod.yml).
+if $DC logs --since 24h worker 2>/dev/null | grep -q 'scheduler running'; then
   report_ok "scheduler started within the last 24h"
-elif $DC logs api 2>/dev/null | tail -200 | grep -q 'scheduler running'; then
+elif $DC logs worker 2>/dev/null | tail -200 | grep -q 'scheduler running'; then
   report_ok "scheduler started (before the 24h window)"
 else
   report_bad "no scheduler start in the logs — reminders and escalations are not firing"
 fi
 
-SWEEP_FAILURES=$($DC logs --since 24h api 2>/dev/null | grep -c 'sweep failed' || true)
+SWEEP_FAILURES=$($DC logs --since 24h worker 2>/dev/null | grep -c 'sweep failed' || true)
 [ "${SWEEP_FAILURES:-0}" -gt 0 ] && report_warn "$SWEEP_FAILURES sweep failure(s) in 24h"
 
 # ── Errors ───────────────────────────────────────────────────────────────────
