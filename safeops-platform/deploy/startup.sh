@@ -30,9 +30,9 @@ PENDING=$($DC exec -T api npx prisma migrate status 2>&1 | grep -ci 'not yet bee
 [ "$PENDING" -eq 0 ] || die "migrations are pending after startup. Check: $DC logs api"
 ok "schema up to date"
 
-$DC logs --tail=40 api 2>/dev/null | grep -q 'scheduler running' \
-  && ok "scheduler running" \
-  || warn "the scheduler did not report starting — reminders will not fire"
+worker_started \
+  && ok "scheduler running (worker)" \
+  || warn "the worker did not report starting — reminders will not fire. Check: $DC logs worker"
 
 echo
 "$DEPLOY_DIR/healthcheck.sh" || warn "startup completed but the health check found problems"

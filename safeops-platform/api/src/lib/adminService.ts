@@ -1354,7 +1354,9 @@ export class AdminService {
     // the backup job reports the newest snapshot. A job with no last-run has genuinely not
     // run, and says so.
     const runs = await readJobRuns(this.db)
-    const sweepOf: Record<string, keyof typeof runs> = { j1: 'reminders', j2: 'expiry', j6: 'webhooks' }
+    const sweepOf: Record<string, keyof typeof runs> = {
+      j1: 'reminders', j2: 'expiry', j6: 'webhooks', j7: 'equipment', j8: 'visitors', j9: 'reports',
+    }
     const jobs = BACKGROUND_JOBS.map((j) => {
       const run = sweepOf[j.id] ? runs[sweepOf[j.id]] : null
       return {

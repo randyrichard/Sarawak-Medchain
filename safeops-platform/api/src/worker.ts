@@ -14,6 +14,9 @@ import { env } from './env.js'
 import { prisma } from './lib/prisma.js'
 import { Scheduler } from './lib/scheduler.js'
 import { INSTANCE } from './lib/jobRuns.js'
+import { announceMail } from './lib/email/announce.js'
+
+announceMail('safeops-worker')
 
 const scheduler = new Scheduler(prisma)
 scheduler.start(env.SCHEDULER_INTERVAL_MIN * 60_000)

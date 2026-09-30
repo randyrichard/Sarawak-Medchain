@@ -53,7 +53,8 @@ ok "current state saved to $SAFETY"
 # ── Stop the application ─────────────────────────────────────────────────────
 # Nothing must write while the database is being replaced.
 info "stopping the application"
-$DC stop api web
+# The worker writes too: left running it would sweep a database mid-restore.
+$DC stop api worker web
 ok "stopped"
 
 # ── Restore ──────────────────────────────────────────────────────────────────
