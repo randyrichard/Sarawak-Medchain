@@ -3,6 +3,9 @@ import multer from 'multer'
 import { z } from 'zod'
 import { randomUUID } from 'node:crypto'
 import { sha256File } from '../lib/fileIntegrity.js'
+import {
+  ALLOWED_UPLOAD_TYPES, attachmentDisposition, discardUploads, settleUploadTypes,
+} from '../lib/uploadSafety.js'
 import { existsSync, mkdirSync, accessSync, constants, unlink } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { env } from '../env.js'
@@ -39,13 +42,7 @@ try {
   process.exit(1)
 }
 
-const ALLOWED_MIME = new Map<string, string>([
-  ['image/jpeg', '.jpg'],
-  ['image/png', '.png'],
-  ['image/webp', '.webp'],
-  ['image/heic', '.heic'],
-  ['application/pdf', '.pdf'],
-])
+const ALLOWED_MIME = ALLOWED_UPLOAD_TYPES
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024
 
@@ -95,6 +92,7 @@ permitAttachmentsRouter.post('/:id/attachments', (req, res, next) => {
       // file the server correctly refused.
       return res.status(400).json({ error: 'validation', message: (err as Error).message })
     }
+    const written = (req.files ?? []) as Express.Multer.File[]
     try {
       const caller = callerOf(req)
       const permit = await permitFor(caller, req.params.id)
@@ -105,6 +103,10 @@ permitAttachmentsRouter.post('/:id/attachments', (req, res, next) => {
       const kind = z.enum(KINDS).catch('other').parse(req.body?.kind)
       const files = (req.files ?? []) as Express.Multer.File[]
       if (files.length === 0) throw new PermitError('validation', 'Choose at least one file.')
+      const mismatch = await settleUploadTypes(UPLOAD_DIR, files)
+      if (mismatch) {
+        throw new PermitError('validation', `${mismatch.originalname.slice(0, 120)} is not the kind of file its name says it is.`)
+      }
 
       /*
        * Digest the bytes multer just wrote, before the row that points at them exists.
@@ -144,6 +146,9 @@ permitAttachmentsRouter.post('/:id/attachments', (req, res, next) => {
 
       res.status(201).json({ rows: saved })
     } catch (e) {
+      // Nothing points at these yet: the rows are written in one transaction, so either
+      // they all exist or none do.
+      await discardUploads(UPLOAD_DIR, written)
       next(e)
     }
   })
@@ -162,7 +167,7 @@ permitAttachmentsRouter.get('/attachments/:attachmentId', asyncRoute(async (req,
 
   res.setHeader('Content-Type', att.mimeType)
   // Forced download rather than inline: a PDF rendered in-origin can script.
-  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(att.originalName)}"`)
+  res.setHeader('Content-Disposition', attachmentDisposition(att.originalName, att.mimeType))
   res.setHeader('X-Content-Type-Options', 'nosniff')
   res.sendFile(join(UPLOAD_DIR, att.storedName), (err) => {
     if (err && !res.headersSent) {
