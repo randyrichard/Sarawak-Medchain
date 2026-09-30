@@ -2,16 +2,11 @@ import { Router } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
 import { TrainingError, TrainingService } from '../lib/trainingService.js'
-import type { Caller } from '../lib/incidentService.js'
 import { requireAuth } from '../middleware/requireAuth.js'
+import { callerOf } from '../middleware/caller.js'
 
 const svc = new TrainingService(prisma)
 export const trainingRouter = Router()
-
-function callerOf(req: { auth?: { sub: string; name: string; roles: unknown } }): Caller {
-  const a = req.auth!
-  return { userId: a.sub, name: a.name, roles: a.roles as Caller['roles'] }
-}
 
 const CATEGORY = z.enum([
   'induction', 'safety', 'equipment', 'emergency', 'health', 'environmental', 'custom',

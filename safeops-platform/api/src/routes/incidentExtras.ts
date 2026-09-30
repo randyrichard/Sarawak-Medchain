@@ -7,17 +7,13 @@ import multer from 'multer'
 import { z } from 'zod'
 import { env } from '../env.js'
 import { prisma } from '../lib/prisma.js'
-import { IncidentService, type Caller } from '../lib/incidentService.js'
+import { IncidentService } from '../lib/incidentService.js'
 import { requireAuth } from '../middleware/requireAuth.js'
+import { callerOf } from '../middleware/caller.js'
 
 const svc = new IncidentService(prisma)
 export const incidentExtrasRouter = Router()
 incidentExtrasRouter.use(requireAuth)
-
-function callerOf(req: { auth?: { sub: string; name: string; roles: unknown } }): Caller {
-  const a = req.auth!
-  return { userId: a.sub, name: a.name, roles: a.roles as Caller['roles'] }
-}
 
 // ── File upload ──────────────────────────────────────────────────────────────
 

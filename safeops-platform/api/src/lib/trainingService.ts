@@ -6,6 +6,7 @@ import {
   BUILT_IN_COURSE_IDS, EXPIRING_WINDOW_DAYS, TRAINING_ACTION_DUE_DAYS, TRAINING_COURSES,
   courseApplies, type CourseShape,
 } from './trainingCatalog.js'
+import { DomainError } from './errors.js'
 
 /** Roles permitted to author courses and escalate a competency gap. */
 const REVIEW_ROLES: Role[] = ['admin', 'hse_manager']
@@ -14,11 +15,7 @@ const MANAGE_ROLES: Role[] = ['admin', 'hse_manager', 'safety_officer']
 /** Roles that see the whole roster rather than their own sites or themselves. */
 const ORG_WIDE_ROLES: Role[] = ['admin', 'hse_manager', 'ceo']
 
-export class TrainingError extends Error {
-  constructor(public code: string, message: string, public status = 400) {
-    super(message)
-  }
-}
+export class TrainingError extends DomainError {}
 
 const DAY = 86400_000
 

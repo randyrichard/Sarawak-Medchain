@@ -11,6 +11,7 @@ import { EquipmentError } from '../lib/equipmentService.js'
 import type { Caller } from '../lib/incidentService.js'
 import { requireAuth } from '../middleware/requireAuth.js'
 import type { Role } from '@prisma/client'
+import { callerOf } from '../middleware/caller.js'
 
 /**
  * Equipment photos, manuals and scanned certificates.
@@ -23,11 +24,6 @@ import type { Role } from '@prisma/client'
 export const assetDocumentsRouter = Router()
 
 assetDocumentsRouter.use(requireAuth)
-
-function callerOf(req: { auth?: { sub: string; name: string; roles: unknown } }): Caller {
-  const a = req.auth!
-  return { userId: a.sub, name: a.name, roles: a.roles as Caller['roles'] }
-}
 
 const UPLOAD_DIR = resolve(process.cwd(), env.UPLOAD_DIR)
 if (!existsSync(UPLOAD_DIR)) mkdirSync(UPLOAD_DIR, { recursive: true })

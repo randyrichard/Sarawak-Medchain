@@ -2,11 +2,12 @@ import { Router } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
 import {
-  INCIDENT_STATUS_FILTERS, IncidentError, IncidentService, type Caller,
+  INCIDENT_STATUS_FILTERS, IncidentError, IncidentService,
 } from '../lib/incidentService.js'
 import { requireAuth } from '../middleware/requireAuth.js'
 import { INCIDENT_SEVERITIES, INCIDENT_TYPES } from '../lib/incidentCatalog.js'
 import { SORT_KEYS } from '../lib/incidentService.js'
+import { callerOf } from '../middleware/caller.js'
 
 /** One list, used to build the report form and to validate what comes back from it. */
 const TYPE_VALUES = z.enum(
@@ -21,11 +22,6 @@ export const incidentsRouter = Router()
 
 // Identity always comes from the verified token, never from the request body.
 incidentsRouter.use(requireAuth)
-
-function callerOf(req: { auth?: { sub: string; name: string; roles: unknown } }): Caller {
-  const a = req.auth!
-  return { userId: a.sub, name: a.name, roles: a.roles as Caller['roles'] }
-}
 
 const MAX_PAGE_SIZE = 100
 

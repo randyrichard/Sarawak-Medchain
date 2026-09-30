@@ -5,8 +5,8 @@ import { prisma } from '../lib/prisma.js'
 import { PrismaRateLimitStore } from '../lib/rateLimitStore.js'
 import { ProvisioningService } from '../lib/provisioningService.js'
 import { SELLABLE_PLANS, formatMyr } from '../lib/planCatalog.js'
-import type { Caller } from '../lib/incidentService.js'
 import { requireAuth } from '../middleware/requireAuth.js'
+import { callerOf } from '../middleware/caller.js'
 
 /**
  * The SafeOps platform console.
@@ -23,11 +23,6 @@ const svc = new ProvisioningService(prisma)
 export const platformRouter = Router()
 
 platformRouter.use(requireAuth)
-
-function callerOf(req: { auth?: { sub: string; name: string; roles: unknown } }): Caller {
-  const a = req.auth!
-  return { userId: a.sub, name: a.name, roles: a.roles as Caller['roles'] }
-}
 
 const ctxOf = (req: { ip?: string; get: (h: string) => string | undefined }) =>
   ({ ip: req.ip, device: req.get('user-agent') ?? '' })

@@ -13,12 +13,9 @@
  */
 import { type AssetEventKind, type AssetStatus, type PrismaClient, type Role, type AssetCategory } from '@prisma/client'
 import type { Caller } from './incidentService.js'
+import { DomainError } from './errors.js'
 
-export class EquipmentError extends Error {
-  constructor(public code: string, message: string, public status = 400) {
-    super(message)
-  }
-}
+export class EquipmentError extends DomainError {}
 
 /** Roles that may record calibration or book equipment onto a permit. */
 const WRITE_ROLES: Role[] = ['admin', 'hse_manager', 'safety_officer']

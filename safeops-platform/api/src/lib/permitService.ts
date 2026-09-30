@@ -9,6 +9,7 @@ import {
   PERMIT_STATUS_LABEL, PERMIT_TYPES, PERMIT_TYPE_LABEL, gasTestPasses, activationBlockers,
 } from './permitCatalog.js'
 import { equipmentBlockers } from './equipmentService.js'
+import { DomainError } from './errors.js'
 
 /**
  * Issuing authority: who may approve, reject, suspend, resume and close a permit.
@@ -19,11 +20,7 @@ import { equipmentBlockers } from './equipmentService.js'
  */
 const ISSUER_ROLES: Role[] = ['admin', 'hse_manager', 'safety_officer']
 
-export class PermitError extends Error {
-  constructor(public code: string, message: string, public status = 400) {
-    super(message)
-  }
-}
+export class PermitError extends DomainError {}
 
 /** Status as the board reports it — the stored states plus derived `expired`. */
 export type EffectivePermitStatus = PermitStatus | 'expired'

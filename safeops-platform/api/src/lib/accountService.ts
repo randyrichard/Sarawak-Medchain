@@ -12,12 +12,9 @@ import {
   generateResetToken, hashRefreshToken, hashResetToken, resetTokenExpiry, RESET_TOKEN_TTL_MIN,
 } from './tokens.js'
 import { sendPasswordResetEmail } from './email/passwordResetDelivery.js'
+import { DomainError } from './errors.js'
 
-export class AccountError extends Error {
-  constructor(public code: string, message: string, public status = 400) {
-    super(message)
-  }
-}
+export class AccountError extends DomainError {}
 
 /** Where a user lands after signing in. Validated against this list, not free text. */
 export const LANDING_PAGES = [

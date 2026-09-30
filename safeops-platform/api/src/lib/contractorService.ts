@@ -17,12 +17,9 @@
  */
 import { Prisma, type PrismaClient, type Role } from '@prisma/client'
 import type { Caller } from './incidentService.js'
+import { DomainError } from './errors.js'
 
-export class ContractorError extends Error {
-  constructor(public code: string, message: string, public status = 400) {
-    super(message)
-  }
-}
+export class ContractorError extends DomainError {}
 
 /** Roles that may change the register. Mirrors the workforce register. */
 const WRITE_ROLES: Role[] = ['admin', 'hse_manager']

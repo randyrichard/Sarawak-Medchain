@@ -10,8 +10,8 @@ import { Router } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
 import { EquipmentError, EquipmentService } from '../lib/equipmentService.js'
-import type { Caller } from '../lib/incidentService.js'
 import { requireAuth } from '../middleware/requireAuth.js'
+import { callerOf } from '../middleware/caller.js'
 
 const svc = new EquipmentService(prisma)
 export const equipmentRouter = Router()
@@ -25,11 +25,6 @@ export const equipmentRouter = Router()
  * wall in front of /auth/login itself.
  */
 const auth = requireAuth
-
-function callerOf(req: { auth?: { sub: string; name: string; roles: unknown } }): Caller {
-  const a = req.auth!
-  return { userId: a.sub, name: a.name, roles: a.roles as Caller['roles'] }
-}
 
 // ── Calibration ──────────────────────────────────────────────────────────────
 

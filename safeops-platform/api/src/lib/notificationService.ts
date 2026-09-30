@@ -1,12 +1,9 @@
 import type { Prisma, PrismaClient, Role } from '@prisma/client'
 // `Caller` is the verified identity shape shared by every module — see permitService.
 import { type Caller } from './incidentService.js'
+import { DomainError } from './errors.js'
 
-export class NotificationError extends Error {
-  constructor(public code: string, message: string, public status = 400) {
-    super(message)
-  }
-}
+export class NotificationError extends DomainError {}
 
 const KINDS = ['incident', 'action', 'audit', 'system']
 

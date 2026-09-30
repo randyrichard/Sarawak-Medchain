@@ -5,9 +5,9 @@ import { prisma } from '../lib/prisma.js'
 import { env } from '../env.js'
 import { ReportError, ReportService, REPORT_TYPE_LABEL } from '../lib/reportService.js'
 import { renderReportPdf } from '../lib/reportPdf.js'
-import type { Caller } from '../lib/incidentService.js'
 import { requireAuth } from '../middleware/requireAuth.js'
 import { emailConfiguration } from '../lib/email/index.js'
+import { callerOf } from '../middleware/caller.js'
 
 /**
  * Scheduled reports.
@@ -20,11 +20,6 @@ const svc = new ReportService(prisma)
 export const reportsRouter = Router()
 
 reportsRouter.use(requireAuth)
-
-function callerOf(req: { auth?: { sub: string; name: string; roles: unknown } }): Caller {
-  const a = req.auth!
-  return { userId: a.sub, name: a.name, roles: a.roles as Caller['roles'] }
-}
 
 const ctxOf = (req: { ip?: string; get: (h: string) => string | undefined }) =>
   ({ ip: req.ip, device: req.get('user-agent') ?? '' })

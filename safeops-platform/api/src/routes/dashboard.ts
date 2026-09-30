@@ -3,8 +3,8 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
 import { SiteComparisonService } from '../lib/siteComparison.js'
 import { DashboardService } from '../lib/dashboardService.js'
-import type { Caller } from '../lib/incidentService.js'
 import { requireAuth } from '../middleware/requireAuth.js'
+import { callerOf } from '../middleware/caller.js'
 
 /**
  * The operational dashboard.
@@ -17,11 +17,6 @@ const svc = new DashboardService(prisma)
 export const dashboardRouter = Router()
 
 dashboardRouter.use(requireAuth)
-
-function callerOf(req: { auth?: { sub: string; name: string; roles: unknown } }): Caller {
-  const a = req.auth!
-  return { userId: a.sub, name: a.name, roles: a.roles as Caller['roles'] }
-}
 
 const QUERY = z.object({
   companyId: z.string().min(1),

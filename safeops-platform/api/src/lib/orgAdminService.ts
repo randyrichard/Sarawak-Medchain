@@ -9,6 +9,7 @@ import { getEmailProvider } from './email/index.js'
 import { EmailProviderError } from './email/provider.js'
 import { buildInvitationEmail } from './email/invitationEmail.js'
 import { siteAllowance, siteLimitMessage } from './entitlements.js'
+import { DomainError } from './errors.js'
 
 /**
  * Organisation administration: sites, departments and invitations.
@@ -23,9 +24,9 @@ import { siteAllowance, siteLimitMessage } from './entitlements.js'
  * an incident that points at a site which no longer exists is an incident nobody can read.
  */
 
-export class OrgAdminError extends Error {
-  constructor(public code: string, message: string, public status = 400) {
-    super(message)
+export class OrgAdminError extends DomainError {
+  constructor(code: string, message: string, status = 400) {
+    super(code, message, status)
     this.name = 'OrgAdminError'
   }
 }

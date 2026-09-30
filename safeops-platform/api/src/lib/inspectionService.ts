@@ -5,15 +5,12 @@ import { enqueueEvent } from './webhookService.js'
 import {
   ASSET_CATEGORIES, CATEGORY_LABEL, CHECKLISTS, DEFECT_DUE_DAYS, FREQUENCY_DAYS,
 } from './inspectionCatalog.js'
+import { DomainError } from './errors.js'
 
 /** Roles permitted to register assets and schedule inspections. */
 const MANAGE_ROLES: Role[] = ['admin', 'hse_manager', 'safety_officer']
 
-export class InspectionError extends Error {
-  constructor(public code: string, message: string, public status = 400) {
-    super(message)
-  }
-}
+export class InspectionError extends DomainError {}
 
 const DAY = 86400_000
 

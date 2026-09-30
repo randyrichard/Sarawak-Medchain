@@ -2,8 +2,8 @@ import { Router } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
 import { VisitorError, VisitorService, ACKNOWLEDGEMENTS } from '../lib/visitorService.js'
-import type { Caller } from '../lib/incidentService.js'
 import { requireAuth } from '../middleware/requireAuth.js'
+import { callerOf } from '../middleware/caller.js'
 
 /**
  * Visitor management.
@@ -17,11 +17,6 @@ export const visitorsRouter = Router()
 
 // Identity always comes from the verified token, never from the request body.
 visitorsRouter.use(requireAuth)
-
-function callerOf(req: { auth?: { sub: string; name: string; roles: unknown } }): Caller {
-  const a = req.auth!
-  return { userId: a.sub, name: a.name, roles: a.roles as Caller['roles'] }
-}
 
 const ctxOf = (req: { ip?: string; get: (h: string) => string | undefined }) =>
   ({ ip: req.ip, device: req.get('user-agent') ?? '' })

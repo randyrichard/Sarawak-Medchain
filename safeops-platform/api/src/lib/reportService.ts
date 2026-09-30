@@ -17,6 +17,7 @@ import {
   describeSchedule, instantForLocal, isValidTimezone, localParts, nextRunAt, parseTimeOfDay,
   type Frequency,
 } from './reportSchedule.js'
+import { DomainError } from './errors.js'
 
 /**
  * Scheduled reports.
@@ -25,9 +26,9 @@ import {
  * Everything here reads current data through the same predicates the screens use - a report
  * that disagrees with the board about what "overdue" means is worse than no report.
  */
-export class ReportError extends Error {
-  constructor(public code: string, message: string, public status = 400) {
-    super(message)
+export class ReportError extends DomainError {
+  constructor(code: string, message: string, status = 400) {
+    super(code, message, status)
     this.name = 'ReportError'
   }
 }

@@ -8,6 +8,7 @@ import { SEVERITY_LABEL, SEVERITY_RANK } from './incidentCatalog.js'
 import { assessFitness, CALIBRATED_CATEGORIES, DUE_WARN_DAYS } from './equipmentService.js'
 import { ON_SITE_STATUSES, overdueBy } from './visitorService.js'
 import { REVIEW_CHAIN } from './permitReview.js'
+import { DomainError } from './errors.js'
 
 /**
  * The morning dashboard.
@@ -22,9 +23,9 @@ import { REVIEW_CHAIN } from './permitReview.js'
  * the database is not shown at all.
  */
 
-export class DashboardError extends Error {
-  constructor(public code: string, message: string, public status = 400) {
-    super(message)
+export class DashboardError extends DomainError {
+  constructor(code: string, message: string, status = 400) {
+    super(code, message, status)
     this.name = 'DashboardError'
   }
 }
