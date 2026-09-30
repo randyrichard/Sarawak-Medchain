@@ -15,6 +15,17 @@ export const DERIVED_META: Record<CapaDerivedStatus, { kind: StatusKind; label: 
 
 export const ACTIVE_STATES: CapaDerivedStatus[] = ['Open', 'Assigned', 'In Progress', 'Waiting Verification']
 
+/**
+ * Whether the actor owns this action - the server's rule (api/src/lib/actionOwner.ts).
+ *
+ * The owner's account decides when the action is linked to one; the name is the fallback
+ * only for an unlinked action. Comparing names alone showed an action as read-only to its
+ * own owner after a rename, and as editable to anybody sharing the owner's name.
+ */
+export function ownsItem(actor: Actor, item: Pick<CapaItem, 'owner' | 'ownerId'>): boolean {
+  return item.ownerId ? item.ownerId === actor.userId : item.owner === actor.name
+}
+
 /** Mirrors the store's permission rules for UI affordances (server re-checks). */
 export function canEditItem(actor: Actor, item: CapaItem): boolean {
   if (item.derived === 'Cancelled' || item.derived === 'Verified' || item.derived === 'Closed') return false
@@ -25,9 +36,9 @@ export function canEditItem(actor: Actor, item: CapaItem): boolean {
       return true
     case 'safety_officer':
     case 'supervisor':
-      return item.owner === actor.name || orgWide || actor.siteIds!.includes(item.siteId)
+      return ownsItem(actor, item) || orgWide || actor.siteIds!.includes(item.siteId)
     case 'employee':
-      return item.owner === actor.name
+      return ownsItem(actor, item)
     default:
       return false
   }

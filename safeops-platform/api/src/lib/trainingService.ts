@@ -7,6 +7,7 @@ import {
   courseApplies, type CourseShape,
 } from './trainingCatalog.js'
 import { DomainError } from './errors.js'
+import { resolveOwnerId } from './actionOwner.js'
 
 /** Roles permitted to author courses and escalate a competency gap. */
 const REVIEW_ROLES: Role[] = ['admin', 'hse_manager']
@@ -909,6 +910,12 @@ export class TrainingService {
             `or is missing for ${emp.name}. Enrol and re-certify.`,
           // The HSE team owns its own gaps; everyone else owns theirs.
           owner: emp.department.includes('HSE') ? caller.name : emp.name,
+          // The account is known outright here - the caller's own, or the employee's login.
+          ownerId: await resolveOwnerId(
+            tx, emp.companyId,
+            emp.department.includes('HSE') ? caller.name : emp.name,
+            emp.department.includes('HSE') ? caller.userId : emp.userId,
+          ),
           dueDate,
           priority: 'High',
           createdBy: caller.name,

@@ -123,6 +123,8 @@ export interface IncidentAction {
   description?: string
   causeId: string | null
   owner: string
+  /** The owner's account, when the action is linked to one. See ownsItem. */
+  ownerId?: string | null
   reviewer?: string
   dueDate: string
   priority: ActionPriority
@@ -219,6 +221,8 @@ export interface Incident {
 /** Who is performing a mutation — the mock store enforces permissions with it. */
 export interface Actor {
   name: string
+  /** The signed-in account. Absent in the offline demo, where names are all there is. */
+  userId?: string
   role: string // Role from types.ts; kept loose here to avoid a cycle
   /** site scope from the membership; empty/undefined = org-wide */
   siteIds?: string[]

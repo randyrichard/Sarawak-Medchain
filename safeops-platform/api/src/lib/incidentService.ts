@@ -5,6 +5,7 @@ import {
   INCIDENT_SEVERITIES, INCIDENT_TYPES, LOST_TIME_SEVERITIES, SEVERITY_RANK,
 } from './incidentCatalog.js'
 import { DomainError } from './errors.js'
+import { isOwnedBy, ownedByWhere, resolveOwnerId } from './actionOwner.js'
 
 /** Roles permitted to triage and progress an investigation. */
 const MANAGE_ROLES: Role[] = ['admin', 'hse_manager', 'safety_officer']
@@ -91,7 +92,7 @@ function actionPayload(a: {
 export function actionScopeWhere(caller: Caller, companyId: string): Prisma.CorrectiveActionWhereInput {
   const m = caller.roles.find((r) => r.companyId === companyId)
   if (!m) return { id: '__no_access__' }
-  return ['employee', 'supervisor'].includes(m.role) ? { owner: caller.name } : {}
+  return ['employee', 'supervisor'].includes(m.role) ? ownedByWhere(caller) : {}
 }
 
 export function overdueActionWhere(): Prisma.CorrectiveActionWhereInput {
@@ -778,7 +779,7 @@ export class IncidentService {
           title: input.title.trim(),
           detail: input.detail?.trim() ?? '',
           owner: input.owner.trim(),
-          ownerId: input.ownerId ?? null,
+          ownerId: await resolveOwnerId(tx, incident.companyId, input.owner, input.ownerId),
           dueDate: due,
           priority: (input.priority ?? 'Medium') as never,
           evidenceRequired: input.evidenceRequired ?? false,
@@ -806,7 +807,7 @@ export class IncidentService {
           detail: action.title + '. Due ' + due.toISOString().slice(0, 10)
             + (action.evidenceRequired ? '. Evidence required before it can be completed.' : '.'),
           href: '/actions?open=' + action.id,
-          recipientUserId: input.ownerId ?? null,
+          recipientUserId: action.ownerId,
           recipientName: action.owner,
           recipientRole: 'capa_owner',
         },
@@ -837,7 +838,7 @@ export class IncidentService {
     }
 
     const m = this.membership(caller, action.companyId)
-    const isOwner = action.owner === caller.name
+    const isOwner = isOwnedBy(action, caller)
     const isManager = REVIEW_ROLES.includes(m.role)
 
     if (!isOwner && !MANAGE_ROLES.includes(m.role)) {
@@ -987,6 +988,7 @@ export class IncidentService {
           title: input.title.trim(),
           detail: input.detail?.trim() ?? '',
           owner: input.owner.trim(),
+          ownerId: await resolveOwnerId(tx, input.companyId, input.owner),
           dueDate: due,
           priority: (input.priority ?? 'Medium') as never,
           createdBy: caller.name,
@@ -1010,7 +1012,7 @@ export class IncidentService {
       ...(opts.source ? { source: opts.source as never } : {}),
       ...(opts.overdue ? overdueActionWhere() : {}),
       // Employees and supervisors see only what they own.
-      ...(['employee', 'supervisor'].includes(m.role) ? { owner: caller.name } : {}),
+      ...(['employee', 'supervisor'].includes(m.role) ? ownedByWhere(caller) : {}),
     }
     const [total, rows] = await this.db.$transaction([
       this.db.correctiveAction.count({ where }),
@@ -1190,14 +1192,14 @@ export class IncidentService {
    */
   private async assertActionVisible(
     caller: Caller,
-    action: { companyId: string; owner: string; incidentId: string | null } | null,
+    action: { companyId: string; owner: string; ownerId: string | null; incidentId: string | null } | null,
   ): Promise<void> {
     if (!action || !caller.roles.some((r) => r.companyId === action.companyId)) {
       throw new IncidentError('not_found', 'Action not found.', 404)
     }
     const m = this.membership(caller, action.companyId)
     if (!['employee', 'supervisor'].includes(m.role)) return
-    if (action.owner === caller.name) return
+    if (isOwnedBy(action, caller)) return
     if (action.incidentId) {
       const incident = await this.db.incident.findFirst({
         where: { id: action.incidentId, archived: false, ...this.scopeWhere(caller, action.companyId) },
@@ -1213,7 +1215,7 @@ export class IncidentService {
   /** Counts by status, priority and source, plus overdue and average days to close. */
   async actionAnalytics(caller: Caller, companyId: string) {
     const m = this.membership(caller, companyId)
-    const scope = ['employee', 'supervisor'].includes(m.role) ? { owner: caller.name } : {}
+    const scope = ['employee', 'supervisor'].includes(m.role) ? ownedByWhere(caller) : {}
     const where = { companyId, ...scope }
 
     const [byStatus, byPriority, bySource, overdue, closed] = await this.db.$transaction([
@@ -1388,7 +1390,7 @@ export class IncidentService {
       companyId,
       ...(siteId ? { siteId } : {}),
       ...(['employee', 'supervisor'].includes(this.membership(caller, companyId).role)
-        ? { owner: caller.name }
+        ? ownedByWhere(caller)
         : {}),
     }
     const OPEN_ACTION: Prisma.EnumCapaStatusFilter = { in: ['open', 'in_progress'] }
