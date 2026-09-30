@@ -4,6 +4,7 @@ import { enqueueEvent } from './webhookService.js'
 import {
   INCIDENT_SEVERITIES, INCIDENT_TYPES, LOST_TIME_SEVERITIES, SEVERITY_RANK,
 } from './incidentCatalog.js'
+import { DomainError } from './errors.js'
 
 /** Roles permitted to triage and progress an investigation. */
 const MANAGE_ROLES: Role[] = ['admin', 'hse_manager', 'safety_officer']
@@ -17,11 +18,7 @@ export interface Caller {
   roles: { companyId: string; role: Role; siteIds: string[] }[]
 }
 
-export class IncidentError extends Error {
-  constructor(public code: string, message: string, public status = 400) {
-    super(message)
-  }
-}
+export class IncidentError extends DomainError {}
 
 /**
  * An inclusive date range over a timestamp column.
@@ -1248,7 +1245,7 @@ export class IncidentService {
     }
     const OPEN_ACTION: Prisma.EnumCapaStatusFilter = { in: ['open', 'in_progress'] }
 
-    const [openIncidents, overdueCapas, lostTime, nearMisses, thisMonth, openInvestigations, rows, sites] =
+    const [openIncidents, overdueCapas, lostTime, nearMisses, thisMonth, openInvestigations, total, sites] =
       await this.db.$transaction([
         this.db.incident.count({ where: { ...base, stage: { notIn: ['closed'] } } }),
         this.db.correctiveAction.count({
@@ -1274,29 +1271,44 @@ export class IncidentService {
         this.db.incident.count({
           where: { ...base, investigationStartedAt: { not: null }, investigationCompletedAt: null },
         }),
-        this.db.incident.findMany({
-          where: base,
-          select: {
-            severity: true, type: true, department: true, siteId: true,
-            rootCause: true, stage: true,
-          },
-          take: 5000,
-        }),
+        this.db.incident.count({ where: base }),
         this.db.site.findMany({ where: { companyId }, select: { id: true, name: true } }),
       ])
 
+    /*
+     * The breakdowns are counted by the database, one GROUP BY per dimension.
+     *
+     * They used to be tallied here from up to 5,000 loaded rows, which cost memory and a
+     * transfer proportional to the whole register on every board load - and past 5,000
+     * incidents quietly reported a truncated total and truncated breakdowns. A GROUP BY
+     * returns one row per distinct value, whatever the register's size.
+     */
+    const [bySeverityRows, byTypeRows, byDepartmentRows, bySiteRows, byRootCauseRows] = await Promise.all([
+      this.db.incident.groupBy({ by: ['severity'], where: base, _count: { _all: true } }),
+      this.db.incident.groupBy({ by: ['type'], where: base, _count: { _all: true } }),
+      this.db.incident.groupBy({ by: ['department'], where: base, _count: { _all: true } }),
+      this.db.incident.groupBy({ by: ['siteId'], where: base, _count: { _all: true } }),
+      this.db.incident.groupBy({ by: ['rootCause'], where: base, _count: { _all: true } }),
+    ])
+
     const siteName = new Map(sites.map((x) => [x.id, x.name]))
 
-    const tally = (pick: (r: (typeof rows)[number]) => string | null) => {
+    // Free-text values are trimmed and merged, and blanks dropped, exactly as the per-row
+    // tally did: " Welding" and "Welding" are one department.
+    const tally = <K extends string>(
+      groups: ({ _count: { _all: number } } & Record<K, string | null>)[],
+      key: K,
+      label: (v: string) => string = (v) => v,
+    ) => {
       const m = new Map<string, number>()
-      for (const r of rows) {
-        const k = (pick(r) ?? '').trim()
+      for (const g of groups) {
+        const k = label((g[key] ?? '').trim())
         if (!k) continue
-        m.set(k, (m.get(k) ?? 0) + 1)
+        m.set(k, (m.get(k) ?? 0) + g._count._all)
       }
       return [...m.entries()]
         .map(([name, value]) => ({ name, value }))
-        .sort((a, b) => b.value - a.value)
+        .sort((a, b) => b.value - a.value || a.name.localeCompare(b.name))
     }
 
     return {
@@ -1306,17 +1318,17 @@ export class IncidentService {
       nearMisses,
       thisMonth,
       openInvestigations,
-      total: rows.length,
+      total,
       // Ordered by how serious, not by how many: a board that puts "Minor (48)" first
       // buries the fatality underneath it.
-      bySeverity: tally((r) => r.severity)
+      bySeverity: tally(bySeverityRows, 'severity')
         .sort((a, b) =>
           (SEVERITY_RANK[b.name as never] ?? 0) - (SEVERITY_RANK[a.name as never] ?? 0)),
-      byType: tally((r) => r.type),
-      byDepartment: tally((r) => r.department).slice(0, 12),
-      bySite: tally((r) => siteName.get(r.siteId) ?? r.siteId),
+      byType: tally(byTypeRows, 'type'),
+      byDepartment: tally(byDepartmentRows, 'department').slice(0, 12),
+      bySite: tally(bySiteRows, 'siteId', (id) => siteName.get(id) ?? id),
       /** What keeps causing things. The reason an investigation is worth doing at all. */
-      topRootCauses: tally((r) => r.rootCause).slice(0, 8),
+      topRootCauses: tally(byRootCauseRows, 'rootCause').slice(0, 8),
     }
   }
 

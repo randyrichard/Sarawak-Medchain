@@ -224,6 +224,10 @@ model Company {
   toolboxMeetings    ToolboxMeeting[]
   reportSchedules    ReportSchedule[]
   reportRuns         ReportRun[]
+
+  // Created by an earlier migration and missing here, so `prisma migrate dev` would have
+  // generated a migration dropping it. Declared so the schema describes the database.
+  @@index([provisionedAt])
 }
 
 /// Where a project stands commercially. Not a safety state - a suspended project's
@@ -925,6 +929,9 @@ model Permit {
   @@index([companyId, status])
   @@index([companyId, siteId])
   @@index([companyId, type])
+  // Created by an earlier migration and missing here, so `prisma migrate dev` would have
+  // generated a migration dropping it. Declared so the schema describes the database.
+  @@index([contractorCompanyId])
   // The board is ordered by urgency and the expiry sweep asks "what lapses next",
   // so validTo is the column both hot paths sort and filter on.
   @@index([validTo])
@@ -1149,6 +1156,11 @@ model Asset {
   @@index([companyId, status])
   @@index([companyId, siteId])
   @@index([companyId, category])
+  // Created by an earlier migration and missing here, so `prisma migrate dev` would have
+  // generated a migration dropping it. Declared so the schema describes the database.
+  @@index([companyId, critical])
+  @@index([assignedEmployeeId])
+  @@index([assignedContractorWorkerId])
   // The register sorts and filters on what is due, so this is the hot path.
   @@index([nextDueDate])
 }
@@ -2428,6 +2440,10 @@ model Notification {
 
   @@index([companyId, createdAt])
   @@index([recipientUserId, createdAt])
+  /// The scheduler asks "has this reminder already been raised?" by (companyId, href)
+  /// once per candidate, thousands of times a sweep. Without this every one of those was
+  /// a scan of the workspace's whole notification history, growing forever.
+  @@index([companyId, href])
 }
 
 /// One row per person who has read a notification. Absence means unread, so a new user
