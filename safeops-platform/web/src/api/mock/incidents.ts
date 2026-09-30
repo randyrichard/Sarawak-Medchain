@@ -1,3 +1,4 @@
+import { OVERDUE_AFTER_DAYS } from '../incidents'
 // ─── Stateful incident store ─────────────────────────────────────────────────
 // In-memory implementation of the incident workflow. Every mutation:
 //   1. checks the actor's permission,  2. validates the state transition,
@@ -59,7 +60,8 @@ const SEVERITY_RANK: Record<string, number> = {
   Minor: 3, near_miss: 4,
 }
 const rank = (s: string) => SEVERITY_RANK[s] ?? 99
-export const OVERDUE_AFTER_DAYS = 14
+// Lives with the incident types so a page can use it without loading this module.
+export { OVERDUE_AFTER_DAYS }
 
 type Notify = (kind: 'incident' | 'action' | 'audit' | 'system', title: string, detail: string) => void
 

@@ -8,6 +8,7 @@ import type { SystemHealth } from '@/api/admin'
 import { Badge, Button, Card, CardBody, CardHeader, Skeleton, StatusPill } from '@/components/ui'
 import { timeAgo } from '@/lib/time'
 import { cn } from '@/lib/cn'
+import { pollWhileVisible } from '@/lib/poll'
 
 export function OverviewSection() {
   const { company } = useOrg()
@@ -18,8 +19,7 @@ export function OverviewSection() {
   const load = () => api.adminSystemHealth(companyId).then(setHealth)
   useEffect(() => {
     load()
-    const t = setInterval(load, 20_000)
-    return () => clearInterval(t)
+    return pollWhileVisible(load, 20_000)
   }, [])
 
   const refresh = async () => {

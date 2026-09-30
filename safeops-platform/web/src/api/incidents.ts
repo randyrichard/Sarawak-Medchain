@@ -283,3 +283,6 @@ export type AdvancePayload =
   | { to: 'review' }
   | { to: 'verification'; reviewNote: string }
   | { to: 'closed'; closeNote: string }
+
+/** An open incident older than this many days counts as overdue on the register. */
+export const OVERDUE_AFTER_DAYS = 14

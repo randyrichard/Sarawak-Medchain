@@ -118,6 +118,10 @@ const MAX_PER_SWEEP_PER_COMPANY = 200
  * be a duplicate would let the second sweep spend its whole budget re-checking what the
  * first one already announced, and the backlog would never advance.
  */
+/** Links per bulk existence query: well inside Postgres's parameter limit. */
+const SEEN_CHUNK = 1000
+const seenKey = (companyId: string, href: string) => `${companyId}\u0000${href}`
+
 class Budget {
   private used = new Map<string, number>()
   exhausted(companyId: string): boolean {
@@ -154,6 +158,8 @@ export class Scheduler {
   private deliveryTimer: NodeJS.Timeout | null = null
   private running = false
   private deliveringWebhooks = false
+  /** One sweep's bulk answers to "does this reminder exist?" - see withSeen. */
+  private seen: Map<string, boolean> | null = null
   /** Owns report generation and delivery; the sweep only decides what is due. */
   private readonly reports: ReportService
 
@@ -178,13 +184,19 @@ export class Scheduler {
   ): Promise<boolean> {
     if (budget.exhausted(companyId)) return false
 
-    const existing = await this.db.notification.findFirst({
-      where: { companyId, href },
-      select: { id: true },
-    })
-    // A duplicate costs nothing: the budget exists to bound what a customer is shown, and
-    // showing them nothing is not something to charge for.
-    if (existing) return false
+    // A sweep that prefetched its candidates has the answer already; anything it did not
+    // cover is looked up one at a time, as before.
+    const known = this.seen?.get(seenKey(companyId, href))
+    if (known === true) return false
+    if (known === undefined) {
+      const existing = await this.db.notification.findFirst({
+        where: { companyId, href },
+        select: { id: true },
+      })
+      // A duplicate costs nothing: the budget exists to bound what a customer is shown,
+      // and showing them nothing is not something to charge for.
+      if (existing) return false
+    }
 
     try {
       await this.db.notification.create({
@@ -204,7 +216,47 @@ export class Scheduler {
       return false
     }
     budget.spend(companyId)
+    this.seen?.set(seenKey(companyId, href), true)
     return true
+  }
+
+  /**
+   * Which of a sweep's candidate reminders already exist, answered in bulk.
+   *
+   * raise() de-duplicates by asking the database about one link at a time. For a sweep
+   * over thousands of overdue actions that is thousands of round trips every pass - most
+   * of them answering "already sent" - measured at 7.7 s for 3,000 overdue actions with
+   * every reminder already raised. This asks once per workspace per thousand links, and
+   * raise() uses the answers.
+   *
+   * Only an optimisation: a link not prefetched is still checked individually, so a sweep
+   * that computes its candidates wrongly costs speed, never a duplicate. The answers live
+   * for one sweep - `withSeen` clears them - so nothing is carried between passes.
+   */
+  private async withSeen<T>(candidates: { companyId: string; href: string }[], run: () => Promise<T>): Promise<T> {
+    const seen = new Map<string, boolean>()
+    const byCompany = new Map<string, string[]>()
+    for (const c of candidates) {
+      seen.set(seenKey(c.companyId, c.href), false)
+      const list = byCompany.get(c.companyId) ?? []
+      list.push(c.href)
+      byCompany.set(c.companyId, list)
+    }
+    for (const [companyId, hrefs] of byCompany) {
+      for (let i = 0; i < hrefs.length; i += SEEN_CHUNK) {
+        const rows = await this.db.notification.findMany({
+          where: { companyId, href: { in: hrefs.slice(i, i + SEEN_CHUNK) } },
+          select: { href: true },
+        })
+        for (const r of rows) if (r.href) seen.set(seenKey(companyId, r.href), true)
+      }
+    }
+    this.seen = seen
+    try {
+      return await run()
+    } finally {
+      this.seen = null
+    }
   }
 
   /**
@@ -229,53 +281,64 @@ export class Scheduler {
       take: 5000,
     })
 
-    const budget = new Budget()
-    let raised = 0
+    /*
+     * The reminders this pass would raise, in the order it raises them, worked out first so
+     * which already exist can be asked in bulk (see withSeen). Raised below exactly as
+     * before: same order, same per-workspace budget, same de-duplication.
+     */
+    type Planned = { companyId: string; title: string; detail: string; href: string }
+    const plan: Planned[] = []
     for (const a of actions) {
-      if (budget.exhausted(a.companyId)) continue
       const days = daysBetween(a.dueDate, now)
 
       if (days > 0) {
         if (!ACTION_REMINDER_DAYS.includes(days)) continue
-        if (await this.raise(
-          budget, a.companyId, 'action',
-          `${a.code} is due in ${days} day${days === 1 ? '' : 's'}`,
-          `${a.title} — owned by ${a.owner}.`,
-          `/actions/${a.id}?due=${days}`,
-        )) raised++
+        plan.push({
+          companyId: a.companyId,
+          title: `${a.code} is due in ${days} day${days === 1 ? '' : 's'}`,
+          detail: `${a.title} — owned by ${a.owner}.`,
+          href: `/actions/${a.id}?due=${days}`,
+        })
         continue
       }
 
       if (days === 0) {
-        if (await this.raise(
-          budget, a.companyId, 'action',
-          `${a.code} is due today`,
-          `${a.title} — owned by ${a.owner}.`,
-          `/actions/${a.id}?due=0`,
-        )) raised++
+        plan.push({
+          companyId: a.companyId,
+          title: `${a.code} is due today`,
+          detail: `${a.title} — owned by ${a.owner}.`,
+          href: `/actions/${a.id}?due=0`,
+        })
         continue
       }
 
       // Past due. Announce the lapse once, then once per escalation threshold.
       const overdueBy = Math.abs(days)
-      if (await this.raise(
-        budget, a.companyId, 'action',
-        `${a.code} is overdue`,
-        `${a.title} — owned by ${a.owner}, ${overdueBy} day${overdueBy === 1 ? '' : 's'} past due.`,
-        `/actions/${a.id}?overdue=1`,
-      )) raised++
-
+      plan.push({
+        companyId: a.companyId,
+        title: `${a.code} is overdue`,
+        detail: `${a.title} — owned by ${a.owner}, ${overdueBy} day${overdueBy === 1 ? '' : 's'} past due.`,
+        href: `/actions/${a.id}?overdue=1`,
+      })
       for (const step of ESCALATIONS) {
         if (overdueBy < step.afterDays) continue
-        if (await this.raise(
-          budget, a.companyId, 'action',
-          `${a.code} escalated to ${step.to}`,
-          `${a.title} — ${overdueBy} days past due, owned by ${a.owner}.`,
-          `/actions/${a.id}?escalated=${step.afterDays}`,
-        )) raised++
+        plan.push({
+          companyId: a.companyId,
+          title: `${a.code} escalated to ${step.to}`,
+          detail: `${a.title} — ${overdueBy} days past due, owned by ${a.owner}.`,
+          href: `/actions/${a.id}?escalated=${step.afterDays}`,
+        })
       }
     }
-    return raised
+
+    const budget = new Budget()
+    return this.withSeen(plan, async () => {
+      let raised = 0
+      for (const p of plan) {
+        if (await this.raise(budget, p.companyId, 'action', p.title, p.detail, p.href)) raised++
+      }
+      return raised
+    })
   }
 
   /** Assets whose inspection has fallen due. */

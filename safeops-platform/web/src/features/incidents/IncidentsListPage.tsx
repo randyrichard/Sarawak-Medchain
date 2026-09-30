@@ -4,7 +4,7 @@ import { Plus, Search, ShieldAlert } from 'lucide-react'
 import { api } from '@/api/client'
 import type { Incident, IncidentSeverity, IncidentStatusFilter, IncidentType } from '@/api/incidents'
 import { INCIDENT_TYPES, STAGE_LABEL, SEVERITY_LABEL, TYPE_LABEL } from '@/api/incidents'
-import { OVERDUE_AFTER_DAYS } from '@/api/mock/incidents'
+import { OVERDUE_AFTER_DAYS } from '@/api/incidents'
 import { useOrg } from '@/features/org/OrgContext'
 import {
   Alert, Badge, Button, Card, DataTable, EmptyState, LinkButton, PageHeader, Skeleton, StatusPill,

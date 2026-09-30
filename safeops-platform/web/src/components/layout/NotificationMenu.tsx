@@ -7,6 +7,7 @@ import type { AppNotification, NotificationKind } from '@/api/types'
 import { timeAgo } from '@/lib/time'
 import { Dropdown, DropdownItem, DropdownSeparator, SkeletonRows } from '@/components/ui'
 import { cn } from '@/lib/cn'
+import { pollWhileVisible } from '@/lib/poll'
 
 const KIND_ICON: Record<NotificationKind, typeof Bell> = {
   incident: ClipboardList,
@@ -26,10 +27,10 @@ export function NotificationMenu() {
     const load = () => api.listNotifications(companyId).then((n) => !cancelled && setItems(n))
     load()
     // light poll so workflow events (assignments, mentions, escalations) surface live
-    const timer = setInterval(load, 15_000)
+    const stop = pollWhileVisible(load, 15_000)
     return () => {
       cancelled = true
-      clearInterval(timer)
+      stop()
     }
   }, [companyId])
 
