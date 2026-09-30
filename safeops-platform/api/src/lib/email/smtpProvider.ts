@@ -1,4 +1,4 @@
-import nodemailer, { type Transporter } from 'nodemailer'
+import nodemailer, { type Transporter, type TransportOptions } from 'nodemailer'
 import {
   EmailProviderError,
   type EmailMessage, type EmailProvider, type EmailResult,
@@ -44,7 +44,7 @@ export class SmtpEmailProvider implements EmailProvider {
         connectionTimeout: 15_000,
         greetingTimeout: 10_000,
         socketTimeout: 30_000,
-      } as nodemailer.TransportOptions)
+      } as TransportOptions)
     }
     return this.transporter
   }
