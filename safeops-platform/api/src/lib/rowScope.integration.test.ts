@@ -62,6 +62,8 @@ let personId = ''
 
 async function purge() {
   await db.notification.deleteMany({ where: { companyId: CO } })
+  await db.capaNote.deleteMany({ where: { action: { companyId: CO } } })
+  await db.correctiveAction.deleteMany({ where: { companyId: CO } })
   await db.incident.deleteMany({ where: { companyId: CO } })
   await db.employee.deleteMany({ where: { companyId: CO } })
   await db.site.deleteMany({ where: { companyId: CO } })
@@ -153,6 +155,68 @@ d('row-level scope inside a tenant', () => {
     await expect(
       investigation.updatePerson(manager, personId, { treatment: 'hospital, discharged' }),
     ).resolves.toBeTruthy()
+  })
+
+  // ── Corrective actions ───────────────────────────────────────────────────
+
+  it('refuses a corrective action, and its notes, to a caller who can see neither it nor its incident', async () => {
+    /*
+     * The action register shows an employee or supervisor only the actions they own, but
+     * the direct fetch checked the tenant and nothing else. The ids are not secret: every
+     * action reminder is broadcast to the whole workspace carrying /actions/<id> in its
+     * link, so any employee's notification feed lists them - and with one, the API
+     * returned the action's title, detail, owner, evidence note and notes thread.
+     */
+    const action = await incidents.addAction(manager, incidentId, {
+      title: 'Refit the press guard', owner: 'Manager Zainab', dueDate: '2030-01-01',
+    })
+    await incidents.addActionNote(manager, action.id, 'Guard ordered from the supplier.')
+
+    await expect(incidents.getAction(employee, action.id)).rejects.toThrow(/do not have access/i)
+    await expect(incidents.getAction(supervisor, action.id)).rejects.toThrow(/do not have access/i)
+    await expect(incidents.getAction(manager, action.id)).resolves.toMatchObject({ id: action.id })
+  })
+
+  it('refuses a note written onto somebody else\'s action', async () => {
+    const action = await incidents.addAction(manager, incidentId, {
+      title: 'Retrain press operators', owner: 'Manager Zainab', dueDate: '2030-01-01',
+    })
+    await expect(incidents.addActionNote(employee, action.id, 'written by the wrong person'))
+      .rejects.toThrow(/do not have access/i)
+    expect(await db.capaNote.count({ where: { actionId: action.id } })).toBe(0)
+  })
+
+  it('still shows an action to its owner and to whoever can open its incident', async () => {
+    // Owned by the employee, on an incident they cannot open: theirs to see and work.
+    const owned = await incidents.addAction(manager, incidentId, {
+      title: 'Inspect the spare guard', owner: employee.name, dueDate: '2030-01-01',
+    })
+    await expect(incidents.getAction(employee, owned.id)).resolves.toMatchObject({ id: owned.id })
+    await expect(incidents.addActionNote(employee, owned.id, 'Inspected, no cracks.')).resolves.toBeTruthy()
+
+    // On an incident the employee reported: they already see it on that incident's page.
+    const theirs = await incidents.create(employee, {
+      companyId: CO, siteId: SITE_A, title: 'Oil on the walkway', description: 'Slip hazard.',
+      type: 'near_miss', severity: 'near_miss', location: 'Walkway', department: 'Production',
+      occurredAt: new Date().toISOString(),
+    })
+    const onTheirs = await incidents.addAction(manager, theirs.id, {
+      title: 'Fix the leaking valve', owner: 'Manager Zainab', dueDate: '2030-01-01',
+    })
+    await expect(incidents.getAction(employee, onTheirs.id)).resolves.toMatchObject({ id: onTheirs.id })
+  })
+
+  it('answers another workspace\'s action as not found, not forbidden', async () => {
+    const action = await incidents.addAction(manager, incidentId, {
+      title: 'Guard interlock test', owner: 'Manager Zainab', dueDate: '2030-01-01',
+    })
+    const outsider: Caller = {
+      userId: 'rowscope-out', name: 'Outsider', roles: [{ companyId: 'elsewhere', role: 'admin', siteIds: [] }],
+    }
+    // 403 for a real id and 404 for a made-up one would tell a stranger which ids exist.
+    await expect(incidents.getAction(outsider, action.id)).rejects.toMatchObject({ status: 404 })
+    await expect(incidents.addActionNote(outsider, action.id, 'x')).rejects.toMatchObject({ status: 404 })
+    await expect(incidents.updateAction(outsider, action.id, { status: 'in_progress' })).rejects.toMatchObject({ status: 404 })
   })
 
   // ── Search ────────────────────────────────────────────────────────────────
