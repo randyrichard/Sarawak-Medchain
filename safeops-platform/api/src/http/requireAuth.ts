@@ -27,11 +27,23 @@ const ALLOWED_WHILE_LOCKED: { method: string; path: string }[] = [
   { method: 'GET', path: '/auth/me' },
 ]
 
-function isAllowedWhileLocked(req: Request): boolean {
+/**
+ * What an account whose workspace requires MFA, and which has not set it up, may reach:
+ * the setup itself, and who am I. The same rule as above for the same reason - the policy
+ * has to hold in the API, not only on the screen.
+ */
+const ALLOWED_BEFORE_MFA_SETUP: { method: string; path: string }[] = [
+  { method: 'GET', path: '/auth/me' },
+  { method: 'GET', path: '/account/mfa' },
+  { method: 'POST', path: '/account/mfa/setup' },
+  { method: 'POST', path: '/account/mfa/enable' },
+]
+
+function isAllowed(req: Request, list: { method: string; path: string }[]): boolean {
   // originalUrl, because this runs inside routers mounted on a prefix: req.path here is
   // '/password', and matching that alone would open any router with such a route.
   const path = req.originalUrl.split('?')[0].replace(/\/+$/, '')
-  return ALLOWED_WHILE_LOCKED.some((a) => a.method === req.method && a.path === path)
+  return list.some((a) => a.method === req.method && a.path === path)
 }
 
 /**
@@ -53,7 +65,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   const claims = verifyAccessToken(token)
   if (!claims) return res.status(401).json({ error: 'unauthenticated', message: 'Session is invalid or expired.' })
 
-  if (claims.mustChangePassword && !isAllowedWhileLocked(req)) {
+  if (claims.mustChangePassword && !isAllowed(req, ALLOWED_WHILE_LOCKED)) {
     /*
      * A distinct code, not a bare 403: the client has to be able to tell "you may not do
      * this" from "you must do something first", and sending somebody to a permissions
@@ -62,6 +74,13 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     return res.status(403).json({
       error: 'password_change_required',
       message: 'Choose your own password before continuing.',
+    })
+  }
+
+  if (claims.mfaSetupRequired && !claims.mustChangePassword && !isAllowed(req, ALLOWED_BEFORE_MFA_SETUP)) {
+    return res.status(403).json({
+      error: 'mfa_setup_required',
+      message: 'Your organisation requires multi-factor sign-in. Set it up to continue.',
     })
   }
 

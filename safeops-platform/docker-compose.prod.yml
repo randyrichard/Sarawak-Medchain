@@ -116,6 +116,9 @@ services:
       # Optional: without it the rest of the product works and webhooks cannot be created,
       # with an explanation rather than a failure. Generate with: npm run keygen
       WEBHOOK_SECRET_KEY_B64: ${WEBHOOK_SECRET_KEY_B64:-}
+      # Seals authenticator secrets for multi-factor sign-in. Optional: without it MFA
+      # cannot be set up, with an explanation. Generate with: npm run keygen
+      MFA_SECRET_KEY_B64: ${MFA_SECRET_KEY_B64:-}
       # Which peers may set X-Forwarded-For. The default covers Caddy on this private
       # compose network and refuses the header from anything on a public address, so a
       # client cannot name its own rate-limit bucket or audit-trail entry. It does not

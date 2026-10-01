@@ -27,6 +27,22 @@ export const PERMIT_TYPE_COLOR: Record<PermitType, string> = {
 export const canIssuePermits = (role: string | null) =>
   ['admin', 'hse_manager', 'safety_officer'].includes(role ?? '')
 
+/**
+ * Who may perform the safety steps on a permit: name or remove people, record gas tests,
+ * place and release isolations. Mirrors FIELD_ROLES in the API's permitService.ts.
+ */
+export const canOperatePermits = (role: string | null) =>
+  ['admin', 'hse_manager', 'safety_officer', 'supervisor'].includes(role ?? '')
+
+/**
+ * Who is shown the gas-test form. The operators, and employees - because the server also
+ * accepts a reading from an employee the permit names as its gas tester, and that person
+ * has to be able to reach the form. Anyone else on the employee role gets the server's
+ * explanation. The executive role is read-only and never sees it.
+ */
+export const canRecordGasTests = (role: string | null) =>
+  canOperatePermits(role) || role === 'employee'
+
 /** "2h 40m left" / "expired 25m ago" — the number a supervisor actually reads. */
 export function formatRemaining(hours: number): string {
   const mins = Math.round(Math.abs(hours) * 60)

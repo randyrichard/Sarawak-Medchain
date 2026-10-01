@@ -7,7 +7,7 @@ import { useOrg } from '@/features/org/OrgContext'
 import { useActor } from '@/features/incidents/lib'
 import { Button, Card, EmptyState, PageHeader, Skeleton } from '@/components/ui'
 import { cn } from '@/lib/cn'
-import { canIssuePermits } from './lib'
+import { canIssuePermits, canOperatePermits, canRecordGasTests } from './lib'
 import { PermitCard } from './components/PermitCard'
 import { PermitDrawer } from './components/PermitDrawer'
 import { NewPermitDialog } from './components/NewPermitDialog'
@@ -40,6 +40,8 @@ export function PermitsPage() {
   const [newOpen, setNewOpen] = useState(false)
 
   const issuer = canIssuePermits(role)
+  const operator = canOperatePermits(role)
+  const gasTester = canRecordGasTests(role)
 
   const refresh = useCallback(() => {
     if (!company) return
@@ -206,6 +208,8 @@ export function PermitsPage() {
         permitId={openId}
         actor={actor}
         issuer={issuer}
+        operator={operator}
+        gasTester={gasTester}
         onClose={() => { setOpenId(null); setParam('permit', '') }}
         onChanged={refresh}
       />

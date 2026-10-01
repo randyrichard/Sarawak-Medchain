@@ -180,7 +180,7 @@ export interface ApiClient {
     deliveryNote?: string
   }>
   adminForcePasswordReset(companyId: string, id: string, actor: AdminActor): Promise<AdminUser>
-  adminToggleMfa(companyId: string, id: string, actor: AdminActor): Promise<AdminUser>
+  adminResetMfa(companyId: string, id: string, actor: AdminActor): Promise<AdminUser>
   adminBulkImport(companyId: string, csv: string, actor: AdminActor): Promise<{ created: number; skipped: number; errors: string[] }>
   adminUserDevices(companyId: string, id: string): Promise<UserDevice[]>
   adminUserLoginHistory(companyId: string, id: string): Promise<LoginEvent[]>
@@ -1293,9 +1293,9 @@ class MockApiClient implements ApiClient {
     if (SERVER_ADMIN) return adminApi.forcePasswordReset(companyId, id)
     await delay(LATENCY() / 3); return (await this.demo()).admin.forcePasswordReset(id, actor)
   }
-  async adminToggleMfa(companyId: string, id: string, actor: AdminActor) {
-    if (SERVER_ADMIN) return adminApi.toggleMfa(companyId, id)
-    await delay(LATENCY() / 3); return (await this.demo()).admin.toggleMfa(id, actor)
+  async adminResetMfa(companyId: string, id: string, actor: AdminActor) {
+    if (SERVER_ADMIN) return adminApi.resetMfa(companyId, id)
+    await delay(LATENCY() / 3); return (await this.demo()).admin.resetMfa(id, actor)
   }
   async adminBulkImport(companyId: string, csv: string, actor: AdminActor) {
     if (SERVER_ADMIN) {

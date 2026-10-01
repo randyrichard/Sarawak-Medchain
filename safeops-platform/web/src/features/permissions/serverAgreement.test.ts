@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { capabilitiesOf, type Capability } from './permissions'
+import { canIssuePermits, canOperatePermits } from '@/features/permits/lib'
 import { ROLE_LABEL, type Role } from '@/api/types'
 
 /** Every role the product ships, read through the same map the UI labels them with. */
@@ -121,6 +122,16 @@ const PAIRS: { capability: Capability; file: string; constant: string; what: str
 d('the navigation and the API agree about roles', () => {
   it.each(PAIRS)('$what', ({ capability, file, constant }) => {
     expect(sorted(clientRoles(capability))).toEqual(sorted(serverRoles(file, constant)))
+  })
+
+  it('agrees about who issues permits and who performs their safety steps', () => {
+    /*
+     * The permit screens decide with role helpers rather than capabilities, so they are
+     * compared directly. A drift here is a Release button that answers 403, or a supervisor
+     * who cannot see the button they are entitled to press with a lock in their hand.
+     */
+    expect(sorted(ROLES.filter((r) => canIssuePermits(r)))).toEqual(sorted(serverRoles('permitService', 'ISSUER_ROLES')))
+    expect(sorted(ROLES.filter((r) => canOperatePermits(r)))).toEqual(sorted(serverRoles('permitService', 'FIELD_ROLES')))
   })
 
   it('declares the same set of roles on both sides', () => {

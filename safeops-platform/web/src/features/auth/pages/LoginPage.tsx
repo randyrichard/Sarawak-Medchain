@@ -1,12 +1,13 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { LogIn } from 'lucide-react'
+import { LogIn, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../AuthContext'
 import { usePageTitle } from '@/app/pageTitle'
 import { safeInternalPath } from '../safeRedirect'
 import { loadPreferences } from '@/features/account/preferences'
 import { getPlatformInfo } from '@/features/platform/usePlatformAdmin'
 import { ApiError, ROLE_LABEL, type Role } from '@/api/types'
+import { MfaRequiredError } from '@/api/authApi'
 import { Alert, Button, Checkbox, Input, PasswordInput } from '@/components/ui'
 import { AuthLayout } from './AuthLayout'
 import { shouldShowDemoLogins } from '../demoLogins'
@@ -67,7 +68,7 @@ export async function destination(from: string): Promise<string> {
 
 export function LoginPage() {
   usePageTitle('Sign in')
-  const { login } = useAuth()
+  const { login, verifyMfa } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   // Sanitise the post-login destination — never trust a caller-supplied redirect target.
@@ -78,6 +79,10 @@ export function LoginPage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [remember, setRemember] = useState(true)
+  // Set once the password has been accepted and the account wants a code as well.
+  const [challenge, setChallenge] = useState<string | null>(null)
+  const [code, setCode] = useState('')
+  const [useRecovery, setUseRecovery] = useState(false)
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -87,9 +92,71 @@ export function LoginPage() {
       await login(email, password, remember)
       navigate(await destination(from), { replace: true })
     } catch (err) {
+      if (err instanceof MfaRequiredError) {
+        setChallenge(err.challenge)
+        setBusy(false)
+        return
+      }
       setError(err instanceof ApiError ? err.message : 'Something went wrong. Try again.')
       setBusy(false)
     }
+  }
+
+  const submitCode = async (e: FormEvent) => {
+    e.preventDefault()
+    if (!challenge) return
+    setBusy(true)
+    setError(null)
+    try {
+      await verifyMfa(challenge, code)
+      navigate(await destination(from), { replace: true })
+    } catch (err) {
+      setCode('')
+      if (err instanceof ApiError && err.code === 'mfa_challenge_expired') {
+        // Five minutes passed, or the account was locked meanwhile: back to the password.
+        setChallenge(null)
+        setPassword('')
+      }
+      setError(err instanceof ApiError ? err.message : 'Something went wrong. Try again.')
+      setBusy(false)
+    }
+  }
+
+  if (challenge) {
+    return (
+      <AuthLayout>
+        <h1 className="text-xl font-semibold tracking-tight text-ink">Enter your code</h1>
+        <p className="mt-1 text-sm text-ink-2">
+          {useRecovery
+            ? 'Enter one of the recovery codes you saved when you set up multi-factor sign-in.'
+            : 'Open your authenticator app and enter the 6-digit code for SafeOps.'}
+        </p>
+        <form onSubmit={submitCode} className="mt-6 space-y-4" noValidate>
+          {error && <Alert tone="critical">{error}</Alert>}
+          <Input
+            label={useRecovery ? 'Recovery code' : 'Authentication code'}
+            inputMode={useRecovery ? 'text' : 'numeric'} autoComplete="one-time-code"
+            placeholder={useRecovery ? 'XXXX-XXXX' : '123 456'}
+            value={code} onChange={(e) => setCode(e.target.value)} required autoFocus
+            className="font-mono tracking-widest"
+          />
+          <Button type="submit" size="lg" loading={busy} icon={<ShieldCheck size={15} />} className="w-full"
+            disabled={!code.trim()}>
+            Verify and sign in
+          </Button>
+          <div className="flex items-center justify-between gap-3 text-xs">
+            <button type="button" className="font-medium text-accent hover:text-ink"
+              onClick={() => { setUseRecovery((v) => !v); setCode(''); setError(null) }}>
+              {useRecovery ? 'Use the authenticator app instead' : 'Lost your phone? Use a recovery code'}
+            </button>
+            <button type="button" className="text-muted hover:text-ink"
+              onClick={() => { setChallenge(null); setCode(''); setPassword(''); setError(null) }}>
+              Back
+            </button>
+          </div>
+        </form>
+      </AuthLayout>
+    )
   }
 
   const quickLogin = async (demoEmail: string) => {

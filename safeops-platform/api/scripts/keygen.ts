@@ -20,9 +20,13 @@ console.log(`JWT_PUBLIC_KEY_B64=${b64(publicKey)}`)
 // 32 bytes for AES-256. Seals webhook signing secrets so they can be read back to
 // sign each payload - see api/src/lib/secretBox.ts.
 console.log(`WEBHOOK_SECRET_KEY_B64=${randomBytes(32).toString("base64")}`)
+// 32 bytes for AES-256. Seals each person's authenticator secret - see mfaService.ts.
+console.log(`MFA_SECRET_KEY_B64=${randomBytes(32).toString("base64")}`)
 console.log('')
 console.log('\n# Rotate by regenerating: existing access tokens stop verifying immediately,')
 console.log('# and clients recover on their next refresh.\n')
 console.log('# Rotating WEBHOOK_SECRET_KEY_B64 is NOT routine: it makes every existing')
 console.log('# webhook secret unreadable, and each webhook has to be recreated. That is')
 console.log('# why it is separate from the JWT keys, which are meant to be rotated freely.')
+console.log('# Rotating MFA_SECRET_KEY_B64 is not routine either: everyone enrolled in MFA')
+console.log('# has to have it reset by an administrator and set it up again.')

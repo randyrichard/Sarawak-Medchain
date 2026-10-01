@@ -27,6 +27,12 @@ const d = hasDb ? describe : describe.skip
 const db = new PrismaClient()
 const svc = new AdminService(db)
 
+/** One audited administrative act that leaves the account as it found it. */
+async function enrolAndReset() {
+  await db.user.update({ where: { id: staffId }, data: { mfaEnabled: true } })
+  await svc.resetMfa(admin, COMPANY, ctx, staffId)
+}
+
 const COMPANY = 'adm-itest-co'
 const SITE = 'adm-itest-site'
 const OTHER = 'adm-itest-other-co'
@@ -237,12 +243,25 @@ d('AdminService — integration (real Postgres)', () => {
     expect((await db.user.findUniqueOrThrow({ where: { id: staffId } })).mustChangePassword).toBe(true)
   })
 
-  it('toggles MFA on the real account', async () => {
-    const on = await svc.toggleMfa(admin, COMPANY, ctx, staffId)
-    expect(on.mfaEnabled).toBe(true)
-    expect((await db.user.findUniqueOrThrow({ where: { id: staffId } })).mfaEnabled).toBe(true)
-    const off = await svc.toggleMfa(admin, COMPANY, ctx, staffId)
+  it('cannot switch MFA on for somebody else - only they can, with their phone', async () => {
+    await db.user.update({ where: { id: staffId }, data: { mfaEnabled: false } })
+    await expect(svc.resetMfa(admin, COMPANY, ctx, staffId)).rejects.toMatchObject({ code: 'validation' })
+    expect((await db.user.findUniqueOrThrow({ where: { id: staffId } })).mfaEnabled).toBe(false)
+  })
+
+  it('resets MFA for somebody who lost their phone, and ends their sessions', async () => {
+    await db.user.update({
+      where: { id: staffId },
+      data: { mfaEnabled: true, mfaSecret: 'sealed', mfaRecoveryCodes: ['a', 'b'], mfaLastStep: 7 },
+    })
+    await db.refreshToken.create({
+      data: { userId: staffId, tokenHash: `mfa-reset-${Date.now()}`, familyId: 'f-mfa', expiresAt: new Date(Date.now() + 86_400_000) },
+    })
+    const off = await svc.resetMfa(admin, COMPANY, ctx, staffId)
     expect(off.mfaEnabled).toBe(false)
+    const row = await db.user.findUniqueOrThrow({ where: { id: staffId } })
+    expect(row).toMatchObject({ mfaEnabled: false, mfaSecret: null, mfaRecoveryCodes: [], mfaLastStep: null })
+    expect(await db.refreshToken.count({ where: { userId: staffId, revokedAt: null } })).toBe(0)
   })
 
   it('imports users from CSV, skipping duplicates', async () => {
@@ -361,7 +380,7 @@ d('AdminService — integration (real Postgres)', () => {
      * millisecond, and without the id tiebreak a row can appear on two pages or neither.
      */
     for (let i = 0; i < 12; i += 1) {
-      await svc.toggleMfa(admin, COMPANY, ctx, staffId)
+      await enrolAndReset()
     }
 
     const first = await svc.listAudit(admin, COMPANY, { page: 1, pageSize: 5 })
@@ -427,7 +446,7 @@ d('AdminService — integration (real Postgres)', () => {
   })
 
   it('writes an append-only entry for every administrative act, with the real actor', async () => {
-    await svc.toggleMfa(admin, COMPANY, ctx, staffId)
+    await enrolAndReset()
     const entries = await svc.listAudit(admin, COMPANY, {})
 
     expect(entries.rows.length).toBeGreaterThan(0)

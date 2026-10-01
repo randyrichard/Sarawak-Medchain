@@ -6,6 +6,7 @@ import type { Capability } from '@/features/permissions/permissions'
 import { FullPageSpinner } from '@/components/ui/Spinner'
 import { ForbiddenPage } from '@/app/pages/ForbiddenPage'
 import { ChangePasswordRequiredPage } from './pages/ChangePasswordRequiredPage'
+import { MfaSetupRequiredPage } from './pages/MfaSetupRequiredPage'
 
 /** Blocks anonymous users; preserves the intended destination. */
 export function RequireAuth() {
@@ -26,6 +27,12 @@ export function RequireAuth() {
    * Placed here rather than on a route so there is no address that skips it.
    */
   if (user?.mustChangePassword) return <ChangePasswordRequiredPage />
+  /*
+   * Then, if a workspace requires multi-factor sign-in, setting it up comes before
+   * anything else - the API refuses everything but the setup until it is done, so showing
+   * the app would only show a wall of errors.
+   */
+  if (user?.mfaSetupRequired) return <MfaSetupRequiredPage />
   return <Outlet />
 }
 

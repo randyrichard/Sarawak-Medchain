@@ -31,6 +31,19 @@ const schema = z.object({
   WEBHOOK_SECRET_KEY_B64: z.string().optional(),
 
   /*
+   * Seals each person's authenticator secret (multi-factor sign-in), 32 bytes, base64.
+   *
+   * A TOTP secret has to be read back to check a code, so it cannot be hashed the way a
+   * password is; it is encrypted instead, and with its own key rather than the webhook one,
+   * so that neither can be rotated by accident when the other is.
+   *
+   * Absent means nobody can set up multi-factor sign-in and the "require MFA" policy cannot
+   * be switched on, both with an explanation. Rotating it is NOT routine: everybody enrolled
+   * has to set their authenticator up again.
+   */
+  MFA_SECRET_KEY_B64: z.string().optional(),
+
+  /*
    * Permits webhook delivery to private, loopback and link-local addresses, and over plain
    * HTTP.
    *
@@ -484,7 +497,7 @@ if ((raw.RESEND_API_KEY || raw.SMTP_URL) && !raw.REPORT_EMAIL_FROM) {
  * A key of the wrong length must not be discovered at the first delivery attempt, weeks
  * after a deployment, by a customer whose endpoint went quiet.
  */
-function decodeWebhookKey(b64: string | undefined): Buffer | null {
+function decodeAesKey(b64: string | undefined, label = 'WEBHOOK_SECRET_KEY_B64'): Buffer | null {
   if (!b64) return null
   const buf = Buffer.from(b64, 'base64')
   // AES-256. Parsed here rather than in secretBox.ts so that module can import this one
@@ -492,7 +505,7 @@ function decodeWebhookKey(b64: string | undefined): Buffer | null {
   if (buf.length !== 32) {
     // eslint-disable-next-line no-console
     console.error(
-      `WEBHOOK_SECRET_KEY_B64 must decode to exactly 32 bytes (got ${buf.length}). `
+      `${label} must decode to exactly 32 bytes (got ${buf.length}). `
       + 'Run: npm run keygen',
     )
     process.exit(1)
@@ -514,7 +527,9 @@ export const env = {
   ...raw,
   isProd: raw.NODE_ENV === 'production',
   /** The webhook sealing key, decoded once. `null` when webhooks are not configured. */
-  webhookSecretKey: decodeWebhookKey(raw.WEBHOOK_SECRET_KEY_B64),
+  webhookSecretKey: decodeAesKey(raw.WEBHOOK_SECRET_KEY_B64),
+  /** The authenticator-secret sealing key. `null` when multi-factor sign-in is not configured. */
+  mfaSecretKey: decodeAesKey(raw.MFA_SECRET_KEY_B64, 'MFA_SECRET_KEY_B64'),
   /** Peers allowed to set X-Forwarded-For, in the shape Express's `trust proxy` expects. */
   trustProxy: parseTrustProxy(raw.TRUST_PROXY),
   schedulerEnabled: raw.SCHEDULER_ENABLED === 'true' && raw.NODE_ENV !== 'test',

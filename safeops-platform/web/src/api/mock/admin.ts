@@ -403,11 +403,15 @@ export class AdminStore {
     return u
   }
 
-  toggleMfa(id: string, actor: AdminActor): AdminUser {
+  /** Mirrors the server: an administrator can clear MFA, never switch it on for someone. */
+  resetMfa(id: string, actor: AdminActor): AdminUser {
     this.requireAdmin(actor)
     const u = this.getUser(id)
-    u.mfaEnabled = !u.mfaEnabled
-    this.log(actor, u.mfaEnabled ? 'Enabled MFA' : 'Disabled MFA', 'admin', u.email)
+    if (!u.mfaEnabled) {
+      throw new ApiError('validation', 'This person has not set up multi-factor sign-in. They do that from their own account page.')
+    }
+    u.mfaEnabled = false
+    this.log(actor, 'Reset MFA', 'admin', u.email)
     this.persist()
     return u
   }

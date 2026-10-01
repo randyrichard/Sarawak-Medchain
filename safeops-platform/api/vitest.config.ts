@@ -55,6 +55,8 @@ export default defineConfig({
     env: {
       WEBHOOK_SECRET_KEY_B64: Buffer.from('safeops-test-key-not-a-real-one!').toString('base64'),
       WEBHOOK_ALLOW_PRIVATE_TARGETS: 'true',
+      // Same idea for authenticator secrets: MFA cannot be set up, or tested, without a key.
+      MFA_SECRET_KEY_B64: Buffer.from('safeops-test-mfa-key-not-real!!!').toString('base64'),
     },
     /*
      * 30s. Sized for the slowest legitimate case - a process spawn plus a cold Prisma

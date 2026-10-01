@@ -100,6 +100,11 @@ export interface User {
   memberships: Membership[]
   /** users must change password at next login when set (future: forced rotation) */
   mustChangePassword?: boolean
+  /**
+   * A workspace requires multi-factor sign-in and this person has not set it up. The API
+   * refuses everything but the setup until they do; the app shows only the setup screen.
+   */
+  mfaSetupRequired?: boolean
 }
 
 export interface Session {

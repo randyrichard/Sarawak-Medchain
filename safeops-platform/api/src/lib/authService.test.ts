@@ -32,6 +32,9 @@ function makeDb() {
     membership: {
       findMany: async ({ where }: any) => memberships.filter((m) => matches(m, where)),
     },
+    securityPolicy: {
+      count: async () => 0,
+    },
     company: {
       findMany: async ({ where }: any) => companies
         .filter((c) => where.id.in.includes(c.id) && c.status === where.status)

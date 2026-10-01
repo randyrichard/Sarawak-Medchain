@@ -29,6 +29,7 @@ export function UsersSection() {
   const [importOpen, setImportOpen] = useState(false)
   // The raw reset token exists exactly once, in this response. If the admin closes the
   // dialog without copying it, it is gone and they must issue another.
+  const [mfaResetFor, setMfaResetFor] = useState<AdminUser | null>(null)
   const [resetLink, setResetLink] = useState<{ email: string; url: string; minutes: number } | null>(null)
 
   const refresh = useCallback(() => {
@@ -162,7 +163,8 @@ export function UsersSection() {
                         trigger={() => <button className="rounded-lg border p-1.5 text-ink-2 hover:bg-accent-soft" aria-label="User actions"><MoreHorizontal size={14} /></button>}
                       >
                         <DropdownItem icon={<KeyRound size={14} />} onSelect={() => void issueReset(u)}>Issue reset link</DropdownItem>
-                        <DropdownItem icon={<ShieldCheck size={14} />} onSelect={() => void run(() => api.adminToggleMfa(companyId, u.id, actor), u.mfaEnabled ? 'MFA disabled' : 'MFA enabled')}>{u.mfaEnabled ? 'Disable MFA' : 'Enable MFA'}</DropdownItem>
+                        {/* Only a reset: switching MFA on needs the person's own phone, so they do it from My account. */}
+                        {u.mfaEnabled && <DropdownItem icon={<ShieldCheck size={14} />} onSelect={() => setMfaResetFor(u)}>Reset MFA (lost phone)</DropdownItem>}
                         <DropdownItem icon={<Play size={14} />} onSelect={() => void run(() => api.adminForcePasswordReset(companyId, u.id, actor), 'Reset forced at next login')}>Force reset at next login</DropdownItem>
                         <DropdownSeparator />
                         {u.status === 'locked' && <DropdownItem icon={<Play size={14} />} onSelect={() => void run(() => api.adminSetUserStatus(companyId, u.id, 'active', actor), 'Account unlocked')}>Unlock account</DropdownItem>}
@@ -186,6 +188,31 @@ export function UsersSection() {
       <NewUserDialog open={newOpen} roles={roles} sites={sites} onClose={() => setNewOpen(false)} onCreated={() => { setNewOpen(false); refresh(); setFlash('User created'); setTimeout(() => setFlash(null), 2500) }} />
       <BulkImportDialog open={importOpen} onClose={() => setImportOpen(false)} onDone={(r) => { setImportOpen(false); refresh(); setFlash(`${r.created} user(s) imported, ${r.skipped} skipped`); setTimeout(() => setFlash(null), 3000) }} />
       <ResetLinkDialog link={resetLink} onClose={() => setResetLink(null)} />
+      <Dialog
+        open={!!mfaResetFor}
+        onClose={() => setMfaResetFor(null)}
+        title="Reset multi-factor sign-in?"
+        description={mfaResetFor?.email}
+        footer={(
+          <>
+            <Button variant="ghost" onClick={() => setMfaResetFor(null)}>Cancel</Button>
+            <Button variant="danger" onClick={() => {
+              const u = mfaResetFor
+              setMfaResetFor(null)
+              if (u) void run(() => api.adminResetMfa(companyId, u.id, actor), `MFA reset for ${u.name}`)
+            }}>
+              Reset MFA
+            </Button>
+          </>
+        )}
+      >
+        <p className="text-sm text-ink-2">
+          For someone who has lost their phone and their recovery codes. Their authenticator
+          stops working, they are signed out everywhere, and they sign in next with their
+          password alone - then set MFA up again from My account, or straight away if your
+          organisation requires it. Confirm who is asking before you do this.
+        </p>
+      </Dialog>
     </div>
   )
 }
