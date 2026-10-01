@@ -46,7 +46,19 @@ model User {
   /// inside any of them. Keeping it separate is also what stops a customer administrator
   /// granting it - the organisation console writes Membership.role and never touches this.
   platformAdmin Boolean @default(false)
+  /// True only once the person has proved, with a code, that their authenticator works.
+  /// Sign-in then asks for a code after the password (mfaService.ts).
   mfaEnabled    Boolean @default(false)
+  /// The authenticator (TOTP) secret, sealed under MFA_SECRET_KEY_B64. Never a plaintext.
+  mfaSecret        String?
+  /// A secret issued by "set up" and not yet confirmed with a code. Replaced on every new
+  /// setup attempt and cleared on confirmation, so an abandoned setup never takes effect.
+  mfaPendingSecret String?
+  /// SHA-256 digests of the unused one-time recovery codes. A code is removed when used.
+  mfaRecoveryCodes String[] @default([])
+  /// The last 30-second step a code was accepted for, so a code that has been used once -
+  /// read over a shoulder, or replayed from a phishing page - cannot be used again.
+  mfaLastStep      Int?
   /// Shown in the admin console's user list. Additive and nullable — authentication
   /// does not read it, so every existing account is unaffected.
   department    String?

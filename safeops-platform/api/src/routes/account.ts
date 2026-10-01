@@ -10,10 +10,12 @@ import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
 import { PrismaRateLimitStore } from '../lib/rateLimitStore.js'
 import { AccountError, AccountService, LANDING_PAGES } from '../lib/accountService.js'
+import { MfaService } from '../lib/mfaService.js'
 import { requireAuth } from '../http/requireAuth.js'
 import { asyncRoute } from '../http/asyncRoute.js'
 
 const svc = new AccountService(prisma)
+const mfa = new MfaService(prisma)
 export const accountRouter = Router()
 
 accountRouter.use(requireAuth)
@@ -77,6 +79,50 @@ accountRouter.post('/password', changeLimiter, asyncRoute(async (req, res) => {
     req.cookies?.[REFRESH_COOKIE],
   )
   res.json(result)
+}))
+
+// ── Multi-factor sign-in ─────────────────────────────────────────────────────
+
+/*
+ * Setting up, turning off and replacing recovery codes all work on the caller's own
+ * account only - there is no user id in any of these paths. The ones that check a code or
+ * a password share the password-change limiter, because each is a guessing oracle for
+ * somebody holding a session but not the phone.
+ */
+
+accountRouter.get('/mfa', asyncRoute(async (req, res) => {
+  res.json(await mfa.status(req.auth!.sub))
+}))
+
+accountRouter.post('/mfa/setup', asyncRoute(async (req, res) => {
+  res.json(await mfa.beginSetup(req.auth!.sub))
+}))
+
+const codeBody = z.object({ code: z.string().min(1).max(40) })
+
+accountRouter.post('/mfa/enable', changeLimiter, asyncRoute(async (req, res) => {
+  const parsed = codeBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'Enter the code from your authenticator app.' })
+  }
+  res.json(await mfa.confirmSetup(req.auth!.sub, parsed.data.code))
+}))
+
+accountRouter.post('/mfa/disable', changeLimiter, asyncRoute(async (req, res) => {
+  const parsed = z.object({ password: z.string().min(1).max(200), code: z.string().min(1).max(40) }).safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'Enter your password and a code.' })
+  }
+  await mfa.disable(req.auth!.sub, parsed.data.password, parsed.data.code)
+  res.status(204).end()
+}))
+
+accountRouter.post('/mfa/recovery-codes', changeLimiter, asyncRoute(async (req, res) => {
+  const parsed = codeBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'Enter the code from your authenticator app.' })
+  }
+  res.json(await mfa.regenerateRecoveryCodes(req.auth!.sub, parsed.data.code))
 }))
 
 export { AccountError }

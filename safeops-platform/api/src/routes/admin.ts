@@ -135,10 +135,10 @@ adminRouter.post('/users/:id/force-reset', asyncRoute(async (req, res) => {
   res.json(await svc.forcePasswordReset(callerOf(req), parsed.data.companyId, ctxOf(req), req.params.id))
 }))
 
-adminRouter.post('/users/:id/toggle-mfa', asyncRoute(async (req, res) => {
+adminRouter.post('/users/:id/reset-mfa', asyncRoute(async (req, res) => {
   const parsed = companyBody.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ error: 'validation', message: 'companyId is required.' })
-  res.json(await svc.toggleMfa(callerOf(req), parsed.data.companyId, ctxOf(req), req.params.id))
+  res.json(await svc.resetMfa(callerOf(req), parsed.data.companyId, ctxOf(req), req.params.id))
 }))
 
 // ── RBAC ─────────────────────────────────────────────────────────────────────

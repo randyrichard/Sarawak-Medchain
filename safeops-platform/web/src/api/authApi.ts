@@ -84,6 +84,7 @@ export interface SessionIdentity {
   name: string
   title: string | null
   mustChangePassword?: boolean
+  mfaSetupRequired?: boolean
 }
 
 interface AuthPayload {
@@ -163,15 +164,56 @@ function toUser(payload: AuthPayload['user'], roles: Membership[]): User {
     title: payload.title ?? '',
     memberships: roles,
     mustChangePassword: payload.mustChangePassword,
+    mfaSetupRequired: payload.mfaSetupRequired,
+  }
+}
+
+/**
+ * The password was right and the account has multi-factor sign-in: the server answered
+ * with a challenge instead of a session. Thrown so the sign-in screen can ask for the code
+ * without every other caller of `login` having to handle a second kind of success.
+ */
+export class MfaRequiredError extends ApiError {
+  constructor(public challenge: string) {
+    super('mfa_required', 'Enter the code from your authenticator app.')
   }
 }
 
 export const authApi = {
   async login(email: string, password: string, rememberMe = true): Promise<User> {
-    const data = await request<AuthPayload>('/auth/login', {
+    const data = await request<AuthPayload | { mfaRequired: true; challenge: string }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password, rememberMe }),
     })
+    if ('mfaRequired' in data && data.mfaRequired) throw new MfaRequiredError(data.challenge)
+    return this.adopt(data as AuthPayload)
+  },
+
+  /** The second step: the challenge from `login` and a code (or a recovery code). */
+  async verifyMfa(challenge: string, code: string): Promise<User> {
+    const data = await request<AuthPayload>('/auth/mfa', {
+      method: 'POST',
+      body: JSON.stringify({ challenge, code }),
+    })
+    return this.adopt(data)
+  },
+
+  /**
+   * Fetches a fresh session for the same person, now.
+   *
+   * After setting up MFA the access token in hand still says setup is required - it was
+   * minted before - so the app asks for a new one rather than waiting for it to expire.
+   */
+  async reload(): Promise<User> {
+    const data = await refreshOnce()
+    setAccessToken(data.accessToken, data.accessExpiresAt)
+    sessionUserId = data.user.id
+    const me = await request<MePayload>('/auth/me')
+    return toUser(me.user, me.roles)
+  },
+
+  /** Takes on a session the server has just issued. */
+  async adopt(data: AuthPayload): Promise<User> {
     setAccessToken(data.accessToken, data.accessExpiresAt)
     sessionUserId = data.user.id
     // Roles are never taken from the login response body — they are read back from the

@@ -166,21 +166,66 @@ These change product behaviour, so they were not changed unilaterally.
 
 | ID | Severity | Finding | Recommendation |
 |---|---|---|---|
-| D-0 | **High** | **MFA is a label, not a control.** Admin → Users has "Enable MFA", Admin → Security has "Require multi-factor authentication for all users" ("New users must enrol in MFA at first sign-in"), and the security score counts MFA adoption. But sign-in never asks for a second factor: `mfaEnabled` is a flag nothing reads. An administrator who "enforces MFA" has password-only accounts. | Either implement TOTP (enrol with QR, verify at login, recovery codes, `mfaRequired` enforced at sign-in), or relabel these controls as "not yet enforced" until then. Misrepresenting a security control is worse than not having it. |
-| D-1 | Medium | **Permit safety steps are open to every member.** Any role, including `employee` and the read-only `ceo`, can do the actions listed below, and none of them is limited by a membership's sites. Found by the role probe: an employee removing a named person from a permit got `204`. Issuing, approving, suspending and closing are correctly restricted to issuers. | Restrict people, isolations, gas tests, controls and extensions to the issuer roles plus `supervisor`. Make `ceo` read-only, as `permissions.ts` already describes. Apply membership site restrictions to permits. |
+| D-0 | **High** | **MFA was a label, not a control.** "Enable MFA", "Require multi-factor authentication" and the MFA adoption score all existed, but sign-in never asked for a second factor. | **Resolved, see section 3a.** |
+| D-1 | Medium | **Permit safety steps were open to every member,** including `employee` and the read-only `ceo`. Found by the role probe: an employee removing a named person from a permit got `204`. | **Resolved for the steps that decide who may be in the work, see section 3a.** Precautions, extensions and site restriction remain open, as described there. |
 | D-2 | Low | Access tokens stay valid for up to 15 minutes after a user is deactivated, loses a role, or has their workspace suspended (stateless JWT). | Acceptable for most tenants. If immediate cut-off matters, check a per-user `tokenVersion` in `requireAuth` (one indexed read per request), or shorten `ACCESS_TOKEN_TTL_MIN`. |
 | D-3 | Low | Anyone who knows an address can lock that account with five wrong passwords. The per-IP login limit (20 per 15 minutes) caps this at about 4 accounts per IP per window. | Switch to progressive delay per account plus IP instead of a hard lock, or add a CAPTCHA after N failures. |
 | D-4 | Low | Inviting someone who already has an account adds the membership immediately, without their consent. The invite form's error also reveals whether an address belongs to a SafeOps platform administrator. | Create the membership on acceptance. Return the generic "cannot invite this address" message. |
 | D-5 | Info | IPv6-literal webhook URLs never deliver, because of the bracketed hostname (see SA-5). | Strip the brackets before `https.request`. That is safe now that the guard parses IPv6 correctly. |
+| D-7 | **Medium** | **The rest of the Authentication Policy page is also unenforced.** Lockout threshold, session timeout ("Applies to your next sign-in"), minimum password length, the uppercase/number/symbol rules and password expiry are saved and shown, but nothing reads them. The server uses its own fixed settings (`MAX_FAILED_LOGINS`, `REFRESH_TOKEN_TTL_DAYS`, `validatePasswordStrength`). Found while building MFA. | Enforce each setting where its fixed counterpart is used today, or mark it "not yet enforced" on the page. Same reasoning as D-0. |
 | D-6 | Info | `deploy/rollback.sh` tags `safeops-api:rollback`, but compose never uses that tag. Already noted in the worker PR. | Pin the image by digest in the rollback path. |
 
-**D-1: the permit actions any member can perform:**
-- add or remove named people;
-- record gas tests;
-- confirm precautions;
-- release LOTO isolations;
-- request extensions;
-- create permits.
+## 3a. Resolved after the audit
+
+### D-0: real multi-factor sign-in
+
+The scheme is TOTP (RFC 6238), which works with any authenticator app. The code
+implementing it was checked against the RFC's published test vectors.
+
+- **Enrolment.** It happens in My account → Security.
+  - The person scans a QR code (or types in the key) and confirms with a code.
+  - Nothing is switched on until that code is right.
+  - They get ten one-time recovery codes, which are shown once and stored only as SHA-256
+    digests.
+- **Storage.** The secret is sealed with AES-256-GCM under its own key,
+  `MFA_SECRET_KEY_B64`.
+- **Sign-in.**
+  - With MFA on, the password step returns a five-minute challenge (an RS256 token with
+    its own audience) instead of a session. Neither the challenge nor the session token
+    can stand in for the other.
+  - `POST /auth/mfa` then takes a code or a recovery code.
+  - Every wrong code counts towards the same account lockout as a wrong password.
+  - Each code works once: the last accepted 30-second step is recorded with a conditional
+    update. Each recovery code also works once.
+- **Policy.** "Require MFA" is enforced in the API. A member of a workspace that requires it
+  gets a token marked `mfaSetupRequired`. `requireAuth` then allows only `/auth/me` and the
+  setup endpoints, and the web app shows only the setup screen. MFA cannot be turned off
+  while it is required. The policy cannot be switched on if the server has no MFA key.
+- **Administrators** can no longer "enable" MFA for someone else; only the person holding
+  the phone can. They can **reset** it for a lost phone, which is audited and also ends that
+  person's sessions.
+- **Turning it off** needs the password and a code.
+- **Accounts left switched on by the old toggle** were switched off by the migration. They
+  never had an authenticator behind them, so leaving them on would have locked those people
+  out.
+
+### D-1: permit safety steps
+
+The following steps are now limited to `FIELD_ROLES`: admin, HSE manager, safety officer and
+supervisor.
+- naming or removing people on a permit;
+- recording gas tests;
+- placing or releasing isolations.
+
+An employee whom the permit names as its gas tester may still record readings. The web app
+hides the controls from roles that cannot use them. A drift test compares the web helpers
+with the API's role lists.
+
+These remain open:
+- **Confirming precautions and requesting extensions** are still open to every member.
+- **Creating a draft permit** is still open to every member, which matches the "applicant"
+  workflow.
+- **Site restriction** of permits is not yet applied.
 
 ## 4. Controls verified as sound (no change needed)
 
@@ -220,8 +265,9 @@ These change product behaviour, so they were not changed unilaterally.
 
 ## 5. Production recommendations
 
-1. **Resolve D-0 (MFA) before selling to companies that ask about it.** It is the one
-   finding a customer's security questionnaire will catch.
+1. **Set `MFA_SECRET_KEY_B64` and switch on "Require MFA" for administrators' workspaces**
+   before go-live. Then resolve D-7, the remaining unenforced policy settings, which a
+   customer's security questionnaire will also ask about.
 2. **Malware scanning for uploads.** Run ClamAV as a sidecar and scan before the row is
    written. The signature check in SA-2 stops disguised files but not a malicious PDF.
 3. **Per-tenant storage quotas** on the uploads volume, and **alerting at 80% disk**.

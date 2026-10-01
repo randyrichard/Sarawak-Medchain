@@ -5,6 +5,11 @@ import { Scheduler } from './lib/scheduler.js'
 import { announceMail } from './lib/email/announce.js'
 
 announceMail('safeops-api')
+if (!env.mfaSecretKey) {
+  // Said at boot so an operator finds out before a customer's administrator does.
+  // eslint-disable-next-line no-console
+  console.warn('[safeops-api] multi-factor sign-in unavailable: MFA_SECRET_KEY_B64 is not set (npm run keygen)')
+}
 
 const app = createApp()
 const server = app.listen(env.PORT, () => {

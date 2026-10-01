@@ -130,7 +130,7 @@ function PolicyPanel() {
             hint="Applies to your next sign-in — sessions expire after this many hours." />
           <div className="rounded-lg border px-3.5 py-3">
             <Switch checked={s.mfaRequired} onChange={(v) => set({ mfaRequired: v })} label="Require multi-factor authentication for all users" />
-            <p className="mt-1 text-2xs text-muted">New users must enrol in MFA at first sign-in.</p>
+            <p className="mt-1 text-2xs text-muted">Anyone without it is asked to set up an authenticator app the next time they sign in, and can do nothing else until they have.</p>
           </div>
           <Button icon={<Save size={14} />} loading={busy} onClick={() => void save()}>Save policy</Button>
         </CardBody>

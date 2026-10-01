@@ -16,6 +16,13 @@ export interface AccessClaims {
    * it can never be older than one access-token lifetime.
    */
   mustChangePassword: boolean
+  /**
+   * A workspace this person belongs to requires multi-factor sign-in and they have not set
+   * it up. Like `mustChangePassword`, requireAuth then lets them reach only the setup, so
+   * the policy holds in the API and not just on the screen. Read from the database every
+   * time a token is minted. Optional so a token minted before it existed still verifies.
+   */
+  mfaSetupRequired?: boolean
   jti: string
 }
 
@@ -97,4 +104,40 @@ export const RESET_TOKEN_TTL_MIN = 30
 
 export function resetTokenExpiry(): Date {
   return new Date(Date.now() + RESET_TOKEN_TTL_MIN * 60 * 1000)
+}
+
+/**
+ * The proof, between the two steps of an MFA sign-in, that the password was right.
+ *
+ * Signed with the same key as an access token but for a different audience, so neither can
+ * stand in for the other: `verifyAccessToken` refuses this, and this refuses an access
+ * token. Five minutes is long enough to unlock a phone and short enough that a challenge
+ * lifted from a screen is worth little - and it is useless without a code anyway.
+ */
+const MFA_CHALLENGE_TTL_SECONDS = 5 * 60
+const mfaAudience = () => `${env.JWT_AUDIENCE}:mfa`
+
+export function signMfaChallenge(userId: string, rememberMe: boolean): string {
+  return jwt.sign({ purpose: 'mfa', rememberMe }, env.jwtPrivateKey, {
+    algorithm: 'RS256',
+    subject: userId,
+    expiresIn: MFA_CHALLENGE_TTL_SECONDS,
+    issuer: env.JWT_ISSUER,
+    audience: mfaAudience(),
+    jwtid: randomUUID(),
+  })
+}
+
+export function verifyMfaChallenge(token: string): { userId: string; rememberMe: boolean } | null {
+  try {
+    const c = jwt.verify(token, env.jwtPublicKey, {
+      algorithms: ['RS256'],
+      issuer: env.JWT_ISSUER,
+      audience: mfaAudience(),
+    }) as { sub?: string; purpose?: string; rememberMe?: boolean }
+    if (c.purpose !== 'mfa' || !c.sub) return null
+    return { userId: c.sub, rememberMe: c.rememberMe !== false }
+  } catch {
+    return null
+  }
 }

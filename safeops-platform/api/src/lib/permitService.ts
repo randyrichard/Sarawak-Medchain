@@ -20,6 +20,29 @@ import { DomainError } from '../domain/errors.js'
  */
 const ISSUER_ROLES: Role[] = ['admin', 'hse_manager', 'safety_officer']
 
+/**
+ * Who may perform the safety steps on a live permit: naming or removing the people on it,
+ * recording a gas test, and placing or releasing a lock-out/tag-out isolation.
+ *
+ * The issuing authority plus the supervisor who runs the job on the floor. These steps had
+ * no role check at all, only membership - so any employee, and the read-only executive,
+ * could release an isolation on a live job or take a named entrant off a confined space
+ * permit. Each of those is a decision about whether it is safe for someone to be in the
+ * work, and it belongs to the people accountable for that.
+ */
+export const FIELD_ROLES: Role[] = ['admin', 'hse_manager', 'safety_officer', 'supervisor']
+
+/** Refuses a member whose role is not one of FIELD_ROLES. */
+export function requireFieldRole(role: Role, doing: string) {
+  if (!FIELD_ROLES.includes(role)) {
+    throw new PermitError(
+      'forbidden',
+      `Only a Supervisor, Safety Officer, HSE Manager or Admin can ${doing}.`,
+      403,
+    )
+  }
+}
+
 export class PermitError extends DomainError {}
 
 /** Status as the board reports it — the stored states plus derived `expired`. */
@@ -783,6 +806,18 @@ export class PermitService {
     reading: { oxygenPct: number; lelPct: number; h2sPpm: number; coPpm: number; note?: string },
   ): Promise<PermitView> {
     const { permit, membership } = await this.load(caller, permitId)
+    /*
+     * Or the person this permit names as its gas tester. Testing the atmosphere is a
+     * competence, not a rank: the authorised tester is often a technician on the employee
+     * role, and they are exactly who should be writing the reading down.
+     */
+    if (!FIELD_ROLES.includes(membership.role)) {
+      const namedTester = await this.db.permitAttendee.findFirst({
+        where: { permitId, role: 'gas_tester', employee: { userId: caller.userId } },
+        select: { id: true },
+      })
+      if (!namedTester) requireFieldRole(membership.role, 'record a gas test unless named on the permit as its gas tester')
+    }
     const pass = gasTestPasses(reading)
     // Plain "O2"/"H2S" rather than subscripts — this line is persisted on the audit
     // trail, and see the note in permitCatalog.ts about cluster encoding.
@@ -834,6 +869,7 @@ export class PermitService {
     input: { description: string; tagId: string },
   ): Promise<PermitView> {
     const { permit, membership } = await this.load(caller, permitId)
+    requireFieldRole(membership.role, 'place an isolation')
     if (['closed', 'rejected'].includes(permit.status)) {
       throw new PermitError('validation', 'This permit is no longer open.')
     }
@@ -867,6 +903,7 @@ export class PermitService {
 
   async releaseIsolation(caller: Caller, permitId: string, isolationId: string): Promise<PermitView> {
     const { permit, membership } = await this.load(caller, permitId)
+    requireFieldRole(membership.role, 'release an isolation')
 
     // Scoped to the permit for the same reason as confirmControl.
     const iso = permit.isolations.find((i) => i.id === isolationId)

@@ -24,11 +24,15 @@ import { printPermit } from '../print'
 
 /** The permit itself: controls, atmosphere, isolations, signatures and the audit trail. */
 export function PermitDrawer({
-  permitId, actor, issuer, onClose, onChanged,
+  permitId, actor, issuer, operator, gasTester, onClose, onChanged,
 }: {
   permitId: string | null
   actor: Actor
   issuer: boolean
+  /** May name people and place or release isolations (see canOperatePermits). */
+  operator: boolean
+  /** Is shown the gas-test form (see canRecordGasTests). */
+  gasTester: boolean
   onClose: () => void
   onChanged: () => void
 }) {
@@ -203,7 +207,7 @@ export function PermitDrawer({
                 <Alert tone="warning">A gas test is required before this permit can be issued.</Alert>
               )}
 
-              {open && (
+              {open && gasTester && (
                 <div className="mt-2 rounded-lg border p-3">
                   <div className="grid grid-cols-4 gap-2">
                     {([['oxygenPct', 'O₂ %'], ['lelPct', 'LEL %'], ['h2sPpm', 'H₂S ppm'], ['coPpm', 'CO ppm']] as const).map(([k, label]) => (
@@ -286,7 +290,7 @@ export function PermitDrawer({
           <PermitPeoplePanel
             permitId={permit.id}
             permitStatus={permit.status}
-            canEdit={open}
+            canEdit={open && operator}
             onChanged={onChanged}
           />
 
@@ -330,7 +334,7 @@ export function PermitDrawer({
                         {i.removedAt && ` · released ${i.removedBy}`}
                       </p>
                     </div>
-                    {!i.removedAt && open && (
+                    {!i.removedAt && open && operator && (
                       <Button size="sm" variant="ghost" icon={<Unlock size={11} />} loading={busy}
                         onClick={() => void run(() => api.releasePermitIsolation(permit.id, i.id, actor))}>
                         Release
@@ -344,7 +348,7 @@ export function PermitDrawer({
                   </li>
                 )}
               </ul>
-              {open && (
+              {open && operator && (
                 <div className="mt-2 flex flex-col gap-2 sm:flex-row">
                   <input value={iso.description} onChange={(e) => setIso((s) => ({ ...s, description: e.target.value }))}
                     placeholder="What is isolated…" aria-label="Isolation description"

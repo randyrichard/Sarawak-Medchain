@@ -13,6 +13,7 @@ import {
   Alert, Avatar, Badge, Button, Card, CardBody, CardHeader, Dialog, Input, PageHeader,
 } from '@/components/ui'
 import { loadSession } from '@/features/auth/session'
+import { MfaSettings } from './mfa/MfaSettings'
 
 export function AccountPage() {
   const { user, logout, backend } = useAuth()
@@ -54,7 +55,7 @@ export function AccountPage() {
 
         <div className="space-y-4">
           <Card>
-            <CardHeader title="Security" subtitle="Password and two-factor authentication" />
+            <CardHeader title="Security" subtitle="Password and multi-factor sign-in" />
             <CardBody className="space-y-3">
               <div className="flex items-center justify-between gap-3">
                 <div>
@@ -68,14 +69,7 @@ export function AccountPage() {
                   Change
                 </Button>
               </div>
-              <div className="flex items-center justify-between gap-3 border-t pt-3">
-                <div>
-                  <p className="text-sm font-medium text-ink">Two-factor authentication</p>
-                  <p className="text-2xs text-muted">
-                    Enabled per account by your workspace administrator
-                  </p>
-                </div>
-              </div>
+              <MfaSettings backend={backend} />
             </CardBody>
           </Card>
 

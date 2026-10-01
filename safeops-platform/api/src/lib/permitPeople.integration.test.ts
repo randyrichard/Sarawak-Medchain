@@ -308,4 +308,65 @@ d('Permit people — integration (real Postgres)', () => {
         .rejects.toThrow(/already awaiting|later than/i)
     })
   })
+
+  // ── Who may perform the safety steps ─────────────────────────────────────
+
+  describe('who may perform the safety steps', () => {
+    const as = (role: string, userId = `ptwppl-${role}`): Caller => ({
+      userId, name: `ITest ${role}`, roles: [{ companyId: COMPANY, role: role as never, siteIds: [] }],
+    })
+    const reading = { oxygenPct: 20.9, lelPct: 0, h2sPpm: 0, coPpm: 0 }
+
+    it('refuses an employee and the read-only executive every step, before anything changes', async () => {
+      const p = await newPermit()
+      const e = await fitEmployee()
+      const named = await people.add(manager, p.id, { employeeId: e.id })
+      const iso = (await permits.addIsolation(manager, p.id, { description: 'MCC-4 breaker', tagId: 'LOTO-17' })).isolations[0]
+
+      for (const who of [as('employee'), as('ceo')]) {
+        await expect(people.add(who, p.id, { employeeId: e.id })).rejects.toMatchObject({ status: 403 })
+        await expect(people.remove(who, named.id)).rejects.toMatchObject({ status: 403 })
+        await expect(permits.addGasTest(who, p.id, reading)).rejects.toMatchObject({ status: 403 })
+        await expect(permits.addIsolation(who, p.id, { description: 'Valve', tagId: 'T-1' })).rejects.toMatchObject({ status: 403 })
+        await expect(permits.releaseIsolation(who, p.id, iso.id)).rejects.toMatchObject({ status: 403 })
+      }
+      const after = await permits.get(manager, p.id)
+      expect(after.isolations.find((i) => i.id === iso.id)?.removedAt).toBeNull()
+      expect(await people.list(manager, p.id)).toHaveLength(1)
+    })
+
+    it('lets the supervisor running the job perform them', async () => {
+      const p = await newPermit()
+      const e = await fitEmployee()
+      const sup = as('supervisor')
+      const named = await people.add(sup, p.id, { employeeId: e.id })
+      await permits.addGasTest(sup, p.id, reading)
+      const iso = (await permits.addIsolation(sup, p.id, { description: 'Pump P-2', tagId: 'LOTO-3' })).isolations[0]
+      await permits.releaseIsolation(sup, p.id, iso.id)
+      await people.remove(sup, named.id)
+      expect(await people.list(manager, p.id)).toHaveLength(0)
+    })
+
+    it('lets an employee record a gas test on a permit that names them as its gas tester, and no other', async () => {
+      const user = await db.user.upsert({
+        where: { email: 'ptwppl-tester@itest.local' }, update: {},
+        create: { id: 'ptwppl-tester', email: 'ptwppl-tester@itest.local', name: 'Tester', passwordHash: 'x' },
+      })
+      try {
+        const tester = as('employee', user.id)
+        const e = await fitEmployee({ name: 'Gas Tester' })
+        await db.employee.update({ where: { id: e.id }, data: { userId: user.id } })
+
+        const theirs = await newPermit()
+        await people.add(manager, theirs.id, { employeeId: e.id, role: 'gas_tester' })
+        await expect(permits.addGasTest(tester, theirs.id, reading)).resolves.toBeTruthy()
+
+        const other = await newPermit()
+        await expect(permits.addGasTest(tester, other.id, reading)).rejects.toMatchObject({ status: 403 })
+      } finally {
+        await db.employee.updateMany({ where: { userId: user.id }, data: { userId: null } })
+        await db.user.delete({ where: { id: user.id } })
+      }
+    })
+  })
 })

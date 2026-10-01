@@ -19,7 +19,7 @@
  * A closed or archived permit accepts no changes at all.
  */
 import type { PrismaClient, PermitAttendeeRole, PermitType } from '@prisma/client'
-import { PermitError } from './permitService.js'
+import { PermitError, requireFieldRole } from './permitService.js'
 import type { Caller } from '../domain/caller.js'
 
 /** Roles on a permit that put someone in the work. Standby stays outside by definition. */
@@ -258,7 +258,8 @@ export class PermitPeopleService {
     contractorWorkerId?: string
     role?: PermitAttendeeRole
   }): Promise<AttendeeView> {
-    const { permit } = await this.permitFor(caller, permitId)
+    const { permit, membership } = await this.permitFor(caller, permitId)
+    requireFieldRole(membership.role, 'name people on a permit')
     this.assertEditable(permit.status)
 
     const hasEmployee = !!input.employeeId
@@ -333,6 +334,7 @@ export class PermitPeopleService {
     if (!row) throw new PermitError('not_found', 'That person is not on this permit.', 404)
     const m = caller.roles.find((r) => r.companyId === row.permit.companyId)
     if (!m) throw new PermitError('forbidden', 'You do not have access to this workspace.', 403)
+    requireFieldRole(m.role, 'remove people from a permit')
     this.assertEditable(row.permit.status)
 
     if (row.enteredAt && !row.exitedAt) {

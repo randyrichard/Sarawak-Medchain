@@ -156,8 +156,9 @@ export const adminApi = {
     }))
   },
 
-  async toggleMfa(companyId: string, id: string) {
-    return toUser(await request<ServerUser>(`/admin/users/${id}/toggle-mfa`, {
+  /** Clears somebody's MFA (lost phone). Switching it on is theirs alone to do. */
+  async resetMfa(companyId: string, id: string) {
+    return toUser(await request<ServerUser>(`/admin/users/${id}/reset-mfa`, {
       method: 'POST', body: JSON.stringify({ companyId }),
     }))
   },

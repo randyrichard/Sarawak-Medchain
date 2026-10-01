@@ -17,6 +17,10 @@ interface AuthValue {
   user: User | null
   /** `rememberMe` false makes the refresh cookie last only as long as the browser is open. */
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>
+  /** Finishes a sign-in that `login` answered with MfaRequiredError. */
+  verifyMfa: (challenge: string, code: string) => Promise<void>
+  /** Re-reads the session from the server, e.g. once MFA has been set up. */
+  reload: () => Promise<void>
   logout: () => Promise<void>
   /** True when authentication is served by the real API rather than the mock client. */
   backend: boolean
@@ -123,6 +127,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => onSessionIdentityChange(null)
   }, [])
 
+  /** A session the server has just issued becomes the one this tab shows. */
+  const adopt = (u: User) => {
+    markFreshLogin()
+    setUser(u)
+    setAuthenticatedRoles(u.memberships.map((m) => m.role))
+    setStatus('authenticated')
+  }
+
   const login = useCallback(async (email: string, password: string, rememberMe = true) => {
     // Whoever was signed in before, their cached preferences must not leak into this session.
     clearPreferences()
@@ -143,11 +155,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // the next person to sign in on this browser inherits the previous one's pickers.
     forgetOrgCaches()
     if (BACKEND) {
-      const u = await authApi.login(email, password, rememberMe)
-      markFreshLogin()
-      setUser(u)
-      setAuthenticatedRoles(u.memberships.map((m) => m.role))
-      setStatus('authenticated')
+      // Throws MfaRequiredError when a code is needed; the sign-in screen catches it and
+      // finishes with verifyMfa below.
+      adopt(await authApi.login(email, password, rememberMe))
       return
     }
     const { session, user: u } = await api.login(email, password)
@@ -156,6 +166,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(u)
     setAuthenticatedRoles(u.memberships.map((m) => m.role))
     setStatus('authenticated')
+  }, [])
+
+  const verifyMfa = useCallback(async (challenge: string, code: string) => {
+    adopt(await authApi.verifyMfa(challenge, code))
+  }, [])
+
+  const reload = useCallback(async () => {
+    const u = await authApi.reload()
+    setUser(u)
+    setAuthenticatedRoles(u.memberships.map((m) => m.role))
   }, [])
 
   const logout = useCallback(async () => {
@@ -182,8 +202,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo(
-    () => ({ status, user, login, logout, backend: BACKEND }),
-    [status, user, login, logout],
+    () => ({ status, user, login, verifyMfa, reload, logout, backend: BACKEND }),
+    [status, user, login, verifyMfa, reload, logout],
   )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

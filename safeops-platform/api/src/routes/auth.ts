@@ -94,10 +94,48 @@ authRouter.post('/login', loginLimiter, asyncRoute(async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ error: 'validation', message: 'Email and password are required.' })
   }
-  const { accessToken, accessExpiresAt, refreshToken, user } = await auth.login(
-    parsed.data.email, parsed.data.password, ctxOf(req),
+  const remember = parsed.data.rememberMe ?? true
+  const result = await auth.authenticate(parsed.data.email, parsed.data.password, ctxOf(req), remember)
+  if (result.mfaRequired) {
+    // No cookie and no token yet: the password alone earns only the chance to give a code.
+    return res.json({ mfaRequired: true, challenge: result.challenge })
+  }
+  const { accessToken, accessExpiresAt, refreshToken, user } = result
+  res.cookie(REFRESH_COOKIE, refreshToken, refreshCookieOptions(remember))
+  res.json({ accessToken, accessExpiresAt, user })
+}))
+
+/**
+ * The second step of an MFA sign-in.
+ *
+ * Its own per-IP budget, the same size as the password step's, and every wrong code counts
+ * towards the account lockout - so neither the address nor the account can be used to
+ * search the million possible codes. Not the password step's bucket: a site behind one NAT
+ * address would then get half as many sign-ins once its people turned MFA on.
+ */
+const mfaLimiter = rateLimit({
+  store: new PrismaRateLimitStore(prisma, 'mfa'),
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { error: 'rate_limited', message: 'Too many attempts. Try again shortly.' },
+})
+
+const mfaBody = z.object({
+  challenge: z.string().min(1).max(4000),
+  code: z.string().min(1).max(40),
+})
+
+authRouter.post('/mfa', mfaLimiter, asyncRoute(async (req, res) => {
+  const parsed = mfaBody.safeParse(req.body)
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'Enter the code from your authenticator app.' })
+  }
+  const { accessToken, accessExpiresAt, refreshToken, user, rememberMe } = await auth.completeMfa(
+    parsed.data.challenge, parsed.data.code, ctxOf(req),
   )
-  res.cookie(REFRESH_COOKIE, refreshToken, refreshCookieOptions(parsed.data.rememberMe ?? true))
+  res.cookie(REFRESH_COOKIE, refreshToken, refreshCookieOptions(rememberMe))
   res.json({ accessToken, accessExpiresAt, user })
 }))
 
@@ -216,7 +254,12 @@ authRouter.get('/me', requireAuth, asyncRoute(async (req, res) => {
   if (!user || user.status === 'deactivated') {
     return res.status(401).json({ error: 'unauthenticated', message: 'Account is unavailable.' })
   }
-  res.json({ user: auth.publicUser(user), roles: req.auth!.roles })
+  res.json({
+    // Read from the token rather than recomputed: it is what requireAuth is enforcing, so
+    // the screen and the API agree about whether setup comes first.
+    user: { ...auth.publicUser(user), mfaSetupRequired: req.auth!.mfaSetupRequired === true },
+    roles: req.auth!.roles,
+  })
 }))
 
 export { AuthError }

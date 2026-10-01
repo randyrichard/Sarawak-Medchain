@@ -15,6 +15,7 @@ import { collectTenantExport } from './tenantExport.js'
 import { integrationAllowance, integrationsMessage } from './entitlements.js'
 import { callsTodayByKey, usageSeries } from './apiUsage.js'
 import { open, seal, secretBoxAvailable } from './secretBox.js'
+import { CLEARED as MFA_CLEARED, mfaAvailable } from './mfaService.js'
 import { checkUrlShape, TARGET_MESSAGE } from './webhookTarget.js'
 import { deliver } from './webhookDelivery.js'
 import { DomainError } from '../domain/errors.js'
@@ -437,18 +438,35 @@ export class AdminService {
     return this.toAdminUser(updated, companyId)
   }
 
-  async toggleMfa(caller: Caller, companyId: string, ctx: AdminContext, id: string) {
+  /**
+   * Clears somebody's multi-factor sign-in, for a person who has lost their phone and their
+   * recovery codes.
+   *
+   * This used to be a toggle that switched a flag on or off and protected nothing. Switching
+   * MFA *on* for somebody else is not something an administrator can do - only the person
+   * holding the phone can scan the code - so what remains is the reset. Their sessions are
+   * ended with it: whoever has the lost phone may also have a signed-in browser. If their
+   * workspace requires MFA they set it up again at their next sign-in.
+   */
+  async resetMfa(caller: Caller, companyId: string, ctx: AdminContext, id: string) {
     this.requireAdmin(caller, companyId)
     const target = await this.getUser(caller, companyId, id)
-    const updated = await this.db.user.update({
-      where: { id },
-      data: { mfaEnabled: !target.mfaEnabled },
-      include: { memberships: true },
+    if (!target.mfaEnabled) {
+      throw new AdminError('validation', 'This person has not set up multi-factor sign-in. They do that from their own account page.')
+    }
+    const updated = await this.db.$transaction(async (tx) => {
+      const u = await tx.user.update({
+        where: { id },
+        data: MFA_CLEARED,
+        include: { memberships: true },
+      })
+      await tx.refreshToken.updateMany({
+        where: { userId: id, revokedAt: null },
+        data: { revokedAt: new Date(), revokedReason: 'mfa_reset' },
+      })
+      return u
     })
-    await this.log(
-      caller, companyId, ctx,
-      updated.mfaEnabled ? 'Enabled MFA' : 'Disabled MFA', 'admin', target.email,
-    )
+    await this.log(caller, companyId, ctx, 'Reset MFA', 'admin', target.email)
     return this.toAdminUser(updated, companyId)
   }
 
@@ -1107,6 +1125,14 @@ export class AdminService {
     this.requireAdmin(caller, companyId)
     const before = await this.getSecurity(caller, companyId)
 
+    if (patch.mfaRequired === true && !mfaAvailable()) {
+      // Requiring something nobody can set up would put every member behind a setup page
+      // with no way through it.
+      throw new AdminError(
+        'validation',
+        'Multi-factor sign-in is not configured on this server (MFA_SECRET_KEY_B64), so it cannot be required yet.',
+      )
+    }
     const allowed = [
       'passwordMinLength', 'requireUppercase', 'requireNumber', 'requireSymbol',
       'passwordExpiryDays', 'lockoutThreshold', 'sessionTimeoutHours', 'mfaRequired',
@@ -1218,7 +1244,7 @@ export class AdminService {
         id: 'f-mfareq',
         severity: 'warning',
         title: 'MFA not enforced by policy',
-        detail: 'MFA is optional. Turn on "Require MFA" so new users must enrol.',
+        detail: 'MFA is optional. Turn on "Require MFA" so everyone without it sets it up at their next sign-in.',
         metric: 'Policy',
       })
     }

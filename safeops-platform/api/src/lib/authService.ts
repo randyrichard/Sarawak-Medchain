@@ -3,8 +3,9 @@ import { env } from '../env.js'
 import { burnEquivalentWork, verifyPassword } from './password.js'
 import {
   generateRefreshToken, hashRefreshToken, newFamilyId, refreshExpiry, signAccessToken,
-  type AccessClaims,
+  signMfaChallenge, verifyMfaChallenge, type AccessClaims,
 } from './tokens.js'
+import { MfaService, mfaAvailable } from './mfaService.js'
 import { DomainError } from '../domain/errors.js'
 
 export class AuthError extends DomainError {
@@ -12,6 +13,15 @@ export class AuthError extends DomainError {
     super(code, message, status)
   }
 }
+
+/** What a session carries besides who it is: roles, and whether MFA setup comes first. */
+interface SessionClaims {
+  roles: AccessClaims['roles']
+  mfaSetupRequired: boolean
+}
+
+const MFA_UNAVAILABLE = 'Multi-factor sign-in is not available on this server right now. '
+  + 'Contact your administrator.'
 
 export interface RequestContext {
   ip?: string
@@ -51,7 +61,7 @@ export class AuthService {
    * is told so rather than signed in to an empty shell - after their password has been
    * checked, so the answer reveals nothing to someone who does not hold it.
    */
-  private async sessionRoles(user: User): Promise<AccessClaims['roles']> {
+  private async sessionClaims(user: User): Promise<SessionClaims> {
     const memberships = await this.db.membership.findMany({ where: { userId: user.id } })
     const active = new Set((await this.db.company.findMany({
       where: { id: { in: memberships.map((m) => m.companyId) }, status: 'active' },
@@ -65,18 +75,33 @@ export class AuthService {
         403,
       )
     }
-    return live.map((m) => ({ companyId: m.companyId, role: m.role, siteIds: m.siteIds }))
+    /*
+     * Whether a workspace's policy obliges this person to set up MFA before anything else.
+     *
+     * Never when the server cannot hold authenticator secrets: the setup screen would be a
+     * wall nobody could get past. updateSecurity refuses to switch the policy on in that
+     * state, so this only matters if the key is removed afterwards.
+     */
+    const mfaSetupRequired = !user.mfaEnabled && mfaAvailable() && live.length > 0
+      && (await this.db.securityPolicy.count({
+        where: { companyId: { in: live.map((m) => m.companyId) }, mfaRequired: true },
+      })) > 0
+    return {
+      roles: live.map((m) => ({ companyId: m.companyId, role: m.role, siteIds: m.siteIds })),
+      mfaSetupRequired,
+    }
   }
 
   private async issueSession(
-    user: User, ctx: RequestContext, roles: AccessClaims['roles'], familyId = newFamilyId(),
+    user: User, ctx: RequestContext, claims: SessionClaims, familyId = newFamilyId(),
   ) {
     const { token: accessToken, expiresAt: accessExpiresAt } = signAccessToken({
       sub: user.id,
       email: user.email,
       name: user.name,
-      roles,
+      roles: claims.roles,
       mustChangePassword: user.mustChangePassword,
+      mfaSetupRequired: claims.mfaSetupRequired,
     })
 
     const refreshToken = generateRefreshToken()
@@ -102,6 +127,19 @@ export class AuthService {
    * password. The distinction is recorded in the audit log instead, where defenders can see it.
    */
   async login(emailRaw: string, password: string, ctx: RequestContext) {
+    const result = await this.authenticate(emailRaw, password, ctx)
+    if (result.mfaRequired) {
+      // For callers that can only take a session. The sign-in route uses `authenticate`.
+      throw new AuthError('mfa_required', 'Enter the code from your authenticator app.')
+    }
+    return result
+  }
+
+  /**
+   * The first step of signing in: a session, or - with MFA on - a challenge to finish with
+   * `completeMfa`.
+   */
+  async authenticate(emailRaw: string, password: string, ctx: RequestContext, rememberMe = true) {
     const email = emailRaw.trim().toLowerCase()
     const user = await this.db.user.findUnique({ where: { email } })
 
@@ -125,31 +163,77 @@ export class AuthService {
 
     const ok = await verifyPassword(user.passwordHash, password)
     if (!ok) {
-      const failed = user.failedLoginCount + 1
-      const shouldLock = failed >= env.MAX_FAILED_LOGINS
-      await this.db.user.update({
-        where: { id: user.id },
-        data: {
-          failedLoginCount: shouldLock ? 0 : failed,
-          lockedUntil: shouldLock
-            ? new Date(Date.now() + env.LOCKOUT_MINUTES * 60 * 1000)
-            : user.lockedUntil,
-          status: shouldLock ? 'locked' : user.status,
-        },
-      })
-      await this.record(email, 'bad_password', ctx, user.id)
+      await this.recordFailure(user, 'bad_password', ctx)
       throw new AuthError('invalid_credentials', GENERIC_FAILURE)
     }
 
-    let roles: AccessClaims['roles']
+    /*
+     * The password is right. With MFA on, that earns a challenge, not a session.
+     *
+     * Nothing is reset yet: the lockout counter keeps counting until the second factor is
+     * also right, so a stolen password cannot be used to grind through codes.
+     */
+    if (user.mfaEnabled) {
+      if (!mfaAvailable()) {
+        // Fail closed. Signing them in on the password alone would quietly switch off the
+        // protection they turned on; an administrator can reset MFA if the key is gone.
+        await this.record(email, 'mfa_unavailable', ctx, user.id)
+        throw new AuthError('mfa_unavailable', MFA_UNAVAILABLE, 503)
+      }
+      await this.record(email, 'mfa_challenge', ctx, user.id)
+      return { mfaRequired: true as const, challenge: signMfaChallenge(user.id, rememberMe) }
+    }
+
+    return this.completeSignIn(user, ctx)
+  }
+
+  /**
+   * The second step of an MFA sign-in: the challenge from `login` and a code.
+   *
+   * A wrong code counts towards the same lockout as a wrong password, so the code space
+   * cannot be searched with a known password either.
+   */
+  async completeMfa(challenge: string, code: string, ctx: RequestContext) {
+    const claimed = verifyMfaChallenge(challenge)
+    if (!claimed) throw new AuthError('mfa_challenge_expired', 'That sign-in has expired. Enter your password again.')
+    const user = await this.db.user.findUnique({ where: { id: claimed.userId } })
+    if (!user || user.status === 'deactivated' || (user.lockedUntil && user.lockedUntil > new Date())) {
+      throw new AuthError('mfa_challenge_expired', 'That sign-in has expired. Enter your password again.')
+    }
+    if (!(await new MfaService(this.db).verifySecondFactor(user, code))) {
+      await this.recordFailure(user, 'bad_mfa_code', ctx)
+      throw new AuthError('invalid_mfa_code', 'That code is not right. Use the newest code from your authenticator app.')
+    }
+    return { ...(await this.completeSignIn(user, ctx)), rememberMe: claimed.rememberMe }
+  }
+
+  /** A wrong password or code: count it, and lock the account at the threshold. */
+  private async recordFailure(user: User, outcome: string, ctx: RequestContext) {
+    const failed = user.failedLoginCount + 1
+    const shouldLock = failed >= env.MAX_FAILED_LOGINS
+    await this.db.user.update({
+      where: { id: user.id },
+      data: {
+        failedLoginCount: shouldLock ? 0 : failed,
+        lockedUntil: shouldLock
+          ? new Date(Date.now() + env.LOCKOUT_MINUTES * 60 * 1000)
+          : user.lockedUntil,
+        status: shouldLock ? 'locked' : user.status,
+      },
+    })
+    await this.record(user.email, outcome, ctx, user.id)
+  }
+
+  /** Every factor has been checked: clear the lockout counter and issue the session. */
+  private async completeSignIn(user: User, ctx: RequestContext) {
+    let claims: SessionClaims
     try {
-      roles = await this.sessionRoles(user)
+      claims = await this.sessionClaims(user)
     } catch (e) {
-      await this.record(email, 'workspace_suspended', ctx, user.id)
+      await this.record(user.email, 'workspace_suspended', ctx, user.id)
       throw e
     }
 
-    // Success clears the lockout counter.
     await this.db.user.update({
       where: { id: user.id },
       data: {
@@ -159,10 +243,14 @@ export class AuthService {
         status: user.status === 'locked' ? 'active' : user.status,
       },
     })
-    await this.record(email, 'success', ctx, user.id)
+    await this.record(user.email, 'success', ctx, user.id)
 
-    const session = await this.issueSession(user, ctx, roles)
-    return { ...session, user: this.publicUser(user) }
+    const session = await this.issueSession(user, ctx, claims)
+    return {
+      mfaRequired: false as const,
+      ...session,
+      user: { ...this.publicUser(user), mfaSetupRequired: claims.mfaSetupRequired },
+    }
   }
 
   /**
@@ -196,7 +284,7 @@ export class AuthService {
       throw new AuthError('invalid_refresh', 'Session is invalid. Please sign in again.')
     }
 
-    const roles = await this.sessionRoles(user)
+    const claims = await this.sessionClaims(user)
 
     // Issuing the successor and revoking its predecessor must be atomic. If the process
     // died between the two writes, the consumed token would remain valid alongside the new
@@ -247,11 +335,15 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       name: user.name,
-      roles,
+      roles: claims.roles,
       mustChangePassword: user.mustChangePassword,
+      mfaSetupRequired: claims.mfaSetupRequired,
     })
 
-    return { accessToken, accessExpiresAt, refreshToken, user: this.publicUser(user) }
+    return {
+      accessToken, accessExpiresAt, refreshToken,
+      user: { ...this.publicUser(user), mfaSetupRequired: claims.mfaSetupRequired },
+    }
   }
 
   /** Server-side revocation. Clearing the cookie alone would leave the token usable. */
