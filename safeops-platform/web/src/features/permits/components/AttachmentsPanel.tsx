@@ -27,10 +27,12 @@ const prettySize = (b: number) =>
   b < 1024 ? `${b} B` : b < 1024 * 1024 ? `${(b / 1024).toFixed(0)} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`
 
 export function AttachmentsPanel({
-  permitId, canEdit, onChanged,
+  permitId, canEdit, canRemove, onChanged,
 }: {
   permitId: string
   canEdit: boolean
+  /** Removing a document is a safety step (see canOperatePermits); adding one is not. */
+  canRemove: boolean
   onChanged?: () => void
 }) {
   const [rows, setRows] = useState<PermitAttachment[] | null>(null)
@@ -207,7 +209,7 @@ export function AttachmentsPanel({
                 >
                   <Download size={13} />
                 </button>
-                {canEdit && (
+                {canRemove && (
                   <button
                     onClick={() => void remove(a)}
                     aria-label={`Remove ${a.originalName}`}

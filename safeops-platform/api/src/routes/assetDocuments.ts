@@ -6,6 +6,7 @@ import { sha256File } from '../lib/fileIntegrity.js'
 import {
   ALLOWED_UPLOAD_TYPES, attachmentDisposition, discardUploads, settleUploadTypes,
 } from '../lib/uploadSafety.js'
+import { keepScope } from '../lib/tenantContext.js'
 import { existsSync, mkdirSync, accessSync, constants, unlink } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { env } from '../env.js'
@@ -109,7 +110,9 @@ assetDocumentsRouter.get('/:assetId/documents', asyncRoute(async (req, res) => {
 }))
 
 assetDocumentsRouter.post('/:assetId/documents', (req, res, next) => {
-  upload.array('files', 5)(req, res, async (err) => {
+  // keepScope: multer calls back from the upload stream, which has lost the request's
+  // tenant scope; without it every query below would see no rows.
+  upload.array('files', 5)(req, res, keepScope(async (err?: unknown) => {
     if (err) {
       // Multer rejections are client errors - a 500 here would blame the server for a
       // file the server correctly refused.
@@ -178,7 +181,7 @@ assetDocumentsRouter.post('/:assetId/documents', (req, res, next) => {
       await discardUploads(UPLOAD_DIR, written)
       next(e)
     }
-  })
+  }))
 })
 
 /** Download. Authorisation is re-checked, so a stored name alone grants nothing. */

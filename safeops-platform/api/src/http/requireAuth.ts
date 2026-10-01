@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express'
 import { verifyAccessToken, type AccessClaims } from '../lib/tokens.js'
+import { runAsTenants } from '../lib/tenantContext.js'
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -85,5 +86,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
   }
 
   req.auth = claims
-  next()
+  // Everything this request does in the database is confined to the caller's companies -
+  // enforced by Postgres too, when row-level security is active (lib/prisma.ts).
+  runAsTenants(claims.roles.map((r) => r.companyId), next)
 }

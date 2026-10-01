@@ -6,6 +6,7 @@ import { PrismaRateLimitStore } from '../lib/rateLimitStore.js'
 import { ProvisioningService } from '../lib/provisioningService.js'
 import { SELLABLE_PLANS, formatMyr } from '../lib/planCatalog.js'
 import { requireAuth } from '../http/requireAuth.js'
+import { runAsSystem } from '../lib/tenantContext.js'
 import { callerOf } from '../http/caller.js'
 import { asyncRoute } from '../http/asyncRoute.js'
 
@@ -24,6 +25,12 @@ const svc = new ProvisioningService(prisma)
 export const platformRouter = Router()
 
 platformRouter.use(requireAuth)
+/*
+ * The console is above every customer, so its queries are cross-tenant by design. Each
+ * handler's service call checks the platform flag against the database before it reads
+ * anything (ProvisioningService.requirePlatformAdmin).
+ */
+platformRouter.use((_req, _res, next) => runAsSystem(next))
 
 const ctxOf = (req: { ip?: string; get: (h: string) => string | undefined }) =>
   ({ ip: req.ip, device: req.get('user-agent') ?? '' })

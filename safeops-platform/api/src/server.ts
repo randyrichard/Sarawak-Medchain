@@ -2,9 +2,14 @@ import { createApp } from './app.js'
 import { env } from './env.js'
 import { prisma } from './lib/prisma.js'
 import { Scheduler } from './lib/scheduler.js'
+import { runAsSystem } from './lib/tenantContext.js'
 import { announceMail } from './lib/email/announce.js'
 
 announceMail('safeops-api')
+if (!env.APP_DB_PASSWORD && env.isProd) {
+  // eslint-disable-next-line no-console
+  console.warn('[safeops-api] APP_DB_PASSWORD is not set: running as the database owner, so row-level security does not apply (npm run keygen)')
+}
 if (!env.mfaSecretKey) {
   // Said at boot so an operator finds out before a customer's administrator does.
   // eslint-disable-next-line no-console
@@ -24,7 +29,8 @@ const server = app.listen(env.PORT, () => {
  */
 const scheduler = new Scheduler(prisma)
 if (env.schedulerEnabled) {
-  scheduler.start(env.SCHEDULER_INTERVAL_MIN * 60_000)
+  // Sweeps every tenant, so system work - its timers inherit this scope.
+  runAsSystem(() => scheduler.start(env.SCHEDULER_INTERVAL_MIN * 60_000))
   // eslint-disable-next-line no-console
   console.log(`[safeops-api] scheduler running every ${env.SCHEDULER_INTERVAL_MIN} min`)
 } else {

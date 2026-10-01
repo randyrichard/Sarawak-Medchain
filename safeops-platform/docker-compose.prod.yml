@@ -119,6 +119,10 @@ services:
       # Seals authenticator secrets for multi-factor sign-in. Optional: without it MFA
       # cannot be set up, with an explanation. Generate with: npm run keygen
       MFA_SECRET_KEY_B64: ${MFA_SECRET_KEY_B64:-}
+      # The restricted database login the API and worker run as, with row-level security in
+      # force. DATABASE_URL stays the schema owner, used only for migrations. Optional, but
+      # without it the service runs as the Postgres superuser. Generate with: npm run keygen
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:-}
       # Which peers may set X-Forwarded-For. The default covers Caddy on this private
       # compose network and refuses the header from anything on a public address, so a
       # client cannot name its own rate-limit bucket or audit-trail entry. It does not

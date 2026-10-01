@@ -184,6 +184,18 @@ d('security hardening — integration (real Postgres, real HTTP)', () => {
         expect(res.status, path).toBe(201)
       }
     })
+
+    it("lets only the permit's safety roles remove its documents", async () => {
+      const res = await upload(`/permits/${permitId}/attachments`, 'admin', { bytes: PDF, type: 'application/pdf', name: 'JSA.pdf' })
+      const { rows } = await res.json() as { rows: { id: string }[] }
+      const del = (who: string) => fetch(`${base}/permits/attachments/${rows[0].id}`, {
+        method: 'DELETE', headers: { Authorization: `Bearer ${tokens[who]}` },
+      })
+      expect((await del('employee')).status).toBe(403)
+      expect(await db.permitAttachment.count({ where: { id: rows[0].id } })).toBe(1)
+      expect((await del('admin')).status).toBe(204)
+      expect(await db.permitAttachment.count({ where: { id: rows[0].id } })).toBe(0)
+    })
   })
 
   describe('suspended workspace', () => {

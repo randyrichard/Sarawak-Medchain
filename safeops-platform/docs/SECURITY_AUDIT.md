@@ -227,6 +227,52 @@ These remain open:
   workflow.
 - **Site restriction** of permits is not yet applied.
 
+## 3b. Second review: RLS, frontend keys, storage rules, model input
+
+A focused check of four areas, done after the fixes above.
+
+| Area | Found | Done |
+|---|---|---|
+| Row-level security | **Off on all 81 tables.** The service connected as the Postgres superuser, which owns every table and is exempt from any policy. A bug that skipped a company check had nothing behind it, and SQL execution through the app meant control of the database server (`COPY ... TO PROGRAM`). | **Fixed.** See below. |
+| API keys on the frontend | **None.** The production bundle was scanned for real key formats: none found, no source maps, no committed `.env`. The browser gets one setting (the API address). The API masks every stored secret. | The bundle check (`npm run verify:bundle`) only looked for the demo password. **It now also fails the build on real key formats** (Stripe-style, Resend, AWS, Google, GitHub, Slack, private keys, signed JWTs, database URLs with passwords, webhook secrets). It was tested by planting four of them. |
+| Storage rules | **Mostly sound.** Files are never served directly. Every download re-checks permission, and incident evidence follows the incident's row scope. Types are checked against the bytes, names are random, and every file has a SHA-256 fingerprint. The process runs as non-root. **Gap:** any member, the read-only executive included, could delete documents from a live permit. | **Fixed:** removing a permit document needs the field roles (`requireFieldRole`), and the web hides the button from other roles. Still open: no per-company quota, files and backups unencrypted at rest. |
+| Model input is untrusted | **There is no AI model in SafeOps.** No AI library, no outbound call to one. Summaries and reports are built from fields by fixed code. All other input is checked: every write route validates against a schema, emails escape, CSV neutralises formulas, the web inserts no raw HTML. | Nothing to change. If an AI feature is added, follow the rules below. |
+
+### Row-level security, as built
+
+- **A restricted login, `safeops_app`.**
+  - Its password is `APP_DB_PASSWORD`.
+  - The entrypoint creates or updates it after every migration (`cli/dbAppRole.ts`, `lib/dbRole.ts`).
+  - It can read and write rows and use sequences, nothing else. It cannot change the schema or read `_prisma_migrations`, is not a superuser and cannot bypass RLS.
+  - The API and worker connect as it. `DATABASE_URL` stays the schema owner and is used only for migrations, backups and operator CLIs.
+- **Policies.** Migration `20261002090000_row_level_security` enables RLS on the 35 tables with a `companyId`. A row is visible or writable only if its company is in `safeops.company_ids`, or `safeops.bypass_rls` is `on`.
+- **Setting the companies.** `lib/tenantContext.ts` holds the scope for each unit of work:
+  - `requireAuth` sets the caller's companies;
+  - `requireApiKey` sets the key's company;
+  - the scheduler, the worker, the platform console and invitation redemption run as system work.
+
+  `lib/prisma.ts` passes the scope to Postgres as transaction-local settings before every query, including inside both kinds of transaction. Transaction-local means a pooled connection cannot carry one request's scope into another.
+- **Fail closed.** No scope means no rows: a forgotten path reads nothing rather than everything.
+- **Not covered:**
+  - Membership, Invitation, ApiKey and SecurityPolicy are read before the caller's company is known (sign-in, invitation tokens, API keys), so the application alone guards them.
+  - Child tables without a `companyId` are reached through a covered parent.
+- **Tests:**
+  - `rowLevelSecurity.integration.test.ts` connects as the restricted login and proves:
+    - queries naming another company's rows get nothing and change nothing;
+    - writes into another company are refused;
+    - both transaction kinds are scoped;
+    - pooled connections do not leak scope;
+    - the login cannot run DDL or `COPY ... TO PROGRAM`.
+  - The whole suite now runs every HTTP test as the restricted login (`vitest.config.ts`, `src/test/appDbRole.ts`), so a route that fails to set a scope fails its tests.
+- **Restore.** `deploy/restore.sh` now restores with `--no-privileges`, so a backup restores onto a fresh server where `safeops_app` does not exist yet. The entrypoint re-grants on start.
+
+### If an AI model is added later
+
+- **Never let the model decide what it may read.** Fetch the data first, with the user's own scope, and pass only that to the model.
+- **Treat the user's text, and any record content placed in a prompt, as untrusted data.** A hazard description can contain "ignore your instructions". Keep it in a clearly delimited data section, never in the instructions.
+- **Treat the model's output as untrusted input.** Validate it against a schema before acting on it, escape it before rendering, and never execute it or let it choose a tool or record without the same authorisation checks a person would face.
+- **Keep the provider key on the server.** `verify:bundle` would fail the build if it reached the frontend.
+
 ## 4. Controls verified as sound (no change needed)
 
 - **Tokens.**

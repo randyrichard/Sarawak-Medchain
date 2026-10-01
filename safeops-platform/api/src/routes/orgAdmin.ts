@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { runAsSystem } from '../lib/tenantContext.js'
 import rateLimit from 'express-rate-limit'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
@@ -216,6 +217,9 @@ orgAdminRouter.patch('/users/:id/access', requireAuth, asyncRoute(async (req, re
  * workspace, and why every failure mode returns the same sentence.
  */
 export const inviteRouter = Router()
+// The invitee has no session, so there is no company to scope to: the single-use token is
+// the authority, and the service checks it before touching anything else.
+inviteRouter.use((_req, _res, next) => runAsSystem(next))
 
 inviteRouter.get('/:token', asyncRoute(async (req, res) => {
   res.json(await svc.previewInvitation(req.params.token))

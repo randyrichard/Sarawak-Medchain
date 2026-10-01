@@ -65,7 +65,13 @@ $DC exec -T db createdb -U "$POSTGRES_USER" "$POSTGRES_DB"
 
 # --exit-on-error matters: without it pg_restore reports success having skipped statements
 # it could not apply, and the gap is discovered much later.
-$DC exec -T db pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --no-owner --exit-on-error < "$DUMP" \
+#
+# --no-privileges: the dump's GRANTs name `safeops_app`, a server-wide login that does not
+# exist yet on a fresh server, and with --exit-on-error that one missing name would abort
+# the whole restore. The grants are not lost - the API's entrypoint creates the login and
+# re-grants everything on start (lib/dbRole.ts). Row-level security policies are part of
+# the schema, not privileges, and are restored as normal.
+$DC exec -T db pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --no-owner --no-privileges --exit-on-error < "$DUMP" \
   || die "the restore failed. The safety dump is at $SAFETY"
 ok "database restored"
 
