@@ -392,7 +392,7 @@ export function PermitDrawer({
           )}
 
           {/* Timeline */}
-          <AttachmentsPanel permitId={permit.id} canEdit={open} onChanged={() => { load(); onChanged() }} />
+          <AttachmentsPanel permitId={permit.id} canEdit={open} canRemove={open && operator} onChanged={() => { load(); onChanged() }} />
 
           {/* Extension history — how long this job was actually authorised for, and who
               kept extending it. */}

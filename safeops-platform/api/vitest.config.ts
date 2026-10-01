@@ -37,7 +37,7 @@ export default defineConfig({
      * makes; only state carried in from other files and earlier runs is cleared. See the
      * file for the numbers this was diagnosed from.
      */
-    setupFiles: ['./src/test/resetRateLimits.ts'],
+    setupFiles: ['./src/test/resetRateLimits.ts', './src/test/appDbRole.ts'],
 
     /*
      * What the webhook tests need to exist at all.
@@ -57,6 +57,9 @@ export default defineConfig({
       WEBHOOK_ALLOW_PRIVATE_TARGETS: 'true',
       // Same idea for authenticator secrets: MFA cannot be set up, or tested, without a key.
       MFA_SECRET_KEY_B64: Buffer.from('safeops-test-mfa-key-not-real!!!').toString('base64'),
+      // Routes connect as the restricted login, so row-level security is in force for every
+      // HTTP test. See src/test/appDbRole.ts.
+      APP_DB_PASSWORD: 'safeops-test-app-role-not-real',
     },
     /*
      * 30s. Sized for the slowest legitimate case - a process spawn plus a cold Prisma

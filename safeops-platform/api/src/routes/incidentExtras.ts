@@ -3,6 +3,7 @@ import { sha256File } from '../lib/fileIntegrity.js'
 import {
   ALLOWED_UPLOAD_TYPES, attachmentDisposition, discardUploads, settleUploadTypes,
 } from '../lib/uploadSafety.js'
+import { keepScope } from '../lib/tenantContext.js'
 import { join, resolve } from 'node:path'
 import { accessSync, constants, existsSync, mkdirSync } from 'node:fs'
 import { Router } from 'express'
@@ -72,7 +73,9 @@ const upload = multer({
 })
 
 incidentExtrasRouter.post('/:id/attachments', (req, res, next) => {
-  upload.array('files', 5)(req, res, async (err) => {
+  // keepScope: multer calls back from the upload stream, which has lost the request's
+  // tenant scope; without it every query below would see no rows.
+  upload.array('files', 5)(req, res, keepScope(async (err?: unknown) => {
     if (err) {
       const msg = err instanceof Error ? err.message : 'Upload failed.'
       const tooBig = /file too large/i.test(msg)
@@ -124,7 +127,7 @@ incidentExtrasRouter.post('/:id/attachments', (req, res, next) => {
       await discardUploads(UPLOAD_DIR, files.filter((f) => !kept.has(f.filename)))
       next(e)
     }
-  })
+  }))
 })
 
 /** Download. Authorisation is re-checked, so a stored name alone grants nothing. */

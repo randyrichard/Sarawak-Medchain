@@ -4,6 +4,7 @@ import {
   authenticateApiKey, hasScope, scopeForMethod, type ApiPrincipal,
 } from '../lib/apiKeyAuth.js'
 import { countApiCall, countApiError } from '../lib/apiUsage.js'
+import { enterTenants } from '../lib/tenantContext.js'
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -57,6 +58,8 @@ export async function requireApiKey(req: Request, res: Response, next: NextFunct
   }
 
   const principal = result.principal
+  // From here on, database reads and writes are confined to the key's company.
+  enterTenants([principal.companyId])
 
   /*
    * Counted on the way in, before the scope check, and awaited.

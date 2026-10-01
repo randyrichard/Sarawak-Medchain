@@ -13,6 +13,24 @@ const schema = z.object({
 
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
 
+  /*
+   * The password of `safeops_app`, the restricted database login the running service uses.
+   *
+   * DATABASE_URL is the account that owns the schema: it runs migrations and, under the
+   * compose file, it is the Postgres superuser. With this set, the entrypoint creates
+   * `safeops_app` (read and write on the tables, nothing else - no DDL, no superuser, no
+   * COPY TO PROGRAM) and the API and worker connect as it instead. That login is also the
+   * one row-level security applies to: the owner of a table is exempt from its policies,
+   * so tenant isolation in the database only exists once the service stops being the owner.
+   *
+   * Optional so an existing installation keeps working on upgrade; production warns at boot
+   * until it is set. Letters, digits and _-.~+= only, at least 16 characters - it is placed
+   * in a connection URL and an ALTER ROLE statement.
+   */
+  APP_DB_PASSWORD: z.string()
+    .regex(/^[A-Za-z0-9_\-.~+=]{16,128}$/, 'APP_DB_PASSWORD must be 16-128 letters, digits or _-.~+=')
+    .optional(),
+
   // RS256 keypair, base64-encoded PEM. Generate with: npm run keygen
   JWT_PRIVATE_KEY_B64: z.string().min(1, 'JWT_PRIVATE_KEY_B64 is required (run: npm run keygen)'),
   JWT_PUBLIC_KEY_B64: z.string().min(1, 'JWT_PUBLIC_KEY_B64 is required (run: npm run keygen)'),
@@ -513,6 +531,22 @@ function decodeAesKey(b64: string | undefined, label = 'WEBHOOK_SECRET_KEY_B64')
   return buf
 }
 
+/** The name of the restricted login. Fixed: policies and grants refer to it. */
+export const APP_DB_ROLE = 'safeops_app'
+
+/** DATABASE_URL with its credentials swapped for the restricted login's, or unchanged. */
+function withAppRole(url: string, password: string | undefined): string {
+  if (!password) return url
+  try {
+    const u = new URL(url)
+    u.username = APP_DB_ROLE
+    u.password = password
+    return u.toString()
+  } catch {
+    return url
+  }
+}
+
 function decodeKey(b64: string, label: string): string {
   const pem = Buffer.from(b64, 'base64').toString('utf8')
   if (!pem.includes('-----BEGIN')) {
@@ -528,6 +562,11 @@ export const env = {
   isProd: raw.NODE_ENV === 'production',
   /** The webhook sealing key, decoded once. `null` when webhooks are not configured. */
   webhookSecretKey: decodeAesKey(raw.WEBHOOK_SECRET_KEY_B64),
+  /**
+   * Where the running service connects: as `safeops_app` when APP_DB_PASSWORD is set,
+   * otherwise as DATABASE_URL's own account. Migrations always use DATABASE_URL.
+   */
+  appDatabaseUrl: withAppRole(raw.DATABASE_URL, raw.APP_DB_PASSWORD),
   /** The authenticator-secret sealing key. `null` when multi-factor sign-in is not configured. */
   mfaSecretKey: decodeAesKey(raw.MFA_SECRET_KEY_B64, 'MFA_SECRET_KEY_B64'),
   /** Peers allowed to set X-Forwarded-For, in the shape Express's `trust proxy` expects. */

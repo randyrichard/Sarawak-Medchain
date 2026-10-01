@@ -22,6 +22,8 @@ console.log(`JWT_PUBLIC_KEY_B64=${b64(publicKey)}`)
 console.log(`WEBHOOK_SECRET_KEY_B64=${randomBytes(32).toString("base64")}`)
 // 32 bytes for AES-256. Seals each person's authenticator secret - see mfaService.ts.
 console.log(`MFA_SECRET_KEY_B64=${randomBytes(32).toString("base64")}`)
+// The restricted database login - see lib/dbRole.ts. URL-safe, so it needs no escaping.
+console.log(`APP_DB_PASSWORD=${randomBytes(24).toString("base64url")}`)
 console.log('')
 console.log('\n# Rotate by regenerating: existing access tokens stop verifying immediately,')
 console.log('# and clients recover on their next refresh.\n')

@@ -20,5 +20,10 @@ set -e
 echo "[safeops-api] applying migrations…"
 npx prisma migrate deploy
 
+# Then the restricted login the server itself connects as (APP_DB_PASSWORD), created or
+# updated as the schema owner and granted any table a migration just added. Without
+# APP_DB_PASSWORD this only prints a warning and the server connects as the owner.
+node dist/cli/dbAppRole.js
+
 echo "[safeops-api] starting server…"
 exec node dist/server.js

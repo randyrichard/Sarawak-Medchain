@@ -13,12 +13,12 @@
  * More than one worker is safe - each pass takes a Postgres advisory lock (leaderLock.ts)
  * - but one is enough; a second only stands by.
  */
-import { PrismaClient } from '@prisma/client'
 import { env } from './env.js'
 import { Scheduler } from './lib/scheduler.js'
 import { INSTANCE } from './lib/jobRuns.js'
 import { announceMail } from './lib/email/announce.js'
 import { withConnectionLimit } from './lib/dbUrl.js'
+import { createDb } from './lib/prisma.js'
 
 /* eslint-disable no-console */
 
@@ -29,10 +29,9 @@ const DRAIN_MS = 25_000
 
 announceMail('safeops-worker')
 
-const db = new PrismaClient({
-  datasources: { db: { url: withConnectionLimit(env.DATABASE_URL, POOL) } },
-  log: ['warn', 'error'],
-})
+// As the restricted login when one is configured, and always as system work: every sweep
+// is cross-tenant by design.
+const db = createDb({ url: withConnectionLimit(env.appDatabaseUrl, POOL), fixedScope: { system: true } })
 const scheduler = new Scheduler(db)
 scheduler.start(env.SCHEDULER_INTERVAL_MIN * 60_000)
 /*

@@ -6,11 +6,12 @@ import { sha256File } from '../lib/fileIntegrity.js'
 import {
   ALLOWED_UPLOAD_TYPES, attachmentDisposition, discardUploads, settleUploadTypes,
 } from '../lib/uploadSafety.js'
+import { keepScope } from '../lib/tenantContext.js'
 import { existsSync, mkdirSync, accessSync, constants, unlink } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { env } from '../env.js'
 import { prisma } from '../lib/prisma.js'
-import { PermitError } from '../lib/permitService.js'
+import { PermitError, requireFieldRole } from '../lib/permitService.js'
 import type { Caller } from '../domain/caller.js'
 import { requireAuth } from '../http/requireAuth.js'
 import { callerOf } from '../http/caller.js'
@@ -86,7 +87,9 @@ permitAttachmentsRouter.get('/:id/attachments', asyncRoute(async (req, res) => {
 }))
 
 permitAttachmentsRouter.post('/:id/attachments', (req, res, next) => {
-  upload.array('files', 5)(req, res, async (err) => {
+  // keepScope: multer calls back from the upload stream, which has lost the request's
+  // tenant scope; without it every query below would see no rows.
+  upload.array('files', 5)(req, res, keepScope(async (err?: unknown) => {
     if (err) {
       // Multer rejections are client errors — a 500 here would blame the server for a
       // file the server correctly refused.
@@ -151,7 +154,7 @@ permitAttachmentsRouter.post('/:id/attachments', (req, res, next) => {
       await discardUploads(UPLOAD_DIR, written)
       next(e)
     }
-  })
+  }))
 })
 
 /** Download. Authorisation is re-checked, so a stored name alone grants nothing. */
@@ -183,9 +186,17 @@ permitAttachmentsRouter.delete('/attachments/:attachmentId', asyncRoute(async (r
     include: { permit: { select: { id: true, companyId: true, status: true } } },
   })
   if (!att) throw new PermitError('not_found', 'Attachment not found.', 404)
-  if (!caller.roles.some((r) => r.companyId === att.permit.companyId)) {
+  const membership = caller.roles.find((r) => r.companyId === att.permit.companyId)
+  if (!membership) {
     throw new PermitError('forbidden', 'You do not have access to this workspace.', 403)
   }
+  /*
+   * Removing a permit's method statement, JSA, gas test sheet or isolation certificate is
+   * taking away the evidence the job was authorised on, so it needs the same roles as the
+   * other safety steps. It was open to every member - an employee or the read-only
+   * executive could delete documents from a live permit.
+   */
+  requireFieldRole(membership.role, 'remove documents from a permit')
   if (['closed', 'archived'].includes(att.permit.status)) {
     throw new PermitError('validation', 'This permit is closed. Its documents are part of the record.')
   }

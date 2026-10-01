@@ -41,6 +41,31 @@ const FORBIDDEN = [
  */
 const PASSWORD_FIELD = /password\s*:\s*["'][A-Za-z0-9!@#$%^&*()_+=-]{8,}["']/g
 
+/**
+ * Real credential formats, as opposed to SafeOps' own demo password above.
+ *
+ * The browser is given exactly one setting (the API's address) and talks to nothing but
+ * the SafeOps API, so no key of any kind has a reason to be in this bundle. These are the
+ * shapes a key takes when somebody adds a VITE_ variable "just for now", or pastes one into
+ * a component to try something: the bundle is public the moment it is deployed, and
+ * anything in it belongs to whoever opens the developer tools.
+ *
+ * Each pattern needs the key's body, not just its name, so the Reports page explaining
+ * "set RESEND_API_KEY" in its help text is not a finding.
+ */
+const KEY_PATTERNS = [
+  { re: /sk_(live|test)_[A-Za-z0-9]{16,}/g, why: 'an API secret key (sk_live_/sk_test_)' },
+  { re: /\bre_[A-Za-z0-9]{8}_[A-Za-z0-9]{16,}/g, why: 'a Resend API key' },
+  { re: /\bAKIA[0-9A-Z]{16}\b/g, why: 'an AWS access key id' },
+  { re: /\bAIza[0-9A-Za-z_-]{35}\b/g, why: 'a Google API key' },
+  { re: /\bgh[pousr]_[A-Za-z0-9]{36,}\b/g, why: 'a GitHub token' },
+  { re: /\bxox[abposr]-[A-Za-z0-9-]{10,}/g, why: 'a Slack token' },
+  { re: /-----BEGIN [A-Z ]*PRIVATE KEY-----/g, why: 'a private key' },
+  { re: /\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g, why: 'a signed JWT' },
+  { re: /\bpostgres(?:ql)?:\/\/[^\s"'`:]+:[^\s"'`@]+@/g, why: 'a database URL with a password' },
+  { re: /\bwhsec_[A-Za-z0-9+/=]{16,}/g, why: 'a webhook signing secret' },
+]
+
 function walk(dir) {
   const out = []
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -63,6 +88,12 @@ for (const file of files) {
   const text = readFileSync(file, 'utf8')
   for (const { needle, why } of FORBIDDEN) {
     if (text.includes(needle)) problems.push(`${file}: contains ${why} ("${needle}")`)
+  }
+  for (const { re, why } of KEY_PATTERNS) {
+    for (const match of text.match(re) ?? []) {
+      // Never print the whole secret into a CI log - that would be a second leak.
+      problems.push(`${file}: contains ${why} (${match.slice(0, 8)}…)`)
+    }
   }
   for (const match of text.match(PASSWORD_FIELD) ?? []) {
     // A bundler may emit `password:""` for an empty default; only values are a problem.
