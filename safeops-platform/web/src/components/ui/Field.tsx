@@ -7,6 +7,29 @@ import { cn } from '@/lib/cn'
 
 // Form primitives share one visual contract: 36px control height, hairline
 // border, accent focus ring, error state in --critical with a message slot.
+//
+// And one accessibility contract: the hint or error under a control is tied to it with
+// `aria-describedby`, and an error sets `aria-invalid`. Before this the message was only
+// *near* the field - a screen reader focusing the input heard its label and nothing else,
+// so "Must be at least 12 characters" was never read to the person it was for.
+
+/** The id of the message (hint or error) under the control with this id. */
+const messageId = (controlId: string) => `${controlId}-message`
+
+/**
+ * The attributes that tie a control to its message. Keeps any `aria-describedby` the caller
+ * passed, so wiring a control to something else on the page is not lost.
+ */
+export function fieldA11y(
+  controlId: string,
+  { hint, error, describedBy }: { hint?: string; error?: string; describedBy?: string },
+) {
+  const ids = [describedBy, hint || error ? messageId(controlId) : undefined].filter(Boolean)
+  return {
+    'aria-invalid': error ? (true as const) : undefined,
+    'aria-describedby': ids.length ? ids.join(' ') : undefined,
+  }
+}
 
 export function FieldShell({
   label, hint, error, required, htmlFor, children,
@@ -23,14 +46,15 @@ export function FieldShell({
       {label && (
         <label htmlFor={htmlFor} className="block text-xs font-semibold text-ink-2">
           {label}
-          {required && <span className="ml-0.5 text-critical">*</span>}
+          {/* The control's own `required` is what assistive technology reads; the star is visual. */}
+          {required && <span aria-hidden className="ml-0.5 text-critical">*</span>}
         </label>
       )}
       {children}
       {error ? (
-        <p className="text-xs font-medium text-critical" role="alert">{error}</p>
+        <p id={htmlFor && messageId(htmlFor)} className="text-xs font-medium text-critical" role="alert">{error}</p>
       ) : hint ? (
-        <p className="text-xs text-muted">{hint}</p>
+        <p id={htmlFor && messageId(htmlFor)} className="text-xs text-muted">{hint}</p>
       ) : null}
     </div>
   )
@@ -57,7 +81,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   const inputId = id ?? autoId
   return (
     <FieldShell label={label} hint={hint} error={error} required={required} htmlFor={inputId}>
-      <input ref={ref} id={inputId} required={required} className={cn(controlCls(error), className)} {...rest} />
+      <input
+        ref={ref} id={inputId} required={required} className={cn(controlCls(error), className)} {...rest}
+        {...fieldA11y(inputId, { hint, error, describedBy: rest['aria-describedby'] })}
+      />
     </FieldShell>
   )
 })
@@ -212,6 +239,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, InputProps>(function P
           type={revealed ? 'text' : 'password'}
           className={cn(controlCls(error), 'pr-10', className)}
           {...rest}
+          {...fieldA11y(inputId, { hint, error, describedBy: rest['aria-describedby'] })}
         />
         <button
           type="button"
@@ -225,7 +253,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, InputProps>(function P
             'focus-visible:ring-2 focus-visible:ring-accent',
           )}
         >
-          {revealed ? <EyeOff size={15} /> : <Eye size={15} />}
+          {revealed ? <EyeOff size={15} aria-hidden /> : <Eye size={15} aria-hidden />}
         </button>
       </div>
     </FieldShell>
@@ -249,6 +277,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
       <textarea
         ref={ref} id={inputId} rows={rows} required={required}
         className={cn(controlCls(error), 'h-auto py-2', className)} {...rest}
+        {...fieldA11y(inputId, { hint, error, describedBy: rest['aria-describedby'] })}
       />
     </FieldShell>
   )
@@ -269,10 +298,13 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
   return (
     <FieldShell label={label} hint={hint} error={error} required={required} htmlFor={inputId}>
       <div className="relative">
-        <select ref={ref} id={inputId} required={required} className={cn(controlCls(error), 'appearance-none pr-8', className)} {...rest}>
+        <select
+          ref={ref} id={inputId} required={required} className={cn(controlCls(error), 'appearance-none pr-8', className)} {...rest}
+          {...fieldA11y(inputId, { hint, error, describedBy: rest['aria-describedby'] })}
+        >
           {children}
         </select>
-        <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted" />
+        <ChevronDown size={14} aria-hidden className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted" />
       </div>
     </FieldShell>
   )

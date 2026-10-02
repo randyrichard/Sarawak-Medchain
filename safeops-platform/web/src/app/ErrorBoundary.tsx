@@ -119,7 +119,8 @@ export class ErrorBoundary extends Component<Props, State> {
               + 'nothing was lost. You can retry this view or return to Mission Control.'}
         </p>
 
-        <pre className="mt-4 max-w-md overflow-x-auto rounded-lg border px-3.5 py-2.5 text-left font-mono text-2xs text-ink-2">
+        {/* Focusable, so a long message that scrolls sideways can be scrolled from the keyboard. */}
+        <pre tabIndex={0} aria-label="Error details" className="mt-4 max-w-md overflow-x-auto rounded-lg border px-3.5 py-2.5 text-left font-mono text-2xs text-ink-2">
           {error.message || String(error)}
         </pre>
 
@@ -127,9 +128,9 @@ export class ErrorBoundary extends Component<Props, State> {
           <button
             onClick={this.reset}
             className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-semibold text-white transition-colors"
-            style={{ background: 'var(--accent)' }}
+            style={{ background: 'var(--accent-solid)' }}
           >
-            <RotateCw size={14} /> {stale ? 'Reload' : 'Try again'}
+            <RotateCw size={14} aria-hidden /> {stale ? 'Reload' : 'Try again'}
           </button>
           <button
             onClick={() => { window.location.href = '/' }}

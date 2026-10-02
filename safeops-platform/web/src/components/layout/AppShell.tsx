@@ -114,7 +114,7 @@ export default function AppShell() {
       */}
       <a
         href="#main"
-        className="sr-only rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60]"
+        className="sr-only rounded-lg bg-accent-solid px-4 py-2 text-sm font-semibold text-white focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60]"
       >
         Skip to main content
       </a>

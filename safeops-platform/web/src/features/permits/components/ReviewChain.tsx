@@ -90,9 +90,9 @@ function buildLadder(permit: PermitView, review: ReviewStatus | null): Rung[] {
 
 const DOT: Record<LadderState, { icon: typeof Check; cls: string; ring: string }> = {
   done: { icon: Check, cls: 'bg-good text-white', ring: 'border-good/40' },
-  current: { icon: Clock, cls: 'bg-accent text-white', ring: 'border-accent' },
+  current: { icon: Clock, cls: 'bg-accent-solid text-white', ring: 'border-accent' },
   pending: { icon: Circle, cls: 'bg-sunken text-muted', ring: 'border-grid' },
-  rejected: { icon: XCircle, cls: 'bg-critical text-white', ring: 'border-critical/40' },
+  rejected: { icon: XCircle, cls: 'bg-critical-solid text-white', ring: 'border-critical/40' },
 }
 
 export function ReviewChain({

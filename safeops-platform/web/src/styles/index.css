@@ -45,6 +45,14 @@
   /* 3.97:1 before, so every link and every text button failed AA in this theme. */
   --accent: #266fc6;
   --accent-hover: #1f5da6;
+  /*
+   * Accent fills under white text: the primary button, a selected chip, today's date.
+   * The same as --accent here; in the dark theme --accent is lightened to read as text on
+   * a dark ground, and white on that lighter blue is 3.6:1 - so every primary button in
+   * dark mode failed. A fill needs its own value. 5.0:1 here, 5.3:1 in dark.
+   */
+  --accent-solid: #266fc6;
+  --accent-solid-hover: #1f5da6;
   --accent-soft: rgba(42, 120, 214, 0.1);
 
   /*
@@ -71,6 +79,12 @@
   --serious: #c24616;
   --serious-soft: rgba(236, 131, 90, 0.14);
   --critical: #ce3434;
+  /*
+   * Solid red fills that carry white text (a danger button, an unread count). Its own token
+   * because --critical is tuned as a text colour on the page, and in the dark theme that
+   * lighter red under white text is 3.8:1 - below 4.5. 5.0:1 here, 5.6:1 in dark.
+   */
+  --critical-solid: #ce3434;
   --critical-soft: rgba(208, 59, 59, 0.1);
   --delta-good: #006300;
 
@@ -106,6 +120,8 @@
 
   --accent: #3987e5;
   --accent-hover: #5598e7;
+  --accent-solid: #2e6cb7;
+  --accent-solid-hover: #2a64ab;
   --accent-soft: rgba(57, 135, 229, 0.16);
 
   /*
@@ -124,6 +140,7 @@
   --warning: #fab219;
   --serious: #ec835a;
   --critical: #d75959;
+  --critical-solid: #ac4747;
 
   --delta-good: #0ca30c;
 

@@ -228,7 +228,7 @@ export function ReportNearMissPage() {
                 aria-pressed={tags.includes(t)}
                 className={cn(
                   'min-h-[36px] rounded-full border px-3 py-1.5 text-2xs font-semibold transition-colors',
-                  tags.includes(t) ? 'border-transparent bg-accent text-white' : 'text-ink-2 hover:bg-accent-soft',
+                  tags.includes(t) ? 'border-transparent bg-accent-solid text-white' : 'text-ink-2 hover:bg-accent-soft',
                 )}
               >
                 {t}

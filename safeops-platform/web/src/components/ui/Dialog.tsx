@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/cn'
@@ -32,6 +32,32 @@ export const DIALOG_LAYOUT = {
   footer: 'flex shrink-0 justify-end gap-2 border-t px-5 py-3',
 } as const
 
+/** What can take focus inside the panel. Disabled controls are skipped, as the browser does. */
+const FOCUSABLE =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
+/**
+ * Where focus goes when a dialog opens.
+ *
+ * It used to be the first button in the panel - which is the close X in the header, so every
+ * form dialog opened with focus on "Close dialog" and the first keystroke after "New
+ * incident" went nowhere useful. Now, in order:
+ *
+ *  1. an element the caller marked with `data-autofocus`;
+ *  2. the first form field in the body, so a form is ready to type into;
+ *  3. the panel itself, so a screen reader reads the title and description first - right
+ *     for a confirmation, where landing on "Delete" would invite an accidental Enter.
+ */
+export function initialFocusTarget(panel: HTMLElement): HTMLElement {
+  return (
+    panel.querySelector<HTMLElement>('[data-autofocus]') ??
+    panel.querySelector<HTMLElement>(
+      '[data-dialog-body] input:not([disabled]):not([type="hidden"]), [data-dialog-body] select:not([disabled]), [data-dialog-body] textarea:not([disabled])',
+    ) ??
+    panel
+  )
+}
+
 export function Dialog({
   open, onClose, title, description, children, footer, width = 'max-w-md',
 }: {
@@ -44,6 +70,8 @@ export function Dialog({
   width?: string
 }) {
   const panelRef = useRef<HTMLDivElement>(null)
+  const titleId = useId()
+  const descriptionId = useId()
 
   /*
    * Focus moves into the dialog once, when it opens - and only then.
@@ -64,10 +92,17 @@ export function Dialog({
   useEffect(() => {
     if (!open) return
     const previouslyFocused = document.activeElement as HTMLElement | null
-    panelRef.current?.querySelector<HTMLElement>('button, input, select, textarea')?.focus()
+    if (panelRef.current) initialFocusTarget(panelRef.current).focus()
+    // The page behind does not scroll under the dialog. Restored to what it was, so a
+    // dialog opened from inside another does not unlock the page when it closes.
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
     // Returning focus where it came from is why the dialog does not lose the page's place
     // when it closes.
-    return () => { previouslyFocused?.focus?.() }
+    return () => {
+      document.body.style.overflow = previousOverflow
+      previouslyFocused?.focus?.()
+    }
   }, [open])
 
   // Esc to close + rudimentary focus containment. Safe to re-bind on every render: adding
@@ -77,13 +112,17 @@ export function Dialog({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
       if (e.key === 'Tab' && panelRef.current) {
-        const focusables = panelRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        )
+        const focusables = panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)
         if (focusables.length === 0) return
         const first = focusables[0]
         const last = focusables[focusables.length - 1]
-        if (e.shiftKey && document.activeElement === first) {
+        // Focus on the panel itself (a confirmation) or somewhere outside it: Tab enters
+        // at the start and Shift+Tab at the end, never escaping to the page behind.
+        const inside = Array.prototype.includes.call(focusables, document.activeElement)
+        if (!inside) {
+          e.preventDefault()
+          ;(e.shiftKey ? last : first).focus()
+        } else if (e.shiftKey && document.activeElement === first) {
           e.preventDefault()
           last.focus()
         } else if (!e.shiftKey && document.activeElement === last) {
@@ -104,19 +143,23 @@ export function Dialog({
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-label={title}
-        className={cn(DIALOG_LAYOUT.panel, width)}
+        // Named by its visible heading rather than a copy of it, so the two cannot drift,
+        // and described by the subtitle so it is read on opening.
+        aria-labelledby={titleId}
+        aria-describedby={description ? descriptionId : undefined}
+        tabIndex={-1}
+        className={cn(DIALOG_LAYOUT.panel, 'outline-none', width)}
       >
         <div className={DIALOG_LAYOUT.header}>
           <div>
-            <h2 className="text-base font-semibold tracking-tight text-ink">{title}</h2>
-            {description && <p className="mt-0.5 text-xs text-muted">{description}</p>}
+            <h2 id={titleId} className="text-base font-semibold tracking-tight text-ink">{title}</h2>
+            {description && <p id={descriptionId} className="mt-0.5 text-xs text-muted">{description}</p>}
           </div>
-          <button onClick={onClose} aria-label="Close dialog" className="rounded-lg p-1 text-muted hover:bg-accent-soft hover:text-ink">
-            <X size={16} />
+          <button type="button" onClick={onClose} aria-label="Close dialog" className="shrink-0 rounded-lg p-1 text-muted hover:bg-accent-soft hover:text-ink">
+            <X size={16} aria-hidden />
           </button>
         </div>
-        {children && <div className={DIALOG_LAYOUT.body}>{children}</div>}
+        {children && <div data-dialog-body className={DIALOG_LAYOUT.body}>{children}</div>}
         <div className={DIALOG_LAYOUT.footer}>
           {footer ?? <Button variant="secondary" onClick={onClose}>Close</Button>}
         </div>

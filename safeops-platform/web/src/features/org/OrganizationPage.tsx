@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Building2, ChevronRight, Plus, Users } from 'lucide-react'
 import { api } from '@/api/client'
@@ -8,10 +8,11 @@ import { useOrg } from '@/features/org/OrgContext'
 import { Can } from '@/features/auth/guards'
 import { capabilitiesOf } from '@/features/permissions/permissions'
 import {
-  Avatar, Badge, Button, Card, CardBody, CardHeader, DataTable, EmptyState, PageHeader,
-  Skeleton, Tabs, type Column, type TabItem,
+  AsyncContent, Avatar, Badge, Button, Card, CardBody, CardHeader, DataTable, EmptyState,
+  PageHeader, Skeleton, TabPanel, Tabs, type Column, type TabItem,
 } from '@/components/ui'
 import { cn } from '@/lib/cn'
+import { useAsync } from '@/lib/useAsync'
 
 type View = 'structure' | 'people' | 'roles'
 
@@ -56,10 +57,10 @@ export function OrganizationPage() {
           </Can>
         }
       />
-      <Tabs items={tabs} value={view} onChange={setView} className="mb-4" />
-      {view === 'structure' && <StructureView />}
-      {view === 'people' && <PeopleView />}
-      {view === 'roles' && <RolesView />}
+      <Tabs id="org-views" label="Organization views" items={tabs} value={view} onChange={setView} className="mb-4" />
+      <TabPanel tabsId="org-views" value="structure" selected={view}><StructureView /></TabPanel>
+      <TabPanel tabsId="org-views" value="people" selected={view}><PeopleView /></TabPanel>
+      <TabPanel tabsId="org-views" value="roles" selected={view}><RolesView /></TabPanel>
     </>
   )
 }
@@ -68,23 +69,28 @@ export function OrganizationPage() {
 
 function StructureView() {
   const { company, sites } = useOrg()
-  const [departments, setDepartments] = useState<Department[] | null>(null)
-  const [teams, setTeams] = useState<Team[] | null>(null)
   const [openSite, setOpenSite] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (sites.length === 0) return
-    let cancelled = false
-    api.listDepartments(sites.map((s) => s.id)).then(async (deps) => {
-      if (cancelled) return
-      setDepartments(deps)
-      const t = await api.listTeams(deps.map((d) => d.id))
-      if (!cancelled) setTeams(t)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [sites])
+  /*
+   * Departments, then the teams inside them, as one request: both or neither.
+   *
+   * This was a hand-written effect with a `cancelled` flag and no error branch, so a failed
+   * request left the skeleton on screen for good with no way to retry short of reloading
+   * the page. `useAsync` owns the race and the failure; this owns only what to fetch.
+   */
+  const siteIds = sites.map((s) => s.id).join(',')
+  const tree = useAsync(
+    async () => {
+      // A workspace with no sites has nothing below it; that is an answer, not a wait.
+      if (sites.length === 0) return { departments: [], teams: [] }
+      const departments = await api.listDepartments(sites.map((s) => s.id))
+      const teams = await api.listTeams(departments.map((d) => d.id))
+      return { departments, teams }
+    },
+    [siteIds],
+  )
+  const departments = tree.data?.departments ?? null
+  const teams = tree.data?.teams ?? null
 
   if (!company) return <Skeleton className="h-40 w-full" />
 
@@ -103,24 +109,31 @@ function StructureView() {
         right={<Badge tone="accent" className="capitalize">{company.plan}</Badge>}
       />
       <CardBody>
-        {departments === null ? (
-          <div className="space-y-2">
-            {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
-          </div>
-        ) : (
+        <AsyncContent
+          state={tree}
+          loadingLabel="Loading departments and teams…"
+          errorTitle="Couldn't load the organization structure"
+          loading={
+            <div className="space-y-2">
+              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+            </div>
+          }
+        >
+          {({ departments, teams }) => (
           <ul className="space-y-2">
             {sites.map((site) => (
               <SiteNode
                 key={site.id}
                 site={site}
                 departments={departments.filter((d) => d.siteId === site.id)}
-                teams={teams ?? []}
+                teams={teams}
                 open={openSite === site.id}
                 onToggle={() => setOpenSite((cur) => (cur === site.id ? null : site.id))}
               />
             ))}
           </ul>
-        )}
+          )}
+        </AsyncContent>
       </CardBody>
     </Card>
   )
@@ -177,16 +190,8 @@ function SiteNode({
 
 function PeopleView() {
   const { company, sites } = useOrg()
-  const [employees, setEmployees] = useState<Employee[] | null>(null)
-
-  useEffect(() => {
-    if (!company) return
-    let cancelled = false
-    api.listEmployees(company.id).then((e) => !cancelled && setEmployees(e))
-    return () => {
-      cancelled = true
-    }
-  }, [company])
+  const companyId = company?.id
+  const employees = useAsync(() => api.listEmployees(companyId!), [companyId], { enabled: Boolean(companyId) })
 
   const siteName = useMemo(() => new Map(sites.map((s) => [s.id, s.short])), [sites])
 
@@ -208,20 +213,24 @@ function PeopleView() {
 
   return (
     <Card>
-      {employees === null ? (
-        <div className="p-5"><Skeleton className="h-48 w-full" /></div>
-      ) : (
-        <DataTable
-          columns={columns}
-          rows={employees}
-          rowKey={(e) => e.id}
-          empty={
-            <EmptyState icon={Users} title="No employees yet">
-              Import your workforce from CSV or add people one by one once org management opens.
-            </EmptyState>
-          }
-        />
-      )}
+      {/*
+        The table owns its loading, failure and empty states, so the header stays put while
+        the rows arrive and a failed request offers a retry instead of a permanent skeleton.
+      */}
+      <DataTable
+        caption="Employees"
+        columns={columns}
+        rows={employees.data ?? []}
+        rowKey={(e) => e.id}
+        loading={employees.data === undefined && employees.status !== 'error'}
+        error={employees.status === 'error' ? employees.error : undefined}
+        onRetry={employees.reload}
+        empty={
+          <EmptyState icon={Users} title="No employees yet">
+            Import your workforce from CSV or add people one by one once org management opens.
+          </EmptyState>
+        }
+      />
     </Card>
   )
 }

@@ -9,15 +9,25 @@ export function CardHeader({
   title,
   subtitle,
   right,
+  as: Heading = 'h2',
 }: {
   title: string
   subtitle?: string
   right?: ReactNode
+  /**
+   * The heading level, for the document outline - the look does not change.
+   *
+   * A card sits directly under the page's `h1`, so its title is an `h2`. This was a fixed
+   * `h3`, which skipped a level on every page: screen-reader users navigating by heading
+   * heard the outline jump from the page title to a third-level heading with nothing
+   * between. Pass `h3` for a card nested inside a section that has its own `h2`.
+   */
+  as?: 'h2' | 'h3' | 'h4'
 }) {
   return (
     <div className="flex items-start justify-between gap-4 px-5 pb-1 pt-4">
       <div className="min-w-0">
-        <h3 className="text-sm font-semibold tracking-tight text-ink">{title}</h3>
+        <Heading className="text-sm font-semibold tracking-tight text-ink">{title}</Heading>
         {subtitle && <p className="mt-0.5 text-xs text-muted">{subtitle}</p>}
       </div>
       {right && <div className="shrink-0">{right}</div>}

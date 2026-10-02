@@ -33,6 +33,8 @@ export default {
         accent: 'var(--accent)',
         'accent-hover': 'var(--accent-hover)',
         'accent-soft': 'var(--accent-soft)',
+        'accent-solid': 'var(--accent-solid)',
+        'accent-solid-hover': 'var(--accent-solid-hover)',
         good: 'var(--good)',
         warning: 'var(--warning)',
         // The soft variant already existed as a CSS variable but was never exposed here, so
@@ -45,6 +47,7 @@ export default {
         'good-soft': 'var(--good-soft)',
         serious: 'var(--serious)',
         critical: 'var(--critical)',
+        'critical-solid': 'var(--critical-solid)',
         'critical-soft': 'var(--critical-soft)',
       },
       fontFamily: {

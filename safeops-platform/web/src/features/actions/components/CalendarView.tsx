@@ -73,7 +73,7 @@ export function CalendarView({ items, onOpen }: { items: CapaItem[] | null; onOp
               <span
                 className={cn(
                   'inline-flex h-5 w-5 items-center justify-center rounded-full text-2xs font-semibold',
-                  isToday ? 'bg-accent text-white' : 'text-ink-2',
+                  isToday ? 'bg-accent-solid text-white' : 'text-ink-2',
                 )}
               >
                 {d.getDate()}
