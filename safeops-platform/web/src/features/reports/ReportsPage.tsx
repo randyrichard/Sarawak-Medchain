@@ -20,6 +20,7 @@ import {
 } from './lib'
 import { ReportSectionView } from './components/ReportSectionView'
 import { cn } from '@/lib/cn'
+import { useUrlState } from '@/lib/useUrlState'
 
 /**
  * Reports.
@@ -32,7 +33,8 @@ import { cn } from '@/lib/cn'
  * that proves it: it covers a closed period, so re-running it tomorrow gives the same
  * answer, which is the point of a document somebody files.
  */
-type View = 'reports' | 'schedules' | 'history'
+const VIEWS = ['reports', 'schedules', 'history'] as const
+type View = (typeof VIEWS)[number]
 
 const REPORT_CARDS: { type: ReportType; title: string; blurb: string; icon: typeof FileText }[] = [
   {
@@ -72,7 +74,7 @@ const REPORT_CARDS: { type: ReportType; title: string; blurb: string; icon: type
 
 export function ReportsPage() {
   const { company, role, project, projects, site, sites } = useOrg()
-  const [view, setView] = useState<View>('reports')
+  const [view, setView] = useUrlState<View>('tab', 'reports', VIEWS)
 
   const [preview, setPreview] = useState<ReportData | null>(null)
   const [previewing, setPreviewing] = useState<ReportType | null>(null)

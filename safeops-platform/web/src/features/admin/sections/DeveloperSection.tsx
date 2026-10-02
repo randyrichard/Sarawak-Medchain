@@ -13,8 +13,10 @@ import {
 import { timeAgo } from '@/lib/time'
 import { useAdminActor } from '../lib'
 import { cn } from '@/lib/cn'
+import { useUrlState } from '@/lib/useUrlState'
 
-type Tab = 'keys' | 'webhooks' | 'usage' | 'docs'
+const TABS = ['keys', 'webhooks', 'usage', 'docs'] as const
+type Tab = (typeof TABS)[number]
 
 /**
  * Why creating an integration is off, when it is.
@@ -45,7 +47,7 @@ function usePlanLabel(): string {
 }
 
 export function DeveloperSection() {
-  const [tab, setTab] = useState<Tab>('keys')
+  const [tab, setTab] = useUrlState<Tab>('tab', 'keys', TABS)
   const tabs: TabItem<Tab>[] = [
     { value: 'keys', label: 'API Keys' },
     { value: 'webhooks', label: 'Webhooks' },

@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { Plus, Search, ShieldAlert } from 'lucide-react'
 import { api } from '@/api/client'
 import type { Incident, IncidentSeverity, IncidentStatusFilter, IncidentType } from '@/api/incidents'
-import { INCIDENT_TYPES, STAGE_LABEL, SEVERITY_LABEL, TYPE_LABEL } from '@/api/incidents'
+import { INCIDENT_STAGES, INCIDENT_TYPES, STAGE_LABEL, SEVERITY_LABEL, TYPE_LABEL } from '@/api/incidents'
 import { OVERDUE_AFTER_DAYS } from '@/api/incidents'
 import { useOrg } from '@/features/org/OrgContext'
 import {
-  Alert, Badge, Button, Card, DataTable, EmptyState, LinkButton, PageHeader, Skeleton, StatusPill,
-  type Column,
+  Alert, Badge, Card, DataTable, EmptyState, LinkButton, PageHeader, Skeleton, StatusPill,
+  type Column, type SortState,
 } from '@/components/ui'
-import { daysOpen, severityKind, STAGE_COLOR, TYPE_ICON } from './lib'
+import { daysOpen, severityKind, severityWeight, STAGE_COLOR, TYPE_ICON } from './lib'
 import { cn } from '@/lib/cn'
+import { useUrlState } from '@/lib/useUrlState'
 
 const STATUS_CHIPS: { value: IncidentStatusFilter; label: string }[] = [
   { value: 'all', label: 'All' },
@@ -26,13 +27,25 @@ const STATUS_CHIPS: { value: IncidentStatusFilter; label: string }[] = [
 
 export function IncidentsListPage() {
   const { company, site, sites } = useOrg()
-  const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
 
   const status = (params.get('status') as IncidentStatusFilter) || 'open'
-  const [q, setQ] = useState(params.get('q') ?? '')
-  const [type, setType] = useState<IncidentType | ''>((params.get('type') as IncidentType) || '')
-  const [severity, setSeverity] = useState<IncidentSeverity | ''>((params.get('severity') as IncidentSeverity) || '')
+  /*
+   * Every filter lives in the URL, so a filtered register can be refreshed, bookmarked and
+   * sent to a colleague - "here are the open serious ones at Bintulu" as a link, the way a
+   * filtered search works on any site. These were read from the URL once and then held in
+   * memory, so the address bar stopped matching the screen after the first change, and
+   * refresh or Back quietly reset them. `replace`, so filtering does not fill Back with
+   * every keystroke.
+   */
+  const [q, setQParam] = useUrlState<string>('q', '')
+  const [type, setTypeParam] = useUrlState<IncidentType | ''>('type', '')
+  const [severity, setSeverityParam] = useUrlState<IncidentSeverity | ''>('severity', '')
+  const setQ = (v: string) => setQParam(v, { replace: true })
+  const setType = (v: IncidentType | '') => setTypeParam(v, { replace: true })
+  const setSeverity = (v: IncidentSeverity | '') => setSeverityParam(v, { replace: true })
+  const [sortParam, setSortParam] = useUrlState<string>('sort', '')
+  const sort = parseSort(sortParam)
 
   const [rows, setRows] = useState<Incident[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -61,8 +74,11 @@ export function IncidentsListPage() {
   }, [company, site, q, type, severity, status])
 
   const setStatus = (s: IncidentStatusFilter) => {
-    params.set('status', s)
-    setParams(params, { replace: true })
+    setParams((current) => {
+      const next = new URLSearchParams(current)
+      next.set('status', s)
+      return next
+    }, { replace: true })
   }
 
   const openCount = useMemo(() => rows?.filter((r) => r.stage !== 'closed').length ?? 0, [rows])
@@ -71,6 +87,7 @@ export function IncidentsListPage() {
     {
       key: 'incident',
       header: 'Incident',
+      sortValue: (i) => i.number,
       render: (i) => {
         const Icon = TYPE_ICON[i.type]
         return (
@@ -94,11 +111,13 @@ export function IncidentsListPage() {
     {
       key: 'severity',
       header: 'Severity',
+      sortValue: (i) => severityWeight(i.severity),
       render: (i) => <StatusPill kind={severityKind(i.severity)} label={SEVERITY_LABEL[i.severity] ?? i.severity} />,
     },
     {
       key: 'stage',
       header: 'Stage',
+      sortValue: (i) => (i.stage === 'draft' ? -1 : INCIDENT_STAGES.indexOf(i.stage)),
       visibility: 'hidden lg:table-cell',
       render: (i) => (
         <span className="inline-flex items-center gap-1.5 text-xs text-ink-2">
@@ -127,6 +146,7 @@ export function IncidentsListPage() {
     {
       key: 'age',
       header: 'Days open',
+      sortValue: (i) => (i.stage === 'closed' ? null : daysOpen(i)),
       align: 'right',
       render: (i) => {
         const d = daysOpen(i)
@@ -150,9 +170,9 @@ export function IncidentsListPage() {
         title="Incidents"
         subtitle={`${openCount} open in scope · worst severity always on top`}
         right={
-          <Button icon={<Plus size={15} />} onClick={() => navigate('/incidents/new')}>
+          <LinkButton icon={<Plus size={15} />} to="/incidents/new">
             Report Incident
-          </Button>
+          </LinkButton>
         }
       />
 
@@ -230,7 +250,11 @@ export function IncidentsListPage() {
             columns={columns}
             rows={rows}
             rowKey={(i) => i.id}
-            onRowClick={(i) => navigate(`/incidents/${i.id}`)}
+            // Real links: Ctrl/Cmd-click opens an incident in a new tab, as people expect.
+            rowHref={(i) => `/incidents/${i.id}`}
+            rowLabel={(i) => `${i.number}: ${i.title}`}
+            sort={sort}
+            onSortChange={(next) => setSortParam(`${next.key}-${next.direction}`, { replace: true })}
             empty={
               <EmptyState
                 icon={ShieldAlert}
@@ -249,4 +273,10 @@ export function IncidentsListPage() {
       </Card>
     </>
   )
+}
+
+/** `?sort=age-desc` -> { key: 'age', direction: 'desc' }. Anything else means server order. */
+function parseSort(raw: string): SortState | null {
+  const m = /^([a-z]+)-(asc|desc)$/.exec(raw)
+  return m ? { key: m[1], direction: m[2] as SortState['direction'] } : null
 }

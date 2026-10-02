@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Moon, Sun, LogOut, UserRound, Settings, ShieldQuestion } from 'lucide-react'
+import { Moon, Sun, LogOut, UserRound, Settings, ShieldQuestion, Keyboard } from 'lucide-react'
 import { useTheme } from '@/app/theme'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useOrg } from '@/features/org/OrgContext'
@@ -9,6 +9,7 @@ import { Avatar, Dropdown, DropdownItem, DropdownLabel, DropdownSeparator } from
 import { CompanySwitcher, ProjectSwitcher, SiteSwitcher } from './Switchers'
 import { NotificationMenu } from './NotificationMenu'
 import { GlobalSearch } from './GlobalSearch'
+import { openShortcuts } from '@/lib/shortcuts'
 
 export function Topbar({ menuButton }: { menuButton: ReactNode }) {
   const { theme, toggle } = useTheme()
@@ -91,6 +92,10 @@ export function Topbar({ menuButton }: { menuButton: ReactNode }) {
           </DropdownItem>
           <DropdownItem icon={<Settings size={15} />} onSelect={() => navigate('/account#preferences')}>
             Preferences
+          </DropdownItem>
+          {/* Where GitHub and Gmail keep it: discoverable for people who never press "?". */}
+          <DropdownItem icon={<Keyboard size={15} />} onSelect={openShortcuts}>
+            Keyboard shortcuts
           </DropdownItem>
           <DropdownItem icon={<ShieldQuestion size={15} />} onSelect={() => navigate('/design')}>
             About this build

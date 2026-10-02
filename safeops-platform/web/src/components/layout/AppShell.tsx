@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, ClipboardList, FileText, ListChecks, GraduationCap, ShieldCheck, Bell,
   Building2, Boxes, Menu, X, Lock, SlidersHorizontal, HardHat, UserCheck, ShieldAlert, Users, Megaphone,
@@ -13,6 +13,7 @@ import { PageTitleContext, resolveTitle } from '@/app/pageTitle'
 import { Topbar } from './Topbar'
 import { OutboxBanner } from '@/features/incidents/components/OutboxBanner'
 import { CompanySwitcher } from './Switchers'
+import { KeyboardShortcuts } from './KeyboardShortcuts'
 import { Badge, FullPageSpinner } from '@/components/ui'
 
 interface NavItem {
@@ -141,6 +142,8 @@ export default function AppShell() {
         </div>
       )}
 
+      <KeyboardShortcuts />
+
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar
           menuButton={
@@ -202,15 +205,25 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <>
-      <div className="flex items-center gap-2.5 px-5 py-5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
-          <ShieldCheck size={17} color="#fff" strokeWidth={2.4} />
+      {/*
+        The logo is the way home, as it is on nearly every site people use (Jakob's law). It
+        was a picture: clicking it did nothing, so the one move everybody tries first when
+        lost - click the logo - led nowhere.
+      */}
+      <Link
+        to="/"
+        onClick={onNavigate}
+        aria-label="SafeOps home"
+        className="mx-2 mt-2 flex items-center gap-2.5 rounded-lg px-3 py-3 hover:bg-accent-soft/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--accent)]"
+      >
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent-solid">
+          <ShieldCheck size={17} color="#fff" strokeWidth={2.4} aria-hidden />
         </div>
         <div>
           <p className="text-sm font-bold leading-none tracking-tight text-ink">SafeOps</p>
           <p className="mt-0.5 text-2xs font-medium uppercase tracking-widest text-muted">Safety Intelligence</p>
         </div>
-      </div>
+      </Link>
 
       {/*
         Company switching, for the widths where the header cannot afford it. See the note in

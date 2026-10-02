@@ -10,12 +10,14 @@ import {
   type TabItem,
 } from '@/components/ui'
 import { useAdminActor } from '../lib'
+import { useUrlState } from '@/lib/useUrlState'
 
-type Tab = 'profile' | 'structure' | 'positions' | 'shifts' | 'holidays'
+const TABS = ['profile', 'structure', 'positions', 'shifts', 'holidays'] as const
+type Tab = (typeof TABS)[number]
 
 export function OrganizationSection() {
   const { company, sites } = useOrg()
-  const [tab, setTab] = useState<Tab>('profile')
+  const [tab, setTab] = useUrlState<Tab>('tab', 'profile', TABS)
 
   const tabs: TabItem<Tab>[] = [
     { value: 'profile', label: 'Profile & Branding' },
