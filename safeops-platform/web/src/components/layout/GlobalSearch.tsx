@@ -8,6 +8,7 @@ import { searchApi, type SearchHit, type SearchKind } from '@/api/accountApi'
 import { useOrg } from '@/features/org/OrgContext'
 import { isBackendConfigured } from '@/api/authApi'
 import { cn } from '@/lib/cn'
+import { isTypingTarget, modKey } from '@/lib/shortcuts'
 
 const KIND_ICON: Record<SearchKind, typeof ClipboardList> = {
   incident: ClipboardList,
@@ -87,12 +88,17 @@ export function GlobalSearch() {
   const boxRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // ⌘K / Ctrl-K focuses the box, which is what the badge beside it promises.
+  // ⌘K / Ctrl-K focuses the box, which is what the badge beside it promises. So does "/",
+  // the search key on GitHub, Gmail, YouTube and Slack - unless the person is typing, when a
+  // slash is just a slash.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      const commandK = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k'
+      const slash = e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey && !isTypingTarget(e.target)
+      if (commandK || slash) {
         e.preventDefault()
         inputRef.current?.focus()
+        inputRef.current?.select()
       }
       if (e.key === 'Escape') setOpen(false)
     }
@@ -167,6 +173,7 @@ export function GlobalSearch() {
           : <Search size={14} className="text-muted" />}
         <input
           ref={inputRef}
+          aria-keyshortcuts="Control+K Meta+K /"
           value={query}
           disabled={disabled}
           onChange={(e) => { setQuery(e.target.value); setOpen(true) }}
@@ -179,7 +186,7 @@ export function GlobalSearch() {
           aria-controls="global-search-results"
           className="w-56 bg-transparent text-sm text-ink outline-none placeholder:text-muted disabled:cursor-not-allowed"
         />
-        <kbd className="rounded border px-1.5 text-2xs text-muted">⌘K</kbd>
+        <kbd className="rounded border px-1.5 text-2xs text-muted" aria-hidden>{modKey('K')}</kbd>
       </div>
 
       {showPanel && (

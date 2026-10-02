@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   Activity, Building2, DatabaseBackup, KeyRound, ScrollText, ShieldCheck, Plug, Users, UserCog,
@@ -42,12 +41,19 @@ const NAV: { id: Section; label: string; icon: typeof Activity; group: string }[
 
 export function AdminPage() {
   const [params, setParams] = useSearchParams()
-  const [section, setSection] = useState<Section>((params.get('s') as Section) || 'overview')
+  /*
+   * Read from the URL on every render, not once. It used to seed a `useState`, and each
+   * change replaced the history entry, so Back left the admin console altogether instead of
+   * returning to the section before - not how a settings area behaves anywhere else. A
+   * stale or hand-edited `?s=` falls back to the overview.
+   */
+  const requested = params.get('s') as Section | null
+  const section: Section = requested && NAV.some((n) => n.id === requested) ? requested : 'overview'
 
   const go = (s: Section) => {
-    setSection(s)
-    params.set('s', s)
-    setParams(params, { replace: true })
+    // A new history entry per section, and the previous section's own tab is dropped so the
+    // next one opens on its first tab.
+    setParams({ s })
   }
 
   const groups = [...new Set(NAV.map((n) => n.group))]

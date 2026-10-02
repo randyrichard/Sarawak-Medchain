@@ -24,6 +24,7 @@ import { PeoplePanel } from './components/PeoplePanel'
 import { InvestigationPanel } from './components/InvestigationPanel'
 import { IncidentSummaryDialog } from './components/IncidentSummaryDialog'
 import { isBackendConfigured } from '@/api/authApi'
+import { useUrlState } from '@/lib/useUrlState'
 
 /**
  * One work surface at a time, in the wide column.
@@ -35,8 +36,8 @@ import { isBackendConfigured } from '@/api/authApi'
  * those panels is something a person works in rather than glances at, so they belong
  * where the width is, and where only the open one is rendered.
  */
-type Tab =
-  | 'overview' | 'investigation' | 'actions' | 'people' | 'evidence' | 'discussion' | 'activity'
+const TABS = ['overview', 'investigation', 'actions', 'people', 'evidence', 'discussion', 'activity'] as const
+type Tab = (typeof TABS)[number]
 
 export function IncidentDetailPage() {
   const { id } = useParams()
@@ -47,7 +48,8 @@ export function IncidentDetailPage() {
 
   const [incident, setIncident] = useState<Incident | null>(null)
   const [missing, setMissing] = useState(false)
-  const [tab, setTab] = useState<Tab>('overview')
+  // In the URL, so a link to an incident's Actions tab opens on its Actions tab.
+  const [tab, setTab] = useUrlState<Tab>('tab', 'overview', TABS)
   const [archiveOpen, setArchiveOpen] = useState(false)
   const [summaryOpen, setSummaryOpen] = useState(false)
   const justCreated = (location.state as { created?: boolean } | null)?.created

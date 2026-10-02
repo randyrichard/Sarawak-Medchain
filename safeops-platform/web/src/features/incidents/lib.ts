@@ -133,3 +133,16 @@ export const SITE_COORDS: Record<string, string> = {
   pjy: '1.5761° N, 110.3266° E',
   smh: '3.1499° N, 113.2735° E',
 }
+
+/**
+ * How serious a severity is, for sorting: higher is worse. Covers the original scale and the
+ * enterprise one, and an unknown value sorts below everything rather than above a fatality.
+ */
+const SEVERITY_WEIGHT: Record<string, number> = {
+  catastrophic: 12, fatality: 11,
+  Critical: 10, environmental_major: 10,
+  Serious: 9, lost_time_injury: 9,
+  Moderate: 8, restricted_work: 8, medical_treatment: 8,
+  Minor: 7, near_miss: 6,
+}
+export const severityWeight = (s: Incident['severity']): number => SEVERITY_WEIGHT[s] ?? 0

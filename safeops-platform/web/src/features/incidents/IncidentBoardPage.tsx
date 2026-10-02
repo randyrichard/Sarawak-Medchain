@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import {
   AlertTriangle, Activity, ClipboardCheck, CheckCircle2, Search, X, ChevronLeft, ChevronRight,
   HeartPulse, ShieldAlert, Microscope,
@@ -15,7 +15,7 @@ import { useOrg } from '@/features/org/OrgContext'
 import { useDepartments } from '@/features/org/departments'
 import { usePeople } from './lib'
 import {
-  Alert, Badge, Breadcrumbs, Button, Card, CardBody, Input, SuggestSelect, PageHeader, Select, Skeleton,
+  Alert, Badge, Breadcrumbs, Button, Card, LinkButton, CardBody, Input, SuggestSelect, PageHeader, Select, Skeleton,
   StatusPill,
 } from '@/components/ui'
 import { usePageTitle } from '@/app/pageTitle'
@@ -44,7 +44,6 @@ const PAGE_SIZE = 25
 export function IncidentBoardPage() {
   usePageTitle('Incident board')
   const { company, sites } = useOrg()
-  const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
 
   // Parsed by the module the tests cover, so the board and its tests cannot drift apart.
@@ -143,7 +142,7 @@ export function IncidentBoardPage() {
       <PageHeader
         title="Incident board"
         subtitle="What is serious, what is stuck, and what needs you today"
-        right={<Button onClick={() => navigate('/incidents/new')}>Report incident</Button>}
+        right={<LinkButton to="/incidents/new">Report incident</LinkButton>}
       />
 
       {error && <Alert tone="critical" className="mb-3" onDismiss={() => setError(null)}>{error}</Alert>}
@@ -315,9 +314,14 @@ export function IncidentBoardPage() {
           <ul className="space-y-2">
             {rows.map((i) => (
               <li key={i.id}>
-                <button
-                  onClick={() => navigate(`/incidents/${i.id}`)}
-                  className="w-full rounded-lg border px-3 py-2.5 text-left transition hover:border-accent hover:bg-accent-soft/30"
+                {/*
+                  A link, not a button that navigates: it goes somewhere, so it should behave
+                  like everything else that does - Ctrl/Cmd-click or middle-click for a new
+                  tab, right-click to copy the address, the URL shown on hover.
+                */}
+                <Link
+                  to={`/incidents/${i.id}`}
+                  className="block w-full rounded-lg border px-3 py-2.5 text-left transition hover:border-accent hover:bg-accent-soft/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--accent)]"
                 >
                   <div className="flex flex-wrap items-center gap-1.5">
                     <span className="font-mono text-2xs text-muted">{i.number}</span>
@@ -339,7 +343,7 @@ export function IncidentBoardPage() {
                     {' · '}reported by {i.reporter}
                     {i.updatedAt && <> · updated {fmtDate(i.updatedAt)}</>}
                   </p>
-                </button>
+                </Link>
               </li>
             ))}
           </ul>

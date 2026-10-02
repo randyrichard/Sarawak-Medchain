@@ -47,6 +47,7 @@ hard-codes a colour or spacing value, and it never rebuilds a primitive's behavi
 | Data | `DataTable`, `Badge`, `StatusPill`, `Avatar` |
 | Feedback | `Alert`, `Dialog`, `EmptyState`, `ErrorState`, `Loading`, `Skeleton*`, `Spinner`, `FullPageSpinner` |
 | Async | `useAsync` (hook), `AsyncContent` (renders its states) |
+| Conventions | `useUrlState`, `useUnsavedChangesWarning`, `lib/shortcuts.ts`, `KeyboardShortcuts` |
 
 ## API conventions
 
@@ -212,6 +213,37 @@ audit. The live app was also audited across eight pages, in both themes, at 375p
   container and the text (see the note in `Dropdown.tsx`).
 - Dialogs never grow taller than the window: the body scrolls, and the header and footer stay
   pinned (see `DIALOG_LAYOUT`).
+
+## Familiar conventions (Jakob's law)
+
+People spend most of their working day in other products, such as Gmail, GitHub, Jira, Excel
+and their bank's website, and they come to SafeOps expecting it to work the same way. A
+convention they already know costs them nothing to learn, and one SafeOps invents costs every
+person who uses it. So when a familiar pattern exists, use it, and keep anything new for the
+safety work itself.
+
+| People expect | SafeOps does | How |
+|---|---|---|
+| The logo goes home | The sidebar logo links to Mission Control | `AppShell` |
+| The URL is the view: Back, refresh and a shared link keep the tab and filters | Tabs, admin sections and register filters live in the query string | `useUrlState('tab', default, allowed)` |
+| Records are links: hover shows the address, Ctrl/Cmd-click or middle-click opens a new tab, right-click copies the address | Table rows that open a page use `rowHref`, so the main cell is a real link and a click anywhere on the row follows it | `DataTable rowHref` |
+| Anything that goes somewhere is a link, not a button | Navigation actions use `LinkButton`; `Button` is for actions that do something | `LinkButton` |
+| Click a column title to sort, click again to reverse, with an arrow for the direction | Columns with `sortValue` sort that way and say so with `aria-sort` | `Column.sortValue`, `defaultSort`, controlled `sort` |
+| `/` or Ctrl K (⌘K on a Mac) to search, `?` for the list of shortcuts | Both, shown with the right modifier for the platform | `lib/shortcuts.ts`, `KeyboardShortcuts` |
+| Leaving a half-written form asks first | The near-miss form asks; the incident report autosaves a draft, as Gmail does | `useUnsavedChangesWarning(dirty)` |
+| Esc closes, arrow keys move through tabs and menus, Enter opens | Built into `Dialog`, `Dropdown`, `Tabs` and `DataTable` | see *Accessibility contract* |
+
+**Rules for new screens**
+
+- **Opens a page:** a link (`rowHref`, `LinkButton`, `<Link>`), never `onClick={() => navigate(...)}`.
+- **Opens a drawer or dialog on the same page:** `onRowClick` / `onClick` is right, because
+  there is no address to open in a new tab.
+- **Can be shared or refreshed** (a tab, a filter, a sort, a search): keep it in the URL with
+  `useUrlState`, and use `{ replace: true }` for anything that changes on every keystroke.
+- **Shortcuts:** use one people already know, and leave single-key shortcuts alone while the
+  person is typing (`isTypingTarget`). Never invent a product-only chord.
+- **Forms people may abandon by accident:** keep a draft, or call
+  `useUnsavedChangesWarning`.
 
 ## Adding or changing a component
 

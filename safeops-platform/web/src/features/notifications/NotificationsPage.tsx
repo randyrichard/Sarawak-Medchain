@@ -8,6 +8,7 @@ import {
   Badge, Button, Card, EmptyState, PageHeader, SkeletonRows, Tabs, type TabItem,
 } from '@/components/ui'
 import { cn } from '@/lib/cn'
+import { useUrlState } from '@/lib/useUrlState'
 
 const KIND_META: Record<NotificationKind, { icon: typeof Bell; label: string }> = {
   incident: { icon: ClipboardList, label: 'Incident' },
@@ -16,13 +17,14 @@ const KIND_META: Record<NotificationKind, { icon: typeof Bell; label: string }> 
   system: { icon: Megaphone, label: 'System' },
 }
 
-type Filter = 'all' | 'unread' | NotificationKind
+const FILTERS = ['all', 'unread', 'incident', 'action', 'audit', 'system'] as const satisfies readonly ('all' | 'unread' | NotificationKind)[]
+type Filter = (typeof FILTERS)[number]
 
 export function NotificationsPage() {
   const { company } = useOrg()
   const companyId = company?.id ?? ''
   const [items, setItems] = useState<AppNotification[] | null>(null)
-  const [filter, setFilter] = useState<Filter>('all')
+  const [filter, setFilter] = useUrlState<Filter>('show', 'all', FILTERS)
 
   useEffect(() => {
     let cancelled = false

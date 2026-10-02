@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Building2, ChevronRight, Plus, Users } from 'lucide-react'
 import { api } from '@/api/client'
 import type { Department, Employee, Site, Team } from '@/api/types'
@@ -8,21 +7,23 @@ import { useOrg } from '@/features/org/OrgContext'
 import { Can } from '@/features/auth/guards'
 import { capabilitiesOf } from '@/features/permissions/permissions'
 import {
-  AsyncContent, Avatar, Badge, Button, Card, CardBody, CardHeader, DataTable, EmptyState,
+  AsyncContent, Avatar, Badge, Card, LinkButton, CardBody, CardHeader, DataTable, EmptyState,
   PageHeader, Skeleton, TabPanel, Tabs, type Column, type TabItem,
 } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { useAsync } from '@/lib/useAsync'
+import { useUrlState } from '@/lib/useUrlState'
 
-type View = 'structure' | 'people' | 'roles'
+const VIEWS = ['structure', 'people', 'roles'] as const
+type View = (typeof VIEWS)[number]
 
 /** "1 site", "2 sites". Only regular plurals are needed here. */
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
 
 export function OrganizationPage() {
   const { company } = useOrg()
-  const navigate = useNavigate()
-  const [view, setView] = useState<View>('structure')
+  // In the URL, so Back, refresh and a shared link all keep the tab (see useUrlState).
+  const [view, setView] = useUrlState<View>('tab', 'structure', VIEWS)
 
   const tabs: TabItem<View>[] = [
     { value: 'structure', label: 'Structure' },
@@ -47,13 +48,9 @@ export function OrganizationPage() {
          */
         right={
           <Can capability="org:manage">
-            <Button
-              size="sm"
-              icon={<Plus size={14} />}
-              onClick={() => navigate('/admin?s=invitations')}
-            >
+            <LinkButton size="sm" icon={<Plus size={14} />} to="/admin?s=invitations">
               Invite user
-            </Button>
+            </LinkButton>
           </Can>
         }
       />
@@ -199,6 +196,7 @@ function PeopleView() {
     {
       key: 'name',
       header: 'Employee',
+      sortValue: (e) => e.name,
       render: (e) => (
         <span className="flex items-center gap-2.5">
           <Avatar name={e.name} size={28} />
@@ -206,8 +204,8 @@ function PeopleView() {
         </span>
       ),
     },
-    { key: 'position', header: 'Position', render: (e) => e.position },
-    { key: 'site', header: 'Site', render: (e) => siteName.get(e.siteId) ?? '—', visibility: 'hidden md:table-cell' },
+    { key: 'position', header: 'Position', render: (e) => e.position, sortValue: (e) => e.position },
+    { key: 'site', header: 'Site', render: (e) => siteName.get(e.siteId) ?? '—', sortValue: (e) => siteName.get(e.siteId), visibility: 'hidden md:table-cell' },
     { key: 'dept', header: 'Department', render: (e) => e.departmentId.split('-')[1]?.toUpperCase() ?? '—', visibility: 'hidden lg:table-cell' },
   ]
 
@@ -219,6 +217,7 @@ function PeopleView() {
       */}
       <DataTable
         caption="Employees"
+        defaultSort={{ key: 'name', direction: 'asc' }}
         columns={columns}
         rows={employees.data ?? []}
         rowKey={(e) => e.id}

@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Camera, Check, MapPin, ShieldAlert, Zap } from 'lucide-react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import type { NewIncidentInput } from '@/api/incidents'
 import { useOrg } from '@/features/org/OrgContext'
 import { useActor, SITE_COORDS } from './lib'
-import { Alert, Button, Card } from '@/components/ui'
+import { Alert, Button, Card, LinkButton } from '@/components/ui'
 import { cn } from '@/lib/cn'
+import { useUnsavedChangesWarning } from '@/lib/useUnsavedChangesWarning'
 
 /**
  * Fast near-miss capture.
@@ -43,7 +44,6 @@ const QUICK_TAGS = [
 export function ReportNearMissPage() {
   const { company, site, sites } = useOrg()
   const actor = useActor()
-  const navigate = useNavigate()
 
   const [what, setWhat] = useState('')
   const [where, setWhere] = useState('')
@@ -56,6 +56,10 @@ export function ReportNearMissPage() {
   const [reportedCount, setReportedCount] = useState(0)
 
   const effectiveSite = siteId || site?.id || sites[0]?.id || ''
+
+  // Half a near-miss report is worth keeping: ask before a stray click on the sidebar or a
+  // closed tab throws it away. Not once it has been sent.
+  useUnsavedChangesWarning(!done && !busy && (what.trim() !== '' || where.trim() !== '' || photos.length > 0 || tags.length > 0))
 
   // Recognition, not gamification: a simple running count of what this reporter has filed.
   useEffect(() => {
@@ -140,7 +144,7 @@ export function ReportNearMissPage() {
             <Button onClick={() => { setDone(null); setWhat(''); setWhere(''); setTags([]); setPhotos([]) }}>
               Report another
             </Button>
-            <Button variant="secondary" onClick={() => navigate('/')}>Back to home</Button>
+            <LinkButton variant="secondary" to="/">Back to home</LinkButton>
           </div>
         </Card>
       </div>

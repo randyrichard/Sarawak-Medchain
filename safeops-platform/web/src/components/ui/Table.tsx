@@ -1,4 +1,6 @@
-import type { ReactNode } from 'react'
+import { useMemo, useState, type MouseEvent, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
+import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { ErrorState } from './AsyncContent'
 import { Skeleton } from './Skeleton'
@@ -14,6 +16,50 @@ export interface Column<T> {
   width?: string
   /** Tailwind responsive visibility, e.g. "hidden md:table-cell" */
   visibility?: string
+  /**
+   * Makes the column sortable: clicking its header sorts by this value, clicking again
+   * reverses it. Empty values (null, undefined, '') always sort last, in either direction.
+   */
+  sortValue?: (row: T) => string | number | Date | null | undefined
+  /**
+   * The cell that carries the row's link when the table has `rowHref`. Defaults to the
+   * first column.
+   */
+  link?: boolean
+}
+
+export type SortDirection = 'asc' | 'desc'
+export interface SortState { key: string; direction: SortDirection }
+
+/** Compares two sort values; empties are handled by the caller. */
+function compare(a: string | number | Date, b: string | number | Date): number {
+  if (a instanceof Date || b instanceof Date) return +a - +b
+  if (typeof a === 'number' && typeof b === 'number') return a - b
+  // `numeric` so "INC-9" sorts before "INC-10", as people read them.
+  return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' })
+}
+
+const isEmpty = (v: unknown) => v === null || v === undefined || v === ''
+
+/**
+ * Rows in the order the sort asks for. Stable - rows that compare equal keep the order the
+ * server sent them in - so re-sorting never shuffles ties.
+ */
+export function sortRows<T>(rows: T[], columns: Column<T>[], sort: SortState | null): T[] {
+  const column = sort && columns.find((c) => c.key === sort.key)
+  if (!sort || !column?.sortValue) return rows
+  const value = column.sortValue
+  const sign = sort.direction === 'asc' ? 1 : -1
+  return rows
+    .map((row, index) => ({ row, index, v: value(row) }))
+    .sort((x, y) => {
+      if (isEmpty(x.v) || isEmpty(y.v)) {
+        if (isEmpty(x.v) && isEmpty(y.v)) return x.index - y.index
+        return isEmpty(x.v) ? 1 : -1
+      }
+      return sign * compare(x.v as string | number | Date, y.v as string | number | Date) || x.index - y.index
+    })
+    .map((x) => x.row)
 }
 
 export interface DataTableProps<T> {
@@ -23,6 +69,21 @@ export interface DataTableProps<T> {
   /** Shown in place of the rows when there are none. */
   empty?: ReactNode
   onRowClick?: (row: T) => void
+  /**
+   * Where a row leads. Prefer this over `onRowClick` for anything that opens a page.
+   *
+   * The row then works like every link people use elsewhere: its main cell is a real link,
+   * so hovering shows the address, Ctrl/Cmd-click and middle-click open it in a new tab, and
+   * right-click offers "Open in new tab" and "Copy link". A click anywhere else on the row
+   * follows the link too, as it does in Gmail and Jira. With `onRowClick` alone, none of
+   * that works - the row is a click handler, not a destination.
+   */
+  rowHref?: (row: T) => string
+  /** The column and direction to sort by at first. The person can change it. */
+  defaultSort?: SortState
+  /** Controlled sort, e.g. kept in the URL. Pair with `onSortChange`. */
+  sort?: SortState | null
+  onSortChange?: (sort: SortState) => void
   /**
    * What activating a row does, for assistive technology: `(i) => \`Open ${i.ref}\``.
    * Only used with `onRowClick`. Without it a focused row is announced by its content alone.
@@ -47,10 +108,43 @@ export interface DataTableProps<T> {
 }
 
 export function DataTable<T>({
-  columns, rows, rowKey, empty, onRowClick, rowLabel, loading = false, loadingRows = 5,
+  columns, rows, rowKey, empty, onRowClick, rowHref, rowLabel, loading = false, loadingRows = 5,
   error, onRetry, caption, captionVisible = false, stickyHeader = false, className,
+  defaultSort, sort: controlledSort, onSortChange,
 }: DataTableProps<T>) {
   const failed = error !== undefined && error !== null && error !== false
+  const interactive = Boolean(onRowClick || rowHref)
+
+  const [ownSort, setOwnSort] = useState<SortState | null>(defaultSort ?? null)
+  const sort = controlledSort !== undefined ? controlledSort : ownSort
+  const sorted = useMemo(() => sortRows(rows, columns, sort), [rows, columns, sort])
+  const changeSort = (key: string) => {
+    // A new column starts ascending; the same column again reverses - spreadsheet behaviour.
+    const next: SortState = sort?.key === key
+      ? { key, direction: sort.direction === 'asc' ? 'desc' : 'asc' }
+      : { key, direction: 'asc' }
+    if (controlledSort === undefined) setOwnSort(next)
+    onSortChange?.(next)
+  }
+
+  const linkColumn = columns.find((c) => c.link)?.key ?? columns[0]?.key
+
+  /*
+   * A click on the row, away from its link, behaves like a click on the link. Modifier and
+   * middle clicks open a new tab, as they would on the link itself. Clicks on the link, or
+   * on any other control in the row, are left to that control.
+   */
+  const onRowLinkClick = (e: MouseEvent<HTMLTableRowElement>, href: string) => {
+    const target = e.target as HTMLElement
+    if (target.closest('a, button, input, select, textarea, label, [role="menuitem"]')) return
+    // Selecting text in a row is not a click on it.
+    if (window.getSelection?.()?.toString()) return
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) {
+      window.open(href, '_blank', 'noopener')
+      return
+    }
+    e.currentTarget.querySelector<HTMLAnchorElement>('a[data-row-link]')?.click()
+  }
 
   // One full-width row for every state that is not data, so the header stays in place and
   // the table does not jump when the data arrives.
@@ -67,9 +161,9 @@ export function DataTable<T>({
       // becomes a named, focusable region so a keyboard user can scroll it (WCAG 2.1.1) -
       // but not when the rows are focusable themselves, or there would be two stops for one
       // table. Opt-in rather than always, so tables that never overflow add no tab stop.
-      tabIndex={!onRowClick && caption ? 0 : undefined}
-      role={!onRowClick && caption ? 'region' : undefined}
-      aria-label={!onRowClick && caption ? caption : undefined}
+      tabIndex={!interactive && caption ? 0 : undefined}
+      role={!interactive && caption ? 'region' : undefined}
+      aria-label={!interactive && caption ? caption : undefined}
     >
       <table className="w-full text-left" aria-busy={loading || undefined}>
         {caption && (
@@ -79,19 +173,42 @@ export function DataTable<T>({
         )}
         <thead className={cn(stickyHeader && 'sticky top-0 z-10 bg-surface')}>
           <tr className="border-b text-2xs uppercase tracking-wide text-muted">
-            {columns.map((c) => (
-              <th
-                key={c.key}
-                // Names the column this header governs, so a screen reader can say
-                // "Severity, Lost time injury" when reading a cell rather than reading a
-                // bare value out of a grid with no context. WCAG 1.3.1.
-                scope="col"
-                className={cn('px-4 py-2.5 font-semibold first:pl-5 last:pr-5', c.align === 'right' && 'text-right', c.visibility)}
-                style={c.width ? { width: c.width } : undefined}
-              >
-                {c.header}
-              </th>
-            ))}
+            {columns.map((c) => {
+              const active = sort?.key === c.key ? sort.direction : null
+              const SortIcon = active === 'asc' ? ArrowUp : active === 'desc' ? ArrowDown : ChevronsUpDown
+              return (
+                <th
+                  key={c.key}
+                  // Names the column this header governs, so a screen reader can say
+                  // "Severity, Lost time injury" when reading a cell rather than reading a
+                  // bare value out of a grid with no context. WCAG 1.3.1.
+                  scope="col"
+                  aria-sort={c.sortValue ? (active === 'asc' ? 'ascending' : active === 'desc' ? 'descending' : 'none') : undefined}
+                  className={cn('px-4 py-2.5 font-semibold first:pl-5 last:pr-5', c.align === 'right' && 'text-right', c.visibility)}
+                  style={c.width ? { width: c.width } : undefined}
+                >
+                  {c.sortValue ? (
+                    // The header is the control, as in every spreadsheet and table people
+                    // know: click to sort, again to reverse, with an arrow saying which way.
+                    <button
+                      type="button"
+                      onClick={() => changeSort(c.key)}
+                      className={cn(
+                        'inline-flex items-center gap-1 rounded uppercase tracking-wide hover:text-ink',
+                        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent)]',
+                        c.align === 'right' && 'flex-row-reverse',
+                        active && 'text-ink',
+                      )}
+                    >
+                      {c.header}
+                      <SortIcon size={11} aria-hidden className={cn(!active && 'opacity-50')} />
+                    </button>
+                  ) : (
+                    c.header
+                  )}
+                </th>
+              )
+            })}
           </tr>
         </thead>
         <tbody>
@@ -110,10 +227,13 @@ export function DataTable<T>({
           ) : rows.length === 0 ? (
             stateRow(empty ?? <span className="text-sm text-muted">No records.</span>)
           ) : (
-            rows.map((row) => (
+            sorted.map((row) => {
+              const href = rowHref?.(row)
+              return (
               <tr
                 key={rowKey(row)}
-                onClick={onRowClick ? () => onRowClick(row) : undefined}
+                onClick={href ? (e) => onRowLinkClick(e, href) : onRowClick ? () => onRowClick(row) : undefined}
+                onAuxClick={href ? (e) => { if (e.button === 1) onRowLinkClick(e, href) } : undefined}
                 /*
                  * Keyboard operability for clickable rows (WCAG 2.1.1 / 2.4.7): focusable,
                  * Enter/Space activates, with a visible focus ring.
@@ -125,7 +245,7 @@ export function DataTable<T>({
                  * is still focusable and operable; `rowLabel` says what it opens.
                  */
                 onKeyDown={
-                  onRowClick
+                  onRowClick && !href
                     ? (e) => {
                         if (e.target !== e.currentTarget) return // a button inside the row
                         if (e.key === 'Enter' || e.key === ' ') {
@@ -135,21 +255,37 @@ export function DataTable<T>({
                       }
                     : undefined
                 }
-                tabIndex={onRowClick ? 0 : undefined}
-                aria-label={onRowClick && rowLabel ? rowLabel(row) : undefined}
+                // With a link the link is the tab stop, so the row itself is not one.
+                tabIndex={onRowClick && !href ? 0 : undefined}
+                aria-label={onRowClick && !href && rowLabel ? rowLabel(row) : undefined}
                 className={cn(
                   'border-b last:border-0',
-                  onRowClick &&
-                    'cursor-pointer hover:bg-accent-soft/40 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[color:var(--accent)]',
+                  (onRowClick || href) && 'cursor-pointer hover:bg-accent-soft/40',
+                  onRowClick && !href &&
+                    'focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[color:var(--accent)]',
+                  // The whole row lights up while its link has focus.
+                  href && 'focus-within:bg-accent-soft/40',
                 )}
               >
                 {columns.map((c) => (
                   <td key={c.key} className={cn('px-4 py-3 text-sm text-ink-2 first:pl-5 last:pr-5', c.align === 'right' && 'text-right', c.visibility)}>
-                    {c.render(row)}
+                    {href && c.key === linkColumn ? (
+                      <Link
+                        to={href}
+                        data-row-link
+                        aria-label={rowLabel?.(row)}
+                        className="block rounded text-inherit no-underline outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                      >
+                        {c.render(row)}
+                      </Link>
+                    ) : (
+                      c.render(row)
+                    )}
                   </td>
                 ))}
               </tr>
-            ))
+              )
+            })
           )}
         </tbody>
       </table>

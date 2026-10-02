@@ -10,11 +10,13 @@ import {
 } from '@/components/ui'
 import { timeAgo } from '@/lib/time'
 import { downloadCsv, useAdminActor } from '../lib'
+import { useUrlState } from '@/lib/useUrlState'
 
-type Tab = 'center' | 'policy' | 'logins'
+const TABS = ['center', 'policy', 'logins'] as const
+type Tab = (typeof TABS)[number]
 
 export function SecuritySection() {
-  const [tab, setTab] = useState<Tab>('center')
+  const [tab, setTab] = useUrlState<Tab>('tab', 'center', TABS)
   const tabs: TabItem<Tab>[] = [
     { value: 'center', label: 'Security Center' },
     { value: 'policy', label: 'Authentication Policy' },
