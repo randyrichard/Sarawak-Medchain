@@ -1,0 +1,18 @@
+# Minimal Prometheus scrape config for SafeOps. Point it at the API's /metrics with the
+# METRICS_TOKEN from .env.prod. Works the same for Grafana Agent / Alloy.
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+
+rule_files:
+  - alerts.yml
+
+scrape_configs:
+  - job_name: safeops-api
+    metrics_path: /metrics
+    scheme: https
+    authorization:
+      type: Bearer
+      credentials_file: /etc/prometheus/safeops-metrics-token   # contains METRICS_TOKEN
+    static_configs:
+      - targets: ['api.REPLACE_ME.example.com']

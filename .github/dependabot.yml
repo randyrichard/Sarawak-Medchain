@@ -14,3 +14,37 @@ updates:
     directory: /
     schedule:
       interval: weekly
+
+  # ── SafeOps (safeops-platform/) ────────────────────────────────────────────
+  # Minor and patch updates arrive as one grouped PR per package a week, so they get merged
+  # rather than ignored; majors stay separate because they are the ones that break.
+  - package-ecosystem: npm
+    directory: /safeops-platform/api
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      safeops-api-minor:
+        update-types: [minor, patch]
+  - package-ecosystem: npm
+    directory: /safeops-platform/web
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      safeops-web-minor:
+        update-types: [minor, patch]
+  # Base images are pinned by digest in the Dockerfiles and the compose file; these keep the
+  # pins moving, which is how OS security fixes reach the running containers.
+  - package-ecosystem: docker
+    directory: /safeops-platform/api
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /safeops-platform/web
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker-compose
+    directory: /safeops-platform
+    schedule:
+      interval: weekly

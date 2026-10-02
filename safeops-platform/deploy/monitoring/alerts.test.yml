@@ -1,0 +1,39 @@
+# Unit tests for alerts.yml: promtool test rules alerts.test.yml
+rule_files: [alerts.yml]
+evaluation_interval: 1m
+tests:
+  - interval: 1m
+    input_series:
+      - series: 'up{job="safeops-api"}'
+        values: '1 1 0 0 0 0'
+      - series: 'safeops_job_last_success_age_seconds{job="reminders"}'
+        values: '600 1200 4000 4060 4120 4180 4240 4300'
+      - series: 'safeops_http_requests_total{status="200"}'
+        values: '0+600x20'
+      - series: 'safeops_http_requests_total{status="500"}'
+        values: '0+60x20'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: SafeOpsApiDown
+        exp_alerts:
+          - exp_labels: { severity: page, job: safeops-api }
+            exp_annotations:
+              summary: The SafeOps API is not answering its metrics endpoint.
+              runbook: docs/RUNBOOK.md - check `docker compose ps` and `logs api`; roll back with deploy/rollback.sh if the last deploy caused it.
+      - eval_time: 3m
+        alertname: SafeOpsApiDown
+        exp_alerts: []
+      - eval_time: 7m
+        alertname: SafeOpsRemindersStalled
+        exp_alerts:
+          - exp_labels: { severity: page, job: reminders }
+            exp_annotations:
+              summary: Overdue-action and expiry reminders have not run for over an hour.
+              runbook: Check the worker - `docker compose ps worker`, `logs worker`.
+      - eval_time: 20m
+        alertname: SafeOpsHighErrorRate
+        exp_alerts:
+          - exp_labels: { severity: page }
+            exp_annotations:
+              summary: Over 5% of API requests are failing with a server error.
+              runbook: Search the API log for "unhandled error" - each line carries a request id (rid).

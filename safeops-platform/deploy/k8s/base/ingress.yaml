@@ -1,0 +1,31 @@
+# Two hosts, one for the app and one for the API, sharing a registrable domain (the refresh
+# cookie is SameSite=Strict). Written for ingress-nginx with cert-manager; adjust the class
+# and annotations for another controller.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: safeops
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # Uploads are up to 5 files of 10 MB in one request.
+    nginx.ingress.kubernetes.io/proxy-body-size: 55m
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [app.REPLACE_ME.example.com, api.REPLACE_ME.example.com]
+      secretName: safeops-tls
+  rules:
+    - host: app.REPLACE_ME.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: { service: { name: safeops-web, port: { name: http } } }
+    - host: api.REPLACE_ME.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend: { service: { name: safeops-api, port: { name: http } } }

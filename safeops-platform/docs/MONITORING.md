@@ -4,6 +4,12 @@ What to watch, what it means, and what to do. Written for a pilot: one host, one
 no observability stack. If you already run Prometheus or Datadog, the endpoints and log
 format below plug into it.
 
+
+> **Metrics and alerting.** The API exports Prometheus metrics at `/metrics`, enabled by
+> `METRICS_TOKEN`. Ready-made alert rules and a scrape config are in `deploy/monitoring/`.
+> Every request carries an `X-Request-Id` that also appears in its log line. Overview:
+> `docs/PRODUCTION_PLATFORM.md` §5.
+
 ## The one thing to monitor
 
 ```

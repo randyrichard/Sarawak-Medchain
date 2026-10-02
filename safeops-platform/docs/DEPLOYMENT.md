@@ -370,7 +370,17 @@ Expect three lines on a healthy start:
 [safeops-scheduler] raised N notification(s): ...
 ```
 
-Confirm the security posture against the deployed instance:
+Confirm the deployment is serving, closed to anonymous callers, and sending its security
+headers. This is anonymous and read-only, so it is safe against a customer's live data, and
+`deploy/deployment.sh` already runs it as its last step:
+
+```bash
+cd safeops-platform && deploy/smoke.sh https://api.example.com https://app.example.com
+```
+
+Expect `All smoke checks passed.` On a **demo or staging** deployment that has the seeded
+demo accounts, also run the signed-in probe (`deploy/deployment.sh --demo-probe` does it for
+you). It cannot run against a real customer database, which has no demo accounts:
 
 ```bash
 cd safeops-platform/api && npx tsx scripts/security-probe.ts https://api.example.com

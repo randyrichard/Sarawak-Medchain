@@ -39,7 +39,9 @@ $DC exec -T db pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --format=custom --c
 
 # A dump that cannot be listed cannot be restored. Checking now costs a second; finding
 # out during an outage costs the pilot.
-$DC exec -T db pg_restore --list /dev/stdin < "$DUMP" >/dev/null 2>&1 \
+# No filename: pg_restore then reads the archive from stdin. Naming /dev/stdin instead made
+# it read nothing through `docker compose exec`, so every valid dump "failed" this check.
+$DC exec -T db pg_restore --list < "$DUMP" >/dev/null 2>&1 \
   || die "the dump is unreadable by pg_restore — treat this as a failed backup"
 
 ok "database  $(du -h "$DUMP" | cut -f1)  $DUMP"

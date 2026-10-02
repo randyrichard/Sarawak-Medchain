@@ -1,0 +1,12 @@
+# Evidence photos, permit documents and report PDFs. ReadWriteMany because every API replica
+# and the worker read and write it - which needs a storage class that offers RWX (EFS,
+# Azure Files, Filestore, NFS, Longhorn RWX). Back it up: it is customer evidence.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: safeops-uploads
+spec:
+  accessModes: [ReadWriteMany]
+  resources:
+    requests:
+      storage: 20Gi

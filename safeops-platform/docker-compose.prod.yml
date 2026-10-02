@@ -63,6 +63,11 @@ services:
     # Not published. Only the API needs it, and it reaches it over the internal network.
 
   api:
+    # Named so a release can be recorded and returned to: the containers always run
+    # `:local`, and deploy/deployment.sh keeps the image it replaced under a dated tag that
+    # deploy/rollback.sh points `:local` back at. SAFEOPS_API_IMAGE names a registry
+    # repository when releases are pulled rather than built (see docs/PRODUCTION_PLATFORM.md).
+    image: ${SAFEOPS_API_IMAGE:-safeops-api}:${SAFEOPS_VERSION:-local}
     build:
       context: .
       dockerfile: api/Dockerfile
@@ -123,6 +128,8 @@ services:
       # force. DATABASE_URL stays the schema owner, used only for migrations. Optional, but
       # without it the service runs as the Postgres superuser. Generate with: npm run keygen
       APP_DB_PASSWORD: ${APP_DB_PASSWORD:-}
+      # Bearer token for GET /metrics (Prometheus). Unset: the endpoint does not exist.
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
       # Which peers may set X-Forwarded-For. The default covers Caddy on this private
       # compose network and refuses the header from anything on a public address, so a
       # client cannot name its own rate-limit bucket or audit-trail entry. It does not
@@ -152,6 +159,9 @@ services:
   # background work on data, and so a slow sweep never shares an event loop with requests.
   # A second worker is safe (each pass takes a Postgres advisory lock) but only stands by.
   worker:
+    # The API's image, by name, so a deploy or rollback moves both together. Before this the
+    # worker was built separately and a rollback could leave it on the newer code.
+    image: ${SAFEOPS_API_IMAGE:-safeops-api}:${SAFEOPS_VERSION:-local}
     build:
       context: .
       dockerfile: api/Dockerfile
@@ -183,6 +193,7 @@ services:
       retries: 3
 
   web:
+    image: ${SAFEOPS_WEB_IMAGE:-safeops-web}:${SAFEOPS_VERSION:-local}
     build:
       context: .
       dockerfile: web/Dockerfile

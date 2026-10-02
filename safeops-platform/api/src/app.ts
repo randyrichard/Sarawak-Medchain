@@ -1,3 +1,4 @@
+import { randomUUID, timingSafeEqual } from 'node:crypto'
 import express from 'express'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
@@ -6,6 +7,7 @@ import rateLimit from 'express-rate-limit'
 import { env } from './env.js'
 import { prisma } from './lib/prisma.js'
 import { PrismaRateLimitStore } from './lib/rateLimitStore.js'
+import { observeRequest, renderMetrics } from './lib/metrics.js'
 import { authRouter } from './routes/auth.js'
 import { incidentsRouter } from './routes/incidents.js'
 import { incidentExtrasRouter } from './routes/incidentExtras.js'
@@ -127,6 +129,19 @@ export function createApp() {
    * body, query string or header is logged — those carry the customer's safety data and
    * their session.
    */
+  /*
+   * A request id on every request, so one request can be followed from the proxy's log
+   * to this log line to an error report. Taken from the proxy when it sent a well-formed
+   * one (Caddy and most load balancers do), generated otherwise, and echoed back so a
+   * customer can quote it from their browser's network tab.
+   */
+  app.use((req, res, next) => {
+    const incoming = req.get('x-request-id')
+    req.id = incoming && /^[A-Za-z0-9._:-]{8,128}$/.test(incoming) ? incoming : randomUUID()
+    res.setHeader('X-Request-Id', req.id)
+    next()
+  })
+
   app.use((req, res, next) => {
     const started = Date.now()
     // Captured now, not in the finish handler. Express rewrites `req.url` to be relative
@@ -135,13 +150,23 @@ export function createApp() {
     // 403 sends whoever reads it somewhere the problem is not.
     const path = redactPath(req.originalUrl.split('?')[0])
     res.on('finish', () => {
+      const ms = Date.now() - started
+      // The route template, not the path: see lib/metrics.ts on why ids must stay out. A
+      // request refused before reaching a route (no session, rate limited) is counted under
+      // its router's prefix, e.g. `/incidents/*`; one no router took is `unmatched`.
+      const route = req.route
+        ? `${req.baseUrl}${req.route.path}`
+        : req.baseUrl ? `${req.baseUrl}/*` : 'unmatched'
+      observeRequest(req.method, route, res.statusCode, ms / 1000)
       // eslint-disable-next-line no-console
       console.log(JSON.stringify({
         t: new Date().toISOString(),
+        rid: req.id,
         method: req.method,
         path,
+        route,
         status: res.statusCode,
-        ms: Date.now() - started,
+        ms,
         user: req.auth?.sub ?? null,
         ip: req.ip,
       }))
@@ -168,11 +193,30 @@ export function createApp() {
     limit: env.RATE_LIMIT_PER_MIN,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
-    skip: (req) => req.path.startsWith('/health'),
+    skip: (req) => req.path.startsWith('/health') || req.path === '/metrics',
     message: { error: 'rate_limited', message: 'Too many requests. Slow down and try again shortly.' },
   }))
 
   app.get('/health', (_req, res) => res.json({ status: 'ok', uptime: process.uptime() }))
+
+  /*
+   * Prometheus scrape target. Absent unless METRICS_TOKEN is set, and then only for a
+   * request carrying it - compared in constant time, since it is a credential.
+   */
+  app.get('/metrics', async (req, res, next) => {
+    if (!env.METRICS_TOKEN) return res.status(404).json({ error: 'not_found' })
+    const header = req.get('authorization') ?? ''
+    const given = Buffer.from(header.startsWith('Bearer ') ? header.slice(7) : '')
+    const expected = Buffer.from(env.METRICS_TOKEN)
+    if (given.length !== expected.length || !timingSafeEqual(given, expected)) {
+      return res.status(401).json({ error: 'unauthenticated' })
+    }
+    try {
+      res.type('text/plain; version=0.0.4').send(await renderMetrics(prisma))
+    } catch (e) {
+      next(e)
+    }
+  })
 
   app.get('/health/ready', async (_req, res) => {
     try {
@@ -251,7 +295,7 @@ export function createApp() {
   app.use((_req, res) => res.status(404).json({ error: 'not_found' }))
 
   // Central error handler: clients get a stable code, details stay in the server log.
-  app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  app.use((err: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
     // Every service refuses through a DomainError subclass (lib/errors.ts), so a new
     // module is answered correctly without being registered here.
     if (err instanceof DomainError) {
@@ -299,7 +343,7 @@ export function createApp() {
     const name = (err as { name?: string })?.name ?? ''
     if (name === 'PrismaClientInitializationError' || name === 'PrismaClientRustPanicError') {
       // eslint-disable-next-line no-console
-      console.error('[safeops-api] database unavailable:', err)
+      console.error(`[safeops-api] database unavailable (rid ${req.id}):`, err)
       res.setHeader('Retry-After', '5')
       return res.status(503).json({
         error: 'unavailable',
@@ -308,8 +352,9 @@ export function createApp() {
     }
 
     // eslint-disable-next-line no-console
-    console.error('[safeops-api] unhandled error:', err)
-    res.status(500).json({ error: 'internal', message: 'Something went wrong.' })
+    console.error(`[safeops-api] unhandled error (rid ${req.id}):`, err)
+    // The id is safe to show and is what support needs to find the server-side detail.
+    res.status(500).json({ error: 'internal', message: 'Something went wrong.', requestId: req.id })
   })
 
   return app

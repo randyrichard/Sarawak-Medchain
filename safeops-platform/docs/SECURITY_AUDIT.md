@@ -173,7 +173,7 @@ These change product behaviour, so they were not changed unilaterally.
 | D-4 | Low | Inviting someone who already has an account adds the membership immediately, without their consent. The invite form's error also reveals whether an address belongs to a SafeOps platform administrator. | Create the membership on acceptance. Return the generic "cannot invite this address" message. |
 | D-5 | Info | IPv6-literal webhook URLs never deliver, because of the bracketed hostname (see SA-5). | Strip the brackets before `https.request`. That is safe now that the guard parses IPv6 correctly. |
 | D-7 | **Medium** | **The rest of the Authentication Policy page is also unenforced.** Lockout threshold, session timeout ("Applies to your next sign-in"), minimum password length, the uppercase/number/symbol rules and password expiry are saved and shown, but nothing reads them. The server uses its own fixed settings (`MAX_FAILED_LOGINS`, `REFRESH_TOKEN_TTL_DAYS`, `validatePasswordStrength`). Found while building MFA. | Enforce each setting where its fixed counterpart is used today, or mark it "not yet enforced" on the page. Same reasoning as D-0. |
-| D-6 | Info | `deploy/rollback.sh` tags `safeops-api:rollback`, but compose never uses that tag. Already noted in the worker PR. | Pin the image by digest in the rollback path. |
+| D-6 | Info | `deploy/rollback.sh` tagged `safeops-api:rollback`, but compose never used that tag, so a rollback restarted the newest image. | **Resolved**: releases are tagged, and rollback points `:local` at the kept release. Verified end to end; see `docs/PRODUCTION_PLATFORM.md`. |
 
 ## 3a. Resolved after the audit
 

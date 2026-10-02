@@ -1,0 +1,36 @@
+# Production overlay: your domains, your images, your release.
+#   kubectl apply -k deploy/k8s/overlays/production
+# A release is deployed by changing `newTag` to the commit sha the release workflow
+# published (or: kustomize edit set image safeops-api=ghcr.io/OWNER/safeops-api:<sha>),
+# and rolled back by setting it to the previous one - or `kubectl rollout undo`.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+images:
+  - name: safeops-api
+    newName: ghcr.io/REPLACE_ME/safeops-api
+    newTag: REPLACE_WITH_COMMIT_SHA
+  - name: safeops-web
+    newName: ghcr.io/REPLACE_ME/safeops-web
+    newTag: REPLACE_WITH_COMMIT_SHA
+patches:
+  - target: { kind: ConfigMap, name: safeops-config }
+    patch: |-
+      - op: replace
+        path: /data/APP_PUBLIC_URL
+        value: https://app.REPLACE_ME.example.com
+      - op: replace
+        path: /data/CORS_ORIGINS
+        value: https://app.REPLACE_ME.example.com
+      - op: replace
+        path: /data/COOKIE_DOMAIN
+        value: .REPLACE_ME.example.com
+  - target: { kind: ConfigMap, name: safeops-web-config }
+    patch: |-
+      - op: replace
+        path: /data/CSP_CONNECT_SRC
+        value: https://api.REPLACE_ME.example.com
+      - op: replace
+        path: /data/APP_PUBLIC_URL
+        value: https://app.REPLACE_ME.example.com

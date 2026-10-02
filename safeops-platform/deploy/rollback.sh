@@ -12,8 +12,9 @@
 # enough and you need deploy/restore.sh with the pre-deploy backup. The script says so
 # rather than assuming.
 #
-#   deploy/rollback.sh
-#   deploy/rollback.sh --to <image-id>
+#   deploy/rollback.sh                # to the release the last deploy replaced
+#   deploy/rollback.sh --to <tag>     # to any kept or published release, e.g. before-2026-10-02-0912
+#                                     # or a registry tag such as a commit sha
 
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
@@ -23,52 +24,69 @@ require_env
 RELEASE_DIR="$ROOT/.releases"
 PREVIOUS="$RELEASE_DIR/previous.env"
 
+API_TARGET=""
+WEB_TARGET=""
 if [ "${1:-}" = "--to" ] && [ -n "${2:-}" ]; then
-  API_IMAGE="$2"
-  WEB_IMAGE=""
-  GIT_SHA="(specified on the command line)"
+  API_TARGET="$API_REPO:$2"
+  WEB_TARGET="$WEB_REPO:$2"
+  GIT_SHA="$2"
 else
-  [ -f "$PREVIOUS" ] || die "no recorded previous release at $PREVIOUS. Roll back by hand: $DC up -d --no-deps api:<tag>"
+  [ -f "$PREVIOUS" ] || die "no recorded previous release at $PREVIOUS. Name one: deploy/rollback.sh --to <tag>"
+  # shellcheck disable=SC1090
   . "$PREVIOUS"
+  if [ -n "${PREVIOUS_TAG:-}" ]; then
+    API_TARGET="$API_REPO:$PREVIOUS_TAG"
+    WEB_TARGET="$WEB_REPO:$PREVIOUS_TAG"
+  else
+    # A record written before releases were tagged: image ids.
+    API_TARGET="${API_IMAGE:-}"
+    WEB_TARGET="${WEB_IMAGE:-}"
+  fi
 fi
 
 info "rolling back"
-echo "  from : $(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
 echo "  to   : ${GIT_SHA:-unknown}"
-echo "  api  : ${API_IMAGE:-unknown}"
+echo "  api  : ${API_TARGET:-unknown}"
+echo "  web  : ${WEB_TARGET:-unknown}"
+[ -n "$API_TARGET" ] && [ "$API_TARGET" != unknown ] || die "the recorded release names no api image"
 
-[ "${API_IMAGE:-unknown}" = unknown ] && die "the recorded release has no api image id — roll back by hand"
-docker image inspect "$API_IMAGE" >/dev/null 2>&1 \
-  || die "image $API_IMAGE is no longer on this host. It may have been pruned. Rebuild from the previous git sha instead."
+# A published release may not be on this host yet; a kept one must be.
+for img in "$API_TARGET" ${WEB_TARGET:+"$WEB_TARGET"}; do
+  if ! docker image inspect "$img" >/dev/null 2>&1; then
+    case "$img" in
+      */*) docker pull "$img" || die "$img is not on this host and could not be pulled. Nothing was changed." ;;
+      *) die "$img is no longer on this host. Nothing was changed. Kept releases: docker images $API_REPO" ;;
+    esac
+  fi
+done
 
-confirm "Roll the application back to ${GIT_SHA:-that image}? The database is NOT touched."
+confirm "Roll the application back to ${GIT_SHA:-that release}? The database is NOT touched."
 
-# Stop before swapping, so no request is served by a half-swapped stack. The worker runs
-# the same code as the API and must not outlive it.
-info "stopping the application"
-$DC stop api worker web
+# Point `:local` - the tag the containers run - at the release, then recreate. The worker
+# runs the API's image, so it moves with it.
+docker tag "$API_TARGET" "$API_REPO:local"
+[ -n "$WEB_TARGET" ] && docker tag "$WEB_TARGET" "$WEB_REPO:local"
 
-info "starting the previous images"
-docker run -d --rm --name safeops-rollback-check "$API_IMAGE" true >/dev/null 2>&1 || true
-docker rm -f safeops-rollback-check >/dev/null 2>&1 || true
-
-# Compose owns the container lifecycle, so the previous image is pinned by tagging it back
-# to the name compose expects and recreating.
-docker tag "$API_IMAGE" safeops-api:rollback
-[ -n "${WEB_IMAGE:-}" ] && docker tag "$WEB_IMAGE" safeops-web:rollback
-
-API_IMAGE_OVERRIDE=safeops-api:rollback $DC up -d --no-build api worker web \
+info "restarting on the previous release"
+$DC up -d --no-build --force-recreate api worker web \
   || die "the rollback failed to start. The database is untouched — investigate before retrying."
 
 wait_for_ready 60
 
+[ "$(running_image api)" = "$(docker image inspect --format '{{.Id}}' "$API_TARGET")" ] \
+  || die "the API is not running the requested image after the rollback. Check: $DC ps"
+echo "${GIT_SHA:-unknown}" > "$RELEASE_DIR/current.sha"
+
+"$DEPLOY_DIR/smoke.sh" "http://localhost:${API_PORT:-4000}" "http://localhost:${WEB_PORT:-8080}" \
+  || warn "the rolled-back release fails the smoke test - see above"
+
 echo
-ok "rolled back to ${GIT_SHA:-the recorded image}"
+ok "rolled back to ${GIT_SHA:-the recorded release}"
 echo
 warn "The database was NOT rolled back."
 echo "  SafeOps migrations are additive, so the previous release runs against the newer"
 echo "  schema unchanged. If the release you are backing out of introduced a DESTRUCTIVE"
 echo "  migration, the data it dropped is only in the pre-deploy backup:"
 echo
-echo "    deploy/restore.sh $BACKUP_DIR/pre-deploy-<stamp>.dump"
+echo "    deploy/restore.sh $BACKUP_DIR/db-pre-deploy-<stamp>.dump"
 echo

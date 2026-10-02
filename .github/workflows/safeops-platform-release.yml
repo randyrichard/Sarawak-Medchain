@@ -1,0 +1,186 @@
+# Release pipeline for SafeOps: publish versioned images, then (optionally) deploy them.
+#
+# Runs only after safeops-platform-ci has passed on a push to a release branch, so nothing
+# is published that did not pass the full test suite, the bundle credential scan and the
+# boot-and-smoke-test of the production stack.
+#
+#   publish  Builds the API image (and the web image, when the browser-facing API URL is
+#            configured) and pushes it to GitHub Container Registry, tagged with the commit
+#            sha - immutable, one per commit - and `edge`, the latest. Then scans the API
+#            image for known vulnerabilities and reports them on the run.
+#   deploy   Optional. When SAFEOPS_DEPLOY_HOST is configured, SSHes to the server and runs
+#            deploy/deployment.sh --version <sha>: backup, pull, migrate, start, smoke test.
+#            Behind the `production` environment, so it waits for an approval when that
+#            environment is set to require one (Settings > Environments).
+#
+# Repository settings this reads (Settings > Secrets and variables > Actions):
+#   variables  SAFEOPS_VITE_API_BASE_URL  the API URL baked into the web bundle; without it
+#                                         only the API image is published
+#              SAFEOPS_DEPLOY_HOST        server to deploy to; without it, publish only
+#              SAFEOPS_DEPLOY_USER        SSH user (default: safeops)
+#              SAFEOPS_DEPLOY_DIR         checkout on the server (default: /srv/safeops)
+#   secrets    SAFEOPS_DEPLOY_SSH_KEY     private key allowed to log in as that user
+#              SAFEOPS_DEPLOY_KNOWN_HOSTS the server's host key line, so the connection
+#                                         cannot be silently redirected
+# See docs/PRODUCTION_PLATFORM.md.
+name: safeops-platform-release
+
+on:
+  workflow_run:
+    workflows: [safeops-platform-ci]
+    types: [completed]
+    branches: [feature/permit-to-work, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One release at a time, and never cancel one half way through a push or a deploy.
+concurrency:
+  group: safeops-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    # A green CI run on a push - not a pull request, whose code is not yet reviewed.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      sha: ${{ steps.meta.outputs.sha }}
+      web: ${{ steps.meta.outputs.web }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Release name and image paths
+        id: meta
+        env:
+          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          OWNER: ${{ github.repository_owner }}
+          VITE_URL: ${{ vars.SAFEOPS_VITE_API_BASE_URL }}
+        run: |
+          owner=$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')   # registry paths are lower-case
+          {
+            echo "sha=$SHA"
+            echo "version=${SHA:0:12}"
+            echo "api=ghcr.io/$owner/safeops-api"
+            echo "web=ghcr.io/$owner/safeops-web"
+          } >> "$GITHUB_OUTPUT"
+          if [ -z "$VITE_URL" ]; then
+            echo "::notice::SAFEOPS_VITE_API_BASE_URL is not set, so only the API image is published. The web bundle bakes in the API's URL at build time."
+          fi
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push the API image
+        uses: docker/build-push-action@v7
+        with:
+          context: safeops-platform
+          file: safeops-platform/api/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.api }}:${{ steps.meta.outputs.version }}
+            ${{ steps.meta.outputs.api }}:edge
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ steps.meta.outputs.sha }}
+          # Provenance and an SBOM travel with the image: what it was built from, and what is in it.
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha,scope=safeops-api
+          cache-to: type=gha,mode=max,scope=safeops-api
+
+      - name: Build and push the web image
+        if: vars.SAFEOPS_VITE_API_BASE_URL != ''
+        uses: docker/build-push-action@v7
+        with:
+          context: safeops-platform
+          file: safeops-platform/web/Dockerfile
+          push: true
+          build-args: |
+            VITE_API_BASE_URL=${{ vars.SAFEOPS_VITE_API_BASE_URL }}
+          tags: |
+            ${{ steps.meta.outputs.web }}:${{ steps.meta.outputs.version }}
+            ${{ steps.meta.outputs.web }}:edge
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ steps.meta.outputs.sha }}
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha,scope=safeops-web
+          cache-to: type=gha,mode=max,scope=safeops-web
+
+      # Reported, not blocking: a newly published CVE in a base image should start a fix,
+      # not stop every release until upstream ships one. Dependabot moves the base-image pins.
+      - name: Vulnerability scan (API image)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ steps.meta.outputs.api }}:${{ steps.meta.outputs.version }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '0'
+          format: table
+          output: trivy.txt
+
+      - name: Release summary
+        env:
+          API: ${{ steps.meta.outputs.api }}
+          WEB: ${{ steps.meta.outputs.web }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          WEB_BUILT: ${{ vars.SAFEOPS_VITE_API_BASE_URL != '' }}
+        run: |
+          {
+            echo "## SafeOps release \`$VERSION\`"
+            echo
+            echo "- API image: \`$API:$VERSION\`"
+            if [ "$WEB_BUILT" = true ]; then echo "- Web image: \`$WEB:$VERSION\`"; else echo "- Web image: not built (set SAFEOPS_VITE_API_BASE_URL)"; fi
+            echo
+            echo "Deploy on the server: \`deploy/deployment.sh --version $VERSION\`"
+            echo
+            echo "### Vulnerability scan (fixable CRITICAL/HIGH)"
+            echo '```'
+            cat trivy.txt 2>/dev/null || echo "scan output unavailable"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    needs: publish
+    # Only where a server is configured, and only when both images exist to deploy.
+    if: vars.SAFEOPS_DEPLOY_HOST != '' && vars.SAFEOPS_VITE_API_BASE_URL != ''
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: safeops-production-deploy
+      cancel-in-progress: false
+    steps:
+      - name: Deploy to the server
+        env:
+          HOST: ${{ vars.SAFEOPS_DEPLOY_HOST }}
+          SSH_USER: ${{ vars.SAFEOPS_DEPLOY_USER || 'safeops' }}
+          DIR: ${{ vars.SAFEOPS_DEPLOY_DIR || '/srv/safeops' }}
+          SSH_KEY: ${{ secrets.SAFEOPS_DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.SAFEOPS_DEPLOY_KNOWN_HOSTS }}
+          SHA: ${{ needs.publish.outputs.sha }}
+          VERSION: ${{ needs.publish.outputs.version }}
+        run: |
+          [ -n "$SSH_KEY" ] && [ -n "$KNOWN_HOSTS" ] || { echo "::error::SAFEOPS_DEPLOY_SSH_KEY and SAFEOPS_DEPLOY_KNOWN_HOSTS must be set"; exit 1; }
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          # The server's checkout moves to the released commit first, so the compose file and
+          # deploy scripts match the images; then the release is deployed by its tag.
+          ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o StrictHostKeyChecking=yes "$SSH_USER@$HOST" \
+            "set -e; cd '$DIR/safeops-platform'; git fetch --quiet origin; git checkout --quiet --detach '$SHA'; deploy/deployment.sh --version '$VERSION'"

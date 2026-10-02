@@ -1,0 +1,88 @@
+# SafeOps alert rules for Prometheus (or anything that loads Prometheus rule files:
+# Grafana Cloud, Mimir, VictoriaMetrics). Scrape config: prometheus.yml beside this file.
+#
+# Few alerts, each one something a person should act on. Every rule says what is wrong for
+# the customer, not what a number did; docs/MONITORING.md says what NOT to page on.
+#
+# Checked with: promtool check rules alerts.yml && promtool test rules alerts.test.yml
+groups:
+  - name: safeops-availability
+    rules:
+      - alert: SafeOpsApiDown
+        expr: up{job="safeops-api"} == 0
+        for: 2m
+        labels: { severity: page }
+        annotations:
+          summary: The SafeOps API is not answering its metrics endpoint.
+          runbook: docs/RUNBOOK.md - check `docker compose ps` and `logs api`; roll back with deploy/rollback.sh if the last deploy caused it.
+
+      - alert: SafeOpsDatabaseUnreachable
+        expr: safeops_db_up == 0
+        for: 2m
+        labels: { severity: page }
+        annotations:
+          summary: The API is up but cannot reach PostgreSQL - every page fails.
+          runbook: docs/RUNBOOK.md - check the db container, disk space and connection limits.
+
+      - alert: SafeOpsHighErrorRate
+        # More than 5% of requests answered 5xx over 10 minutes, with enough traffic to mean it.
+        expr: |
+          sum(rate(safeops_http_requests_total{status=~"5.."}[10m]))
+            / sum(rate(safeops_http_requests_total[10m])) > 0.05
+          and sum(rate(safeops_http_requests_total[10m])) > 0.1
+        for: 5m
+        labels: { severity: page }
+        annotations:
+          summary: Over 5% of API requests are failing with a server error.
+          runbook: Search the API log for "unhandled error" - each line carries a request id (rid).
+
+  - name: safeops-performance
+    rules:
+      - alert: SafeOpsSlowResponses
+        expr: |
+          histogram_quantile(0.95, sum by (le) (rate(safeops_http_request_duration_seconds_bucket[10m]))) > 2
+        for: 15m
+        labels: { severity: ticket }
+        annotations:
+          summary: 95th-percentile API response time has been over 2 s for 15 minutes.
+          runbook: docs/MONITORING.md "Slow queries"; the route label shows which endpoint.
+
+      - alert: SafeOpsEventLoopBlocked
+        expr: nodejs_eventloop_delay_p99_seconds > 0.5
+        for: 10m
+        labels: { severity: ticket }
+        annotations:
+          summary: Requests are waiting over 0.5 s just to be picked up - the API process is saturated.
+
+      - alert: SafeOpsMemoryHigh
+        expr: process_resident_memory_bytes > 1.5e9
+        for: 30m
+        labels: { severity: ticket }
+        annotations:
+          summary: The API process has used over 1.5 GB for half an hour - a leak or an oversized export.
+
+  - name: safeops-background-work
+    rules:
+      - alert: SafeOpsRemindersStalled
+        # The sweep runs every SCHEDULER_INTERVAL_MIN (15 by default); an hour is four missed passes.
+        expr: safeops_job_last_success_age_seconds{job="reminders"} > 3600
+        for: 5m
+        labels: { severity: page }
+        annotations:
+          summary: Overdue-action and expiry reminders have not run for over an hour.
+          runbook: Check the worker - `docker compose ps worker`, `logs worker`.
+
+      - alert: SafeOpsWebhooksStalled
+        expr: safeops_job_last_success_age_seconds{job="webhooks"} > 900
+        for: 5m
+        labels: { severity: ticket }
+        annotations:
+          summary: Webhook delivery has not run for 15 minutes - customer integrations are not being notified.
+
+      - alert: SafeOpsJobFailing
+        expr: safeops_job_last_run_failed == 1
+        for: 30m
+        labels: { severity: ticket }
+        annotations:
+          summary: 'Background job {{ $labels.job }} has been failing for 30 minutes.'
+          runbook: Admin - System Health shows the last error; the worker log has the detail.
