@@ -123,7 +123,7 @@ export function RcaPanel({ incident, onUpdate }: { incident: Incident; onUpdate:
               <div key={i} className="flex items-start gap-2.5">
                 <span
                   className={cn('mt-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-2xs font-bold',
-                    value.trim() ? 'bg-accent text-white' : 'border text-muted')}
+                    value.trim() ? 'bg-accent-solid text-white' : 'border text-muted')}
                 >
                   {i + 1}
                 </span>

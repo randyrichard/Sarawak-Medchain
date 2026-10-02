@@ -48,7 +48,7 @@ export function NotificationMenu() {
         <button className="relative rounded-lg border p-2 text-ink-2 hover:bg-accent-soft coarse:min-h-11 coarse:min-w-11" aria-label={`Notifications${unread ? ` (${unread} unread)` : ''}`}>
           <Bell size={15} />
           {unread > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-critical px-1 text-2xs font-bold text-white">
+            <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-critical-solid px-1 text-2xs font-bold text-white">
               {unread}
             </span>
           )}
@@ -58,8 +58,10 @@ export function NotificationMenu() {
       <div className="flex items-center justify-between px-2.5 py-1.5">
         <p className="text-sm font-semibold text-ink">Notifications</p>
         {unread > 0 && (
-          <button onClick={markAll} className="inline-flex items-center gap-1 text-2xs font-semibold text-accent hover:underline">
-            <CheckCheck size={12} /> Mark all read
+          // A menu item like the rest, so the arrow keys reach it: in a menu, Tab closes
+          // the menu rather than moving to the next button.
+          <button type="button" role="menuitem" tabIndex={-1} onClick={markAll} className="inline-flex rounded focus-visible:outline-none focus:underline items-center gap-1 text-2xs font-semibold text-accent hover:underline">
+            <CheckCheck size={12} aria-hidden /> Mark all read
           </button>
         )}
       </div>

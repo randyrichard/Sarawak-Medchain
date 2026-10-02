@@ -13,10 +13,10 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantCls: Record<Variant, string> = {
-  primary: 'bg-accent text-white hover:bg-accent-hover shadow-card',
+  primary: 'bg-accent-solid text-white hover:bg-accent-solid-hover shadow-card',
   secondary: 'border bg-surface text-ink hover:bg-accent-soft',
   ghost: 'text-ink-2 hover:bg-accent-soft hover:text-ink',
-  danger: 'bg-critical text-white hover:opacity-90 shadow-card',
+  danger: 'bg-critical-solid text-white hover:opacity-90 shadow-card',
 }
 
 /*
@@ -64,10 +64,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     <button
       ref={ref}
       disabled={disabled || loading}
+      // Busy, not just disabled: says the action is under way rather than unavailable.
+      aria-busy={loading || undefined}
       className={buttonClasses(variant, size, className)}
       {...rest}
     >
-      {loading ? <Loader2 size={15} className="animate-spin" /> : icon}
+      {loading ? <Loader2 size={15} className="animate-spin" aria-hidden /> : icon}
       {children}
     </button>
   )

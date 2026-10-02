@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Inbox, Plus, Save, Trash2 } from 'lucide-react'
 import {
-  Alert, Avatar, Badge, Button, Card, CardBody, CardHeader, Checkbox, DataTable, Dialog,
-  Dropdown, DropdownItem, DropdownLabel, DropdownSeparator, EmptyState, Input, PageHeader,
-  Select, Skeleton, SkeletonRows, SkeletonText, StatusPill, Tabs, Textarea, type Column,
+  Alert, AsyncContent, Avatar, Badge, Button, Card, CardBody, CardHeader, Checkbox, DataTable, Dialog,
+  Dropdown, DropdownItem, DropdownLabel, DropdownSeparator, EmptyState, ErrorState, Input, Loading,
+  PageHeader, Select, Skeleton, SkeletonRows, SkeletonText, StatusPill, Tabs, Textarea,
+  type Column, type TabItem,
 } from '@/components/ui'
+import { useAsync } from '@/lib/useAsync'
 import { MiniBars, ScoreRing, Sparkline } from '@/components/charts/Sparkline'
 
 // Living documentation: every primitive, rendered from the same components the
@@ -285,7 +287,16 @@ const DEMO_ROWS: DemoRow[] = [
   { id: 'r4', site: 'Bintulu LNG Terminal', status: 'Intervene', score: 71, trend: [84, 81, 78, 75, 73, 71] },
 ]
 
+type TableState = 'data' | 'loading' | 'empty' | 'error'
+const TABLE_STATES: TabItem<TableState>[] = [
+  { value: 'data', label: 'Data' },
+  { value: 'loading', label: 'Loading' },
+  { value: 'empty', label: 'Empty' },
+  { value: 'error', label: 'Error' },
+]
+
 function TableSection() {
+  const [state, setState] = useState<TableState>('data')
   const columns: Column<DemoRow>[] = [
     { key: 'site', header: 'Site', render: (r) => <span className="text-sm font-medium text-ink">{r.site}</span> },
     {
@@ -302,9 +313,19 @@ function TableSection() {
     { key: 'trend', header: 'Trend', align: 'right', visibility: 'hidden md:table-cell', render: (r) => <Sparkline data={r.trend} width={80} height={22} stroke={r.status === 'Intervene' ? 'var(--critical)' : 'var(--s1)'} /> },
   ]
   return (
-    <Section title="Data table" subtitle="Declarative columns, responsive visibility, one visual standard for all tabular data.">
+    <Section title="Data table" subtitle="Declarative columns, responsive visibility, and every state a request can be in - switch them below.">
+      <Tabs label="Table state" items={TABLE_STATES} value={state} onChange={setState} className="mb-3" />
       <div className="rounded-lg border">
-        <DataTable columns={columns} rows={DEMO_ROWS} rowKey={(r) => r.id} />
+        <DataTable
+          caption="Site safety scores"
+          columns={columns}
+          rows={state === 'data' ? DEMO_ROWS : []}
+          rowKey={(r) => r.id}
+          loading={state === 'loading'}
+          error={state === 'error' ? new Error('The server did not answer in time.') : undefined}
+          onRetry={() => setState('data')}
+          empty={<EmptyState icon={Inbox} title="No sites yet">Add a site to start tracking its score.</EmptyState>}
+        />
       </div>
     </Section>
   )
@@ -320,6 +341,11 @@ function LoadingSection() {
           <Skeleton className="h-16 w-16 rounded-full" />
           <Skeleton className="h-16 flex-1 rounded-xl" />
         </div>
+        <Loading label="Loading reports…"><SkeletonRows rows={1} /></Loading>
+        <div className="rounded-lg border">
+          <ErrorState title="Couldn't load reports" error={new Error('Check your connection and try again.')} onRetry={() => {}} />
+        </div>
+        <AsyncDemo />
         <div className="rounded-lg border">
           <EmptyState
             icon={Inbox}
@@ -331,6 +357,40 @@ function LoadingSection() {
         </div>
       </div>
     </Section>
+  )
+}
+
+/**
+ * `useAsync` + `AsyncContent`, end to end: a request that takes a moment and fails every
+ * other time, so the loading, error-with-retry and loaded states can all be seen.
+ */
+function AsyncDemo() {
+  const calls = useRef(0)
+  const reports = useAsync(
+    () => new Promise<string[]>((resolve, reject) => {
+      const fail = calls.current++ % 2 === 1
+      setTimeout(() => (fail
+        ? reject(new Error('The server did not answer in time.'))
+        : resolve(['Hazard: loose grating, Bay 4', 'Near miss: forklift reversing'])), 900)
+    }),
+    [],
+  )
+  return (
+    <div className="rounded-lg border p-4">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p className="text-xs font-semibold text-ink-2">useAsync + AsyncContent</p>
+        <Button size="sm" variant="secondary" onClick={reports.reload}>Fetch again</Button>
+      </div>
+      <AsyncContent
+        state={reports}
+        loadingLabel="Loading recent reports…"
+        errorTitle="Couldn't load recent reports"
+        isEmpty={(r) => r.length === 0}
+        empty={<EmptyState title="No reports yet" />}
+      >
+        {(rows) => <ul className="space-y-1 text-sm text-ink-2">{rows.map((r) => <li key={r}>{r}</li>)}</ul>}
+      </AsyncContent>
+    </div>
   )
 }
 

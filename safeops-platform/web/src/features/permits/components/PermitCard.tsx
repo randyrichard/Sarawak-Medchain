@@ -22,7 +22,12 @@ export function PermitCard({ permit, onOpen }: { permit: PermitView; onOpen: () 
         'w-full rounded-xl border p-3.5 text-left transition-colors hover:bg-accent-soft/40',
         'focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[color:var(--accent)]',
       )}
-      style={urgent ? { borderColor: 'var(--critical)', background: 'var(--critical-soft)' } : undefined}
+      /*
+       * Urgent is a red border and a solid stripe down the leading edge, not a red tint.
+       * The tint put the card's own red expiry warning on a red ground at 4.2:1, and
+       * dimmed every grey label on it - the urgent card was the hardest one to read.
+       */
+      style={urgent ? { borderColor: 'var(--critical)', boxShadow: 'inset 3px 0 0 var(--critical)' } : undefined}
     >
       <div className="flex items-start gap-2.5">
         <span

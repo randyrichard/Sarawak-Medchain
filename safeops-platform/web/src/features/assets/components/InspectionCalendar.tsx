@@ -80,7 +80,7 @@ export function InspectionCalendar({
           const dayItems = byDay.get(key) ?? []
           return (
             <div key={key} className={cn('min-h-[92px] bg-surface p-1.5', !inMonth && 'opacity-45')}>
-              <span className={cn('inline-flex h-5 w-5 items-center justify-center rounded-full text-2xs font-semibold', key === todayKey ? 'bg-accent text-white' : 'text-ink-2')}>
+              <span className={cn('inline-flex h-5 w-5 items-center justify-center rounded-full text-2xs font-semibold', key === todayKey ? 'bg-accent-solid text-white' : 'text-ink-2')}>
                 {d.getDate()}
               </span>
               <div className="mt-1 space-y-1">
