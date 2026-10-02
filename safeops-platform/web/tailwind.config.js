@@ -105,6 +105,10 @@ export default {
         },
       },
       animation: {
+        // Skeleton placeholders. Tailwind's default is a 2s cycle, which read as a nervous
+        // flicker on pages that show several at once; 3s is a calmer breath. One value here
+        // so every skeleton in the product moves at the same pace.
+        pulse: 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'fade-in': 'fade-in 120ms ease-out',
         'scale-in': 'scale-in 140ms cubic-bezier(0.16, 1, 0.3, 1)',
         rise: 'rise 320ms cubic-bezier(0.16, 1, 0.3, 1) both',
