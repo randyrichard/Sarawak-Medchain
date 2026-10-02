@@ -1,0 +1,20 @@
+# Settings that are not secret. Secrets come from the `safeops-secrets` Secret, which this
+# base does not create - see deploy/k8s/README.md (and secret.example.yaml beside it).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: safeops-config
+data:
+  NODE_ENV: production
+  PORT: "4000"
+  UPLOAD_DIR: /data/uploads
+  # Overridden per environment in the overlay.
+  APP_PUBLIC_URL: https://app.REPLACE_ME.example.com
+  CORS_ORIGINS: https://app.REPLACE_ME.example.com
+  COOKIE_DOMAIN: .REPLACE_ME.example.com
+  # The ingress controller is the only proxy; it reaches pods from the cluster network.
+  TRUST_PROXY: uniquelocal
+  SCHEDULER_INTERVAL_MIN: "15"
+  RATE_LIMIT_PER_MIN: "3000"
+  DB_POOL_SIZE: "10"
+  WORKER_DB_POOL_SIZE: "5"

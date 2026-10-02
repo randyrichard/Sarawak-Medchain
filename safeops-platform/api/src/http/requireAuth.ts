@@ -7,6 +7,8 @@ declare global {
   namespace Express {
     interface Request {
       auth?: AccessClaims
+      /** Set for every request in app.ts; echoed as X-Request-Id and logged as `rid`. */
+      id?: string
     }
   }
 }

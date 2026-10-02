@@ -18,7 +18,9 @@ name: safeops-platform-ci
 
 on:
   push:
-    branches: [main]
+    # feature/permit-to-work is where SafeOps releases are cut from; main is kept for when
+    # it moves there. The release workflow listens for this one finishing green.
+    branches: [main, feature/permit-to-work]
     paths: ['safeops-platform/**', '.github/workflows/safeops-platform-ci.yml']
   pull_request:
     paths: ['safeops-platform/**', '.github/workflows/safeops-platform-ci.yml']
@@ -113,22 +115,72 @@ jobs:
       - name: Dependency vulnerability gate
         run: npm audit --omit=dev --audit-level=high
 
-  # Proves the images still build. Deliberately does not push anywhere: this repository has
-  # no registry wired up, and inventing one would be a deployment decision rather than a
-  # verification.
+  # Proves the images build AND that the production stack built from them boots and serves:
+  # docker-compose.prod.yml, the entrypoint (migrations, the restricted database login),
+  # the worker, nginx - exactly what a server runs - then the same smoke test a deploy ends
+  # with. Publishing images is the release workflow's job, not this one's.
   docker:
     runs-on: ubuntu-latest
     needs: [api, web]
+    defaults:
+      run: { working-directory: safeops-platform }
     steps:
       - uses: actions/checkout@v4
       - name: Build the API image
-        run: docker build -f api/Dockerfile -t safeops-api:ci .
-        working-directory: safeops-platform
+        run: docker build -f api/Dockerfile -t safeops-api:ci -t safeops-api:local .
       - name: Build the web image
-        run: docker build -f web/Dockerfile --build-arg VITE_API_BASE_URL=https://api.example.invalid -t safeops-web:ci .
-        working-directory: safeops-platform
+        run: docker build -f web/Dockerfile --build-arg VITE_API_BASE_URL=https://api.example.invalid -t safeops-web:ci -t safeops-web:local .
       - name: Runtime must not be root
+        working-directory: .
         run: |
           USER_ID=$(docker run --rm --entrypoint sh safeops-api:ci -c 'id -u')
           echo "api image runs as uid $USER_ID"
           test "$USER_ID" != "0"
+
+      # Throwaway configuration for this run only. Nothing here is reused or kept.
+      - name: Boot the production stack
+        run: |
+          {
+            node -e "
+              const { generateKeyPairSync, randomBytes } = require('node:crypto');
+              const { privateKey, publicKey } = generateKeyPairSync('rsa', {
+                modulusLength: 2048,
+                publicKeyEncoding: { type: 'spki', format: 'pem' },
+                privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+              });
+              const b64 = s => Buffer.from(s, 'utf8').toString('base64');
+              console.log('JWT_PRIVATE_KEY_B64=' + b64(privateKey));
+              console.log('JWT_PUBLIC_KEY_B64=' + b64(publicKey));
+              console.log('MFA_SECRET_KEY_B64=' + randomBytes(32).toString('base64'));
+              console.log('POSTGRES_PASSWORD=' + randomBytes(18).toString('hex'));
+              console.log('APP_DB_PASSWORD=' + randomBytes(18).toString('hex'));
+              console.log('METRICS_TOKEN=' + randomBytes(24).toString('hex'));
+            "
+            echo POSTGRES_USER=safeops
+            echo POSTGRES_DB=safeops
+            echo APP_PUBLIC_URL=https://app.safeops-ci.dev
+            echo VITE_API_BASE_URL=https://api.safeops-ci.dev
+            echo CORS_ORIGINS=https://app.safeops-ci.dev
+            echo TRUST_PROXY=false
+          } > .env.prod
+          docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --no-build
+          for _ in $(seq 1 60); do
+            curl -fsS http://localhost:4000/health/ready >/dev/null 2>&1 && exit 0
+            sleep 2
+          done
+          echo "the API did not become ready"; exit 1
+
+      - name: Smoke test the running stack
+        run: deploy/smoke.sh http://localhost:4000 http://localhost:8080
+
+      - name: The API runs as the restricted database login
+        run: docker compose -f docker-compose.prod.yml --env-file .env.prod logs api | grep -q 'restricted database login ready'
+
+      - name: Metrics are served to the token holder
+        run: |
+          TOKEN=$(grep ^METRICS_TOKEN= .env.prod | cut -d= -f2)
+          curl -fsS -H "Authorization: Bearer $TOKEN" http://localhost:4000/metrics | grep -q '^safeops_db_up 1'
+
+      - name: Stack logs (on failure)
+        if: failure()
+        run: docker compose -f docker-compose.prod.yml --env-file .env.prod logs --tail 100

@@ -33,7 +33,9 @@ info "restore from $DUMP"
 [ -f "$MANIFEST" ] && ok "manifest found — the restore will be verified against it" || warn "no manifest — the restore cannot be verified against expected counts"
 
 # Readable before anything is dropped.
-$DC exec -T db pg_restore --list /dev/stdin < "$DUMP" >/dev/null 2>&1 \
+# No filename: pg_restore then reads the archive from stdin. Naming /dev/stdin instead made
+# it read nothing through `docker compose exec`, so every valid dump "failed" this check.
+$DC exec -T db pg_restore --list < "$DUMP" >/dev/null 2>&1 \
   || die "pg_restore cannot read this file. Do not proceed — the live database is intact."
 ok "the dump is readable"
 

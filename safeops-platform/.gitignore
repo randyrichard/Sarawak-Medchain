@@ -17,3 +17,6 @@
 # volume, never in the repository. A .gitkeep preserves the directory itself.
 uploads/*
 !uploads/.gitkeep
+
+# deploy/deployment.sh records which release it replaced, for rollback.sh.
+.releases/

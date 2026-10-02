@@ -196,6 +196,14 @@ const schema = z.object({
   PROXY_TOKEN: z.preprocess((v) => (v === '' ? undefined : v), z.string().min(16).optional()),
 
   /*
+   * Bearer token for GET /metrics (Prometheus format, see lib/metrics.ts). Unset means the
+   * endpoint does not exist - it answers 404 - so nothing is exposed by default. The
+   * metrics name routes and count errors; they hold no customer data, but they describe
+   * the deployment, which is not for the public.
+   */
+  METRICS_TOKEN: z.preprocess((v) => (v === '' ? undefined : v), z.string().min(24).optional()),
+
+  /*
    * Deliberately still declared, so that a deployment carrying the old variable fails loudly
    * rather than silently reverting to the behaviour it was set for. See the check below.
    */

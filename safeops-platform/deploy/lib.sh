@@ -41,6 +41,22 @@ require_env() {
   if [ -n "${SAFEOPS_APP_DOMAIN:-}" ]; then
     DC="$DC --profile tls"
   fi
+  # Image repositories. Local names by default; a registry path (ghcr.io/owner/safeops-api)
+  # when releases are pulled rather than built - see docs/PRODUCTION_PLATFORM.md.
+  # shellcheck disable=SC2034  # used by the scripts that source this file
+  API_REPO="${SAFEOPS_API_IMAGE:-safeops-api}"
+  # shellcheck disable=SC2034
+  WEB_REPO="${SAFEOPS_WEB_IMAGE:-safeops-web}"
+  # The containers always run `:local`; a release is chosen by what `:local` points at.
+  # Exported so a stray SAFEOPS_VERSION in the env file cannot point compose elsewhere.
+  export SAFEOPS_VERSION=local
+}
+
+# The image a running service's container was created from, by id, or empty.
+running_image() {
+  local cid
+  cid="$($DC ps -q "$1" 2>/dev/null | head -n1)"
+  [ -n "$cid" ] && docker inspect --format '{{.Image}}' "$cid" 2>/dev/null || true
 }
 
 # Waits for the API to report ready rather than merely alive: readiness checks the
