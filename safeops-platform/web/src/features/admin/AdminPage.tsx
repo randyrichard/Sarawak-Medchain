@@ -70,7 +70,7 @@ export function AdminPage() {
           section beside them was clipped off-screen - taking the row actions with it.
         */}
         <nav className="min-w-0 lg:sticky lg:top-4 lg:self-start">
-          <div className="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:gap-0.5 lg:overflow-visible">
+          <div className="flex gap-1 relative overflow-x-auto pb-1 lg:flex-col lg:gap-0.5 lg:overflow-visible">
             {groups.map((g) => (
               <div key={g} className="contents lg:block">
                 <p className="hidden px-3 pb-1 pt-3 text-2xs font-bold uppercase tracking-wider text-muted lg:block">{g}</p>

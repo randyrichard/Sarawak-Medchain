@@ -102,7 +102,7 @@ function KeysPanel() {
       </div>
       <Card>
         {keys === null ? <div className="space-y-3 p-5">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div> : (
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table className="w-full min-w-[720px] text-left">
               <thead>
                 <tr className="border-b text-2xs uppercase tracking-wide text-muted">

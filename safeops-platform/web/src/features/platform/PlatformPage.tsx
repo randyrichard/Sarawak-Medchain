@@ -194,7 +194,7 @@ export function PlatformPage() {
           )}
 
           {companies && companies.length > 0 && (
-            <div className="overflow-x-auto">
+            <div className="relative overflow-x-auto">
               <ul className="divide-y divide-line">
                 {companies.map((c) => {
                   const status = companyStatusBadge(c.status)

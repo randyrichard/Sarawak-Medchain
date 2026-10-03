@@ -230,7 +230,7 @@ export function EmployeesPage() {
               : 'Add your workforce so actions, permits and certificates can be assigned to real people.'}
           </EmptyState>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="border-b text-2xs uppercase tracking-wide text-muted">
                 <tr>

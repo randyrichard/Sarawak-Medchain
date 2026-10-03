@@ -86,7 +86,7 @@ export function RolesSection() {
             subtitle={role?.description}
             right={role && !role.system ? <Button size="sm" variant="ghost" icon={<Trash2 size={12} />} onClick={() => void removeRole()}>Delete role</Button> : undefined}
           />
-          <CardBody className="overflow-x-auto">
+          <CardBody className="relative overflow-x-auto">
             {role?.id === 'admin' && (
               <Alert tone="info" className="mb-3">The Administrator role always has full access and cannot be reduced.</Alert>
             )}

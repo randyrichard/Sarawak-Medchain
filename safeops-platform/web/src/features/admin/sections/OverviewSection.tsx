@@ -55,16 +55,19 @@ export function OverviewSection() {
           <CardHeader title="Background jobs" subtitle="Scheduled workers keeping the platform current" />
           <CardBody className="space-y-2">
             {health.jobs.map((j) => (
-              <div key={j.id} className="flex items-center gap-3 rounded-lg border px-3.5 py-2.5">
+              // Wraps on a phone: the text keeps at least 11rem, and the time and status
+              // drop below it. Squeezed onto one line, a 30px text column let the job's
+              // description spill across "not yet run".
+              <div key={j.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border px-3.5 py-2.5">
                 <Cpu size={15} className="shrink-0 text-muted" />
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 basis-44 [overflow-wrap:anywhere]">
                   <p className="text-sm font-medium text-ink">{j.name}</p>
                   <p className="text-2xs text-muted">{j.detail} · {j.schedule}</p>
                 </div>
                 {/* A job with no lastRun has never run — there is no scheduler in this
                     build. Formatting null as a date gave "ran 20663d ago", and a green
                     OK beside it claimed a worker was healthy that had never started. */}
-                <span className="text-2xs text-muted">
+                <span className="whitespace-nowrap text-2xs text-muted">
                   {j.lastRun ? `ran ${timeAgo(j.lastRun)}` : 'not yet run'}
                 </span>
                 <StatusPill

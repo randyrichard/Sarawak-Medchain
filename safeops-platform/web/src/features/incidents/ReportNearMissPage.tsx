@@ -152,7 +152,7 @@ export function ReportNearMissPage() {
   }
 
   return (
-    <div className="mx-auto max-w-lg py-2">
+    <div className="group/nm mx-auto max-w-lg py-2">
       <div className="mb-4 flex items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-soft">
           <ShieldAlert size={19} className="text-accent" />
@@ -264,8 +264,14 @@ export function ReportNearMissPage() {
         </div>
       </Card>
 
-      {/* Single primary action, thumb-reachable */}
-      <div className="sticky bottom-0 mt-4 bg-page pb-2 pt-2">
+      {/*
+        Single primary action, thumb-reachable - pinned to the bottom while reading, but not
+        while typing. With the keyboard up the screen is a third of its height, and a pinned
+        bar sat on top of the very field being filled in ("Where was it?" was hidden on every
+        phone tested). So it stops pinning while a text field has focus, and on short
+        (landscape) screens, and simply follows the form.
+      */}
+      <div className="sticky bottom-0 mt-4 bg-page pb-2 pt-2 short:static group-has-[input:focus,textarea:focus]/nm:static">
         <Button
           className="min-h-[44px] w-full"
           size="lg"

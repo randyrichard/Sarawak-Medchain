@@ -171,7 +171,7 @@ export function SitesSection() {
             overflow-x-auto as a backstop for anything unexpectedly wide.
           */}
           {visible.length > 0 && (
-            <div className="overflow-x-auto">
+            <div className="relative overflow-x-auto">
               <ul className="divide-y divide-line">
                 {visible.map((s) => (
                   <li key={s.id} className="flex flex-wrap items-start justify-between gap-2 py-2.5">

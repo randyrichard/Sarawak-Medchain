@@ -208,7 +208,7 @@ export function InvitationsSection() {
           )}
 
           {rows && rows.length > 0 && (
-            <div className="overflow-x-auto">
+            <div className="relative overflow-x-auto">
               <ul className="divide-y divide-line">
                 {rows.map((inv) => {
                   const state = invitationState(inv.state)

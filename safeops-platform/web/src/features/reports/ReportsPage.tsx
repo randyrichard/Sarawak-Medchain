@@ -392,7 +392,7 @@ export function ReportsPage() {
                       </p>
                     ) : (
                       // Wide tables scroll inside their own container; the page never does.
-                      <div className="overflow-x-auto">
+                      <div className="relative overflow-x-auto">
                         <table className="w-full min-w-[760px] text-2xs">
                           <thead>
                             <tr className="border-b text-left text-muted">

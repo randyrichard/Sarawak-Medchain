@@ -27,9 +27,15 @@ import { Button } from './Button'
  *    carrying on into the page behind.
  */
 export const DIALOG_LAYOUT = {
-  panel: 'relative flex max-h-full w-full flex-col animate-scale-in rounded-xl border bg-surface shadow-modal',
+  /*
+   * `short:` - on a short screen (landscape, or the keyboard up) the pinned header and footer
+   * took all of the height: the body shrank to nothing, and the field being typed into sat
+   * below the panel's edge with no way to scroll to it. There the whole panel scrolls as one
+   * instead, header and buttons included.
+   */
+  panel: 'relative flex max-h-full w-full flex-col animate-scale-in rounded-xl border bg-surface shadow-modal short:overflow-y-auto short:overscroll-contain',
   header: 'flex shrink-0 items-start justify-between gap-4 px-5 pb-1 pt-4',
-  body: 'min-h-0 overflow-y-auto overscroll-contain px-5 py-3',
+  body: 'min-h-0 overflow-y-auto overscroll-contain px-5 py-3 short:min-h-fit short:overflow-visible',
   footer: 'flex shrink-0 justify-end gap-2 border-t px-5 py-3',
   /** Sits directly on top of the footer, so it is pinned with it and never scrolls away. */
   error: 'shrink-0 border-t px-5 pt-3',
@@ -151,7 +157,7 @@ export function Dialog({
 
   if (!open) return null
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 short:p-2">
       <div className="absolute inset-0 animate-fade-in bg-black/40" onClick={onClose} aria-hidden />
       <div
         ref={panelRef}

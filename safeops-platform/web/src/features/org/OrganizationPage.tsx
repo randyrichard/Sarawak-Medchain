@@ -147,10 +147,12 @@ function SiteNode({
 }) {
   return (
     <li className="rounded-lg border">
-      <button onClick={onToggle} className="flex w-full items-center gap-3 px-3.5 py-3 text-left hover:bg-accent-soft/40">
+      {/* Wraps on a phone: the name keeps at least 10rem and the count drops below it,
+          rather than the name squeezing to a word per line and running into the badge. */}
+      <button onClick={onToggle} className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 px-3.5 py-3 text-left hover:bg-accent-soft/40">
         <ChevronRight size={15} className={cn('shrink-0 text-muted transition-transform', open && 'rotate-90')} />
         <Building2 size={16} className="shrink-0 text-accent" />
-        <span className="min-w-0 flex-1">
+        <span className="min-w-0 flex-1 basis-40">
           <span className="block text-sm font-semibold text-ink">{site.name}</span>
           <span className="block text-2xs text-muted">{site.city} · {site.headcount.toLocaleString()} workers · {site.timezone}</span>
         </span>
@@ -274,7 +276,7 @@ function RolesView() {
         subtitle="Deny-by-default. Every route and API call checks a capability, not a role name."
         right={myRole ? <Badge tone="accent">You are: {ROLE_LABEL[myRole]}</Badge> : undefined}
       />
-      <CardBody className="overflow-x-auto">
+      <CardBody className="relative overflow-x-auto">
         <table className="w-full min-w-[720px] text-left">
           <thead>
             <tr className="border-b text-2xs uppercase tracking-wide text-muted">

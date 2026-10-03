@@ -127,7 +127,7 @@ export function UsersSection() {
         ) : users.length === 0 ? (
           <EmptyState icon={UserX} title="No users match">Adjust the filters or create a user.</EmptyState>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table className="w-full min-w-[820px] text-left">
               <thead>
                 <tr className="border-b text-2xs uppercase tracking-wide text-muted">

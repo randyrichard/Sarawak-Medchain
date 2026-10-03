@@ -151,7 +151,7 @@ export function ActionsTable({
       </div>
 
       <Card>
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
           <table className="w-full min-w-[980px] text-left">
             <thead>
               <tr className="border-b text-2xs uppercase tracking-wide text-muted">

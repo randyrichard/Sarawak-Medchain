@@ -156,7 +156,7 @@ function LoginsPanel() {
   return (
     <Card>
       <CardHeader title="Login history" subtitle="Every sign-in attempt across the tenant" right={<Button size="sm" variant="ghost" onClick={exportCsv}>Export</Button>} />
-      <div className="overflow-x-auto">
+      <div className="relative overflow-x-auto">
         <table className="w-full min-w-[760px] text-left">
           <thead>
             <tr className="border-b text-2xs uppercase tracking-wide text-muted">

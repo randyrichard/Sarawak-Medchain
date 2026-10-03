@@ -93,7 +93,7 @@ export function Tabs<T extends string>({
       aria-label={label}
       aria-orientation="horizontal"
       onKeyDown={onKeyDown}
-      className={cn('flex min-w-0 items-center gap-1 overflow-x-auto border-b', className)}
+      className={cn('flex min-w-0 items-center gap-1 relative overflow-x-auto border-b', className)}
     >
       {items.map((item) => {
         const active = item.value === value
