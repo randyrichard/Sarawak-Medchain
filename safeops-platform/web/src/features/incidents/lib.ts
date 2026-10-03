@@ -146,3 +146,43 @@ const SEVERITY_WEIGHT: Record<string, number> = {
   Minor: 7, near_miss: 6,
 }
 export const severityWeight = (s: Incident['severity']): number => SEVERITY_WEIGHT[s] ?? 0
+
+/**
+ * The incident types, in groups - Hick's law.
+ *
+ * Decision time grows with the number of choices, and for a list nobody has memorised it
+ * grows *linearly*: the person reads tile after tile until one fits. The report form showed
+ * all seventeen types as one flat grid in storage order ("Near Miss, First Aid Case, Medical
+ * Treatment Case, …, Equipment Failure"), so somebody reporting a chemical spill read
+ * fourteen tiles to find it - at the moment they are most likely to be shaken.
+ *
+ * Grouping turns one seventeen-way choice into two small ones: first the kind of event,
+ * which anyone can answer at a glance ("was anybody hurt?"), then one of at most seven types
+ * inside it. Within each group the commonest come first, so the usual answer is near the
+ * top of the place the eye lands.
+ *
+ * Every type appears exactly once; the test beside this file holds that, because a type
+ * missing from here could not be reported at all.
+ */
+export const INCIDENT_TYPE_GROUPS: { label: string; hint: string; types: IncidentType[] }[] = [
+  {
+    label: 'Someone was hurt or made ill',
+    hint: 'Any injury or illness, however minor',
+    types: ['first_aid', 'injury', 'mtc', 'rwc', 'lti', 'occupational_illness', 'fatality'],
+  },
+  {
+    label: 'Nobody was hurt, but could have been',
+    hint: 'Near misses and hazards',
+    types: ['near_miss', 'unsafe_condition', 'unsafe_act'],
+  },
+  {
+    label: 'Plant, property or environment',
+    hint: 'Damage, failures, spills, fires and vehicles',
+    types: ['equipment_failure', 'property_damage', 'vehicle', 'chemical_spill', 'fire', 'environmental'],
+  },
+  {
+    label: 'Security',
+    hint: 'Theft or intrusion',
+    types: ['security'],
+  },
+]

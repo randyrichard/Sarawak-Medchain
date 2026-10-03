@@ -16,9 +16,34 @@ import { CompanySwitcher } from './Switchers'
 import { KeyboardShortcuts } from './KeyboardShortcuts'
 import { Badge, FullPageSpinner } from '@/components/ui'
 
+/**
+ * Sidebar sections - Hick's law.
+ *
+ * An administrator saw seventeen items in one flat column. With nothing to separate them
+ * the column is read top to bottom every time, and the time to find "Training" grows with
+ * everything above it. Five small labelled groups turn that into two quick choices - which
+ * area, then which page - and give the eye landmarks to jump to. Each group holds at most
+ * four, the size people take in at a glance.
+ *
+ * The everyday items (home, report a near miss, notifications) have no heading and stay at
+ * the top: they are what most people open most often, and the cheapest choice is the one
+ * already in front of you.
+ */
+type NavGroup = 'Incidents' | 'Operations' | 'People' | 'Assurance' | 'Workspace'
+export const NAV_GROUPS: NavGroup[] = ['Incidents', 'Operations', 'People', 'Assurance', 'Workspace']
+
+/**
+ * Below this many visible items the sidebar stays one flat list. A worker who can open four
+ * pages gains nothing from four headings over them - grouping pays only once the list is
+ * long enough to need scanning.
+ */
+export const GROUP_NAV_ABOVE = 7
+
 interface NavItem {
   to: string
   label: string
+  /** The section it sits under. None: the everyday items at the top. */
+  group?: NavGroup
   icon: typeof LayoutDashboard
   capability: Capability
   /** future-sprint modules render locked, communicating the roadmap */
@@ -35,11 +60,13 @@ interface NavItem {
   notFor?: string[]
 }
 
-const NAV: NavItem[] = [
+export const NAV: NavItem[] = [
   { to: '/', label: 'Mission Control', icon: LayoutDashboard, capability: 'dashboard:view', end: true },
   // Near-miss capture sits in the nav because under-reporting is driven by friction and
   // forgetting (customer research P1) — it has to be one tap from anywhere.
   { to: '/near-miss', label: 'Report Near Miss', icon: ShieldAlert, capability: 'reports:submit' },
+  // Everyone gets told what needs them.
+  { to: '/notifications', label: 'Notifications', icon: Bell, capability: 'dashboard:view' },
   /*
    * Each item asks for the capability it actually needs.
    *
@@ -52,22 +79,20 @@ const NAV: NavItem[] = [
    * Incidents deliberately asks for `:view`, not `:manage`. Reporting one is everybody's
    * job; triaging it is not, and the difference belongs in the page rather than the menu.
    */
-  { to: '/incidents', label: 'Incidents', icon: ClipboardList, capability: 'incidents:view', notFor: ['/incidents/board'] },
-  { to: '/incidents/board', label: 'Incident board', icon: LayoutDashboard, capability: 'incidents:view' },
-  { to: '/actions', label: 'Actions', icon: ListChecks, capability: 'actions:manage' },
-  { to: '/assets', label: 'Assets', icon: Boxes, capability: 'equipment:view' },
-  { to: '/permits', label: 'Permits', icon: HardHat, capability: 'permits:view' },
-  { to: '/visitors', label: 'Visitors', icon: UserCheck, capability: 'visitors:view' },
-  { to: '/toolbox', label: 'Toolbox meetings', icon: Megaphone, capability: 'toolbox:view' },
-  { to: '/reports', label: 'Reports', icon: FileText, capability: 'reports:view' },
-  { to: '/audits', label: 'Compliance', icon: ShieldCheck, capability: 'compliance:manage' },
-  { to: '/training', label: 'Training', icon: GraduationCap, capability: 'training:view' },
-  { to: '/employees', label: 'Workforce', icon: Users, capability: 'workforce:view' },
-  { to: '/contractors', label: 'Contractors', icon: HardHat, capability: 'workforce:view' },
-  // Everyone gets told what needs them.
-  { to: '/notifications', label: 'Notifications', icon: Bell, capability: 'dashboard:view' },
-  { to: '/organization', label: 'Organization', icon: Building2, capability: 'org:view' },
-  { to: '/admin', label: 'Administration', icon: SlidersHorizontal, capability: 'settings:manage' },
+  { to: '/incidents', label: 'Incidents', icon: ClipboardList, capability: 'incidents:view', notFor: ['/incidents/board'], group: 'Incidents' },
+  { to: '/incidents/board', label: 'Incident board', icon: LayoutDashboard, capability: 'incidents:view', group: 'Incidents' },
+  { to: '/actions', label: 'Actions', icon: ListChecks, capability: 'actions:manage', group: 'Incidents' },
+  { to: '/assets', label: 'Assets', icon: Boxes, capability: 'equipment:view', group: 'Operations' },
+  { to: '/permits', label: 'Permits', icon: HardHat, capability: 'permits:view', group: 'Operations' },
+  { to: '/visitors', label: 'Visitors', icon: UserCheck, capability: 'visitors:view', group: 'Operations' },
+  { to: '/toolbox', label: 'Toolbox meetings', icon: Megaphone, capability: 'toolbox:view', group: 'Operations' },
+  { to: '/reports', label: 'Reports', icon: FileText, capability: 'reports:view', group: 'Assurance' },
+  { to: '/audits', label: 'Compliance', icon: ShieldCheck, capability: 'compliance:manage', group: 'Assurance' },
+  { to: '/training', label: 'Training', icon: GraduationCap, capability: 'training:view', group: 'People' },
+  { to: '/employees', label: 'Workforce', icon: Users, capability: 'workforce:view', group: 'People' },
+  { to: '/contractors', label: 'Contractors', icon: HardHat, capability: 'workforce:view', group: 'People' },
+  { to: '/organization', label: 'Organization', icon: Building2, capability: 'org:view', group: 'Workspace' },
+  { to: '/admin', label: 'Administration', icon: SlidersHorizontal, capability: 'settings:manage', group: 'Workspace' },
 ]
 
 /**
@@ -235,43 +260,70 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <CompanySwitcher />
       </div>
 
-      <nav className="flex-1 space-y-0.5 px-3 pt-1">
-        {NAV.filter((item) => allowed(item.capability)).map((item) =>
-          item.locked ? (
-            <div
-              key={item.to}
-              aria-disabled
-              className="flex cursor-not-allowed items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-muted opacity-70"
-              title={`Ships in ${item.locked}`}
-            >
-              <item.icon size={16} />
-              <span className="flex-1">{item.label}</span>
-              <Badge tone="neutral" className="gap-1"><Lock size={9} /> {item.locked}</Badge>
-            </div>
-          ) : (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              onClick={onNavigate}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors coarse:min-h-11',
-                  own(item, isActive)
-                    ? 'bg-accent-soft text-ink'
-                    : 'text-ink-2 hover:bg-accent-soft/60 hover:text-ink',
+      {/*
+        `min-h-0 overflow-y-auto`: on a short screen the list scrolls inside the sidebar
+        instead of pushing the company footer off the bottom. A full administrator list with
+        its section headings is taller than a 900px laptop window.
+      */}
+      <nav aria-label="Main" className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-3 pb-2 pt-1">
+        {(() => {
+          const visible = NAV.filter((item) => allowed(item.capability))
+          const renderItem = (item: NavItem) =>
+            item.locked ? (
+              <div
+                key={item.to}
+                aria-disabled
+                className="flex cursor-not-allowed items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-muted opacity-70"
+                title={`Ships in ${item.locked}`}
+              >
+                <item.icon size={16} />
+                <span className="flex-1">{item.label}</span>
+                <Badge tone="neutral" className="gap-1"><Lock size={9} /> {item.locked}</Badge>
+              </div>
+            ) : (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                onClick={onNavigate}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors coarse:min-h-11',
+                    own(item, isActive)
+                      ? 'bg-accent-soft text-ink'
+                      : 'text-ink-2 hover:bg-accent-soft/60 hover:text-ink',
+                  )
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <item.icon size={16} className={own(item, isActive) ? 'text-accent' : 'text-muted'} />
+                    <span className="flex-1">{item.label}</span>
+                  </>
+                )}
+              </NavLink>
+            )
+          // Short lists stay flat; see GROUP_NAV_ABOVE.
+          if (visible.length <= GROUP_NAV_ABOVE) return visible.map(renderItem)
+          return (
+            <>
+              {visible.filter((i) => !i.group).map(renderItem)}
+              {NAV_GROUPS.map((group) => {
+                const items = visible.filter((i) => i.group === group)
+                if (items.length === 0) return null
+                const headingId = `nav-group-${group.toLowerCase()}`
+                return (
+                  <div key={group} role="group" aria-labelledby={headingId} className="pt-2.5">
+                    <p id={headingId} className="px-3 pb-1 text-2xs font-semibold uppercase tracking-widest text-muted">
+                      {group}
+                    </p>
+                    <div className="space-y-0.5">{items.map(renderItem)}</div>
+                  </div>
                 )
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <item.icon size={16} className={own(item, isActive) ? 'text-accent' : 'text-muted'} />
-                  <span className="flex-1">{item.label}</span>
-                </>
-              )}
-            </NavLink>
-          ),
-        )}
+              })}
+            </>
+          )
+        })()}
 
         {/*
           SafeOps staff tools, kept out of the customer's navigation.

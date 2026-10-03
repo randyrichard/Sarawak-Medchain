@@ -178,7 +178,14 @@ export function SiteSwitcher() {
           </span>
         </DropdownItem>
       )}
-      {sites.map((s) => (
+      {/*
+        Alphabetical. In the order the server returned them, finding a site meant reading
+        the list until it turned up; sorted, the eye jumps to the right letter - the
+        difference between scanning (linear in the number of sites) and choosing among
+        known options (logarithmic). Hick's law only holds for the second. With the
+        type-ahead in Dropdown, pressing a letter now lands on that part of the list too.
+      */}
+      {[...sites].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })).map((s) => (
         <DropdownItem key={s.id} onSelect={() => switchSite(s.id)}>
           <span className="flex w-full items-center justify-between gap-2">
             <span className="min-w-0">

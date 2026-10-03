@@ -7,13 +7,13 @@ import {
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import type { AttachmentKind, IncidentSeverity, IncidentType, NewIncidentInput, PersonInvolved } from '@/api/incidents'
-import { INCIDENT_TYPES, SEVERITY_LABEL, TYPE_LABEL } from '@/api/incidents'
+import { SEVERITY_LABEL, TYPE_LABEL } from '@/api/incidents'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useOrg } from '@/features/org/OrgContext'
 import { useDepartments } from '@/features/org/departments'
 import { Alert, Badge, Breadcrumbs, Button, Card, Checkbox, Input, SuggestSelect, LinkButton, Select, Textarea } from '@/components/ui'
 import { usePageTitle } from '@/app/pageTitle'
-import { severityKind, SITE_COORDS, TYPE_ICON, useActor } from './lib'
+import { INCIDENT_TYPE_GROUPS, severityKind, SITE_COORDS, TYPE_ICON, useActor } from './lib'
 import { enqueue, shouldRetry } from './outbox'
 import { StatusPill } from '@/components/ui'
 import { cn } from '@/lib/cn'
@@ -23,7 +23,8 @@ const STEPS = ['What happened', 'Where & who', 'Details & evidence', 'Review & s
 interface Draft {
   step: number
   type: IncidentType | null
-  severity: IncidentSeverity
+  /** Empty until the reporter chooses - see the note on emptyDraft. */
+  severity: IncidentSeverity | ''
   title: string
   occurredAt: string
   siteId: string
@@ -46,7 +47,15 @@ interface Draft {
 const emptyDraft = (): Draft => ({
   step: 0,
   type: null,
-  severity: 'Minor',
+  /*
+   * No default. This was 'Minor', and a default is the strongest nudge a form has: it is
+   * the one answer that needs no decision at all (Hyman's refinement of Hick's law - the
+   * likely option is chosen fastest), so a pre-filled "Minor" quietly became the answer for
+   * anyone in a hurry. For severity that is the wrong way to be wrong: an under-classified
+   * incident skips the escalation and investigation its real severity would trigger. Four
+   * options cost a second to choose from; the reporter makes that choice on purpose.
+   */
+  severity: '',
   title: '',
   occurredAt: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16),
   siteId: '',
@@ -125,7 +134,7 @@ export function ReportIncidentPage() {
 
   const stepValid = useMemo(() => {
     switch (step) {
-      case 0: return draft.type !== null && draft.title.trim().length >= 8 && !!draft.occurredAt
+      case 0: return draft.type !== null && draft.severity !== '' && draft.title.trim().length >= 8 && !!draft.occurredAt
       case 1: return !!draft.siteId && draft.department.trim() !== '' && draft.location.trim() !== ''
       case 2: return draft.description.trim().length >= 30 && draft.immediateActions.trim() !== ''
       case 3: return draft.signature.trim().length >= 5 && draft.attested
@@ -160,7 +169,7 @@ export function ReportIncidentPage() {
   }
 
   const submit = async () => {
-    if (!company || !draft.type) return
+    if (!company || !draft.type || !draft.severity) return
     setSubmitting(true)
     setError(null)
     const input: NewIncidentInput = {
@@ -321,36 +330,58 @@ export function ReportIncidentPage() {
         {/* STEP 0 — what happened */}
         {step === 0 && (
           <div className="animate-rise space-y-5">
-            <div>
-              <p className="mb-2 text-xs font-semibold text-ink-2">
-                Incident type <span className="text-critical">*</span>
+            {/*
+              Grouped, not one flat grid of seventeen - see INCIDENT_TYPE_GROUPS (Hick's law).
+              A fieldset per group, so a screen reader announces "Someone was hurt or made
+              ill" before the types inside it, the same chunking a sighted person gets.
+            */}
+            <div role="group" aria-labelledby="incident-type-label">
+              <p id="incident-type-label" className="mb-2 text-xs font-semibold text-ink-2">
+                Incident type <span aria-hidden className="text-critical">*</span>
+                <span className="ml-1.5 font-normal text-muted">Start with what happened, then pick the closest match.</span>
               </p>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-                {INCIDENT_TYPES.map((t) => {
-                  const Icon = TYPE_ICON[t]
-                  const active = draft.type === t
-                  return (
-                    <button
-                      key={t}
-                      onClick={() => patch({ type: t })}
-                      aria-pressed={active}
-                      className={cn(
-                        'flex flex-col items-start gap-1.5 rounded-xl border p-3 text-left transition-all hover:-translate-y-0.5',
-                        active ? 'bg-accent-soft shadow-card' : 'hover:bg-accent-soft/40',
-                      )}
-                      style={active ? { borderColor: 'var(--accent)' } : undefined}
-                    >
-                      <Icon size={16} className={active ? 'text-accent' : 'text-muted'} />
-                      <span className="text-xs font-medium leading-tight text-ink">{TYPE_LABEL[t]}</span>
-                    </button>
-                  )
-                })}
+              <div className="space-y-3">
+                {INCIDENT_TYPE_GROUPS.map((group) => (
+                  <fieldset key={group.label} className="rounded-xl border p-3">
+                    <legend className="px-1 text-xs font-semibold text-ink">
+                      {group.label}
+                      <span className="ml-1.5 font-normal text-muted">{group.hint}</span>
+                    </legend>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+                      {group.types.map((t) => {
+                        const Icon = TYPE_ICON[t]
+                        const active = draft.type === t
+                        return (
+                          <button
+                            key={t}
+                            type="button"
+                            onClick={() => patch({ type: t })}
+                            aria-pressed={active}
+                            className={cn(
+                              'flex items-center gap-2 rounded-lg border p-2.5 text-left transition-all hover:-translate-y-0.5',
+                              active ? 'bg-accent-soft shadow-card' : 'hover:bg-accent-soft/40',
+                            )}
+                            style={active ? { borderColor: 'var(--accent)' } : undefined}
+                          >
+                            <Icon size={15} aria-hidden className={cn('shrink-0', active ? 'text-accent' : 'text-muted')} />
+                            <span className="text-xs font-medium leading-tight text-ink">{TYPE_LABEL[t]}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </fieldset>
+                ))}
               </div>
               {touchedNext && !draft.type && <p className="mt-1.5 text-xs font-medium text-critical" role="alert">Pick the type that fits best.</p>}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <Select label="Severity" required value={draft.severity} onChange={(e) => patch({ severity: e.target.value as IncidentSeverity })}>
+              <Select
+                label="Severity" required value={draft.severity}
+                onChange={(e) => patch({ severity: e.target.value as IncidentSeverity })}
+                error={touchedNext && draft.severity === '' ? 'Choose how serious it was.' : undefined}
+              >
+                <option value="" disabled>Choose severity…</option>
                 {(['Minor', 'Moderate', 'Serious', 'Critical'] as const).map((s) => (
                   <option key={s} value={s}>{s}</option>
                 ))}
@@ -582,7 +613,7 @@ export function ReportIncidentPage() {
             {error && <Alert tone="critical" title="Couldn't submit">{error}</Alert>}
             <div className="rounded-xl border">
               <div className="flex flex-wrap items-center gap-2 border-b px-4 py-3">
-                <StatusPill kind={severityKind(draft.severity)} label={SEVERITY_LABEL[draft.severity] ?? draft.severity} />
+                {draft.severity && <StatusPill kind={severityKind(draft.severity)} label={SEVERITY_LABEL[draft.severity] ?? draft.severity} />}
                 <Badge tone="accent">{TYPE_LABEL[draft.type]}</Badge>
                 <span className="text-2xs text-muted">number assigned on submit</span>
               </div>
