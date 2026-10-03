@@ -129,7 +129,7 @@ export function JsaTable({
           </p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
+        <div className="relative overflow-x-auto rounded-lg border">
           <table className="w-full min-w-[46rem] text-left text-sm">
             <thead className="border-b bg-sunken text-2xs uppercase tracking-wide text-muted">
               <tr>

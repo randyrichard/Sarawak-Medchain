@@ -63,7 +63,7 @@ export function NeedsAttention({
         }
       />
 
-      <div className="flex gap-1 overflow-x-auto px-5 pb-2 pt-1">
+      <div className="flex gap-1 relative overflow-x-auto px-5 pb-2 pt-1">
         {TABS.map((t) => {
           const count = items ? filterAttention(items, t.value).length : 0
           return (

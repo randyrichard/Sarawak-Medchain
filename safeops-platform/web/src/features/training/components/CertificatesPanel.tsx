@@ -82,7 +82,7 @@ export function CertificatesPanel({
         {rows.length === 0 ? (
           <EmptyState icon={BadgeCheck} title="No certificates match">Certificates are issued when a training session is passed.</EmptyState>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table className="w-full min-w-[840px] text-left">
               <thead>
                 <tr className="border-b text-2xs uppercase tracking-wide text-muted">

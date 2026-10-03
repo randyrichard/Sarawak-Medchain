@@ -169,7 +169,9 @@ function TileRow({ tiles, label }: { tiles: Tile[]; label: string }) {
           <Card className="h-full px-4 py-3" style={attentionStripe(attentionOf(t.tone))}>
             <p className="text-2xs font-semibold text-ink-2">{t.label}</p>
             <p
-              className="mt-0.5 flex items-center gap-1.5 text-2xl font-semibold tracking-tight"
+              // Scales down on a narrow phone: "9,597,512" at 24px is wider than a
+              // two-up tile on a 320-412px screen and ran past the card's edge.
+              className="mt-0.5 flex items-center gap-1.5 text-[clamp(1.125rem,5.5vw,1.5rem)] font-semibold tracking-tight"
               style={{ color: t.tone ?? 'var(--ink)', fontVariantNumeric: 'tabular-nums' }}
             >
               {t.value}
@@ -320,11 +322,14 @@ function MonthTable({ data }: { data: PerformanceView }) {
     return () => { window.removeEventListener('beforeprint', before); window.removeEventListener('afterprint', after) }
   }, [])
   return (
-    <details ref={ref} className="mt-3 group">
+    // `overflow-hidden`: Chrome keeps a closed <details>'s contents laid out (hidden, not
+    // removed), and the 560px table inside widened the whole page to 516px on a phone -
+    // which zoomed the page out - even though the table sits in its own scroll box.
+    <details ref={ref} className="group mt-3 max-w-full overflow-hidden">
       <summary className="cursor-pointer select-none text-xs font-semibold text-accent hover:underline coarse:py-3 print:hidden">
         Show the figures as a table
       </summary>
-      <div className="mt-2 overflow-x-auto" tabIndex={0} role="region" aria-label="Monthly figures">
+      <div className="mt-2 relative overflow-x-auto" tabIndex={0} role="region" aria-label="Monthly figures">
         <table className="w-full min-w-[560px] text-xs">
           <thead>
             <tr className="border-b text-left text-2xs uppercase tracking-wide text-muted">

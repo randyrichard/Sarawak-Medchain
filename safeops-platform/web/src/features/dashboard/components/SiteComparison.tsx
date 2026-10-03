@@ -51,7 +51,7 @@ export function SiteComparison({
 
         {error && <p className="text-xs text-critical">{error}</p>}
         {rows === null ? <Skeleton className="h-40" /> : rows.length > 0 && (
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table className="w-full min-w-[900px] text-xs">
               <thead>
                 <tr className="border-b text-left text-2xs uppercase tracking-wide text-muted">

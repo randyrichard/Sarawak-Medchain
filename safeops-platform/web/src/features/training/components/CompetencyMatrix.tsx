@@ -69,7 +69,7 @@ export function CompetencyMatrix({
         {matrix.employees.length === 0 ? (
           <EmptyState icon={Users} title="No employees in scope">Your role scopes the matrix — an employee sees only their own row.</EmptyState>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr className="border-b">

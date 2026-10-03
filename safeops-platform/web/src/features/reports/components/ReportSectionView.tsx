@@ -41,7 +41,7 @@ export function ReportSectionView({ section }: { section: ReportSection }) {
       )}
 
       {section.columns && section.rows && section.rows.length > 0 && (
-        <div className="mt-2.5 overflow-x-auto">
+        <div className="mt-2.5 relative overflow-x-auto">
           <table className="w-full text-2xs">
             <thead>
               <tr className="border-b text-left text-muted">

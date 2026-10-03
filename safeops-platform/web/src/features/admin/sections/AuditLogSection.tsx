@@ -53,7 +53,7 @@ export function AuditLogSection() {
         ) : rows.length === 0 ? (
           <EmptyState icon={ScrollText} title="No log entries match">Every mutation across the platform is recorded here.</EmptyState>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table className="w-full min-w-[900px] text-left">
               <thead>
                 <tr className="border-b text-2xs uppercase tracking-wide text-muted">

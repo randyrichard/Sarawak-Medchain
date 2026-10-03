@@ -19,6 +19,14 @@ export default {
        */
       screens: {
         coarse: { raw: '(pointer: coarse)' },
+        /*
+         * A short window: a phone in landscape, or any phone with the keyboard up on a
+         * browser that shrinks the page for it (Firefox and Samsung Internet on Android, and
+         * Chrome with resizes-content). Here, anything pinned to the top or bottom of the
+         * screen is paid for out of very little height, so pinned bars and dialog chrome
+         * stop pinning and scroll with the content instead.
+         */
+        short: { raw: '(max-height: 500px)' },
       },
       colors: {
         page: 'var(--page)',

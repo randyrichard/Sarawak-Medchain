@@ -155,7 +155,7 @@ export function DepartmentsSection() {
           )}
 
           {visible.length > 0 && (
-            <div className="overflow-x-auto">
+            <div className="relative overflow-x-auto">
               <ul className="divide-y divide-line">
                 {visible.map((d) => (
                   <li key={d.id} className="flex flex-wrap items-start justify-between gap-2 py-2.5">

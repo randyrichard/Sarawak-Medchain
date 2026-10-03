@@ -162,7 +162,9 @@ function AuditsList({
           {audits.map((a) => (
             <li key={a.id}>
               <button onClick={() => onOpen(a.id)} className={cn('flex w-full flex-wrap items-center gap-3 px-5 py-3.5 text-left transition-colors hover:bg-accent-soft/40', a.overdue && 'bg-critical-soft/40')}>
-                <div className="min-w-0 flex-1">
+                {/* A full line for the title on a phone; its details wrap beneath. With a
+                    zero basis the title column shrank first and read a word per line. */}
+                <div className="min-w-0 flex-1 basis-full sm:basis-0">
                   <p className="text-sm font-semibold leading-snug text-ink">{a.title}</p>
                   <p className="mt-0.5 text-2xs text-muted">
                     <span className="font-mono">{a.code}</span> · {AUDIT_TYPE_LABEL[a.type]} · {siteShort(a.siteId)} · {a.department} · {a.templateName}

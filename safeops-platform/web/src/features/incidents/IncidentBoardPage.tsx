@@ -158,7 +158,7 @@ export function IncidentBoardPage() {
                 className={cn('block w-full text-left', clickable && 'hover:bg-accent-soft/30')}
               >
                 <CardBody className="py-3">
-                  <p className="flex items-center gap-1.5 text-2xs font-medium uppercase tracking-wide text-muted">
+                  <p className="flex items-center gap-1.5 text-2xs font-medium uppercase tracking-wide text-muted hyphens-auto [overflow-wrap:anywhere]">
                     <t.icon size={11} /> {t.label}
                   </p>
                   {t.value === undefined ? (

@@ -156,7 +156,7 @@ export function DataTable<T>({
 
   return (
     <div
-      className={cn('overflow-x-auto', className)}
+      className={cn('relative overflow-x-auto', className)}
       // A table wider than a phone scrolls sideways inside this box. Given a caption, the box
       // becomes a named, focusable region so a keyboard user can scroll it (WCAG 2.1.1) -
       // but not when the rows are focusable themselves, or there would be two stops for one

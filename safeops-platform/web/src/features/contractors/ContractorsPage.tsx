@@ -297,7 +297,7 @@ export function ContractorsPage() {
                 : 'Register the people your contractors send so the gate can check them.'}
             </EmptyState>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="relative overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="border-b text-2xs uppercase tracking-wide text-muted">
                   <tr>
@@ -393,7 +393,7 @@ export function ContractorsPage() {
               : 'Add the firms working on your sites so their insurance and workers can be tracked.'}
           </EmptyState>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="border-b text-2xs uppercase tracking-wide text-muted">
                 <tr>

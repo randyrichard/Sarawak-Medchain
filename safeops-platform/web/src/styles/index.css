@@ -223,3 +223,24 @@ select optgroup {
     transition-duration: 0.01ms !important;
   }
 }
+
+/*
+ * No zoom on focus, on phones.
+ *
+ * Safari on iPhone zooms the whole page in when a text field under 16px gets focus, and
+ * leaves it zoomed: the layout jumps sideways, half the form is off-screen, and the person
+ * has to pinch back out after every field. Almost every field here was 12-14px (the dense
+ * desktop sizing), so tapping any search box, filter or form field did it.
+ *
+ * 16px on touch screens only - the desk keeps its compact sizing - and `!important`
+ * because the control's own `text-sm` utility would otherwise win. Fields already larger
+ * (the near-miss form is 18px) keep their size. Disabling zoom in the viewport meta instead
+ * would also stop people who need to zoom from doing so (WCAG 1.4.4), so that is not used.
+ */
+@media (pointer: coarse) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not(.text-lg):not(.text-xl):not(.text-2xl),
+  select:not(.text-lg):not(.text-xl),
+  textarea:not(.text-lg):not(.text-xl) {
+    font-size: 16px !important;
+  }
+}

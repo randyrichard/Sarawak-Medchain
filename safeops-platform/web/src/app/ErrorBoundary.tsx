@@ -120,7 +120,7 @@ export class ErrorBoundary extends Component<Props, State> {
         </p>
 
         {/* Focusable, so a long message that scrolls sideways can be scrolled from the keyboard. */}
-        <pre tabIndex={0} aria-label="Error details" className="mt-4 max-w-md overflow-x-auto rounded-lg border px-3.5 py-2.5 text-left font-mono text-2xs text-ink-2">
+        <pre tabIndex={0} aria-label="Error details" className="mt-4 max-w-md relative overflow-x-auto rounded-lg border px-3.5 py-2.5 text-left font-mono text-2xs text-ink-2">
           {error.message || String(error)}
         </pre>
 

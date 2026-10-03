@@ -217,7 +217,7 @@ function RegisterTable({
   return (
     <Card>
       {/* 900px wide, so it scrolls sideways on a phone; focusable and named so a keyboard can too. */}
-      <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Asset register">
+      <div className="relative overflow-x-auto" tabIndex={0} role="region" aria-label="Asset register">
         <table className="w-full min-w-[900px] text-left">
           <thead>
             <tr className="border-b text-2xs uppercase tracking-wide text-muted">
