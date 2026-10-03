@@ -10,7 +10,7 @@ import {
 } from '@/components/ui'
 import { ChartBlock, ChartLegend, GroupedBars } from '@/components/charts/Charts'
 import { cn } from '@/lib/cn'
-import { canRecordManHours, formatHours, formatPercent, formatRate, formatTarget, hoursBasis, monthLabel, targetStatus } from './lib'
+import { canRecordManHours, monthRanges, formatHours, formatPercent, formatRate, formatTarget, hoursBasis, monthLabel, targetStatus } from './lib'
 import { ManHoursDialog } from './ManHoursDialog'
 import { TargetsDialog } from './TargetsDialog'
 import { downloadCsv, exportFilename, monthsCsv, sitesCsv } from './export'
@@ -102,7 +102,7 @@ export function PerformancePage() {
         errorTitle="Could not load HSE performance"
         loading={<PerformanceSkeleton />}
       >
-        {(data) => <PerformanceBody data={data} scope={[company?.name, project?.name].filter(Boolean).join(' · ')} />}
+        {(data) => <PerformanceBody data={data} scope={[company?.name, project?.name].filter(Boolean).join(' · ')} onRecordHours={owner ? () => setManHoursOpen(true) : undefined} />}
       </AsyncContent>
 
       {company && (
@@ -236,7 +236,7 @@ export function leadingTiles(t: Indicators, targets: Target[] = []): Tile[] {
   ]
 }
 
-function PerformanceBody({ data, scope }: { data: PerformanceView; scope: string }) {
+function PerformanceBody({ data, scope, onRecordHours }: { data: PerformanceView; scope: string; onRecordHours?: () => void }) {
   const { total } = data
   const basis = hoursBasis(total)
 
@@ -253,14 +253,35 @@ function PerformanceBody({ data, scope }: { data: PerformanceView; scope: string
         printed {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
       </p>
       {basis.estimated && (
-        <p className="flex items-start gap-2 rounded-lg border bg-sunken px-3 py-2 text-xs text-ink-2">
+        <div className="flex items-start gap-2 rounded-lg border bg-sunken px-3 py-2 text-xs text-ink-2">
           <Info size={14} className="mt-0.5 shrink-0 text-accent" aria-hidden />
-          <span>
-            <strong className="font-semibold text-ink">{basis.label}.</strong>{' '}
-            Rates use {data.basis.estimatedHoursPerWorkerMonth} hours per worker per month where a site has
-            no recorded figure. Fine for comparing sites; record actual man-hours before the figures go on a JKKP 8 return.
-          </span>
-        </p>
+          <div className="min-w-0 flex-1">
+            <p>
+              <strong className="font-semibold text-ink">{basis.label}.</strong>{' '}
+              Rates use {data.basis.estimatedHoursPerWorkerMonth} hours per worker per month where a site has
+              no recorded figure. Fine for comparing sites; record actual man-hours before the figures go on a JKKP 8 return.
+            </p>
+            {/* Where the estimates are, so they can be replaced - not just how many there are. */}
+            {data.missingHours.length > 0 && (
+              <div className="mt-2">
+                <p className="font-semibold text-ink">Not yet recorded (finished months):</p>
+                <ul className="mt-0.5 space-y-0.5">
+                  {data.missingHours.map((m) => (
+                    <li key={m.siteId}>
+                      <span className="font-medium text-ink">{m.siteName}</span>
+                      <span className="text-muted"> · {monthRanges(m.months)}</span>
+                    </li>
+                  ))}
+                </ul>
+                {onRecordHours && (
+                  <Button size="sm" variant="secondary" className="mt-2 print:hidden" icon={<Clock size={13} />} onClick={onRecordHours}>
+                    Record man-hours
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       <section aria-labelledby="perf-lagging">

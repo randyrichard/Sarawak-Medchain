@@ -230,7 +230,7 @@ export class HsePerformanceService {
 
     const keys = Array.from({ length: months }, (_, i) => monthKey(monthStart(fromKey.getUTCFullYear(), fromKey.getUTCMonth() + i)))
     const [sites, targets] = await Promise.all([this.sitesFor(f.companyId, f.projectId, m.siteIds), this.targetsOf(f.companyId)])
-    const empty = { ...period, months: [] as MonthPoint[], total: computeIndicators(emptyCounts()), sites: [] as SitePerformance[], targets, basis: BASIS }
+    const empty = { ...period, months: [] as MonthPoint[], total: computeIndicators(emptyCounts()), sites: [] as SitePerformance[], missingHours: [] as { siteId: string; siteName: string; months: string[] }[], targets, basis: BASIS }
     if (sites.length === 0) return empty
     const siteIds = sites.map((s) => s.id)
     const at = { companyId: f.companyId, siteId: { in: siteIds } }
@@ -282,11 +282,20 @@ export class HsePerformanceService {
       if (now <= start) return 0
       return (now.getTime() - start.getTime()) / (next.getTime() - start.getTime())
     }
+    /*
+     * Which finished months each site has no recorded hours for. The page already says how
+     * much of the total is estimated; this says where, so it can be fixed. The month in
+     * progress is left out - it cannot be recorded until it is over.
+     */
+    const currentKey = monthKey(monthStart(today.getUTCFullYear(), today.getUTCMonth()))
+    const missingHours: { siteId: string; siteName: string; months: string[] }[] = []
     for (const s of sites) {
       const c = bySite.get(s.id)!
       c.workers = s.headcount
+      const missing: string[] = []
       for (const key of keys) {
         const real = recorded.get(`${s.id}|${key}`)
+        if (real === undefined && key < currentKey) missing.push(key)
         const hours = real ?? s.headcount * ESTIMATED_HOURS_PER_WORKER_MONTH * elapsedShare(key)
         c.hours += hours
         if (real === undefined) c.estimatedHours += hours
@@ -294,6 +303,7 @@ export class HsePerformanceService {
         mo.hours += hours
         if (real === undefined) mo.estimatedHours += hours
       }
+      if (missing.length > 0) missingHours.push({ siteId: s.id, siteName: s.name, months: missing })
     }
 
     for (const a of closed) {
@@ -324,6 +334,7 @@ export class HsePerformanceService {
       }),
       total: computeIndicators(total),
       sites: siteRows,
+      missingHours,
       targets,
       basis: BASIS,
     }

@@ -18,6 +18,7 @@ const data = (over: Partial<PerformanceView> = {}): PerformanceView => ({
   ],
   total: base,
   sites: [{ ...base, siteId: 'a', siteName: '=HYPERLINK("x")', frequencyRate: null, hours: 0 }],
+  missingHours: [],
   targets: [],
   basis: { frequency: 1e6, trir: 2e5, incidence: 1e3, estimatedHoursPerWorkerMonth: 195 },
   ...over,

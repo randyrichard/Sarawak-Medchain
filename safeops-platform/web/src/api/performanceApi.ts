@@ -75,6 +75,8 @@ export interface PerformanceView {
   months: MonthPoint[]
   total: Indicators
   sites: SitePerformance[]
+  /** Finished months each site has no recorded man-hours for (estimated instead). */
+  missingHours: { siteId: string; siteName: string; months: string[] }[]
   targets: Target[]
   basis: { frequency: number; trir: number; incidence: number; estimatedHoursPerWorkerMonth: number }
 }

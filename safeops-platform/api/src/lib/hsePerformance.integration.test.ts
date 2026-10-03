@@ -219,6 +219,20 @@ d('HSE performance — integration (real Postgres)', () => {
     await expect(raw('onTimeClosure', 1.2)).rejects.toThrow(/PerformanceTarget_value_check/)
   })
 
+  it('says which sites have finished months with no recorded hours', async () => {
+    const r = await svc.performance(hse, PERIOD)
+    // Site A recorded all six months; Site B none. Listed by site, so they can be fixed.
+    expect(r.missingHours).toEqual([
+      { siteId: SITE_B, siteName: 'Perf Site B', months: ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06'] },
+    ])
+  })
+
+  it('does not ask for the month in progress', async () => {
+    // Viewed on 15 July, a period ending in July: July cannot be recorded yet.
+    const r = await svc.performance(hse, { ...PERIOD, months: 2, endMonth: '2026-07' })
+    expect(r.missingHours.find((m) => m.siteId === SITE_B)?.months).toEqual(['2026-06'])
+  })
+
   it('lists recorded hours with the estimate each month would otherwise use', async () => {
     const r = await svc.manHours(hse, { companyId: CO, year: 2026 })
     const a = r.sites.find((s) => s.siteId === SITE_A)!

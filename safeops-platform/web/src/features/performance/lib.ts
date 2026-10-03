@@ -128,3 +128,22 @@ export function parseTarget(metric: TargetMetric, input: string): { ok: true; va
   if (n > 1_000_000) return { ok: false, error: 'That target is too large' }
   return { ok: true, value: n }
 }
+
+/**
+ * Month keys as short, merged ranges: ["2026-01","2026-02","2026-03","2026-05"] reads
+ * "Jan–Mar 26, May 26". A list of six separate months is harder to act on than one range.
+ */
+export function monthRanges(keys: string[]): string {
+  const sorted = [...keys].sort()
+  const idx = (k: string) => { const [y, m] = k.split('-').map(Number); return y * 12 + (m - 1) }
+  const out: string[] = []
+  for (let i = 0; i < sorted.length; i++) {
+    let j = i
+    while (j + 1 < sorted.length && idx(sorted[j + 1]) === idx(sorted[j]) + 1) j++
+    const sameYear = sorted[i].slice(0, 4) === sorted[j].slice(0, 4)
+    const first = sameYear ? monthLabel(sorted[i]).split(' ')[0] : monthLabel(sorted[i])
+    out.push(i === j ? monthLabel(sorted[i]) : `${first}–${monthLabel(sorted[j])}`)
+    i = j
+  }
+  return out.join(', ')
+}
