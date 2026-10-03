@@ -202,7 +202,7 @@ export function ReportNearMissPage() {
               value={effectiveSite}
               onChange={(e) => setSiteId(e.target.value)}
               aria-label="Site"
-              className="mt-2 h-9 w-full rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none"
+              className="mt-2 h-9 coarse:h-11 w-full rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none"
             >
               {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
@@ -231,7 +231,7 @@ export function ReportNearMissPage() {
                  */
                 aria-pressed={tags.includes(t)}
                 className={cn(
-                  'min-h-[36px] rounded-full border px-3 py-1.5 text-2xs font-semibold transition-colors',
+                  'min-h-[36px] rounded-full border px-3 py-1.5 text-2xs font-semibold transition-colors coarse:min-h-11 coarse:px-4',
                   tags.includes(t) ? 'border-transparent bg-accent-solid text-white' : 'text-ink-2 hover:bg-accent-soft',
                 )}
               >

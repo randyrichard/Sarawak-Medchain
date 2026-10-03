@@ -41,7 +41,7 @@ function SwitcherButton({
          * and measuring the wrappers rather than the button says everything is fine. It is
          * visible in a screenshot and in the button's own rect, and nowhere else.
          */
-        'flex w-full min-w-0 max-w-[180px] items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm font-medium text-ink transition-colors md:max-w-[240px]',
+        'flex w-full min-w-0 max-w-[180px] items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm font-medium text-ink transition-colors coarse:min-h-11 md:max-w-[240px]',
         open ? 'bg-accent-soft' : 'hover:bg-accent-soft/60',
       )}
     >

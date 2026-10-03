@@ -60,9 +60,18 @@ export function FieldShell({
   )
 }
 
+/*
+ * 36px tall for a mouse, 44px on a touch screen - Fitts's law.
+ *
+ * Time to hit a target grows as it shrinks (T = a + b·log2(D/W + 1)), and a fingertip is a
+ * far blunter pointer than a cursor: Apple asks for 44pt and Material for 48dp. The buttons
+ * already grew on `coarse:`; the fields beside them did not, so on a phone every input,
+ * select and date picker was a 36px strip - in the form people fill in standing in a plant.
+ * `coarse:` keys off the pointer, not the screen width, so a desktop keeps its density.
+ */
 const controlCls = (error?: string) =>
   cn(
-    'h-9 w-full rounded-lg border bg-surface px-3 text-sm text-ink outline-none transition-colors',
+    'h-9 w-full rounded-lg border bg-surface px-3 text-sm text-ink outline-none transition-colors coarse:h-11',
     'placeholder:text-muted focus:border-accent',
     error && 'border-critical',
   )

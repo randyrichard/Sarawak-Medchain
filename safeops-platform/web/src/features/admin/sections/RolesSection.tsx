@@ -159,7 +159,7 @@ function NewRoleDialog({ open, roles, onClose, onCreated }: { open: boolean; rol
       footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button><Button loading={busy} onClick={() => void submit()}>Create role</Button></>}>
       <div className="space-y-3">
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Role name (e.g. Contractor Coordinator)"
-          className="h-9 w-full rounded-lg border bg-surface px-3 text-sm text-ink outline-none focus:border-accent" />
+          className="h-9 coarse:h-11 w-full rounded-lg border bg-surface px-3 text-sm text-ink outline-none focus:border-accent" />
         <Select label="Clone permissions from" value={cloneFrom} onChange={(e) => setCloneFrom(e.target.value)}>
           {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
         </Select>

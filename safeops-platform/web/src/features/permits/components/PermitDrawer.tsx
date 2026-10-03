@@ -352,10 +352,10 @@ export function PermitDrawer({
                 <div className="mt-2 flex flex-col gap-2 sm:flex-row">
                   <input value={iso.description} onChange={(e) => setIso((s) => ({ ...s, description: e.target.value }))}
                     placeholder="What is isolated…" aria-label="Isolation description"
-                    className="h-9 flex-1 rounded-lg border bg-surface px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent" />
+                    className="h-9 coarse:h-11 flex-1 rounded-lg border bg-surface px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent" />
                   <input value={iso.tagId} onChange={(e) => setIso((s) => ({ ...s, tagId: e.target.value }))}
                     placeholder="LOTO tag" aria-label="Lock/tag id"
-                    className="h-9 w-full rounded-lg border bg-surface px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent sm:w-28" />
+                    className="h-9 coarse:h-11 w-full rounded-lg border bg-surface px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent sm:w-28" />
                   <Button size="md" variant="secondary" loading={busy}
                     disabled={!iso.description.trim() || !iso.tagId.trim()}
                     onClick={() => void run(async () => {

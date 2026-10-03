@@ -33,9 +33,18 @@ export function Alert({
         {title && <p className="font-semibold">{title}</p>}
         {children && <div className={cn('text-ink-2', title && 'mt-0.5 text-xs')}>{children}</div>}
       </div>
+      {/*
+        24px for a mouse (WCAG 2.5.8 minimum) and 44px on touch. This was an 18px square - the
+        smallest target in the product - on the one control people reach for when an alert is
+        in their way. The negative margin lets the larger hit area overlap the alert's padding
+        instead of making every alert taller.
+      */}
       {onDismiss && (
-        <button onClick={onDismiss} aria-label="Dismiss" className="rounded p-0.5 text-muted hover:text-ink">
-          <X size={14} />
+        <button
+          type="button" onClick={onDismiss} aria-label="Dismiss"
+          className="-m-1 flex h-6 w-6 shrink-0 items-center justify-center rounded text-muted hover:text-ink coarse:-m-2.5 coarse:h-11 coarse:w-11"
+        >
+          <X size={14} aria-hidden />
         </button>
       )}
     </div>

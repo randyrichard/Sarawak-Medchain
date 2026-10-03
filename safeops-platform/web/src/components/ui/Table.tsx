@@ -194,7 +194,9 @@ export function DataTable<T>({
                       type="button"
                       onClick={() => changeSort(c.key)}
                       className={cn(
-                        'inline-flex items-center gap-1 rounded uppercase tracking-wide hover:text-ink',
+                        // At least 24px tall for a mouse and 44px on touch (Fitts's law): sized
+                        // to its text alone, a header was a 17px strip to tap on a phone.
+                        'inline-flex min-h-6 items-center gap-1 rounded uppercase tracking-wide hover:text-ink coarse:min-h-11',
                         'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent)]',
                         c.align === 'right' && 'flex-row-reverse',
                         active && 'text-ink',

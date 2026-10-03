@@ -356,6 +356,54 @@ Already right, and kept that way:
   sections, and any section with more than 5 fields.
 - **Don't cap visible options to seven in Miller's name.** Group them instead (see Hick's law).
 
+## Targets that are easy to hit (Fitts's law)
+
+Fitts (1954), in the Shannon form (MacKenzie 1992, ISO 9241-9), says the time to hit a target is
+`T = a + b·log₂(D/W + 1)`. Small, distant targets are slow and error-prone. Enlarging a *tiny*
+target helps a lot; enlarging an already large one helps little. A fingertip is a far blunter
+pointer than a cursor, so the sizes differ by input:
+
+| Pointer | Minimum | Source |
+|---|---|---|
+| Mouse / trackpad | **24×24 px**, or smaller only if spaced so a 24px circle around it hits nothing else | WCAG 2.2 SC 2.5.8 (AA) |
+| Touch (`coarse:` variant) | **44×44 px** | Apple HIG 44pt, Material 48dp, WCAG 2.5.5 (AAA) |
+
+`coarse:` is `(pointer: coarse)`. It checks *how* someone points, not the screen width, so a
+desktop keeps its density and a touch laptop gets touch sizes.
+
+Measured on 12 pages, every visible interactive element, before and after:
+
+| | Mouse (WCAG 2.5.8) | Touch (44px) |
+|---|---|---|
+| Before | 0 failing | **103 of 258** too small |
+| After | 0 failing | **0 of 242** |
+
+What was too small:
+- Every form field (`FieldShell` and 29 hand-built selects and inputs, 36px).
+- The user-row ⋯ menus (28px).
+- The alert dismiss × (**18px**, even with a mouse).
+- The account avatar (32px).
+- Report-period toggles (25px), near-miss tags (36px) and incident-type tiles (38px).
+- The site switcher and admin section tabs (35–37px).
+- The sortable column headers (17px).
+
+Where the whole area should respond, it now does:
+- Search boxes with an icon are `<label>`s, so a tap on the icon or the padding focuses the
+  field.
+- Table rows are links (`rowHref`).
+- Checkboxes are hit through their label.
+
+**Rules for new screens**
+
+- Use the primitives (`Button`, `Input`, `Select`…), which already size for both pointers. A
+  hand-built control with a fixed height also needs its `coarse:` size: `h-9 coarse:h-11`.
+  `fittsLaw.test.ts` fails any 36px select, input or button without one.
+- Icon-only buttons are at least `h-6 w-6`, and `coarse:min-h-11 coarse:min-w-11` on touch. A
+  negative margin can keep the larger hit area from changing the layout.
+- Make the whole thing the target: a label around its field, a link around its row or card.
+- Put frequent actions where the pointer or thumb already is. The near-miss form pins Submit to
+  the bottom edge on a phone, and dialog actions sit at the bottom of the dialog.
+
 ## Adding or changing a component
 
 1. Check this inventory first. A variant of an existing primitive is better than a new

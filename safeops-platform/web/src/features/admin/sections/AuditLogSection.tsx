@@ -34,11 +34,11 @@ export function AuditLogSection() {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex min-w-52 flex-1 items-center gap-2 rounded-lg border coarse:min-h-11 bg-surface px-3 py-2 coarse:py-0 md:max-w-sm">
-          <Search size={14} className="shrink-0 text-muted" />
+        <label className="flex min-w-52 flex-1 cursor-text items-center gap-2 rounded-lg border coarse:min-h-11 bg-surface px-3 py-2 coarse:py-0 md:max-w-sm focus-within:border-accent">
+          <Search size={14} aria-hidden className="shrink-0 text-muted" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search actor, action, target, IP…" className="w-full coarse:self-stretch bg-transparent text-sm text-ink outline-none placeholder:text-muted" />
-        </div>
-        <select value={module} onChange={(e) => setModule(e.target.value)} className="h-9 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none" aria-label="Filter by module">
+        </label>
+        <select value={module} onChange={(e) => setModule(e.target.value)} className="h-9 coarse:h-11 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none" aria-label="Filter by module">
           <option value="">All modules</option>
           {RBAC_MODULES.map((m) => <option key={m} value={m}>{MODULE_LABEL[m]}</option>)}
           <option value="auth">Authentication</option>

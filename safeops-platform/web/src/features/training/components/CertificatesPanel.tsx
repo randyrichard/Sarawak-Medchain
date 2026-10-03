@@ -59,10 +59,10 @@ export function CertificatesPanel({
   return (
     <>
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <div className="flex min-w-52 flex-1 items-center gap-2 rounded-lg border coarse:min-h-11 bg-surface px-3 py-2 coarse:py-0 md:max-w-xs">
-          <Search size={14} className="shrink-0 text-muted" />
+        <label className="flex min-w-52 flex-1 cursor-text items-center gap-2 rounded-lg border coarse:min-h-11 bg-surface px-3 py-2 coarse:py-0 md:max-w-xs focus-within:border-accent">
+          <Search size={14} aria-hidden className="shrink-0 text-muted" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search number, holder, course…" className="w-full coarse:self-stretch bg-transparent text-sm text-ink outline-none placeholder:text-muted" />
-        </div>
+        </label>
         {(['all', 'expired', 'expiring', 'competent'] as Filter[]).map((f) => (
           <button key={f} onClick={() => setFilter(f)}
             className={cn('rounded-full border px-3 py-1 text-xs font-medium capitalize transition-colors', filter === f ? 'bg-accent-soft text-ink' : 'text-ink-2 hover:text-ink')}

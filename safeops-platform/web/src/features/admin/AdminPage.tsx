@@ -81,7 +81,7 @@ export function AdminPage() {
                       key={n.id}
                       onClick={() => go(n.id)}
                       className={cn(
-                        'flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                        'flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors coarse:min-h-11',
                         active ? 'bg-accent-soft text-ink' : 'text-ink-2 hover:bg-accent-soft/60 hover:text-ink',
                       )}
                     >

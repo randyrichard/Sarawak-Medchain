@@ -131,16 +131,16 @@ export function AssetsPage() {
       <div className="mb-3 flex flex-wrap items-center gap-2">
         {view === 'register' && (
           <>
-            <div className="flex min-w-52 flex-1 items-center gap-2 rounded-lg border coarse:min-h-11 bg-surface px-3 py-2 coarse:py-0 md:max-w-xs">
-              <Search size={14} className="shrink-0 text-muted" />
+            <label className="flex min-w-52 flex-1 cursor-text items-center gap-2 rounded-lg border coarse:min-h-11 bg-surface px-3 py-2 coarse:py-0 md:max-w-xs focus-within:border-accent">
+              <Search size={14} aria-hidden className="shrink-0 text-muted" />
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Search asset, serial, owner, location…"
                 className="w-full coarse:self-stretch bg-transparent text-sm text-ink outline-none placeholder:text-muted"
               />
-            </div>
-            <select value={category} onChange={(e) => setCategory(e.target.value as AssetCategory | '')} className="h-9 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none" aria-label="Filter by category">
+            </label>
+            <select value={category} onChange={(e) => setCategory(e.target.value as AssetCategory | '')} className="h-9 coarse:h-11 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none" aria-label="Filter by category">
               <option value="">All categories</option>
               {ASSET_CATEGORIES.map((c) => <option key={c} value={c}>{CATEGORY_LABEL[c]}</option>)}
             </select>
@@ -216,7 +216,8 @@ function RegisterTable({
   const siteShort = (id: string) => sites.find((s) => s.id === id)?.short ?? id.toUpperCase()
   return (
     <Card>
-      <div className="overflow-x-auto">
+      {/* 900px wide, so it scrolls sideways on a phone; focusable and named so a keyboard can too. */}
+      <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Asset register">
         <table className="w-full min-w-[900px] text-left">
           <thead>
             <tr className="border-b text-2xs uppercase tracking-wide text-muted">

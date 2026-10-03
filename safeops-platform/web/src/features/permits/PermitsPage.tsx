@@ -152,14 +152,14 @@ export function PermitsPage() {
               onChange={(e) => { setQ(e.target.value); setParam('q', e.target.value) }}
               placeholder="Search permit no., work, location, applicant…"
               aria-label="Search permits"
-              className="h-9 w-full rounded-lg border bg-surface pl-9 pr-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
+              className="h-9 coarse:h-11 w-full rounded-lg border bg-surface pl-9 pr-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
             />
           </div>
           <select
             value={type}
             onChange={(e) => { setType(e.target.value as PermitType | ''); setParam('type', e.target.value) }}
             aria-label="Filter by permit type"
-            className="h-9 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none"
+            className="h-9 coarse:h-11 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none"
           >
             <option value="">All permit types</option>
             {PERMIT_TYPES.map((t) => <option key={t} value={t}>{PERMIT_TYPE_LABEL[t]}</option>)}

@@ -229,7 +229,7 @@ export function DepartmentsSection() {
               value={draft.siteId}
               disabled={Boolean(dialog.editing)}
               onChange={(e) => setDraft({ ...draft, siteId: e.target.value })}
-              className="h-9 w-full rounded-lg border border-line bg-surface px-2 text-xs text-ink disabled:opacity-60"
+              className="h-9 coarse:h-11 w-full rounded-lg border border-line bg-surface px-2 text-xs text-ink disabled:opacity-60"
             >
               {sites.filter((s) => s.active).map((s) => (
                 <option key={s.id} value={s.id}>{s.name}</option>
@@ -245,7 +245,7 @@ export function DepartmentsSection() {
             <select
               value={draft.managerUserId}
               onChange={(e) => setDraft({ ...draft, managerUserId: e.target.value })}
-              className="h-9 w-full rounded-lg border border-line bg-surface px-2 text-xs text-ink"
+              className="h-9 coarse:h-11 w-full rounded-lg border border-line bg-surface px-2 text-xs text-ink"
             >
               <option value="">Nobody assigned</option>
               {/* Only members of this workspace: a manager is an account, not a name. */}
