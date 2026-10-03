@@ -45,10 +45,10 @@ model User {
   /// somebody's place *inside* one company, and a platform administrator has no place
   /// inside any of them. Keeping it separate is also what stops a customer administrator
   /// granting it - the organisation console writes Membership.role and never touches this.
-  platformAdmin Boolean @default(false)
+  platformAdmin    Boolean  @default(false)
   /// True only once the person has proved, with a code, that their authenticator works.
   /// Sign-in then asks for a code after the password (mfaService.ts).
-  mfaEnabled    Boolean @default(false)
+  mfaEnabled       Boolean  @default(false)
   /// The authenticator (TOTP) secret, sealed under MFA_SECRET_KEY_B64. Never a plaintext.
   mfaSecret        String?
   /// A secret issued by "set up" and not yet confirmed with a code. Replaced on every new
@@ -61,7 +61,7 @@ model User {
   mfaLastStep      Int?
   /// Shown in the admin console's user list. Additive and nullable — authentication
   /// does not read it, so every existing account is unaffected.
-  department    String?
+  department       String?
 
   /// Per-user settings that should follow the person between devices:
   /// { landingPage?: string, defaultSiteId?: string | null }.
@@ -354,6 +354,7 @@ model Site {
   departments       Department[]
   visitors          Visitor[]
   toolboxMeetings   ToolboxMeeting[]
+  manHours          SiteManHours[]
 
   @@index([companyId])
   @@index([projectId])
@@ -3196,4 +3197,27 @@ model JobRun {
   runCount       Int       @default(0)
   failureCount   Int       @default(0)
   updatedAt      DateTime  @updatedAt
+}
+
+/// Hours worked at a site in one calendar month - the denominator of every injury rate.
+///
+/// DOSH's JKKP 8 annual return, and every frequency or severity rate an HSE manager reports,
+/// divide by man-hours worked: lost-time injuries x 1,000,000 / hours. SafeOps had no record
+/// of hours at all, so it could count injuries but never say whether a site's rate was rising
+/// or falling as its workforce changed. One row per site per month, entered by the people who
+/// hold the timesheets; months without a row are estimated from headcount and labelled so.
+model SiteManHours {
+  id        String   @id @default(cuid())
+  companyId String
+  siteId    String
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  /// The first day of the month, UTC midnight.
+  month     DateTime
+  /// Total hours worked on site that month: employees and contractors.
+  hours     Int
+  updatedBy String
+  updatedAt DateTime @updatedAt
+
+  @@unique([siteId, month])
+  @@index([companyId, month])
 }

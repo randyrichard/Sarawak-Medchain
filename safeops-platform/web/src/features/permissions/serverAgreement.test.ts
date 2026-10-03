@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { capabilitiesOf, type Capability } from './permissions'
 import { canIssuePermits, canOperatePermits } from '@/features/permits/lib'
+import { canRecordManHours } from '@/features/performance/lib'
 import { ROLE_LABEL, type Role } from '@/api/types'
 
 /** Every role the product ships, read through the same map the UI labels them with. */
@@ -112,6 +113,12 @@ const PAIRS: { capability: Capability; file: string; constant: string; what: str
     what: 'comparing every site side by side',
   },
   {
+    capability: 'analytics:view',
+    file: 'hsePerformance',
+    constant: 'PERFORMANCE_ROLES',
+    what: 'reading organisation-wide HSE performance rates',
+  },
+  {
     capability: 'toolbox:view',
     file: 'toolboxService',
     constant: 'VIEW_ROLES',
@@ -132,6 +139,11 @@ d('the navigation and the API agree about roles', () => {
      */
     expect(sorted(ROLES.filter((r) => canIssuePermits(r)))).toEqual(sorted(serverRoles('permitService', 'ISSUER_ROLES')))
     expect(sorted(ROLES.filter((r) => canOperatePermits(r)))).toEqual(sorted(serverRoles('permitService', 'FIELD_ROLES')))
+  })
+
+  it('agrees about who records man-hours', () => {
+    // A drift is a Save button on the HSE Performance page that answers 403.
+    expect(sorted(ROLES.filter((r) => canRecordManHours(r)))).toEqual(sorted(serverRoles('hsePerformance', 'MAN_HOURS_ROLES')))
   })
 
   it('declares the same set of roles on both sides', () => {

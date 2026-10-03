@@ -115,6 +115,15 @@ export const isLostTime = (i: Counted) =>
   (LOST_TIME_SEVERITIES as string[]).includes(i.severity) || i.type === 'lti' || i.type === 'fatality'
 export const isNearMiss = (i: Counted) => i.severity === 'near_miss' || i.type === 'near_miss'
 
+/**
+ * Recordable: an injury that needed more than first aid - medical treatment, restricted work,
+ * lost time or a death (the OSHA 1904 definition behind TRIR). First aid alone is not.
+ */
+const RECORDABLE_SEVERITIES: string[] = ['medical_treatment', 'restricted_work', 'lost_time_injury', 'fatality', 'catastrophic']
+export const isRecordable = (i: Counted) =>
+  RECORDABLE_SEVERITIES.includes(i.severity) || ['mtc', 'rwc', 'lti', 'fatality'].includes(i.type)
+export const isFatality = (i: Counted) => i.severity === 'fatality' || i.type === 'fatality'
+
 /** Severities that oblige an investigation regardless of what anyone thinks of the event. */
 export const MANDATORY_INVESTIGATION: IncidentSeverity[] = [
   'restricted_work', 'lost_time_injury', 'environmental_major',
