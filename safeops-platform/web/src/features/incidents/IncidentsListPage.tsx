@@ -3,24 +3,36 @@ import { useSearchParams } from 'react-router-dom'
 import { Plus, Search, ShieldAlert } from 'lucide-react'
 import { api } from '@/api/client'
 import type { Incident, IncidentSeverity, IncidentStatusFilter, IncidentType } from '@/api/incidents'
-import { INCIDENT_STAGES, INCIDENT_TYPES, STAGE_LABEL, SEVERITY_LABEL, TYPE_LABEL } from '@/api/incidents'
+import { INCIDENT_STAGES, STAGE_LABEL, SEVERITY_LABEL, TYPE_LABEL } from '@/api/incidents'
 import { OVERDUE_AFTER_DAYS } from '@/api/incidents'
 import { useOrg } from '@/features/org/OrgContext'
 import {
   Alert, Badge, Card, DataTable, EmptyState, LinkButton, PageHeader, Skeleton, StatusPill,
   type Column, type SortState,
 } from '@/components/ui'
-import { daysOpen, severityKind, severityWeight, STAGE_COLOR, TYPE_ICON } from './lib'
+import { daysOpen, INCIDENT_TYPE_GROUPS, severityKind, severityWeight, STAGE_COLOR, TYPE_ICON } from './lib'
 import { cn } from '@/lib/cn'
 import { useUrlState } from '@/lib/useUrlState'
 
-const STATUS_CHIPS: { value: IncidentStatusFilter; label: string }[] = [
-  { value: 'all', label: 'All' },
+/*
+ * Status filters, split by how often they are wanted - Hick's law.
+ *
+ * All eight sat in one row of equal chips, so every visit to the register started with an
+ * eight-way choice to make before reading a single incident. Most visits want one of four:
+ * what is open (the default, so usually no choice at all), what is dangerous, what is
+ * late, or everything. Those stay one tap away. The workflow states - who is investigating,
+ * what awaits review, what is closed or archived - are wanted by fewer people less often,
+ * so they sit one step further, in a "More" list, rather than taxing every visit.
+ */
+export const STATUS_CHIPS: { value: IncidentStatusFilter; label: string }[] = [
   { value: 'open', label: 'Open' },
-  { value: 'investigating', label: 'Investigation ongoing' },
-  { value: 'awaiting_review', label: 'Awaiting review' },
   { value: 'high_risk', label: 'High risk' },
   { value: 'overdue', label: `Overdue (> ${OVERDUE_AFTER_DAYS}d)` },
+  { value: 'all', label: 'All' },
+]
+export const MORE_STATUSES: { value: IncidentStatusFilter; label: string }[] = [
+  { value: 'investigating', label: 'Investigation ongoing' },
+  { value: 'awaiting_review', label: 'Awaiting review' },
   { value: 'closed', label: 'Closed' },
   { value: 'archived', label: 'Archived' },
 ]
@@ -194,8 +206,11 @@ export function IncidentsListPage() {
           aria-label="Filter by incident type"
         >
           <option value="">All types</option>
-          {INCIDENT_TYPES.map((t) => (
-            <option key={t} value={t}>{TYPE_LABEL[t]}</option>
+          {/* The same groups as the report form, so the list is scanned by kind, not read top to bottom. */}
+          {INCIDENT_TYPE_GROUPS.map((g) => (
+            <optgroup key={g.label} label={g.label}>
+              {g.types.map((t) => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
+            </optgroup>
           ))}
         </select>
         <select
@@ -227,6 +242,28 @@ export function IncidentsListPage() {
             {chip.label}
           </button>
         ))}
+        {/*
+          The less-used statuses, one step away. Shown as active - and naming the status -
+          when one of them is the current filter, so the row never hides what is applied.
+        */}
+        {(() => {
+          const moreActive = MORE_STATUSES.find((m) => m.value === status)
+          return (
+            <select
+              aria-label="More statuses"
+              value={moreActive?.value ?? ''}
+              onChange={(e) => e.target.value && setStatus(e.target.value as IncidentStatusFilter)}
+              className={cn(
+                'rounded-full border px-3 py-1 text-xs font-medium outline-none transition-colors coarse:min-h-11 coarse:px-4',
+                moreActive ? 'bg-accent-soft text-ink' : 'bg-surface text-ink-2 hover:text-ink',
+              )}
+              style={moreActive ? { borderColor: 'var(--accent)' } : undefined}
+            >
+              <option value="" disabled>More…</option>
+              {MORE_STATUSES.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+            </select>
+          )
+        })()}
       </div>
 
       {error && <Alert tone="critical" className="mb-3">{error}</Alert>}

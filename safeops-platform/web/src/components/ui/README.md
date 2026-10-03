@@ -245,6 +245,44 @@ safety work itself.
 - **Forms people may abandon by accident:** keep a draft, or call
   `useUnsavedChangesWarning`.
 
+## Keeping choices small (Hick's law)
+
+Hick's law (Hick 1952, Hyman 1953) says the time to choose grows with the number of options:
+`T = a + b·log₂(n + 1)`. Three findings shape how SafeOps applies it:
+
+- **The cost is in uncertainty, not raw count.** Hyman showed that decision time tracks the
+  entropy of the choice. A sensible default or an obviously likely option makes a choice
+  fast even when the list is long, while equal-looking options make it slow.
+- **The log curve only holds for options people know.** For a list nobody has memorised,
+  people read items one by one, and time grows linearly with the length. Sorting, grouping
+  and search bring that back down.
+- **Fewer is not automatically better.** Hiding an option people need just moves the cost to
+  a hunt or a support call. Group the options, or move rare ones one step away; don't
+  remove them.
+
+| Where | Before | Now |
+|---|---|---|
+| Sidebar (administrator) | 17 items in one column | 3 everyday items at the top, then 5 labelled groups of ≤ 4. Roles that see ≤ 7 items keep a flat list (`GROUP_NAV_ABOVE`) |
+| Incident type, report form | 17 equal tiles, in storage order | 4 groups by what happened ("Someone was hurt…"), ≤ 7 types each, commonest first (`INCIDENT_TYPE_GROUPS`) |
+| Incident type filter | 17 options in one flat list | The same 4 groups, as `<optgroup>`s |
+| Incident status filter | 8 chips, every visit | The 4 everyday ones (Open, the default; High risk; Overdue; All), with the 4 workflow states under "More…" |
+| Site switcher | Server order | Alphabetical, so a letter key (type-ahead) jumps to the site |
+| Incident severity, report form | Pre-filled "Minor": the fastest answer, so the one a hurried reporter kept | No default; the reporter must choose (4 options). A default is the strongest nudge a form has, and an under-classified incident skips the escalation it needs |
+
+**Rules for new screens**
+
+- **More than about seven options:** group them under labels people can answer at a
+  glance, or move the rarely used ones behind "More". The `hicksLaw.test.ts` tests hold
+  these limits.
+- **Grouping must not lose anything.** Every option appears exactly once, and the tests
+  check that. An option that falls out of every group cannot be chosen at all.
+- **Give the likely answer** as the default or at the top. Never default a field whose answer
+  needs a person's judgement, such as severity, to the convenient value.
+- **Sort long lists** (alphabetically for names, by frequency for actions), and offer search
+  or type-ahead once a list stops fitting on screen.
+- **Split a complex decision into steps** (the incident report is four) instead of putting
+  everything on one screen.
+
 ## Adding or changing a component
 
 1. Check this inventory first. A variant of an existing primitive is better than a new
