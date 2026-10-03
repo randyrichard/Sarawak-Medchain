@@ -30,6 +30,7 @@ import { searchRouter } from './routes/search.js'
 import { employeesRouter } from './routes/employees.js'
 import { contractorsRouter } from './routes/contractors.js'
 import { dashboardRouter } from './routes/dashboard.js'
+import { performanceRouter } from './routes/performance.js'
 import { orgAdminRouter, inviteRouter } from './routes/orgAdmin.js'
 import { platformRouter } from './routes/platform.js'
 import { v1Router } from './routes/v1.js'
@@ -291,6 +292,7 @@ export function createApp() {
   app.use('/employees', employeesRouter)
   app.use('/contractors', contractorsRouter)
   app.use('/dashboard', dashboardRouter)
+  app.use('/performance', performanceRouter)
 
   app.use((_req, res) => res.status(404).json({ error: 'not_found' }))
 

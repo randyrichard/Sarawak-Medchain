@@ -21,6 +21,7 @@ const IncidentsListPage = lazy(() => import('@/features/incidents/IncidentsListP
 const ReportNearMissPage = lazy(() => import('@/features/incidents/ReportNearMissPage').then((m) => ({ default: m.ReportNearMissPage })))
 const ReportIncidentPage = lazy(() => import('@/features/incidents/ReportIncidentPage').then((m) => ({ default: m.ReportIncidentPage })))
 const IncidentBoardPage = lazy(() => import('@/features/incidents/IncidentBoardPage').then((m) => ({ default: m.IncidentBoardPage })))
+const PerformancePage = lazy(() => import('@/features/performance/PerformancePage').then((m) => ({ default: m.PerformancePage })))
 const ReportsPage = lazy(() => import('@/features/reports/ReportsPage').then((m) => ({ default: m.ReportsPage })))
 const IncidentDetailPage = lazy(() => import('@/features/incidents/IncidentDetailPage').then((m) => ({ default: m.IncidentDetailPage })))
 const ActionsPage = lazy(() => import('@/features/actions/ActionsPage').then((m) => ({ default: m.ActionsPage })))
@@ -178,6 +179,14 @@ export default function App() {
                     element={
                       <RequireCapability capability="permits:view">
                         <PermitsPage />
+                      </RequireCapability>
+                    }
+                  />
+                  <Route
+                    path="/performance"
+                    element={
+                      <RequireCapability capability="analytics:view">
+                        <PerformancePage />
                       </RequireCapability>
                     }
                   />
