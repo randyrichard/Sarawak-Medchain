@@ -5,6 +5,7 @@ import { ApiError } from '@/api/types'
 import { Alert, Badge, Button, Card, CardBody, Dialog, Input, Skeleton, Textarea } from '@/components/ui'
 import { fmtDate } from '@/features/incidents/lib'
 import { cn } from '@/lib/cn'
+import { formatIdNumber } from '@/lib/chunk'
 
 /**
  * People, companies and vehicles refused entry.
@@ -81,7 +82,7 @@ export function BlacklistPanel({
                 r.inForce ? 'border-critical/60 bg-critical-soft/20' : 'opacity-70',
               )}>
                 <p className="flex flex-wrap items-center gap-1.5 text-sm text-ink">
-                  {[r.idNumber, r.phone, r.visitorCompany, r.vehicleNumber]
+                  {[formatIdNumber(r.idNumber), r.phone, r.visitorCompany, r.vehicleNumber]
                     .filter(Boolean).join(' · ')}
                   {r.inForce
                     ? <Badge tone="critical">{r.permanent ? 'Permanent' : 'In force'}</Badge>

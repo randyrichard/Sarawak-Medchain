@@ -13,6 +13,7 @@ import { fmtDateTime } from '@/features/incidents/lib'
 import { Alert, Badge, Button, Dialog, Input, Skeleton, Textarea } from '@/components/ui'
 import { VisitorPass } from './VisitorPass'
 import { cn } from '@/lib/cn'
+import { formatIdNumber } from '@/lib/chunk'
 
 /**
  * One visit, end to end.
@@ -103,7 +104,7 @@ export function VisitorDrawer({
                 <p className="text-2xs text-muted">
                   <span className="font-mono">{v.code}</span>
                   {v.visitorCompany && <> · {v.visitorCompany}</>}
-                  {v.idNumber && <> · {v.idNumber}</>}
+                  {v.idNumber && <> · <span className="font-mono">{formatIdNumber(v.idNumber)}</span></>}
                 </p>
               </>
             ) : <Skeleton className="h-6 w-48" />}

@@ -4,6 +4,7 @@ import { Copy, Download, ShieldCheck } from 'lucide-react'
 import { mfaApi } from '@/api/mfaApi'
 import { ApiError } from '@/api/types'
 import { Alert, Button, Input } from '@/components/ui'
+import { chunk } from '@/lib/chunk'
 
 /**
  * Setting up an authenticator app, start to finish.
@@ -86,7 +87,7 @@ export function MfaEnrolment({ onDone }: { onDone: () => void }) {
               <div className="min-w-0">
                 <p className="text-2xs text-muted">Can&apos;t scan? Enter this key instead:</p>
                 <p className="mt-1 break-all font-mono text-sm tracking-wider text-ink">
-                  {setup.secret.match(/.{1,4}/g)?.join(' ')}
+                  {chunk(setup.secret)}
                 </p>
               </div>
             )}

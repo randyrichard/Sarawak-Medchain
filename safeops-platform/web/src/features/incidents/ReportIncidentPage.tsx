@@ -13,7 +13,7 @@ import { useOrg } from '@/features/org/OrgContext'
 import { useDepartments } from '@/features/org/departments'
 import { Alert, Badge, Breadcrumbs, Button, Card, Checkbox, Input, SuggestSelect, LinkButton, Select, Textarea } from '@/components/ui'
 import { usePageTitle } from '@/app/pageTitle'
-import { INCIDENT_TYPE_GROUPS, severityKind, SITE_COORDS, TYPE_ICON, useActor } from './lib'
+import { fmtDateTime, INCIDENT_TYPE_GROUPS, severityKind, SITE_COORDS, TYPE_ICON, useActor } from './lib'
 import { enqueue, shouldRetry } from './outbox'
 import { StatusPill } from '@/components/ui'
 import { cn } from '@/lib/cn'
@@ -325,6 +325,25 @@ export function ReportIncidentPage() {
           </li>
         ))}
       </ol>
+
+      {/*
+        What step 1 said, carried onto the steps after it - Miller's law.
+
+        Working memory holds a handful of things at once, and steps 2 and 3 asked for more
+        while hiding what had already been said: writing "What happened?" meant remembering
+        the title and time given a minute earlier, or stepping back to check. Shown here, the
+        reporter reads them instead of recalling them, and can jump back to fix one. The last
+        step is a full review already, so it is not repeated there.
+      */}
+      {(step === 1 || step === 2) && draft.type && (
+        <ReportingSummary
+          type={draft.type}
+          severity={draft.severity}
+          title={draft.title}
+          occurredAt={draft.occurredAt}
+          onEdit={() => patch({ step: 0 })}
+        />
+      )}
 
       <Card className="p-5 md:p-6">
         {/* STEP 0 — what happened */}
@@ -685,5 +704,35 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
       <dt className="w-28 shrink-0 text-muted">{label}</dt>
       <dd className="min-w-0 flex-1 truncate font-medium text-ink" title={value}>{value}</dd>
     </div>
+  )
+}
+
+/** "You are reporting …": the answers from step 1, on the steps that follow it. */
+export function ReportingSummary({
+  type, severity, title, occurredAt, onEdit,
+}: {
+  type: IncidentType
+  severity: IncidentSeverity | ''
+  title: string
+  occurredAt: string
+  onEdit: () => void
+}) {
+  const Icon = TYPE_ICON[type]
+  return (
+    <section
+      aria-label="You are reporting"
+      className="mb-3 flex items-center gap-3 rounded-xl border bg-sunken px-3.5 py-2.5"
+    >
+      <Icon size={16} aria-hidden className="shrink-0 text-accent" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-ink">{title || TYPE_LABEL[type]}</p>
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-2xs text-muted">
+          <span>{TYPE_LABEL[type]}</span>
+          {severity && <StatusPill kind={severityKind(severity)} label={SEVERITY_LABEL[severity] ?? severity} />}
+          {occurredAt && <span>{fmtDateTime(new Date(occurredAt).toISOString())}</span>}
+        </p>
+      </div>
+      <Button size="sm" variant="ghost" onClick={onEdit}>Edit</Button>
+    </section>
   )
 }
