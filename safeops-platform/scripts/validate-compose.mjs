@@ -163,7 +163,10 @@ if (existsSync(envPath)) {
 }
 
 // ${VAR}, ${VAR:-default}, ${VAR:?message}
-const refs = [...raw.matchAll(/\$\{([A-Z_][A-Z0-9_]*)(:[-?][^}]*)?\}/g)]
+// Comments are prose, not interpolation: a comment explaining why a variable is NOT
+// `${VAR:?...}` was being read as a required variable called VAR.
+const uncommented = raw.split('\n').map((l) => l.replace(/(^|\s)#.*$/, '')).join('\n')
+const refs = [...uncommented.matchAll(/\$\{([A-Z_][A-Z0-9_]*)(:[-?][^}]*)?\}/g)]
 const required = new Set()
 const defaulted = new Set()
 for (const [, name, suffix] of refs) {

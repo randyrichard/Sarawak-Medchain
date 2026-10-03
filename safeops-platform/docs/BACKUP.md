@@ -29,7 +29,37 @@ Measured with `api/scripts/backup-restore-drill.ts` against a workspace of 12 in
 A restored permit comes back **without the controls that were signed off on it**. For a
 safety record, that is not a restoration. The restore dialog says so before you confirm.
 
-## Daily database backup
+## Automatic daily backup (the `backup` service)
+
+The production compose stack now takes its own backups. Before this, nothing backed up a
+fresh install unless someone added the cron job below by hand. The `backup` service runs
+`scripts/backup-loop.sh` every `BACKUP_INTERVAL_HOURS` (default 24). Each run:
+
+1. runs `pg_dump` (custom format, compressed) to a temporary file, then renames it, so a
+   dump that dies half-way is never left looking like a good one;
+2. checks the dump is a readable archive with `pg_restore --list`;
+3. archives the uploads (evidence photos, permit documents) as `uploads-<date>.tgz`;
+4. deletes copies older than `BACKUP_KEEP_DAYS` (default 30);
+5. writes `LAST_SUCCESS`. The container turns **unhealthy** once that is over 26 hours old,
+   and the go-live check fails.
+
+**Where the backups go is `BACKUP_LOCATION`.** The default is a Docker volume **on the same
+machine as the database**, which does not survive losing the machine. Point it at a folder
+that leaves the host:
+
+```env
+# .env.prod
+BACKUP_LOCATION=/mnt/nas/safeops-backups            # Linux: a NAS or network share
+BACKUP_LOCATION=D:/OneDrive/SafeOps-Backups         # Windows: a synced cloud folder
+```
+
+`node dist/cli/goLive.js` warns until `BACKUP_LOCATION` is a path rather than a volume name.
+
+**Restore drill (run 2026-10-04):** demo dataset backed up by the service script, then
+restored with `pg_restore --no-owner --no-privileges` into an empty database. Every table's
+row count matched: 480 rows across all tables, 0 differences.
+
+## Daily database backup (manual / host cron)
 
 This is the one that matters. `pg_dump` is inside the API image, so no extra tooling is
 needed.

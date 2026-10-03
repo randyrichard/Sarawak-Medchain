@@ -178,6 +178,13 @@ const schema = z.object({
    * 1st was counted in the previous month's rates. One zone per deployment: a customer in
    * another zone needs its own deployment, or per-company zones (not built).
    */
+  /*
+   * Lets the published demo password sign in on a production build. Off by default: anyone
+   * who has read the repository knows that password (see lib/demoAccounts.ts). Set to
+   * 'true' only on a stack that is a demo on purpose and is not reachable by strangers.
+   */
+  ALLOW_DEMO_ACCOUNTS: z.enum(['true', 'false']).default('false'),
+
   APP_TIMEZONE: z.string().default('Asia/Kuching').refine((tz) => {
     try { new Intl.DateTimeFormat('en-GB', { timeZone: tz }); return true } catch { return false }
   }, 'APP_TIMEZONE must be an IANA time zone, e.g. Asia/Kuching'),
@@ -580,6 +587,8 @@ function decodeKey(b64: string, label: string): string {
 export const env = {
   ...raw,
   isProd: raw.NODE_ENV === 'production',
+  /** The demo password may sign in: always outside production, and in it only by opt-in. */
+  allowDemoPassword: raw.NODE_ENV !== 'production' || raw.ALLOW_DEMO_ACCOUNTS === 'true',
   /** The webhook sealing key, decoded once. `null` when webhooks are not configured. */
   webhookSecretKey: decodeAesKey(raw.WEBHOOK_SECRET_KEY_B64),
   /**
