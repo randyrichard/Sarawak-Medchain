@@ -5,7 +5,7 @@
 // vertical. The two are identical; this module is where they should converge, and the
 // incident copy is left in place only because that module is not being touched here.
 
-import { API_BASE_URL, authApi, getAccessToken, SESSION_CHANGED } from './authApi'
+import { API_BASE_URL, authApi, getAccessToken, isBackendConfigured, SESSION_CHANGED } from './authApi'
 import { explainNetworkFailure } from './networkError'
 import { ApiError } from './types'
 
@@ -68,12 +68,31 @@ export async function request<T>(path: string, init: RequestInit = {}, retry = t
 
   if (res.status === 204) return undefined as T
 
-  const body = await res.json().catch(() => ({}))
+  const parsed = await res.json().then((b) => ({ ok: true as const, b }), () => ({ ok: false as const, b: {} }))
+  const body = parsed.b
   if (!res.ok) {
     throw new ApiError(body.error ?? 'request_failed', body.message ?? 'Something went wrong.')
   }
+  /*
+   * A success that is not JSON is not data.
+   *
+   * This used to fall back to `{}` and return it as the result. Whatever answered was not
+   * the API - typically the web server's own index.html, sent with 200 for any unknown
+   * path, when VITE_API_BASE_URL is unset (the offline demo) or points at the web app
+   * instead of the API. Every screen then received `{}` in place of its data and crashed
+   * on the first field it read: the dashboard, the incident board, Workforce, Contractors,
+   * Visitors and HSE Performance all did. As an error, each shows its own error state.
+   */
+  if (!parsed.ok) throw new ApiError(NOT_API, notApiMessage())
   return body as T
 }
+
+/** Error code for a successful reply that was not the SafeOps API answering. */
+export const NOT_API = 'not_api'
+
+const notApiMessage = () => isBackendConfigured()
+  ? 'The server sent back something that is not SafeOps data. Check that VITE_API_BASE_URL points at the SafeOps API, not the web app.'
+  : 'This screen needs the SafeOps server, and the offline demo does not include it. Set VITE_API_BASE_URL to the API address to use it.'
 
 /** Query string builder that drops empty, null and undefined values. */
 export const qs = (params: Record<string, string | number | boolean | undefined | null>) => {

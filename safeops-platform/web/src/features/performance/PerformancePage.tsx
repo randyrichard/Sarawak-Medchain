@@ -1,16 +1,19 @@
-import { useMemo, useState } from 'react'
-import { Clock, Info } from 'lucide-react'
-import { performanceApi, type Indicators, type PerformanceView, type SitePerformance } from '@/api/performanceApi'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { CheckCircle2, Clock, Download, FileSpreadsheet, Goal, Info, Printer } from 'lucide-react'
+import { performanceApi, type Indicators, type PerformanceView, type SitePerformance, type Target, type TargetMetric } from '@/api/performanceApi'
 import { useOrg } from '@/features/org/OrgContext'
 import { useAsync } from '@/lib/useAsync'
 import { useUrlState } from '@/lib/useUrlState'
 import {
-  AsyncContent, AttentionIcon, Badge, Button, Card, CardBody, CardHeader, DataTable, PageHeader, Skeleton,
-  attentionOf, attentionStripe, type Column,
+  AsyncContent, AttentionIcon, Badge, Button, Card, CardBody, CardHeader, DataTable, Dropdown, DropdownItem, DropdownLabel,
+  DropdownSeparator, PageHeader, Skeleton, attentionOf, attentionStripe, type Column,
 } from '@/components/ui'
 import { ChartBlock, ChartLegend, GroupedBars } from '@/components/charts/Charts'
-import { canRecordManHours, formatHours, formatPercent, formatRate, hoursBasis, monthLabel } from './lib'
+import { cn } from '@/lib/cn'
+import { canRecordManHours, formatHours, formatPercent, formatRate, formatTarget, hoursBasis, monthLabel, targetStatus } from './lib'
 import { ManHoursDialog } from './ManHoursDialog'
+import { TargetsDialog } from './TargetsDialog'
+import { downloadCsv, exportFilename, monthsCsv, sitesCsv } from './export'
 
 /**
  * HSE Performance - the wider view.
@@ -39,6 +42,8 @@ export function PerformancePage() {
   const { company, project, role } = useOrg()
   const [period, setPeriod] = useUrlState('months', '12', PERIODS)
   const [manHoursOpen, setManHoursOpen] = useState(false)
+  const [targetsOpen, setTargetsOpen] = useState(false)
+  const owner = canRecordManHours(role)
 
   const state = useAsync(
     (signal) => performanceApi.get({ companyId: company!.id, projectId: project?.id, months: Number(period) }, signal),
@@ -52,7 +57,7 @@ export function PerformancePage() {
         title="HSE Performance"
         subtitle={`Every site, ${period} months - the rates you report to DOSH, clients and the board`}
         right={
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 print:hidden">
             <label className="flex items-center gap-2 text-xs text-ink-2">
               Period
               <select
@@ -65,7 +70,27 @@ export function PerformancePage() {
                 <option value="24">Last 24 months</option>
               </select>
             </label>
-            {canRecordManHours(role) && (
+            <Dropdown
+              trigger={() => <Button variant="secondary" icon={<Download size={15} />} disabled={!state.data}>Export</Button>}
+            >
+              <DropdownLabel>Spreadsheet (opens in Excel)</DropdownLabel>
+              <DropdownItem icon={<FileSpreadsheet size={14} />}
+                onSelect={() => state.data && downloadCsv(sitesCsv(state.data), exportFilename('sites', state.data))}>
+                Sites and totals (CSV)
+              </DropdownItem>
+              <DropdownItem icon={<FileSpreadsheet size={14} />}
+                onSelect={() => state.data && downloadCsv(monthsCsv(state.data), exportFilename('monthly', state.data))}>
+                Monthly trend (CSV)
+              </DropdownItem>
+              <DropdownSeparator />
+              <DropdownItem icon={<Printer size={14} />} onSelect={() => window.print()}>
+                Print or save as PDF
+              </DropdownItem>
+            </Dropdown>
+            {owner && (
+              <Button variant="secondary" icon={<Goal size={15} />} disabled={!state.data} onClick={() => setTargetsOpen(true)}>Set targets</Button>
+            )}
+            {owner && (
               <Button icon={<Clock size={15} />} onClick={() => setManHoursOpen(true)}>Record man-hours</Button>
             )}
           </div>
@@ -77,7 +102,7 @@ export function PerformancePage() {
         errorTitle="Could not load HSE performance"
         loading={<PerformanceSkeleton />}
       >
-        {(data) => <PerformanceBody data={data} />}
+        {(data) => <PerformanceBody data={data} scope={[company?.name, project?.name].filter(Boolean).join(' · ')} />}
       </AsyncContent>
 
       {company && (
@@ -85,6 +110,15 @@ export function PerformancePage() {
           open={manHoursOpen}
           companyId={company.id}
           onClose={() => setManHoursOpen(false)}
+          onSaved={state.reload}
+        />
+      )}
+      {company && (
+        <TargetsDialog
+          open={targetsOpen}
+          companyId={company.id}
+          targets={state.data?.targets ?? []}
+          onClose={() => setTargetsOpen(false)}
           onSaved={state.reload}
         />
       )}
@@ -108,6 +142,23 @@ interface Tile {
   value: string
   note: string
   tone?: string
+  /** "≤ 0.50" when a target is set, with whether the figure meets it. */
+  target?: { text: string; status: 'met' | 'missed' | null }
+}
+
+/**
+ * Applies a company target to a tile. A target, where one is set, replaces the page's own
+ * rule of thumb (e.g. "under 80% on time is a warning"): it is the standard the company
+ * chose, and the one the board reads the figure against. Missing it is a warning, never
+ * critical - a fatality keeps the only critical mark on the page.
+ */
+function withTarget(tile: Tile, value: number | null, metric: TargetMetric, targets: Target[]): Tile {
+  const target = targets.find((t) => t.metric === metric)
+  if (!target) return tile
+  const status = targetStatus(value, target)
+  const critical = tile.tone?.includes('--critical')
+  const tone = critical ? tile.tone : status === 'missed' ? 'var(--warning)' : undefined
+  return { ...tile, tone, target: { text: formatTarget(target), status } }
 }
 
 function TileRow({ tiles, label }: { tiles: Tile[]; label: string }) {
@@ -125,6 +176,15 @@ function TileRow({ tiles, label }: { tiles: Tile[]; label: string }) {
               <AttentionIcon level={attentionOf(t.tone)} />
             </p>
             <p className="text-2xs text-muted">{t.note}</p>
+            {t.target && (
+              <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-2xs font-semibold text-ink-2">
+                <span className="whitespace-nowrap">Target {t.target.text}</span>
+                {t.target.status === 'met' && (
+                  <span className="inline-flex items-center gap-0.5 whitespace-nowrap text-good"><CheckCircle2 size={12} aria-hidden /> On target</span>
+                )}
+                {t.target.status === 'missed' && <span className="whitespace-nowrap text-ink">Off target</span>}
+              </p>
+            )}
           </Card>
         </li>
       ))}
@@ -134,47 +194,47 @@ function TileRow({ tiles, label }: { tiles: Tile[]; label: string }) {
 
 const plural = (n: number, one: string, many: string) => `${n.toLocaleString('en-MY')} ${n === 1 ? one : many}`
 
-export function laggingTiles(t: Indicators): Tile[] {
+export function laggingTiles(t: Indicators, targets: Target[] = []): Tile[] {
   return [
-    { label: 'LTI frequency rate', value: formatRate(t.frequencyRate), note: `${plural(t.lostTime, 'lost-time injury', 'lost-time injuries')} · per 1M hours` },
-    { label: 'Severity rate', value: formatRate(t.severityRate), note: `${plural(t.daysLost, 'day', 'days')} lost · per 1M hours` },
-    { label: 'Incidence rate', value: formatRate(t.incidenceRate), note: `LTIs per 1,000 of ${plural(t.workers, 'worker', 'workers')}` },
-    { label: 'TRIR', value: formatRate(t.trir), note: `${plural(t.recordable, 'recordable', 'recordables')} · per 200,000 hours` },
-    {
+    withTarget({ label: 'LTI frequency rate', value: formatRate(t.frequencyRate), note: `${plural(t.lostTime, 'lost-time injury', 'lost-time injuries')} · per 1M hours` }, t.frequencyRate, 'frequencyRate', targets),
+    withTarget({ label: 'Severity rate', value: formatRate(t.severityRate), note: `${plural(t.daysLost, 'day', 'days')} lost · per 1M hours` }, t.severityRate, 'severityRate', targets),
+    withTarget({ label: 'Incidence rate', value: formatRate(t.incidenceRate), note: `LTIs per 1,000 of ${plural(t.workers, 'worker', 'workers')}` }, t.incidenceRate, 'incidenceRate', targets),
+    withTarget({ label: 'TRIR', value: formatRate(t.trir), note: `${plural(t.recordable, 'recordable', 'recordables')} · per 200,000 hours` }, t.trir, 'trir', targets),
+    withTarget({
       label: 'Fatalities',
       value: String(t.fatalities),
       note: t.fatalities > 0 ? 'Reportable to DOSH immediately' : 'None in the period',
       tone: t.fatalities > 0 ? 'var(--critical)' : undefined,
-    },
+    }, t.fatalities, 'fatalities', targets),
     { label: 'Hours worked', value: formatHours(t.hours), note: hoursBasis(t).label },
   ]
 }
 
-export function leadingTiles(t: Indicators): Tile[] {
+export function leadingTiles(t: Indicators, targets: Target[] = []): Tile[] {
   return [
     { label: 'Near misses reported', value: t.nearMisses.toLocaleString('en-MY'), note: 'More reporting is a good sign' },
-    {
+    withTarget({
       label: 'Near-miss ratio',
       value: t.nearMissRatio === null ? '—' : `${t.nearMissRatio}:1`,
       note: t.nearMissRatio === null ? 'No recordable injuries to compare' : 'Near misses per recordable injury',
-    },
-    {
+    }, t.nearMissRatio, 'nearMissRatio', targets),
+    withTarget({
       label: 'Actions closed on time',
       value: formatPercent(t.onTimeClosure),
       note: `${t.actionsClosedOnTime} of ${plural(t.actionsClosed, 'action', 'actions')} closed`,
       tone: t.onTimeClosure !== null && t.onTimeClosure < 0.8 ? 'var(--warning)' : undefined,
-    },
-    {
+    }, t.onTimeClosure, 'onTimeClosure', targets),
+    withTarget({
       label: 'Overdue actions',
       value: String(t.overdueActions),
       note: 'Open past their due date, now',
       tone: t.overdueActions > 0 ? 'var(--warning)' : undefined,
-    },
+    }, t.overdueActions, 'overdueActions', targets),
     { label: 'Toolbox meetings', value: t.toolboxMeetings.toLocaleString('en-MY'), note: 'Held in the period' },
   ]
 }
 
-function PerformanceBody({ data }: { data: PerformanceView }) {
+function PerformanceBody({ data, scope }: { data: PerformanceView; scope: string }) {
   const { total } = data
   const basis = hoursBasis(total)
 
@@ -185,6 +245,11 @@ function PerformanceBody({ data }: { data: PerformanceView }) {
 
   return (
     <div className="space-y-6">
+      {/* On paper the page has no header controls or URL, so it says what it is. */}
+      <p className="hidden text-xs text-ink-2 print:block">
+        {scope} · {monthLabel(data.from.slice(0, 7))} to {monthLabel(new Date(new Date(data.to).getTime() - 1).toISOString().slice(0, 7))} ·
+        printed {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+      </p>
       {basis.estimated && (
         <p className="flex items-start gap-2 rounded-lg border bg-sunken px-3 py-2 text-xs text-ink-2">
           <Info size={14} className="mt-0.5 shrink-0 text-accent" aria-hidden />
@@ -200,14 +265,14 @@ function PerformanceBody({ data }: { data: PerformanceView }) {
         <h2 id="perf-lagging" className="mb-2 text-sm font-semibold text-ink">
           Lagging indicators <span className="font-normal text-muted">· outcomes - lower is better</span>
         </h2>
-        <TileRow label="Lagging indicators" tiles={laggingTiles(total)} />
+        <TileRow label="Lagging indicators" tiles={laggingTiles(total, data.targets)} />
       </section>
 
       <section aria-labelledby="perf-leading">
         <h2 id="perf-leading" className="mb-2 text-sm font-semibold text-ink">
           Leading indicators <span className="font-normal text-muted">· the activity that prevents injuries</span>
         </h2>
-        <TileRow label="Leading indicators" tiles={leadingTiles(total)} />
+        <TileRow label="Leading indicators" tiles={leadingTiles(total, data.targets)} />
       </section>
 
       <Card>
@@ -236,16 +301,27 @@ function PerformanceBody({ data }: { data: PerformanceView }) {
         </CardBody>
       </Card>
 
-      <SiteTable sites={data.sites} />
+      <SiteTable sites={data.sites} targets={data.targets} />
     </div>
   )
 }
 
 /** The chart's figures as a table - for screen readers, for reading exact values, and for anyone who cannot tell the two bar colours apart. */
 function MonthTable({ data }: { data: PerformanceView }) {
+  // A closed <details> prints as its summary alone. The printed board pack needs the
+  // figures, so open it for printing and put it back as it was afterwards.
+  const ref = useRef<HTMLDetailsElement>(null)
+  useEffect(() => {
+    let wasOpen = false
+    const before = () => { if (ref.current) { wasOpen = ref.current.open; ref.current.open = true } }
+    const after = () => { if (ref.current) ref.current.open = wasOpen }
+    window.addEventListener('beforeprint', before)
+    window.addEventListener('afterprint', after)
+    return () => { window.removeEventListener('beforeprint', before); window.removeEventListener('afterprint', after) }
+  }, [])
   return (
-    <details className="mt-3 group">
-      <summary className="cursor-pointer select-none text-xs font-semibold text-accent hover:underline coarse:py-3">
+    <details ref={ref} className="mt-3 group">
+      <summary className="cursor-pointer select-none text-xs font-semibold text-accent hover:underline coarse:py-3 print:hidden">
         Show the figures as a table
       </summary>
       <div className="mt-2 overflow-x-auto" tabIndex={0} role="region" aria-label="Monthly figures">
@@ -280,53 +356,79 @@ function MonthTable({ data }: { data: PerformanceView }) {
   )
 }
 
-const rate = (v: number | null) => <span className={v === null ? 'text-muted' : 'text-ink'}>{formatRate(v)}</span>
+/**
+ * A site figure, marked when it misses the company target. The mark is an icon with words,
+ * not a colour, and only where a target exists: an unmarked number means "no target set" or
+ * "on target", and the header says which target applies.
+ */
+function judged(value: number | null, text: string, target: Target | undefined) {
+  const missed = targetStatus(value, target) === 'missed'
+  return (
+    <span className={cn('inline-flex items-center justify-end gap-1 tabular-nums', value === null ? 'text-muted' : missed ? 'font-semibold text-ink' : 'text-ink')}>
+      {missed && <AttentionIcon level="warning" label={`Off target (${formatTarget(target!)})`} />}
+      {text}
+    </span>
+  )
+}
 
-const SITE_COLUMNS: Column<SitePerformance>[] = [
-  {
-    key: 'site',
-    header: 'Site',
-    render: (s) => (
-      <span className="flex items-center gap-1.5 font-medium text-ink">
-        {s.fatalities > 0 && <AttentionIcon level="critical" label="Fatality in the period" />}
-        {s.siteName}
-      </span>
-    ),
-    sortValue: (s) => s.siteName.toLowerCase(),
-  },
-  {
-    key: 'hours',
-    header: 'Hours',
-    align: 'right',
-    render: (s) => (
-      <span className="whitespace-nowrap tabular-nums">
-        {formatHours(s.hours)}
-        {s.estimatedShare > 0 && <Badge className="ml-1.5" tone="neutral">est.</Badge>}
-      </span>
-    ),
-    sortValue: (s) => s.hours,
-  },
-  { key: 'lti', header: 'LTIs', align: 'right', render: (s) => <span className="tabular-nums">{s.lostTime}</span>, sortValue: (s) => s.lostTime },
-  { key: 'fr', header: 'LTI freq. rate', align: 'right', render: (s) => rate(s.frequencyRate), sortValue: (s) => s.frequencyRate },
-  { key: 'trir', header: 'TRIR', align: 'right', render: (s) => rate(s.trir), sortValue: (s) => s.trir, visibility: 'hidden md:table-cell' },
-  { key: 'sr', header: 'Severity rate', align: 'right', render: (s) => rate(s.severityRate), sortValue: (s) => s.severityRate, visibility: 'hidden lg:table-cell' },
-  { key: 'nm', header: 'Near misses', align: 'right', render: (s) => <span className="tabular-nums">{s.nearMisses}</span>, sortValue: (s) => s.nearMisses, visibility: 'hidden md:table-cell' },
-  { key: 'ontime', header: 'Closed on time', align: 'right', render: (s) => <span className="tabular-nums">{formatPercent(s.onTimeClosure)}</span>, sortValue: (s) => s.onTimeClosure, visibility: 'hidden lg:table-cell' },
-  {
-    key: 'overdue',
-    header: 'Overdue actions',
-    align: 'right',
-    render: (s) => (
-      <span className={s.overdueActions > 0 ? 'inline-flex items-center gap-1 font-semibold text-ink' : 'text-muted'}>
-        {s.overdueActions > 0 && <AttentionIcon level="warning" label="Overdue actions" />}
-        <span className="tabular-nums">{s.overdueActions}</span>
-      </span>
-    ),
-    sortValue: (s) => s.overdueActions,
-  },
-]
+const headed = (label: string, target: Target | undefined) => target
+  ? <span>{label}<span className="block font-normal normal-case tracking-normal text-muted">target {formatTarget(target)}</span></span>
+  : label
 
-function SiteTable({ sites }: { sites: SitePerformance[] }) {
+export function siteColumns(targets: Target[]): Column<SitePerformance>[] {
+  const t = (m: TargetMetric) => targets.find((x) => x.metric === m)
+  return [
+    {
+      key: 'site',
+      header: 'Site',
+      render: (s) => (
+        <span className="flex items-center gap-1.5 font-medium text-ink">
+          {s.fatalities > 0 && <AttentionIcon level="critical" label="Fatality in the period" />}
+          {s.siteName}
+        </span>
+      ),
+      sortValue: (s) => s.siteName.toLowerCase(),
+    },
+    {
+      key: 'hours',
+      header: 'Hours',
+      align: 'right',
+      render: (s) => (
+        <span className="whitespace-nowrap tabular-nums">
+          {formatHours(s.hours)}
+          {s.estimatedShare > 0 && <Badge className="ml-1.5" tone="neutral">est.</Badge>}
+        </span>
+      ),
+      sortValue: (s) => s.hours,
+    },
+    { key: 'lti', header: 'LTIs', align: 'right', render: (s) => <span className="tabular-nums">{s.lostTime}</span>, sortValue: (s) => s.lostTime },
+    { key: 'fr', header: headed('LTI freq. rate', t('frequencyRate')), align: 'right', render: (s) => judged(s.frequencyRate, formatRate(s.frequencyRate), t('frequencyRate')), sortValue: (s) => s.frequencyRate },
+    { key: 'trir', header: headed('TRIR', t('trir')), align: 'right', render: (s) => judged(s.trir, formatRate(s.trir), t('trir')), sortValue: (s) => s.trir, visibility: 'hidden md:table-cell' },
+    { key: 'sr', header: headed('Severity rate', t('severityRate')), align: 'right', render: (s) => judged(s.severityRate, formatRate(s.severityRate), t('severityRate')), sortValue: (s) => s.severityRate, visibility: 'hidden lg:table-cell' },
+    { key: 'nm', header: 'Near misses', align: 'right', render: (s) => <span className="tabular-nums">{s.nearMisses}</span>, sortValue: (s) => s.nearMisses, visibility: 'hidden md:table-cell' },
+    { key: 'ontime', header: headed('Closed on time', t('onTimeClosure')), align: 'right', render: (s) => judged(s.onTimeClosure, formatPercent(s.onTimeClosure), t('onTimeClosure')), sortValue: (s) => s.onTimeClosure, visibility: 'hidden lg:table-cell' },
+    {
+      key: 'overdue',
+      header: headed('Overdue actions', t('overdueActions')),
+      align: 'right',
+      render: (s) => {
+        const target = t('overdueActions')
+        // With a target, only a miss is marked; without one, any overdue action is.
+        const flagged = target ? targetStatus(s.overdueActions, target) === 'missed' : s.overdueActions > 0
+        return (
+          <span className={flagged ? 'inline-flex items-center gap-1 font-semibold text-ink' : 'text-muted'}>
+            {flagged && <AttentionIcon level="warning" label={target ? `Off target (${formatTarget(target)})` : 'Overdue actions'} />}
+            <span className="tabular-nums">{s.overdueActions}</span>
+          </span>
+        )
+      },
+      sortValue: (s) => s.overdueActions,
+    },
+  ]
+}
+
+function SiteTable({ sites, targets }: { sites: SitePerformance[]; targets: Target[] }) {
+  const columns = useMemo(() => siteColumns(targets), [targets])
   return (
     <Card>
       <CardHeader
@@ -335,7 +437,7 @@ function SiteTable({ sites }: { sites: SitePerformance[] }) {
       />
       <DataTable
         caption="HSE performance by site"
-        columns={SITE_COLUMNS}
+        columns={columns}
         rows={sites}
         rowKey={(s) => s.siteId}
         defaultSort={{ key: 'fr', direction: 'desc' }}

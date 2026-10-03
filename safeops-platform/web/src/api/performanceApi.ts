@@ -55,12 +55,26 @@ export interface SitePerformance extends Indicators {
   siteName: string
 }
 
+/** Which indicators can carry a target. Matches TARGET_METRICS on the server. */
+export type TargetMetric =
+  | 'frequencyRate' | 'severityRate' | 'incidenceRate' | 'trir' | 'fatalities' | 'overdueActions'
+  | 'nearMissRatio' | 'onTimeClosure'
+
+export interface Target {
+  metric: TargetMetric
+  /** In the indicator's own unit; onTimeClosure is a fraction 0..1. */
+  value: number
+  /** `max`: on target at or below the value. `min`: at or above it. */
+  direction: 'max' | 'min'
+}
+
 export interface PerformanceView {
   from: string
   to: string
   months: MonthPoint[]
   total: Indicators
   sites: SitePerformance[]
+  targets: Target[]
   basis: { frequency: number; trir: number; incidence: number; estimatedHoursPerWorkerMonth: number }
 }
 
@@ -94,4 +108,8 @@ export const performanceApi = {
   /** `hours: null` clears a recorded month so it falls back to the headcount estimate. */
   setManHours: (b: { companyId: string; siteId: string; month: string; hours: number | null }) =>
     request<unknown>('/performance/man-hours', { method: 'PUT', body: JSON.stringify(b) }),
+
+  /** `value: null` removes the target. */
+  setTarget: (b: { companyId: string; metric: TargetMetric; value: number | null }) =>
+    request<unknown>('/performance/targets', { method: 'PUT', body: JSON.stringify(b) }),
 }

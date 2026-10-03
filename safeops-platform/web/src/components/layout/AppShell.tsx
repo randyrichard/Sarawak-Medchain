@@ -126,7 +126,7 @@ export default function AppShell() {
   const location = useLocation()
   useDocumentTitle(location.pathname, claimedTitle)
   return (
-    <div className="flex h-full">
+    <div className="flex h-full print:block print:h-auto">
       {/*
         Skip link.
 
@@ -147,7 +147,7 @@ export default function AppShell() {
       </a>
 
       {/* Desktop sidebar */}
-      <aside className="hidden w-60 shrink-0 flex-col border-r bg-surface lg:flex">
+      <aside className="hidden w-60 shrink-0 flex-col border-r bg-surface lg:flex print:hidden">
         <SidebarContent />
       </aside>
 
@@ -170,7 +170,7 @@ export default function AppShell() {
 
       <KeyboardShortcuts />
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col print:block">
         <Topbar
           menuButton={
             <button
@@ -184,7 +184,7 @@ export default function AppShell() {
         />
         {/* `tabIndex={-1}` so the skip link can move focus here, not merely scroll to it —
             without it the browser jumps the viewport and leaves focus in the sidebar. */}
-        <main id="main" tabIndex={-1} className="min-w-0 flex-1 overflow-y-auto px-4 py-5 outline-none md:px-6 lg:px-7">
+        <main id="main" tabIndex={-1} className="min-w-0 flex-1 overflow-y-auto px-4 py-5 outline-none md:px-6 lg:px-7 print:overflow-visible print:p-0">
           <div className="mx-auto max-w-[1360px]">
             {/*
               Unsent incident reports, shown on every screen.
