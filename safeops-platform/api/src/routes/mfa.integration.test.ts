@@ -108,8 +108,8 @@ d('multi-factor sign-in — integration (real Postgres, real HTTP)', () => {
   afterEach(async () => {
     nextStep()
     /*
-     * Each test signs in several times from 127.0.0.1, and the per-IP sign-in budget is 20
-     * per quarter hour. Cleared between tests for the same reason resetRateLimits.ts clears
+     * Each test signs in several times from 127.0.0.1, and the per-IP budget is 40 failed
+     * attempts per quarter hour. Cleared between tests for the same reason resetRateLimits.ts clears
      * it between files: isolation, not switching the limiter off - every request still
      * passes through it and counts.
      */

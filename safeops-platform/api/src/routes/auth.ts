@@ -43,11 +43,22 @@ function ctxOf(req: { ip?: string; headers: Record<string, unknown> }): RequestC
  * Per-IP throttle in front of the credential endpoint. This bounds online guessing
  * independently of per-account lockout, which alone would let an attacker spray one
  * attempt each across thousands of accounts.
+ *
+ * It counts **failed** attempts only (`skipSuccessfulRequests`). A customer's site reaches
+ * us from one NAT address, and this used to count every sign-in: at shift start the first
+ * 20 people through the gate spent the budget and the 21st was told "Too many attempts"
+ * with the right password - in testing, 25 of a 45-person shift were locked out. A guess
+ * is a failure, so failures are what is bounded: 40 per address per quarter hour, which
+ * leaves room for a shift's worth of typos and still caps a spray at 160 guesses an hour,
+ * each account locking after MAX_FAILED_LOGINS of them. A correct sign-in between guesses
+ * does not refund one: the counter only ever goes down for the request that succeeded.
  */
+export const LOGIN_FAILURES_PER_IP = 40
 const loginLimiter = rateLimit({
   store: new PrismaRateLimitStore(prisma, 'login'),
   windowMs: 15 * 60 * 1000,
-  limit: 20,
+  limit: LOGIN_FAILURES_PER_IP,
+  skipSuccessfulRequests: true,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'rate_limited', message: 'Too many attempts. Try again shortly.' },
@@ -116,7 +127,10 @@ authRouter.post('/login', loginLimiter, asyncRoute(async (req, res) => {
 const mfaLimiter = rateLimit({
   store: new PrismaRateLimitStore(prisma, 'mfa'),
   windowMs: 15 * 60 * 1000,
-  limit: 20,
+  // Failed codes only, for the same reason as the password step: a whole site's correct
+  // codes must not spend the budget meant for wrong ones.
+  limit: LOGIN_FAILURES_PER_IP,
+  skipSuccessfulRequests: true,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'rate_limited', message: 'Too many attempts. Try again shortly.' },
