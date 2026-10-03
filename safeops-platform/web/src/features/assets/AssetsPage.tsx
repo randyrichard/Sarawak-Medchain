@@ -6,7 +6,7 @@ import type { AssetFilters, AssetStats, AssetView, InspectionView } from '@/api/
 import { ASSET_CATEGORIES, CATEGORY_LABEL, type AssetCategory } from '@/api/assets'
 import { useOrg } from '@/features/org/OrgContext'
 import { useActor } from '@/features/incidents/lib'
-import { Badge, Button, Card, PageHeader, Skeleton, StatusPill, Tabs, type TabItem } from '@/components/ui'
+import { Badge, Button, Card, PageHeader, Skeleton, StatusPill, Tabs, type TabItem, AttentionIcon, attentionOf, attentionStripe } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { canManageAssets, CATEGORY_ICON, healthColor, RISK_PILL } from './lib'
 import { AssetDrawer } from './components/AssetDrawer'
@@ -105,14 +105,14 @@ export function AssetsPage() {
         {KPIS.map((k, i) => {
           const active = k.bucket && bucket === k.bucket
           const inner = (
-            <Card className={cn('px-4 py-3 transition-all', k.bucket && 'hover:-translate-y-0.5 hover:shadow-pop', active && 'ring-2 ring-[var(--accent)]')}>
+            <Card className={cn('px-4 py-3 transition-all', k.bucket && 'hover:-translate-y-0.5 hover:shadow-pop', active && 'ring-2 ring-[var(--accent)]')} style={attentionStripe(attentionOf(k.tone))}>
               <p className="text-2xs font-semibold text-ink-2">{k.label}</p>
               {k.value === undefined ? (
                 <Skeleton className="mt-1.5 h-7 w-10" />
               ) : (
-                <p className="mt-0.5 text-2xl font-semibold tracking-tight" style={{ color: k.tone ?? 'var(--ink)', fontVariantNumeric: 'tabular-nums' }}>
+                <p className="mt-0.5 flex items-center gap-1.5 text-2xl font-semibold tracking-tight" style={{ color: k.tone ?? 'var(--ink)', fontVariantNumeric: 'tabular-nums' }}>
                   {k.value}
-                </p>
+                <AttentionIcon level={attentionOf(k.tone)} /></p>
               )}
             </Card>
           )

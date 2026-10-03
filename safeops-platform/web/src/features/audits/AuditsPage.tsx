@@ -9,7 +9,7 @@ import type {
 } from '@/api/audits'
 import { useOrg } from '@/features/org/OrgContext'
 import { useActor } from '@/features/incidents/lib'
-import { Badge, Button, Card, PageHeader, Skeleton, StatusPill, Tabs, type TabItem } from '@/components/ui'
+import { Badge, Button, Card, PageHeader, Skeleton, StatusPill, Tabs, type TabItem, AttentionIcon, attentionOf, attentionStripe } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { isComplianceManager, scoreColor, AUDIT_STATUS_META } from './lib'
 import { AUDIT_TYPE_LABEL } from '@/api/audits'
@@ -88,14 +88,14 @@ export function AuditsPage() {
 
       <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         {KPIS.map((k, i) => (
-          <Card key={k.label} className="animate-rise px-4 py-3" >
+          <Card key={k.label} className="animate-rise px-4 py-3"  style={attentionStripe(attentionOf(k.tone))}>
             <p className="text-2xs font-semibold text-ink-2" style={{ animationDelay: `${i * 35}ms` }}>{k.label}</p>
             {k.value === undefined ? (
               <Skeleton className="mt-1.5 h-7 w-10" />
             ) : (
-              <p className="mt-0.5 text-2xl font-semibold tracking-tight" style={{ color: k.tone ?? 'var(--ink)', fontVariantNumeric: 'tabular-nums' }}>
+              <p className="mt-0.5 flex items-center gap-1.5 text-2xl font-semibold tracking-tight" style={{ color: k.tone ?? 'var(--ink)', fontVariantNumeric: 'tabular-nums' }}>
                 {k.value}
-              </p>
+              <AttentionIcon level={attentionOf(k.tone)} /></p>
             )}
           </Card>
         ))}

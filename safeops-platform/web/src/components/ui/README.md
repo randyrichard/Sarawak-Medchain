@@ -45,7 +45,7 @@ hard-codes a colour or spacing value, and it never rebuilds a primitive's behavi
 | Forms | `Input`, `PasswordInput`, `Textarea`, `Select`, `SuggestSelect`, `Checkbox`, `Switch`, `FieldShell`, `fieldA11y` |
 | Layout | `FormStack` / `FormRow` / `FormSection` / `FormSections`, `PageHeader`, `Card` / `CardHeader` / `CardBody`, `Tabs` / `TabPanel`, `Breadcrumbs` |
 | Data | `DataTable`, `Badge`, `StatusPill`, `Avatar` |
-| Feedback | `Alert`, `Dialog`, `EmptyState`, `ErrorState`, `Loading`, `Skeleton*`, `Spinner`, `FullPageSpinner` |
+| Feedback | `AttentionIcon` / `attentionOf` / `attentionStripe`, `Alert`, `Dialog`, `EmptyState`, `ErrorState`, `Loading`, `Skeleton*`, `Spinner`, `FullPageSpinner` |
 | Async | `useAsync` (hook), `AsyncContent` (renders its states) |
 | Conventions | `useUrlState`, `useUnsavedChangesWarning`, `lib/shortcuts.ts`, `KeyboardShortcuts` |
 
@@ -403,6 +403,41 @@ Where the whole area should respond, it now does:
 - Make the whole thing the target: a label around its field, a link around its row or card.
 - Put frequent actions where the pointer or thumb already is. The near-miss form pins Submit to
   the bottom edge on a phone, and dialog actions sit at the bottom of the dialog.
+
+## One thing stands out (Von Restorff effect)
+
+Hedwig von Restorff (1933) showed that, among items that look alike, the one that differs is the
+one people notice and remember. Two conditions come with it:
+
+1. **The standouts must stay outnumbered.** If everything stands out, nothing does, and overused
+   emphasis gets tuned out, like banner ads.
+2. **The difference can't be colour alone.** About one man in twelve has a red-green colour
+   vision deficiency, and a site tablet in sunlight washes colour out (WCAG 1.4.1). Pair colour
+   with shape, an icon or words.
+
+SafeOps spends distinctiveness on one thing: **what needs action.**
+
+| Where | Before | Now |
+|---|---|---|
+| KPI tiles (8 implementations across Actions, Training, Audits, Assets, Permits, CAPA analytics, Admin security and Admin overview) | An alarming value was a red or amber number; nothing else differed | `AttentionIcon` beside the value, words for screen readers, and for **critical only** a stripe down the card's edge (`attentionStripe`) |
+| Warnings vs critical | (no distinction beyond hue) | Warnings get the icon. Critical gets icon **and** stripe, so in a row with several marked tiles the one needing action now is still the standout |
+| Incident register, overdue "Days open" | Red "18d" plus a hover-only tooltip | Icon, plus "Overdue:" for screen readers |
+| Permits status chips | The selected chip used the same solid blue as "Request permit", so two equal standouts | Selected chips are tinted with an accent border. The page has one solid primary |
+| Near-miss tags | Each selected tag was solid blue, so three tags plus Submit made four standouts | Tinted with a check mark (the non-colour cue). "Submit near miss" is the only solid button |
+
+Measured after the change, every page has **at most one** solid primary action, and no warning
+is signalled by red alone.
+
+**Rules for new screens**
+
+- **One solid-accent primary per view.** Selected chips, tabs and toggles use the tint and
+  border style, never `bg-accent-solid`.
+- **Colour a value only when it is asking for something**, and then add `AttentionIcon`.
+  Reserve the stripe for critical.
+- **Don't decorate with emphasis.** Badges, colour and motion that mean nothing take attention
+  from the things that do.
+- `vonRestorff.dom.test.tsx` fails a coloured KPI value without an icon, and a pressed toggle
+  in the primary fill.
 
 ## Adding or changing a component
 
