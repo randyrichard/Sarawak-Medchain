@@ -43,7 +43,7 @@ hard-codes a colour or spacing value, and it never rebuilds a primitive's behavi
 |---|---|
 | Actions | `Button`, `LinkButton`, `Dropdown` / `DropdownItem` / `DropdownLabel` / `DropdownSeparator` |
 | Forms | `Input`, `PasswordInput`, `Textarea`, `Select`, `SuggestSelect`, `Checkbox`, `Switch`, `FieldShell`, `fieldA11y` |
-| Layout | `FormStack` / `FormRow` / `FormSection`, `PageHeader`, `Card` / `CardHeader` / `CardBody`, `Tabs` / `TabPanel`, `Breadcrumbs` |
+| Layout | `FormStack` / `FormRow` / `FormSection` / `FormSections`, `PageHeader`, `Card` / `CardHeader` / `CardBody`, `Tabs` / `TabPanel`, `Breadcrumbs` |
 | Data | `DataTable`, `Badge`, `StatusPill`, `Avatar` |
 | Feedback | `Alert`, `Dialog`, `EmptyState`, `ErrorState`, `Loading`, `Skeleton*`, `Spinner`, `FullPageSpinner` |
 | Async | `useAsync` (hook), `AsyncContent` (renders its states) |
@@ -319,6 +319,42 @@ What was changed, and why:
 
 `proximity.dom.test.tsx` holds the spacing ratios and the error placement, and fails if a
 dialog puts its submit error back in the body.
+
+## Not making people remember (Miller's law)
+
+Miller (1956) found that people can hold about **7 ± 2** chunks in short-term memory. Cowan
+(2001) put it nearer **4** when people can't rehearse or group the items. The real insight is
+**chunking**: the limit counts meaningful groups, not raw items.
+
+The law is about *memory*, not about what is on screen. "Menus must have at most seven items"
+is a misreading: options in view are recognised, not recalled, and grouping them is Hick's law
+(see above). In SafeOps, Miller's law applies wherever a person has to **hold something in
+their head**:
+
+| Where | Before | Now |
+|---|---|---|
+| Incident report, steps 2–3 | Type, severity, title and time entered on step 1 were hidden, so writing "What happened?" meant remembering them or going back | A **"You are reporting"** summary (`ReportingSummary`) with an Edit link, on the steps in between |
+| Register asset (16 fields), Register a visit (15 fields) | One unbroken column, so keeping track of what was done and what was left | Named `FormSection`s of 2–5 fields (5 sections and 4 sections) |
+| IC numbers (visitor drawer, blacklist) | 12 digits in one run, compared by eye against a card | `formatIdNumber`: `900101-13-5678`, the printed MyKad form. Display only; matching uses the stored value |
+| MFA setup key | Already chunked in fours | Now through the shared `chunk()` |
+
+Already right, and kept that way:
+- Recovery codes are short and chunked.
+- Code fields accept `123 456` with a space, as authenticator apps show it.
+- Every destructive confirmation names its target ("Delete Jane Doe?"), so nothing has to be
+  remembered from the screen behind it.
+
+**Rules for new screens**
+
+- **Never ask people to recall what they entered earlier.** Carry it forward: a summary line, or
+  the record's name in the dialog title.
+- **Long codes, IDs and numbers that people read, compare or retype** go through `chunk()` or a
+  domain formatter. Codes that are only copied (API keys, links) need a copy button, not
+  chunking.
+- **A form with more than about 8 fields** gets named `FormSection`s of 5 or fewer, inside
+  `FormSections`. `millersLaw.dom.test.tsx` fails any dialog of 12 or more fields without
+  sections, and any section with more than 5 fields.
+- **Don't cap visible options to seven in Miller's name.** Group them instead (see Hick's law).
 
 ## Adding or changing a component
 

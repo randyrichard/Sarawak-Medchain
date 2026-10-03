@@ -3,7 +3,7 @@ import { visitorsApi } from '@/api/visitorsApi'
 import { listEquipmentHolders, type EquipmentHolderOption } from '@/api/equipmentHolders'
 import { ApiError } from '@/api/types'
 import { useOrg, useSiteScope } from '@/features/org/OrgContext'
-import { Alert, Button, Dialog, Input, Select, Textarea, personRegisterHint } from '@/components/ui'
+import { Button, Dialog, FormSection, FormSections, Input, Select, Textarea, personRegisterHint } from '@/components/ui'
 
 /**
  * Pre-registering a visit.
@@ -109,6 +109,7 @@ export function NewVisitorDialog({
 
   return (
     <Dialog
+      error={error}
       open={open}
       onClose={onClose}
       title="Register a visit"
@@ -124,73 +125,77 @@ export function NewVisitorDialog({
         </>
       }
     >
-      <div className="space-y-3">
-        {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
-
-        <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
-          <Input label="Full name" required value={name} onChange={(e) => setName(e.target.value)} />
-          <Input label="IC or passport" required value={idNumber}
-            onChange={(e) => setIdNumber(e.target.value)} />
-        </div>
-
-        <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
-          <Input label="Nationality" value={nationality} onChange={(e) => setNationality(e.target.value)} />
-          <Input label="Company" value={visitorCompany} onChange={(e) => setVisitorCompany(e.target.value)} />
-        </div>
-
-        <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
-          <Input label="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
-          <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        </div>
-
-        <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
-          <Select label="Site" required value={siteId} onChange={(e) => setSiteId(e.target.value)}>
-            <option value="">Select…</option>
-            {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </Select>
-          <Select label="Host" value={hostEmployeeId}
-            onChange={(e) => setHostEmployeeId(e.target.value)}
-            hint="Named hosts must approve before the visitor can enter.">
-            <option value="">No host</option>
-            {/*
-              "No host" is a real choice here, not an empty state, so it cannot double as
-              the explanation. Without this the select offered exactly one option and said
-              nothing about why - which on a site-scoped account is the same silence that
-              sent somebody looking for a broken request for most of an afternoon.
-            */}
-            {hosts.length === 0 && (
-              <option value="" disabled>{personRegisterHint(siteScope, 'Employees')}</option>
-            )}
-            {hosts.map((h) => (
-              <option key={h.id} value={h.id}>
-                {h.name}{h.reference ? ` — ${h.reference}` : ''}
-              </option>
-            ))}
-          </Select>
-        </div>
-
-        <Input label="Purpose of visit" value={purpose} onChange={(e) => setPurpose(e.target.value)}
-          placeholder="e.g. Vendor meeting, pump commissioning" />
-
-        <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
-          <Input label="Expected arrival" type="datetime-local" required value={expectedArrival}
-            onChange={(e) => setExpectedArrival(e.target.value)} />
-          <Input label="Expected departure" type="datetime-local" required value={expectedDeparture}
-            onChange={(e) => setExpectedDeparture(e.target.value)} />
-        </div>
-
-        <Input label="Vehicle number" value={vehicleNumber}
-          onChange={(e) => setVehicleNumber(e.target.value)} placeholder="e.g. QAB 1234" />
-
-        <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
-          <Input label="Emergency contact" value={emergencyContactName}
-            onChange={(e) => setEmergencyContactName(e.target.value)} />
-          <Input label="Emergency phone" value={emergencyContactPhone}
-            onChange={(e) => setEmergencyContactPhone(e.target.value)} />
-        </div>
-
-        <Textarea label="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
-      </div>
+      {/*
+        Fifteen fields in one column, chunked into four named sections of two to five - the
+        size working memory keeps track of (Miller's law). The gatehouse officer fills this
+        in with a visitor standing at the window; "who, the visit, contacts, vehicle" is a
+        sequence they can hold, fifteen loose boxes is not.
+      */}
+      <FormSections>
+        <FormSection title="Who is visiting">
+            <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
+              <Input label="Full name" required value={name} onChange={(e) => setName(e.target.value)} />
+              <Input label="IC or passport" required value={idNumber}
+                onChange={(e) => setIdNumber(e.target.value)} />
+            </div>
+            <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
+              <Input label="Nationality" value={nationality} onChange={(e) => setNationality(e.target.value)} />
+              <Input label="Company" value={visitorCompany} onChange={(e) => setVisitorCompany(e.target.value)} />
+            </div>
+        </FormSection>
+        <FormSection title="The visit">
+            <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
+              <Select label="Site" required value={siteId} onChange={(e) => setSiteId(e.target.value)}>
+                <option value="">Select…</option>
+                {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </Select>
+              <Select label="Host" value={hostEmployeeId}
+                onChange={(e) => setHostEmployeeId(e.target.value)}
+                hint="Named hosts must approve before the visitor can enter.">
+                <option value="">No host</option>
+                {/*
+                  "No host" is a real choice here, not an empty state, so it cannot double as
+                  the explanation. Without this the select offered exactly one option and said
+                  nothing about why - which on a site-scoped account is the same silence that
+                  sent somebody looking for a broken request for most of an afternoon.
+                */}
+                {hosts.length === 0 && (
+                  <option value="" disabled>{personRegisterHint(siteScope, 'Employees')}</option>
+                )}
+                {hosts.map((h) => (
+                  <option key={h.id} value={h.id}>
+                    {h.name}{h.reference ? ` — ${h.reference}` : ''}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          <Input label="Purpose of visit" value={purpose} onChange={(e) => setPurpose(e.target.value)}
+            placeholder="e.g. Vendor meeting, pump commissioning" />
+            <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
+              <Input label="Expected arrival" type="datetime-local" required value={expectedArrival}
+                onChange={(e) => setExpectedArrival(e.target.value)} />
+              <Input label="Expected departure" type="datetime-local" required value={expectedDeparture}
+                onChange={(e) => setExpectedDeparture(e.target.value)} />
+            </div>
+        </FormSection>
+        <FormSection title="Contact and emergency">
+            <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
+              <Input label="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            </div>
+            <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
+              <Input label="Emergency contact" value={emergencyContactName}
+                onChange={(e) => setEmergencyContactName(e.target.value)} />
+              <Input label="Emergency phone" value={emergencyContactPhone}
+                onChange={(e) => setEmergencyContactPhone(e.target.value)} />
+            </div>
+        </FormSection>
+        <FormSection title="Vehicle and notes">
+          <Input label="Vehicle number" value={vehicleNumber}
+            onChange={(e) => setVehicleNumber(e.target.value)} placeholder="e.g. QAB 1234" />
+          <Textarea label="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
+        </FormSection>
+      </FormSections>
     </Dialog>
   )
 }

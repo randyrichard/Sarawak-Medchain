@@ -47,6 +47,10 @@ export function FormRow({ children, columns = 2, className }: { children: ReactN
  * A titled group of fields. The heading sits 8px above its fields and 32px below the
  * previous section, so it is unmistakably the title of what follows - a heading spaced
  * evenly between two sections belongs to neither.
+ *
+ * Put sections inside `FormSections` (or a container with `FORM_SPACING.section`): the
+ * 32px between them comes from the container, which is what keeps them further apart than
+ * the fields inside each one.
  */
 export function FormSection({
   title, description, children, className,
@@ -57,7 +61,7 @@ export function FormSection({
   className?: string
 }) {
   return (
-    <section className={cn('[&+&]:mt-8', className)}>
+    <section className={className}>
       <div className={FORM_SPACING.sectionHeading}>
         <h3 className="text-sm font-semibold text-ink">{title}</h3>
         {description && <p className="mt-0.5 text-xs text-muted">{description}</p>}
@@ -65,4 +69,9 @@ export function FormSection({
       <FormStack>{children}</FormStack>
     </section>
   )
+}
+
+/** Stacks FormSections 32px apart - further than the 20px between fields inside each. */
+export function FormSections({ children, className }: { children: ReactNode; className?: string }) {
+  return <div className={cn(FORM_SPACING.section, className)}>{children}</div>
 }
