@@ -127,23 +127,23 @@ export function NewVisitorDialog({
       <div className="space-y-3">
         {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
           <Input label="Full name" required value={name} onChange={(e) => setName(e.target.value)} />
           <Input label="IC or passport" required value={idNumber}
             onChange={(e) => setIdNumber(e.target.value)} />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
           <Input label="Nationality" value={nationality} onChange={(e) => setNationality(e.target.value)} />
           <Input label="Company" value={visitorCompany} onChange={(e) => setVisitorCompany(e.target.value)} />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
           <Input label="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
           <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
           <Select label="Site" required value={siteId} onChange={(e) => setSiteId(e.target.value)}>
             <option value="">Select…</option>
             {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -172,7 +172,7 @@ export function NewVisitorDialog({
         <Input label="Purpose of visit" value={purpose} onChange={(e) => setPurpose(e.target.value)}
           placeholder="e.g. Vendor meeting, pump commissioning" />
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
           <Input label="Expected arrival" type="datetime-local" required value={expectedArrival}
             onChange={(e) => setExpectedArrival(e.target.value)} />
           <Input label="Expected departure" type="datetime-local" required value={expectedDeparture}
@@ -182,7 +182,7 @@ export function NewVisitorDialog({
         <Input label="Vehicle number" value={vehicleNumber}
           onChange={(e) => setVehicleNumber(e.target.value)} placeholder="e.g. QAB 1234" />
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
           <Input label="Emergency contact" value={emergencyContactName}
             onChange={(e) => setEmergencyContactName(e.target.value)} />
           <Input label="Emergency phone" value={emergencyContactPhone}

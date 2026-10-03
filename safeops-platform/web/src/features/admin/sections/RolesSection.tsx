@@ -154,10 +154,10 @@ function NewRoleDialog({ open, roles, onClose, onCreated }: { open: boolean; rol
   }
 
   return (
-    <Dialog open={open} onClose={onClose} title="Create custom role" description="Start from an existing role's permissions, then refine the matrix."
+    <Dialog
+      error={error} open={open} onClose={onClose} title="Create custom role" description="Start from an existing role's permissions, then refine the matrix."
       footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button><Button loading={busy} onClick={() => void submit()}>Create role</Button></>}>
       <div className="space-y-3">
-        {error && <Alert tone="critical">{error}</Alert>}
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Role name (e.g. Contractor Coordinator)"
           className="h-9 w-full rounded-lg border bg-surface px-3 text-sm text-ink outline-none focus:border-accent" />
         <Select label="Clone permissions from" value={cloneFrom} onChange={(e) => setCloneFrom(e.target.value)}>

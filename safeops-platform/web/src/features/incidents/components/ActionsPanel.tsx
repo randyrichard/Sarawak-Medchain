@@ -155,6 +155,7 @@ export function ActionsPanel({ incident, onUpdate }: { incident: Incident; onUpd
 
       {/* Add action */}
       <Dialog
+        error={error}
         open={addOpen}
         onClose={() => setAddOpen(false)}
         title="New corrective action"
@@ -166,8 +167,7 @@ export function ActionsPanel({ incident, onUpdate }: { incident: Incident; onUpd
           </>
         }
       >
-        <div className="space-y-3.5">
-          {error && <Alert tone="critical">{error}</Alert>}
+        <div className="space-y-5">
           <Input label="What must be done" required value={title} onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Add reinstatement step + sign-back to barrier permit" />
           <Select label="Addresses root cause" value={causeId} onChange={(e) => setCauseId(e.target.value)}
@@ -175,7 +175,7 @@ export function ActionsPanel({ incident, onUpdate }: { incident: Incident; onUpd
             <option value="">General / preventive</option>
             {causes.map((c) => <option key={c.id} value={c.id}>{c.category} — {c.description.slice(0, 40)}…</option>)}
           </Select>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-5">
             <Select label="Owner" required value={owner} onChange={(e) => setOwner(e.target.value)}>
               <option value="" disabled>Select…</option>
               <PeopleOptions people={people} />
@@ -195,6 +195,7 @@ export function ActionsPanel({ incident, onUpdate }: { incident: Incident; onUpd
 
       {/* Complete action */}
       <Dialog
+        error={error}
         open={completeFor !== null}
         onClose={() => setCompleteFor(null)}
         title={`Complete: ${completeFor?.title ?? ''}`}
@@ -205,8 +206,7 @@ export function ActionsPanel({ incident, onUpdate }: { incident: Incident; onUpd
           </>
         }
       >
-        <div className="space-y-3">
-          {error && <Alert tone="critical">{error}</Alert>}
+        <div className="space-y-5">
           <Textarea
             label={completeFor?.evidenceRequired ? 'Completion evidence (required)' : 'Completion note (optional)'}
             rows={3} value={evidenceNote} onChange={(e) => setEvidenceNote(e.target.value)}

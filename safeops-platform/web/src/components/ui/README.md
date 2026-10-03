@@ -43,7 +43,7 @@ hard-codes a colour or spacing value, and it never rebuilds a primitive's behavi
 |---|---|
 | Actions | `Button`, `LinkButton`, `Dropdown` / `DropdownItem` / `DropdownLabel` / `DropdownSeparator` |
 | Forms | `Input`, `PasswordInput`, `Textarea`, `Select`, `SuggestSelect`, `Checkbox`, `Switch`, `FieldShell`, `fieldA11y` |
-| Layout | `PageHeader`, `Card` / `CardHeader` / `CardBody`, `Tabs` / `TabPanel`, `Breadcrumbs` |
+| Layout | `FormStack` / `FormRow` / `FormSection`, `PageHeader`, `Card` / `CardHeader` / `CardBody`, `Tabs` / `TabPanel`, `Breadcrumbs` |
 | Data | `DataTable`, `Badge`, `StatusPill`, `Avatar` |
 | Feedback | `Alert`, `Dialog`, `EmptyState`, `ErrorState`, `Loading`, `Skeleton*`, `Spinner`, `FullPageSpinner` |
 | Async | `useAsync` (hook), `AsyncContent` (renders its states) |
@@ -282,6 +282,43 @@ Hick's law (Hick 1952, Hyman 1953) says the time to choose grows with the number
   or type-ahead once a list stops fitting on screen.
 - **Split a complex decision into steps** (the incident report is four) instead of putting
   everything on one screen.
+
+## Spacing that groups (law of proximity)
+
+The law of proximity is the Gestalt finding (Wertheimer, 1923) that people see things which
+sit close together as belonging together. Spacing does this on its own, before colour, borders
+or boxes come into play, so in SafeOps spacing is the main way to show what belongs with what.
+The rule is a ratio: **the space inside a group must be clearly smaller than the space between
+groups.** A label that sits equally far from two fields belongs to neither, and people slow
+down or fill in the wrong one.
+
+| Inside a field (`FieldShell`) | Between fields (`FormStack`, `FormRow`) | Between sections (`FormSection`) |
+|---|---|---|
+| label → control → hint/error: **6px** | **20px**, stacked or side by side | **32px**; the heading sits **8px** above its own fields |
+
+What was changed, and why:
+
+| Where | Before | Now |
+|---|---|---|
+| Dialog submit errors (37 dialogs) | At the top of a scrolling body, while Save is pinned at the bottom. On long forms the refusal appeared off-screen, so the click seemed to do nothing | `Dialog error={...}`: pinned directly above the footer buttons, always in view |
+| Form fields in dialogs and settings | 12, 14 or 16px apart depending on the file, barely more than the 6px from a label to its own field | 20px (`FORM_SPACING`), measured on the live app: every field pair now meets the ratio |
+| Report scope panel | 8px between rows, so "Year" read as the caption of Month | 20px |
+| Employee, contractor and worker drawers | Delete 8px from "Edit details", read as one group of routine actions | Delete pushed to the far end of the footer |
+| Incident header | Archive right beside Summary | A rule and space between them |
+
+**Rules for new screens**
+
+- Build forms from `FormStack`, `FormRow` and `FormSection` (or `FORM_SPACING`). Don't pick
+  ad-hoc `space-y-*` values.
+- A hint or error goes directly under its own field (`FieldShell` does this). A form-level
+  error goes in `Dialog error`, next to the buttons.
+- Put actions next to the thing they act on. Put destructive actions away from constructive
+  ones (`ml-auto`, or a divider).
+- Use whitespace first. Reach for a border or a box only when space alone can't separate
+  groups.
+
+`proximity.dom.test.tsx` holds the spacing ratios and the error placement, and fails if a
+dialog puts its submit error back in the body.
 
 ## Adding or changing a component
 

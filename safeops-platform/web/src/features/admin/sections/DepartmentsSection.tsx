@@ -212,7 +212,7 @@ export function DepartmentsSection() {
           </div>
         )}
       >
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
           <Input
             label="Department name" required value={draft.name}
             onChange={(e) => setDraft({ ...draft, name: e.target.value })}

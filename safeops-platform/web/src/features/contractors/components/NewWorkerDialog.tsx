@@ -82,6 +82,7 @@ export function NewWorkerDialog({
 
   return (
     <Dialog
+      error={error}
       open={open}
       onClose={onClose}
       title="Register a contractor worker"
@@ -93,7 +94,6 @@ export function NewWorkerDialog({
         </>
       }
     >
-      {error && <Alert tone="critical" className="mb-3">{error}</Alert>}
 
       {active.length === 0 && (
         <Alert tone="warning" className="mb-3">
@@ -101,7 +101,7 @@ export function NewWorkerDialog({
         </Alert>
       )}
 
-      <div className="space-y-3">
+      <div className="space-y-5">
         <Input label="Full name" value={form.name} required autoFocus onChange={(e) => set('name', e.target.value)} />
 
         <div className="grid gap-3 sm:grid-cols-2">
@@ -118,7 +118,7 @@ export function NewWorkerDialog({
           </Select>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
           <Input label="IC / passport" value={form.icPassport} onChange={(e) => set('icPassport', e.target.value)}
             hint="What a gate check is done against." />
           <SuggestSelect
@@ -131,14 +131,14 @@ export function NewWorkerDialog({
           />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
           <Input label="Medical expires" type="date" value={form.medicalExpiry}
             onChange={(e) => set('medicalExpiry', e.target.value)} />
           <Input label="Induction expires" type="date" value={form.inductionExpiry}
             onChange={(e) => set('inductionExpiry', e.target.value)} />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-x-3 gap-y-5 sm:grid-cols-3">
           <Input label="Emergency contact" value={form.emergencyName}
             onChange={(e) => set('emergencyName', e.target.value)} />
           <Input label="Relationship" value={form.emergencyRelation}

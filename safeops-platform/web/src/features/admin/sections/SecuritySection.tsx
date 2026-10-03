@@ -111,7 +111,7 @@ function PolicyPanel() {
     <div className="grid gap-4 xl:grid-cols-2">
       <Card>
         <CardHeader title="Password policy" subtitle="Enforced on every password set or reset" />
-        <CardBody className="space-y-3">
+        <CardBody className="space-y-5">
           {flash && <Alert tone="success">Security policy saved.</Alert>}
           {error && <Alert tone="critical">{error}</Alert>}
           <Input label="Minimum length" type="number" value={String(s.passwordMinLength)} onChange={(e) => set({ passwordMinLength: Number(e.target.value) || 8 })} className="w-32" />
@@ -126,7 +126,7 @@ function PolicyPanel() {
 
       <Card>
         <CardHeader title="Sessions & MFA" subtitle="Lockout, session lifetime and MFA enforcement" />
-        <CardBody className="space-y-3">
+        <CardBody className="space-y-5">
           <Input label="Account lockout after N failed attempts" type="number" value={String(s.lockoutThreshold)} onChange={(e) => set({ lockoutThreshold: Number(e.target.value) || 5 })} className="w-40" />
           <Input label="Session timeout (hours)" type="number" value={String(s.sessionTimeoutHours)} onChange={(e) => set({ sessionTimeoutHours: Number(e.target.value) || 8 })} className="w-40"
             hint="Applies to your next sign-in — sessions expire after this many hours." />

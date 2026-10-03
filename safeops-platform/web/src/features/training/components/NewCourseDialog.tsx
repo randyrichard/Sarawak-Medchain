@@ -5,7 +5,7 @@ import type { CourseCategory, DeliveryMode } from '@/api/training'
 import { CATEGORY_LABEL } from '@/api/training'
 import { useActor } from '@/features/incidents/lib'
 import { useOrg } from '@/features/org/OrgContext'
-import { Alert, Button, Checkbox, Dialog, Input, Select, Textarea } from '@/components/ui'
+import { Button, Checkbox, Dialog, Input, Select, Textarea } from '@/components/ui'
 
 const CATEGORIES: CourseCategory[] = ['induction', 'safety', 'equipment', 'emergency', 'health', 'environmental', 'custom']
 const DEPT_KEYWORDS = ['Production', 'Maintenance', 'Warehouse', 'Logistics', 'Field', 'Mill', 'Contractors', 'HSE', 'Civil', 'M&E']
@@ -56,6 +56,7 @@ export function NewCourseDialog({ open, onClose, onCreated }: { open: boolean; o
 
   return (
     <Dialog
+      error={error}
       open={open}
       onClose={onClose}
       title="Add training course"
@@ -68,17 +69,16 @@ export function NewCourseDialog({ open, onClose, onCreated }: { open: boolean; o
         </>
       }
     >
-      <div className="max-h-[60vh] space-y-3.5 overflow-y-auto pr-1">
-        {error && <Alert tone="critical">{error}</Alert>}
+      <div className="max-h-[60vh] space-y-5 overflow-y-auto pr-1">
         <Input label="Course name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Overhead Crane Operation" />
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-5">
           <Select label="Category" value={category} onChange={(e) => setCategory(e.target.value as CourseCategory)}>
             {CATEGORIES.map((c) => <option key={c} value={c}>{CATEGORY_LABEL[c]}</option>)}
           </Select>
           <Input label="Competency granted" value={competency} onChange={(e) => setCompetency(e.target.value)} placeholder="e.g. Licensed crane operator" />
         </div>
         <Textarea label="Description" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-5">
           <Input label="Validity (months, blank = no expiry)" value={validityMonths} onChange={(e) => setValidityMonths(e.target.value.replace(/\D/g, ''))} placeholder="24" />
           <Input label="Duration (hours)" value={durationHours} onChange={(e) => setDurationHours(e.target.value.replace(/\D/g, ''))} placeholder="8" />
         </div>

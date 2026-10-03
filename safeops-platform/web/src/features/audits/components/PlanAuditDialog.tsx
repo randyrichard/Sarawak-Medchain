@@ -6,7 +6,7 @@ import { AUDIT_TYPES, AUDIT_TYPE_LABEL } from '@/api/audits'
 import { useOrg } from '@/features/org/OrgContext'
 import { useDepartments } from '@/features/org/departments'
 import { usePeople, useActor } from '@/features/incidents/lib'
-import { Alert, Badge, Button, Dialog, Input, SuggestSelect, Select, Textarea } from '@/components/ui'
+import { Badge, Button, Dialog, Input, SuggestSelect, Select, Textarea } from '@/components/ui'
 import { PeopleOptions } from '@/features/org/PeopleOptions'
 
 export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
@@ -86,6 +86,7 @@ export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; o
 
   return (
     <Dialog
+      error={error}
       open={open}
       onClose={onClose}
       title="Plan audit"
@@ -105,8 +106,7 @@ export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; o
         )
       }
     >
-      <div className="max-h-[62vh] space-y-3.5 overflow-y-auto pr-1">
-        {error && <Alert tone="critical">{error}</Alert>}
+      <div className="max-h-[62vh] space-y-5 overflow-y-auto pr-1">
         {tplMode ? (
           <>
             <Input label="Template name" required value={tplName} onChange={(e) => setTplName(e.target.value)} placeholder="e.g. Warehouse racking audit" />
@@ -116,7 +116,7 @@ export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; o
         ) : (
           <>
             <Input label="Audit title" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Q3 contractor HSE audit — Miri" />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-5">
               <Select label="Audit type" value={type} onChange={(e) => setType(e.target.value as AuditType)}>
                 {AUDIT_TYPES.map((t) => <option key={t} value={t}>{AUDIT_TYPE_LABEL[t]}</option>)}
               </Select>
@@ -125,7 +125,7 @@ export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; o
                 {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-5">
               <SuggestSelect
                 options={departments}
                 label="Department"
@@ -159,7 +159,7 @@ export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; o
                 + Create a custom template
               </button>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-x-3 gap-y-5">
               <Input label="Date" required type="date" value={scheduledFor} onChange={(e) => setScheduledFor(e.target.value)} />
               <Input label="Duration (days)" type="number" min={1} max={10} value={durationDays}
                 onChange={(e) => setDurationDays(Math.max(1, Number(e.target.value) || 1))} />

@@ -3,7 +3,7 @@ import { Pencil, Trash2 } from 'lucide-react'
 import { toolboxApi, type ToolboxMeeting } from '@/api/toolboxApi'
 import { ApiError } from '@/api/types'
 import { fmtDateTime } from '@/features/incidents/lib'
-import { Alert, Button, Dialog } from '@/components/ui'
+import { Button, Dialog } from '@/components/ui'
 
 /** One meeting, as it would be read out to an auditor. */
 export function ToolboxDetail({
@@ -35,6 +35,7 @@ export function ToolboxDetail({
 
   return (
     <Dialog
+      error={error}
       open
       onClose={onClose}
       title={meeting.topic}
@@ -59,7 +60,6 @@ export function ToolboxDetail({
       }
     >
       <div className="space-y-4 text-sm">
-        {error && <Alert tone="critical">{error}</Alert>}
 
         <dl className="grid grid-cols-[auto,1fr] gap-x-4 gap-y-1.5">
           <dt className="text-muted">Led by</dt><dd className="text-ink">{meeting.ledBy}</dd>

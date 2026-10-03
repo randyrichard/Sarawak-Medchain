@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Inbox, Plus, Save, Trash2 } from 'lucide-react'
 import {
-  Alert, AsyncContent, Avatar, Badge, Button, Card, CardBody, CardHeader, Checkbox, DataTable, Dialog,
+  Alert, AsyncContent, Avatar, FORM_SPACING, Badge, Button, Card, CardBody, CardHeader, Checkbox, DataTable, Dialog,
   Dropdown, DropdownItem, DropdownLabel, DropdownSeparator, EmptyState, ErrorState, Input, Loading,
   PageHeader, Select, Skeleton, SkeletonRows, SkeletonText, StatusPill, Tabs, Textarea,
   type Column, type TabItem,
@@ -183,8 +183,8 @@ function AlertsSection() {
 function FormsSection() {
   const [val, setVal] = useState('')
   return (
-    <Section title="Forms & inputs" subtitle="36px controls, accent focus, errors replace hints in place.">
-      <div className="space-y-4">
+    <Section title="Forms & inputs" subtitle="36px controls, accent focus, errors replace hints in place. Label to field 6px, field to field 20px: each label is clearly closer to its own control (law of proximity).">
+      <div className={FORM_SPACING.stack}>
         <Input label="Site name" placeholder="e.g. Bintulu LNG Terminal" hint="Shown in switchers and reports." required />
         <Input
           label="Work email" type="email" value={val} onChange={(e) => setVal(e.target.value)}

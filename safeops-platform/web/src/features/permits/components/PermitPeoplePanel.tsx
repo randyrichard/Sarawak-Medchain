@@ -181,6 +181,7 @@ function AddPersonDialog({
 
   return (
     <Dialog
+      error={error}
       open={open} onClose={onClose} title="Name someone on this permit"
       description="Only people the register says are fit for this work can be named."
       footer={
@@ -190,14 +191,13 @@ function AddPersonDialog({
         </>
       }
     >
-      {error && <Alert tone="critical" className="mb-3">{error}</Alert>}
 
       {people === null ? (
         <div className="space-y-2">
           {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-10 rounded-lg" />)}
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-5">
           <Select label="Role on the permit" value={role} onChange={(e) => setRole(e.target.value as AttendeeRole)}>
             {(Object.keys(ATTENDEE_ROLE_LABEL) as AttendeeRole[]).map((r) => (
               <option key={r} value={r}>{ATTENDEE_ROLE_LABEL[r]}</option>

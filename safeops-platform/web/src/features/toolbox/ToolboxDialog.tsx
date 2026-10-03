@@ -4,7 +4,7 @@ import { toolboxApi, type AttendanceGroup, type ToolboxMeeting } from '@/api/too
 import { ApiError } from '@/api/types'
 import { useOrg } from '@/features/org/OrgContext'
 import { usePeople } from '@/features/incidents/lib'
-import { Alert, Button, Dialog, Input, Select, SuggestSelect, Textarea } from '@/components/ui'
+import { Button, Dialog, Input, Select, SuggestSelect, Textarea } from '@/components/ui'
 import { toLocalInput } from './lib'
 
 /**
@@ -74,6 +74,7 @@ export function ToolboxDialog({
 
   return (
     <Dialog
+      error={error}
       open
       onClose={onClose}
       title={meeting ? `Edit ${meeting.number}` : 'Record toolbox meeting'}
@@ -86,10 +87,9 @@ export function ToolboxDialog({
         </>
       }
     >
-      <div className="space-y-4">
-        {error && <Alert tone="critical">{error}</Alert>}
+      <div className="space-y-5">
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
           <Select label="Site" required value={siteId} onChange={(e) => setSiteId(e.target.value)}>
             {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </Select>

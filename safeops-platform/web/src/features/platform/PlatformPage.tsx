@@ -287,7 +287,7 @@ export function PlatformPage() {
             <p className="text-2xs font-bold uppercase tracking-wider text-muted">
               First administrator
             </p>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
               <Input
                 label="Full name" required value={draft.adminName}
                 onChange={(e) => setDraft({ ...draft, adminName: e.target.value })}
@@ -306,7 +306,7 @@ export function PlatformPage() {
 
           <div className="space-y-3 border-t border-line pt-3">
             <p className="text-2xs font-bold uppercase tracking-wider text-muted">First site</p>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
               <Input
                 label="Site name" required value={draft.siteName}
                 onChange={(e) => setDraft({ ...draft, siteName: e.target.value })}

@@ -170,11 +170,11 @@ function AddDialog({
           &ldquo;QAB 1234&rdquo; and &ldquo;qab-1234&rdquo; are the same vehicle.
         </p>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
           <Input label="IC or passport" value={idNumber} onChange={(e) => setIdNumber(e.target.value)} />
           <Input label="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
           <Input label="Company" value={visitorCompany} onChange={(e) => setVisitorCompany(e.target.value)} />
           <Input label="Vehicle" value={vehicleNumber} onChange={(e) => setVehicleNumber(e.target.value)} />
         </div>

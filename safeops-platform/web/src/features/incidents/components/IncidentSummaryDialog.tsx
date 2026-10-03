@@ -4,7 +4,7 @@ import { blob, request } from '@/api/http'
 import type { ReportData } from '@/api/reportsApi'
 import { ApiError } from '@/api/types'
 import { ReportSectionView } from '@/features/reports/components/ReportSectionView'
-import { Alert, Button, Dialog, Skeleton } from '@/components/ui'
+import { Button, Dialog, Skeleton } from '@/components/ui'
 
 /**
  * The one-page incident summary: the facts, people, investigation and actions, written from
@@ -42,6 +42,7 @@ export function IncidentSummaryDialog({ incidentId, number, onClose }: {
 
   return (
     <Dialog
+      error={error}
       open
       onClose={onClose}
       title={`Incident summary — ${number}`}
@@ -54,7 +55,6 @@ export function IncidentSummaryDialog({ incidentId, number, onClose }: {
         </>
       }
     >
-      {error && <Alert tone="critical">{error}</Alert>}
       {!data && !error && <Skeleton className="h-64" />}
       {data && (
         <div>

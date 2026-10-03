@@ -296,7 +296,7 @@ export function ReportsPage() {
                           onClick={() => setActivityPeriod(p)}
                           className={cn(
                             'rounded-md px-2.5 py-1 text-2xs font-medium',
-                            activityPeriod === p ? 'bg-accent-soft text-accent' : 'text-muted hover:text-ink',
+                            activityPeriod === p ? 'bg-accent-soft text-ink' : 'text-muted hover:text-ink',
                           )}
                         >
                           {p === 'day' ? 'Today' : 'Last 7 days'}
@@ -660,7 +660,10 @@ function MonthlyScopeBar({
   const project = projects.find((p) => p.id === scope.projectId)
 
   return (
-    <div className="mt-3 grid gap-2 rounded-lg border bg-sunken p-2.5 sm:grid-cols-2">
+    // gap-y-5, not gap-2: at 8px between rows a label sat almost exactly halfway between its
+    // own select and the one above it (6px vs 8px), so "Year" read as the caption of Month.
+    // The space between fields has to clearly exceed the space inside one (law of proximity).
+    <div className="mt-3 grid gap-x-3 gap-y-5 rounded-lg border bg-sunken p-3 sm:grid-cols-2">
       {projects.length > 0 && (
         <Select
           label="Project"

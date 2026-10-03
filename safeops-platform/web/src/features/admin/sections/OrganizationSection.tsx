@@ -67,14 +67,14 @@ function ProfilePanel({ companyId }: { companyId: string }) {
     <div className="grid gap-4 xl:grid-cols-3">
       <Card className="xl:col-span-2">
         <CardHeader title="Company profile" subtitle="Legal identity, locale and default timezone" />
-        <CardBody className="space-y-3.5">
+        <CardBody className="space-y-5">
           {error && <Alert tone="critical">{error}</Alert>}
           {flash && <Alert tone="success">Organisation settings saved.</Alert>}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-5">
             <Input label="Display name" value={s.displayName} onChange={(e) => set({ displayName: e.target.value })} />
             <Input label="Legal entity name" value={s.legalName} onChange={(e) => set({ legalName: e.target.value })} />
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-x-3 gap-y-5">
             <Input label="Industry" value={s.industry} onChange={(e) => set({ industry: e.target.value })} />
             <Select label="Timezone" value={s.timezone} onChange={(e) => set({ timezone: e.target.value })}>
               {['Asia/Kuching', 'Asia/Kuala_Lumpur', 'Asia/Singapore', 'Asia/Jakarta', 'UTC'].map((t) => <option key={t}>{t}</option>)}
@@ -265,10 +265,10 @@ function AddItemDialog({
   }
 
   return (
-    <Dialog open={open} onClose={onClose} title={title}
+    <Dialog
+      error={error} open={open} onClose={onClose} title={title}
       footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button><Button loading={busy} onClick={() => void submit()}>Add</Button></>}>
       <div className="space-y-3">
-        {error && <Alert tone="critical">{error}</Alert>}
         {fields.map((f) => (
           <Input key={f.key} label={f.label} type={f.type ?? 'text'} value={data[f.key] ?? ''} onChange={(e) => setData((d) => ({ ...d, [f.key]: e.target.value }))} />
         ))}

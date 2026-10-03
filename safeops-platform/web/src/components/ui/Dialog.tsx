@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { Alert } from './Alert'
 import { Button } from './Button'
 
 /**
@@ -30,6 +31,8 @@ export const DIALOG_LAYOUT = {
   header: 'flex shrink-0 items-start justify-between gap-4 px-5 pb-1 pt-4',
   body: 'min-h-0 overflow-y-auto overscroll-contain px-5 py-3',
   footer: 'flex shrink-0 justify-end gap-2 border-t px-5 py-3',
+  /** Sits directly on top of the footer, so it is pinned with it and never scrolls away. */
+  error: 'shrink-0 border-t px-5 pt-3',
 } as const
 
 /** What can take focus inside the panel. Disabled controls are skipped, as the browser does. */
@@ -59,7 +62,7 @@ export function initialFocusTarget(panel: HTMLElement): HTMLElement {
 }
 
 export function Dialog({
-  open, onClose, title, description, children, footer, width = 'max-w-md',
+  open, onClose, title, description, children, footer, width = 'max-w-md', error,
 }: {
   open: boolean
   onClose: () => void
@@ -68,6 +71,17 @@ export function Dialog({
   children?: ReactNode
   footer?: ReactNode
   width?: string
+  /**
+   * Why the last action failed, shown directly above the footer buttons.
+   *
+   * Law of proximity: feedback belongs next to the thing that caused it. Dialogs used to
+   * put this Alert at the top of the body - and the body scrolls, while the buttons are
+   * pinned at the bottom. On any form taller than the window, pressing "Save" and being
+   * refused put the reason off-screen, a scroll away from where the person was looking,
+   * so the click seemed to do nothing. Here it sits against the button that was pressed,
+   * pinned with the footer, in view whatever the body's scroll position.
+   */
+  error?: ReactNode
 }) {
   const panelRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
@@ -160,7 +174,12 @@ export function Dialog({
           </button>
         </div>
         {children && <div data-dialog-body className={DIALOG_LAYOUT.body}>{children}</div>}
-        <div className={DIALOG_LAYOUT.footer}>
+        {error && (
+          <div className={DIALOG_LAYOUT.error}>
+            <Alert tone="critical">{error}</Alert>
+          </div>
+        )}
+        <div className={cn(DIALOG_LAYOUT.footer, Boolean(error) && 'border-t-0')}>
           {footer ?? <Button variant="secondary" onClick={onClose}>Close</Button>}
         </div>
       </div>

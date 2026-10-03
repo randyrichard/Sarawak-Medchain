@@ -170,7 +170,7 @@ function RecordCalibrationDialog({
         <Input label="Certificate number" value={certificateNumber} required
           onChange={(e) => setCertificateNumber(e.target.value)} />
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-5">
           <Input label="Calibrated on" type="date" value={calibratedAt}
             onChange={(e) => setCalibratedAt(e.target.value)} />
           <Input label="Valid until" type="date" value={expiresAt}

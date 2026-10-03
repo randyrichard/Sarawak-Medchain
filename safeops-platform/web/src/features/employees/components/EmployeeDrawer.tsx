@@ -171,7 +171,12 @@ export function EmployeeDrawer({
                 >
                   {item.active ? 'Mark as left' : 'Reactivate'}
                 </Button>
-                <Button size="sm" variant="ghost" icon={<Trash2 size={12} />} onClick={() => setConfirmDelete(true)}>
+                {/*
+                  Pushed to the far end, away from Edit and the status toggle (law of
+                  proximity): buttons side by side read as one group of equally safe
+                  choices, and Delete is not one of them.
+                */}
+                <Button size="sm" variant="ghost" className="ml-auto" icon={<Trash2 size={12} />} onClick={() => setConfirmDelete(true)}>
                   Delete
                 </Button>
               </footer>
@@ -517,6 +522,7 @@ function AddContactDialog({
 
   return (
     <Dialog
+      error={error}
       open={open} onClose={close} title="Add emergency contact"
       footer={
         <>
@@ -525,8 +531,7 @@ function AddContactDialog({
         </>
       }
     >
-      {error && <Alert tone="critical" className="mb-3">{error}</Alert>}
-      <div className="space-y-3">
+      <div className="space-y-5">
         <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
         <Input
           label="Relationship" placeholder="Spouse, parent, sibling…"
@@ -570,6 +575,7 @@ function IssuePpeDialog({
 
   return (
     <Dialog
+      error={error}
       open={open} onClose={close} title="Issue PPE"
       description="Recorded against this person with today's date and your name."
       footer={
@@ -579,7 +585,6 @@ function IssuePpeDialog({
         </>
       }
     >
-      {error && <Alert tone="critical" className="mb-3">{error}</Alert>}
       <div className="space-y-3">
         {/* A picked item keeps the register countable; free text produces three spellings
             of "harness" and three different answers to how many are overdue. */}

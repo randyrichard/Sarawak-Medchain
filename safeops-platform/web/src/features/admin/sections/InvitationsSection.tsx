@@ -293,7 +293,7 @@ export function InvitationsSection() {
           </div>
         )}
       >
-        <div className="space-y-3">
+        <div className="space-y-5">
           <Input
             label="Email address" required type="email" value={draft.email}
             onChange={(e) => setDraft({ ...draft, email: e.target.value })}

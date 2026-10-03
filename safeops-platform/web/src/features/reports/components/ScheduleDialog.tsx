@@ -146,7 +146,7 @@ export function ScheduleDialog({
           <option value="site_activity">Site activity summary (daily schedule = the day, otherwise the week)</option>
         </Select>
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-x-3 gap-y-5 sm:grid-cols-3">
           <Select label="How often" value={frequency}
             onChange={(e) => setFrequency(e.target.value as ReportFrequency)}>
             <option value="weekly">Weekly</option>

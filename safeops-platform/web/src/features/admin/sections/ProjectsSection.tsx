@@ -270,11 +270,11 @@ export function ProjectsSection() {
           </>
         )}
       >
-        <div className="space-y-3">
+        <div className="space-y-5">
           <Input label="Project name" required value={draft.name}
             onChange={(e) => setDraft({ ...draft, name: e.target.value })}
             placeholder="e.g. Bintulu Tank Farm Upgrade" />
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
             <Input label="Project code" value={draft.code}
               onChange={(e) => setDraft({ ...draft, code: e.target.value })}
               placeholder="e.g. PRJ-2026-014"
@@ -282,7 +282,7 @@ export function ProjectsSection() {
             <Input label="Client" value={draft.client}
               onChange={(e) => setDraft({ ...draft, client: e.target.value })} />
           </div>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-x-3 gap-y-5 sm:grid-cols-3">
             <Input label="Start date" type="date" value={draft.startDate}
               onChange={(e) => setDraft({ ...draft, startDate: e.target.value })} />
             <Input label="End date" type="date" value={draft.endDate}

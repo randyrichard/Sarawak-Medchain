@@ -225,7 +225,12 @@ export function WorkerDrawer({
                     )}>
                     {item.active ? 'Deregister' : 'Reinstate'}
                   </Button>
-                  <Button size="sm" variant="ghost" icon={<Trash2 size={12} />} onClick={() => setConfirmDelete(true)}>
+                  {/*
+                    Pushed to the far end, away from Edit and the status toggle (law of
+                    proximity): buttons side by side read as one group of equally safe
+                    choices, and Delete is not one of them.
+                  */}
+                  <Button size="sm" variant="ghost" className="ml-auto" icon={<Trash2 size={12} />} onClick={() => setConfirmDelete(true)}>
                     Delete
                   </Button>
                 </>
@@ -342,6 +347,7 @@ function AddCompetencyDialog({
 
   return (
     <Dialog
+      error={error}
       open={open} onClose={close} title="Record competency"
       description="Evidence supplied by the contractor. Trusted as far as the expiry date on it."
       footer={
@@ -351,7 +357,6 @@ function AddCompetencyDialog({
         </>
       }
     >
-      {error && <Alert tone="critical" className="mb-3">{error}</Alert>}
       <div className="space-y-3">
         {/* Picked rather than typed: free text produces three spellings of "working at
             height" and three different answers to how many riggers are certified. */}
