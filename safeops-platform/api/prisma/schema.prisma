@@ -3221,3 +3221,19 @@ model SiteManHours {
   @@unique([siteId, month])
   @@index([companyId, month])
 }
+
+/// A company's target for one HSE performance indicator, e.g. LTI frequency rate ≤ 0.5.
+/// Which way "on target" points (at most / at least) is fixed per metric in code
+/// (TARGET_METRICS in lib/hsePerformance.ts), so a row cannot hold a backwards target.
+model PerformanceTarget {
+  id        String   @id @default(cuid())
+  companyId String
+  /// One of TARGET_METRICS.
+  metric    String
+  /// In the indicator's own unit; onTimeClosure is a fraction 0..1.
+  value     Float
+  updatedBy String
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, metric])
+}

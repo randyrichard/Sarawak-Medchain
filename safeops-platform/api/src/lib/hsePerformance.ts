@@ -38,6 +38,27 @@ export const PERFORMANCE_ROLES: Role[] = ['admin', 'hse_manager', 'safety_office
 /** Who may record hours worked: the people accountable for the figures built on them. */
 export const MAN_HOURS_ROLES: Role[] = ['admin', 'hse_manager']
 
+/**
+ * The indicators a company may set a target for, and which way "on target" points:
+ * `max` - the figure must be at or below the target (injury rates, overdue actions);
+ * `min` - at or above it (near-miss ratio, actions closed on time).
+ *
+ * The direction is fixed here rather than stored, so a target cannot be saved backwards.
+ * The database CHECK constraint on PerformanceTarget.metric lists the same keys.
+ */
+export const TARGET_METRICS = {
+  frequencyRate: 'max',
+  severityRate: 'max',
+  incidenceRate: 'max',
+  trir: 'max',
+  fatalities: 'max',
+  overdueActions: 'max',
+  nearMissRatio: 'min',
+  onTimeClosure: 'min',
+} as const satisfies Record<string, 'max' | 'min'>
+export type TargetMetric = keyof typeof TARGET_METRICS
+export const isTargetMetric = (m: string): m is TargetMetric => Object.hasOwn(TARGET_METRICS, m)
+
 /** DOSH JKKP 8 frequency and severity rates: per 1,000,000 man-hours. */
 export const FREQUENCY_BASE = 1_000_000
 /** OSHA TRIR: per 200,000 hours (100 full-time workers for a year). */
@@ -82,6 +103,12 @@ export interface MonthPoint {
   hours: number
   estimatedShare: number
   frequencyRate: number | null
+}
+
+export interface Target {
+  metric: TargetMetric
+  value: number
+  direction: 'max' | 'min'
 }
 
 export interface SitePerformance extends Indicators {
@@ -182,8 +209,8 @@ export class HsePerformanceService {
     if (from > now) throw new HsePerformanceError('validation', 'That period has not started yet.')
 
     const keys = Array.from({ length: months }, (_, i) => monthKey(monthStart(from.getUTCFullYear(), from.getUTCMonth() + i)))
-    const sites = await this.sitesFor(f.companyId, f.projectId, m.siteIds)
-    const empty = { from: from.toISOString(), to: to.toISOString(), months: [] as MonthPoint[], total: computeIndicators(emptyCounts()), sites: [] as SitePerformance[], basis: BASIS }
+    const [sites, targets] = await Promise.all([this.sitesFor(f.companyId, f.projectId, m.siteIds), this.targetsOf(f.companyId)])
+    const empty = { from: from.toISOString(), to: to.toISOString(), months: [] as MonthPoint[], total: computeIndicators(emptyCounts()), sites: [] as SitePerformance[], targets, basis: BASIS }
     if (sites.length === 0) return empty
     const siteIds = sites.map((s) => s.id)
     const at = { companyId: f.companyId, siteId: { in: siteIds } }
@@ -278,8 +305,43 @@ export class HsePerformanceService {
       }),
       total: computeIndicators(total),
       sites: siteRows,
+      targets,
       basis: BASIS,
     }
+  }
+
+  /** The company's targets, with the direction each one points. */
+  private async targetsOf(companyId: string): Promise<Target[]> {
+    const rows = await this.db.performanceTarget.findMany({ where: { companyId }, select: { metric: true, value: true } })
+    return rows
+      .filter((r) => isTargetMetric(r.metric))
+      .map((r) => ({ metric: r.metric as TargetMetric, value: r.value, direction: TARGET_METRICS[r.metric as TargetMetric] }))
+      .sort((a, b) => Object.keys(TARGET_METRICS).indexOf(a.metric) - Object.keys(TARGET_METRICS).indexOf(b.metric))
+  }
+
+  /**
+   * Sets (or clears, with `value: null`) one target. Owned by the same people as the hours,
+   * for the same reason: the board reads every tile against it.
+   */
+  async setTarget(caller: Caller, f: { companyId: string; metric: string; value: number | null }) {
+    this.membership(caller, f.companyId, MAN_HOURS_ROLES, 'setting performance targets')
+    if (!isTargetMetric(f.metric)) throw new HsePerformanceError('validation', 'There is no target for that indicator.')
+    if (f.value === null) {
+      await this.db.performanceTarget.deleteMany({ where: { companyId: f.companyId, metric: f.metric } })
+      return { metric: f.metric, value: null }
+    }
+    const max = f.metric === 'onTimeClosure' ? 1 : 1_000_000
+    if (!Number.isFinite(f.value) || f.value < 0 || f.value > max) {
+      throw new HsePerformanceError('validation', f.metric === 'onTimeClosure'
+        ? 'On-time closure is a share between 0 and 1 (0% to 100%).'
+        : 'A target must be a number of 0 or more.')
+    }
+    const row = await this.db.performanceTarget.upsert({
+      where: { companyId_metric: { companyId: f.companyId, metric: f.metric } },
+      create: { companyId: f.companyId, metric: f.metric, value: f.value, updatedBy: caller.userId },
+      update: { value: f.value, updatedBy: caller.userId },
+    })
+    return { metric: f.metric, value: row.value, direction: TARGET_METRICS[f.metric] }
   }
 
   /** Recorded hours for each site this caller may see, for the months of one year. */

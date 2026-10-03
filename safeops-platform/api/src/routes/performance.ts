@@ -42,3 +42,13 @@ performanceRouter.put('/man-hours', asyncRoute(async (req, res) => {
   }).parse(req.body)
   res.json(await svc.setManHours(callerOf(req), b))
 }))
+
+performanceRouter.put('/targets', asyncRoute(async (req, res) => {
+  const b = z.object({
+    companyId: z.string().min(1),
+    metric: z.string().min(1),
+    /** null clears the target. Range is checked in the service, per metric. */
+    value: z.number().finite().nullable(),
+  }).parse(req.body)
+  res.json(await svc.setTarget(callerOf(req), b))
+}))

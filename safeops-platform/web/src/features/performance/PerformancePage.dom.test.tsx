@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import axe from 'axe-core'
-import type { Indicators, PerformanceView } from '@/api/performanceApi'
+import type { Indicators, PerformanceView, Target } from '@/api/performanceApi'
 import type { Role } from '@/api/types'
 
 /*
@@ -18,11 +18,13 @@ import type { Role } from '@/api/types'
 const get = vi.fn()
 const manHours = vi.fn()
 const setManHours = vi.fn()
+const setTarget = vi.fn()
 vi.mock('@/api/performanceApi', () => ({
   performanceApi: {
     get: (...a: unknown[]) => get(...a),
     manHours: (...a: unknown[]) => manHours(...a),
     setManHours: (...a: unknown[]) => setManHours(...a),
+    setTarget: (...a: unknown[]) => setTarget(...a),
   },
 }))
 
@@ -47,7 +49,7 @@ const base: Indicators = {
   overdueActions: 1, toolboxMeetings: 12,
 }
 
-function view(over: Partial<Indicators> = {}): PerformanceView {
+function view(over: Partial<Indicators> = {}, targets: Target[] = []): PerformanceView {
   return {
     from: '2026-01-01T00:00:00.000Z',
     to: '2026-07-01T00:00:00.000Z',
@@ -61,6 +63,7 @@ function view(over: Partial<Indicators> = {}): PerformanceView {
       { ...base, siteId: 'b', siteName: 'Site B', frequencyRate: 17.09, fatalities: 1 },
       { ...base, siteId: 'c', siteName: 'Site C', frequencyRate: null, hours: 0 },
     ],
+    targets,
     basis: { frequency: 1e6, trir: 2e5, incidence: 1e3, estimatedHoursPerWorkerMonth: 195 },
   }
 }
@@ -78,6 +81,7 @@ beforeEach(() => {
     ],
   })
   setManHours.mockReset().mockResolvedValue({})
+  setTarget.mockReset().mockResolvedValue({})
 })
 afterEach(cleanup)
 
@@ -196,5 +200,110 @@ describe('HSE Performance page', () => {
     await screen.findByRole('table', { name: /HSE performance by site/ })
     const result = await axe.run(container, { rules: { 'color-contrast': { enabled: false } } })
     expect(result.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.html).join(' | ')}`)).toEqual([])
+  })
+
+  describe('targets', () => {
+    const targets: Target[] = [
+      { metric: 'frequencyRate', value: 0.5, direction: 'max' },
+      { metric: 'onTimeClosure', value: 0.6, direction: 'min' },
+    ]
+
+    it('marks each tile on or off its target, by icon and words', async () => {
+      get.mockResolvedValue(view({}, targets))
+      renderPage()
+      const fr = await waitFor(() => tile('LTI frequency rate'))
+      expect(fr.textContent).toContain('Target ≤ 0.50')
+      expect(fr.textContent).toContain('Off target')
+      expect(within(fr).getByText('Needs attention')).toBeTruthy()
+      const onTime = tile('Actions closed on time')
+      expect(onTime.textContent).toContain('Target ≥ 60%')
+      expect(onTime.textContent).toContain('On target')
+      // A target replaces the page's own rule of thumb: 67% is not a warning against a 60% goal.
+      expect(within(onTime).queryByText('Needs attention')).toBeNull()
+      // No target, no verdict.
+      expect(tile('TRIR').textContent).not.toMatch(/Target|on target/i)
+    })
+
+    it('keeps a fatality critical whatever the target says', async () => {
+      get.mockResolvedValue(view({ fatalities: 1 }, [{ metric: 'fatalities', value: 0, direction: 'max' }]))
+      renderPage()
+      const f = await waitFor(() => tile('Fatalities'))
+      expect(within(f).getByText('Needs attention now')).toBeTruthy()
+      expect(f.textContent).toContain('Off target')
+    })
+
+    it('marks sites that miss a target, and says the target in the column header', async () => {
+      get.mockResolvedValue(view({}, targets))
+      renderPage()
+      const table = await screen.findByRole('table', { name: /HSE performance by site/ })
+      expect(within(table).getByRole('columnheader', { name: /LTI freq\. rate.*target ≤ 0\.50/ })).toBeTruthy()
+      // Site B (17.09) and Site A (8.33) miss 0.50; Site C has no rate and is not judged.
+      expect(within(table).getAllByText('Off target (≤ 0.50)')).toHaveLength(2)
+    })
+
+    it('lets the figure owners set targets, saving a percentage as a fraction', async () => {
+      get.mockResolvedValue(view({}, targets))
+      renderPage()
+      fireEvent.click(await screen.findByRole('button', { name: 'Set targets' }))
+      const dialog = await screen.findByRole('dialog', { name: 'Set performance targets' })
+      const onTime = within(dialog).getByLabelText(/Actions closed on time/) as HTMLInputElement
+      expect(onTime.value).toBe('60')
+      fireEvent.change(onTime, { target: { value: '90' } })
+      fireEvent.change(within(dialog).getByLabelText(/^TRIR/), { target: { value: '1.2' } })
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Save 2 targets' }))
+      await waitFor(() => expect(setTarget).toHaveBeenCalledTimes(2))
+      expect(setTarget).toHaveBeenCalledWith({ companyId: 'co1', metric: 'onTimeClosure', value: 0.9 })
+      expect(setTarget).toHaveBeenCalledWith({ companyId: 'co1', metric: 'trir', value: 1.2 })
+    })
+
+    it('does not offer target setting to people who only read the figures', async () => {
+      role = 'ceo'
+      renderPage()
+      await screen.findByRole('table', { name: /HSE performance by site/ })
+      expect(screen.queryByRole('button', { name: 'Set targets' })).toBeNull()
+    })
+  })
+
+  describe('export', () => {
+    it('downloads the sites sheet as a CSV named for its period', async () => {
+      const blobs: Blob[] = []
+      const createObjectURL = vi.fn((b: Blob) => { blobs.push(b); return 'blob:x' })
+      vi.stubGlobal('URL', Object.assign(URL, { createObjectURL, revokeObjectURL: vi.fn() }))
+      const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+        expect(this.download).toBe('hse-performance-sites_2026-01_to_2026-06.csv')
+      })
+      renderPage()
+      fireEvent.click(await screen.findByRole('button', { name: 'Export' }))
+      fireEvent.click(await screen.findByRole('menuitem', { name: /Sites and totals/ }))
+      expect(click).toHaveBeenCalledTimes(1)
+      const text = await new Promise<string>((resolve) => {
+        const r = new FileReader() // jsdom's Blob has no .text()
+        r.onload = () => resolve(String(r.result))
+        r.readAsText(blobs[0])
+      })
+      expect(text).toContain('All sites')
+      expect(text).toContain('Site B')
+      click.mockRestore()
+    })
+
+    it('prints the page as a board pack', async () => {
+      const print = vi.spyOn(window, 'print').mockImplementation(() => {})
+      renderPage()
+      fireEvent.click(await screen.findByRole('button', { name: 'Export' }))
+      fireEvent.click(await screen.findByRole('menuitem', { name: /Print or save as PDF/ }))
+      expect(print).toHaveBeenCalled()
+      print.mockRestore()
+    })
+
+    it('opens the monthly table for printing and closes it again afterwards', async () => {
+      renderPage()
+      const region = await screen.findByRole('region', { name: 'Monthly figures' })
+      const details = region.closest('details')!
+      expect(details.open).toBe(false)
+      window.dispatchEvent(new Event('beforeprint'))
+      expect(details.open).toBe(true)
+      window.dispatchEvent(new Event('afterprint'))
+      expect(details.open).toBe(false)
+    })
   })
 })

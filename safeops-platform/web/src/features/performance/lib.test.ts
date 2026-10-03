@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canRecordManHours, formatPercent, formatRate, hoursBasis, monthLabel, monthsOfYear, parseHours } from './lib'
+import { canRecordManHours, formatPercent, formatRate, formatTarget, hoursBasis, monthLabel, monthsOfYear, parseHours, parseTarget, targetInput, targetStatus } from './lib'
 
 describe('HSE performance formatting', () => {
   it('shows a missing rate as a dash, never as zero', () => {
@@ -45,5 +45,44 @@ describe('HSE performance formatting', () => {
     expect(canRecordManHours('admin')).toBe(true)
     expect(canRecordManHours('hse_manager')).toBe(true)
     for (const r of ['ceo', 'safety_officer', 'supervisor', 'employee', null] as const) expect(canRecordManHours(r)).toBe(false)
+  })
+})
+
+describe('performance targets', () => {
+  const fr = { metric: 'frequencyRate' as const, value: 0.5, direction: 'max' as const }
+  const onTime = { metric: 'onTimeClosure' as const, value: 0.9, direction: 'min' as const }
+
+  it('judges a figure in the direction its indicator improves', () => {
+    expect(targetStatus(0.5, fr)).toBe('met') // at the target is on target
+    expect(targetStatus(0.51, fr)).toBe('missed')
+    expect(targetStatus(0.9, onTime)).toBe('met')
+    expect(targetStatus(0.89, onTime)).toBe('missed')
+  })
+
+  it('does not judge an unknown figure or a missing target', () => {
+    expect(targetStatus(null, fr)).toBeNull()
+    expect(targetStatus(3, undefined)).toBeNull()
+  })
+
+  it('shows targets in the unit people use', () => {
+    expect(formatTarget(fr)).toBe('≤ 0.50')
+    expect(formatTarget(onTime)).toBe('≥ 90%')
+    expect(formatTarget({ metric: 'nearMissRatio', value: 10, direction: 'min' })).toBe('≥ 10:1')
+    expect(formatTarget({ metric: 'fatalities', value: 0, direction: 'max' })).toBe('≤ 0')
+    expect(targetInput(onTime)).toBe('90')
+    expect(targetInput(fr)).toBe('0.5')
+    expect(targetInput(undefined)).toBe('')
+  })
+
+  it('parses a typed target, storing a percentage as a fraction', () => {
+    expect(parseTarget('onTimeClosure', '90')).toEqual({ ok: true, value: 0.9 })
+    expect(parseTarget('onTimeClosure', '87.5%')).toEqual({ ok: true, value: 0.875 })
+    expect(parseTarget('nearMissRatio', '10:1')).toEqual({ ok: true, value: 10 })
+    expect(parseTarget('frequencyRate', '0.5')).toEqual({ ok: true, value: 0.5 })
+    expect(parseTarget('frequencyRate', ' ')).toEqual({ ok: true, value: null })
+    expect(parseTarget('onTimeClosure', '120').ok).toBe(false)
+    expect(parseTarget('fatalities', '0.5').ok).toBe(false)
+    expect(parseTarget('trir', '-1').ok).toBe(false)
+    expect(parseTarget('trir', 'low').ok).toBe(false)
   })
 })

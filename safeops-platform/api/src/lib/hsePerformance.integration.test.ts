@@ -56,6 +56,7 @@ async function incident(over: Record<string, unknown>) {
 async function purge() {
   const scope = { companyId: { in: [CO, OTHER] } }
   await db.siteManHours.deleteMany({ where: scope })
+  await db.performanceTarget.deleteMany({ where: scope })
   await db.correctiveAction.deleteMany({ where: scope })
   await db.incident.deleteMany({ where: scope })
 }
@@ -182,6 +183,40 @@ d('HSE performance — integration (real Postgres)', () => {
     await expect(svc.setManHours(siteAOnly, { companyId: CO, siteId: SITE_B, month: '2026-05', hours: 1, now: NOW })).rejects.toMatchObject({ status: 404 })
     await expect(svc.setManHours(hse, { companyId: CO, siteId: SITE_A, month: '2026-08', hours: 1, now: NOW })).rejects.toMatchObject({ code: 'validation' })
     await expect(svc.setManHours(hse, { companyId: CO, siteId: SITE_A, month: '2026-05', hours: -5, now: NOW })).rejects.toMatchObject({ code: 'validation' })
+  })
+
+  it('keeps targets per company, each pointing the way its indicator improves', async () => {
+    expect((await svc.performance(hse, PERIOD)).targets).toEqual([])
+    await svc.setTarget(hse, { companyId: CO, metric: 'onTimeClosure', value: 0.9 })
+    await svc.setTarget(hse, { companyId: CO, metric: 'frequencyRate', value: 0.5 })
+    await svc.setTarget(hse, { companyId: CO, metric: 'frequencyRate', value: 1.5 }) // update, not a second row
+    await svc.setTarget(outsider, { companyId: OTHER, metric: 'trir', value: 2 })
+
+    expect((await svc.performance(hse, PERIOD)).targets).toEqual([
+      { metric: 'frequencyRate', value: 1.5, direction: 'max' },
+      { metric: 'onTimeClosure', value: 0.9, direction: 'min' },
+    ])
+    // A site-restricted manager reads the same company targets.
+    expect((await svc.performance(siteAOnly, PERIOD)).targets).toHaveLength(2)
+
+    await svc.setTarget(hse, { companyId: CO, metric: 'onTimeClosure', value: null })
+    expect((await svc.performance(hse, PERIOD)).targets.map((t) => t.metric)).toEqual(['frequencyRate'])
+  })
+
+  it('refuses a target from the wrong role, for an unknown indicator, or out of range', async () => {
+    await expect(svc.setTarget(officer, { companyId: CO, metric: 'trir', value: 1 })).rejects.toMatchObject({ status: 403 })
+    await expect(svc.setTarget(outsider, { companyId: CO, metric: 'trir', value: 1 })).rejects.toMatchObject({ status: 403 })
+    await expect(svc.setTarget(hse, { companyId: CO, metric: 'toString', value: 1 })).rejects.toMatchObject({ code: 'validation' })
+    await expect(svc.setTarget(hse, { companyId: CO, metric: 'trir', value: -1 })).rejects.toMatchObject({ code: 'validation' })
+    await expect(svc.setTarget(hse, { companyId: CO, metric: 'onTimeClosure', value: 90 })).rejects.toMatchObject({ code: 'validation' })
+  })
+
+  it('holds the same rules in the database itself', async () => {
+    // A path that skips the service - a script, a manual fix - still cannot store nonsense.
+    const raw = (metric: string, value: number) => db.performanceTarget.create({ data: { companyId: CO, metric, value, updatedBy: 'raw' } })
+    await expect(raw('madeUp', 1)).rejects.toThrow(/PerformanceTarget_metric_check/)
+    await expect(raw('severityRate', -3)).rejects.toThrow(/PerformanceTarget_value_check/)
+    await expect(raw('onTimeClosure', 1.2)).rejects.toThrow(/PerformanceTarget_value_check/)
   })
 
   it('lists recorded hours with the estimate each month would otherwise use', async () => {

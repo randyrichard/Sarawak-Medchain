@@ -18,7 +18,7 @@ export function Topbar({ menuButton }: { menuButton: ReactNode }) {
   const navigate = useNavigate()
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-surface px-4 md:px-5">
+    <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-surface px-4 md:px-5 print:hidden">
       {menuButton}
 
       {/*

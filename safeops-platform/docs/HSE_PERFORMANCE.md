@@ -29,6 +29,8 @@ rest of the product did not give:
 | Monthly trend | Near misses against recordable injuries per month, with a table of the same figures (LTIs, hours, monthly LTI frequency rate) |
 | Sites compared | Every site on the same rates, sortable, worst LTI frequency rate first |
 | Record man-hours | Hours worked per site per month (admin and HSE manager only) |
+| Set targets | The company's target for each indicator (admin and HSE manager only) |
+| Export | Sites and totals CSV, monthly trend CSV, and *Print or save as PDF* |
 
 The period is 6, 12 or 24 whole calendar months ending with the current month. It is kept in
 the URL (`?months=24`), so a view can be shared. The page follows the project picker; the site
@@ -89,6 +91,64 @@ headcount". Sites and months with any estimated hours are marked **est.** Estima
 fine for comparing sites. Record actual hours before the figures go on a JKKP 8 return or to a
 client.
 
+## Targets
+
+A target is the figure the company commits to, for example "LTI frequency rate ≤ 0.50" or
+"actions closed on time ≥ 90%". Once one is set:
+
+- the tile shows the target and **On target** (green tick) or **Off target** (warning icon);
+- the site table's column header shows the target, and each site that misses it is marked;
+- the CSV export adds a *Target* row and an *All sites on target?* row.
+
+Rules:
+
+- **The direction is fixed per indicator,** so a target cannot be saved backwards:
+
+  | At most (lower is better) | At least (higher is better) |
+  |---|---|
+  | LTI frequency rate, severity rate, incidence rate, TRIR, fatalities, overdue actions | Near-miss ratio, actions closed on time |
+
+- A figure exactly on the target counts as on target.
+- An unknown figure ("—") is not judged either way.
+- **A target replaces the page's built-in rule of thumb.** For example, closing fewer than 80%
+  of actions on time is a warning only when no target is set.
+- A missed target is a warning. A fatality stays the only *critical* mark on the page,
+  whatever its target.
+- Targets belong to the company, not to a site. A site-restricted manager sees the same
+  targets.
+
+Targets are stored in `PerformanceTarget`, one row per company and indicator. On-time
+closure is stored as a fraction (0.9) and entered as a percentage (90).
+
+## Export and print
+
+| Export | Contents |
+|---|---|
+| Sites and totals (CSV) | One row for all sites, one per site, then the Target and *on target?* rows when targets are set |
+| Monthly trend (CSV) | One row per month: near misses, recordable and lost-time injuries, hours, estimated share, monthly LTI frequency rate |
+| Print or save as PDF | The page itself, laid out as a board pack (see below) |
+
+The CSV files are built to be worked with, not just read:
+
+- **Numbers are raw,** so Excel can sum and chart them: `178500` rather than `178,500`, and
+  `66.7` rather than `67%`. Percentages are 0 to 100.
+- **An unknown rate is an empty cell,** never 0, matching the page's "—".
+- **Every row carries its period.** The month key is `YYYY-MM`, so files from different
+  months can be stacked and pivoted. The file name gives the period, for example
+  `hse-performance-sites_2025-11_to_2026-10.csv`.
+- **The file starts with a UTF-8 byte-order mark.** Without it, Excel opens the file as ANSI
+  and shows "≤" as "â‰¤".
+- **Cells go through the shared CSV writer** (`web/src/lib/csv.ts`), which neutralises
+  anything a spreadsheet would run as a formula. Site names are typed by people.
+
+In the printed board pack:
+- the sidebar, top bar and buttons are hidden;
+- a line gives the company, the period and the print date;
+- the monthly figures table is opened for printing and closed again afterwards;
+- the page flows over as many sheets as it needs.
+
+The print rules live in the app shell, so the Reports page's print button benefits too.
+
 ## Storage and security
 
 - Man-hours are kept in `SiteManHours`, one row per site per month, unique on `(siteId,
@@ -97,6 +157,12 @@ client.
   `tenant_isolation` using `safeops_tenant_visible("companyId")`.
 - Recording is refused for a future month, for a figure that is not a whole number between 0
   and 50,000,000, and for a site outside the caller's company or site restriction.
+- `PerformanceTarget` has the same `tenant_isolation` policy. It also has CHECK
+  constraints, so the database itself refuses an unknown indicator, a negative value, or an
+  on-time closure above 1. A script or manual fix that skips the service still cannot store
+  nonsense. Adding an indicator means extending the CHECK list in a migration as well as
+  `TARGET_METRICS`.
+- Only the admin and HSE manager may set targets, the same people who record hours.
 - `web/src/features/permissions/serverAgreement.test.ts` checks that the web navigation and
   the API agree on who may view the page (`PERFORMANCE_ROLES`) and who may record hours
   (`MAN_HOURS_ROLES`).
@@ -105,9 +171,10 @@ client.
 
 | File | What it covers |
 |---|---|
-| `api/src/lib/hsePerformance.integration.test.ts` | Every rate against hand-worked figures on a real database: recorded and estimated hours, site restriction, man-hours permissions and validation, and the no-hours case returning `null` |
-| `web/src/features/performance/PerformancePage.dom.test.tsx` | What the reader is told: unknown rates shown as "—", the estimate notice, worst site first, the chart's table, who sees *Record man-hours*, saving only changed months, and an axe audit |
-| `web/src/features/performance/lib.test.ts` | Formatting and hours parsing |
+| `api/src/lib/hsePerformance.integration.test.ts` | Every rate against hand-worked figures on a real database: recorded and estimated hours, site restriction, man-hours permissions and validation, the no-hours case returning `null`, targets (per company, roles, validation), and the database CHECK constraints |
+| `web/src/features/performance/PerformancePage.dom.test.tsx` | What the reader is told: unknown rates shown as "—", the estimate notice, worst site first, the chart's table, on/off target marks, who may record hours and set targets, saving only changed values, the CSV download, print, and an axe audit |
+| `web/src/features/performance/lib.test.ts` | Formatting, hours parsing, and target direction, display and parsing |
+| `web/src/features/performance/export.test.ts` | The CSVs: byte-order mark, raw numbers, empty unknowns, formula neutralising, target rows, file names |
 | `web/src/api/performanceApi.test.ts` | Request URLs |
 
 ## Sources
