@@ -84,6 +84,7 @@ export function NewPermitDialog({
 
   return (
     <Dialog
+      error={error}
       open={open}
       onClose={onClose}
       title="Request a permit to work"
@@ -96,7 +97,6 @@ export function NewPermitDialog({
       }
     >
       <div className="space-y-4">
-        {error && <Alert tone="critical">{error}</Alert>}
 
         <div>
           <p className="mb-1.5 text-xs font-semibold text-ink-2">Permit type</p>
@@ -128,7 +128,7 @@ export function NewPermitDialog({
         <Textarea label="Scope and method" rows={2} value={description} onChange={(e) => setDescription(e.target.value)}
           placeholder="What will be done, with what equipment…" />
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
           <Select label="Site" required value={effectiveSite} onChange={(e) => setSiteId(e.target.value)}>
             {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </Select>

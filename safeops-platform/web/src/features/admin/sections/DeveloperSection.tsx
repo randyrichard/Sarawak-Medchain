@@ -167,10 +167,10 @@ function NewKeyDialog({ open, onClose, onCreated }: { open: boolean; onClose: ()
   const close = () => { setName(''); setScopes(['view']); setSecret(null); setCopied(false); onClose(); if (secret) onCreated() }
 
   return (
-    <Dialog open={open} onClose={close} title="Generate API key" description="Scoped access to the SafeOps REST API."
+    <Dialog
+      error={error} open={open} onClose={close} title="Generate API key" description="Scoped access to the SafeOps REST API."
       footer={secret ? <Button onClick={close}>Done</Button> : <><Button variant="secondary" onClick={close}>Cancel</Button><Button loading={busy} onClick={() => void submit()}>Generate</Button></>}>
       <div className="space-y-3">
-        {error && <Alert tone="critical">{error}</Alert>}
         {secret ? (
           <>
             <Alert tone="warning" title="Copy your key now">This secret is shown once and cannot be retrieved again.</Alert>
@@ -271,10 +271,10 @@ function NewWebhookDialog({ open, onClose, onCreated }: { open: boolean; onClose
   }
 
   return (
-    <Dialog open={open} onClose={onClose} title="Add webhook" description="We POST a signed JSON payload for each selected event." width="max-w-lg"
+    <Dialog
+      error={error} open={open} onClose={onClose} title="Add webhook" description="We POST a signed JSON payload for each selected event." width="max-w-lg"
       footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button><Button loading={busy} onClick={() => void submit()}>Create webhook</Button></>}>
-      <div className="space-y-3">
-        {error && <Alert tone="critical">{error}</Alert>}
+      <div className="space-y-5">
         <Input label="Endpoint URL (HTTPS)" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://example.com/hooks/safeops" />
         <div>
           <p className="mb-1.5 text-xs font-semibold text-ink-2">Events</p>

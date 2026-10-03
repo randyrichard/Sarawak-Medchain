@@ -124,10 +124,10 @@ function ConnectDialog({ connector, onClose, onConnected }: { connector: Connect
   }
 
   return (
-    <Dialog open onClose={onClose} title={`${connector.status === 'connected' ? 'Configure' : 'Connect'} ${connector.name}`} description={connector.capability}
+    <Dialog
+      error={error} open onClose={onClose} title={`${connector.status === 'connected' ? 'Configure' : 'Connect'} ${connector.name}`} description={connector.capability}
       footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button><Button loading={busy} onClick={() => void submit()}>{connector.status === 'connected' ? 'Save' : 'Connect'}</Button></>}>
       <div className="space-y-3">
-        {error && <Alert tone="critical">{error}</Alert>}
         {connector.fields.length === 0 ? (
           <Alert tone="info">This connector needs no credentials — it is enabled at the platform level.</Alert>
         ) : connector.fields.map((f) => (

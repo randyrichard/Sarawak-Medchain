@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { employeesApi } from '@/api/employeesApi'
 import type { EmployeeDetail } from '@/api/employees'
 import { ApiError } from '@/api/types'
-import { Alert, Button, Dialog } from '@/components/ui'
+import { Button, Dialog } from '@/components/ui'
 import {
   EmployeeForm, employeeFormProblem, toEmployeePayload, type EmployeeFormState,
 } from './EmployeeForm'
@@ -52,6 +52,7 @@ export function EditEmployeeDialog({
 
   return (
     <Dialog
+      error={error}
       open={open}
       onClose={onClose}
       title={`Edit ${employee.name}`}
@@ -63,7 +64,6 @@ export function EditEmployeeDialog({
         </>
       }
     >
-      {error && <Alert tone="critical" className="mb-3">{error}</Alert>}
       <EmployeeForm value={form} onChange={setForm} />
       {problem && <p className="mt-2 text-2xs text-muted">{problem}</p>}
     </Dialog>

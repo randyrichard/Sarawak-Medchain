@@ -269,7 +269,7 @@ function AddPersonDialog({
         )}
 
         {!who && (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
             <Input label="Name" required value={name} onChange={(e) => setName(e.target.value)} />
             <Input label="Company or department" value={company}
               onChange={(e) => setCompany(e.target.value)} />
@@ -279,13 +279,13 @@ function AddPersonDialog({
         {/* Offered only for the injured, matching what the server will accept. */}
         {role === 'injured' && (
           <>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
               <Input label="Injury" value={injuryType} onChange={(e) => setInjuryType(e.target.value)}
                 placeholder="e.g. Laceration" />
               <Input label="Body part" value={bodyPart} onChange={(e) => setBodyPart(e.target.value)}
                 placeholder="e.g. Left forearm" />
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
               <Input label="Treatment" value={treatment} onChange={(e) => setTreatment(e.target.value)}
                 placeholder="e.g. On-site first aid" />
               <Input label="Days lost" type="number" min={0} value={daysLost}

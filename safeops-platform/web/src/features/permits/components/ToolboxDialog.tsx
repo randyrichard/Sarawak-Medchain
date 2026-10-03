@@ -70,6 +70,7 @@ export function ToolboxDialog({
 
   return (
     <Dialog
+      error={error}
       open={open}
       onClose={onClose}
       title="Toolbox talk"
@@ -80,7 +81,6 @@ export function ToolboxDialog({
         </Button>
       }
     >
-      {error && <Alert tone="critical" className="mb-3">{error}</Alert>}
 
       <div className="space-y-4">
         {/* Meeting record */}

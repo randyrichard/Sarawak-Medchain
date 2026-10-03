@@ -202,7 +202,7 @@ function RaiseDialog({
       <div className="space-y-3">
         {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-5">
           <Select label="Kind of work" value={kind}
             onChange={(e) => setKind(e.target.value as MaintenanceKind)}>
             {(Object.keys(MAINTENANCE_KIND_LABEL) as MaintenanceKind[]).map((k) => (
@@ -221,7 +221,7 @@ function RaiseDialog({
         <Textarea label="What needs doing" value={description} required
           onChange={(e) => setDescription(e.target.value)} />
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-5">
           <SuggestSelect
             options={people}
             label="Assigned to"
@@ -306,7 +306,7 @@ function CloseOutDialog({
       <div className="space-y-3">
         {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-5">
           <Input label="Downtime (minutes)" type="number" min={0} value={downtime}
             onChange={(e) => setDowntime(e.target.value)} />
           <Input label="Cost (RM)" type="number" min={0} step="0.01" value={cost}

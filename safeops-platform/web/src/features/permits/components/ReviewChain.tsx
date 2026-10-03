@@ -259,6 +259,7 @@ function StatementDialog({
 
   return (
     <Dialog
+      error={error}
       open={open} onClose={close} title={title} description={description}
       footer={
         <>
@@ -274,7 +275,6 @@ function StatementDialog({
         </>
       }
     >
-      {error && <Alert tone="critical" className="mb-3">{error}</Alert>}
       <Textarea
         label="Comment" rows={3} autoFocus placeholder={placeholder}
         value={text} onChange={(e) => setText(e.target.value)}

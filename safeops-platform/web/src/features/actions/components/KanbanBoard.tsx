@@ -176,6 +176,7 @@ export function KanbanBoard({
       </div>
 
       <Dialog
+        error={error}
         open={completeFor !== null}
         onClose={() => setCompleteFor(null)}
         title={`Complete ${completeFor?.code}`}
@@ -187,8 +188,7 @@ export function KanbanBoard({
           </>
         }
       >
-        <div className="space-y-3">
-          {error && <Alert tone="critical">{error}</Alert>}
+        <div className="space-y-5">
           <Textarea
             label={completeFor?.evidenceRequired ? 'Completion evidence (required)' : 'Completion note (optional)'}
             rows={3}

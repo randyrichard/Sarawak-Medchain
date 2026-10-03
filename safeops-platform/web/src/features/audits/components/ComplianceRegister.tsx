@@ -5,7 +5,7 @@ import { ApiError } from '@/api/types'
 import type { ObligationView } from '@/api/audits'
 import type { Site } from '@/api/types'
 import { useActor } from '@/features/incidents/lib'
-import { Alert, Avatar, Badge, Button, Card, Dialog, Input, Skeleton, StatusPill, Textarea } from '@/components/ui'
+import { Avatar, Badge, Button, Card, Dialog, Input, Skeleton, StatusPill, Textarea } from '@/components/ui'
 import { cn } from '@/lib/cn'
 
 const STATUS_KIND = { Compliant: 'good', 'Expiring Soon': 'warning', Overdue: 'critical' } as const
@@ -108,6 +108,7 @@ export function ComplianceRegister({
       </Card>
 
       <Dialog
+        error={error}
         open={renewFor !== null}
         onClose={() => setRenewFor(null)}
         title={`Renew: ${renewFor?.requirement ?? ''}`}
@@ -119,8 +120,7 @@ export function ComplianceRegister({
           </>
         }
       >
-        <div className="space-y-3">
-          {error && <Alert tone="critical">{error}</Alert>}
+        <div className="space-y-5">
           <Input label="New due / expiry date" required type="date" value={nextDue} onChange={(e) => setNextDue(e.target.value)} />
           <Textarea label="Note (evidence reference)" rows={2} value={note} onChange={(e) => setNote(e.target.value)}
             placeholder="e.g. Renewed certificate filed as PMT-4/2027 in Documents…" />

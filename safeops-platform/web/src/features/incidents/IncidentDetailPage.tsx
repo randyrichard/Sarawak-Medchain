@@ -181,9 +181,17 @@ export function IncidentDetailPage() {
             </Button>
           )}
           {role === 'admin' && incident.stage !== 'closed' && (
-            <Button variant="ghost" size="sm" icon={<Archive size={13} />} onClick={() => setArchiveOpen(true)}>
-              Archive
-            </Button>
+            <>
+              {/*
+                Set apart from Summary by a rule and space (law of proximity): side by side
+                they read as two equal, harmless options, and archiving takes the incident
+                out of everyone's register.
+              */}
+              <span aria-hidden className="mx-1.5 h-5 w-px bg-grid" />
+              <Button variant="ghost" size="sm" icon={<Archive size={13} />} onClick={() => setArchiveOpen(true)}>
+                Archive
+              </Button>
+            </>
           )}
         </div>
         {summaryOpen && (

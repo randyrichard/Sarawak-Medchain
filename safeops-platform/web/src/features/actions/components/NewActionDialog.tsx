@@ -5,7 +5,7 @@ import type { ActionPriority } from '@/api/incidents'
 import { useOrg } from '@/features/org/OrgContext'
 import { useDepartments } from '@/features/org/departments'
 import { usePeople, useActor } from '@/features/incidents/lib'
-import { Alert, Button, Checkbox, Dialog, Input, SuggestSelect, Select, Textarea } from '@/components/ui'
+import { Button, Checkbox, Dialog, Input, SuggestSelect, Select, Textarea } from '@/components/ui'
 import { PeopleOptions } from '@/features/org/PeopleOptions'
 
 /** Standalone corrective action (audit finding, inspection, MOC…). */
@@ -50,6 +50,7 @@ export function NewActionDialog({ open, onClose, onCreated }: { open: boolean; o
 
   return (
     <Dialog
+      error={error}
       open={open}
       onClose={onClose}
       title="New corrective action"
@@ -62,12 +63,11 @@ export function NewActionDialog({ open, onClose, onCreated }: { open: boolean; o
         </>
       }
     >
-      <div className="space-y-3.5">
-        {error && <Alert tone="critical">{error}</Alert>}
+      <div className="space-y-5">
         <Input label="What must be done" required value={title} onChange={(e) => setTitle(e.target.value)}
           placeholder="e.g. Replace expired fire extinguishers — Block C" />
         <Textarea label="Details (optional)" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-5">
           <Select label="Site" required value={siteId} onChange={(e) => setSiteId(e.target.value)}>
             <option value="" disabled>Select…</option>
             {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -87,7 +87,7 @@ export function NewActionDialog({ open, onClose, onCreated }: { open: boolean; o
             <option key={r}>{r}</option>
           ))}
         </Select>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-5">
           <Select label="Owner" required value={owner} onChange={(e) => setOwner(e.target.value)}>
             <option value="" disabled>Select…</option>
             <PeopleOptions people={people} />
@@ -97,7 +97,7 @@ export function NewActionDialog({ open, onClose, onCreated }: { open: boolean; o
             <PeopleOptions people={people} />
           </Select>
         </div>
-        <div className="grid grid-cols-2 items-end gap-3">
+        <div className="grid grid-cols-2 items-end gap-x-3 gap-y-5">
           <Input label="Due date" required type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
           <Select label="Priority" value={priority} onChange={(e) => setPriority(e.target.value as ActionPriority)}>
             <option>High</option><option>Medium</option><option>Low</option>

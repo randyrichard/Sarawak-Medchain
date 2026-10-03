@@ -101,6 +101,7 @@ export function NextStepCard({ incident, onUpdate }: { incident: Incident; onUpd
 
       {/* Stage dialogs */}
       <Dialog
+        error={error}
         open={open}
         onClose={() => setOpen(false)}
         title={step.title}
@@ -125,10 +126,9 @@ export function NextStepCard({ incident, onUpdate }: { incident: Incident; onUpd
         }
       >
         <div className="space-y-4">
-          {error && <Alert tone="critical">{error}</Alert>}
           {incident.stage === 'reported' && (
             <>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-x-3 gap-y-5">
                 <Select label="Risk rating" value={riskRating} onChange={(e) => setRiskRating(e.target.value as RiskRating)}>
                   {(['Low', 'Medium', 'High', 'Extreme'] as const).map((r) => <option key={r}>{r}</option>)}
                 </Select>

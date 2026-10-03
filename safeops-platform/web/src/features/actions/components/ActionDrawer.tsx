@@ -345,6 +345,7 @@ export function ActionDrawer({
 
       {/* Complete dialog */}
       <Dialog
+        error={error}
         open={completeOpen}
         onClose={() => setCompleteOpen(false)}
         title={`Complete ${item.code}`}
@@ -357,8 +358,7 @@ export function ActionDrawer({
           </>
         }
       >
-        <div className="space-y-3">
-          {error && <Alert tone="critical">{error}</Alert>}
+        <div className="space-y-5">
           <Textarea
             label={item.evidenceRequired ? 'Completion evidence (required)' : 'Completion note (optional)'}
             rows={3} value={evidence} onChange={(e) => setEvidence(e.target.value)}
@@ -420,6 +420,7 @@ export function ActionDrawer({
 
       {/* Cancel dialog */}
       <Dialog
+        error={error}
         open={cancelOpen}
         onClose={() => setCancelOpen(false)}
         title={`Cancel ${item.code}?`}
@@ -434,14 +435,14 @@ export function ActionDrawer({
           </>
         }
       >
-        <div className="space-y-3">
-          {error && <Alert tone="critical">{error}</Alert>}
+        <div className="space-y-5">
           <Textarea label="Reason (required)" rows={2} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. Duplicate of CA-901; superseded by engineering change…" />
         </div>
       </Dialog>
 
       {/* Edit details (management) */}
       <Dialog
+        error={error}
         open={editOpen}
         onClose={() => setEditOpen(false)}
         title={`Edit ${item.code}`}
@@ -455,9 +456,8 @@ export function ActionDrawer({
           </>
         }
       >
-        <div className="space-y-3">
-          {error && <Alert tone="critical">{error}</Alert>}
-          <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-5">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-5">
             <Select label="Owner" value={owner} onChange={(e) => setOwner(e.target.value)}>
               <PeopleOptions people={people} />
             </Select>
@@ -466,7 +466,7 @@ export function ActionDrawer({
               <PeopleOptions people={people} />
             </Select>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-5">
             <Input label="Due date" type="date" value={due} onChange={(e) => setDue(e.target.value)} />
             <Select label="Priority" value={prio} onChange={(e) => setPrio(e.target.value as ActionPriority)}>
               <option>High</option><option>Medium</option><option>Low</option>

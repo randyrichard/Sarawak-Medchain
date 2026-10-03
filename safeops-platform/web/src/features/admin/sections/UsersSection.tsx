@@ -361,15 +361,15 @@ function NewUserDialog({ open, roles, sites, onClose, onCreated }: { open: boole
   }
 
   return (
-    <Dialog open={open} onClose={onClose} title="Create user" description="Provision a new account and optionally send an invitation email."
+    <Dialog
+      error={error} open={open} onClose={onClose} title="Create user" description="Provision a new account and optionally send an invitation email."
       footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button><Button loading={busy} onClick={() => void submit()}>Create user</Button></>}>
-      <div className="space-y-3.5">
-        {error && <Alert tone="critical">{error}</Alert>}
-        <div className="grid grid-cols-2 gap-3">
+      <div className="space-y-5">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-5">
           <Input label="Full name" required value={name} onChange={(e) => setName(e.target.value)} />
           <Input label="Work email" required type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-5">
           <Select label="Role" value={role} onChange={(e) => setRole(e.target.value)}>
             {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
           </Select>
@@ -404,12 +404,12 @@ function BulkImportDialog({ open, onClose, onDone }: { open: boolean; onClose: (
   }
 
   return (
-    <Dialog open={open} onClose={onClose} title="Bulk import users" description="Paste CSV with columns: name, email, role. Duplicates are skipped." width="max-w-lg"
+    <Dialog
+      error={error} open={open} onClose={onClose} title="Bulk import users" description="Paste CSV with columns: name, email, role. Duplicates are skipped." width="max-w-lg"
       footer={result
         ? <Button onClick={() => onDone(result)}>Done</Button>
         : <><Button variant="secondary" onClick={onClose}>Cancel</Button><Button loading={busy} onClick={() => void submit()}>Import users</Button></>}>
       <div className="space-y-3">
-        {error && <Alert tone="critical">{error}</Alert>}
         {result ? (
           <Alert tone="success" title="Import complete">
             {result.created} user(s) invited, {result.skipped} duplicate(s) skipped.

@@ -5,7 +5,7 @@ import type { CourseView, DeliveryMode } from '@/api/training'
 import type { Employee } from '@/api/types'
 import { useOrg } from '@/features/org/OrgContext'
 import { usePeople, useActor } from '@/features/incidents/lib'
-import { Alert, Avatar, Badge, Button, Dialog, Input, Select } from '@/components/ui'
+import { Avatar, Badge, Button, Dialog, Input, Select } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { PeopleOptions } from '@/features/org/PeopleOptions'
 
@@ -61,6 +61,7 @@ export function NewSessionDialog({ open, onClose, onCreated }: { open: boolean; 
 
   return (
     <Dialog
+      error={error}
       open={open}
       onClose={onClose}
       title="Schedule training session"
@@ -73,12 +74,11 @@ export function NewSessionDialog({ open, onClose, onCreated }: { open: boolean; 
         </>
       }
     >
-      <div className="max-h-[62vh] space-y-3.5 overflow-y-auto pr-1">
-        {error && <Alert tone="critical">{error}</Alert>}
+      <div className="max-h-[62vh] space-y-5 overflow-y-auto pr-1">
         <Select label="Course" required value={courseId} onChange={(e) => setCourseId(e.target.value)}>
           {courses.map((c) => <option key={c.id} value={c.id}>{c.code} — {c.name}</option>)}
         </Select>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-5">
           <Select label="Trainer" required value={trainer} onChange={(e) => setTrainer(e.target.value)}>
             <option value="" disabled>Select…</option>
             <PeopleOptions people={people} />
@@ -90,7 +90,7 @@ export function NewSessionDialog({ open, onClose, onCreated }: { open: boolean; 
           </Select>
         </div>
         <Input label="Venue" required value={venue} onChange={(e) => setVenue(e.target.value)} placeholder={mode === 'online' ? 'e.g. Online (Microsoft Teams)' : 'e.g. Kuching training room 2'} />
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-x-3 gap-y-5">
           <Select label="Site" required value={siteId} onChange={(e) => { setSiteId(e.target.value); setEnrolled([]) }}>
             <option value="" disabled>Select…</option>
             {sites.map((s) => <option key={s.id} value={s.id}>{s.short}</option>)}

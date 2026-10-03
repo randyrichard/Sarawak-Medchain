@@ -9,7 +9,7 @@ import { CATEGORY_LABEL, FREQUENCY_LABEL } from '@/api/assets'
 import type { CapaItem } from '@/api/capa'
 import { useActor, fmtDate, fmtDateTime } from '@/features/incidents/lib'
 import { usePeople } from '@/features/incidents/lib'
-import { Alert, Avatar, Badge, Button, Dialog, Input, Select, Skeleton, StatusPill } from '@/components/ui'
+import { Avatar, Badge, Button, Dialog, Input, Select, Skeleton, StatusPill } from '@/components/ui'
 import { CATEGORY_ICON, healthColor, RISK_PILL } from '../lib'
 import { QrBlock } from './QrBlock'
 import { CalibrationPanel } from './CalibrationPanel'
@@ -283,6 +283,7 @@ export function AssetDrawer({
 
       {/* Schedule dialog */}
       <Dialog
+        error={error}
         open={scheduleOpen}
         onClose={() => setScheduleOpen(false)}
         title={`Schedule inspection — ${asset?.code ?? ''}`}
@@ -293,8 +294,7 @@ export function AssetDrawer({
           </>
         }
       >
-        <div className="space-y-3">
-          {error && <Alert tone="critical">{error}</Alert>}
+        <div className="space-y-5">
           <Input label="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           <Select label="Inspector" value={inspector} onChange={(e) => setInspector(e.target.value)} hint="They're notified immediately.">
             <PeopleOptions people={people} />

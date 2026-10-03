@@ -173,7 +173,12 @@ export function ContractorDrawer({
                   )}>
                   {item.status === 'active' ? 'Suspend' : 'Reinstate'}
                 </Button>
-                <Button size="sm" variant="ghost" icon={<Trash2 size={12} />} onClick={() => setConfirmDelete(true)}>
+                {/*
+                  Pushed to the far end, away from Edit and the status toggle (law of
+                  proximity): buttons side by side read as one group of equally safe
+                  choices, and Delete is not one of them.
+                */}
+                <Button size="sm" variant="ghost" className="ml-auto" icon={<Trash2 size={12} />} onClick={() => setConfirmDelete(true)}>
                   Delete
                 </Button>
               </footer>

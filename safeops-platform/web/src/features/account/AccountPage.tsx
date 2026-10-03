@@ -172,6 +172,7 @@ function ChangePasswordDialog({ open, onClose }: { open: boolean; onClose: () =>
 
   return (
     <Dialog
+      error={error}
       open={open}
       onClose={close}
       title="Change password"
@@ -185,8 +186,7 @@ function ChangePasswordDialog({ open, onClose }: { open: boolean; onClose: () =>
         </>
       }
     >
-      {error && <Alert tone="critical" className="mb-3">{error}</Alert>}
-      <div className="space-y-3">
+      <div className="space-y-5">
         <Input
           label="Current password"
           type="password"

@@ -3,7 +3,7 @@ import { contractorsApi } from '@/api/contractorsApi'
 import { forgetContractorCompanies } from '@/features/org/registers'
 import { ApiError } from '@/api/types'
 import { useOrg } from '@/features/org/OrgContext'
-import { Alert, Button, Dialog } from '@/components/ui'
+import { Button, Dialog } from '@/components/ui'
 import {
   ContractorForm, contractorFormProblem, emptyContractorForm, toContractorPayload,
   type ContractorFormState,
@@ -45,6 +45,7 @@ export function NewContractorDialog({
 
   return (
     <Dialog
+      error={error}
       open={open}
       onClose={onClose}
       title="Add a contractor"
@@ -56,7 +57,6 @@ export function NewContractorDialog({
         </>
       }
     >
-      {error && <Alert tone="critical" className="mb-3">{error}</Alert>}
       <ContractorForm value={form} onChange={setForm} />
       {problem && <p className="mt-2 text-2xs text-muted">{problem}</p>}
     </Dialog>
