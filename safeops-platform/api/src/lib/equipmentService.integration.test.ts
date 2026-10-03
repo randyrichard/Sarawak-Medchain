@@ -6,6 +6,7 @@ import { PermitService } from './permitService.js'
 import { PermitReviewService } from './permitReview.js'
 import { IncidentService } from './incidentService.js'
 import type { Caller } from '../domain/caller.js'
+import { todayDate } from '../domain/businessDay.js'
 
 /**
  * Integration tests against a REAL PostgreSQL database.
@@ -47,7 +48,8 @@ const employee = role('employee', 'Employee')
 const ceo = role('ceo', 'Ceo')
 
 const daysFromNow = (n: number) => new Date(Date.now() + n * 86400_000)
-const isoDays = (n: number) => daysFromNow(n).toISOString().slice(0, 10)
+// A date-only value n days from today's local date (APP_TIMEZONE), as the forms send it.
+const isoDays = (n: number) => new Date(todayDate().getTime() + n * 86400_000).toISOString().slice(0, 10)
 const hoursFromNow = (h: number) => new Date(Date.now() + h * 3600_000).toISOString()
 
 let seq = 0

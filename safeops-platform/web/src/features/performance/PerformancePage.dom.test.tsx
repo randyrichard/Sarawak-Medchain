@@ -51,8 +51,8 @@ const base: Indicators = {
 
 function view(over: Partial<Indicators> = {}, targets: Target[] = []): PerformanceView {
   return {
-    from: '2026-01-01T00:00:00.000Z',
-    to: '2026-07-01T00:00:00.000Z',
+    from: '2026-01-01',
+    to: '2026-06-30',
     months: [
       { month: '2026-05', lostTime: 1, recordable: 1, nearMisses: 3, hours: 30_000, estimatedShare: 0.3, frequencyRate: 33.33 },
       { month: '2026-06', lostTime: 0, recordable: 0, nearMisses: 1, hours: 30_000, estimatedShare: 0, frequencyRate: 0 },

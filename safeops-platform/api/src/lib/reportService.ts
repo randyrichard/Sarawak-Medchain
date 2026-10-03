@@ -18,6 +18,7 @@ import {
   type Frequency,
 } from './reportSchedule.js'
 import { DomainError } from '../domain/errors.js'
+import { todayDate } from '../domain/businessDay.js'
 
 /**
  * Scheduled reports.
@@ -71,10 +72,8 @@ const OPEN_INVESTIGATION_STAGES = [
 const fmtIsoDate = (d: Date) => docDate(d)
 
 const dayMs = 86_400_000
-const startOfToday = () => {
-  const d = new Date()
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
-}
+/** Today's local date (APP_TIMEZONE), as a date-only value - see businessDay.ts. */
+const startOfToday = () => todayDate()
 
 export interface ReportColumn { key: string; label: string; width: number }
 

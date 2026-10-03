@@ -8,6 +8,7 @@ import { ApiError } from '@/api/types'
 import { Alert, Badge, Button, Dialog, Input, Select, Skeleton } from '@/components/ui'
 import { fmtDate } from '@/features/incidents/lib'
 import { cn } from '@/lib/cn'
+import { localISODate } from '@/lib/localDate'
 
 /**
  * Calibration certificates for a measuring instrument.
@@ -126,7 +127,7 @@ export function CalibrationPanel({
 function RecordCalibrationDialog({
   open, assetId, onClose, onSaved,
 }: { open: boolean; assetId: string; onClose: () => void; onSaved: () => void }) {
-  const today = new Date().toISOString().slice(0, 10)
+  const today = localISODate()
   const [calibratedAt, setCalibratedAt] = useState(today)
   const [expiresAt, setExpiresAt] = useState('')
   const [certificateNumber, setCertificateNumber] = useState('')
@@ -142,7 +143,7 @@ function RecordCalibrationDialog({
     const inAYear = new Date()
     inAYear.setFullYear(inAYear.getFullYear() + 1)
     setCalibratedAt(today)
-    setExpiresAt(inAYear.toISOString().slice(0, 10))
+    setExpiresAt(localISODate(inAYear))
     setCertificateNumber(''); setVendor(''); setResult('pass'); setRemarks(''); setError(null)
   }, [open, today])
 

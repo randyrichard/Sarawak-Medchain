@@ -7,6 +7,7 @@ import {
   courseApplies, type CourseShape,
 } from './trainingCatalog.js'
 import { DomainError } from '../domain/errors.js'
+import { recentLocalMonths } from '../domain/businessDay.js'
 import { resolveOwnerId } from './actionOwner.js'
 
 /** Roles permitted to author courses and escalate a competency gap. */
@@ -983,17 +984,13 @@ export class TrainingService {
 
     // Hours delivered = course length times the number who actually turned up.
     const monthlyHours: { month: string; Hours: number }[] = []
-    for (let m = 5; m >= 0; m--) {
-      const start = new Date()
-      start.setMonth(start.getMonth() - m, 1)
-      start.setHours(0, 0, 0, 0)
-      const end = new Date(start)
-      end.setMonth(end.getMonth() + 1)
+    // Local calendar months (APP_TIMEZONE), not the server's clock zone.
+    for (const { start, end, label } of recentLocalMonths(6)) {
       const hours = completed
         .filter((s) => s.completedAt && s.completedAt >= start && s.completedAt < end)
         .reduce((sum, s) => sum + s.durationHours * s.enrolments.filter((e) => e.present).length, 0)
       monthlyHours.push({
-        month: start.toLocaleDateString('en-MY', { month: 'short' }),
+        month: label,
         Hours: hours,
       })
     }

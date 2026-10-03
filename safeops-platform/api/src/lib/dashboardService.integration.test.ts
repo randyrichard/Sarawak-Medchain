@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { PrismaClient } from '@prisma/client'
 import { DashboardService } from './dashboardService.js'
 import type { Caller } from '../domain/caller.js'
+import { todayDate } from '../domain/businessDay.js'
 
 /**
  * The dashboard, against a REAL PostgreSQL database.
@@ -172,9 +173,8 @@ d('Operational dashboard — integration (real Postgres)', () => {
 
   it('separates due today from due this week', async () => {
     await purge()
-    const todayNoon = new Date()
-    todayNoon.setUTCHours(12, 0, 0, 0)
-    await action({ dueDate: todayNoon })
+    // Due today: today's local date (APP_TIMEZONE), the date-only form due dates are stored in.
+    await action({ dueDate: todayDate() })
     await action({ dueDate: days(3) })
     await action({ dueDate: days(4) })
     await action({ dueDate: days(20) })

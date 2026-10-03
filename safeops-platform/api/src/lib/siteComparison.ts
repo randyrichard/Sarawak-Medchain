@@ -24,6 +24,8 @@ import { LOST_TIME_SEVERITIES, isInjury, isNearMiss } from './incidentCatalog.js
 import { ON_SITE_STATUSES } from './visitorService.js'
 import { ToolboxService } from './toolboxService.js'
 import { DomainError } from '../domain/errors.js'
+import { endOfLocalDateString, startOfLocalDateString } from '../domain/businessDay.js'
+import { dateOf } from '../domain/businessDay.js'
 
 export class SiteComparisonError extends DomainError {}
 
@@ -31,7 +33,6 @@ export class SiteComparisonError extends DomainError {}
 const COMPARE_ROLES: Role[] = ['admin', 'hse_manager', 'safety_officer', 'ceo']
 
 const DAY = 86_400_000
-const utcDay = (d: Date) => Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())
 
 export interface SiteRow {
   siteId: string
@@ -69,8 +70,9 @@ export class SiteComparisonService {
       throw new SiteComparisonError('forbidden', 'Your role does not permit comparing sites.', 403)
     }
 
-    const to = f.to ? new Date(`${f.to}T23:59:59.999Z`) : new Date()
-    const from = f.from ? new Date(`${f.from}T00:00:00.000Z`) : new Date(to.getTime() - 30 * DAY)
+    // Local days, as on the dashboard: see dashboardService.window.
+    const to = f.to ? endOfLocalDateString(f.to) : new Date()
+    const from = f.from ? startOfLocalDateString(f.from) : new Date(to.getTime() - 30 * DAY)
     if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || from > to) {
       throw new SiteComparisonError('validation', 'That date range is not valid.')
     }
@@ -138,7 +140,8 @@ export class SiteComparisonService {
     const visitorBy = count(visitors)
     const ltiBy = new Map(lastLti.map((r) => [r.siteId, r._max.occurredAt]))
     const toolboxBy = new Map(today.sites.map((s) => [s.siteId, s]))
-    const todayUtc = utcDay(now)
+    // Local calendar days (APP_TIMEZONE): a lost-time injury at 02:00 local is that day's.
+    const todayUtc = dateOf(now).getTime()
 
     // Per-site incident counts for the window, bucketed once instead of re-scanning the
     // whole result for every site.
@@ -165,7 +168,7 @@ export class SiteComparisonService {
         incidentsInRange: mine.total,
         nearMissesInRange: mine.nearMisses,
         injuriesInRange: mine.injuries,
-        daysSinceLostTime: lti ? Math.max(0, Math.round((todayUtc - utcDay(lti)) / DAY)) : null,
+        daysSinceLostTime: lti ? Math.max(0, Math.round((todayUtc - dateOf(lti).getTime()) / DAY)) : null,
         lastLostTimeAt: lti ? lti.toISOString() : null,
         overdueActions: overdueBy.get(s.id) ?? 0,
         openActions: openActBy.get(s.id) ?? 0,

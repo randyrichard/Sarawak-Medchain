@@ -7,6 +7,7 @@ import { assessFitness, CALIBRATED_CATEGORIES, DUE_WARN_DAYS } from './equipment
 import { ON_SITE_STATUSES, overdueBy } from './visitorService.js'
 import { REVIEW_CHAIN } from './permitReview.js'
 import { DomainError } from '../domain/errors.js'
+import { endOfLocalDateString, startOfLocalDateString, startOfLocalDay, todayDate } from '../domain/businessDay.js'
 
 /**
  * The morning dashboard.
@@ -28,10 +29,9 @@ export class DashboardError extends DomainError {
   }
 }
 
-/** Everyone who can open the app can see their own workspace's operational picture. */
+/** Today's local date (APP_TIMEZONE), as a date-only value - see businessDay.ts. */
 function startOfToday(): Date {
-  const n = new Date()
-  return new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate()))
+  return todayDate()
 }
 
 const DAY = 86_400_000
@@ -101,8 +101,10 @@ export class DashboardService {
    * calendar-month dashboard is empty, which is exactly the morning it should not be.
    */
   private window(f: DashboardFilters) {
-    const to = f.to ? new Date(`${f.to}T23:59:59.999Z`) : new Date()
-    const from = f.from ? new Date(`${f.from}T00:00:00.000Z`) : new Date(to.getTime() - 30 * DAY)
+    // The picked dates are local days: "1-31 March" read as UTC ran 08:00 on the 1st to
+    // 07:59 on 1 April in Malaysia, moving incidents across the edges.
+    const to = f.to ? endOfLocalDateString(f.to) : new Date()
+    const from = f.from ? startOfLocalDateString(f.from) : new Date(to.getTime() - 30 * DAY)
     if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) {
       throw new DashboardError('validation', 'That date range is not valid.')
     }
@@ -166,6 +168,10 @@ export class DashboardService {
     const vdept = this.visitorDept(f)
     const weekEnd = new Date(today.getTime() + 7 * DAY)
     const tomorrow = new Date(today.getTime() + DAY)
+    // `today`/`tomorrow` are calendar dates for date-only fields; arrivals are moments,
+    // so "arriving today" is local midnight to local midnight.
+    const dayStart = startOfLocalDay()
+    const dayEnd = startOfLocalDateString(new Date(today.getTime() + DAY).toISOString().slice(0, 10))
 
     const company = await this.db.company.findUnique({
       where: { id: f.companyId },
@@ -425,7 +431,7 @@ export class DashboardService {
         where: {
           ...scope, ...vdept,
           status: { in: ['pre_registered', 'waiting'] },
-          expectedArrival: { gte: today, lt: tomorrow },
+          expectedArrival: { gte: dayStart, lt: dayEnd },
         },
       }),
       this.db.visitor.findMany({

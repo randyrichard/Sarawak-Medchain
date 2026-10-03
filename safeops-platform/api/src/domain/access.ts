@@ -1,5 +1,6 @@
 import type { Prisma } from '@prisma/client'
 import type { Caller } from './caller.js'
+import { todayDate } from './businessDay.js'
 
 /**
  * Row-level access: which incidents and corrective actions a caller may see.
@@ -75,8 +76,9 @@ export function isOwnedBy(action: { owner: string; ownerId: string | null }, cal
  * chip and the Overdue list disagreed by exactly the actions due today.
  */
 export function startOfToday(): Date {
-  const n = new Date()
-  return new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate()))
+  // Today's *local* date (APP_TIMEZONE): at UTC midnight that was 08:00 in Malaysia, and
+  // an action due today was not yet due until eight in the morning.
+  return todayDate()
 }
 
 /**

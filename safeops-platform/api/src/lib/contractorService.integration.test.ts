@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client'
 import { ContractorService, EXPIRY_WARN_DAYS, expiryStatus } from './contractorService.js'
 import { Scheduler } from './scheduler.js'
 import type { Caller } from '../domain/caller.js'
+import { todayDate } from '../domain/businessDay.js'
 
 /**
  * Integration tests against a REAL PostgreSQL database.
@@ -45,7 +46,8 @@ const outsider: Caller = {
   roles: [{ companyId: 'some-other-co', role: 'admin', siteIds: [] }],
 }
 
-const inDays = (n: number) => new Date(Date.now() + n * 86400_000).toISOString().slice(0, 10)
+// A date-only value n days from today's local date (APP_TIMEZONE), as the forms send it.
+const inDays = (n: number) => new Date(todayDate().getTime() + n * 86400_000).toISOString().slice(0, 10)
 
 /** A worker who clears every gate check, unless overridden. */
 const compliant = { medicalExpiry: inDays(200), inductionExpiry: inDays(200) }

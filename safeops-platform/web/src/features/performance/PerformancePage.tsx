@@ -249,7 +249,7 @@ function PerformanceBody({ data, scope }: { data: PerformanceView; scope: string
     <div className="space-y-6">
       {/* On paper the page has no header controls or URL, so it says what it is. */}
       <p className="hidden text-xs text-ink-2 print:block">
-        {scope} · {monthLabel(data.from.slice(0, 7))} to {monthLabel(new Date(new Date(data.to).getTime() - 1).toISOString().slice(0, 7))} ·
+        {scope} · {monthLabel(data.from.slice(0, 7))} to {monthLabel(data.to.slice(0, 7))} ·
         printed {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
       </p>
       {basis.estimated && (

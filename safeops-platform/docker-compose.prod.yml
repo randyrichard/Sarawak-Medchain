@@ -136,6 +136,9 @@ services:
       # need changing for Cloudflare: Cloudflare talks to Caddy, and Caddy is still the
       # peer this process sees. See docs/CLOUDFLARE.md.
       TRUST_PROXY: ${TRUST_PROXY:-loopback,linklocal,uniquelocal}
+      # The business day: when "today" and "this month" roll over. Inherited by the worker,
+      # whose reminders count days from it.
+      APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Kuching}
       # Proves a request came through Caddy. Required in production whenever TRUST_PROXY is
       # not `false`, because behind Docker the address alone cannot establish it: published
       # ports are source-NATed to the bridge gateway, which the trust list accepts. Without

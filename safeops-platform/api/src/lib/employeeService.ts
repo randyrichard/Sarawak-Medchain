@@ -19,6 +19,7 @@ import { Prisma, type PrismaClient } from '@prisma/client'
 import { membershipOf, type Caller } from '../domain/caller.js'
 import type { Role } from '@prisma/client'
 import { DomainError } from '../domain/errors.js'
+import { todayDate } from '../domain/businessDay.js'
 
 export class EmployeeError extends DomainError {}
 
@@ -53,9 +54,9 @@ export interface ListEmployeeParams {
 }
 
 /** Today at UTC midnight — the boundary date-only values are measured against. */
+/** Today's local date (APP_TIMEZONE), as a date-only value - see businessDay.ts. */
 function startOfToday(): Date {
-  const n = new Date()
-  return new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate()))
+  return todayDate()
 }
 
 function daysUntil(d: Date | null): number | null {

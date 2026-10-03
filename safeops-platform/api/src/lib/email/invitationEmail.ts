@@ -1,4 +1,5 @@
 import { headerSafe, type EmailMessage } from './provider.js'
+import { businessTimeZone } from '../../domain/businessDay.js'
 
 /**
  * The invitation email.
@@ -33,7 +34,8 @@ const esc = (s: string) =>
 /** "18 August 2026" — unambiguous across the locales this product ships to. */
 function longDate(d: Date): string {
   return d.toLocaleDateString('en-GB', {
-    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+    // The recipient's business day, not UTC: an invitation expiring at 01:00 local is that day's.
+    day: 'numeric', month: 'long', year: 'numeric', timeZone: businessTimeZone(),
   })
 }
 

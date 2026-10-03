@@ -10,8 +10,8 @@ const base: Indicators = {
 }
 
 const data = (over: Partial<PerformanceView> = {}): PerformanceView => ({
-  from: '2026-01-01T00:00:00.000Z',
-  to: '2026-07-01T00:00:00.000Z',
+  from: '2026-01-01',
+  to: '2026-06-30',
   months: [
     { month: '2026-05', lostTime: 1, recordable: 1, nearMisses: 3, hours: 30_000, estimatedShare: 0.3, frequencyRate: 33.33 },
     { month: '2026-06', lostTime: 0, recordable: 0, nearMisses: 1, hours: 0, estimatedShare: 0, frequencyRate: null },
@@ -35,7 +35,7 @@ describe('HSE performance export', () => {
   it('writes raw numbers a spreadsheet can calculate with', () => {
     const [header, total] = parse(sitesCsv(data()))
     const col = (name: string) => total[header.indexOf(name)]
-    expect(total.slice(0, 3)).toEqual(['2026-01-01', '2026-07-01', 'All sites'])
+    expect(total.slice(0, 3)).toEqual(['2026-01-01', '2026-06-30', 'All sites'])
     expect(col('Hours worked')).toBe('178500')
     expect(col('Hours estimated (%)')).toBe('32.9')
     expect(col('LTI frequency rate (per 1M h)')).toBe('11.2')
@@ -78,7 +78,7 @@ describe('HSE performance export', () => {
   it('names the file after the months it covers', () => {
     expect(exportFilename('sites', data())).toBe('hse-performance-sites_2026-01_to_2026-06.csv')
     // A period running to "now" names the current month.
-    expect(exportFilename('monthly', data({ from: '2025-11-01T00:00:00.000Z', to: '2026-10-03T13:00:00.000Z' })))
+    expect(exportFilename('monthly', data({ from: '2025-11-01', to: '2026-10-03' })))
       .toBe('hse-performance-monthly_2025-11_to_2026-10.csv')
   })
 })

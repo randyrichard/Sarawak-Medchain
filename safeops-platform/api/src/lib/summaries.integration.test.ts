@@ -6,6 +6,7 @@ import { renderReportPdf } from './reportPdf.js'
 import { existsSync, readdirSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import type { Caller } from '../domain/caller.js'
+import { todayDate } from '../domain/businessDay.js'
 
 /**
  * The three summaries, against a REAL PostgreSQL database.
@@ -38,6 +39,8 @@ const outsider: Caller = { userId: 'sum-out', name: 'Out', roles: [{ companyId: 
 
 const DAY = 86_400_000
 const daysFromNow = (n: number) => new Date(Date.now() + n * DAY)
+/** A due date (date-only) n days from today's local date (APP_TIMEZONE). */
+const dueFromToday = (n: number) => new Date(todayDate().getTime() + n * DAY)
 
 let incidentId = ''
 let anonymousId = ''
@@ -77,12 +80,12 @@ d('Summaries — integration (real Postgres)', () => {
     anonymousId = anon.id
 
     const action = (code: string, over: object) => db.correctiveAction.create({
-      data: { code, companyId: COMPANY, siteId: SITE_A, title: `Action ${code}`, owner: 'Kumar Raj', createdBy: 'itest', dueDate: daysFromNow(5), ...over },
+      data: { code, companyId: COMPANY, siteId: SITE_A, title: `Action ${code}`, owner: 'Kumar Raj', createdBy: 'itest', dueDate: dueFromToday(5), ...over },
     })
-    await action('CA-S1', { incidentId: inc.id, dueDate: daysFromNow(-10) }) // Maintenance, 10 days late
-    await action('CA-S2', { incidentId: inc.id, dueDate: daysFromNow(3), owner: 'Faizal Omar' }) // Maintenance, due soon
-    await action('CA-S3', { dueDate: daysFromNow(-2), owner: 'Faizal Omar' }) // no department, late
-    await action('CA-S4', { siteId: SITE_B, dueDate: daysFromNow(20) }) // other site
+    await action('CA-S1', { incidentId: inc.id, dueDate: dueFromToday(-10) }) // Maintenance, 10 days late
+    await action('CA-S2', { incidentId: inc.id, dueDate: dueFromToday(3), owner: 'Faizal Omar' }) // Maintenance, due soon
+    await action('CA-S3', { dueDate: dueFromToday(-2), owner: 'Faizal Omar' }) // no department, late
+    await action('CA-S4', { siteId: SITE_B, dueDate: dueFromToday(20) }) // other site
     await action('CA-S5', { status: 'completed', completedAt: daysFromNow(-1) }) // closed this week
 
     /*

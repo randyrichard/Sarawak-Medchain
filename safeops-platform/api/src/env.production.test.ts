@@ -126,6 +126,14 @@ describe('production environment guards', { timeout: SPAWN_TIMEOUT }, () => {
     expect(r.said).toMatch(/PROXY_TOKEN/)
   })
 
+  it('refuses a business time zone it does not recognise', () => {
+    // A typo must stop the deployment, not quietly put every day boundary in the wrong
+    // place: "today", due dates and the monthly injury rates all hang on it.
+    const r = bootWith({ APP_TIMEZONE: 'Asia/Kuchng' })
+    expect(r.status).toBe(1)
+    expect(r.said).toMatch(/APP_TIMEZONE must be an IANA time zone/)
+  })
+
   it('refuses an APP_PUBLIC_URL that is not https', () => {
     /*
      * Every link built from this carries a single-use credential in the URL - the

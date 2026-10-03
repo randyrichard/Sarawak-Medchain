@@ -6,6 +6,7 @@ import { IncidentService } from './incidentService.js'
 import { type Caller } from '../domain/caller.js'
 import { dueSlotKey } from './reportSchedule.js'
 import { EmailProviderError, setEmailProviderForTests, type EmailMessage, type EmailProvider } from './email/index.js'
+import { todayDate } from '../domain/businessDay.js'
 
 /**
  * Integration tests against a REAL PostgreSQL database.
@@ -45,7 +46,8 @@ const employee = role('employee', 'Employee')
 const supervisor = role('supervisor', 'Supervisor')
 const outsider = role('admin', 'Outsider', OTHER)
 
-const days = (n: number) => new Date(Date.now() + n * 86_400_000)
+/** A due date n days from today's local date (APP_TIMEZONE), as YYYY-MM-DD. */
+const dueIn = (n: number) => new Date(todayDate().getTime() + n * 86_400_000).toISOString().slice(0, 10)
 
 /** A user who is a member of a company, so they can be a recipient. */
 async function member(companyId: string, tag: string, r = 'hse_manager') {
@@ -74,7 +76,7 @@ async function action(incidentId: string, over: Record<string, unknown> = {}) {
   const caller = i.companyId === COMPANY ? admin : outsider
   return incidents.addAction(caller, incidentId, {
     title: 'Fit a guard', owner: 'ITest Owner',
-    dueDate: days(-5).toISOString().slice(0, 10),
+    dueDate: dueIn(-5),
     ...over,
   } as never)
 }
@@ -185,7 +187,7 @@ d('Scheduled reports — integration (real Postgres)', () => {
 
   it('reports an overdue action with its incident, owner and days overdue', async () => {
     const i = await incident()
-    await action(i.id, { owner: 'Ahmad Zaki', dueDate: days(-9).toISOString().slice(0, 10) })
+    await action(i.id, { owner: 'Ahmad Zaki', dueDate: dueIn(-9) })
 
     const r = await reports.build(COMPANY, 'overdue_actions')
     expect(r.rows).toHaveLength(1)
@@ -195,7 +197,7 @@ d('Scheduled reports — integration (real Postgres)', () => {
 
   it('does not count an action that is due today', async () => {
     const i = await incident()
-    await action(i.id, { dueDate: new Date().toISOString().slice(0, 10) })
+    await action(i.id, { dueDate: dueIn(0) })
     // Due today is not overdue for the whole of today.
     expect((await reports.build(COMPANY, 'overdue_actions')).rows).toHaveLength(0)
   })
@@ -221,7 +223,7 @@ d('Scheduled reports — integration (real Postgres)', () => {
 
   it('uses the same overdue rule the register uses', async () => {
     const i = await incident()
-    await action(i.id, { dueDate: days(-3).toISOString().slice(0, 10) })
+    await action(i.id, { dueDate: dueIn(-3) })
     const viaRegister = await incidents.listActions(admin, COMPANY, {
       page: 1, pageSize: 50, overdue: true,
     })
@@ -652,7 +654,7 @@ d('Scheduled reports — integration (real Postgres)', () => {
         siteId: SITE,
         title: `Action number ${n} with a title long enough to need truncating in the column`,
         owner: `Owner ${n}`,
-        dueDate: days(-(n + 1)),
+        dueDate: new Date(dueIn(-(n + 1))),
         createdBy: 'itest',
       })),
     })

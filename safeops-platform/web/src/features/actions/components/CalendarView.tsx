@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { CapaItem } from '@/api/capa'
 import { Button, Card, Skeleton } from '@/components/ui'
 import { cn } from '@/lib/cn'
+import { localISODate } from '@/lib/localDate'
 
 const chipColor = (i: CapaItem) =>
   i.derived === 'Verified' || i.derived === 'Closed' ? 'var(--good)'
@@ -37,7 +38,7 @@ export function CalendarView({ items, onOpen }: { items: CapaItem[] | null; onOp
     return { cells, monthLabel: cursor.toLocaleDateString('en-MY', { month: 'long', year: 'numeric' }) }
   }, [cursor])
 
-  const todayKey = new Date().toISOString().slice(0, 10)
+  const todayKey = localISODate()
   const keyOf = (d: Date) =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 

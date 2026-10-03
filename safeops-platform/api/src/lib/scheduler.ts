@@ -27,6 +27,7 @@ import { dueSlotKey, nextRunAt, type Frequency } from './reportSchedule.js'
 import { enqueueEvent, sweepDeliveries } from './webhookService.js'
 import { LOCK_SCHEDULER_SWEEP, LOCK_WEBHOOK_DELIVERY, withLeaderLock } from './leaderLock.js'
 import { recordJobRun, type JobKey } from './jobRuns.js'
+import { endOfLocalDate, todayDate } from '../domain/businessDay.js'
 
 const MINUTE = 60_000
 const DAY = 86400_000
@@ -135,7 +136,12 @@ class Budget {
 
 /** UTC midnight, matching how every date-only value in this codebase is stored. */
 const utcDay = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
-const daysBetween = (a: Date, b: Date) => Math.round((utcDay(a).getTime() - utcDay(b).getTime()) / DAY)
+/**
+ * Days from today to a date-only value (negative once it has passed). `now` is turned into
+ * today's *local* date (APP_TIMEZONE): taken as a UTC day, a reminder run before 08:00 in
+ * Malaysia counted from yesterday, and "expires today" read as "expires tomorrow".
+ */
+const daysBetween = (a: Date, now: Date) => Math.round((utcDay(a).getTime() - todayDate(now).getTime()) / DAY)
 
 export class Scheduler {
   private timer: NodeJS.Timeout | null = null
@@ -250,8 +256,8 @@ export class Scheduler {
    * verification has already had the work done, and chasing its owner would be noise.
    */
   async sweepActions(now = new Date()): Promise<number> {
-    const horizon = new Date(now.getTime() + Math.max(...ACTION_REMINDER_DAYS) * DAY)
-    const floor = new Date(now.getTime() - LOOKBACK_DAYS * DAY)
+    const horizon = new Date(todayDate(now).getTime() + Math.max(...ACTION_REMINDER_DAYS) * DAY)
+    const floor = new Date(todayDate(now).getTime() - LOOKBACK_DAYS * DAY)
     const actions = await this.db.correctiveAction.findMany({
       where: {
         status: { in: ['open', 'in_progress'] },
@@ -327,11 +333,12 @@ export class Scheduler {
 
   /** Assets whose inspection has fallen due. */
   async sweepInspections(now = new Date()): Promise<number> {
-    const floor = new Date(now.getTime() - LOOKBACK_DAYS * DAY)
+    const floor = new Date(todayDate(now).getTime() - LOOKBACK_DAYS * DAY)
     const assets = await this.db.asset.findMany({
       where: {
         status: { in: ['in_service', 'under_maintenance'] },
-        nextDueDate: { lte: now, gte: floor },
+        // Calendar dates, so compared with today's local date: due today is due, all day.
+        nextDueDate: { lte: todayDate(now), gte: floor },
       },
       orderBy: { nextDueDate: 'asc' },
       select: { id: true, code: true, name: true, owner: true, nextDueDate: true, companyId: true },
@@ -362,8 +369,8 @@ export class Scheduler {
    * a renewal supersedes its predecessor, and warning about the old one would be wrong.
    */
   async sweepCertificates(now = new Date()): Promise<number> {
-    const horizon = new Date(now.getTime() + Math.max(...CERT_EXPIRY_DAYS) * DAY)
-    const floor = new Date(now.getTime() - LOOKBACK_DAYS * DAY)
+    const horizon = new Date(todayDate(now).getTime() + Math.max(...CERT_EXPIRY_DAYS) * DAY)
+    const floor = new Date(todayDate(now).getTime() - LOOKBACK_DAYS * DAY)
     const certs = await this.db.certificate.findMany({
       where: { expiryDate: { not: null, lte: horizon, gte: floor } },
       select: {
@@ -435,8 +442,8 @@ export class Scheduler {
    * work, and the first anyone usually notices is when a permit is refused on the day.
    */
   async sweepMedicals(now = new Date()): Promise<number> {
-    const horizon = new Date(now.getTime() + Math.max(...MEDICAL_EXPIRY_DAYS) * DAY)
-    const floor = new Date(now.getTime() - LOOKBACK_DAYS * DAY)
+    const horizon = new Date(todayDate(now).getTime() + Math.max(...MEDICAL_EXPIRY_DAYS) * DAY)
+    const floor = new Date(todayDate(now).getTime() - LOOKBACK_DAYS * DAY)
     const people = await this.db.employee.findMany({
       where: { active: true, medicalExpiry: { not: null, lte: horizon, gte: floor } },
       select: { id: true, companyId: true, name: true, employeeNo: true, medicalExpiry: true },
@@ -493,8 +500,8 @@ export class Scheduler {
    * hears is a worker turned away at the gate on the morning of a shutdown.
    */
   async sweepContractors(now = new Date()): Promise<number> {
-    const horizon = new Date(now.getTime() + Math.max(...CONTRACTOR_EXPIRY_DAYS) * DAY)
-    const floor = new Date(now.getTime() - LOOKBACK_DAYS * DAY)
+    const horizon = new Date(todayDate(now).getTime() + Math.max(...CONTRACTOR_EXPIRY_DAYS) * DAY)
+    const floor = new Date(todayDate(now).getTime() - LOOKBACK_DAYS * DAY)
     const budget = new Budget()
     let raised = 0
 
@@ -587,8 +594,8 @@ export class Scheduler {
     const budget = new Budget()
     let raised = 0
 
-    const endOfDay = new Date(now)
-    endOfDay.setUTCHours(23, 59, 59, 999)
+    // The end of today, locally (APP_TIMEZONE): at UTC 23:59 that was 07:59 tomorrow here.
+    const endOfDay = endOfLocalDate(todayDate(now))
     const floor = new Date(now.getTime() - LOOKBACK_DAYS * DAY)
 
     // Awaiting a signature. Every stage of the chain counts: a permit parked with HSE is
@@ -660,8 +667,8 @@ export class Scheduler {
    * how people learn to ignore the reminders.
    */
   async sweepCalibrations(now = new Date()): Promise<number> {
-    const horizon = new Date(now.getTime() + Math.max(...CALIBRATION_DAYS) * DAY)
-    const floor = new Date(now.getTime() - LOOKBACK_DAYS * DAY)
+    const horizon = new Date(todayDate(now).getTime() + Math.max(...CALIBRATION_DAYS) * DAY)
+    const floor = new Date(todayDate(now).getTime() - LOOKBACK_DAYS * DAY)
 
     const assets = await this.db.asset.findMany({
       where: {
@@ -709,11 +716,12 @@ export class Scheduler {
 
   /** Work orders past their due date and still open. */
   async sweepMaintenance(now = new Date()): Promise<number> {
-    const floor = new Date(now.getTime() - LOOKBACK_DAYS * DAY)
+    const floor = new Date(todayDate(now).getTime() - LOOKBACK_DAYS * DAY)
     const orders = await this.db.workOrder.findMany({
       where: {
         status: { in: ['open', 'in_progress'] },
-        dueAt: { not: null, lt: now, gte: floor },
+        // A date, as in equipmentService: overdue once its day has passed, locally.
+        dueAt: { not: null, lt: todayDate(now), gte: floor },
       },
       select: {
         id: true, code: true, dueAt: true, description: true, assignedTo: true, priority: true,

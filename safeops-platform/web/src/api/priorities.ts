@@ -15,13 +15,17 @@ import type { Insight, PriorityItem, PriorityLevel } from './dashboard'
 import type { Incident } from './incidents'
 import type { AssetView } from './assets'
 import type { ExpiringPermit } from './permitsApi'
+import { localISODate } from '@/lib/localDate'
 
 /** How many rows the queue shows before it stops being a queue and becomes a list. */
 const MAX_ITEMS = 10
 
 const RANK: Record<PriorityLevel, number> = { Critical: 0, High: 1, Medium: 2 }
 
+/** A stored date-only value (due date), read as the date it was stored as. */
 const dayOf = (iso: string) => new Date(iso).toISOString().slice(0, 10)
+/** A moment (reported, valid until, now), shown as the person's local date. */
+const localDay = (iso: string) => localISODate(new Date(iso))
 
 function dueLabel(days: number): string {
   if (days < -1) return `${Math.abs(days)} days overdue`
@@ -90,7 +94,7 @@ export function buildPriorities(src: PrioritySources): PriorityItem[] {
       siteId: i.siteId,
       site: site(i.siteId),
       department: i.department,
-      due: dayOf(i.reportedAt),
+      due: localDay(i.reportedAt),
       dueLabel: 'assign today',
       overdue: false,
       cta: 'Assign',
@@ -112,7 +116,7 @@ export function buildPriorities(src: PrioritySources): PriorityItem[] {
       siteId: '',
       site: p.location,
       department: 'Permit to work',
-      due: dayOf(p.validTo),
+      due: localDay(p.validTo),
       dueLabel: mins <= 0 ? 'expired' : `expires ${label}`,
       overdue: mins <= 0,
       cta: 'Review',
@@ -159,7 +163,7 @@ export function buildPriorities(src: PrioritySources): PriorityItem[] {
       siteId: '',
       site: 'All sites',
       department: 'Training',
-      due: dayOf(new Date().toISOString()),
+      due: localISODate(),
       dueLabel: 'schedule now',
       overdue: true,
       cta: 'Review',
@@ -177,7 +181,7 @@ export function buildPriorities(src: PrioritySources): PriorityItem[] {
       siteId: '',
       site: 'All sites',
       department: 'Training',
-      due: dayOf(new Date(Date.now() + 90 * 86400_000).toISOString()),
+      due: localISODate(new Date(Date.now() + 90 * 86400_000)),
       dueLabel: 'plan this quarter',
       overdue: false,
       cta: 'Schedule',
@@ -200,7 +204,7 @@ export function buildPriorities(src: PrioritySources): PriorityItem[] {
       siteId: '',
       site: 'All sites',
       department: 'Audit & compliance',
-      due: dayOf(new Date().toISOString()),
+      due: localISODate(),
       dueLabel: 'blocking closure',
       overdue: false,
       cta: 'Review',

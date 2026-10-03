@@ -171,6 +171,18 @@ const schema = z.object({
   TRUST_PROXY: z.string().default('loopback,linklocal,uniquelocal'),
 
   /*
+   * The business day: the IANA time zone in which "today", "this month" and "due on the
+   * 5th" are meant. Every customer so far is in Malaysia (UTC+8). Days used to roll over
+   * at UTC midnight - 08:00 here - so before eight in the morning a permit starting today
+   * was "yesterday's", an action due today was not yet due, and an incident at 02:00 on the
+   * 1st was counted in the previous month's rates. One zone per deployment: a customer in
+   * another zone needs its own deployment, or per-company zones (not built).
+   */
+  APP_TIMEZONE: z.string().default('Asia/Kuching').refine((tz) => {
+    try { new Intl.DateTimeFormat('en-GB', { timeZone: tz }); return true } catch { return false }
+  }, 'APP_TIMEZONE must be an IANA time zone, e.g. Asia/Kuching'),
+
+  /*
    * A secret the reverse proxy presents to prove it is the reverse proxy.
    *
    * TRUST_PROXY alone is not sufficient behind Docker, and that is not a subtlety - it was

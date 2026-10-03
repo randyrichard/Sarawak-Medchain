@@ -1,6 +1,7 @@
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui'
 import type { DashboardFilterState } from '../useDashboard'
+import { localISODate } from '@/lib/localDate'
 
 /**
  * The global filters.
@@ -17,7 +18,7 @@ const RANGES: { label: string; days: number | null }[] = [
   { label: '90 days', days: 90 },
 ]
 
-const ymd = (d: Date) => d.toISOString().slice(0, 10)
+const ymd = (d: Date) => localISODate(d)
 
 export function DashboardFilters({
   filters, departments, onChange, onClear, filtered,
