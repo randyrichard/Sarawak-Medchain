@@ -190,19 +190,25 @@ export function IncidentsListPage() {
 
       {/* Search + dimension filters */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <div className="flex min-w-56 flex-1 items-center gap-2 rounded-lg border coarse:min-h-11 bg-surface px-3 py-2 coarse:py-0 md:max-w-sm">
-          <Search size={14} className="shrink-0 text-muted" />
+        {/*
+          A <label>, so the whole bordered box is the target - the icon and padding included -
+          not just the text field inside it (Fitts's law: the target is whatever responds).
+        */}
+        <label className="flex min-w-56 flex-1 cursor-text items-center gap-2 rounded-lg border coarse:min-h-11 bg-surface px-3 py-2 coarse:py-0 focus-within:border-accent md:max-w-sm">
+          <Search size={14} aria-hidden className="shrink-0 text-muted" />
           <input
+            type="search"
+            aria-label="Search incidents"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search number, title, reporter, location…"
             className="w-full coarse:self-stretch bg-transparent text-sm text-ink outline-none placeholder:text-muted"
           />
-        </div>
+        </label>
         <select
           value={type}
           onChange={(e) => setType(e.target.value as IncidentType | '')}
-          className="h-9 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none"
+          className="h-9 coarse:h-11 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none"
           aria-label="Filter by incident type"
         >
           <option value="">All types</option>
@@ -216,7 +222,7 @@ export function IncidentsListPage() {
         <select
           value={severity}
           onChange={(e) => setSeverity(e.target.value as IncidentSeverity | '')}
-          className="h-9 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none"
+          className="h-9 coarse:h-11 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none"
           aria-label="Filter by severity"
         >
           <option value="">All severities</option>

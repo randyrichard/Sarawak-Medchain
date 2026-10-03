@@ -91,7 +91,7 @@ export function RcaPanel({ incident, onUpdate }: { incident: Incident; onUpdate:
             <select
               value={newCategory}
               onChange={(e) => setNewCategory(e.target.value as RcaCategory)}
-              className="h-9 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none"
+              className="h-9 coarse:h-11 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none"
               aria-label="Cause category"
             >
               {RCA_CATEGORIES.map((c) => <option key={c}>{c}</option>)}
@@ -101,7 +101,7 @@ export function RcaPanel({ incident, onUpdate }: { incident: Incident; onUpdate:
               onChange={(e) => setNewDesc(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && addCause()}
               placeholder="Describe how this cause contributed…"
-              className="h-9 flex-1 rounded-lg border bg-surface px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
+              className="h-9 coarse:h-11 flex-1 rounded-lg border bg-surface px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
             />
             <Button variant="secondary" size="md" icon={<Plus size={14} />} onClick={addCause}>Add</Button>
           </div>
@@ -138,7 +138,7 @@ export function RcaPanel({ incident, onUpdate }: { incident: Incident; onUpdate:
                       setSaved(false)
                     }}
                     placeholder={i === 0 ? 'Why did the problem happen?' : 'Why was that the case?'}
-                    className="h-9 w-full rounded-lg border bg-surface px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent disabled:opacity-70"
+                    className="h-9 coarse:h-11 w-full rounded-lg border bg-surface px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent disabled:opacity-70"
                   />
                 </div>
               </div>

@@ -377,7 +377,7 @@ export function ReportIncidentPage() {
                             onClick={() => patch({ type: t })}
                             aria-pressed={active}
                             className={cn(
-                              'flex items-center gap-2 rounded-lg border p-2.5 text-left transition-all hover:-translate-y-0.5',
+                              'flex items-center gap-2 rounded-lg border p-2.5 text-left transition-all hover:-translate-y-0.5 coarse:min-h-12',
                               active ? 'bg-accent-soft shadow-card' : 'hover:bg-accent-soft/40',
                             )}
                             style={active ? { borderColor: 'var(--accent)' } : undefined}
@@ -483,7 +483,7 @@ export function ReportIncidentPage() {
                         patch({ peopleInvolved: next })
                       }}
                       placeholder="Name or role, e.g. Reach truck operator"
-                      className="h-9 flex-1 rounded-lg border bg-surface px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
+                      className="h-9 coarse:h-11 flex-1 rounded-lg border bg-surface px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
                     />
                     <select
                       value={p.role}
@@ -492,7 +492,7 @@ export function ReportIncidentPage() {
                         next[i] = { ...p, role: e.target.value as PersonInvolved['role'] }
                         patch({ peopleInvolved: next })
                       }}
-                      className="h-9 rounded-lg border bg-surface px-2 text-sm text-ink-2 outline-none"
+                      className="h-9 coarse:h-11 rounded-lg border bg-surface px-2 text-sm text-ink-2 outline-none"
                     >
                       <option>Employee</option>
                       <option>Contractor</option>

@@ -69,7 +69,7 @@ export function Topbar({ menuButton }: { menuButton: ReactNode }) {
         <Dropdown
           width="w-72"
           trigger={() => (
-            <button className="flex items-center rounded-full" aria-label="Account menu">
+            <button className="flex items-center justify-center rounded-full coarse:min-h-11 coarse:min-w-11" aria-label="Account menu">
               <Avatar name={user?.name ?? '?'} size={32} />
             </button>
           )}

@@ -262,7 +262,7 @@ export function PlatformPage() {
               <select
                 value={draft.plan}
                 onChange={(e) => setDraft({ ...draft, plan: e.target.value })}
-                className="h-9 w-full rounded-lg border border-line bg-surface px-2 text-xs text-ink"
+                className="h-9 coarse:h-11 w-full rounded-lg border border-line bg-surface px-2 text-xs text-ink"
               >
                 {plans.map((p) => (
                   <option key={p.key} value={p.key}>{p.label} — {p.monthlyPrice}/month</option>
@@ -322,7 +322,7 @@ export function PlatformPage() {
               <select
                 value={draft.siteTimezone}
                 onChange={(e) => setDraft({ ...draft, siteTimezone: e.target.value })}
-                className="h-9 w-full rounded-lg border border-line bg-surface px-2 text-xs text-ink"
+                className="h-9 coarse:h-11 w-full rounded-lg border border-line bg-surface px-2 text-xs text-ink"
               >
                 {TIMEZONES.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>

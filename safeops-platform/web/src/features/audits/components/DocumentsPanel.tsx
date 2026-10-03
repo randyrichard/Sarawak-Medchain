@@ -89,7 +89,7 @@ export function DocumentsPanel({
     <>
       {error && <Alert tone="critical" className="mb-3" onDismiss={() => setError(null)}>{error}</Alert>}
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <select value={kind} onChange={(e) => setKind(e.target.value as DocKind | '')} className="h-9 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none" aria-label="Filter by document kind">
+        <select value={kind} onChange={(e) => setKind(e.target.value as DocKind | '')} className="h-9 coarse:h-11 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none" aria-label="Filter by document kind">
           <option value="">All kinds</option>
           {DOC_KINDS.map((k) => <option key={k} value={k}>{DOC_KIND_LABEL[k]}</option>)}
         </select>

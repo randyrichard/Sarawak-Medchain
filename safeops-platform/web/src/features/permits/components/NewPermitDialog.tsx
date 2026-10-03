@@ -161,12 +161,12 @@ export function NewPermitDialog({
           <label className="text-xs font-semibold text-ink-2">
             Valid from
             <input type="datetime-local" value={validFrom} onChange={(e) => setValidFrom(e.target.value)}
-              className="mt-1 h-9 w-full rounded-lg border bg-surface px-3 text-sm text-ink outline-none focus:border-accent" />
+              className="mt-1 h-9 coarse:h-11 w-full rounded-lg border bg-surface px-3 text-sm text-ink outline-none focus:border-accent" />
           </label>
           <label className="text-xs font-semibold text-ink-2">
             Valid to
             <input type="datetime-local" value={validTo} onChange={(e) => setValidTo(e.target.value)}
-              className="mt-1 h-9 w-full rounded-lg border bg-surface px-3 text-sm text-ink outline-none focus:border-accent" />
+              className="mt-1 h-9 coarse:h-11 w-full rounded-lg border bg-surface px-3 text-sm text-ink outline-none focus:border-accent" />
           </label>
         </div>
 
