@@ -5,7 +5,7 @@ import {
 import { api } from '@/api/client'
 import { useOrg } from '@/features/org/OrgContext'
 import type { SystemHealth } from '@/api/admin'
-import { Badge, Button, Card, CardBody, CardHeader, Skeleton, StatusPill } from '@/components/ui'
+import { Badge, Button, Card, CardBody, CardHeader, Skeleton, StatusPill, AttentionIcon, attentionOf, attentionStripe } from '@/components/ui'
 import { timeAgo } from '@/lib/time'
 import { cn } from '@/lib/cn'
 import { pollWhileVisible } from '@/lib/poll'
@@ -118,12 +118,12 @@ export function OverviewSection() {
 
 function StatTile({ icon: Icon, label, value, note, tone }: { icon: typeof Users; label: string; value: React.ReactNode; note: string; tone?: string }) {
   return (
-    <Card className="px-4 py-3.5">
+    <Card className="px-4 py-3.5" style={attentionStripe(attentionOf(tone))}>
       <div className="flex items-center gap-2">
-        <Icon size={15} className="text-muted" />
+        <Icon size={15} aria-hidden className="text-muted" />
         <span className="text-2xs font-semibold text-ink-2">{label}</span>
       </div>
-      <div className="mt-1.5 text-2xl font-semibold tracking-tight" style={{ color: tone ?? 'var(--ink)' }}>{value}</div>
+      <div className="mt-1.5 flex items-center gap-1.5 text-2xl font-semibold tracking-tight" style={{ color: tone ?? 'var(--ink)' }}>{value}<AttentionIcon level={attentionOf(tone)} /></div>
       <p className="mt-0.5 text-2xs text-muted">{note}</p>
     </Card>
   )

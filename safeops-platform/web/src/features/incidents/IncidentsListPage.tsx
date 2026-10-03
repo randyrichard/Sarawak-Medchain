@@ -7,7 +7,7 @@ import { INCIDENT_STAGES, STAGE_LABEL, SEVERITY_LABEL, TYPE_LABEL } from '@/api/
 import { OVERDUE_AFTER_DAYS } from '@/api/incidents'
 import { useOrg } from '@/features/org/OrgContext'
 import {
-  Alert, Badge, Card, DataTable, EmptyState, LinkButton, PageHeader, Skeleton, StatusPill,
+  Alert, AttentionIcon, Badge, Card, DataTable, EmptyState, LinkButton, PageHeader, Skeleton, StatusPill,
   type Column, type SortState,
 } from '@/components/ui'
 import { daysOpen, INCIDENT_TYPE_GROUPS, severityKind, severityWeight, STAGE_COLOR, TYPE_ICON } from './lib'
@@ -163,12 +163,19 @@ export function IncidentsListPage() {
       render: (i) => {
         const d = daysOpen(i)
         const overdue = i.stage !== 'closed' && d > OVERDUE_AFTER_DAYS
+        /*
+         * Overdue stands out by shape and words, not by red alone (Von Restorff, WCAG 1.4.1):
+         * a red "18d" among black ones was the only cue, plus a tooltip nobody hovers on a
+         * phone - so to anyone who cannot tell the red apart, an overdue investigation looked
+         * like any other.
+         */
         return (
           <span
-            className={cn('text-sm font-semibold', overdue ? 'text-critical' : 'text-ink')}
+            className={cn('inline-flex items-center justify-end gap-1 text-sm font-semibold', overdue ? 'text-critical' : 'text-ink')}
             style={{ fontVariantNumeric: 'tabular-nums' }}
             title={overdue ? 'Investigation overdue' : undefined}
           >
+            {overdue && <AttentionIcon level="critical" label="Overdue:" />}
             {i.stage === 'closed' ? '—' : `${d}d`}
           </span>
         )

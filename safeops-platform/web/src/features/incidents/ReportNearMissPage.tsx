@@ -231,10 +231,15 @@ export function ReportNearMissPage() {
                  */
                 aria-pressed={tags.includes(t)}
                 className={cn(
-                  'min-h-[36px] rounded-full border px-3 py-1.5 text-2xs font-semibold transition-colors coarse:min-h-11 coarse:px-4',
-                  tags.includes(t) ? 'border-transparent bg-accent-solid text-white' : 'text-ink-2 hover:bg-accent-soft',
+                  'inline-flex min-h-[36px] items-center gap-1 rounded-full border px-3 py-1.5 text-2xs font-semibold transition-colors coarse:min-h-11 coarse:px-4',
+                  // Tinted with a check mark, not filled solid: three chosen tags in the same
+                  // solid blue as "Submit near miss" made four equal standouts on one form,
+                  // and the button that matters stopped being the one that stood out. The
+                  // check is the non-colour cue for which tags are on.
+                  tags.includes(t) ? 'border-[color:var(--accent)] bg-accent-soft text-ink' : 'text-ink-2 hover:bg-accent-soft',
                 )}
               >
+                {tags.includes(t) && <Check size={12} aria-hidden className="text-accent" />}
                 {t}
               </button>
             ))}

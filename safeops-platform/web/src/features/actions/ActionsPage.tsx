@@ -6,7 +6,7 @@ import type { CapaFilters, CapaItem, CapaStats } from '@/api/capa'
 import type { ActionPriority } from '@/api/incidents'
 import { useOrg } from '@/features/org/OrgContext'
 import { useActor, usePeople } from '@/features/incidents/lib'
-import { Alert, Badge, Button, Card, PageHeader, Skeleton, Tabs, type TabItem } from '@/components/ui'
+import { Alert, Badge, Button, Card, PageHeader, Skeleton, Tabs, type TabItem, AttentionIcon, attentionOf, attentionStripe } from '@/components/ui'
 import { ApiError } from '@/api/types'
 import { cn } from '@/lib/cn'
 import { isManager } from './lib'
@@ -173,14 +173,14 @@ export function ActionsPage() {
               className="animate-rise text-left"
               style={{ animationDelay: `${i * 35}ms` }}
             >
-              <Card className={cn('px-4 py-3 transition-all hover:-translate-y-0.5 hover:shadow-pop', active && 'ring-2 ring-[var(--accent)]')}>
+              <Card className={cn('px-4 py-3 transition-all hover:-translate-y-0.5 hover:shadow-pop', active && 'ring-2 ring-[var(--accent)]')} style={attentionStripe(value === undefined ? null : attentionOf(def.tone(value)))}>
                 <p className="text-2xs font-semibold text-ink-2">{def.label}</p>
                 {value === undefined ? (
                   <Skeleton className="mt-1.5 h-7 w-10" />
                 ) : (
-                  <p className="mt-0.5 text-2xl font-semibold tracking-tight" style={{ color: def.tone(value), fontVariantNumeric: 'tabular-nums' }}>
+                  <p className="mt-0.5 flex items-center gap-1.5 text-2xl font-semibold tracking-tight" style={{ color: def.tone(value), fontVariantNumeric: 'tabular-nums' }}>
                     {value}
-                  </p>
+                  <AttentionIcon level={attentionOf(def.tone(value))} /></p>
                 )}
               </Card>
             </button>

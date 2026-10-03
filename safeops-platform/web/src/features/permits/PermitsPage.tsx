@@ -5,7 +5,7 @@ import { api } from '@/api/client'
 import { PERMIT_TYPES, PERMIT_TYPE_LABEL, type PermitFilters, type PermitStats, type PermitType, type PermitView } from '@/api/permits'
 import { useOrg } from '@/features/org/OrgContext'
 import { useActor } from '@/features/incidents/lib'
-import { Button, Card, EmptyState, PageHeader, Skeleton } from '@/components/ui'
+import { Button, Card, EmptyState, PageHeader, Skeleton, AttentionIcon, attentionOf, attentionStripe } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { canIssuePermits, canOperatePermits, canRecordGasTests } from './lib'
 import { PermitCard } from './components/PermitCard'
@@ -116,15 +116,15 @@ export function PermitsPage() {
       {/* Widget row — 2 up on phones, 4 across on desktop */}
       <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-4">
         {KPIS.map((k, i) => (
-          <Card key={k.label} className="animate-rise px-4 py-3">
+          <Card key={k.label} className="animate-rise px-4 py-3" style={attentionStripe(attentionOf(k.tone))}>
             <p className="text-2xs font-semibold text-ink-2" style={{ animationDelay: `${i * 35}ms` }}>{k.label}</p>
             {k.value === undefined ? (
               <Skeleton className="mt-1.5 h-7 w-10" />
             ) : (
-              <p className="mt-0.5 text-2xl font-semibold tracking-tight"
+              <p className="mt-0.5 flex items-center gap-1.5 text-2xl font-semibold tracking-tight"
                 style={{ color: k.tone ?? 'var(--ink)', fontVariantNumeric: 'tabular-nums' }}>
                 {k.value}
-              </p>
+              <AttentionIcon level={attentionOf(k.tone)} /></p>
             )}
           </Card>
         ))}
@@ -174,7 +174,11 @@ export function PermitsPage() {
               aria-pressed={status === c.value}
               className={cn(
                 'rounded-full border px-3 py-1 text-2xs font-semibold transition-colors coarse:min-h-11 coarse:px-4',
-                status === c.value ? 'border-transparent bg-accent-solid text-white' : 'text-ink-2 hover:bg-accent-soft',
+                // The selected filter is marked softly - tint and accent border - not with the
+                // solid fill of the page's primary button. Both used to be solid blue, so the
+                // selected chip and "Request permit" competed as equals and neither stood out
+                // (Von Restorff: one standout per view).
+                status === c.value ? 'border-[color:var(--accent)] bg-accent-soft text-ink' : 'text-ink-2 hover:bg-accent-soft',
               )}
             >
               {c.label}

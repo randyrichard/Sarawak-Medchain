@@ -5,8 +5,7 @@ import { ApiError } from '@/api/types'
 import type { LoginEvent, SecurityCenter, SecuritySettings } from '@/api/admin'
 import { useOrg } from '@/features/org/OrgContext'
 import {
-  Alert, Badge, Button, Card, CardBody, CardHeader, Input, Skeleton, StatusPill, Switch, Tabs,
-  type TabItem,
+  Alert, Badge, Button, Card, CardBody, CardHeader, Input, Skeleton, StatusPill, Switch, Tabs, type TabItem, AttentionIcon, attentionOf, attentionStripe,
 } from '@/components/ui'
 import { timeAgo } from '@/lib/time'
 import { downloadCsv, useAdminActor } from '../lib'
@@ -56,9 +55,9 @@ function CenterPanel() {
     <div className="space-y-4">
       <div className="grid gap-3 md:grid-cols-4">
         {tiles.map((t) => (
-          <Card key={t.label} className="px-4 py-3.5">
+          <Card key={t.label} className="px-4 py-3.5" style={attentionStripe(attentionOf(t.tone))}>
             <p className="text-2xs font-semibold text-ink-2">{t.label}</p>
-            <p className="mt-0.5 text-2xl font-semibold tracking-tight" style={{ color: t.tone, fontVariantNumeric: 'tabular-nums' }}>{t.value}</p>
+            <p className="mt-0.5 flex items-center gap-1.5 text-2xl font-semibold tracking-tight" style={{ color: t.tone, fontVariantNumeric: 'tabular-nums' }}>{t.value}<AttentionIcon level={attentionOf(t.tone)} /></p>
             <p className="text-2xs text-muted">{t.note}</p>
           </Card>
         ))}

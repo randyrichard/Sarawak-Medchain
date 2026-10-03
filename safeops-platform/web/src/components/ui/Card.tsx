@@ -1,8 +1,8 @@
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 
-export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn('rounded-xl border bg-surface shadow-card', className)}>{children}</div>
+export function Card({ children, className, style }: { children: ReactNode; className?: string; style?: CSSProperties }) {
+  return <div className={cn('rounded-xl border bg-surface shadow-card', className)} style={style}>{children}</div>
 }
 
 export function CardHeader({
