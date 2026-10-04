@@ -16,6 +16,26 @@ export function isValidTimezone(tz: string): boolean {
   }
 }
 
+/*
+ * One formatter per zone, kept. Building an Intl.DateTimeFormat costs far more than using one
+ * (about 75 µs against 2 µs), and the business-day helpers call this once per row: placing
+ * 15,000 incidents in their local months built 15,000 formatters and took seconds.
+ */
+const formatters = new Map<string, Intl.DateTimeFormat>()
+function formatterFor(timeZone: string): Intl.DateTimeFormat {
+  let fmt = formatters.get(timeZone)
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      hour12: false,
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+    })
+    formatters.set(timeZone, fmt)
+  }
+  return fmt
+}
+
 /**
  * The offset of a zone at a given instant, in minutes.
  *
@@ -24,12 +44,7 @@ export function isValidTimezone(tz: string): boolean {
  * without a timezone database of our own.
  */
 function offsetMinutes(instant: Date, timeZone: string): number {
-  const fmt = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    hour12: false,
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', second: '2-digit',
-  })
+  const fmt = formatterFor(timeZone)
   const parts = Object.fromEntries(
     fmt.formatToParts(instant).filter((p) => p.type !== 'literal').map((p) => [p.type, p.value]),
   ) as Record<string, string>

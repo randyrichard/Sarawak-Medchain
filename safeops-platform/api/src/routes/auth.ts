@@ -9,6 +9,7 @@ import { AuthError, AuthService, type RequestContext } from '../lib/authService.
 import { AccountService } from '../lib/accountService.js'
 import { requireAuth } from '../http/requireAuth.js'
 import { asyncRoute } from '../http/asyncRoute.js'
+import { inFlightQueue } from '../http/inFlightQueue.js'
 
 const auth = new AuthService(prisma)
 const account = new AccountService(prisma)
@@ -52,13 +53,29 @@ function ctxOf(req: { ip?: string; headers: Record<string, unknown> }): RequestC
  * leaves room for a shift's worth of typos and still caps a spray at 160 guesses an hour,
  * each account locking after MAX_FAILED_LOGINS of them. A correct sign-in between guesses
  * does not refund one: the counter only ever goes down for the request that succeeded.
+ *
+ * Two more things keep a shift that arrives all at once from being locked out, both found
+ * by load testing 300 simultaneous sign-ins from one address (260 were refused):
+ * - An attempt is counted on arrival and refunded when it succeeds, so attempts still being
+ *   checked hold places. `signInQueue` lets at most SIGN_INS_IN_FLIGHT_PER_IP of them be in
+ *   progress per address; the rest wait their turn, so they can never fill the budget.
+ * - The throttle's own refusals are refunded too (`notAFailure`). Otherwise each refusal
+ *   counted as a failure, and a lock kept itself going for as long as people kept trying.
  */
 export const LOGIN_FAILURES_PER_IP = 40
+export const SIGN_INS_IN_FLIGHT_PER_IP = 8
+const notAFailure = (_req: unknown, res: { statusCode: number }) => res.statusCode < 400 || res.statusCode === 429
+const signInQueue = () => inFlightQueue({
+  perKey: SIGN_INS_IN_FLIGHT_PER_IP,
+  maxWaiting: 500,
+  message: { error: 'rate_limited', message: 'Too many attempts. Try again shortly.' },
+})
 const loginLimiter = rateLimit({
   store: new PrismaRateLimitStore(prisma, 'login'),
   windowMs: 15 * 60 * 1000,
   limit: LOGIN_FAILURES_PER_IP,
   skipSuccessfulRequests: true,
+  requestWasSuccessful: notAFailure,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'rate_limited', message: 'Too many attempts. Try again shortly.' },
@@ -100,7 +117,7 @@ const credentials = z.object({
   rememberMe: z.boolean().optional(),
 })
 
-authRouter.post('/login', loginLimiter, asyncRoute(async (req, res) => {
+authRouter.post('/login', signInQueue(), loginLimiter, asyncRoute(async (req, res) => {
   const parsed = credentials.safeParse(req.body)
   if (!parsed.success) {
     return res.status(400).json({ error: 'validation', message: 'Email and password are required.' })
@@ -131,6 +148,7 @@ const mfaLimiter = rateLimit({
   // codes must not spend the budget meant for wrong ones.
   limit: LOGIN_FAILURES_PER_IP,
   skipSuccessfulRequests: true,
+  requestWasSuccessful: notAFailure,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'rate_limited', message: 'Too many attempts. Try again shortly.' },
@@ -141,7 +159,7 @@ const mfaBody = z.object({
   code: z.string().min(1).max(40),
 })
 
-authRouter.post('/mfa', mfaLimiter, asyncRoute(async (req, res) => {
+authRouter.post('/mfa', signInQueue(), mfaLimiter, asyncRoute(async (req, res) => {
   const parsed = mfaBody.safeParse(req.body)
   if (!parsed.success) {
     return res.status(400).json({ error: 'validation', message: 'Enter the code from your authenticator app.' })

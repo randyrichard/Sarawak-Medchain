@@ -89,6 +89,27 @@ d('sign-in throttle — integration (real Postgres, real HTTP)', () => {
     expect(statuses.slice(40).every((s) => s === 429)).toBe(true)
   }, 120_000)
 
+  it('lets a shift that arrives all at once sign in', async () => {
+    // The load test's finding: 300 people pressing "Sign in" in the same second from one
+    // address got 260 refusals. Each request counted on arrival and was only refunded when
+    // it finished, so the first 40 still being checked filled the budget for everybody.
+    const burst = await Promise.all(Array.from({ length: 300 }, (_, i) => signIn(email(i % WORKERS), PASSWORD)))
+    expect(burst.map((r) => r.status).filter((s) => s !== 200)).toEqual([])
+  }, 120_000)
+
+  it('gives a parallel spray no more guesses than a sequential one', async () => {
+    const burst = await Promise.all(Array.from({ length: 100 }, (_, i) => signIn(`${PREFIX}-nobody-p${i}@example.test`, 'guess')))
+    const statuses = burst.map((r) => r.status)
+    expect(statuses.filter((s) => s === 401)).toHaveLength(40)
+    expect(statuses.filter((s) => s === 429)).toHaveLength(60)
+  }, 120_000)
+
+  it('does not count its own refusals, so a lock does not feed itself', async () => {
+    for (let i = 0; i < 60; i++) await signIn(`${PREFIX}-nobody-r${i}@example.test`, 'guess')
+    const row = await db.rateLimit.findFirst({ where: { key: { startsWith: 'login:' } } })
+    expect(row?.hits).toBe(40) // 40 failures; the 20 refused requests left no mark
+  }, 120_000)
+
   it('does not let successful sign-ins wash out the failures in between', async () => {
     // Interleaving a correct sign-in after every guess must not buy more guesses.
     const statuses: number[] = []

@@ -30,7 +30,7 @@ import { actionScopeWhere, incidentScopeWhere, overdueActionWhere } from '../dom
 import { type Caller } from '../domain/caller.js'
 import { DomainError } from '../domain/errors.js'
 import { isFatality, isInjury, isLostTime, isNearMiss, isRecordable } from './incidentCatalog.js'
-import { dateOf, endOfLocalDate, localMonthKey, startOfLocalMonth, todayDate } from '../domain/businessDay.js'
+import { dateOf, endOfLocalDate, startOfLocalMonth, todayDate } from '../domain/businessDay.js'
 
 export class HsePerformanceError extends DomainError {}
 
@@ -261,9 +261,20 @@ export class HsePerformanceService {
     const byMonth = new Map(keys.map((k) => [k, { lostTime: 0, recordable: 0, nearMisses: 0, hours: 0, estimatedHours: 0 }]))
     const daysLostBy = new Map(daysLostRows.map((r) => [r.incidentId, r._sum.daysLost ?? 0]))
 
+    // Each incident goes in the month whose local start it falls after. Comparing against the
+    // period's month starts, worked out once, gives the same answer as asking the time zone
+    // per incident, without tens of thousands of time-zone lookups per request.
+    const monthStarts = keys.map((k) => { const [y, m] = k.split('-').map(Number); return periodStart(y, m - 1).getTime() })
+    const monthOf = (at: Date) => {
+      const t = at.getTime()
+      let lo = 0, hi = monthStarts.length - 1
+      if (t < monthStarts[0]) return undefined
+      while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (monthStarts[mid] <= t) lo = mid; else hi = mid - 1 }
+      return byMonth.get(keys[lo])
+    }
     for (const i of incidents) {
       const c = bySite.get(i.siteId)!
-      const mo = byMonth.get(localMonthKey(i.occurredAt))
+      const mo = monthOf(i.occurredAt)
       if (isLostTime(i)) { c.lostTime++; if (mo) mo.lostTime++ }
       if (isRecordable(i)) { c.recordable++; if (mo) mo.recordable++ }
       if (isFatality(i)) c.fatalities++
@@ -306,11 +317,19 @@ export class HsePerformanceService {
       if (missing.length > 0) missingHours.push({ siteId: s.id, siteName: s.name, months: missing })
     }
 
+    // Due dates are calendar days and thousands of actions share each one: work out where
+    // each day ends once, not once per action.
+    const dueEnds = new Map<number, Date>()
+    const endOfDue = (d: Date) => {
+      let end = dueEnds.get(d.getTime())
+      if (!end) { end = endOfLocalDate(d); dueEnds.set(d.getTime(), end) }
+      return end
+    }
     for (const a of closed) {
       const c = bySite.get(a.siteId)
       if (!c || !a.completedAt) continue
       c.actionsClosed++
-      if (a.completedAt <= endOfLocalDate(a.dueDate)) c.actionsClosedOnTime++
+      if (a.completedAt <= endOfDue(a.dueDate)) c.actionsClosedOnTime++
     }
     for (const r of overdue) { const c = bySite.get(r.siteId); if (c) c.overdueActions = r._count }
     for (const r of toolbox) { const c = bySite.get(r.siteId); if (c) c.toolboxMeetings = r._count }
