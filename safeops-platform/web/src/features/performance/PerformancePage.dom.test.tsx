@@ -51,8 +51,8 @@ const base: Indicators = {
 
 function view(over: Partial<Indicators> = {}, targets: Target[] = []): PerformanceView {
   return {
-    from: '2026-01-01T00:00:00.000Z',
-    to: '2026-07-01T00:00:00.000Z',
+    from: '2026-01-01',
+    to: '2026-06-30',
     months: [
       { month: '2026-05', lostTime: 1, recordable: 1, nearMisses: 3, hours: 30_000, estimatedShare: 0.3, frequencyRate: 33.33 },
       { month: '2026-06', lostTime: 0, recordable: 0, nearMisses: 1, hours: 30_000, estimatedShare: 0, frequencyRate: 0 },
@@ -63,6 +63,7 @@ function view(over: Partial<Indicators> = {}, targets: Target[] = []): Performan
       { ...base, siteId: 'b', siteName: 'Site B', frequencyRate: 17.09, fatalities: 1 },
       { ...base, siteId: 'c', siteName: 'Site C', frequencyRate: null, hours: 0 },
     ],
+    missingHours: [{ siteId: 'b', siteName: 'Site B', months: ['2026-01', '2026-02', '2026-04'] }],
     targets,
     basis: { frequency: 1e6, trir: 2e5, incidence: 1e3, estimatedHoursPerWorkerMonth: 195 },
   }
@@ -104,6 +105,23 @@ describe('HSE Performance page', () => {
     renderPage()
     expect(await screen.findByText(/33% of hours estimated from headcount\./)).toBeTruthy()
     expect(screen.getByText(/before the figures go on a JKKP 8 return/)).toBeTruthy()
+  })
+
+  it('says which sites and months still need man-hours, with a way to record them', async () => {
+    renderPage()
+    const note = await screen.findByText(/Not yet recorded/)
+    const box = note.closest('div')!
+    expect(box.textContent).toContain('Site B')
+    expect(box.textContent).toContain('Jan–Feb 26, Apr 26')
+    fireEvent.click(within(box).getByRole('button', { name: 'Record man-hours' }))
+    expect(await screen.findByRole('dialog', { name: 'Record man-hours' })).toBeTruthy()
+  })
+
+  it('lists the gaps for people who cannot record hours, without offering to', async () => {
+    role = 'ceo'
+    renderPage()
+    const box = (await screen.findByText(/Not yet recorded/)).closest('div')!
+    expect(within(box).queryByRole('button')).toBeNull()
   })
 
   it('says nothing about estimates when every hour is recorded', async () => {

@@ -893,3 +893,28 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --no-deps a
 
 If a future migration is genuinely destructive, that is no longer true and the rollback
 becomes a restore from the pre-upgrade dump. Take the dump.
+
+## Before the first customer: go-live check
+
+The full go-live list is in `GO_LIVE.md`: the decisions to make, and the check on real
+phones. Start with the command below.
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec api node dist/cli/goLive.js
+```
+
+It reports PASS, WARN or FAIL for each of these, and exits 1 on any FAIL:
+
+- **Email:** whether it can send. Without it, invitations and resets are links an
+  administrator passes on by hand.
+- **Demo logins:** demo accounts still on the published password. Production refuses that
+  password at sign-in unless `ALLOW_DEMO_ACCOUNTS=true`.
+- **Backups:** whether a backup was taken in the last 26 hours, and whether
+  `BACKUP_LOCATION` leaves the machine.
+- **Database role:** whether the API connects as the restricted role, which is what makes
+  row-level security apply.
+- **MFA:** whether the MFA key is set.
+- **Worker:** whether it is running, which is what sends reminders and reports.
+- **Business day:** the time zone in use.
+
+Fix every FAIL before customers sign in. Each WARN is a decision to make and write down.

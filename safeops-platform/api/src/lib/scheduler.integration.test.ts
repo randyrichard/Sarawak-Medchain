@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import { PrismaClient } from '@prisma/client'
 import { Scheduler } from './scheduler.js'
+import { todayDate } from '../domain/businessDay.js'
 
 /**
  * Integration tests — these run against a REAL PostgreSQL database, not a fake.
@@ -27,8 +28,9 @@ const COMPANY = 'sched-itest-co'
 const SITE = 'sched-itest-site'
 
 const DAY = 86400_000
-const utcDay = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
-const inDays = (n: number) => utcDay(new Date(Date.now() + n * DAY))
+// A date-only value n days from *today's local date* (APP_TIMEZONE) - the day the reminders
+// count from. Built from the UTC date, these went wrong between 00:00 and 08:00 Malaysia time.
+const inDays = (n: number) => new Date(todayDate().getTime() + n * DAY)
 
 /** Every notification href raised for this workspace — the dedupe keys. */
 const hrefs = async () =>

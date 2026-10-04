@@ -19,7 +19,6 @@ import { formatTarget, monthLabel, targetStatus } from './lib'
 /** Excel reads a UTF-8 CSV as ANSI unless it starts with a byte-order mark - "≤" would arrive as "â‰¤". */
 const BOM = '\uFEFF'
 
-const day = (iso: string) => iso.slice(0, 10)
 const pct = (v: number | null) => (v === null ? null : Math.round(v * 1000) / 10)
 
 const SITE_HEADER = [
@@ -73,8 +72,7 @@ function targetRows(from: string, to: string, total: Indicators, targets: Target
  * whether the all-sites figure meets each.
  */
 export function sitesCsv(data: PerformanceView): string {
-  const from = day(data.from)
-  const to = day(data.to)
+  const { from, to } = data
   const rows = [
     siteRow(from, to, 'All sites', data.total),
     ...data.sites.map((s) => siteRow(from, to, s.siteName, s)),
@@ -93,9 +91,7 @@ export function monthsCsv(data: PerformanceView): string {
 
 /** "hse-performance-sites_2025-11_to_2026-10.csv" - the period in the name, so files do not overwrite each other. */
 export function exportFilename(kind: 'sites' | 'monthly', data: PerformanceView): string {
-  // `to` is the exclusive end (the first of next month, or now); name the last month covered.
-  const last = new Date(new Date(data.to).getTime() - 1).toISOString().slice(0, 7)
-  return `hse-performance-${kind}_${data.from.slice(0, 7)}_to_${last}.csv`
+  return `hse-performance-${kind}_${data.from.slice(0, 7)}_to_${data.to.slice(0, 7)}.csv`
 }
 
 export function downloadCsv(content: string, filename: string) {

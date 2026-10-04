@@ -14,6 +14,7 @@
 import { type AssetEventKind, type AssetStatus, type PrismaClient, type Role, type AssetCategory } from '@prisma/client'
 import { membershipOf, type Caller } from '../domain/caller.js'
 import { DomainError } from '../domain/errors.js'
+import { todayDate } from '../domain/businessDay.js'
 
 export class EquipmentError extends DomainError {}
 
@@ -109,9 +110,9 @@ function describeChanges(
   return out
 }
 
+/** Today's local date (APP_TIMEZONE), as a date-only value - see businessDay.ts. */
 function startOfToday(): Date {
-  const n = new Date()
-  return new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate()))
+  return todayDate()
 }
 
 function daysUntil(d: Date | null): number | null {

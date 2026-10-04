@@ -6,6 +6,7 @@ import {
   ASSET_CATEGORIES, CATEGORY_LABEL, CHECKLISTS, DEFECT_DUE_DAYS, FREQUENCY_DAYS,
 } from './inspectionCatalog.js'
 import { DomainError } from '../domain/errors.js'
+import { recentLocalMonths } from '../domain/businessDay.js'
 import { resolveOwnerId } from './actionOwner.js'
 
 /** Roles permitted to register assets and schedule inspections. */
@@ -851,14 +852,9 @@ export class InspectionService {
      * waits — so the endpoint degrades faster than the work it does would suggest.
      */
     const scope = { companyId, ...(siteId ? { siteId } : {}) }
-    const months = Array.from({ length: 6 }, (_, i) => {
-      const start = new Date()
-      start.setMonth(start.getMonth() - (5 - i), 1)
-      start.setHours(0, 0, 0, 0)
-      const end = new Date(start)
-      end.setMonth(end.getMonth() + 1)
-      return { start, end }
-    })
+    // Local calendar months (APP_TIMEZONE). These used the server's clock zone - UTC in
+    // the container - so each month began at 08:00 on the 1st in Malaysia.
+    const months = recentLocalMonths(6)
 
     const counts = await this.db.$transaction(
       months.flatMap(({ start, end }) => [
@@ -871,8 +867,8 @@ export class InspectionService {
       ]),
     )
 
-    const monthlyTrend = months.map(({ start }, i) => ({
-      month: start.toLocaleDateString('en-MY', { month: 'short' }),
+    const monthlyTrend = months.map((_, i) => ({
+      month: months[i].label,
       Completed: counts[i * 2],
       Failed: counts[i * 2 + 1],
     }))

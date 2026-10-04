@@ -25,6 +25,7 @@
     "platform:grant": "tsx src/cli/grantPlatformAdmin.ts",
     "user:create": "tsx src/cli/createWorkspaceUser.ts",
     "mail:verify": "tsx src/cli/verifyMail.ts",
+    "golive:check": "tsx src/cli/goLive.ts",
     "platform:revoke": "tsx src/cli/grantPlatformAdmin.ts --revoke",
     "demo": "tsx prisma/demo.ts",
     "demo:reset": "tsx prisma/demo.ts --reset",

@@ -18,6 +18,7 @@
 import { Prisma, type PrismaClient, type Role } from '@prisma/client'
 import { membershipOf, type Caller } from '../domain/caller.js'
 import { DomainError } from '../domain/errors.js'
+import { todayDate } from '../domain/businessDay.js'
 
 export class ContractorError extends DomainError {}
 
@@ -48,9 +49,9 @@ const MAX_PAGE_SIZE = 100
 
 export type ExpiryStatus = 'valid' | 'expiring' | 'expired' | 'missing'
 
+/** Today's local date (APP_TIMEZONE), as a date-only value - see businessDay.ts. */
 function startOfToday(): Date {
-  const n = new Date()
-  return new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate()))
+  return todayDate()
 }
 
 function daysUntil(d: Date | null): number | null {

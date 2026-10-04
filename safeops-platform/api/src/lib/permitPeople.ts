@@ -21,6 +21,7 @@
 import type { PrismaClient, PermitAttendeeRole, PermitType } from '@prisma/client'
 import { PermitError, requireFieldRole } from './permitService.js'
 import type { Caller } from '../domain/caller.js'
+import { todayDate } from '../domain/businessDay.js'
 
 /** Roles on a permit that put someone in the work. Standby stays outside by definition. */
 const INSIDE_ROLES: PermitAttendeeRole[] = ['worker', 'receiver', 'supervisor', 'gas_tester']
@@ -80,10 +81,9 @@ export class PermitPeopleService {
     }
   }
 
-  /** Today at UTC midnight — the boundary date-only fitness values are measured against. */
+  /** Today's local date (APP_TIMEZONE) — the boundary date-only fitness values are measured against. */
   private today(): Date {
-    const n = new Date()
-    return new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate()))
+    return todayDate()
   }
 
   /**

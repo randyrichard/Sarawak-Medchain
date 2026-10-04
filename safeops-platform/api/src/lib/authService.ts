@@ -1,6 +1,7 @@
 import type { PrismaClient, User } from '@prisma/client'
 import { env } from '../env.js'
 import { burnEquivalentWork, verifyPassword } from './password.js'
+import { DEMO_PASSWORD, DEMO_PASSWORD_REFUSED } from './demoAccounts.js'
 import {
   generateRefreshToken, hashRefreshToken, newFamilyId, refreshExpiry, signAccessToken,
   signMfaChallenge, verifyMfaChallenge, type AccessClaims,
@@ -165,6 +166,13 @@ export class AuthService {
     if (!ok) {
       await this.recordFailure(user, 'bad_password', ctx)
       throw new AuthError('invalid_credentials', GENERIC_FAILURE)
+    }
+
+    // Right, but published: see lib/demoAccounts.ts. Checked only after the password is
+    // proven correct, so it reveals nothing about any account to somebody guessing.
+    if (password === DEMO_PASSWORD && !env.allowDemoPassword) {
+      await this.record(email, 'demo_password_refused', ctx, user.id)
+      throw new AuthError('demo_password', DEMO_PASSWORD_REFUSED, 403)
     }
 
     /*

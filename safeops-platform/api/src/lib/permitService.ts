@@ -10,6 +10,7 @@ import {
 } from './permitCatalog.js'
 import { equipmentBlockers } from './equipmentService.js'
 import { DomainError } from '../domain/errors.js'
+import { localMidnight, startOfLocalDay, startOfLocalMonth, todayDate } from '../domain/businessDay.js'
 
 /**
  * Issuing authority: who may approve, reject, suspend, resume and close a permit.
@@ -276,12 +277,18 @@ export class PermitService {
     this.membership(caller, companyId)
     const now = new Date()
     const in2h = new Date(now.getTime() + 2 * 3600_000)
-    const monthAgo = new Date(now.getTime() - 30 * 86400_000)
+    // "Closed this month" is the local calendar month; it was the last 30 days, so on the
+    // 3rd it was mostly last month's closures under this month's name.
+    const local = todayDate(now)
+    const monthStart = startOfLocalMonth(local.getUTCFullYear(), local.getUTCMonth())
 
     const base: Prisma.PermitWhereInput = { companyId, ...(siteId ? { siteId } : {}) }
 
-    const startOfDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
-    const endOfDay = new Date(startOfDay.getTime() + 86400_000 - 1)
+    // The permit office's day, locally (APP_TIMEZONE): validFrom/validTo are moments, so
+    // "starting today" runs local midnight to local midnight. At UTC midnight a permit
+    // starting at 07:00 was counted as yesterday's.
+    const startOfDay = startOfLocalDay(now)
+    const endOfDay = new Date(localMidnight(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate() + 1).getTime() - 1)
 
     const [
       activeNow, awaitingApproval, expiringWithin2h, expiredOpen, closedThisMonth, byType,
@@ -296,7 +303,7 @@ export class PermitService {
         this.db.permit.count({
           where: { ...base, status: { in: ['active', 'approved'] }, validTo: { lt: now } },
         }),
-        this.db.permit.count({ where: { ...base, status: 'closed', closedAt: { gt: monthAgo } } }),
+        this.db.permit.count({ where: { ...base, status: 'closed', closedAt: { gte: monthStart } } }),
         this.db.permit.groupBy({
           by: ['type'],
           where: { ...base, status: 'active', validTo: { gte: now } },

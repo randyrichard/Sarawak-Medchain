@@ -1,16 +1,37 @@
 // ─── Authenticated request helper ────────────────────────────────────────────
-// Shared by the HTTP clients that talk to the SafeOps API.
-//
-// `incidentsApi.ts` still carries its own private copy of this logic from the first
-// vertical. The two are identical; this module is where they should converge, and the
-// incident copy is left in place only because that module is not being touched here.
+// Shared by every HTTP client that talks to the SafeOps API.
 
 import { API_BASE_URL, authApi, getAccessToken, isBackendConfigured, SESSION_CHANGED } from './authApi'
 import { explainNetworkFailure } from './networkError'
 import { ApiError } from './types'
 
 /**
+ * How long to wait before each retry of a read that got no answer. Two retries, about two
+ * seconds in all: long enough to ride out a dropped packet on site wifi or a phone moving
+ * between cells, or the API restarting during a deploy; short enough that a real outage is
+ * still reported promptly. Mutable only so tests need not wait.
+ */
+export const READ_RETRY_DELAYS_MS = [500, 1500]
+
+/**
+ * Statuses that mean "the API did not answer" rather than "the API said no": what the
+ * reverse proxy returns while the API restarts or is briefly overloaded.
+ */
+const NO_ANSWER = new Set([502, 503, 504])
+
+const isRead = (init: RequestInit) => !init.method || ['GET', 'HEAD'].includes(init.method.toUpperCase())
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+/**
  * Single request.
+ *
+ * A read that gets no answer is tried again (READ_RETRY_DELAYS_MS). On localhost a request
+ * never fails half-way; on a site's wifi or a phone at the edge of coverage it regularly
+ * does, and without this one lost packet turned a whole screen into an error. Only reads are
+ * retried, because sending one twice changes nothing. A write that got no answer may still
+ * have been done, so it is never repeated blindly: it reports the failure, and incident
+ * reports - the write that matters most in the field - go through the outbox, which retries
+ * with an idempotency key so the server can tell a repeat from a new report.
  *
  * Refreshes a stale access token before the call rather than after a 401, so a normal
  * user action never fails on an expired token. A 401 that still comes back means the
@@ -32,26 +53,35 @@ export async function request<T>(path: string, init: RequestInit = {}, retry = t
   }
 
   const isForm = init.body instanceof FormData
-  let res: Response
-  try {
-    res = await fetch(`${API_BASE_URL}${path}`, {
-      ...init,
-      credentials: 'include',
-      headers: {
-        ...(isForm ? {} : { 'Content-Type': 'application/json' }),
-        ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}),
-        ...init.headers,
-      },
-    })
-  } catch {
-    /*
-     * Network-level failure. Kept distinct from a server rejection so the UI can offer
-     * "retry" rather than a validation-style message — and now explained, because a browser
-     * reports a blocked cross-origin request and a dead server identically, and telling
-     * somebody to "check your connection" while the server answers fine sends them to
-     * debug the wrong thing entirely.
-     */
-    throw new ApiError('network', explainNetworkFailure())
+  const send = () => fetch(`${API_BASE_URL}${path}`, {
+    ...init,
+    credentials: 'include',
+    headers: {
+      ...(isForm ? {} : { 'Content-Type': 'application/json' }),
+      ...(getAccessToken() ? { Authorization: `Bearer ${getAccessToken()}` } : {}),
+      ...init.headers,
+    },
+  })
+  const retries = isRead(init) ? READ_RETRY_DELAYS_MS : []
+  let res: Response | undefined
+  for (let attempt = 0; ; attempt++) {
+    try {
+      res = await send()
+      if (!NO_ANSWER.has(res.status) || attempt >= retries.length) break
+    } catch {
+      // A request the caller cancelled is not a failure to retry.
+      if (init.signal?.aborted || attempt >= retries.length) {
+        /*
+         * Network-level failure. Kept distinct from a server rejection so the UI can offer
+         * "retry" rather than a validation-style message — and now explained, because a
+         * browser reports a blocked cross-origin request and a dead server identically, and
+         * telling somebody to "check your connection" while the server answers fine sends
+         * them to debug the wrong thing entirely.
+         */
+        throw new ApiError('network', explainNetworkFailure())
+      }
+    }
+    await wait(retries[attempt])
   }
 
   if (res.status === 401 && retry) {

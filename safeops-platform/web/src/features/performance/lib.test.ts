@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canRecordManHours, formatPercent, formatRate, formatTarget, hoursBasis, monthLabel, monthsOfYear, parseHours, parseTarget, targetInput, targetStatus } from './lib'
+import { canRecordManHours, monthRanges, formatPercent, formatRate, formatTarget, hoursBasis, monthLabel, monthsOfYear, parseHours, parseTarget, targetInput, targetStatus } from './lib'
 
 describe('HSE performance formatting', () => {
   it('shows a missing rate as a dash, never as zero', () => {
@@ -84,5 +84,14 @@ describe('performance targets', () => {
     expect(parseTarget('fatalities', '0.5').ok).toBe(false)
     expect(parseTarget('trir', '-1').ok).toBe(false)
     expect(parseTarget('trir', 'low').ok).toBe(false)
+  })
+})
+
+describe('monthRanges', () => {
+  it('merges consecutive months into ranges', () => {
+    expect(monthRanges(['2026-01', '2026-02', '2026-03', '2026-05'])).toBe('Jan–Mar 26, May 26')
+    expect(monthRanges(['2025-11', '2025-12', '2026-01'])).toBe('Nov 25–Jan 26') // both years when they differ
+    expect(monthRanges(['2026-04'])).toBe('Apr 26')
+    expect(monthRanges([])).toBe('')
   })
 })

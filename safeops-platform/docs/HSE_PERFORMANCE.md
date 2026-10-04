@@ -91,6 +91,8 @@ headcount". Sites and months with any estimated hours are marked **est.** Estima
 fine for comparing sites. Record actual hours before the figures go on a JKKP 8 return or to a
 client.
 
+It also lists **which sites and finished months have no recorded hours** (for example "Site B · Jan–Mar 26, May 26"), with a *Record man-hours* button for those who can record them. The month in progress isn't listed, because it isn't over. The same list is in the API response as `missingHours`.
+
 ## Targets
 
 A target is the figure the company commits to, for example "LTI frequency rate ≤ 0.50" or

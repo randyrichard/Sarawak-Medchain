@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import type { PrismaClient, Role, VisitorEventKind, VisitorStatus } from '@prisma/client'
 import { membershipOf, type Caller } from '../domain/caller.js'
 import { DomainError } from '../domain/errors.js'
+import { localMidnight, startOfLocalDay, todayDate } from '../domain/businessDay.js'
 
 /**
  * Visitor management.
@@ -68,9 +69,17 @@ export const ON_SITE_STATUSES: VisitorStatus[] = ['checked_in', 'on_site']
 /** Statuses from which nothing further happens. A visit here is finished. */
 const SETTLED: VisitorStatus[] = ['checked_out', 'expired', 'denied', 'blacklisted', 'cancelled']
 
+/**
+ * The visitor-log day, in local time (APP_TIMEZONE). Every "today" below is compared with a
+ * moment - expected arrival, check-in, refusal - so it is local midnight to local midnight.
+ * At UTC midnight a visitor arriving at 07:00 was counted on yesterday's log.
+ */
 function startOfToday(): Date {
-  const d = new Date()
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
+  return startOfLocalDay()
+}
+function startOfTomorrow(): Date {
+  const t = todayDate()
+  return localMidnight(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate() + 1)
 }
 
 /** Blacklist matching is done on a normalised value so spacing and case cannot dodge it. */
@@ -913,7 +922,7 @@ export class VisitorService {
     const pageSize = Math.min(200, Math.max(1, filters.pageSize ?? 50))
 
     const today = startOfToday()
-    const tomorrow = new Date(today.getTime() + 86400_000)
+    const tomorrow = startOfTomorrow()
 
     const where: Record<string, unknown> = { companyId }
     if (filters.siteId) where.siteId = filters.siteId
@@ -973,7 +982,7 @@ export class VisitorService {
     this.membership(caller, companyId)
     const now = new Date()
     const today = startOfToday()
-    const tomorrow = new Date(today.getTime() + 86400_000)
+    const tomorrow = startOfTomorrow()
 
     const scope = { companyId, ...(siteId ? { siteId } : {}) }
 

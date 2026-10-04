@@ -19,6 +19,7 @@ import { docDate, humanize, isInjury, isNearMiss, severityName, stageLabel, type
 import { PERMIT_STATUS_LABEL, PERMIT_TYPE_LABEL } from './permitCatalog.js'
 import { instantForLocal, localParts } from './reportSchedule.js'
 import type { ReportData } from './reportService.js'
+import { todayDate } from '../domain/businessDay.js'
 
 const DAY = 86_400_000
 
@@ -35,7 +36,8 @@ export interface SummaryScope {
 export type ActivityPeriod = 'day' | 'week'
 
 const utcDay = (d: Date) => Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())
-const startOfTodayUtc = () => new Date(utcDay(new Date()))
+/** Today's local date (APP_TIMEZONE), as a date-only value; due dates are compared with it. */
+const startOfTodayUtc = () => todayDate()
 const iso = (d: Date) => docDate(d)
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
 

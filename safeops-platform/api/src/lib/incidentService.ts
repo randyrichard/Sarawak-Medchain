@@ -5,6 +5,7 @@ import {
   INCIDENT_SEVERITIES, INCIDENT_TYPES, LOST_TIME_SEVERITIES, SEVERITY_RANK,
 } from './incidentCatalog.js'
 import { DomainError } from '../domain/errors.js'
+import { recentLocalMonths } from '../domain/businessDay.js'
 import { membershipOf, type Caller } from '../domain/caller.js'
 import { resolveOwnerId } from './actionOwner.js'
 import {
@@ -1215,9 +1216,8 @@ export class IncidentService {
       ...(siteId ? { siteId } : {}),
     }
 
-    const monthStart = new Date()
-    monthStart.setDate(1)
-    monthStart.setHours(0, 0, 0, 0)
+    // The local calendar month (APP_TIMEZONE), not the server's clock zone (UTC in the container).
+    const monthStart = recentLocalMonths(1)[0].start
 
     const actionBase = {
       companyId,
@@ -1320,9 +1320,8 @@ export class IncidentService {
       ...this.scopeWhere(caller, companyId),
       ...(siteId ? { siteId } : {}),
     }
-    const monthStart = new Date()
-    monthStart.setDate(1)
-    monthStart.setHours(0, 0, 0, 0)
+    // The local calendar month (APP_TIMEZONE), not the server's clock zone (UTC in the container).
+    const monthStart = recentLocalMonths(1)[0].start
 
     // Actions are scoped by company/site directly; they are not all incident-derived.
     const actionBase = {

@@ -11,6 +11,7 @@ import {
 import { fmtDateTime } from '@/features/incidents/lib'
 import { timeAgo } from '@/lib/time'
 import { downloadJson, useAdminActor } from '../lib'
+import { localISODate } from '@/lib/localDate'
 
 export function BackupSection() {
   const { company } = useOrg()
@@ -55,7 +56,7 @@ export function BackupSection() {
     setExporting(true); setError(null)
     try {
       const archive = await api.adminExportWorkspace(companyId)
-      const stamp = new Date().toISOString().slice(0, 10)
+      const stamp = localISODate()
       const slug = (company?.name ?? 'workspace').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
       const url = URL.createObjectURL(archive)
       const a = document.createElement('a')

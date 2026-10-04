@@ -4,6 +4,7 @@ import type { InspectionView } from '@/api/assets'
 import type { Actor } from '@/api/incidents'
 import { Button, Card, Skeleton } from '@/components/ui'
 import { cn } from '@/lib/cn'
+import { localISODate } from '@/lib/localDate'
 
 const chipColor = (i: InspectionView) =>
   i.status === 'Completed' ? (i.outcome === 'failed' ? 'var(--serious)' : 'var(--good)')
@@ -47,7 +48,7 @@ export function InspectionCalendar({
     }
   }, [cursor])
 
-  const todayKey = new Date().toISOString().slice(0, 10)
+  const todayKey = localISODate()
   const keyOf = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
   if (inspections === null) return <Card className="p-5"><Skeleton className="h-96 w-full" /></Card>

@@ -53,14 +53,47 @@ services:
       POSTGRES_INITDB_ARGS: '--encoding=UTF8 --locale=C'
     volumes:
       - safeops_pgdata:/var/lib/postgresql/data
-      # Where pg_dump writes. Mount it somewhere backed up off this host.
-      - safeops_backups:/backups
+      # Where pg_dump writes: BACKUP_LOCATION, shared with the backup service below.
+      - ${BACKUP_LOCATION:-safeops_backups}:/backups
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB:-safeops}']
       interval: 10s
       timeout: 5s
       retries: 10
     # Not published. Only the API needs it, and it reaches it over the internal network.
+
+  # Daily pg_dump + uploads archive, verified and rotated: scripts/backup-loop.sh. Until this
+  # existed nothing took a backup unless someone added a host cron job by hand, so a fresh
+  # install had none. The same image as db, so pg_dump matches the server's version.
+  #
+  # BACKUP_LOCATION is a Docker volume on this host by default. Set it to a folder that
+  # leaves the machine - a NAS share, a synced cloud drive - or losing the host loses the
+  # backups with it. Unhealthy once the last good backup is over 26 hours old.
+  backup:
+    image: postgres:16-alpine@sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
+    restart: unless-stopped
+    logging: *logging
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGHOST: db
+      PGUSER: ${POSTGRES_USER:?set POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB:-safeops}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-30}
+      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-24}
+    volumes:
+      - ${BACKUP_LOCATION:-safeops_backups}:/backups
+      - safeops_uploads:/data/uploads:ro
+      - ./scripts/backup-loop.sh:/usr/local/bin/safeops-backup:ro
+    entrypoint: ['/bin/sh', '/usr/local/bin/safeops-backup']
+    healthcheck:
+      test: ['CMD-SHELL', 'find /backups/LAST_SUCCESS -mmin -1560 | grep -q .']
+      interval: 10m
+      timeout: 10s
+      start_period: 15m
+      retries: 1
 
   api:
     # Named so a release can be recorded and returned to: the containers always run
@@ -136,6 +169,14 @@ services:
       # need changing for Cloudflare: Cloudflare talks to Caddy, and Caddy is still the
       # peer this process sees. See docs/CLOUDFLARE.md.
       TRUST_PROXY: ${TRUST_PROXY:-loopback,linklocal,uniquelocal}
+      # The business day: when "today" and "this month" roll over. Inherited by the worker,
+      # whose reminders count days from it.
+      APP_TIMEZONE: ${APP_TIMEZONE:-Asia/Kuching}
+      # 'true' only on a stack that is a demo on purpose: lets the published demo password
+      # sign in. Off, production refuses it even when it is right (api/src/lib/demoAccounts.ts).
+      ALLOW_DEMO_ACCOUNTS: ${ALLOW_DEMO_ACCOUNTS:-false}
+      # Read by the go-live check (dist/cli/goLive.js) to say whether backups leave this machine.
+      BACKUP_LOCATION: ${BACKUP_LOCATION:-safeops_backups}
       # Proves a request came through Caddy. Required in production whenever TRUST_PROXY is
       # not `false`, because behind Docker the address alone cannot establish it: published
       # ports are source-NATed to the bridge gateway, which the trust list accepts. Without
@@ -145,6 +186,8 @@ services:
       UPLOAD_DIR: /data/uploads
     volumes:
       - safeops_uploads:/data/uploads
+      # Read-only, for `node dist/cli/goLive.js` to confirm a recent backup exists.
+      - ${BACKUP_LOCATION:-safeops_backups}:/backups:ro
     # Bound to loopback by default. With a proxy in front, publishing these on 0.0.0.0
     # would expose a plaintext HTTP port on the public interface alongside the HTTPS one,
     # and anything reaching it bypasses TLS and HSTS entirely - the redirect only helps

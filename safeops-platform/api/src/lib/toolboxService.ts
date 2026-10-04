@@ -21,6 +21,7 @@ import { Prisma, type PrismaClient, type Role } from '@prisma/client'
 import { membershipOf, type Caller } from '../domain/caller.js'
 import { instantForLocal, isValidTimezone, localParts } from './reportSchedule.js'
 import { DomainError } from '../domain/errors.js'
+import { endOfLocalDateString, startOfLocalDateString } from '../domain/businessDay.js'
 
 export class ToolboxError extends DomainError {}
 
@@ -174,8 +175,10 @@ export class ToolboxService {
     this.requireRole(caller, p.companyId, VIEW_ROLES, 'viewing toolbox meetings')
     const pageSize = Math.min(Math.max(p.pageSize, 1), MAX_PAGE_SIZE)
     const heldAt: Prisma.DateTimeFilter = {}
-    if (p.from) heldAt.gte = new Date(`${p.from}T00:00:00.000Z`)
-    if (p.to) heldAt.lt = new Date(new Date(`${p.to}T00:00:00.000Z`).getTime() + 86400_000)
+    // Meetings are moments; the filter's dates are local days (an 07:00 meeting is 23:00
+    // UTC the day before, and fell outside a one-day filter on its own date).
+    if (p.from) heldAt.gte = startOfLocalDateString(p.from)
+    if (p.to) heldAt.lte = endOfLocalDateString(p.to)
     const q = p.q?.trim()
 
     const where: Prisma.ToolboxMeetingWhereInput = {

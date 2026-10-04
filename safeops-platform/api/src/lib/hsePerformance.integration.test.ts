@@ -219,6 +219,20 @@ d('HSE performance — integration (real Postgres)', () => {
     await expect(raw('onTimeClosure', 1.2)).rejects.toThrow(/PerformanceTarget_value_check/)
   })
 
+  it('says which sites have finished months with no recorded hours', async () => {
+    const r = await svc.performance(hse, PERIOD)
+    // Site A recorded all six months; Site B none. Listed by site, so they can be fixed.
+    expect(r.missingHours).toEqual([
+      { siteId: SITE_B, siteName: 'Perf Site B', months: ['2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06'] },
+    ])
+  })
+
+  it('does not ask for the month in progress', async () => {
+    // Viewed on 15 July, a period ending in July: July cannot be recorded yet.
+    const r = await svc.performance(hse, { ...PERIOD, months: 2, endMonth: '2026-07' })
+    expect(r.missingHours.find((m) => m.siteId === SITE_B)?.months).toEqual(['2026-06'])
+  })
+
   it('lists recorded hours with the estimate each month would otherwise use', async () => {
     const r = await svc.manHours(hse, { companyId: CO, year: 2026 })
     const a = r.sites.find((s) => s.siteId === SITE_A)!
@@ -244,5 +258,67 @@ describe('HSE performance — arithmetic', () => {
     expect(parseMonth('2026-03').toISOString()).toBe('2026-03-01T00:00:00.000Z')
     expect(() => parseMonth('2026-13')).toThrow()
     expect(() => parseMonth('26-03')).toThrow()
+  })
+})
+
+/*
+ * Month and day boundaries are local (APP_TIMEZONE, Asia/Kuching, UTC+8), not UTC.
+ *
+ * Every fixture above sits at 08:00 UTC - 16:00 local - well clear of midnight, which is how
+ * UTC month boundaries went unnoticed: they only move what happens between 00:00 and 08:00
+ * local. These fixtures sit exactly there.
+ */
+const TZ_CO = 'perf-itest-tz'
+const TZ_SITE = 'perf-itest-tz-site'
+d('HSE performance — local month boundaries (real Postgres)', () => {
+  const at0 = (iso: string) => new Date(iso)
+  beforeAll(async () => {
+    await db.company.upsert({ where: { id: TZ_CO }, update: {}, create: { id: TZ_CO, name: 'Perf TZ ITest' } })
+    await db.site.upsert({ where: { id: TZ_SITE }, update: {}, create: { id: TZ_SITE, companyId: TZ_CO, name: 'TZ Site', headcount: 10 } })
+    await db.correctiveAction.deleteMany({ where: { companyId: TZ_CO } })
+    await db.incident.deleteMany({ where: { companyId: TZ_CO } })
+    const lti = (n: number, iso: string) => db.incident.create({
+      data: {
+        number: `PERF-TZ-${n}-${Date.now().toString(36)}`, companyId: TZ_CO, siteId: TZ_SITE, title: `TZ ${n}`,
+        type: 'injury', severity: 'lost_time_injury', severityRank: 5, location: 'Yard', occurredAt: at0(iso),
+        reporter: 'Tester', stage: 'investigation',
+      } as never,
+    })
+    await lti(1, '2026-02-28T18:00:00Z') // 02:00 on 1 March local - March, not February
+    await lti(2, '2026-03-31T17:00:00Z') // 01:00 on 1 April local - April, not March
+    const action = (code: string, done: string) => db.correctiveAction.create({
+      data: {
+        code, companyId: TZ_CO, siteId: TZ_SITE, title: code, owner: 'Owner', dueDate: new Date('2026-03-05T00:00:00Z'),
+        priority: 'High', status: 'completed', completedAt: at0(done), createdBy: 'seed',
+      } as never,
+    })
+    await action('PERF-TZ-ONTIME', '2026-03-05T15:30:00Z') // 23:30 local on the due date
+    await action('PERF-TZ-LATE', '2026-03-05T16:30:00Z') // 00:30 local the day after
+  })
+
+  afterAll(async () => {
+    await db.correctiveAction.deleteMany({ where: { companyId: TZ_CO } })
+    await db.incident.deleteMany({ where: { companyId: TZ_CO } })
+    await db.site.deleteMany({ where: { id: TZ_SITE } })
+    await db.company.deleteMany({ where: { id: TZ_CO } })
+  })
+
+  const tzCaller = caller('hse_manager', 'tz', TZ_CO)
+  const view = () => svc.performance(tzCaller, { companyId: TZ_CO, months: 3, endMonth: '2026-04', now: new Date('2026-05-15T00:00:00Z') })
+
+  it('counts an injury in the local month it happened in', async () => {
+    const r = await view()
+    expect(r.months.map((m) => [m.month, m.lostTime])).toEqual([['2026-02', 0], ['2026-03', 1], ['2026-04', 1]])
+  })
+
+  it('reports the period as local calendar dates', async () => {
+    const r = await view()
+    expect([r.from, r.to]).toEqual(['2026-02-01', '2026-04-30'])
+  })
+
+  it('treats anything done on the due date, locally, as on time', async () => {
+    const r = await view()
+    expect(r.total.actionsClosed).toBe(2)
+    expect(r.total.actionsClosedOnTime).toBe(1)
   })
 })

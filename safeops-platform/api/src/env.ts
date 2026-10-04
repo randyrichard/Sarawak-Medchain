@@ -171,6 +171,25 @@ const schema = z.object({
   TRUST_PROXY: z.string().default('loopback,linklocal,uniquelocal'),
 
   /*
+   * The business day: the IANA time zone in which "today", "this month" and "due on the
+   * 5th" are meant. Every customer so far is in Malaysia (UTC+8). Days used to roll over
+   * at UTC midnight - 08:00 here - so before eight in the morning a permit starting today
+   * was "yesterday's", an action due today was not yet due, and an incident at 02:00 on the
+   * 1st was counted in the previous month's rates. One zone per deployment: a customer in
+   * another zone needs its own deployment, or per-company zones (not built).
+   */
+  /*
+   * Lets the published demo password sign in on a production build. Off by default: anyone
+   * who has read the repository knows that password (see lib/demoAccounts.ts). Set to
+   * 'true' only on a stack that is a demo on purpose and is not reachable by strangers.
+   */
+  ALLOW_DEMO_ACCOUNTS: z.enum(['true', 'false']).default('false'),
+
+  APP_TIMEZONE: z.string().default('Asia/Kuching').refine((tz) => {
+    try { new Intl.DateTimeFormat('en-GB', { timeZone: tz }); return true } catch { return false }
+  }, 'APP_TIMEZONE must be an IANA time zone, e.g. Asia/Kuching'),
+
+  /*
    * A secret the reverse proxy presents to prove it is the reverse proxy.
    *
    * TRUST_PROXY alone is not sufficient behind Docker, and that is not a subtlety - it was
@@ -568,6 +587,8 @@ function decodeKey(b64: string, label: string): string {
 export const env = {
   ...raw,
   isProd: raw.NODE_ENV === 'production',
+  /** The demo password may sign in: always outside production, and in it only by opt-in. */
+  allowDemoPassword: raw.NODE_ENV !== 'production' || raw.ALLOW_DEMO_ACCOUNTS === 'true',
   /** The webhook sealing key, decoded once. `null` when webhooks are not configured. */
   webhookSecretKey: decodeAesKey(raw.WEBHOOK_SECRET_KEY_B64),
   /**

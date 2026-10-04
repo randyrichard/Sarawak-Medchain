@@ -18,6 +18,7 @@ import { type Caller } from '../domain/caller.js'
 import { PERSON_ROLE_LABEL } from './incidentInvestigation.js'
 import { docDate, humanize, severityName, stageLabel, typeName } from './incidentCatalog.js'
 import type { ReportData } from './reportService.js'
+import { dateOf, todayDate } from '../domain/businessDay.js'
 
 const DAY = 86_400_000
 const utcDay = (d: Date) => Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())
@@ -62,7 +63,8 @@ export class IncidentSummaryService {
 
     const injured = people.filter((p) => p.injuryType)
     const daysLost = people.reduce((n, p) => n + (p.daysLost ?? 0), 0)
-    const today = utcDay(new Date())
+    // Today's local date (APP_TIMEZONE); due dates are date-only, reportedAt a moment.
+    const today = todayDate().getTime()
     const actions = inc.actions.filter((a) => a.status !== 'cancelled')
     const done = actions.filter((a) => a.status === 'completed' || a.status === 'verified')
     const late = actions.filter((a) => (a.status === 'open' || a.status === 'in_progress') && utcDay(a.dueDate) < today)
@@ -70,7 +72,7 @@ export class IncidentSummaryService {
     // When it was reported, which is what the incident page shows - not when the row was
     // written, which differs for anything entered after the fact or queued offline.
     const reportedAt = inc.reportedAt ?? inc.createdAt
-    const openDays = Math.max(0, Math.round((today - utcDay(reportedAt)) / DAY))
+    const openDays = Math.max(0, Math.round((today - dateOf(reportedAt).getTime()) / DAY))
 
     const summary = [
       `${inc.number}, ${/^[aeiou]/i.test(type) ? 'an' : 'a'} ${type} incident of ${severity} severity, occurred at `

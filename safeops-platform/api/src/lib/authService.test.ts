@@ -3,6 +3,8 @@ import type { PrismaClient } from '@prisma/client'
 import { AuthService, AuthError } from './authService.js'
 import { hashPassword } from './password.js'
 import { verifyAccessToken, hashRefreshToken } from './tokens.js'
+import { DEMO_PASSWORD } from './demoAccounts.js'
+import { env } from '../env.js'
 
 /**
  * In-memory stand-in for the Prisma methods AuthService uses. Docker/Postgres are not
@@ -323,5 +325,53 @@ describe('suspended workspaces', () => {
     await expect(auth.login('hse@demo.safeops.app', PASSWORD, ctx)).rejects.toBeInstanceOf(AuthError)
     store.companies[0].status = 'active'
     await expect(auth.login('hse@demo.safeops.app', PASSWORD, ctx)).resolves.toBeTruthy()
+  })
+})
+
+describe('the published demo password, in production', () => {
+  /*
+   * The demo logins share one password that is written in the repository (see
+   * lib/demoAccounts.ts). A production stack started from the demo keeps those accounts,
+   * so anyone who has read the repo could sign in as an administrator. Production refuses
+   * that password - even when it is right - unless the deployment opts in as a demo.
+   */
+  const withDemoPassword = async (allowed: boolean, fn: () => Promise<void>) => {
+    const before = env.allowDemoPassword
+    env.allowDemoPassword = allowed
+    try { await fn() } finally { env.allowDemoPassword = before }
+  }
+
+  it('refuses it, with a reason the person can act on', async () => {
+    await withDemoPassword(false, async () => {
+      const err = await auth.login('hse@demo.safeops.app', DEMO_PASSWORD, ctx).catch((e) => e)
+      expect(err).toBeInstanceOf(AuthError)
+      expect(err.code).toBe('demo_password')
+      expect(err.status).toBe(403)
+      expect(err.message).toMatch(/published demo password/)
+      expect(store.loginAttempts.at(-1)?.outcome).toBe('demo_password_refused')
+      expect(store.refreshTokens).toHaveLength(0)
+    })
+  })
+
+  it('reveals nothing to a guess: a wrong password is still the generic failure', async () => {
+    await withDemoPassword(false, async () => {
+      const err = await auth.login('hse@demo.safeops.app', 'not-the-password', ctx).catch((e) => e)
+      expect(err.code).toBe('invalid_credentials')
+    })
+  })
+
+  it('lets the same account in once its password has been changed', async () => {
+    await withDemoPassword(false, async () => {
+      store.users[0].passwordHash = await hashPassword('A-new-private-passphrase-2026')
+      const res = await auth.login('hse@demo.safeops.app', 'A-new-private-passphrase-2026', ctx)
+      expect(res.accessToken).toBeTruthy()
+    })
+  })
+
+  it('lets a deployment that is a demo on purpose opt back in', async () => {
+    await withDemoPassword(true, async () => {
+      const res = await auth.login('hse@demo.safeops.app', DEMO_PASSWORD, ctx)
+      expect(res.accessToken).toBeTruthy()
+    })
   })
 })

@@ -30,7 +30,8 @@ if (process.env.NODE_ENV === 'production' && process.env.SEED_ALLOW_PRODUCTION !
 
 const prisma = new PrismaClient()
 
-const DEMO_PASSWORD = 'SafeOpsPlatform2026'
+// One definition, shared with the production sign-in guard (src/lib/demoAccounts.ts).
+import { DEMO_PASSWORD } from '../src/lib/demoAccounts.js'
 
 const USERS: { email: string; name: string; title: string; role: Role; companies: string[] }[] = [
   { email: 'ceo@demo.safeops.app', name: 'Faridah Abdullah', title: 'Group Managing Director', role: 'ceo', companies: ['big', 'kcs'] },

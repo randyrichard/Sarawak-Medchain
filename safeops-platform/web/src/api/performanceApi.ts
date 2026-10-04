@@ -69,11 +69,14 @@ export interface Target {
 }
 
 export interface PerformanceView {
+  /** The period's first and last local calendar dates, inclusive ("2026-01-01", "2026-06-30"). */
   from: string
   to: string
   months: MonthPoint[]
   total: Indicators
   sites: SitePerformance[]
+  /** Finished months each site has no recorded man-hours for (estimated instead). */
+  missingHours: { siteId: string; siteName: string; months: string[] }[]
   targets: Target[]
   basis: { frequency: number; trir: number; incidence: number; estimatedHoursPerWorkerMonth: number }
 }
