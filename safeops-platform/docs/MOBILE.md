@@ -37,7 +37,8 @@ organization, administration, notifications and account.
 
 The audit runs Chromium (Chrome's engine) with each phone's size, touch input and user
 agent. That is how Android renders. It is **not Safari**. Three iOS behaviours are handled
-by rules instead, and should be checked on a real iPhone before an important release:
+by rules instead, and should be checked on a real iPhone before an important release (the
+real-phone checklist is in `GO_LIVE.md`, section 3):
 
 - Safari zooms into any field under 16px. This is prevented by the 16px rule below.
 - The iOS keyboard does not resize the page. It overlays the page and Safari scrolls the

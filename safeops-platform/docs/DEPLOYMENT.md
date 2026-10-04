@@ -896,6 +896,9 @@ becomes a restore from the pre-upgrade dump. Take the dump.
 
 ## Before the first customer: go-live check
 
+The full go-live list is in `GO_LIVE.md`: the decisions to make, and the check on real
+phones. Start with the command below.
+
 ```bash
 docker compose -f docker-compose.prod.yml --env-file .env.prod exec api node dist/cli/goLive.js
 ```
