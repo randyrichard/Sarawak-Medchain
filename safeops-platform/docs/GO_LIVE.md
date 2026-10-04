@@ -20,7 +20,7 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod exec api node dis
 | Database role | The API connects as the schema owner, so row-level tenant isolation does not apply (fail) |
 | Multi-factor sign-in | No `MFA_SECRET_KEY_B64` (warn) |
 | Worker | Has never run, or has stopped. Reminders and scheduled reports are not being sent (fail). |
-| Public address | `APP_PUBLIC_URL` not set, so links in emails are wrong (fail) |
+| Public address | `APP_PUBLIC_URL` not set, or not in `CORS_ORIGINS`: links in invitations and resets open a page that cannot reach the API (fail) |
 | Business day | Shows the time zone that "today" and "this month" use (`APP_TIMEZONE`, default Asia/Kuching) |
 
 It exits with 1 on any failure, so it can gate a deploy script. Go live with no failures.

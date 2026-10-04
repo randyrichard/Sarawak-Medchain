@@ -3,7 +3,7 @@ import { BACKUP_MAX_AGE_MS, evaluate, type Facts } from './goLive.js'
 
 const NOW = new Date('2026-10-04T02:00:00Z')
 const ready: Facts = {
-  isProd: true, appPublicUrl: 'https://app.safeops-pilot.my',
+  isProd: true, appPublicUrl: 'https://app.safeops-pilot.my', corsOrigins: ['https://app.safeops-pilot.my'],
   mail: { configured: true, problem: null }, mfaKeySet: true, appDbRoleSet: true,
   allowDemoAccounts: false, demoAccountsOnPublishedPassword: [],
   backup: { lastSuccess: new Date(NOW.getTime() - 3_600_000), location: '/mnt/nas/safeops' },
@@ -14,6 +14,14 @@ const level = (f: Facts, title: RegExp) => evaluate(f).find((c) => title.test(c.
 describe('go-live readiness', () => {
   it('passes a deployment that is ready', () => {
     expect(evaluate(ready).filter((c) => c.level !== 'pass')).toEqual([])
+  })
+
+  it('fails when links in emails open an address the API does not serve', () => {
+    // Seen on a laptop stack: APP_PUBLIC_URL left at the pilot domain, CORS_ORIGINS at
+    // localhost. The check said "0 to fix" while every invitation link was dead.
+    const laptop = { ...ready, corsOrigins: ['http://localhost:8080'] }
+    expect(level(laptop, /links are dead/)).toBe('fail')
+    expect(level({ ...laptop, appPublicUrl: 'http://localhost:8080/' }, /Links in emails open/)).toBe('pass')
   })
 
   it('fails demo accounts left on the published password, unless the stack is a demo on purpose', () => {
