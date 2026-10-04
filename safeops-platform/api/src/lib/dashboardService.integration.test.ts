@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { PrismaClient } from '@prisma/client'
 import { DashboardService } from './dashboardService.js'
 import type { Caller } from '../domain/caller.js'
-import { todayDate } from '../domain/businessDay.js'
+import { startOfLocalDay, todayDate } from '../domain/businessDay.js'
 
 /**
  * The dashboard, against a REAL PostgreSQL database.
@@ -356,8 +356,9 @@ d('Operational dashboard — integration (real Postgres)', () => {
 
   it('counts visitors expected today separately from those on site', async () => {
     await purge()
-    const laterToday = new Date()
-    laterToday.setUTCHours(23, 0, 0, 0)
+    // 23:00 on today's local date. Not 23:00 UTC, which is 07:00 tomorrow in Malaysia and
+    // made this test pass or fail depending on the hour it ran.
+    const laterToday = new Date(startOfLocalDay().getTime() + 23 * 3_600_000)
     await visitor({ status: 'pre_registered', expectedArrival: laterToday })
     await visitor({ status: 'on_site' })
 
