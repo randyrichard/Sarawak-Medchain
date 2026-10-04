@@ -1133,6 +1133,11 @@ export class AdminService {
         'Multi-factor sign-in is not configured on this server (MFA_SECRET_KEY_B64), so it cannot be required yet.',
       )
     }
+    // The server never accepts a password under 12 characters, so a policy saying fewer would
+    // be shown and not applied. Checked here as well as at the route, for direct callers.
+    if (typeof patch.passwordMinLength === 'number' && patch.passwordMinLength < 12) {
+      throw new AdminError('validation', 'The minimum length cannot be below 12, the SafeOps minimum.')
+    }
     const allowed = [
       'passwordMinLength', 'requireUppercase', 'requireNumber', 'requireSymbol',
       'passwordExpiryDays', 'lockoutThreshold', 'sessionTimeoutHours', 'mfaRequired',

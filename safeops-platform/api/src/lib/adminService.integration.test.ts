@@ -665,7 +665,9 @@ d('AdminService — integration (real Postgres)', () => {
 
   it('stores the security policy and records every changed field', async () => {
     const before = await svc.getSecurity(admin, COMPANY)
-    expect(before.passwordMinLength).toBe(10)
+    // 12: the SafeOps minimum, which a policy can raise but not lower (authPolicy.ts).
+    expect(before.passwordMinLength).toBe(12)
+    await expect(svc.updateSecurity(admin, COMPANY, ctx, { passwordMinLength: 10 })).rejects.toThrow(/below 12/)
 
     const after = await svc.updateSecurity(admin, COMPANY, ctx, {
       passwordMinLength: 14, mfaRequired: true,
