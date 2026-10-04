@@ -289,7 +289,14 @@ authRouter.get('/me', requireAuth, asyncRoute(async (req, res) => {
   res.json({
     // Read from the token rather than recomputed: it is what requireAuth is enforcing, so
     // the screen and the API agree about whether setup comes first.
-    user: { ...auth.publicUser(user), mfaSetupRequired: req.auth!.mfaSetupRequired === true },
+    user: {
+      ...auth.publicUser(user),
+      mfaSetupRequired: req.auth!.mfaSetupRequired === true,
+      // Likewise: an expired password is a demand in the token, not a column. The column
+      // still counts, so an administrator's forced reset shows before the next refresh.
+      mustChangePassword: req.auth!.mustChangePassword || user.mustChangePassword,
+      passwordExpired: req.auth!.mustChangePassword && !user.mustChangePassword,
+    },
     roles: req.auth!.roles,
   })
 }))

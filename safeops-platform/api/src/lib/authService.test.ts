@@ -36,6 +36,8 @@ function makeDb() {
     },
     securityPolicy: {
       count: async () => 0,
+      // No stored policy: each company gets the defaults the page shows (authPolicy.ts).
+      findMany: async () => [],
     },
     company: {
       findMany: async ({ where }: any) => companies
@@ -95,6 +97,7 @@ beforeEach(async () => {
     passwordHash: await hashPassword(PASSWORD),
     status: 'active',
     failedLoginCount: 0,
+    passwordChangedAt: new Date(),
     lockedUntil: null,
     lastLoginAt: null,
     mfaEnabled: false,

@@ -109,26 +109,31 @@ function PolicyPanel() {
   return (
     <div className="grid gap-4 xl:grid-cols-2">
       <Card>
-        <CardHeader title="Password policy" subtitle="Enforced on every password set or reset" />
+        <CardHeader title="Password policy" subtitle="Enforced whenever a password is set: changed, reset or chosen on joining" />
         <CardBody className="space-y-5">
           {flash && <Alert tone="success">Security policy saved.</Alert>}
           {error && <Alert tone="critical">{error}</Alert>}
-          <Input label="Minimum length" type="number" value={String(s.passwordMinLength)} onChange={(e) => set({ passwordMinLength: Number(e.target.value) || 8 })} className="w-32" />
+          <Input label="Minimum length" type="number" min={12} value={String(s.passwordMinLength)} onChange={(e) => set({ passwordMinLength: Number(e.target.value) || 12 })} className="w-32"
+            hint="12 or more. SafeOps never accepts fewer than 12 characters." />
           <div className="space-y-2">
-            <Switch checked={s.requireUppercase} onChange={(v) => set({ requireUppercase: v })} label="Require an uppercase letter" />
-            <Switch checked={s.requireNumber} onChange={(v) => set({ requireNumber: v })} label="Require a number" />
+            {/* Always on: SafeOps requires both on every account. Shown so the page says what applies. */}
+            <Switch checked disabled onChange={() => {}} label="Require an uppercase letter (always required)" />
+            <Switch checked disabled onChange={() => {}} label="Require a number (always required)" />
             <Switch checked={s.requireSymbol} onChange={(v) => set({ requireSymbol: v })} label="Require a symbol" />
           </div>
-          <Input label="Password expiry (days, 0 = never)" type="number" value={String(s.passwordExpiryDays)} onChange={(e) => set({ passwordExpiryDays: Number(e.target.value) || 0 })} className="w-40" />
+          <Input label="Password expiry (days, 0 = never)" type="number" value={String(s.passwordExpiryDays)} onChange={(e) => set({ passwordExpiryDays: Number(e.target.value) || 0 })} className="w-40"
+            hint="Counted from when each password was last set. When it runs out, the person must choose a new one at their next sign-in." />
+          <p className="text-2xs text-muted">Someone who belongs to more than one organisation follows the strictest of their policies.</p>
         </CardBody>
       </Card>
 
       <Card>
         <CardHeader title="Sessions & MFA" subtitle="Lockout, session lifetime and MFA enforcement" />
         <CardBody className="space-y-5">
-          <Input label="Account lockout after N failed attempts" type="number" value={String(s.lockoutThreshold)} onChange={(e) => set({ lockoutThreshold: Number(e.target.value) || 5 })} className="w-40" />
-          <Input label="Session timeout (hours)" type="number" value={String(s.sessionTimeoutHours)} onChange={(e) => set({ sessionTimeoutHours: Number(e.target.value) || 8 })} className="w-40"
-            hint="Applies to your next sign-in — sessions expire after this many hours." />
+          <Input label="Account lockout after N failed attempts" type="number" value={String(s.lockoutThreshold)} onChange={(e) => set({ lockoutThreshold: Number(e.target.value) || 5 })} className="w-40"
+            hint="Wrong passwords and wrong codes both count. The account then stays locked for a set time (15 minutes unless the server is configured otherwise), or until an administrator unlocks it." />
+          <Input label="Session timeout (hours)" type="number" value={String(s.sessionTimeoutHours)} onChange={(e) => set({ sessionTimeoutHours: Number(e.target.value) || 12 })} className="w-40"
+            hint="Applies from each person's next sign-in: they are signed out this many hours after signing in, however active they are." />
           <div className="rounded-lg border px-3.5 py-3">
             <Switch checked={s.mfaRequired} onChange={(v) => set({ mfaRequired: v })} label="Require multi-factor authentication for all users" />
             <p className="mt-1 text-2xs text-muted">Anyone without it is asked to set up an authenticator app the next time they sign in, and can do nothing else until they have.</p>

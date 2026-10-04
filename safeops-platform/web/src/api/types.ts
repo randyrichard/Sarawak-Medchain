@@ -98,8 +98,14 @@ export interface User {
   name: string
   title: string
   memberships: Membership[]
-  /** users must change password at next login when set (future: forced rotation) */
+  /**
+   * Must choose a new password before anything else: an administrator asked for it, or the
+   * password is older than the company's policy allows (`passwordExpired`). The API refuses
+   * everything else until it is done.
+   */
   mustChangePassword?: boolean
+  /** The password is older than the security policy allows. */
+  passwordExpired?: boolean
   /**
    * A workspace requires multi-factor sign-in and this person has not set it up. The API
    * refuses everything but the setup until they do; the app shows only the setup screen.

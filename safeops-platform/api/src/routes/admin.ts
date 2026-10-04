@@ -210,7 +210,8 @@ adminRouter.get('/security', asyncRoute(async (req, res) => {
 
 const securityBody = z.object({
   companyId: z.string().min(1),
-  passwordMinLength: z.number().int().min(8).max(128).optional(),
+  // 12 is the server's own floor (validatePasswordStrength); a policy can only raise it.
+  passwordMinLength: z.number().int().min(12, 'The minimum length cannot be below 12, the SafeOps minimum.').max(128).optional(),
   requireUppercase: z.boolean().optional(),
   requireNumber: z.boolean().optional(),
   requireSymbol: z.boolean().optional(),
