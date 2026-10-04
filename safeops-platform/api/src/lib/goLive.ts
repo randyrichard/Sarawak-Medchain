@@ -25,6 +25,8 @@ export interface Check { level: Level; title: string; detail: string }
 export interface Facts {
   isProd: boolean
   appPublicUrl: string | undefined
+  /** The origins in CORS_ORIGINS: the web addresses allowed to call this API. */
+  corsOrigins: string[]
   mail: { configured: boolean; problem: string | null }
   mfaKeySet: boolean
   appDbRoleSet: boolean
@@ -130,11 +132,26 @@ export function evaluate(f: Facts): Check[] {
   // Public address
   if (f.isProd && !f.appPublicUrl) {
     out.push({ level: 'fail', title: 'APP_PUBLIC_URL is not set', detail: 'Links in invitations and resets need the public https address.' })
+  } else if (f.appPublicUrl) {
+    // Links in emails open APP_PUBLIC_URL. If that page is not allowed to call the API, the
+    // link opens and then fails: nobody can accept an invitation or reset a password.
+    const origin = originOf(f.appPublicUrl)
+    if (!origin || !f.corsOrigins.includes(origin)) {
+      out.push({
+        level: 'fail', title: 'Invitation and reset links are dead',
+        detail: `APP_PUBLIC_URL is ${f.appPublicUrl}, which is not in CORS_ORIGINS (${f.corsOrigins.join(', ') || 'none'}). `
+          + 'Set APP_PUBLIC_URL to the address people open SafeOps at, and make sure CORS_ORIGINS includes it.',
+      })
+    } else {
+      out.push({ level: 'pass', title: `Links in emails open ${origin}`, detail: '' })
+    }
   }
 
   out.push({ level: 'pass', title: `Business day: ${f.timeZone}`, detail: '"Today" and "this month" roll over at midnight here (docs/TIME_ZONES.md).' })
   return out
 }
+
+const originOf = (url: string) => { try { return new URL(url).origin } catch { return null } }
 
 /** Reads the facts from this process's environment, its database and the backup volume. */
 export async function gatherFacts(db: PrismaClient, now = new Date()): Promise<Facts> {
@@ -161,6 +178,7 @@ export async function gatherFacts(db: PrismaClient, now = new Date()): Promise<F
   return {
     isProd: env.isProd,
     appPublicUrl: env.APP_PUBLIC_URL,
+    corsOrigins: env.CORS_ORIGINS.split(',').map((o) => originOf(o.trim())).filter((o): o is string => !!o),
     mail: { configured: Boolean(provider), problem },
     mfaKeySet: env.mfaSecretKey !== null,
     appDbRoleSet: Boolean(env.APP_DB_PASSWORD),
