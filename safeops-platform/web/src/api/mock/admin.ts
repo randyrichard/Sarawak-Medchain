@@ -184,7 +184,7 @@ function buildWebhooks(): Webhook[] {
 }
 
 const DEFAULT_SECURITY: SecuritySettings = {
-  passwordMinLength: 10, requireUppercase: true, requireNumber: true, requireSymbol: true,
+  passwordMinLength: 12, requireUppercase: true, requireNumber: true, requireSymbol: true,
   passwordExpiryDays: 90, lockoutThreshold: 5, sessionTimeoutHours: 8, mfaRequired: false,
 }
 

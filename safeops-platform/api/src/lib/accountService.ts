@@ -7,7 +7,8 @@
  */
 import { Prisma } from '@prisma/client'
 import type { PrismaClient } from '@prisma/client'
-import { hashPassword, validatePasswordStrength, verifyPassword } from './password.js'
+import { hashPassword, verifyPassword } from './password.js'
+import { passwordProblem, policyForUser } from './authPolicy.js'
 import {
   generateResetToken, hashRefreshToken, hashResetToken, resetTokenExpiry, RESET_TOKEN_TTL_MIN,
 } from './tokens.js'
@@ -193,7 +194,8 @@ export class AccountService {
       throw new AccountError('invalid_password', 'Your current password is not correct.', 400)
     }
 
-    const weak = validatePasswordStrength(newPassword)
+    // The rules of every company this person belongs to, strictest first (authPolicy.ts).
+    const weak = passwordProblem(newPassword, await policyForUser(this.db, userId))
     if (weak) throw new AccountError('validation', weak)
 
     // Reusing the current password is not a change, and telling the user plainly is
@@ -223,7 +225,7 @@ export class AccountService {
       await tx.user.update({
         where: { id: userId },
         // Clearing mustChangePassword is the point when an admin forced this.
-        data: { passwordHash, mustChangePassword: false, failedLoginCount: 0, lockedUntil: null },
+        data: { passwordHash, passwordChangedAt: new Date(), mustChangePassword: false, failedLoginCount: 0, lockedUntil: null },
       })
       return tx.refreshToken.updateMany({
         where: {
@@ -321,9 +323,6 @@ export class AccountService {
   }
 
   async redeemPasswordReset(rawToken: string, newPassword: string): Promise<void> {
-    const weak = validatePasswordStrength(newPassword)
-    if (weak) throw new AccountError('validation', weak)
-
     const record = await this.db.passwordResetToken.findUnique({
       where: { tokenHash: hashResetToken(rawToken) },
       select: {
@@ -338,6 +337,10 @@ export class AccountService {
     if (!record || record.usedAt || record.expiresAt.getTime() < Date.now()) throw invalid()
     // A deactivated account must not be revivable by a link issued before it was disabled.
     if (record.user.status === 'deactivated') throw invalid()
+
+    // Checked once the link is known to be good, because the rules are the account's.
+    const weak = passwordProblem(newPassword, await policyForUser(this.db, record.userId))
+    if (weak) throw new AccountError('validation', weak)
 
     const passwordHash = await hashPassword(newPassword)
 
@@ -354,6 +357,7 @@ export class AccountService {
         where: { id: record.userId },
         data: {
           passwordHash,
+          passwordChangedAt: new Date(),
           mustChangePassword: false,
           failedLoginCount: 0,
           lockedUntil: null,

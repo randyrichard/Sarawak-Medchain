@@ -35,6 +35,9 @@ model User {
   // ── Brute-force protection (server-authoritative) ──
   failedLoginCount Int       @default(0)
   lockedUntil      DateTime?
+  /// When the password was last set. Password expiry in the security policy counts from
+  /// here. Existing rows took the time of the migration, so nobody expired on upgrade.
+  passwordChangedAt DateTime @default(now())
   lastLoginAt      DateTime?
 
   mustChangePassword Boolean @default(false)
@@ -140,6 +143,10 @@ model RefreshToken {
   familyId  String
 
   expiresAt     DateTime
+  /// The latest moment this session may last until, however often it is refreshed: sign-in
+  /// plus the security policy's session timeout. Carried to every rotated successor. Null on
+  /// sessions started before the timeout was enforced, which keep their old lifetime.
+  sessionEndsAt DateTime?
   revokedAt     DateTime?
   revokedReason String?
   replacedById  String?
@@ -2337,7 +2344,7 @@ model SecurityPolicy {
   companyId String  @id
   company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  passwordMinLength   Int     @default(10)
+  passwordMinLength   Int     @default(12)
   requireUppercase    Boolean @default(true)
   requireNumber       Boolean @default(true)
   requireSymbol       Boolean @default(false)

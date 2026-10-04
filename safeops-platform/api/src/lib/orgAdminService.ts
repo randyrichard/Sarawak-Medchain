@@ -3,7 +3,8 @@ import type { PrismaClient, Prisma, ProjectStatus, Role } from '@prisma/client'
 import { membershipOf, type Caller } from '../domain/caller.js'
 import { writeAdminAudit, type AdminContext } from './adminAudit.js'
 import { hashResetToken } from './tokens.js'
-import { hashPassword, validatePasswordStrength } from './password.js'
+import { hashPassword } from './password.js'
+import { passwordProblem, policyForUser } from './authPolicy.js'
 import { env } from '../env.js'
 import { getEmailProvider } from './email/index.js'
 import { EmailProviderError } from './email/provider.js'
@@ -1186,10 +1187,11 @@ export class OrgAdminService {
    * rather than setting the password twice.
    */
   async acceptInvitation(rawToken: string, input: { password: string; name?: string }) {
-    const weak = validatePasswordStrength(input.password)
-    if (weak) throw new OrgAdminError('validation', weak)
-
     const invite = await this.openInvitation(rawToken)
+
+    // The rules of the company being joined and of any the person already belongs to.
+    const weak = passwordProblem(input.password, await policyForUser(this.db, invite.userId, [invite.companyId]))
+    if (weak) throw new OrgAdminError('validation', weak)
 
     /*
      * Checked again here, not only when the invitation was created.
@@ -1243,6 +1245,7 @@ export class OrgAdminService {
           where: { id: invite.userId },
           data: {
             passwordHash,
+            passwordChangedAt: new Date(),
             status: 'active',
             mustChangePassword: false,
             failedLoginCount: 0,

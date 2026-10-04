@@ -76,11 +76,23 @@ export function ChangePasswordRequiredPage() {
 
   return (
     <AuthLayout>
-      <h1 className="text-xl font-semibold tracking-tight text-ink">Choose your own password</h1>
-      <p className="mt-1 text-sm text-ink-2">
-        This account is using a password somebody else set. Choose one only you know before
-        continuing.
-      </p>
+      {user?.passwordExpired ? (
+        <>
+          <h1 className="text-xl font-semibold tracking-tight text-ink">Your password has expired</h1>
+          <p className="mt-1 text-sm text-ink-2">
+            Your organisation's security policy asks for a new password after a set number of
+            days. Choose a new one before continuing.
+          </p>
+        </>
+      ) : (
+        <>
+          <h1 className="text-xl font-semibold tracking-tight text-ink">Choose your own password</h1>
+          <p className="mt-1 text-sm text-ink-2">
+            This account is using a password somebody else set. Choose one only you know before
+            continuing.
+          </p>
+        </>
+      )}
 
       <form onSubmit={submit} className="mt-6 space-y-3">
         <div className="flex items-center gap-2 rounded-lg border border-line px-3 py-2">
@@ -93,7 +105,7 @@ export function ChangePasswordRequiredPage() {
           required
           value={current}
           onChange={(e) => setCurrent(e.target.value)}
-          hint="The one you were given."
+          hint={user?.passwordExpired ? 'The one you use now.' : 'The one you were given.'}
           autoComplete="current-password"
         />
 

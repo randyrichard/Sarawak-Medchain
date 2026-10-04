@@ -172,7 +172,7 @@ These change product behaviour, so they were not changed unilaterally.
 | D-3 | Low | Anyone who knows an address can lock that account with five wrong passwords. The per-IP login limit (40 *failed* attempts per 15 minutes; successful sign-ins and the limiter's own refusals are not counted, and at most 8 sign-ins per address are in progress at once with the rest queued, so a whole site behind one NAT address can sign in at shift start: 300 simultaneous sign-ins from one address all succeed in load testing) caps this at about 8 accounts per IP per window. | Switch to progressive delay per account plus IP instead of a hard lock, or add a CAPTCHA after N failures. |
 | D-4 | Low | Inviting someone who already has an account adds the membership immediately, without their consent. The invite form's error also reveals whether an address belongs to a SafeOps platform administrator. | Create the membership on acceptance. Return the generic "cannot invite this address" message. |
 | D-5 | Info | IPv6-literal webhook URLs never deliver, because of the bracketed hostname (see SA-5). | Strip the brackets before `https.request`. That is safe now that the guard parses IPv6 correctly. |
-| D-7 | **Medium** | **The rest of the Authentication Policy page is also unenforced.** Lockout threshold, session timeout ("Applies to your next sign-in"), minimum password length, the uppercase/number/symbol rules and password expiry are saved and shown, but nothing reads them. The server uses its own fixed settings (`MAX_FAILED_LOGINS`, `REFRESH_TOKEN_TTL_DAYS`, `validatePasswordStrength`). Found while building MFA. | Enforce each setting where its fixed counterpart is used today, or mark it "not yet enforced" on the page. Same reasoning as D-0. |
+| D-7 | **Medium** | **The rest of the Authentication Policy page was also unenforced.** Lockout threshold, session timeout, minimum length, the composition rules and password expiry were saved and shown, but the server used its own fixed settings. | **Resolved, see section 3a.** |
 | D-6 | Info | `deploy/rollback.sh` tagged `safeops-api:rollback`, but compose never used that tag, so a rollback restarted the newest image. | **Resolved**: releases are tagged, and rollback points `:local` at the kept release. Verified end to end; see `docs/PRODUCTION_PLATFORM.md`. |
 
 ## 3a. Resolved after the audit
@@ -208,6 +208,41 @@ implementing it was checked against the RFC's published test vectors.
 - **Accounts left switched on by the old toggle** were switched off by the migration. They
   never had an authenticator behind them, so leaving them on would have locked those people
   out.
+
+### D-7: the Authentication Policy page, enforced
+
+`lib/authPolicy.ts` reads each company's `SecurityPolicy`. Sign-in and every way a password
+is set use it.
+
+- **Whose policy.** A password, a lockout and a session belong to a person, and one person
+  can belong to several companies. Every policy that applies to a person applies in full,
+  so **the strictest value of each setting wins**. This is the rule the MFA requirement
+  already followed.
+  - A suspended company's policy does not count, as it gives no access either.
+  - A company that never saved a policy gets the defaults the page shows it.
+- **The server's rules stay a floor.** At least 12 characters, with an uppercase letter, a
+  lowercase letter and a number, are always required. A policy can only add to them.
+  - The page shows uppercase and number as always on.
+  - The minimum length cannot be saved below 12.
+  - Stored minimums below 12 were raised to 12 by the migration, because 12 was always
+    what applied.
+
+| Setting | Enforced where | Behaviour |
+|---|---|---|
+| Minimum length, symbol | Changing a password, a reset link, accepting an invitation | Refused with the rule named, e.g. "at least 16 characters, as your organisation requires" |
+| Password expiry | Sign-in and every refresh | Counted from `User.passwordChangedAt`. Once expired, the session carries `mustChangePassword`; the API refuses everything but the change, and the app says the password has expired. 0 means never. |
+| Lockout threshold | Every wrong password or code | The account locks at the policy's count instead of `MAX_FAILED_LOGINS` |
+| Session timeout | Sign-in | Each session gets a fixed end, `RefreshToken.sessionEndsAt` = sign-in + the timeout. Every refresh carries it forward unchanged, so staying active cannot extend it. |
+
+- **No surprises on upgrade.**
+  - Password ages start counting at the migration, so no password expires on deploy.
+  - Existing sessions have no fixed end and keep their old lifetime. The timeout applies
+    from each person's next sign-in, as the page says.
+- **Tests.**
+  - `lib/authPolicy.test.ts`: the strictest-wins combination and each rule.
+  - `lib/authPolicy.integration.test.ts`: each setting end to end on a real database,
+    including the invitation path and the suspended-company case. Five of its seven tests
+    failed before the change.
 
 ### D-1: permit safety steps
 
@@ -312,8 +347,8 @@ A focused check of four areas, done after the fixes above.
 ## 5. Production recommendations
 
 1. **Set `MFA_SECRET_KEY_B64` and switch on "Require MFA" for administrators' workspaces**
-   before go-live. Then resolve D-7, the remaining unenforced policy settings, which a
-   customer's security questionnaire will also ask about.
+   before go-live. Review the Authentication Policy page too: since D-7 was resolved, every
+   setting on it is enforced.
 2. **Malware scanning for uploads.** Run ClamAV as a sidecar and scan before the row is
    written. The signature check in SA-2 stops disguised files but not a malicious PDF.
 3. **Per-tenant storage quotas** on the uploads volume, and **alerting at 80% disk**.

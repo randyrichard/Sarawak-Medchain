@@ -7,6 +7,7 @@ import {
   signMfaChallenge, verifyMfaChallenge, type AccessClaims,
 } from './tokens.js'
 import { MfaService, mfaAvailable } from './mfaService.js'
+import { passwordExpired, policyForUser, sessionEnd, type EffectivePolicy } from './authPolicy.js'
 import { DomainError } from '../domain/errors.js'
 
 export class AuthError extends DomainError {
@@ -19,6 +20,10 @@ export class AuthError extends DomainError {
 interface SessionClaims {
   roles: AccessClaims['roles']
   mfaSetupRequired: boolean
+  /** Set by an administrator, or because the password is older than the policy allows. */
+  mustChangePassword: boolean
+  passwordExpired: boolean
+  policy: EffectivePolicy
 }
 
 const MFA_UNAVAILABLE = 'Multi-factor sign-in is not available on this server right now. '
@@ -87,9 +92,15 @@ export class AuthService {
       && (await this.db.securityPolicy.count({
         where: { companyId: { in: live.map((m) => m.companyId) }, mfaRequired: true },
       })) > 0
+    // The company policies that apply to this person, strictest first (authPolicy.ts).
+    const policy = await policyForUser(this.db, user.id)
+    const expired = passwordExpired(user.passwordChangedAt, policy)
     return {
       roles: live.map((m) => ({ companyId: m.companyId, role: m.role, siteIds: m.siteIds })),
       mfaSetupRequired,
+      mustChangePassword: user.mustChangePassword || expired,
+      passwordExpired: expired,
+      policy,
     }
   }
 
@@ -101,17 +112,20 @@ export class AuthService {
       email: user.email,
       name: user.name,
       roles: claims.roles,
-      mustChangePassword: user.mustChangePassword,
+      mustChangePassword: claims.mustChangePassword,
       mfaSetupRequired: claims.mfaSetupRequired,
     })
 
+    // The session timeout counts from sign-in, and every refresh carries this end forward.
+    const sessionEndsAt = sessionEnd(new Date(), claims.policy)
     const refreshToken = generateRefreshToken()
     await this.db.refreshToken.create({
       data: {
         userId: user.id,
         tokenHash: hashRefreshToken(refreshToken),
         familyId,
-        expiresAt: refreshExpiry(),
+        expiresAt: earlier(refreshExpiry(), sessionEndsAt),
+        sessionEndsAt,
         ip: ctx.ip,
         userAgent: ctx.userAgent,
       },
@@ -215,10 +229,14 @@ export class AuthService {
     return { ...(await this.completeSignIn(user, ctx)), rememberMe: claimed.rememberMe }
   }
 
-  /** A wrong password or code: count it, and lock the account at the threshold. */
+  /**
+   * A wrong password or code: count it, and lock the account at the threshold - the
+   * strictest of the policies of the companies this person belongs to.
+   */
   private async recordFailure(user: User, outcome: string, ctx: RequestContext) {
     const failed = user.failedLoginCount + 1
-    const shouldLock = failed >= env.MAX_FAILED_LOGINS
+    const { lockoutThreshold } = await policyForUser(this.db, user.id)
+    const shouldLock = failed >= lockoutThreshold
     await this.db.user.update({
       where: { id: user.id },
       data: {
@@ -257,7 +275,16 @@ export class AuthService {
     return {
       mfaRequired: false as const,
       ...session,
-      user: { ...this.publicUser(user), mfaSetupRequired: claims.mfaSetupRequired },
+      user: { ...this.publicUser(user), ...this.policyFlags(claims) },
+    }
+  }
+
+  /** What the client is told about the policy's demands on this session. */
+  private policyFlags(claims: SessionClaims) {
+    return {
+      mfaSetupRequired: claims.mfaSetupRequired,
+      mustChangePassword: claims.mustChangePassword,
+      passwordExpired: claims.passwordExpired,
     }
   }
 
@@ -320,7 +347,9 @@ export class AuthService {
           userId: user.id,
           tokenHash: hashRefreshToken(refreshToken),
           familyId: existing.familyId,
-          expiresAt: refreshExpiry(),
+          // Never beyond the session's end: refreshing rotates the token, not the deadline.
+          expiresAt: existing.sessionEndsAt ? earlier(refreshExpiry(), existing.sessionEndsAt) : refreshExpiry(),
+          sessionEndsAt: existing.sessionEndsAt,
           ip: ctx.ip,
           userAgent: ctx.userAgent,
         },
@@ -344,13 +373,13 @@ export class AuthService {
       email: user.email,
       name: user.name,
       roles: claims.roles,
-      mustChangePassword: user.mustChangePassword,
+      mustChangePassword: claims.mustChangePassword,
       mfaSetupRequired: claims.mfaSetupRequired,
     })
 
     return {
       accessToken, accessExpiresAt, refreshToken,
-      user: { ...this.publicUser(user), mfaSetupRequired: claims.mfaSetupRequired },
+      user: { ...this.publicUser(user), ...this.policyFlags(claims) },
     }
   }
 
@@ -383,3 +412,5 @@ export class AuthService {
     }
   }
 }
+
+const earlier = (a: Date, b: Date) => (a.getTime() <= b.getTime() ? a : b)
