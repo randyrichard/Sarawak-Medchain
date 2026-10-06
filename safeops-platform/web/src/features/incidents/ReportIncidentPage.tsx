@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  ArrowLeft, ArrowRight, Check, CloudOff, CloudUpload, FileText, Film, Image as ImageIcon,
+  ArrowLeft, ArrowRight, Check, CloudOff, CloudUpload, FileText, Image as ImageIcon,
   LocateFixed, PenLine, Send, Trash2, UserPlus, X,
 } from 'lucide-react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
-import type { AttachmentKind, IncidentSeverity, IncidentType, NewIncidentInput, PersonInvolved } from '@/api/incidents'
+import type { IncidentSeverity, IncidentType, NewIncidentInput, PersonInvolved } from '@/api/incidents'
 import { SEVERITY_LABEL, TYPE_LABEL } from '@/api/incidents'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useOrg } from '@/features/org/OrgContext'
@@ -15,6 +15,7 @@ import { Alert, Badge, Breadcrumbs, Button, Card, Checkbox, Input, SuggestSelect
 import { usePageTitle } from '@/app/pageTitle'
 import { fmtDateTime, INCIDENT_TYPE_GROUPS, severityKind, SITE_COORDS, TYPE_ICON, useActor } from './lib'
 import { enqueue, shouldRetry } from './outbox'
+import { EVIDENCE_ACCEPT, EVIDENCE_HINT, screenEvidence, uploadEvidence } from './evidence'
 import { StatusPill } from '@/components/ui'
 import { cn } from '@/lib/cn'
 
@@ -39,7 +40,6 @@ interface Draft {
   witnesses: string
   immediateActions: string
   description: string
-  attachments: { name: string; kind: AttachmentKind; sizeKb: number }[]
   signature: string
   attested: boolean
 }
@@ -70,20 +70,9 @@ const emptyDraft = (): Draft => ({
   witnesses: '',
   immediateActions: '',
   description: '',
-  attachments: [],
   signature: '',
   attested: false,
 })
-
-const kindOf = (name: string): AttachmentKind => {
-  const ext = name.split('.').pop()?.toLowerCase() ?? ''
-  if (['jpg', 'jpeg', 'png', 'webp', 'heic'].includes(ext)) return 'image'
-  if (['mp4', 'mov', 'avi'].includes(ext)) return 'video'
-  if (ext === 'pdf') return 'pdf'
-  if (['doc', 'docx'].includes(ext)) return 'word'
-  if (['xls', 'xlsx', 'csv'].includes(ext)) return 'excel'
-  return 'report'
-}
 
 export function ReportIncidentPage() {
   usePageTitle('Report an incident')
@@ -106,6 +95,11 @@ export function ReportIncidentPage() {
   const [error, setError] = useState<string | null>(null)
   const [touchedNext, setTouchedNext] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  // The files themselves. Kept in memory, not in the saved draft: a draft is text, and a
+  // file cannot be written into it. See ./evidence.ts.
+  const [files, setFiles] = useState<File[]>([])
+  const [refused, setRefused] = useState<string[]>([])
+  const [queuedWithFiles, setQueuedWithFiles] = useState(0)
   // Pristine forms never autosave — otherwise a reload would overwrite a real
   // stored draft with an empty one before the user can click "Resume".
   const dirty = useRef(false)
@@ -170,10 +164,11 @@ export function ReportIncidentPage() {
     )
   }
 
-  const addFiles = (files: FileList | null) => {
-    if (!files) return
-    const mapped = [...files].map((f) => ({ name: f.name, kind: kindOf(f.name), sizeKb: Math.max(1, Math.round(f.size / 1024)) }))
-    patch({ attachments: [...draft.attachments, ...mapped] })
+  const addFiles = (chosen: FileList | null) => {
+    if (!chosen) return
+    const { ok, refused: no } = screenEvidence([...chosen])
+    setFiles((f) => [...f, ...ok])
+    setRefused(no)
   }
 
   const submit = async () => {
@@ -199,14 +194,16 @@ export function ReportIncidentPage() {
       witnesses: draft.witnesses.split(',').map((w) => w.trim()).filter(Boolean),
       immediateActions: draft.immediateActions,
       description: draft.description,
-      attachments: draft.attachments,
+      attachments: [],
       signature: draft.signature,
       clientRef: clientRef.current,
     }
     try {
       const incident = await api.createIncident(input, actor)
       localStorage.removeItem(draftKey)
-      navigate(`/incidents/${incident.id}`, { state: { created: true } })
+      // The report stands whatever happens to the files; the page says if any did not arrive.
+      const evidenceFailed = files.length ? await uploadEvidence(incident.id, files, actor) : 0
+      navigate(`/incidents/${incident.id}`, { state: { created: true, evidenceFailed } })
     } catch (e) {
       const code = e instanceof ApiError ? e.code : undefined
 
@@ -225,6 +222,7 @@ export function ReportIncidentPage() {
       if (shouldRetry(code)) {
         enqueue(user?.id ?? 'anonymous', input, clientRef.current)
         localStorage.removeItem(draftKey)
+        setQueuedWithFiles(files.length)
         setQueued(true)
         setSubmitting(false)
         return
@@ -261,6 +259,12 @@ export function ReportIncidentPage() {
           submitted automatically as soon as you are back online. You do not need to fill it
           in again.
         </p>
+        {queuedWithFiles > 0 && (
+          <Alert tone="warning" className="mt-3">
+            The {queuedWithFiles === 1 ? 'photo or file' : `${queuedWithFiles} photos or files`} could not be kept
+            on this device. Once the report has gone, open it and add them under Evidence.
+          </Alert>
+        )}
         <p className="mt-3 rounded-lg border bg-sunken px-3 py-2.5 text-xs text-ink-2">
           It is safe to close the app. Keep the phone signed in — the report is held for this
           account and sends on its own next time SafeOps is open with a connection.
@@ -602,27 +606,33 @@ export function ReportIncidentPage() {
             </label>
 
             <div>
-              <p className="mb-2 text-xs font-semibold text-ink-2">Photos, videos & documents</p>
+              <p className="mb-2 text-xs font-semibold text-ink-2">Photos & documents</p>
               <button
                 onClick={() => fileRef.current?.click()}
                 className="flex w-full flex-col items-center gap-1.5 rounded-xl border border-dashed px-4 py-6 text-center transition-colors hover:bg-accent-soft/40"
               >
                 <CloudUpload size={20} className="text-accent" />
-                <span className="text-sm font-medium text-ink">Click to add evidence</span>
-                <span className="text-2xs text-muted">Images · video · PDF · Word · Excel · inspection reports</span>
+                <span className="text-sm font-medium text-ink">Add photos or documents</span>
+                <span className="text-2xs text-muted">{EVIDENCE_HINT}</span>
               </button>
-              <input ref={fileRef} type="file" multiple className="hidden" onChange={(e) => addFiles(e.target.files)} />
-              {draft.attachments.length > 0 && (
+              <input ref={fileRef} type="file" accept={EVIDENCE_ACCEPT} multiple className="hidden"
+                onChange={(e) => { addFiles(e.target.files); e.target.value = '' }} />
+              {refused.length > 0 && (
+                <Alert tone="warning" className="mt-2" onDismiss={() => setRefused([])}>
+                  {refused.join(' ')}
+                </Alert>
+              )}
+              {files.length > 0 && (
                 <ul className="mt-2 space-y-1.5">
-                  {draft.attachments.map((a, i) => (
-                    <li key={`${a.name}-${i}`} className="flex items-center gap-2.5 rounded-lg border px-3 py-2">
-                      {a.kind === 'image' ? <ImageIcon size={14} className="text-accent" /> : a.kind === 'video' ? <Film size={14} className="text-accent" /> : <FileText size={14} className="text-accent" />}
-                      <span className="min-w-0 flex-1 truncate text-xs font-medium text-ink">{a.name}</span>
-                      <span className="text-2xs text-muted">{a.sizeKb.toLocaleString()} KB</span>
+                  {files.map((f, i) => (
+                    <li key={`${f.name}-${i}`} className="flex items-center gap-2.5 rounded-lg border px-3 py-2">
+                      {f.type === 'application/pdf' ? <FileText size={14} className="text-accent" /> : <ImageIcon size={14} className="text-accent" />}
+                      <span className="min-w-0 flex-1 truncate text-xs font-medium text-ink">{f.name}</span>
+                      <span className="text-2xs text-muted">{Math.max(1, Math.round(f.size / 1024)).toLocaleString()} KB</span>
                       <button
-                        aria-label={`Remove ${a.name}`}
-                        onClick={() => patch({ attachments: draft.attachments.filter((_, x) => x !== i) })}
-                        className="rounded p-1 text-muted hover:text-critical"
+                        aria-label={`Remove ${f.name}`}
+                        onClick={() => setFiles(files.filter((_, x) => x !== i))}
+                        className="rounded p-1 text-muted hover:text-critical coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center"
                       >
                         <Trash2 size={13} />
                       </button>
@@ -653,7 +663,7 @@ export function ReportIncidentPage() {
                 <ReviewRow label="GPS" value={draft.gps || '—'} />
                 <ReviewRow label="People involved" value={draft.peopleInvolved.map((p) => `${p.name} (${p.role})`).join(', ') || 'None'} />
                 <ReviewRow label="Witnesses" value={draft.witnesses || 'None'} />
-                <ReviewRow label="Evidence" value={`${draft.attachments.length} file(s)`} />
+                <ReviewRow label="Evidence" value={files.length ? `${files.length} file(s), sent with the report` : 'None'} />
                 <ReviewRow label="Weather" value={draft.weather || '—'} />
                 <ReviewRow label="Shift" value={draft.shift || '—'} />
                 <ReviewRow label="Emergency response" value={draft.emergencyResponseActivated ? 'Activated' : 'Not activated'} />

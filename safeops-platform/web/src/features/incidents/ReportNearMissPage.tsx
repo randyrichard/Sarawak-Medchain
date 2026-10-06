@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Camera, Check, MapPin, ShieldAlert, Zap } from 'lucide-react'
+import { Camera, Check, CloudOff, MapPin, ShieldAlert, Zap } from 'lucide-react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import type { NewIncidentInput } from '@/api/incidents'
 import { useOrg } from '@/features/org/OrgContext'
+import { useAuth } from '@/features/auth/AuthContext'
+import { enqueue, shouldRetry } from './outbox'
 import { useActor, SITE_COORDS } from './lib'
+import { EVIDENCE_ACCEPT, screenEvidence, uploadEvidence } from './evidence'
 import { Alert, Button, Card, LinkButton } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { useUnsavedChangesWarning } from '@/lib/useUnsavedChangesWarning'
@@ -48,7 +51,13 @@ export function ReportNearMissPage() {
   const [what, setWhat] = useState('')
   const [where, setWhere] = useState('')
   const [tags, setTags] = useState<string[]>([])
-  const [photos, setPhotos] = useState<string[]>([])
+  // The photos themselves - see ./evidence.ts for why the names alone were not enough.
+  const [photos, setPhotos] = useState<File[]>([])
+  const [refused, setRefused] = useState<string[]>([])
+  const [photosFailed, setPhotosFailed] = useState(0)
+  // Saved for sending with no signal: how many photos could not be kept with it, or null.
+  const [queued, setQueued] = useState<number | null>(null)
+  const { user } = useAuth()
   const [siteId, setSiteId] = useState(site?.id ?? '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -86,8 +95,9 @@ export function ReportNearMissPage() {
     if (!company || !valid) return
     setBusy(true)
     setError(null)
+    let input: NewIncidentInput | null = null
     try {
-      const input: NewIncidentInput = {
+      input = {
         title,
         type: 'near_miss',
         // A near miss caused no harm; potential severity is set during triage, not by
@@ -104,11 +114,12 @@ export function ReportNearMissPage() {
         witnesses: [],
         immediateActions: '',
         description: [what.trim(), tags.length ? `\n\nCategory: ${tags.join(', ')}` : ''].join(''),
-        attachments: photos.map((name) => ({ name, kind: 'image' as const, sizeKb: 820 })),
+        attachments: [],
         signature: actor.name,
         clientRef: clientRef.current,
       }
       const created = await api.createIncident(input, actor)
+      setPhotosFailed(photos.length ? await uploadEvidence(created.id, photos, actor) : 0)
       try {
         const n = reportedCount + 1
         localStorage.setItem('safeops.nearMiss.count', String(n))
@@ -116,10 +127,46 @@ export function ReportNearMissPage() {
       } catch { /* cosmetic only */ }
       setDone({ number: created.number, id: created.id })
     } catch (e) {
+      /*
+       * No signal, rather than the server saying no: kept and sent later, as the full
+       * incident form does. A near miss is the report most often made on a phone out on
+       * site, and "try again" asks someone to remember to come back and retype it.
+       */
+      if (input && shouldRetry(e instanceof ApiError ? e.code : undefined)) {
+        enqueue(user?.id ?? 'anonymous', input, clientRef.current)
+        setQueued(photos.length)
+        return
+      }
       setError(e instanceof ApiError ? e.message : 'Could not submit. Your text is still here — try again.')
     } finally {
       setBusy(false)
     }
+  }
+
+  if (queued !== null) {
+    return (
+      <div className="mx-auto max-w-lg py-6">
+        <Card className="p-6 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-soft text-accent">
+            <CloudOff size={26} aria-hidden />
+          </div>
+          <h1 className="mt-4 text-lg font-semibold tracking-tight text-ink">Saved on this phone</h1>
+          <p className="mt-1.5 text-sm leading-relaxed text-ink-2">
+            There is no connection right now. Your report is kept here and sent on its own as soon as
+            SafeOps is open with a signal. Keep the phone signed in.
+          </p>
+          {queued > 0 && (
+            <Alert tone="warning" className="mt-3 text-left">
+              {queued === 1 ? 'The photo' : `The ${queued} photos`} could not be kept with it. Once it has gone,
+              open the report and add {queued === 1 ? 'it' : 'them'} under Evidence.
+            </Alert>
+          )}
+          <Button className="mt-5" onClick={() => { clientRef.current = crypto.randomUUID(); setQueued(null); setWhat(''); setWhere(''); setTags([]); setPhotos([]) }}>
+            Report another
+          </Button>
+        </Card>
+      </div>
+    )
   }
 
   if (done) {
@@ -135,6 +182,12 @@ export function ReportNearMissPage() {
             Logged as <span className="font-mono font-semibold text-accent">{done.number}</span>. An HSE
             officer reviews every near miss and raises a corrective action where it is needed.
           </p>
+          {photosFailed > 0 && (
+            <Alert tone="warning" className="mt-3 text-left">
+              {photosFailed === 1 ? 'The photo' : `${photosFailed} photos`} did not upload. Open the report and
+              add {photosFailed === 1 ? 'it' : 'them'} under Evidence.
+            </Alert>
+          )}
           <p className="mt-3 text-sm font-semibold text-ink">
             {reportedCount === 1
               ? 'That is your first near miss report.'
@@ -256,16 +309,26 @@ export function ReportNearMissPage() {
           <p className="text-xs font-semibold text-ink-2">Photo <span className="font-normal text-muted">(optional)</span></p>
           <label className="mt-1.5 flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed py-3 text-sm text-ink-2 hover:bg-accent-soft/40">
             <Camera size={16} />
-            {photos.length > 0 ? `${photos.length} photo(s) attached` : 'Take or attach a photo'}
+            {photos.length > 0 ? `${photos.length} photo(s) to send` : 'Take or attach a photo'}
+            {/*
+              No `capture` attribute: it opens the camera directly on Android, so a photo already taken
+              could not be chosen - though this says "or attach". Without it, the phone
+              offers the camera and the gallery.
+            */}
             <input
               type="file"
-              accept="image/*"
-              capture="environment"
+              accept={EVIDENCE_ACCEPT}
               multiple
               className="hidden"
-              onChange={(e) => setPhotos([...photos, ...Array.from(e.target.files ?? []).map((f) => f.name)])}
+              onChange={(e) => {
+                const { ok, refused: no } = screenEvidence(Array.from(e.target.files ?? []))
+                setPhotos([...photos, ...ok])
+                setRefused(no)
+                e.target.value = ''
+              }}
             />
           </label>
+          {refused.length > 0 && <Alert tone="warning" className="mt-2" onDismiss={() => setRefused([])}>{refused.join(' ')}</Alert>}
         </div>
       </Card>
 

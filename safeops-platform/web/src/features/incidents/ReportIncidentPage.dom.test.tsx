@@ -14,8 +14,14 @@ import { ApiError } from '@/api/types'
  * resend carries the same key, so the server recognises it.
  */
 const createIncident = vi.fn()
+const addIncidentAttachment = vi.fn()
 const enqueue = vi.fn()
-vi.mock('@/api/client', () => ({ api: { createIncident: (...a: unknown[]) => createIncident(...a) } }))
+vi.mock('@/api/client', () => ({
+  api: {
+    createIncident: (...a: unknown[]) => createIncident(...a),
+    addIncidentAttachment: (...a: unknown[]) => addIncidentAttachment(...a),
+  },
+}))
 vi.mock('./outbox', async (orig) => ({ ...(await orig<object>()), enqueue: (...a: unknown[]) => enqueue(...a) }))
 vi.mock('@/features/auth/AuthContext', () => ({ useAuth: () => ({ user: { id: 'u1', name: 'Melissa Bong' } }) }))
 vi.mock('@/features/org/OrgContext', () => ({
@@ -26,9 +32,9 @@ vi.mock('@/app/pageTitle', () => ({ usePageTitle: () => {} }))
 
 const { ReportIncidentPage } = await import('./ReportIncidentPage')
 
-afterEach(() => { cleanup(); createIncident.mockReset(); enqueue.mockReset(); localStorage.clear() })
+afterEach(() => { cleanup(); createIncident.mockReset(); addIncidentAttachment.mockReset(); enqueue.mockReset(); localStorage.clear() })
 
-async function fillAndSubmit() {
+async function fillAndSubmit(files: File[] = []) {
   render(<MemoryRouter><ReportIncidentPage /></MemoryRouter>)
   fireEvent.click(document.querySelector('[aria-labelledby="incident-type-label"] button')!)
   const severity = screen.getByLabelText(/Severity/) as HTMLSelectElement
@@ -41,6 +47,7 @@ async function fillAndSubmit() {
   fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
   fireEvent.change(await screen.findByLabelText(/What happened\?/), { target: { value: 'Slipped on oily water near the drain.' } })
   fireEvent.change(screen.getByLabelText(/Immediate actions taken/), { target: { value: 'Area cordoned and cleaned.' } })
+  if (files.length) fireEvent.change(document.querySelector('input[type=file]')!, { target: { files } })
   fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
   fireEvent.change(await screen.findByLabelText(/Type your full name to sign/), { target: { value: 'Melissa Bong' } })
   fireEvent.click(screen.getByLabelText(/I confirm this report is accurate/))
@@ -64,5 +71,26 @@ describe('ReportIncidentPage submission', () => {
     expect(sentKey).toBeTruthy()
     expect(queuedKey).toBe(sentKey)
     expect(queuedInput.clientRef).toBe(sentKey)
+  })
+
+  it('uploads the photos to the new incident, rather than only listing their names', async () => {
+    // Both report forms listed the files and confirmed them, and never sent them.
+    createIncident.mockResolvedValue({ id: 'inc-1' })
+    addIncidentAttachment.mockResolvedValue({})
+    const photo = new File([new Uint8Array(2048)], 'scene.jpg', { type: 'image/jpeg' })
+    await fillAndSubmit([photo])
+    await waitFor(() => expect(addIncidentAttachment).toHaveBeenCalledTimes(1))
+    const [incidentId, meta, , file] = addIncidentAttachment.mock.calls[0]
+    expect(incidentId).toBe('inc-1')
+    expect(file).toBe(photo)
+    expect(meta).toMatchObject({ name: 'scene.jpg', kind: 'image', sizeKb: 2 })
+  })
+
+  it('refuses up front, in words, a file the server would reject', async () => {
+    createIncident.mockResolvedValue({ id: 'inc-1' })
+    const video = new File([new Uint8Array(10)], 'clip.mp4', { type: 'video/mp4' })
+    await fillAndSubmit([video])
+    await waitFor(() => expect(createIncident).toHaveBeenCalledTimes(1))
+    expect(addIncidentAttachment).not.toHaveBeenCalled()
   })
 })

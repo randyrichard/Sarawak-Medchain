@@ -62,6 +62,7 @@ export function IncidentDetailPage() {
   const [archiveOpen, setArchiveOpen] = useState(false)
   const [summaryOpen, setSummaryOpen] = useState(false)
   const justCreated = (location.state as { created?: boolean } | null)?.created
+  const evidenceFailed = (location.state as { evidenceFailed?: number } | null)?.evidenceFailed ?? 0
 
   // Names the tab after the incident once it has loaded; until then the shell's route-derived
   // "Incidents" stands, which is the right thing to show while the record is still in flight.
@@ -187,6 +188,12 @@ export function IncidentDetailPage() {
       {justCreated && (
         <Alert tone="success" title={`${incident.number} submitted`} className="mb-4">
           The site manager has been notified for initial assessment. You'll get updates as the case progresses.
+        </Alert>
+      )}
+      {justCreated && evidenceFailed > 0 && (
+        <Alert tone="warning" title={`${evidenceFailed} file(s) did not upload`} className="mb-4">
+          The report is filed, but {evidenceFailed === 1 ? 'one photo or file' : `${evidenceFailed} photos or files`} did not reach
+          the server. Add {evidenceFailed === 1 ? 'it' : 'them'} again under the Evidence tab.
         </Alert>
       )}
 
