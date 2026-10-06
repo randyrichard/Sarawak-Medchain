@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Camera, Check, MapPin, ShieldAlert, Zap } from 'lucide-react'
 import { api } from '@/api/client'
@@ -78,6 +78,10 @@ export function ReportNearMissPage() {
     return base.length <= 90 ? base : `${base.slice(0, 87)}…`
   }, [what])
 
+  // One key per near miss, kept across retries: pressing Submit again after a reply was lost
+  // must not file it twice (see ReportIncidentPage). A new one after "Report another".
+  const clientRef = useRef(crypto.randomUUID())
+
   const submit = async () => {
     if (!company || !valid) return
     setBusy(true)
@@ -102,6 +106,7 @@ export function ReportNearMissPage() {
         description: [what.trim(), tags.length ? `\n\nCategory: ${tags.join(', ')}` : ''].join(''),
         attachments: photos.map((name) => ({ name, kind: 'image' as const, sizeKb: 820 })),
         signature: actor.name,
+        clientRef: clientRef.current,
       }
       const created = await api.createIncident(input, actor)
       try {
@@ -141,7 +146,7 @@ export function ReportNearMissPage() {
           </p>
 
           <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-center">
-            <Button onClick={() => { setDone(null); setWhat(''); setWhere(''); setTags([]); setPhotos([]) }}>
+            <Button onClick={() => { clientRef.current = crypto.randomUUID(); setDone(null); setWhat(''); setWhere(''); setTags([]); setPhotos([]) }}>
               Report another
             </Button>
             <LinkButton variant="secondary" to="/">Back to home</LinkButton>

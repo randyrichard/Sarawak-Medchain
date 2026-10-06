@@ -109,6 +109,14 @@ export function ReportIncidentPage() {
   // Pristine forms never autosave — otherwise a reload would overwrite a real
   // stored draft with an empty one before the user can click "Resume".
   const dirty = useRef(false)
+  /*
+   * The report's idempotency key, made once per report and sent on the first attempt as well
+   * as every retry. It used to be made only when the first attempt failed, so a report the
+   * server had already saved - but whose reply never arrived (signal lost, or the page left
+   * mid-send) - was queued under a new key and filed a second time. One injury, two records.
+   * With the key on the first attempt, the server recognises any resend as the same report.
+   */
+  const clientRef = useRef(crypto.randomUUID())
 
   // Restore banner
   useEffect(() => {
@@ -193,6 +201,7 @@ export function ReportIncidentPage() {
       description: draft.description,
       attachments: draft.attachments,
       signature: draft.signature,
+      clientRef: clientRef.current,
     }
     try {
       const incident = await api.createIncident(input, actor)
@@ -214,8 +223,7 @@ export function ReportIncidentPage() {
        * unique index on (companyId, clientRef).
        */
       if (shouldRetry(code)) {
-        const clientRef = crypto.randomUUID()
-        enqueue(user?.id ?? 'anonymous', { ...input, clientRef }, clientRef)
+        enqueue(user?.id ?? 'anonymous', input, clientRef.current)
         localStorage.removeItem(draftKey)
         setQueued(true)
         setSubmitting(false)
