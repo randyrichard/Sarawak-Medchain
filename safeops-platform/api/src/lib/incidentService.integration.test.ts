@@ -146,6 +146,38 @@ d('IncidentService — integration (real Postgres)', () => {
       .rejects.toMatchObject({ status: 403 })
   })
 
+  it('will not close an investigation that has nothing in it', async () => {
+    // Found by driving the lifecycle in a browser: every stage moved with nothing filled in,
+    // so an incident went Reported → Closed with no root cause and no corrective action.
+    const inc = await svc.create(officer, newIncident('Empty investigation'))
+    await svc.advance(manager, inc.id, { to: 'assessment', riskRating: 'Medium', potentialSeverity: 'Minor' })
+    await expect(svc.advance(manager, inc.id, { to: 'investigation' })).rejects.toThrow(/investigator/)
+    await svc.advance(manager, inc.id, { to: 'investigation', investigator: 'Amirul Hassan' })
+    await expect(svc.advance(manager, inc.id, { to: 'rca', findings: 'short' })).rejects.toThrow(/20 characters/)
+    await svc.advance(manager, inc.id, { to: 'rca', findings: 'Coupling split under pressure; never inspected.' })
+    await expect(svc.advance(manager, inc.id, { to: 'actions' })).rejects.toThrow(/contributing cause/)
+    await svc.saveRca(manager, inc.id, {
+      causes: [{ id: 'c1', category: 'Equipment', description: 'Couplings not inspected' }],
+      fiveWhys: { problem: 'Slip on oil', whys: ['Coupling split'], rootStatement: 'Couplings are outside the inspection programme.' },
+    })
+    await svc.advance(manager, inc.id, { to: 'actions' })
+    await expect(svc.advance(manager, inc.id, { to: 'review' })).rejects.toThrow(/at least one corrective action/)
+
+    const action = await svc.addAction(manager, inc.id, {
+      title: 'Add couplings to the checklist', owner: employee.name, dueDate: new Date(Date.now() + 86400000).toISOString(),
+    })
+    await expect(svc.advance(manager, inc.id, { to: 'review' })).rejects.toThrow(/not completed/)
+    await svc.updateAction(employee, action.id, { status: 'completed', evidenceNote: 'Checklist rev 4 issued.' })
+    await svc.advance(manager, inc.id, { to: 'review' })
+    await expect(svc.advance(manager, inc.id, { to: 'verification' })).rejects.toThrow(/review note/)
+    await svc.advance(manager, inc.id, { to: 'verification', note: 'Root cause and action agreed.' })
+    await expect(svc.advance(manager, inc.id, { to: 'closed', note: 'Done.' })).rejects.toThrow(/still need verifying/)
+    await svc.updateAction(manager, action.id, { status: 'verified' })
+    await expect(svc.advance(manager, inc.id, { to: 'closed' })).rejects.toThrow(/closing note/)
+    const closed = await svc.advance(manager, inc.id, { to: 'closed', note: 'Verified on site.' })
+    expect(closed.stage).toBe('closed')
+  })
+
   it('requires evidence before an action can be completed, and a manager to verify it', async () => {
     const inc = await svc.create(officer, newIncident('CAPA rules'))
     const action = await svc.addAction(manager, inc.id, {

@@ -5,6 +5,7 @@ import {
   INCIDENT_SEVERITIES, INCIDENT_TYPES, LOST_TIME_SEVERITIES, SEVERITY_RANK,
 } from './incidentCatalog.js'
 import { DomainError } from '../domain/errors.js'
+import { stageGateProblem } from '../domain/incidentStageGate.js'
 import { recentLocalMonths } from '../domain/businessDay.js'
 import { membershipOf, type Caller } from '../domain/caller.js'
 import { resolveOwnerId } from './actionOwner.js'
@@ -535,6 +536,18 @@ export class IncidentService {
         409,
       )
     }
+
+    // What the stage needs before it may be entered (domain/incidentStageGate.ts).
+    const actions = await this.db.correctiveAction.findMany({ where: { incidentId: id }, select: { status: true } })
+    const problem = stageGateProblem(payload.to, {
+      investigator: payload.investigator ?? current.investigator,
+      findings: payload.findings ?? current.findings,
+      note: payload.note ?? null,
+      causes: Array.isArray(current.rcaCauses) ? current.rcaCauses : [],
+      rootStatement: (current.rcaFiveWhys as { rootStatement?: string } | null)?.rootStatement ?? null,
+      actions,
+    })
+    if (problem) throw new IncidentError('validation', problem)
 
     await this.db.$transaction(async (tx) => {
       const updated = await tx.incident.update({
