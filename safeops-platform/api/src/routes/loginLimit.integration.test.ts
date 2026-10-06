@@ -106,8 +106,11 @@ d('sign-in throttle — integration (real Postgres, real HTTP)', () => {
 
   it('does not count its own refusals, so a lock does not feed itself', async () => {
     for (let i = 0; i < 60; i++) await signIn(`${PREFIX}-nobody-r${i}@example.test`, 'guess')
-    const row = await db.rateLimit.findFirst({ where: { key: { startsWith: 'login:' } } })
-    expect(row?.hits).toBe(40) // 40 failures; the 20 refused requests left no mark
+    // A refusal is counted, then taken back when its response finishes - after the client
+    // already has the reply. Under load the last take-back can land a moment after the loop
+    // ends, so wait for the counter to settle rather than reading it once.
+    await expect.poll(async () => (await db.rateLimit.findFirst({ where: { key: { startsWith: 'login:' } } }))?.hits, { timeout: 5000 })
+      .toBe(40) // 40 failures; the 20 refused requests left no mark
   }, 120_000)
 
   it('does not let successful sign-ins wash out the failures in between', async () => {
