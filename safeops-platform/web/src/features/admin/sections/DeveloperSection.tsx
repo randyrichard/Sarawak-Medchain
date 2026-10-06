@@ -7,9 +7,10 @@ import { ApiError } from '@/api/types'
 import type { ApiKey, RbacAction, Webhook } from '@/api/admin'
 import { RBAC_ACTIONS, WEBHOOK_EVENTS } from '@/api/admin'
 import {
-  Alert, Badge, Button, Card, CardBody, CardHeader, Checkbox, Dialog, Input, Skeleton, StatusPill,
+  Alert, Badge, Button, Card, CardBody, CardHeader, Checkbox, Dialog, ErrorState, Input, Skeleton, StatusPill,
   Switch, Tabs, type TabItem,
 } from '@/components/ui'
+import { useAsync } from '@/lib/useAsync'
 import { timeAgo } from '@/lib/time'
 import { useAdminActor } from '../lib'
 import { cn } from '@/lib/cn'
@@ -222,7 +223,7 @@ function WebhooksPanel() {
       {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
       {!integrations && <PlanGate thing="Webhooks" planLabel={planLabel} />}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-ink-2">Push real-time events to your endpoints over HTTPS.</p>
+        <p className="text-sm text-ink-2">Send events to your endpoints over HTTPS, usually within 30 seconds of them happening.</p>
         <Button
           size="sm"
           icon={<Plus size={13} />}
@@ -290,10 +291,14 @@ function NewWebhookDialog({ open, onClose, onCreated }: { open: boolean; onClose
 function UsagePanel() {
   const { company } = useOrg()
   const companyId = company?.id ?? ''
-  const [usage, setUsage] = useState<Awaited<ReturnType<typeof api.adminApiUsage>> | null>(null)
-  useEffect(() => { api.adminApiUsage(companyId).then(setUsage) }, [])
+  // Per company, and never stuck on a skeleton: it used to load once, for whichever company
+  // was selected first, and had no error branch.
+  const loaded = useAsync(() => api.adminApiUsage(companyId), [companyId], { enabled: Boolean(companyId) })
+  const usage = loaded.data
+  if (!usage && loaded.status === 'error') return <ErrorState title="Couldn't load API usage" error={loaded.error} onRetry={loaded.reload} />
   if (!usage) return <Card className="p-5"><Skeleton className="h-56 w-full" /></Card>
-  const max = Math.max(...usage.series.map((p) => p.calls))
+  // At least 1: an empty series made this -Infinity and a quiet week made the bars divide by zero.
+  const max = Math.max(1, ...usage.series.map((p) => p.calls))
   return (
     <div className="grid gap-4 xl:grid-cols-3">
       <Card className="px-5 py-4"><p className="text-2xs font-semibold text-ink-2">Calls today</p><p className="mt-0.5 text-2xl font-semibold text-ink" style={{ fontVariantNumeric: 'tabular-nums' }}>{usage.totalToday.toLocaleString()}</p></Card>
@@ -361,7 +366,7 @@ function DocsPanel() {
           curl {apiBase()}/v1/incidents \<br />&nbsp;&nbsp;-H "Authorization: Bearer sk_live_…"
         </div>
         {ENDPOINTS.map((e) => (
-          <div key={e.path} className="flex items-center gap-3 rounded-lg border px-3.5 py-2">
+          <div key={`${e.method} ${e.path}`} className="flex items-center gap-3 rounded-lg border px-3.5 py-2">
             <Badge tone={e.method === 'GET' ? 'good' : e.method === 'POST' ? 'accent' : 'warning'}>{e.method}</Badge>
             <code className="font-mono text-xs text-ink">{e.path}</code>
             <span className="ml-auto text-2xs text-muted">{e.desc}</span>

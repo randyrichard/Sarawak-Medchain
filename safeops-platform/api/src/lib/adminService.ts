@@ -36,6 +36,19 @@ export interface AdminContext {
   device?: string
 }
 
+/**
+ * How much a month of failed sign-ins should worry an administrator. A few are typos; many,
+ * or an account locked out, are worth reviewing.
+ */
+export function failedSignInSeverity(failures: number, lockedAccounts: number): 'critical' | 'serious' | 'warning' {
+  if (lockedAccounts > 0 || failures >= 50) return 'critical'
+  if (failures >= 10) return 'serious'
+  return 'warning'
+}
+
+/** Sign-in outcomes worth a second look in the login history: an account that should not be in use. */
+const SUSPICIOUS_OUTCOMES = new Set(['locked_out', 'deactivated', 'workspace_suspended'])
+
 export class AdminService {
   constructor(private db: PrismaClient) {}
 
@@ -570,8 +583,12 @@ export class AdminService {
       ip: a.ip ?? '',
       device: a.userAgent ?? '',
       result: a.outcome === 'success' ? 'success' : 'failed',
-      // Anything that is not a clean success is worth a second look.
-      suspicious: a.outcome !== 'success',
+      /*
+       * Worth a second look: somebody trying an account that is locked or deactivated. Not
+       * every failure. Calling each mistyped password "suspicious" marked most rows red and
+       * taught administrators to ignore the colour.
+       */
+      suspicious: SUSPICIOUS_OUTCOMES.has(a.outcome),
       outcome: a.outcome,
     }
   }
@@ -1217,12 +1234,20 @@ export class AdminService {
         metric: `${pendingResets} account(s)`,
       })
     }
+    /*
+     * Rated by what the numbers suggest, not by their existence. One mistyped password used to
+     * raise a *critical* finding advising to block the source. A few failures a month are
+     * normal; many, or an account locked out, deserve attention.
+     */
     if (suspiciousLogins > 0) {
+      const severity = failedSignInSeverity(suspiciousLogins, lockedAccounts)
       findings.push({
         id: 'f-susp',
-        severity: 'critical',
+        severity,
         title: 'Failed sign-in attempts',
-        detail: 'Unsuccessful sign-ins recorded in the last 30 days. Review the login history and consider blocking the source.',
+        detail: severity === 'warning'
+          ? 'A few unsuccessful sign-ins in the last 30 days, usually mistyped passwords. Check the login history if one account or one address repeats.'
+          : 'Many unsuccessful sign-ins in the last 30 days, or an account locked out. Review the login history for an account or address that repeats.',
         metric: `${suspiciousLogins} attempt(s)`,
       })
     }

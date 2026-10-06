@@ -312,13 +312,15 @@ d('AdminService — integration (real Postgres)', () => {
       data: [
         { userId: staffId, email: 'adm-s1@itest.local', outcome: 'success', ip: '203.0.113.9' },
         { userId: staffId, email: 'adm-s1@itest.local', outcome: 'bad_password', ip: '198.51.100.4' },
+        { userId: staffId, email: 'adm-s1@itest.local', outcome: 'locked_out', ip: '198.51.100.4' },
       ],
     })
     const history = await svc.userLoginHistory(admin, COMPANY, staffId)
     expect(history.length).toBeGreaterThanOrEqual(2)
     expect(history.some((h) => h.result === 'success')).toBe(true)
-    // Anything that is not a clean success is flagged for review.
-    expect(history.find((h) => h.outcome === 'bad_password')?.suspicious).toBe(true)
+    // A mistyped password is a failure, not "suspicious"; trying a locked account is.
+    expect(history.find((h) => h.outcome === 'bad_password')?.suspicious).toBe(false)
+    expect(history.find((h) => h.outcome === 'locked_out')?.suspicious).toBe(true)
   })
 
   // ── RBAC ───────────────────────────────────────────────────────────────────

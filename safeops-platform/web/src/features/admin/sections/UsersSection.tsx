@@ -8,7 +8,7 @@ import type { AdminUser, LoginEvent, RoleDef, UserDevice } from '@/api/admin'
 import { useOrg } from '@/features/org/OrgContext'
 import {
   Alert, Avatar, Badge, Button, Card, Dialog, Dropdown, DropdownItem, DropdownSeparator, EmptyState,
-  Input, Select, Skeleton, StatusPill, Switch,
+  ErrorState, Input, Select, Skeleton, StatusPill, Switch,
 } from '@/components/ui'
 import { timeAgo } from '@/lib/time'
 import { fmtDateTime } from '@/features/incidents/lib'
@@ -43,7 +43,13 @@ export function UsersSection() {
     return () => clearTimeout(t)
   }, [refresh, q])
 
-  useEffect(() => { api.adminListRoles(companyId).then(setRoles) }, [])
+  // Per company: the roles list used to load once, so after switching company the role names
+  // (and the roles offered when inviting) were the first company's.
+  useEffect(() => {
+    let live = true
+    api.adminListRoles(companyId).then((r) => { if (live) setRoles(r) }).catch(() => { if (live) setRoles([]) })
+    return () => { live = false }
+  }, [companyId])
 
   const roleName = useMemo(() => new Map(roles.map((r) => [r.id, r.name])), [roles])
 
@@ -279,18 +285,26 @@ function UserDetailDrawer({ userId, roleName, onClose }: { userId: string | null
   const [devices, setDevices] = useState<UserDevice[]>([])
   const [logins, setLogins] = useState<LoginEvent[]>([])
 
+  const [loadError, setLoadError] = useState<unknown>(null)
+  const [attempt, setAttempt] = useState(0)
+
   useEffect(() => {
     if (!userId) return
-    setUser(null)
-    api.adminGetUser(companyId, userId).then(setUser)
-    api.adminUserDevices(companyId, userId).then(setDevices)
-    api.adminUserLoginHistory(companyId, userId).then(setLogins)
-  }, [userId])
+    let live = true
+    setUser(null); setLoadError(null)
+    // The user is what the drawer is about, so its failure is shown with a retry; devices and
+    // sign-in history are secondary and simply stay empty if they fail.
+    api.adminGetUser(companyId, userId).then((u) => { if (live) setUser(u) }).catch((e) => { if (live) setLoadError(e) })
+    api.adminUserDevices(companyId, userId).then((d) => { if (live) setDevices(d) }).catch(() => {})
+    api.adminUserLoginHistory(companyId, userId).then((l) => { if (live) setLogins(l) }).catch(() => {})
+    return () => { live = false }
+  }, [companyId, userId, attempt])
 
   if (!userId) return null
   return (
     <Dialog open onClose={onClose} title={user?.name ?? 'User'} description={user?.email} width="max-w-lg">
-      {!user ? <Skeleton className="h-40 w-full" /> : (
+      {!user && loadError ? <ErrorState title="Couldn't load this user" error={loadError} onRetry={() => setAttempt((n) => n + 1)} />
+        : !user ? <Skeleton className="h-40 w-full" /> : (
         <div className="max-h-[62vh] space-y-4 overflow-y-auto">
           <div className="flex items-center gap-3">
             <Avatar name={user.name} size={44} />
@@ -325,7 +339,7 @@ function UserDetailDrawer({ userId, roleName, onClose }: { userId: string | null
               {logins.slice(0, 6).map((e) => (
                 <li key={e.id} className="flex items-center gap-2 text-xs">
                   <StatusPill kind={e.result === 'success' ? 'good' : 'critical'} label={e.result === 'success' ? 'Success' : 'Failed'} />
-                  <span className="text-ink-2">{e.device} · {e.location}</span>
+                  <span className="text-ink-2">{e.device}{e.ip ? ` · ${e.ip}` : ''}</span>
                   <span className="ml-auto text-2xs text-muted">{timeAgo(e.at)}</span>
                 </li>
               ))}

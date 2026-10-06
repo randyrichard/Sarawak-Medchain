@@ -56,6 +56,7 @@ interface ServerLogin {
   device: string
   result: string
   suspicious: boolean
+  outcome?: string
 }
 
 function toUser(u: ServerUser): AdminUser {
@@ -86,8 +87,8 @@ function toLogin(l: ServerLogin): LoginEvent {
     device: l.device,
     // The server records the real outcome; the console shows success or failure.
     result: l.result === 'success' ? 'success' : 'failed',
-    location: '',
     suspicious: l.suspicious,
+    outcome: l.outcome,
   }
 }
 

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
-import { AlertOctagon, AlertTriangle, CheckCircle2, MapPin, Save } from 'lucide-react'
+import { AlertOctagon, AlertTriangle, CheckCircle2, Save } from 'lucide-react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import type { LoginEvent, SecurityCenter, SecuritySettings } from '@/api/admin'
 import { useOrg } from '@/features/org/OrgContext'
 import {
-  Alert, Badge, Button, Card, CardBody, CardHeader, Input, Skeleton, StatusPill, Switch, Tabs, type TabItem, AttentionIcon, attentionOf, attentionStripe,
+  Alert, Badge, Button, Card, CardBody, CardHeader, ErrorState, Input, Skeleton, StatusPill, Switch, Tabs, type TabItem, AttentionIcon, attentionOf, attentionStripe,
 } from '@/components/ui'
+import { useAsync } from '@/lib/useAsync'
 import { timeAgo } from '@/lib/time'
 import { downloadCsv, useAdminActor } from '../lib'
 import { useUrlState } from '@/lib/useUrlState'
@@ -36,9 +37,12 @@ const SEV_COLOR = { critical: 'var(--critical)', serious: 'var(--serious)', warn
 
 function CenterPanel() {
   const { company } = useOrg()
-  const [sc, setSc] = useState<SecurityCenter | null>(null)
-  useEffect(() => { if (company) api.adminSecurityCenter(company.id).then(setSc) }, [company])
+  const companyId = company?.id ?? ''
+  // useAsync, not a bare effect: a failed load used to leave the skeleton on screen for good.
+  const center = useAsync<SecurityCenter>(() => api.adminSecurityCenter(companyId), [companyId], { enabled: Boolean(companyId) })
+  const sc = center.data
 
+  if (!sc && center.status === 'error') return <ErrorState title="Couldn't load the Security Center" error={center.error} onRetry={center.reload} />
   if (!sc) return <div className="grid gap-3 md:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
 
   const tiles = [
@@ -48,7 +52,9 @@ function CenterPanel() {
     // What it does know is which accounts an administrator has flagged for reset.
     { label: 'Pending resets', value: sc.weakPasswords, tone: sc.weakPasswords > 0 ? 'var(--warning)' : 'var(--good)', note: 'must change at next sign-in' },
     { label: 'Inactive accounts', value: sc.inactiveUsers, tone: sc.inactiveUsers > 0 ? 'var(--warning)' : 'var(--good)', note: '60+ days idle' },
-    { label: 'Suspicious logins', value: sc.suspiciousLogins, tone: sc.suspiciousLogins > 0 ? 'var(--critical)' : 'var(--good)', note: 'last 7 days' },
+    // Counted over 30 days by the server; this said 7. A few failures are normal (typos), so
+    // the colour follows the volume rather than turning red at the first one.
+    { label: 'Failed sign-ins', value: sc.suspiciousLogins, tone: sc.suspiciousLogins === 0 ? 'var(--good)' : sc.suspiciousLogins >= 10 ? 'var(--critical)' : 'var(--warning)', note: 'last 30 days' },
   ]
 
   return (
@@ -94,7 +100,13 @@ function PolicyPanel() {
   const [flash, setFlash] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => { api.adminGetSecurity(companyId).then(setS) }, [])
+  /*
+   * Loaded per company. It used to load once with no dependencies, so switching company
+   * kept showing - and on Save, wrote - the previous company's policy under the new one.
+   */
+  const loaded = useAsync<SecuritySettings>(() => api.adminGetSecurity(companyId), [companyId], { enabled: Boolean(companyId) })
+  useEffect(() => { setS(loaded.data ?? null) }, [loaded.data])
+  if (!s && loaded.status === 'error') return <ErrorState title="Couldn't load the security policy" error={loaded.error} onRetry={loaded.reload} />
   if (!s) return <Card className="p-5"><Skeleton className="h-64 w-full" /></Card>
   const set = (p: Partial<SecuritySettings>) => setS({ ...s, ...p })
 
@@ -145,18 +157,27 @@ function PolicyPanel() {
   )
 }
 
+/** Why an attempt is worth a look, in words. Matches SUSPICIOUS_OUTCOMES in adminService.ts. */
+const OUTCOME_LABEL: Record<string, string> = {
+  locked_out: 'Tried a locked account',
+  deactivated: 'Tried a deactivated account',
+  workspace_suspended: 'Workspace suspended',
+}
+
 function LoginsPanel() {
   const { company } = useOrg()
   const companyId = company?.id ?? ''
-  const [events, setEvents] = useState<LoginEvent[] | null>(null)
-  useEffect(() => { api.adminLoginHistory(companyId).then(setEvents) }, [])
+  const history = useAsync<LoginEvent[]>(() => api.adminLoginHistory(companyId), [companyId], { enabled: Boolean(companyId) })
+  const events = history.data ?? null
 
   const exportCsv = () => downloadCsv(
-    ['Time', 'User', 'Email', 'Result', 'IP', 'Device', 'Location', 'Suspicious'],
-    (events ?? []).map((e) => [e.at, e.userName, e.email, e.result, e.ip, e.device, e.location, e.suspicious ? 'YES' : '']),
+    // No location column: SafeOps does not look up where an address is, so it was always empty.
+    ['Time', 'User', 'Email', 'Result', 'IP', 'Device', 'Needs a look'],
+    (events ?? []).map((e) => [e.at, e.userName, e.email, e.result, e.ip, e.device, e.suspicious ? 'YES' : '']),
     'safeops-login-history.csv',
   )
 
+  if (events === null && history.status === 'error') return <ErrorState title="Couldn't load the login history" error={history.error} onRetry={history.reload} />
   if (events === null) return <Card className="p-5"><Skeleton className="h-64 w-full" /></Card>
   return (
     <Card>
@@ -168,7 +189,7 @@ function LoginsPanel() {
               <th className="px-5 py-2.5 font-semibold">User</th>
               <th className="px-3 py-2.5 font-semibold">Result</th>
               <th className="px-3 py-2.5 font-semibold">IP / Device</th>
-              <th className="px-3 py-2.5 font-semibold">Location</th>
+              <th className="px-3 py-2.5 font-semibold">Needs a look</th>
               <th className="px-5 py-2.5 text-right font-semibold">When</th>
             </tr>
           </thead>
@@ -179,8 +200,7 @@ function LoginsPanel() {
                 <td className="px-3 py-3"><StatusPill kind={e.result === 'success' ? 'good' : 'critical'} label={e.result === 'success' ? 'Success' : 'Failed'} /></td>
                 <td className="px-3 py-3 text-xs text-ink-2"><span className="font-mono">{e.ip}</span><span className="block text-2xs text-muted">{e.device}</span></td>
                 <td className="px-3 py-3 text-xs text-ink-2">
-                  <span className="inline-flex items-center gap-1">{e.suspicious && <MapPin size={11} className="text-critical" />}{e.location}</span>
-                  {e.suspicious && <Badge tone="critical" className="ml-1.5">Unusual</Badge>}
+                  {e.suspicious && <Badge tone="critical">{OUTCOME_LABEL[e.outcome ?? ''] ?? 'Unusual'}</Badge>}
                 </td>
                 <td className="px-5 py-3 text-right text-2xs text-muted">{timeAgo(e.at)}</td>
               </tr>

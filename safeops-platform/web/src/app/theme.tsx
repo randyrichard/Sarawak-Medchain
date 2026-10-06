@@ -10,7 +10,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
-    localStorage.setItem('safeops.theme', theme)
+    // Remembering the choice is a convenience. Storage can be blocked (a locked-down or
+    // private browser), and that must not take the app down with it.
+    try { localStorage.setItem('safeops.theme', theme) } catch { /* not remembered */ }
   }, [theme])
 
   const toggle = useCallback(() => setTheme((t) => (t === 'dark' ? 'light' : 'dark')), [])
