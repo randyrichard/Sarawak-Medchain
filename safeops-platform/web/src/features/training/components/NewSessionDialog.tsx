@@ -29,8 +29,10 @@ export function NewSessionDialog({ open, onClose, onCreated }: { open: boolean; 
 
   useEffect(() => {
     if (!open || !company) return
-    void api.listCourses(company.id).then((c) => { setCourses(c); if (!courseId && c.length) setCourseId(c[0].id) })
-    void api.listEmployees(company.id).then(setEmployees)
+    // Said, not swallowed: an empty participant list must not be mistaken for an empty site.
+    const failed = () => setError('Could not load courses or people. Close this and try again.')
+    void api.listCourses(company.id).then((c) => { setCourses(c); if (!courseId && c.length) setCourseId(c[0].id) }).catch(failed)
+    void api.listEmployees(company.id).then(setEmployees).catch(failed)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, company])
 

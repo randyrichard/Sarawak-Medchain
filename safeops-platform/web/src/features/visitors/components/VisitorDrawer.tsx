@@ -41,6 +41,14 @@ export function VisitorDrawer({
   const [passOpen, setPassOpen] = useState(false)
   const [note, setNote] = useState('')
 
+  // Escape closes it, as every other drawer does - unless a dialog on top of it is open.
+  useEffect(() => {
+    if (!visitorId) return
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !checkInOpen && !decisionOpen && !passOpen && onClose()
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [visitorId, checkInOpen, decisionOpen, passOpen, onClose])
+
   const load = useCallback(() => {
     if (!visitorId) return
     Promise.all([
@@ -83,6 +91,7 @@ export function VisitorDrawer({
   return createPortal(
     <div className="fixed inset-0 z-40 flex justify-end bg-black/40" onClick={onClose}>
       <aside
+        role="dialog" aria-modal="true" aria-label={v ? `Visitor ${v.name}` : 'Visitor'}
         className="h-full w-full max-w-xl overflow-y-auto bg-surface shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
