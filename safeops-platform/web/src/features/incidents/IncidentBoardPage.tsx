@@ -26,6 +26,7 @@ import {
   type BoardFilters, type SortKey,
 } from './boardFilters'
 import { cn } from '@/lib/cn'
+import { useSiteLabel } from '@/features/org/useSiteLabel'
 
 /**
  * The incident board.
@@ -42,6 +43,7 @@ import { cn } from '@/lib/cn'
 const PAGE_SIZE = 25
 
 export function IncidentBoardPage() {
+  const siteLabel = useSiteLabel()
   usePageTitle('Incident board')
   const { company, sites } = useOrg()
   const [params, setParams] = useSearchParams()
@@ -342,7 +344,7 @@ export function IncidentBoardPage() {
                   <p className="mt-0.5 text-2xs text-muted">
                     {TYPE_LABEL[i.type] ?? i.type}
                     {' · '}{fmtDateTime(i.occurredAt)}
-                    {i.siteId && <> · {i.siteId.toUpperCase()}</>}
+                    {i.siteId && <> · {siteLabel(i.siteId, 'short')}</>}
                     {i.department && <> · {i.department}</>}
                     {i.location && <> · {i.location}</>}
                   </p>

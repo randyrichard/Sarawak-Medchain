@@ -59,12 +59,13 @@ export function dueLabel(item: CapaItem): string {
   return `due in ${item.daysToDue}d`
 }
 
-export function exportCsv(items: CapaItem[], filename: string) {
+/** `siteName` turns a site id into its name; a server's ids are database keys, not codes. */
+export function exportCsv(items: CapaItem[], filename: string, siteName: (id: string) => string = (id) => id.toUpperCase()) {
   const header = ['Code', 'Title', 'Status', 'Priority', 'Owner', 'Reviewer', 'Site', 'Department', 'Due date', 'Progress %', 'Incident', 'Root cause', 'Overdue']
   // Title and root cause are free text written by whoever raised the action, which includes
   // every employee — so this file needs the same formula guard as the rest.
   const rows = items.map((i) =>
-    [i.code, i.title, i.derived, i.priority, i.owner, i.reviewer, i.siteId.toUpperCase(), i.department, i.dueDate, i.progress, i.incidentNumber ?? '', i.rootCause ?? '', i.overdue ? 'YES' : ''],
+    [i.code, i.title, i.derived, i.priority, i.owner, i.reviewer, siteName(i.siteId), i.department, i.dueDate, i.progress, i.incidentNumber ?? '', i.rootCause ?? '', i.overdue ? 'YES' : ''],
   )
   const blob = new Blob([csvDocument(header, rows)], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)

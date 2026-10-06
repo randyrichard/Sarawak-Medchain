@@ -314,6 +314,31 @@ d('IncidentService — integration (real Postgres)', () => {
     expect(onlyInspection.total).toBeLessThan(all.total)
   })
 
+  it('names the incident each action came from, so the register can link to it', async () => {
+    const inc = await svc.create(officer, newIncident('Register link target'))
+    const a = await svc.addAction(manager, inc.id, {
+      title: 'Linked back', owner: employee.name,
+      dueDate: new Date(Date.now() + 86400000).toISOString(),
+    })
+    const s = await svc.createStandaloneAction(manager, {
+      companyId: COMPANY, siteId: SITE, title: 'No parent', owner: employee.name,
+      dueDate: new Date(Date.now() + 86400000).toISOString(), source: 'manual',
+    })
+    const { rows } = await svc.listActions(manager, COMPANY, { page: 1, pageSize: 500 })
+    const linked = rows.find((r) => r.id === a.id)!
+    expect(linked.incidentNumber).toBe(inc.number)
+    expect(linked.incidentTitle).toBe('Register link target')
+    expect(linked.department).toBe(inc.department)
+    const alone = rows.find((r) => r.id === s.id)!
+    expect(alone.incidentNumber).toBeNull()
+    expect(alone.incidentTitle).toBeNull()
+
+    // Opened on its own - a link from a notification - it says the same.
+    const one = await svc.getAction(manager, a.id)
+    expect(one.incidentNumber).toBe(inc.number)
+    expect(one.incidentTitle).toBe('Register link target')
+  })
+
   it('updating a standalone action does not attempt an incident audit event', async () => {
     const a = await svc.createStandaloneAction(manager, {
       companyId: COMPANY, siteId: SITE, title: 'Standalone update', owner: employee.name,

@@ -19,6 +19,7 @@ import { MaintenancePanel } from './MaintenancePanel'
 import { AssetTimeline } from './AssetTimeline'
 import { cn } from '@/lib/cn'
 import { PeopleOptions } from '@/features/org/PeopleOptions'
+import { useSiteLabel } from '@/features/org/useSiteLabel'
 
 interface Profile {
   asset: AssetView
@@ -35,6 +36,7 @@ export function AssetDrawer({
   onRun: (inspection: InspectionView) => void
   onChanged: () => void
 }) {
+  const siteLabel = useSiteLabel()
   const actor = useActor()
   const people = usePeople()
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -138,7 +140,7 @@ export function AssetDrawer({
                   {asset.overdue && <Badge tone="critical">Inspection {Math.abs(asset.daysToDue)}d overdue</Badge>}
                 </div>
               </div>
-              <button onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-muted hover:bg-accent-soft hover:text-ink">
+              <button onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft hover:text-ink">
                 <X size={16} />
               </button>
             </div>
@@ -217,7 +219,7 @@ export function AssetDrawer({
 
               {/* Profile */}
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                <Meta label="Site · Dept" value={`${asset.siteId.toUpperCase()} · ${asset.department}`} />
+                <Meta label="Site · Dept" value={[siteLabel(asset.siteId), asset.department].filter(Boolean).join(' · ')} />
                 <Meta label="Location" value={asset.location} />
                 <Meta label="Owner"><span className="flex items-center gap-1.5"><Avatar name={asset.owner} size={16} />{asset.owner}</span></Meta>
                 <Meta label="Manufacturer" value={`${asset.manufacturer} ${asset.model}`} />

@@ -4,6 +4,7 @@ import type { EmployeeCompetency, TrainingMatrix } from '@/api/training'
 import { Avatar, Button, Card, EmptyState, Skeleton } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { COMPETENCY_META, exportMatrixCsv, LEVEL_META } from '../lib'
+import { useSiteLabel } from '@/features/org/useSiteLabel'
 
 type GroupBy = 'none' | 'site' | 'department'
 
@@ -15,6 +16,7 @@ export function CompetencyMatrix({
 }) {
   const [group, setGroup] = useState<GroupBy>('site')
   const [gapsOnly, setGapsOnly] = useState(false)
+  const siteLabel = useSiteLabel()
 
   const groups = useMemo(() => {
     if (!matrix) return []
@@ -22,11 +24,11 @@ export function CompetencyMatrix({
       ? matrix.employees.filter((e) => e.gapCount > 0 || e.expiringCount > 0)
       : matrix.employees
     if (group === 'none') return [{ label: null as string | null, rows: employees }]
-    const key = (e: EmployeeCompetency) => (group === 'site' ? e.siteId.toUpperCase() : e.department)
+    const key = (e: EmployeeCompetency) => (group === 'site' ? siteLabel(e.siteId, 'short') : e.department)
     const map = new Map<string, EmployeeCompetency[]>()
     employees.forEach((e) => map.set(key(e), [...(map.get(key(e)) ?? []), e]))
     return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([label, rows]) => ({ label, rows }))
-  }, [matrix, group, gapsOnly])
+  }, [matrix, group, gapsOnly, siteLabel])
 
   if (matrix === null) {
     return <Card className="p-5"><Skeleton className="h-96 w-full" /></Card>
@@ -38,7 +40,7 @@ export function CompetencyMatrix({
     <>
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <span className="text-2xs font-semibold uppercase tracking-wider text-muted">Group by</span>
-        <select value={group} onChange={(e) => setGroup(e.target.value as GroupBy)} className="h-8 rounded-lg border bg-surface px-2 text-xs text-ink-2 outline-none">
+        <select value={group} onChange={(e) => setGroup(e.target.value as GroupBy)} aria-label="Group by" className="h-8 coarse:h-11 rounded-lg border bg-surface px-2 text-xs text-ink-2 outline-none">
           <option value="none">None</option>
           <option value="site">Site</option>
           <option value="department">Department</option>
@@ -69,7 +71,7 @@ export function CompetencyMatrix({
         {matrix.employees.length === 0 ? (
           <EmptyState icon={Users} title="No employees in scope">Your role scopes the matrix — an employee sees only their own row.</EmptyState>
         ) : (
-          <div className="relative overflow-x-auto">
+          <div className="relative overflow-x-auto" tabIndex={0} role="region" aria-label="Competency matrix">
             <table className="w-full border-collapse text-left">
               <thead>
                 <tr className="border-b">
@@ -129,8 +131,8 @@ function MatrixGroup({
           </td>
           <td className="px-2 py-2.5 text-center">
             <span
-              className="inline-block h-6 rounded-full px-2 text-2xs font-bold leading-6 text-white"
-              style={{ background: LEVEL_META[e.level].color }}
+              className="inline-block h-6 rounded-full border-2 px-2 text-2xs font-bold leading-5 text-ink"
+              style={{ borderColor: LEVEL_META[e.level].color }}
               title={`${e.compliancePct}% of required competencies current`}
             >
               {e.compliancePct}%

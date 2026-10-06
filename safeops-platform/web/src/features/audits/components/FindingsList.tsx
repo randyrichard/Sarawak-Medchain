@@ -5,6 +5,7 @@ import type { AuditFindingView, FindingSeverity } from '@/api/audits'
 import { Avatar, Card, EmptyState, Skeleton, StatusPill } from '@/components/ui'
 import { FINDING_STATUS_META, SEVERITY_META } from '../lib'
 import { cn } from '@/lib/cn'
+import { useSiteLabel } from '@/features/org/useSiteLabel'
 
 type Filter = 'all' | FindingSeverity | 'open'
 
@@ -15,6 +16,7 @@ export function FindingsList({
   q: string
   onOpenAudit: (auditId: string) => void
 }) {
+  const siteLabel = useSiteLabel()
   const [filter, setFilter] = useState<Filter>('open')
 
   const rows = useMemo(() => {
@@ -34,7 +36,7 @@ export function FindingsList({
       <div className="mb-3 flex flex-wrap gap-1.5">
         {(['open', 'all', 'Critical', 'Major', 'Minor', 'Observation'] as Filter[]).map((f) => (
           <button key={f} onClick={() => setFilter(f)}
-            className={cn('rounded-full border px-3 py-1 text-xs font-medium capitalize transition-colors', filter === f ? 'bg-accent-soft text-ink' : 'text-ink-2 hover:text-ink')}
+            className={cn('rounded-full border px-3 py-1 text-xs font-medium capitalize transition-colors coarse:min-h-11 coarse:px-4', filter === f ? 'bg-accent-soft text-ink' : 'text-ink-2 hover:text-ink')}
             style={filter === f ? { borderColor: 'var(--accent)' } : undefined}>
             {f}
           </button>
@@ -53,10 +55,10 @@ export function FindingsList({
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-mono text-2xs text-muted">{f.code}</span>
                     <StatusPill kind={SEVERITY_META[f.severity].kind} label={f.severity} />
-                    <button onClick={() => onOpenAudit(f.auditId)} className="text-2xs font-semibold text-accent hover:underline">
+                    <button onClick={() => onOpenAudit(f.auditId)} className="text-2xs font-semibold text-accent hover:underline coarse:inline-flex coarse:min-h-11 coarse:items-center coarse:px-1">
                       {f.auditCode}
                     </button>
-                    <span className="text-2xs text-muted">{f.category} · {f.siteId.toUpperCase()}</span>
+                    <span className="text-2xs text-muted">{f.category} · {siteLabel(f.siteId, 'short')}</span>
                   </div>
                   <p className="mt-1 text-sm leading-relaxed text-ink">{f.description}</p>
                   <p className="mt-1 flex flex-wrap items-center gap-2 text-2xs text-muted">

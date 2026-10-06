@@ -8,6 +8,7 @@ import {
   Alert, Avatar, Badge, Button, Dialog, Input, Select, Skeleton, StatusPill,
 } from '@/components/ui'
 import { EXPIRY_KIND, fmtDate, gateBlockReason, relativeDays } from '../lib'
+import { useSiteLabel } from '@/features/org/useSiteLabel'
 
 /**
  * One contractor worker.
@@ -25,6 +26,7 @@ export function WorkerDrawer({
   onClose: () => void
   onChanged: (message?: string) => void
 }) {
+  const siteLabel = useSiteLabel()
   const [item, setItem] = useState<ContractorWorkerDetail | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -106,7 +108,7 @@ export function WorkerDrawer({
               </>
             )}
           </div>
-          <button onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-muted hover:bg-accent-soft">
+          <button onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft">
             <X size={16} />
           </button>
         </header>
@@ -142,7 +144,7 @@ export function WorkerDrawer({
                 <Row label="Worker no." value={<span className="font-mono">{item.workerNo}</span>} />
                 <Row label="IC / passport" value={item.icPassport} />
                 <Row label="Contractor" value={`${item.contractorName} (${item.contractorCode})`} />
-                <Row label="Site" value={item.siteId.toUpperCase()} />
+                <Row label="Site" value={siteLabel(item.siteId)} />
                 <Row label="Checked in" value={item.checkedInAt ? fmtDate(item.checkedInAt) : 'Not on site'} />
               </Section>
 

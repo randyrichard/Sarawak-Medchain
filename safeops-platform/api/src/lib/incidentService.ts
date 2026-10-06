@@ -162,6 +162,13 @@ function statusWhere(status: IncidentStatusFilter | undefined): Prisma.IncidentW
   }
 }
 
+/** An action with its parent incident flattened to the number, title and department. */
+function withIncidentRef<A extends { incident: { number: string; title: string; department: string } | null }>(
+  { incident, ...a }: A,
+): Omit<A, 'incident'> & { incidentNumber: string | null; incidentTitle: string | null; department: string } {
+  return { ...a, incidentNumber: incident?.number ?? null, incidentTitle: incident?.title ?? null, department: incident?.department ?? '' }
+}
+
 export class IncidentService {
   constructor(private db: PrismaClient) {}
 
@@ -321,7 +328,28 @@ export class IncidentService {
     if (!incident.anonymous) return incident
     const role = caller.roles.find((r) => r.companyId === incident.companyId)?.role
     if (role && REVIEW_ROLES.includes(role)) return incident
-    return { ...incident, reporter: 'Reported anonymously', reporterId: null }
+    const hidden = 'Reported anonymously'
+    const who = incident.reporter
+    const whoId = incident.reporterId
+    const out: T = { ...incident, reporter: hidden, reporterId: null }
+    /*
+     * The reporter's own entries in the activity log and the evidence list too. The header
+     * said "Reported anonymously" while the log beneath it said "Incident reported - <name>,
+     * employee", to everyone who could open the incident.
+     */
+    const parts = incident as T & {
+      events?: { actor: string; actorRole: string }[]
+      attachments?: { uploadedBy: string; uploadedById: string | null }[]
+    }
+    const target = out as typeof parts
+    if (parts.events) {
+      target.events = parts.events.map((e) => (e.actor === who ? { ...e, actor: hidden, actorRole: '' } : e))
+    }
+    if (parts.attachments) {
+      target.attachments = parts.attachments.map((a) =>
+        (whoId && a.uploadedById === whoId) || a.uploadedBy === who ? { ...a, uploadedBy: hidden, uploadedById: null } : a)
+    }
+    return out
   }
 
   /**
@@ -974,10 +1002,17 @@ export class IncidentService {
         orderBy: [{ dueDate: 'asc' }],
         skip: (opts.page - 1) * opts.pageSize,
         take: opts.pageSize,
+        include: { incident: { select: { number: true, title: true, department: true } } },
       }),
     ])
     return {
-      rows,
+      /*
+       * Which incident an action came from, by number and title, and that incident's
+       * department. Without them the register's link to the incident read "·" and its
+       * export had empty Incident and Department columns. Found on a phone, where the
+       * action drawer is how an owner reaches the incident.
+       */
+      rows: rows.map(withIncidentRef),
       total,
       page: opts.page,
       pageSize: opts.pageSize,
@@ -1118,10 +1153,13 @@ export class IncidentService {
   async getAction(caller: Caller, actionId: string) {
     const action = await this.db.correctiveAction.findUnique({
       where: { id: actionId },
-      include: { notes: { orderBy: { createdAt: 'asc' } } },
+      include: {
+        notes: { orderBy: { createdAt: 'asc' } },
+        incident: { select: { number: true, title: true, department: true } },
+      },
     })
     await this.assertActionVisible(caller, action)
-    return action!
+    return withIncidentRef(action!)
   }
 
   /**
