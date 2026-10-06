@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import { PageHeader } from '@/components/ui'
 import { cn } from '@/lib/cn'
+import { useOrg } from '@/features/org/OrgContext'
 import { OverviewSection } from './sections/OverviewSection'
 import { UsersSection } from './sections/UsersSection'
 import { RolesSection } from './sections/RolesSection'
@@ -41,6 +42,7 @@ const NAV: { id: Section; label: string; icon: typeof Activity; group: string }[
 
 export function AdminPage() {
   const [params, setParams] = useSearchParams()
+  const { company } = useOrg()
   /*
    * Read from the URL on every render, not once. It used to seed a `useState`, and each
    * change replaced the history entry, so Back left the admin console altogether instead of
@@ -95,8 +97,14 @@ export function AdminPage() {
           </div>
         </nav>
 
-        {/* Section content */}
-        <div className="min-w-0">
+        {/*
+          * Section content, rebuilt when the company changes. Most sections load their data
+          * once when they open, so after switching company they went on showing the previous
+          * company's roles, keys, backups and settings - and the security policy form saved
+          * the previous company's values into the new one. Keying on the company makes every
+          * section, including ones added later, start fresh for the company it now shows.
+          */}
+        <div className="min-w-0" key={company?.id ?? ''}>
           {section === 'overview' && <OverviewSection />}
           {section === 'users' && <UsersSection />}
           {section === 'invitations' && <InvitationsSection />}

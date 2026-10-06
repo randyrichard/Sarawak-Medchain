@@ -60,9 +60,11 @@ export interface LoginEvent {
   email: string
   ip: string
   device: string
-  location: string
   result: 'success' | 'failed' | 'mfa_challenge'
+  /** An attempt on an account that should not be in use (locked, deactivated, suspended). */
   suspicious?: boolean
+  /** The server's reason, e.g. `bad_password` or `locked_out`. */
+  outcome?: string
 }
 
 export interface UserDevice {

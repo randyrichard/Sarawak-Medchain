@@ -15,7 +15,7 @@ import { useOrg } from '@/features/org/OrgContext'
 import { useDepartments } from '@/features/org/departments'
 import { usePeople } from './lib'
 import {
-  Alert, Badge, Breadcrumbs, Button, Card, LinkButton, CardBody, Input, SuggestSelect, PageHeader, Select, Skeleton,
+  Alert, Badge, Breadcrumbs, Button, Card, LinkButton, CardBody, ErrorState, Input, SuggestSelect, PageHeader, Select, Skeleton,
   StatusPill,
 } from '@/components/ui'
 import { usePageTitle } from '@/app/pageTitle'
@@ -55,6 +55,8 @@ export function IncidentBoardPage() {
 
 
   const [board, setBoard] = useState<IncidentBoard | null>(null)
+  const [boardError, setBoardError] = useState<unknown>(null)
+  const [boardAttempt, setBoardAttempt] = useState(0)
   const [rows, setRows] = useState<Incident[] | null>(null)
   const [total, setTotal] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
@@ -98,10 +100,12 @@ export function IncidentBoardPage() {
 
   useEffect(() => {
     if (!company) return
+    setBoardError(null)
     investigationApi.board(company.id, filters.siteId || undefined)
       .then(setBoard)
-      .catch(() => setBoard(null))
-  }, [company, filters.siteId])
+      // Said, with a retry. It used to clear the board, leaving the tiles loading for good.
+      .catch((e) => { setBoard(null); setBoardError(e) })
+  }, [company, filters.siteId, boardAttempt])
 
   const activeCount = useMemo(() => activeFilterCount(filters), [filters])
 
@@ -146,6 +150,10 @@ export function IncidentBoardPage() {
       />
 
       {error && <Alert tone="critical" className="mb-3" onDismiss={() => setError(null)}>{error}</Alert>}
+
+      {boardError != null && (
+        <ErrorState compact className="mb-3" title="Couldn't load the summary" error={boardError} onRetry={() => setBoardAttempt((n) => n + 1)} />
+      )}
 
       <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
         {tiles.map((t) => {

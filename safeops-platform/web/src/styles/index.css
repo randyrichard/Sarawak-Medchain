@@ -33,8 +33,12 @@
    * pairs with the smallest size in the app 467 times, so the most common piece of text in
    * SafeOps was both the palest and the smallest. Darkened by the least amount that
    * reaches 4.5:1, with hue and saturation untouched.
+   *
+   * Darkened once more (#716f69 → #6b6963) after the 2026-10 audit: 4.5:1 against white
+   * was not enough on tinted surfaces. A selected row (accent-soft) measured 4.21:1. This
+   * value passes on white, the page, and the accent, good and warning tints.
    */
-  --muted: #716f69;
+  --muted: #6b6963;
 
   /* lines */
   --line: rgba(11, 11, 11, 0.1);
@@ -74,7 +78,9 @@
    */
   --good: #0a810a;
   --good-soft: rgba(12, 163, 12, 0.12);
-  --warning: #946603;
+  /* Darkened from #946603 after the 2026-10 audit: as text on its own tint (warning-soft) it
+     measured 4.46:1. This passes 4.5:1 on white and on every tint. */
+  --warning: #8a5e02;
   --warning-soft: rgba(250, 178, 25, 0.16);
   --serious: #c24616;
   --serious-soft: rgba(236, 131, 90, 0.14);

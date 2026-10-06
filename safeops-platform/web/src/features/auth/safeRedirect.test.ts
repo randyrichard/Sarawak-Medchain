@@ -20,6 +20,11 @@ describe('safeInternalPath — open-redirect guard', () => {
     expect(safeInternalPath('//evil.com')).toBe('/')
     expect(safeInternalPath('/\\evil.com')).toBe('/')
     expect(safeInternalPath('/\\/evil.com')).toBe('/')
+    // A backslash anywhere, and encoded slashes where the host would start.
+    expect(safeInternalPath('/incidents/..\\..\\evil.com')).toBe('/')
+    expect(safeInternalPath('/%2F%2Fevil.com')).toBe('/')
+    expect(safeInternalPath('/%5Cevil.com')).toBe('/')
+    expect(safeInternalPath('/incidents?q=a%2Fb')).toBe('/incidents?q=a%2Fb') // encoded slash later is fine
   })
 
   it('rejects absolute URLs and scheme-based targets', () => {

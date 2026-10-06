@@ -9,7 +9,7 @@ import { CATEGORY_LABEL, FREQUENCY_LABEL } from '@/api/assets'
 import type { CapaItem } from '@/api/capa'
 import { useActor, fmtDate, fmtDateTime } from '@/features/incidents/lib'
 import { usePeople } from '@/features/incidents/lib'
-import { Avatar, Badge, Button, Dialog, Input, Select, Skeleton, StatusPill } from '@/components/ui'
+import { Avatar, Badge, Button, Dialog, ErrorState, Input, Select, Skeleton, StatusPill } from '@/components/ui'
 import { CATEGORY_ICON, healthColor, RISK_PILL } from '../lib'
 import { QrBlock } from './QrBlock'
 import { CalibrationPanel } from './CalibrationPanel'
@@ -44,7 +44,10 @@ export function AssetDrawer({
    * polling, which is worse for the same result.
    */
   const [revision, setRevision] = useState(0)
-  const [missing, setMissing] = useState(false)
+  // 'missing' only for a real 404. A failed request used to say the QR label may be stale,
+  // which sent people to replace a good label when the signal had dropped.
+  const [missing, setMissing] = useState<false | 'missing' | { error: unknown }>(false)
+  const [attempt, setAttempt] = useState(0)
   const changed = () => { setRevision((n) => n + 1); onChanged() }
   const [scheduleOpen, setScheduleOpen] = useState(false)
   const [date, setDate] = useState('')
@@ -62,8 +65,8 @@ export function AssetDrawer({
         setDate(p.asset.nextDueDate)
         setInspector(p.asset.owner)
       })
-      .catch(() => setMissing(true))
-  }, [assetId])
+      .catch((e) => setMissing(e instanceof ApiError && e.code === 'not_found' ? 'missing' : { error: e }))
+  }, [assetId, attempt])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !scheduleOpen && onClose()
@@ -98,9 +101,14 @@ export function AssetDrawer({
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 animate-fade-in bg-black/40" onClick={onClose} aria-hidden />
       <aside role="dialog" aria-label="Asset profile" className="absolute inset-y-0 right-0 flex w-full max-w-[540px] animate-scale-in flex-col border-l bg-surface shadow-modal">
-        {missing ? (
+        {missing === 'missing' ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
             <p className="text-sm text-muted">Asset not found — the QR label may be stale.</p>
+            <Button variant="secondary" onClick={onClose}>Close</Button>
+          </div>
+        ) : missing ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
+            <ErrorState title="Couldn't load this asset" error={missing.error} onRetry={() => setAttempt((n) => n + 1)} />
             <Button variant="secondary" onClick={onClose}>Close</Button>
           </div>
         ) : !asset ? (

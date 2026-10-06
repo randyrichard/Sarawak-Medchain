@@ -26,7 +26,6 @@ const minsAgo = (m: number) => new Date(Date.now() - m * 60000).toISOString()
 
 const IPS = ['203.82.14.6', '175.140.22.91', '60.51.108.44', '118.100.9.212', '202.75.44.7']
 const DEVICES = ['Chrome · Windows 11', 'Edge · Windows 11', 'Safari · macOS', 'Chrome · Android', 'Safari · iOS']
-const LOCS = ['Kuching, MY', 'Bintulu, MY', 'Miri, MY', 'Kuala Lumpur, MY', 'Singapore, SG']
 
 const pick = <T,>(arr: T[], i: number) => arr[i % arr.length]
 
@@ -114,14 +113,15 @@ function buildLoginHistory(users: AdminUser[]): LoginEvent[] {
   users.filter((u) => u.lastLoginAt).slice(0, 16).forEach((u, i) => {
     events.push({
       id: `le-${++n}`, at: u.lastLoginAt!, userId: u.id, userName: u.name, email: u.email,
-      ip: pick(IPS, i), device: pick(DEVICES, i), location: pick(LOCS, i),
+      ip: pick(IPS, i), device: pick(DEVICES, i),
       result: u.mfaEnabled ? 'success' : 'success',
     })
   })
-  // a couple of failed + suspicious attempts
-  events.push({ id: `le-${++n}`, at: hoursAgo(5), userId: 'u-hse', userName: 'Marcus Tan', email: 'hse@demo.safeops.app', ip: '45.146.26.18', device: 'Unknown · Linux', location: 'Amsterdam, NL', result: 'failed', suspicious: true })
-  events.push({ id: `le-${++n}`, at: hoursAgo(5.1), userId: 'u-hse', userName: 'Marcus Tan', email: 'hse@demo.safeops.app', ip: '45.146.26.18', device: 'Unknown · Linux', location: 'Amsterdam, NL', result: 'failed', suspicious: true })
-  events.push({ id: `le-${++n}`, at: daysAgo(1), userId: 'au-e15', userName: 'Siti Aminah', email: 'siti.aminah@borneo-ind.com.my', ip: pick(IPS, 2), device: 'Chrome · Android', location: 'Bintulu, MY', result: 'failed' })
+  // A few failed attempts (mistyped passwords), and one on a locked account, which is worth a look.
+  events.push({ id: `le-${++n}`, at: hoursAgo(5), userId: 'u-hse', userName: 'Marcus Tan', email: 'hse@demo.safeops.app', ip: '45.146.26.18', device: 'Unknown · Linux', result: 'failed' })
+  events.push({ id: `le-${++n}`, at: hoursAgo(5.1), userId: 'u-hse', userName: 'Marcus Tan', email: 'hse@demo.safeops.app', ip: '45.146.26.18', device: 'Unknown · Linux', result: 'failed' })
+  events.push({ id: `le-${++n}`, at: hoursAgo(4.9), userId: 'u-hse', userName: 'Marcus Tan', email: 'hse@demo.safeops.app', ip: '45.146.26.18', device: 'Unknown · Linux', result: 'failed', suspicious: true, outcome: 'locked_out' })
+  events.push({ id: `le-${++n}`, at: daysAgo(1), userId: 'au-e15', userName: 'Siti Aminah', email: 'siti.aminah@borneo-ind.com.my', ip: pick(IPS, 2), device: 'Chrome · Android', result: 'failed' })
   return events.sort((a, b) => b.at.localeCompare(a.at))
 }
 
@@ -162,7 +162,7 @@ function buildConnectors(): Connector[] {
       fields: [{ key: 'endpoint', label: 'API endpoint', placeholder: 'https://…' }, { key: 'token', label: 'API token', placeholder: '••••••••', secret: true }] },
     { id: 'rest', name: 'REST API', category: 'developer', status: 'connected', description: 'Programmatic access to every module via signed API keys.', capability: 'Full platform API',
       fields: [], config: {}, connectedAt: daysAgo(120), connectedBy: 'Randy Richard' },
-    { id: 'webhooks', name: 'Webhooks', category: 'developer', status: 'connected', description: 'Push real-time events to any HTTPS endpoint you control.', capability: 'Event streaming',
+    { id: 'webhooks', name: 'Webhooks', category: 'developer', status: 'connected', description: 'Send events to any HTTPS endpoint you control, usually within 30 seconds.', capability: 'Event streaming',
       fields: [], config: {}, connectedAt: daysAgo(120), connectedBy: 'Randy Richard' },
     { id: 'csv', name: 'CSV Import / Export', category: 'data', status: 'connected', description: 'Bulk import users and export any register to CSV.', capability: 'Bulk data', fields: [], connectedAt: daysAgo(200), connectedBy: 'Randy Richard' },
   ]
@@ -458,10 +458,9 @@ export class AdminStore {
 
   /** Called by the auth flow so login history is genuinely captured. */
   recordLogin(userId: string, userName: string, email: string, result: LoginEvent['result'], device: string) {
-    const suspicious = result === 'failed'
     this.s.loginHistory.unshift({
       id: `le-live-${this.s.nextId++}`, at: now(), userId, userName, email,
-      ip: IPS[0], device, location: 'Kuching, MY', result, suspicious,
+      ip: IPS[0], device, result,
     })
     const u = this.s.users.find((x) => x.id === userId || x.email.toLowerCase() === email.toLowerCase())
     if (u && result === 'success') { u.lastLoginAt = now(); u.failedLogins = 0 }

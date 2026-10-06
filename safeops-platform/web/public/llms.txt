@@ -22,9 +22,10 @@ information governed by Malaysia's Personal Data Protection Act 2010.
 - No public pricing, trial sign-up, or self-service registration.
 - No customer list, case studies, or testimonials. The product is pre-launch and has no
   completed customer deployments to describe.
-- No public API. The HTTP API is for the application's own front end and requires a session.
+- No open API. The application's own API requires a session, and the integration API (`/v1`)
+  requires an API key that a customer's administrator creates for their own workspace.
 
 ## Contact
 
-Enquiries go through the sign-in page's administrator contact route. There is no public
-sales address published here yet.
+There is no public contact address published here yet. People who use SafeOps should
+contact their own organisation's administrator.

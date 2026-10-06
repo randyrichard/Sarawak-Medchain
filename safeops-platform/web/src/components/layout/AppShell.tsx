@@ -15,6 +15,7 @@ import { OutboxBanner } from '@/features/incidents/components/OutboxBanner'
 import { CompanySwitcher } from './Switchers'
 import { KeyboardShortcuts } from './KeyboardShortcuts'
 import { Badge, FullPageSpinner } from '@/components/ui'
+import { isBackendConfigured } from '@/api/authApi'
 
 /**
  * Sidebar sections - Hick's law.
@@ -186,6 +187,17 @@ export default function AppShell() {
             without it the browser jumps the viewport and leaves focus in the sidebar. */}
         <main id="main" tabIndex={-1} className="min-w-0 flex-1 overflow-y-auto px-4 py-5 outline-none md:px-6 lg:px-7 print:overflow-visible print:p-0">
           <div className="mx-auto max-w-[1360px]">
+            {/*
+              The offline demo says what it is. Without an API it shows invented companies,
+              people and injuries that look real, and nothing typed is kept anywhere but this
+              browser. Somebody shown the demo should not mistake it for a customer's records,
+              or think a report they made in it was filed.
+            */}
+            {!isBackendConfigured() && (
+              <p role="note" className="mb-4 rounded-lg border border-accent/40 bg-accent-soft px-3.5 py-2 text-xs text-ink-2 print:hidden">
+                <strong className="font-semibold text-ink">Demo mode.</strong> Everything here is made-up sample data, and nothing you enter is sent to a server or saved for anyone else.
+              </p>
+            )}
             {/*
               Unsent incident reports, shown on every screen.
 

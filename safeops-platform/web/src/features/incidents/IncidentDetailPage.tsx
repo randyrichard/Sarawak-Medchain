@@ -8,9 +8,10 @@ import type { Incident } from '@/api/incidents'
 import { STAGE_LABEL, SEVERITY_LABEL, TYPE_LABEL } from '@/api/incidents'
 import { useOrg } from '@/features/org/OrgContext'
 import {
-  Alert, Avatar, Badge, Breadcrumbs, Button, Card, CardBody, CardHeader, Dialog, LinkButton,
+  Alert, Avatar, Badge, Breadcrumbs, Button, Card, CardBody, CardHeader, Dialog, ErrorState, LinkButton,
   Skeleton, StatusPill, Tabs, type TabItem,
 } from '@/components/ui'
+import { ApiError } from '@/api/types'
 import { usePageTitle } from '@/app/pageTitle'
 import { fmtDate, fmtDateTime, severityKind, STAGE_COLOR, TYPE_ICON, useActor } from './lib'
 import { StageStepper } from './components/StageStepper'
@@ -47,7 +48,15 @@ export function IncidentDetailPage() {
   const actor = useActor()
 
   const [incident, setIncident] = useState<Incident | null>(null)
-  const [missing, setMissing] = useState(false)
+  /*
+   * Why the incident could not be shown. Kept apart because each means something different
+   * to the person reading it: a record that is gone, one they may not see, and a request
+   * that failed. All three used to read "no longer available ... may have been archived",
+   * which was false for the last two. A worker on patchy site wifi was told their report was
+   * gone, and could report it again.
+   */
+  const [failure, setFailure] = useState<null | 'missing' | 'forbidden' | { error: unknown }>(null)
+  const [attempt, setAttempt] = useState(0)
   // In the URL, so a link to an incident's Actions tab opens on its Actions tab.
   const [tab, setTab] = useUrlState<Tab>('tab', 'overview', TABS)
   const [archiveOpen, setArchiveOpen] = useState(false)
@@ -61,13 +70,18 @@ export function IncidentDetailPage() {
   useEffect(() => {
     if (!id) return
     let cancelled = false
+    setFailure(null)
     api.getIncident(id)
       .then((i) => !cancelled && setIncident(i))
-      .catch(() => !cancelled && setMissing(true))
+      .catch((e) => {
+        if (cancelled) return
+        const code = e instanceof ApiError ? e.code : ''
+        setFailure(code === 'not_found' ? 'missing' : code === 'forbidden' ? 'forbidden' : { error: e })
+      })
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [id, attempt])
 
   /*
    * A record that is gone, not an error.
@@ -81,7 +95,34 @@ export function IncidentDetailPage() {
    * Says why it might have happened, and gives both exits. Deliberately not phrased as a
    * failure: nothing went wrong, the incident is simply not there any more.
    */
-  if (missing) {
+  if (failure === 'forbidden') {
+    return (
+      <div className="py-16 text-center">
+        <p className="text-sm font-medium text-ink">You don't have access to this incident.</p>
+        <p className="mx-auto mt-1.5 max-w-sm text-xs leading-relaxed text-muted">
+          Which incidents you can open depends on your role and sites. If you need this one, ask
+          your safety officer or administrator.
+        </p>
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+          <LinkButton to="/incidents" variant="secondary" size="sm">Back to incidents</LinkButton>
+          <LinkButton to="/" variant="ghost" size="sm">Go to dashboard</LinkButton>
+        </div>
+      </div>
+    )
+  }
+
+  if (failure && failure !== 'missing') {
+    return (
+      <ErrorState
+        className="py-16"
+        title="Couldn't load this incident"
+        error={failure.error}
+        onRetry={() => setAttempt((n) => n + 1)}
+      />
+    )
+  }
+
+  if (failure === 'missing') {
     return (
       <div className="py-16 text-center">
         <p className="text-sm font-medium text-ink">This incident is no longer available.</p>
