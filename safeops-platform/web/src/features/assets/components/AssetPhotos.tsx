@@ -236,7 +236,7 @@ export function AssetPhotos({
             <button
               aria-label="Close preview"
               onClick={closePreview}
-              className="absolute -top-9 right-0 rounded-lg p-1.5 text-white hover:bg-white/20"
+              className="absolute -top-9 right-0 rounded-lg p-1.5 coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center coarse:-top-12 text-white hover:bg-white/20"
             >
               <X size={16} />
             </button>

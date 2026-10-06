@@ -75,9 +75,9 @@ function CenterPanel() {
           {sc.findings.map((f) => {
             const Icon = SEV_ICON[f.severity]
             return (
-              <div key={f.id} className="flex items-start gap-3 rounded-lg border px-3.5 py-3" style={{ borderColor: SEV_COLOR[f.severity] }}>
+              <div key={f.id} className="flex flex-wrap items-start gap-3 rounded-lg border px-3.5 py-3" style={{ borderColor: SEV_COLOR[f.severity] }}>
                 <Icon size={17} className="mt-0.5 shrink-0" style={{ color: SEV_COLOR[f.severity] }} />
-                <div className="min-w-0 flex-1">
+                <div className="min-w-[10rem] flex-1">
                   <p className="text-sm font-semibold text-ink">{f.title}</p>
                   <p className="mt-0.5 text-xs leading-relaxed text-ink-2">{f.detail}</p>
                 </div>
@@ -182,7 +182,7 @@ function LoginsPanel() {
   return (
     <Card>
       <CardHeader title="Login history" subtitle="Every sign-in attempt across the tenant" right={<Button size="sm" variant="ghost" onClick={exportCsv}>Export</Button>} />
-      <div className="relative overflow-x-auto">
+      <div className="relative overflow-x-auto" tabIndex={0} role="region" aria-label="Login history">
         <table className="w-full min-w-[760px] text-left">
           <thead>
             <tr className="border-b text-2xs uppercase tracking-wide text-muted">

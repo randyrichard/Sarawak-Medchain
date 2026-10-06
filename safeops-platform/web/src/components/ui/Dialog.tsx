@@ -175,7 +175,7 @@ export function Dialog({
             <h2 id={titleId} className="text-base font-semibold tracking-tight text-ink">{title}</h2>
             {description && <p id={descriptionId} className="mt-0.5 text-xs text-muted">{description}</p>}
           </div>
-          <button type="button" onClick={onClose} aria-label="Close dialog" className="shrink-0 rounded-lg p-1 text-muted hover:bg-accent-soft hover:text-ink">
+          <button type="button" onClick={onClose} aria-label="Close dialog" className="shrink-0 rounded-lg p-1 coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft hover:text-ink">
             <X size={16} aria-hidden />
           </button>
         </div>

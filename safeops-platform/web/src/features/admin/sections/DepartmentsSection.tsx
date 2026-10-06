@@ -138,7 +138,7 @@ export function DepartmentsSection() {
             <select
               value={siteFilter}
               onChange={(e) => setSiteFilter(e.target.value)}
-              className="h-8 rounded-lg border border-line bg-surface px-2 text-xs text-ink"
+              className="h-8 min-w-0 flex-1 coarse:h-11 rounded-lg border border-line bg-surface px-2 text-xs text-ink sm:flex-none"
             >
               <option value="">All sites</option>
               {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}

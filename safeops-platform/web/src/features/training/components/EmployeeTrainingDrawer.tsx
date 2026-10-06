@@ -81,7 +81,7 @@ export function EmployeeTrainingDrawer({
                   </div>
                 </div>
               </div>
-              <button onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-muted hover:bg-accent-soft hover:text-ink"><X size={16} /></button>
+              <button onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft hover:text-ink"><X size={16} /></button>
             </div>
 
             <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">

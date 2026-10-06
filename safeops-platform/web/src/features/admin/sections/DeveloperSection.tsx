@@ -103,7 +103,7 @@ function KeysPanel() {
       </div>
       <Card>
         {keys === null ? <div className="space-y-3 p-5">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div> : (
-          <div className="relative overflow-x-auto">
+          <div className="relative overflow-x-auto" tabIndex={0} role="region" aria-label="API keys">
             <table className="w-full min-w-[720px] text-left">
               <thead>
                 <tr className="border-b text-2xs uppercase tracking-wide text-muted">
@@ -279,7 +279,7 @@ function NewWebhookDialog({ open, onClose, onCreated }: { open: boolean; onClose
         <Input label="Endpoint URL (HTTPS)" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://example.com/hooks/safeops" />
         <div>
           <p className="mb-1.5 text-xs font-semibold text-ink-2">Events</p>
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
             {WEBHOOK_EVENTS.map((e) => <Checkbox key={e} label={e} checked={events.includes(e)} onChange={() => toggle(e)} />)}
           </div>
         </div>
@@ -362,7 +362,7 @@ function DocsPanel() {
     <Card>
       <CardHeader title="REST API reference" subtitle={`Base URL ${apiBase()} · Bearer token auth · JSON`} />
       <CardBody className="space-y-1.5">
-        <div className="rounded-lg border bg-sunken p-3 font-mono text-2xs text-ink-2">
+        <div className="relative overflow-x-auto whitespace-nowrap rounded-lg border bg-sunken p-3 font-mono text-2xs text-ink-2" tabIndex={0} role="region" aria-label="Example request">
           curl {apiBase()}/v1/incidents \<br />&nbsp;&nbsp;-H "Authorization: Bearer sk_live_…"
         </div>
         {ENDPOINTS.map((e) => (

@@ -36,7 +36,7 @@ export function SessionsPanel({
       <div className="mb-3 flex flex-wrap items-center gap-1.5">
         {(['all', 'scheduled', 'completed'] as Filter[]).map((f) => (
           <button key={f} onClick={() => setFilter(f)}
-            className={cn('rounded-full border px-3 py-1 text-xs font-medium capitalize transition-colors', filter === f ? 'bg-accent-soft text-ink' : 'text-ink-2 hover:text-ink')}
+            className={cn('rounded-full border px-3 py-1 text-xs font-medium capitalize transition-colors coarse:min-h-11 coarse:px-4', filter === f ? 'bg-accent-soft text-ink' : 'text-ink-2 hover:text-ink')}
             style={filter === f ? { borderColor: 'var(--accent)' } : undefined}>
             {f}
           </button>
@@ -51,7 +51,8 @@ export function SessionsPanel({
           <ul className="divide-y">
             {rows.map((s) => (
               <li key={s.id} className={cn('flex flex-wrap items-center gap-3 px-5 py-3.5', s.overdue && 'bg-critical-soft/40')}>
-                <div className="min-w-0 flex-1">
+                {/* The whole first line on a phone, so the trainer and date wrap beneath it. */}
+                <div className="min-w-0 flex-1 basis-full sm:basis-0">
                   <p className="text-sm font-semibold leading-snug text-ink">{s.courseName}</p>
                   <p className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-2xs text-muted">
                     <span className="font-mono">{s.code}</span>

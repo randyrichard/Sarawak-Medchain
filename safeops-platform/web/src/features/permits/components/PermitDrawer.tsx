@@ -112,9 +112,9 @@ export function PermitDrawer({
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <button onClick={() => printPermit(permit)} aria-label="Print permit"
-              className="rounded-lg p-1.5 text-muted hover:bg-accent-soft hover:text-ink"><Printer size={16} /></button>
+              className="rounded-lg p-1.5 coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft hover:text-ink"><Printer size={16} /></button>
             <button onClick={onClose} aria-label="Close"
-              className="rounded-lg p-1.5 text-muted hover:bg-accent-soft hover:text-ink"><X size={16} /></button>
+              className="rounded-lg p-1.5 coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft hover:text-ink"><X size={16} /></button>
           </div>
         </div>
 

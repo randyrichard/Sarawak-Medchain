@@ -65,7 +65,7 @@ export function CertificatesPanel({
         </label>
         {(['all', 'expired', 'expiring', 'competent'] as Filter[]).map((f) => (
           <button key={f} onClick={() => setFilter(f)}
-            className={cn('rounded-full border px-3 py-1 text-xs font-medium capitalize transition-colors', filter === f ? 'bg-accent-soft text-ink' : 'text-ink-2 hover:text-ink')}
+            className={cn('rounded-full border px-3 py-1 text-xs font-medium capitalize transition-colors coarse:min-h-11 coarse:px-4', filter === f ? 'bg-accent-soft text-ink' : 'text-ink-2 hover:text-ink')}
             style={filter === f ? { borderColor: 'var(--accent)' } : undefined}>
             {f}
           </button>

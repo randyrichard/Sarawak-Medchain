@@ -16,7 +16,7 @@ export function StageStepper({ stage }: { stage: IncidentStage }) {
   const currentIdx = WORKFLOW.indexOf(stage)
   const closed = stage === 'closed'
   return (
-    <div className="relative overflow-x-auto pb-1">
+    <div className="relative overflow-x-auto pb-1" tabIndex={0} role="region" aria-label="Investigation stages">
       {stage === 'draft' && (
         <p className="mb-2 text-xs font-medium text-muted">{STAGE_LABEL.draft} - not yet submitted, so the workflow has not started.</p>
       )}

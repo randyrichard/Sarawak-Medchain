@@ -90,3 +90,63 @@ MOBILE_AUDIT_URL=http://localhost:5173 npm run audit:mobile   # exits 1 on any f
 
 It signs in five times, once per device. The API's login limiter allows only a few sign-ins
 per quarter hour, so wait between back-to-back runs, or use a scratch database.
+
+## Second pass, October 2026
+
+The first pass measured 22 pages as each one first loads. This pass measured what people
+actually do on a phone: every tab, the record drawers, every "New / Add / Register" dialog,
+and every role. It also checked colour contrast at phone width (the earlier crawl ran axe
+only on desktop), the size of every tap target, and pinned bars that block the view. Then it
+ran all 13 end-to-end workflows on a 320px iPhone SE (see `WORKFLOW_TEST.md`).
+
+**Coverage:** five roles (admin, HSE manager, safety officer, supervisor, employee) and the
+CEO view. Three phone sizes: 320px (iPhone SE), 360px (Galaxy S8) and 393px (iPhone 14 Pro).
+Light and dark mode. More than 1,300 screen states in all.
+
+**New checks in `npm run audit:mobile`** (`scripts/mobile-audit/targets.js`):
+
+- a control under 24px, the WCAG 2.5.8 floor, measured through its label where it has one;
+- a control with no name;
+- pinned bars taking more than 30% of the screen.
+
+The probe also now ignores content scrolled out of view under the top bar. Measuring a
+scrolled page had reported that content as overlapping the bar.
+
+### What was found, and fixed
+
+| # | Problem | Where | Fix |
+|---|---|---|---|
+| 1 | **Photos on both report forms were never uploaded.** The near-miss form said "1 photo(s) attached", and the incident form listed files with sizes and "Evidence: 2 file(s)". Only the file names went into the report, which the server ignores. A worker who photographed the scene was told the photos were on record. | Report incident, report near miss | The files are uploaded to the new incident (`features/incidents/evidence.ts`). They are screened first against the types and size the server accepts: photos and PDF, 10 MB each. Anything refused is named. If an upload fails, the incident page says so. A report saved offline says its photos could not be kept. Tests: `ReportIncidentPage.dom.test.tsx`, `evidence.test.ts`. Verified in a browser on a phone profile: the photo is in the database. |
+| 2 | **An anonymous report named its reporter in the activity log.** The header said "Reported anonymously", while the log beneath it said "Incident reported — <name>, employee", to everyone who could open it. | Incident page, Activity tab | Below HSE manager, the reporter's own events and uploads are masked too. Test: `incidentInvestigation.integration.test.ts`, which fails without the fix. |
+| 3 | **Inspection and audit "Photos" buttons threw the photos away** and recorded only a count, which the result then showed as "2 photo(s)". | Inspection runner, audit runner | The buttons are removed until the product can store those photos. See "Still open" below. |
+| 4 | **A corrective action's link to its incident read "·"**, and the actions export had empty Incident and Department columns. The register API never sent the incident's number, title or department. | Action drawer, actions CSV | `listActions` and `getAction` return them. Test: `incidentService.integration.test.ts`. |
+| 5 | **Screens printed site ids.** A site created in the product has an id like `site-a1b2c3d4e5f6`. The printed visitor pass, the asset, worker, employee and action drawers, the incident board, findings, the competency matrix and the actions CSV showed it, uppercased. | 9 places | `useSiteLabel()` gives the site's name. |
+| 6 | **Calendars were unreadable on a phone.** Seven columns of about 45px each showed every entry as a coloured dot and "(", and the colour key is hidden at that width. | Actions and inspection calendars | Below `sm`, an agenda lists each day's entries with code, title and status in words, each a 44px target (`MonthAgenda`). |
+| 7 | **Rows squeezed to one word per line**, with codes broken mid-way ("AST-/1137"), and text drawn over the trainer's name at 320px. | Inspections, training sessions, backups, security recommendations, every card header | The title gets the whole first line on a phone, and the rest wraps below it. |
+| 8 | **Colour contrast below 4.5:1.** Competency pills had white text on green or amber (1.8–3.4:1). Calendar days outside the month were faded (2.2:1). The file size on an amber row in dark mode was 3.5:1. | Training matrix, calendars, audit documents, toolbox | Pills use a coloured border with ink text, as `StatusPill` does. Out-of-month days use a sunken background with muted text. The amber row, and "present" on a toolbox site's green tile (4.2:1 in dark mode), use `ink-2`. |
+| 9 | **Tap targets under 24px**, and under 44px for controls used constantly. These included the invitation's site checkboxes (19px rows), the toggle switch (36×20), the dialog and drawer close buttons (24–28px), Privacy and Terms links (19px), finding codes (17px), table checkboxes (14px), filter chips (29px), and "Group by" and mention selects. | Throughout | Touch screens get 44px rows and buttons: one CSS rule for every checkbox or radio label, plus `coarse:` sizing on each control. Table checkboxes are 24px. |
+| 10 | **The Privacy and Terms pages were 329px wide on a 320px phone**, so the phone shrank the page. | Legal pages | The header wraps, and the long file path can break. |
+| 11 | **Sideways-scrolling tables could not be scrolled by keyboard.** | Dashboard, incident stages, roles, matrix, invitations, login history, audit log, API keys | Each is a focusable, named region. |
+| 12 | Unlabelled controls: "Group by" selects, the CSV import box | Actions, training, users | Named |
+| 13 | A webhook's event names ran out of a two-column grid | Developer → webhooks | One column on phones |
+| 14 | **A near miss reported with no signal was lost** unless the person came back and retyped it: the form said "Could not submit… try again". The full incident form already kept such a report and sent it later. | Report near miss | It goes into the same outbox, under the same key, so it cannot be filed twice. It says any photos were not kept. Test: `ReportNearMissPage.dom.test.tsx`. |
+
+### Mobile ethics
+
+| Question | Finding |
+|---|---|
+| Can people zoom? | Yes. Zoom is never disabled, and fields are 16px so iPhones do not zoom in by themselves. |
+| Are permissions asked for in context? | Yes. Location is asked only when someone taps "Capture GPS". Nothing asks for notifications, the camera or location on load. |
+| Does anything claim what did not happen? | It did, and is fixed: photos "attached" that were never sent (1, 3), and the anonymity of the activity log (2). The near-miss form also no longer forces the camera. With `capture`, Android opened the camera directly, although the button says "Take or attach a photo". |
+| Pop-ups, interstitials, pre-ticked boxes, auto-play? | None. The crawl found no pinned bar taking more than 30% of any screen. |
+| Data cost on site connections | 123 KB compressed to first load. Every page after that is loaded when first opened. There are no web fonts, trackers or analytics. A report or near miss made with no signal is kept on the phone and sent later (fixed, 14). |
+| Dark mode, reduced motion | Dark mode follows the phone unless the person chooses otherwise. Animations stop when the phone asks for reduced motion. |
+| Phone numbers | Tappable to call in the employee drawer and emergency contacts. On a site phone, that is the point of having them. |
+
+### Still open
+
+| Item | Why it is not done here |
+|---|---|
+| **Photos for inspections and audits** | Nothing stores a photo against an inspection or an audit answer, or against a corrective action that has no incident. This needs storage, routes and permissions: a feature, not a fix. Until then, the runners do not offer a photo button. |
+| Avatar initials at 9–11px | They sit beside the person's name or inside a labelled button, so they are a visual cue rather than text that has to be read. |
+| A real iPhone in Safari | Still needed before an important release (`GO_LIVE.md` §3). |

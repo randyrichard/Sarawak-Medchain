@@ -51,7 +51,7 @@ export function ComplianceRegister({
   return (
     <>
       <Card>
-        <div className="relative overflow-x-auto">
+        <div className="relative overflow-x-auto" tabIndex={0} role="region" aria-label="Compliance register">
           <table className="w-full min-w-[860px] text-left">
             <thead>
               <tr className="border-b text-2xs uppercase tracking-wide text-muted">

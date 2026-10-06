@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { CapaItem } from '@/api/capa'
-import { Button, Card, Skeleton } from '@/components/ui'
+import { Button, Card, MonthAgenda, Skeleton } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { localISODate } from '@/lib/localDate'
 
@@ -60,7 +60,21 @@ export function CalendarView({ items, onOpen }: { items: CapaItem[] | null; onOp
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-px overflow-hidden rounded-lg border bg-grid">
+      <MonthAgenda
+        todayKey={todayKey}
+        empty="Nothing due this month."
+        days={cells.filter((d) => d.getMonth() === cursor.getMonth()).map((d) => ({
+          key: keyOf(d),
+          date: d,
+          entries: (byDay.get(keyOf(d)) ?? []).map((i) => ({
+            id: i.id, code: i.code, title: i.title, color: chipColor(i),
+            status: i.overdue && i.derived !== 'Verified' && i.derived !== 'Closed' ? 'Overdue' : i.derived,
+            onSelect: () => onOpen(i.id), hint: `${i.code} · ${i.title} — ${i.owner}`,
+          })),
+        }))}
+      />
+
+      <div className="hidden grid-cols-7 gap-px overflow-hidden rounded-lg border bg-grid sm:grid">
         {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
           <div key={d} className="bg-sunken px-2 py-1.5 text-center text-2xs font-bold uppercase tracking-wider text-muted">{d}</div>
         ))}
@@ -70,11 +84,11 @@ export function CalendarView({ items, onOpen }: { items: CapaItem[] | null; onOp
           const dayItems = byDay.get(key) ?? []
           const isToday = key === todayKey
           return (
-            <div key={key} className={cn('min-h-[92px] bg-surface p-1.5', !inMonth && 'opacity-45')}>
+            <div key={key} className={cn('min-h-[92px] p-1.5', inMonth ? 'bg-surface' : 'bg-sunken')}>
               <span
                 className={cn(
                   'inline-flex h-5 w-5 items-center justify-center rounded-full text-2xs font-semibold',
-                  isToday ? 'bg-accent-solid text-white' : 'text-ink-2',
+                  isToday ? 'bg-accent-solid text-white' : inMonth ? 'text-ink-2' : 'text-muted',
                 )}
               >
                 {d.getDate()}

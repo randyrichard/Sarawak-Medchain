@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { InspectionView } from '@/api/assets'
 import type { Actor } from '@/api/incidents'
-import { Button, Card, Skeleton } from '@/components/ui'
+import { Button, Card, MonthAgenda, Skeleton } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { localISODate } from '@/lib/localDate'
 
@@ -71,7 +71,25 @@ export function InspectionCalendar({
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-px overflow-hidden rounded-lg border bg-grid">
+      <MonthAgenda
+        todayKey={todayKey}
+        empty="No inspections this month."
+        days={cells.filter((d) => d.getMonth() === cursor.getMonth()).map((d) => ({
+          key: keyOf(d),
+          date: d,
+          entries: (byDay.get(keyOf(d)) ?? []).map((i) => {
+            const runnable = i.status === 'Scheduled' && (manage || i.assignedTo === actor.name)
+            return {
+              id: i.id, code: i.code, title: i.assetName, color: chipColor(i),
+              status: i.status === 'Completed' ? (i.outcome === 'failed' ? 'Failed' : 'Passed') : i.overdue ? 'Overdue' : runnable ? 'Run' : 'Scheduled',
+              onSelect: runnable ? () => onRun(i) : undefined,
+              hint: `${i.code} · ${i.assetName} — ${i.assignedTo}`,
+            }
+          }),
+        }))}
+      />
+
+      <div className="hidden grid-cols-7 gap-px overflow-hidden rounded-lg border bg-grid sm:grid">
         {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
           <div key={d} className="bg-sunken px-2 py-1.5 text-center text-2xs font-bold uppercase tracking-wider text-muted">{d}</div>
         ))}
@@ -80,8 +98,8 @@ export function InspectionCalendar({
           const inMonth = d.getMonth() === cursor.getMonth()
           const dayItems = byDay.get(key) ?? []
           return (
-            <div key={key} className={cn('min-h-[92px] bg-surface p-1.5', !inMonth && 'opacity-45')}>
-              <span className={cn('inline-flex h-5 w-5 items-center justify-center rounded-full text-2xs font-semibold', key === todayKey ? 'bg-accent-solid text-white' : 'text-ink-2')}>
+            <div key={key} className={cn('min-h-[92px] p-1.5', inMonth ? 'bg-surface' : 'bg-sunken')}>
+              <span className={cn('inline-flex h-5 w-5 items-center justify-center rounded-full text-2xs font-semibold', key === todayKey ? 'bg-accent-solid text-white' : inMonth ? 'text-ink-2' : 'text-muted')}>
                 {d.getDate()}
               </span>
               <div className="mt-1 space-y-1">

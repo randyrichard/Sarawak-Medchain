@@ -26,6 +26,11 @@ and failed API calls were recorded throughout.
 | 12 | All five reports: preview and PDF; a scheduled report run now and downloaded from History; every CSV export (actions, certificates, competency matrix, HSE performance by site and by month, users, audit log, login history) | HSE manager, admin | Pass |
 | 13 | HSE Performance: refuse bad man-hours, record hours and see the rates move, reopen and see the saved value, set targets and see tiles marked on or off target, targets kept after reload | HSE manager | Pass |
 
+**On a phone.** All 13 were then run again on a 320px iPhone SE profile, with touch input,
+measuring the layout after every step. Every workflow completes on the phone. The mobile
+pass found and fixed further problems, most importantly report photos that were never
+uploaded and an anonymous reporter named in the activity log (`MOBILE.md`, second pass).
+
 The exports were checked for content as well as for downloading. Every PDF is a real PDF.
 No CSV has `undefined`, `NaN`, `[object Object]` or `Invalid Date` in a cell, and none has
 an unguarded formula cell. The users and audit log exports match the database row for row.

@@ -276,7 +276,7 @@ function RolesView() {
         subtitle="Deny-by-default. Every route and API call checks a capability, not a role name."
         right={myRole ? <Badge tone="accent">You are: {ROLE_LABEL[myRole]}</Badge> : undefined}
       />
-      <CardBody className="relative overflow-x-auto">
+      <CardBody className="relative overflow-x-auto" tabIndex={0} role="region" aria-label="Role permissions">
         <table className="w-full min-w-[720px] text-left">
           <thead>
             <tr className="border-b text-2xs uppercase tracking-wide text-muted">
