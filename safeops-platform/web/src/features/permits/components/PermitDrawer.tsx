@@ -119,7 +119,6 @@ export function PermitDrawer({
         </div>
 
         <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
-          {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
 
           {permit.status === 'suspended' && (
             <Alert tone="critical" title="Work suspended">{permit.suspendedReason}</Alert>
@@ -430,6 +429,12 @@ export function PermitDrawer({
 
         {/* Stage actions — one primary decision per state */}
         <div className="space-y-2 border-t px-5 py-3">
+          {/*
+            Why the last action was refused, shown here, beside the buttons. It used to sit at
+            the top of the scrolling body, out of view once the issuer had scrolled down to act:
+            pressing Start work on a permit with nobody named on it appeared to do nothing.
+          */}
+          {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
           {permit.status === 'draft' && (
             <Button className="w-full" size="lg" loading={busy}
               onClick={() => void run(() => api.submitPermit(permit.id, actor))}>

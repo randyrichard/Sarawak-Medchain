@@ -91,6 +91,40 @@ export const TRAINING_COURSES: CourseShape[] = [
     mandatory: true, validityMonths: 24, durationHours: 4, deliveryModes: ['physical', 'online'],
     competency: 'Permit authoriser', passMark: 85, applies: ['Field', 'Maintenance'],
   },
+  /*
+   * The competencies the permit rules ask for (permitPeople.ts REQUIRED_COMPETENCY). They
+   * were missing from the catalogue, so no employee could ever hold one: hot work, electrical
+   * isolation, LOTO, lifting and radiography permits could never be started with your own
+   * staff named on them. trainingCatalog.test.ts now fails if the two lists drift apart.
+   */
+  {
+    id: 'trn-111', code: 'TRN-111', name: 'Hot Work Safety', category: 'safety',
+    description: 'Fire triangle, combustibles control, fire watch duties, gas testing before and during hot work.',
+    mandatory: false, validityMonths: 24, durationHours: 4, deliveryModes: ['physical'],
+    competency: 'Authorised for hot work', passMark: 80,
+    applies: ['Maintenance', 'Fabrication', 'Contractors', 'M&E'],
+  },
+  {
+    id: 'trn-112', code: 'TRN-112', name: 'Electrical Safety & Isolation', category: 'safety',
+    description: 'Electrical hazards, safe isolation, prove-dead testing, lock-out and permit interfaces.',
+    mandatory: false, validityMonths: 24, durationHours: 8, deliveryModes: ['physical'],
+    competency: 'Authorised for electrical isolation', passMark: 85,
+    applies: ['Maintenance', 'M&E'],
+  },
+  {
+    id: 'trn-113', code: 'TRN-113', name: 'Rigging & Slinging', category: 'equipment',
+    description: 'Load estimation, sling selection and inspection, hand signals, lift plans and exclusion zones.',
+    mandatory: false, validityMonths: 36, durationHours: 8, deliveryModes: ['physical'],
+    competency: 'Competent rigger', passMark: 80,
+    applies: ['Contractors', 'Civil', 'Fabrication', 'Warehouse'],
+  },
+  {
+    id: 'trn-114', code: 'TRN-114', name: 'Radiation Protection (Industrial Radiography)', category: 'health',
+    description: 'Ionising radiation hazards, dose limits, barriers and survey meters, under the Atomic Energy Licensing Act 1984.',
+    mandatory: false, validityMonths: 36, durationHours: 16, deliveryModes: ['physical'],
+    competency: 'Radiation worker', passMark: 85,
+    applies: ['Inspection', 'Radiography'],
+  },
 ]
 
 export const BUILT_IN_COURSE_IDS = new Set(TRAINING_COURSES.map((c) => c.id))
