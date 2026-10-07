@@ -114,6 +114,10 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
   const failed = error !== undefined && error !== null && error !== false
   const interactive = Boolean(onRowClick || rowHref)
+  // Rows can carry the keyboard only when there are rows. Empty or loading, an interactive
+  // table still scrolls sideways on a phone - its header is wider than 320px - and with
+  // nothing inside to focus, a keyboard user could not scroll it.
+  const rowsFocusable = interactive && !loading && rows.length > 0
 
   const [ownSort, setOwnSort] = useState<SortState | null>(defaultSort ?? null)
   const sort = controlledSort !== undefined ? controlledSort : ownSort
@@ -159,11 +163,11 @@ export function DataTable<T>({
       className={cn('relative overflow-x-auto', className)}
       // A table wider than a phone scrolls sideways inside this box. Given a caption, the box
       // becomes a named, focusable region so a keyboard user can scroll it (WCAG 2.1.1) -
-      // but not when the rows are focusable themselves, or there would be two stops for one
+      // but not while the rows are focusable themselves, or there would be two stops for one
       // table. Opt-in rather than always, so tables that never overflow add no tab stop.
-      tabIndex={!interactive && caption ? 0 : undefined}
-      role={!interactive && caption ? 'region' : undefined}
-      aria-label={!interactive && caption ? caption : undefined}
+      tabIndex={!rowsFocusable && caption ? 0 : undefined}
+      role={!rowsFocusable && caption ? 'region' : undefined}
+      aria-label={!rowsFocusable && caption ? caption : undefined}
     >
       <table className="w-full text-left" aria-busy={loading || undefined}>
         {caption && (

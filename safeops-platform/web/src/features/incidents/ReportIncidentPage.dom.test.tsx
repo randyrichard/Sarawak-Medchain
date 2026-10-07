@@ -55,6 +55,18 @@ async function fillAndSubmit(files: File[] = []) {
 }
 
 describe('ReportIncidentPage submission', () => {
+  it('says a time in the future is wrong, and will not go on until it is fixed', () => {
+    render(<MemoryRouter><ReportIncidentPage /></MemoryRouter>)
+    fireEvent.click(document.querySelector('[aria-labelledby="incident-type-label"] button')!)
+    const severity = screen.getByLabelText(/Severity/) as HTMLSelectElement
+    fireEvent.change(severity, { target: { value: severity.options[1].value } })
+    fireEvent.change(screen.getByLabelText(/One-line title/), { target: { value: 'Slip near wash bay' } })
+    fireEvent.change(screen.getByLabelText(/Date & time of occurrence/), { target: { value: '2099-01-01T08:00' } })
+    expect(screen.getByText('That is in the future. Check the date and time.')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
+    expect(screen.queryByLabelText(/^Site/)).toBeNull()
+  })
+
   it('sends the idempotency key with the first attempt', async () => {
     createIncident.mockResolvedValue({ id: 'inc-1' })
     await fillAndSubmit()

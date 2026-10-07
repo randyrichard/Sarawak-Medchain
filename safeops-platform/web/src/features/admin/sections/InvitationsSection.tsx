@@ -322,9 +322,11 @@ export function InvitationsSection() {
             <p className="text-2xs text-muted">
               Leave all unticked for organisation-wide access.
             </p>
-            <div className="max-h-40 space-y-1 overflow-y-auto">
+            {/* Each row is the tap target, at least 24px (WCAG 2.2) and 44px on touch:
+                the 13px boxes 4px apart were easy to miss and easier to mis-tick. */}
+            <div className="max-h-48 space-y-0.5 overflow-y-auto">
               {sites.filter((s) => s.active).map((s) => (
-                <label key={s.id} className="flex items-center gap-2 text-xs text-ink">
+                <label key={s.id} className="flex min-h-6 cursor-pointer items-center gap-2 rounded px-1 text-xs text-ink hover:bg-accent-soft coarse:min-h-11">
                   <input
                     type="checkbox"
                     checked={draft.siteIds.includes(s.id)}

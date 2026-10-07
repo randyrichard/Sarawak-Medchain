@@ -14,6 +14,7 @@ import {
 import { ApiError } from '@/api/types'
 import { usePageTitle } from '@/app/pageTitle'
 import { fmtDate, fmtDateTime, severityKind, STAGE_COLOR, TYPE_ICON, useActor } from './lib'
+import { canRecordInvestigation } from './permissions'
 import { StageStepper } from './components/StageStepper'
 import { NextStepCard } from './components/NextStepCard'
 import { RcaPanel } from './components/RcaPanel'
@@ -45,6 +46,7 @@ export function IncidentDetailPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const { sites, role } = useOrg()
+  const mayInvestigate = canRecordInvestigation(role)
   const actor = useActor()
 
   const [incident, setIncident] = useState<Incident | null>(null)
@@ -289,7 +291,8 @@ export function IncidentDetailPage() {
                   */}
                   <InvestigationPanel
                     incidentId={incident.id}
-                    canEdit={incident.stage !== 'closed'}
+                    canEdit={incident.stage !== 'closed' && mayInvestigate}
+                    canRecord={mayInvestigate}
                     canSignOff={['admin', 'hse_manager'].includes(role ?? '')}
                   />
                   <RcaPanel incident={incident} onUpdate={setIncident} />
@@ -305,12 +308,12 @@ export function IncidentDetailPage() {
                   <PeoplePanel
                     incidentId={incident.id}
                     companyId={incident.companyId}
-                    canEdit={incident.stage !== 'closed'}
+                    canEdit={incident.stage !== 'closed' && mayInvestigate}
                   />
                   <IncidentEquipmentPanel
                     incidentId={incident.id}
                     companyId={incident.companyId}
-                    canEdit={incident.stage !== 'closed'}
+                    canEdit={incident.stage !== 'closed' && mayInvestigate}
                   />
                 </div>
               )}
@@ -404,7 +407,10 @@ function Overview({ incident, siteName }: { incident: Incident; siteName: string
       </div>
       <div>
         <p className="mb-1.5 text-xs font-bold uppercase tracking-wider text-muted">Immediate actions taken</p>
-        <p className="text-sm leading-relaxed text-ink-2">{incident.immediateActions}</p>
+        {/* Optional when reporting. An empty heading read as data that failed to load. */}
+        {incident.immediateActions.trim()
+          ? <p className="text-sm leading-relaxed text-ink-2">{incident.immediateActions}</p>
+          : <p className="text-sm text-muted">None recorded when it was reported.</p>}
       </div>
 
       <div className="grid gap-x-6 gap-y-2.5 text-sm sm:grid-cols-2">

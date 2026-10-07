@@ -44,11 +44,18 @@ export function CapaAnalyticsView({ companyId, sites }: { companyId: string | nu
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {tiles.map((t, i) => (
-          <Card key={t.label} className="animate-rise px-4 py-3.5"  style={attentionStripe(attentionOf(t.tone))}>
+          // A size container, so the figure scales to the tile: "Most overdue site" holds a
+          // site's name, and at 320px "Bintulu" at 24px already met the tile's edge - a
+          // longer name ran out of it.
+          <Card key={t.label} className="animate-rise px-4 py-3.5" style={{ ...attentionStripe(attentionOf(t.tone)), containerType: 'inline-size' }}>
             <p className="text-2xs font-semibold text-ink-2" style={{ animationDelay: `${i * 40}ms` }}>{t.label}</p>
-            <p className="mt-0.5 flex items-center gap-1.5 text-2xl font-semibold tracking-tight" style={{ color: t.tone ?? 'var(--ink)', fontVariantNumeric: 'tabular-nums' }}>
-              {t.value}
-            <AttentionIcon level={attentionOf(t.tone)} /></p>
+            <p
+              className="mt-0.5 flex items-center gap-1.5 text-2xl font-semibold tracking-tight"
+              style={{ color: t.tone ?? 'var(--ink)', fontVariantNumeric: 'tabular-nums', fontSize: 'clamp(1rem, 14cqw, 1.5rem)' }}
+            >
+              <span className="min-w-0 [overflow-wrap:anywhere]">{t.value}</span>
+              <AttentionIcon level={attentionOf(t.tone)} />
+            </p>
             <p className="text-2xs text-muted">{t.note}</p>
           </Card>
         ))}

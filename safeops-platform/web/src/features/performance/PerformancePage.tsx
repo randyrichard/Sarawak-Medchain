@@ -161,18 +161,31 @@ function withTarget(tile: Tile, value: number | null, metric: TargetMetric, targ
   return { ...tile, tone, target: { text: formatTarget(target), status } }
 }
 
+/*
+ * A tile's figure, sized to the tile.
+ *
+ * Screen width was the wrong measure on a desktop: at 1280px the row turns six-up beside
+ * the sidebar, each tile has 120px for its figure, and "9,710,350" at 24px is 130px - it
+ * ran into the tile's edge on exactly the screen most managers use. 13% of the tile's own
+ * width fits nine digits with their separators at any column count. A browser without
+ * container units (Safari before 16) ignores this and keeps the screen-width class above.
+ */
+const TILE_FIGURE = 'clamp(1rem, 13cqw, 1.5rem)'
+
 function TileRow({ tiles, label }: { tiles: Tile[]; label: string }) {
   return (
     <ul aria-label={label} className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
       {tiles.map((t) => (
-        <li key={t.label}>
+        // The tile is a size container, so the figure can scale to the tile rather than to
+        // the screen (TILE_FIGURE below).
+        <li key={t.label} style={{ containerType: 'inline-size' }}>
           <Card className="h-full px-4 py-3" style={attentionStripe(attentionOf(t.tone))}>
             <p className="text-2xs font-semibold text-ink-2">{t.label}</p>
             <p
               // Scales down on a narrow phone: "9,597,512" at 24px is wider than a
               // two-up tile on a 320-412px screen and ran past the card's edge.
               className="mt-0.5 flex items-center gap-1.5 text-[clamp(1.125rem,5.5vw,1.5rem)] font-semibold tracking-tight"
-              style={{ color: t.tone ?? 'var(--ink)', fontVariantNumeric: 'tabular-nums' }}
+              style={{ color: t.tone ?? 'var(--ink)', fontVariantNumeric: 'tabular-nums', fontSize: TILE_FIGURE }}
             >
               {t.value}
               <AttentionIcon level={attentionOf(t.tone)} />

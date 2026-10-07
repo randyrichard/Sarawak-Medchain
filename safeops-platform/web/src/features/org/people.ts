@@ -1,3 +1,4 @@
+import type { Role } from '@/api/types'
 import { employeesApi } from '@/api/employeesApi'
 import { reportsApi } from '@/api/reportsApi'
 import { drainRows } from '@/api/paging'
@@ -49,7 +50,17 @@ export function fixturePeople(companyId: string): string[] {
   ].sort()
 }
 
-async function fetchPeople(companyId: string): Promise<string[]> {
+/**
+ * Roles the member list answers for. Mirrors REPORT_ROLES in api/src/lib/reportService.ts:
+ * the list is the report-schedule recipients, which only those roles may manage.
+ *
+ * Anyone else was refused with a 403 every time a picker opened - harmless, because the
+ * refusal is caught below, but a request that can never succeed and an error in the
+ * console of every supervisor's and employee's phone.
+ */
+const MEMBER_LIST_ROLES: Role[] = ['admin', 'hse_manager', 'safety_officer', 'ceo']
+
+async function fetchPeople(companyId: string, withMembers: boolean): Promise<string[]> {
   const [employees, members] = await Promise.all([
     /*
      * Drained rather than one page. The register is the one list that grows with headcount
@@ -66,7 +77,7 @@ async function fetchPeople(companyId: string): Promise<string[]> {
      * empty it. Anything else that goes wrong is treated the same way, because a people
      * list that throws takes the whole dialog down with it.
      */
-    reportsApi.recipients(companyId).catch(() => []),
+    withMembers ? reportsApi.recipients(companyId).catch(() => []) : Promise.resolve([]),
   ])
 
   return [
@@ -85,24 +96,28 @@ async function fetchPeople(companyId: string): Promise<string[]> {
  * Rejections are not cached: a picker that failed once because the network blinked should
  * work on the next visit rather than stay empty for the session.
  */
-export function loadPeople(companyId: string): Promise<string[]> {
+export function loadPeople(companyId: string, role?: Role | null): Promise<string[]> {
   if (!companyId) return Promise.resolve([])
   if (!isBackendConfigured()) return Promise.resolve(fixturePeople(companyId))
 
-  const known = cache.get(companyId)
+  // An unknown role still asks: the refusal is handled, and a missing name is worse.
+  const withMembers = !role || MEMBER_LIST_ROLES.includes(role)
+  const key = withMembers ? companyId : `${companyId}|register`
+
+  const known = cache.get(key)
   if (known) return Promise.resolve(known)
 
-  const pending = inFlight.get(companyId)
+  const pending = inFlight.get(key)
   if (pending) return pending
 
-  const request = fetchPeople(companyId)
+  const request = fetchPeople(companyId, withMembers)
     .then((names) => {
-      cache.set(companyId, names)
+      cache.set(key, names)
       return names
     })
-    .finally(() => inFlight.delete(companyId))
+    .finally(() => inFlight.delete(key))
 
-  inFlight.set(companyId, request)
+  inFlight.set(key, request)
   return request
 }
 
@@ -113,6 +128,6 @@ export function loadPeople(companyId: string): Promise<string[]> {
  * assigning them an action in the same session offers a list that does not include them.
  */
 export function forgetPeople(companyId?: string) {
-  if (companyId) cache.delete(companyId)
+  if (companyId) { cache.delete(companyId); cache.delete(`${companyId}|register`) }
   else cache.clear()
 }

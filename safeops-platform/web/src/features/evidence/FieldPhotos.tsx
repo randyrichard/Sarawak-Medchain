@@ -50,8 +50,15 @@ function Thumb({ row }: { row: FieldEvidenceRow }) {
   useEffect(() => {
     if (!image) return
     let made: string | null = null
-    fieldEvidenceApi.file(row.id).then((b) => { made = URL.createObjectURL(b); setUrl(made) }).catch(() => setUrl(null))
-    return () => { if (made) URL.revokeObjectURL(made) }
+    let gone = false
+    fieldEvidenceApi.file(row.id)
+      .then((b) => {
+        // Closed before the image arrived: make nothing, or the object URL is never freed.
+        if (gone) return
+        made = URL.createObjectURL(b); setUrl(made)
+      })
+      .catch(() => { if (!gone) setUrl(null) })
+    return () => { gone = true; if (made) URL.revokeObjectURL(made) }
   }, [row.id, image])
 
   const open = async () => {

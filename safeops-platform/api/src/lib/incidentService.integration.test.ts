@@ -68,6 +68,15 @@ d('IncidentService — integration (real Postgres)', () => {
     expect(new Set(numbers).size).toBe(10)
   })
 
+  it('refuses an occurrence time in the future, allowing for a phone clock running fast', async () => {
+    const at = (ms: number) => ({ ...newIncident('Future dated'), occurredAt: new Date(Date.now() + ms).toISOString() })
+    await expect(svc.create(manager, at(365 * 24 * 3600_000)))
+      .rejects.toMatchObject({ code: 'validation', message: expect.stringMatching(/in the future/) })
+    await expect(svc.create(manager, at(60 * 60_000))).rejects.toMatchObject({ code: 'validation' })
+    // Five minutes ahead is a clock, not a mistake.
+    expect((await svc.create(manager, at(5 * 60_000))).stage).toBe('reported')
+  })
+
   it('scopes rows in SQL: an employee sees only what they reported', async () => {
     await svc.create(manager, newIncident('Manager visible only'))
     const mine = await svc.create(employee, newIncident('Employee own report'))

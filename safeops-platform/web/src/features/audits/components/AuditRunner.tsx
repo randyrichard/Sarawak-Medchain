@@ -129,7 +129,7 @@ export function AuditRunner({
       let failed = 0
       for (const [itemId, files] of Object.entries(photos)) {
         // Only items still answered; a photo for an item since changed to N/A would be refused.
-        if (allItems.some((i) => i.id === itemId)) failed += await sendFieldPhotos('audits', audit.id, files, itemId)
+        if (allItems.some((i) => i.id === itemId)) failed += (await sendFieldPhotos('audits', audit.id, files, itemId)).failed.length
       }
       setPhotos({})
       // The audit is saved either way. If photos did not arrive, stay to say so.

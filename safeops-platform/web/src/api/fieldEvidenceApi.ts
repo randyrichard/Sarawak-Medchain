@@ -21,16 +21,16 @@ export const fieldEvidenceApi = {
     return request<{ rows: FieldEvidenceRow[] }>(`/evidence/${kind}/${id}`).then((r) => r.rows)
   },
 
-  /** Up to five files per request, as the server allows. */
+  /**
+   * One request, of at most five files - the server's limit. More than that goes through
+   * sendFieldPhotos (features/evidence), which batches and says which batch failed.
+   */
   async upload(kind: EvidenceKind, id: string, files: File[], itemId?: string): Promise<FieldEvidenceRow[]> {
-    const out: FieldEvidenceRow[] = []
-    for (let i = 0; i < files.length; i += 5) {
-      const form = new FormData()
-      files.slice(i, i + 5).forEach((f) => form.append('files', f))
-      if (itemId) form.append('itemId', itemId)
-      out.push(...(await upload<{ rows: FieldEvidenceRow[] }>(`/evidence/${kind}/${id}`, form)).rows)
-    }
-    return out
+    if (files.length > 5) throw new Error('At most five files per upload; use sendFieldPhotos for more.')
+    const form = new FormData()
+    files.forEach((f) => form.append('files', f))
+    if (itemId) form.append('itemId', itemId)
+    return (await upload<{ rows: FieldEvidenceRow[] }>(`/evidence/${kind}/${id}`, form)).rows
   },
 
   file(evidenceId: string): Promise<Blob> {

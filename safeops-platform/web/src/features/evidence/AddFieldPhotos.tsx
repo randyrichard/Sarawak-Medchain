@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Upload } from 'lucide-react'
-import { type EvidenceKind, fieldEvidenceApi } from '@/api/fieldEvidenceApi'
+import type { EvidenceKind } from '@/api/fieldEvidenceApi'
 import { isBackendConfigured } from '@/api/authApi'
 import { Alert, Button } from '@/components/ui'
 import { PhotoPicker } from './PhotoPicker'
+import { sendFieldPhotos } from './fieldEvidence'
 
 /** Choose photos and send them straight away, to a record that already exists. */
 export function AddFieldPhotos({
@@ -23,11 +24,14 @@ export function AddFieldPhotos({
     setBusy(true)
     setError(null)
     try {
-      await fieldEvidenceApi.upload(kind, id, files, itemId)
-      setFiles([])
-      onAdded()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Upload failed.')
+      const r = await sendFieldPhotos(kind, id, files, itemId)
+      // Only what did not arrive stays selected, so trying again cannot send a photo twice.
+      setFiles(r.failed)
+      if (r.stored > 0) onAdded()
+      if (r.failed.length > 0) {
+        const n = r.failed.length === 1 ? 'One photo' : `${r.failed.length} photos`
+        setError(`${n} did not upload${r.stored > 0 ? `; the other ${r.stored} did` : ''}. ${r.error ?? 'Check the connection and try again.'}`)
+      }
     } finally {
       setBusy(false)
     }

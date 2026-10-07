@@ -578,7 +578,7 @@ async function seedAssets(companyId: CompanyId) {
         status: 'completed', completedAt: ago(20), completedBy: a.owner,
         outcome: a.lastFailed ? 'failed' : 'passed',
         comments: a.lastFailed ? 'Battery charger faulty; the unit will not auto-start on mains failure.' : null,
-        signature: a.owner, photoCount: 2,
+        signature: a.owner, photoCount: 0,
       },
     })
 
@@ -783,10 +783,11 @@ async function seedAudits(companyId: CompanyId) {
           dueDate: utcDay(ahead(f.settled ? -(elapsed - 4) : 8)),
           priority: f.severity === 'Major' || f.severity === 'Critical' ? 'High' : 'Medium',
           status: f.settled ? 'verified' : 'open',
-          completedAt: f.settled ? ago(Math.max(1, elapsed - 4)) : null,
+          // Completed first, verified a day later: `ago` counts back, so the larger is earlier.
+          completedAt: f.settled ? ago(Math.max(2, elapsed - 3)) : null,
           evidenceNote: f.settled ? 'Completed and photographed; closed out with the lead auditor.' : null,
           verifiedBy: f.settled ? a.lead : null,
-          verifiedAt: f.settled ? ago(Math.max(1, elapsed - 3)) : null,
+          verifiedAt: f.settled ? ago(Math.max(1, elapsed - 4)) : null,
           createdBy: DEMO_MARK,
         },
       })

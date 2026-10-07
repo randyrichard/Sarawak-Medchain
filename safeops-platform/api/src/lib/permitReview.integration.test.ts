@@ -89,6 +89,16 @@ d('Permit review chain — integration (real Postgres)', () => {
     expect((await review.advance(ceo, p.id, 'Plant is free.')).status).toBe('approved')
   })
 
+  it('stops the review chain once the working window has ended', async () => {
+    const p = await submitted()
+    await review.advance(admin, p.id, 'Entering review.')
+    await db.permit.update({ where: { id: p.id }, data: { validTo: new Date(Date.now() - 60_000) } })
+
+    await expect(review.advance(supervisor, p.id, 'Method and crew are right.'))
+      .rejects.toMatchObject({ code: 'validation', message: expect.stringMatching(/window has already ended/) })
+    expect((await db.permit.findUnique({ where: { id: p.id } }))?.status).toBe('supervisor_review')
+  })
+
   it('cannot skip a stage, because advance takes no target', async () => {
     const p = await submitted()
     await review.advance(admin, p.id, 'Entering review.')

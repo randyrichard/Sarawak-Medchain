@@ -167,7 +167,7 @@ checks, 10 MB limit and SHA-256 checksum as incident evidence
   number the browser sends.
 - **An action marked "evidence required"** that is not part of an incident can now be
   completed. Before, it had nowhere to put its evidence, so it could never be closed.
-- **The data export and `verify:uploads`** both include these files.
+- **The data export and the file integrity check** (`npm run files:verify` in `api/`) both include these files.
 - **On the phone**, the picker offers camera or library and does not force the camera.
   If a photo fails to upload after the inspection or audit is saved, the screen says
   which, and photos can still be added from the result for 24 hours.
