@@ -540,7 +540,8 @@ class MockApiClient implements ApiClient {
     assertRealAuth()
     await delay(LATENCY())
     const user = this.users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase())
-    if (!user || user.password !== password) {
+    // An empty password never matches, even a demo account built without one.
+    if (!user || !password || user.password !== password) {
       // capture the failed attempt in the security login history
       ;(await this.demo()).admin.recordLogin(user?.id ?? '', user?.name ?? email.trim(), email.trim(), 'failed', deviceLabel())
       throw new ApiError('invalid_credentials', 'Email or password is incorrect.')

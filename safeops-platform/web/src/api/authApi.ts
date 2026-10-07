@@ -23,7 +23,15 @@ export const isBackendConfigured = () => API_BASE_URL.length > 0
  * in the browser and keeps a forgeable session in localStorage. Shipping a production build
  * without VITE_API_BASE_URL would silently fall back to it, so say so loudly.
  */
-export const MOCK_AUTH_IN_PROD = import.meta.env.PROD && !isBackendConfigured()
+/**
+ * A build made on purpose as the public offline demo (`npm run build:demo`, the Cloudflare
+ * demo site). It has no server by design, every screen says "Demo mode", and its accounts
+ * and password are invented for it, so signing in in the browser is the point, not a leak.
+ * Nothing else sets this flag, so a customer build without an API still fails closed.
+ */
+export const OFFLINE_DEMO_BUILD = import.meta.env.VITE_OFFLINE_DEMO === 'true'
+
+export const MOCK_AUTH_IN_PROD = import.meta.env.PROD && !isBackendConfigured() && !OFFLINE_DEMO_BUILD
 
 if (MOCK_AUTH_IN_PROD) {
   // eslint-disable-next-line no-console

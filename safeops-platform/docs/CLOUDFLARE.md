@@ -1,5 +1,12 @@
 # Putting Cloudflare in front of SafeOps
 
+Two separate things, on purpose:
+
+- **The public demo** (below, at the end) can go on Cloudflare today. It is the web app on
+  its own with invented sample data, for showing prospects. No customer data, no server.
+- **A real deployment** puts Cloudflare in front of the SafeOps server. That needs a domain
+  and a server first, and is the rest of this document.
+
 Cloudflare gives you three things this deployment does not have: a WAF, DDoS absorption, and
 a CDN. It is free at the tier that matters here.
 
@@ -129,3 +136,59 @@ It does not protect against anything on the far side of it: a stolen password, a
 misconfigured role, or an authorised user exporting data they are entitled to. It absorbs
 volume and filters known-bad patterns. Every finding in the security audit was on the
 application side, and none of them would have been stopped by a WAF.
+
+## The public demo
+
+The web app runs entirely in the browser in demo mode: two invented companies, their
+people, incidents, permits and so on, with nothing sent anywhere. That needs no server, so
+it can be hosted on Cloudflare Workers as static files, free, today.
+
+It is a separate Cloudflare Worker, `safeops-demo`. It is not the `sarawak-medchain` Worker,
+which is the earlier MedChain product built from `frontend/`.
+
+### What makes it safe to publish
+
+- **Its own build.** `npm run build:demo` (`web/scripts/build-demo.mjs`) is the only build
+  allowed to sign in without a server (`VITE_OFFLINE_DEMO`). Every other production build
+  without an API address still refuses to sign anyone in.
+- **Its own password.** The demo accounts' password is the demo's, shown on its sign-in
+  page. It is not the password the API seed gives the same accounts, so the demo never
+  publishes something a seeded server would accept. `demoBuild.test.ts` fails if they match.
+- **It says what it is.** Every screen carries "Demo mode. Everything here is made-up sample
+  data…". Nothing typed leaves the visitor's browser.
+- **Same security headers as a real deployment.** The build writes `dist/_headers` from
+  `nginx.conf.template`, so the Content-Security-Policy cannot drift; the page may connect
+  only to itself.
+- **It never calls a server.** Screens that need one (Visitors, Employees, HSE Performance,
+  the incident board, some reports) say so rather than trying.
+
+`npm run verify:bundle` reports the demo accounts in a demo build. That is correct: that
+check is for customer builds, and the demo is the one build meant to contain them.
+
+### Setting it up (once, in the Cloudflare dashboard)
+
+1. **Workers & Pages → Create → Import a repository →** `randyrichard/Sarawak-Medchain`.
+2. Settings:
+
+   | Setting | Value |
+   |---|---|
+   | Project name | `safeops-demo` (must match `web/wrangler.jsonc`) |
+   | Production branch | `feature/permit-to-work` (where SafeOps lives) |
+   | Root directory | `safeops-platform/web` |
+   | Build command | `npm run build:demo` |
+   | Deploy command | `npx wrangler deploy` |
+   | Non-production branch deploy command | `npx wrangler versions upload` |
+   | Build watch paths, include | `safeops-platform/web/*` |
+   | API token | Create new token |
+
+   No build variables are needed; the build script sets everything.
+3. Deploy. The address is `https://safeops-demo.<your-subdomain>.workers.dev`.
+4. Optional: in the `sarawak-medchain` Worker, set its build watch path to `frontend/*`, so
+   SafeOps commits stop triggering MedChain builds.
+
+### Checking it
+
+Open the address, pick a role under "Demo workspace", and sign in. The "Demo mode" note is
+at the top of every screen. Reload a deep link such as `/permits`: it must load the app, not
+a Cloudflare 404.
+
