@@ -1,0 +1,3 @@
+
+# Local state from `wrangler dev` (the Cloudflare demo)
+.wrangler/
