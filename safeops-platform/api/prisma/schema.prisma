@@ -33,12 +33,12 @@ model User {
   status       String  @default("active") // active | invited | deactivated | locked
 
   // ── Brute-force protection (server-authoritative) ──
-  failedLoginCount Int       @default(0)
-  lockedUntil      DateTime?
+  failedLoginCount  Int       @default(0)
+  lockedUntil       DateTime?
   /// When the password was last set. Password expiry in the security policy counts from
   /// here. Existing rows took the time of the migration, so nobody expired on upgrade.
-  passwordChangedAt DateTime @default(now())
-  lastLoginAt      DateTime?
+  passwordChangedAt DateTime  @default(now())
+  lastLoginAt       DateTime?
 
   mustChangePassword Boolean @default(false)
 
@@ -243,6 +243,7 @@ model Company {
   toolboxMeetings    ToolboxMeeting[]
   reportSchedules    ReportSchedule[]
   reportRuns         ReportRun[]
+  fieldEvidence      FieldEvidence[]
 
   // Created by an earlier migration and missing here, so `prisma migrate dev` would have
   // generated a migration dropping it. Declared so the schema describes the database.
@@ -795,11 +796,12 @@ model CorrectiveAction {
 
   notes CapaNote[]
 
-  version   Int                  @default(1)
-  createdBy String
-  createdAt DateTime             @default(now())
-  updatedAt DateTime             @updatedAt
-  evidence  IncidentAttachment[]
+  version       Int                  @default(1)
+  createdBy     String
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  evidence      IncidentAttachment[]
+  fieldEvidence FieldEvidence[]
 
   @@unique([companyId, code])
   @@index([companyId, status])
@@ -1252,7 +1254,8 @@ model Inspection {
   signature  String?
 
   /// Defects raised from this inspection.
-  actions CorrectiveAction[]
+  actions  CorrectiveAction[]
+  evidence FieldEvidence[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1378,6 +1381,7 @@ model Audit {
 
   findings AuditFinding[]
   timeline AuditEvent[]
+  evidence FieldEvidence[]
 
   version   Int      @default(1)
   createdBy String
@@ -3243,4 +3247,47 @@ model PerformanceTarget {
   updatedAt DateTime @updatedAt
 
   @@unique([companyId, metric])
+}
+
+/// A photo or document taken in the field and kept against an inspection, an audit answer
+/// or a corrective action that has no incident.
+///
+/// Those three had no storage at all: the inspection and audit runners counted the photos
+/// chosen and discarded them, and an action raised outside an investigation could take no
+/// file, so one marked "evidence required" could never be completed. Incident evidence and
+/// permit documents keep their own tables; this holds what had nowhere to go.
+///
+/// Exactly one parent per row, enforced by a CHECK constraint in the migration, so a
+/// photo can neither be orphaned nor claimed by two records. Each parent is a real foreign
+/// key that cascades, unlike a polymorphic id-and-type pair. companyId is denormalised
+/// from the parent so row-level security covers the table directly.
+model FieldEvidence {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  inspectionId String?
+  inspection   Inspection?       @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  auditId      String?
+  audit        Audit?            @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  /// The checklist item an audit photo shows. Only with auditId.
+  auditItemId  String?
+  actionId     String?
+  action       CorrectiveAction? @relation(fields: [actionId], references: [id], onDelete: Cascade)
+
+  originalName String
+  storedName   String  @unique
+  mimeType     String
+  sizeBytes    Int
+  /// SHA-256 of the bytes as written. Required from the start, unlike the older tables.
+  checksum     String
+  uploadedBy   String
+  uploadedById String?
+
+  createdAt DateTime @default(now())
+
+  @@index([inspectionId])
+  @@index([auditId, auditItemId])
+  @@index([actionId])
+  @@index([companyId, createdAt])
 }

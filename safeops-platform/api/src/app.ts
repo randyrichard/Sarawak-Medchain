@@ -16,6 +16,7 @@ import { permitAttachmentsRouter } from './routes/permitAttachments.js'
 import { inspectionsRouter } from './routes/inspections.js'
 import { equipmentRouter } from './routes/equipment.js'
 import { assetDocumentsRouter } from './routes/assetDocuments.js'
+import { fieldEvidenceRouter } from './routes/fieldEvidence.js'
 import { visitorsRouter } from './routes/visitors.js'
 import { reportsRouter } from './routes/reports.js'
 import { incidentInvestigationRouter } from './routes/incidentInvestigation.js'
@@ -270,6 +271,7 @@ export function createApp() {
   // Before the asset router: its /:idOrQr would otherwise match /assets/documents.
   app.use('/assets', assetDocumentsRouter)
   app.use('/assets', inspectionsRouter)
+  app.use('/evidence', fieldEvidenceRouter)
   app.use('/visitors', visitorsRouter)
   app.use('/toolbox', toolboxRouter)
   app.use('/reports', reportsRouter)

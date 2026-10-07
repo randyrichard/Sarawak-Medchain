@@ -6,6 +6,8 @@ import type { Actor } from '@/api/incidents'
 import { Avatar, Badge, Button, Card, Dialog, EmptyState, Skeleton, StatusPill } from '@/components/ui'
 import { fmtDateTime } from '@/features/incidents/lib'
 import { cn } from '@/lib/cn'
+import { FieldPhotos } from '@/features/evidence/FieldPhotos'
+import { AddFieldPhotos } from '@/features/evidence/AddFieldPhotos'
 
 type Filter = 'all' | 'scheduled' | 'overdue' | 'completed' | 'failed'
 
@@ -20,6 +22,7 @@ export function InspectionsList({
 }) {
   const [filter, setFilter] = useState<Filter>('all')
   const [viewResult, setViewResult] = useState<InspectionView | null>(null)
+  const [photoKey, setPhotoKey] = useState(0)
 
   const rows = useMemo(() => {
     if (!inspections) return []
@@ -125,6 +128,14 @@ export function InspectionsList({
               </div>
             ))}
             {viewResult.comments && <p className="rounded-lg bg-sunken px-3 py-2 text-xs leading-relaxed text-ink-2">{viewResult.comments}</p>}
+            <div className="space-y-2 pt-1">
+              <p className="text-2xs font-bold uppercase tracking-wider text-muted">Photos</p>
+              <FieldPhotos kind="inspections" id={viewResult.id} refreshKey={photoKey} empty="No photos were kept with this inspection." />
+              {/* The server allows the inspector to add photos for 24 hours after completing. */}
+              {canRun(viewResult) && viewResult.completedAt && Date.now() - new Date(viewResult.completedAt).getTime() < 24 * 3_600_000 && (
+                <AddFieldPhotos kind="inspections" id={viewResult.id} onAdded={() => setPhotoKey((k) => k + 1)} />
+              )}
+            </div>
             {viewResult.actionCodes.length > 0 && (
               <div className="space-y-1 pt-1">
                 <p className="text-2xs font-bold uppercase tracking-wider text-muted">Defect actions created</p>

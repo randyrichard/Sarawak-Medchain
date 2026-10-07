@@ -10,6 +10,8 @@ import { useActor, usePeople, SITE_COORDS } from '@/features/incidents/lib'
 import { Alert, Badge, Button, Checkbox, Input } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { PeopleOptions } from '@/features/org/PeopleOptions'
+import { PhotoPicker } from '@/features/evidence/PhotoPicker'
+import { sendFieldPhotos } from '@/features/evidence/fieldEvidence'
 
 interface DraftState {
   answers: Record<string, { result?: AuditAnswerResult; comment?: string; photoCount?: number }>
@@ -38,6 +40,10 @@ export function AuditRunner({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [savedAt, setSavedAt] = useState<string | null>(null)
+  // Per checklist item, in memory (a draft is text and cannot hold a file). Sent once the
+  // audit is saved, as field evidence against the item.
+  const [photos, setPhotos] = useState<Record<string, File[]>>({})
+  const [photosFailed, setPhotosFailed] = useState(0)
   const dirty = useRef(false)
 
   const allItems = useMemo(
@@ -104,7 +110,7 @@ export function AuditRunner({
       text: i.text,
       result: draft.answers[i.id]!.result!,
       comment: draft.answers[i.id]?.comment?.trim() || undefined,
-      photoCount: draft.answers[i.id]?.photoCount ?? 0,
+      photoCount: photos[i.id]?.length ?? 0,
     }))
     const failsInput: Record<string, FailInput> = {}
     fails.forEach((i) => {
@@ -113,14 +119,22 @@ export function AuditRunner({
         severity: (f.severity ?? 'Minor') as FindingSeverity,
         description: f.description!.trim(),
         owner: f.owner!,
-        photoCount: draft.answers[i.id]?.photoCount ?? 0,
+        photoCount: photos[i.id]?.length ?? 0,
         linkedAssetId: f.linkedAssetId,
       }
     })
     try {
       await api.completeAudit(audit.id, { answers, fails: failsInput, signature: draft.signature, gps: draft.gps || undefined }, actor)
       localStorage.removeItem(draftKey)
-      onCompleted()
+      let failed = 0
+      for (const [itemId, files] of Object.entries(photos)) {
+        // Only items still answered; a photo for an item since changed to N/A would be refused.
+        if (allItems.some((i) => i.id === itemId)) failed += await sendFieldPhotos('audits', audit.id, files, itemId)
+      }
+      setPhotos({})
+      // The audit is saved either way. If photos did not arrive, stay to say so.
+      if (failed > 0) setPhotosFailed(failed)
+      else onCompleted()
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Submission failed — your answers are saved locally.')
     } finally {
@@ -219,6 +233,8 @@ export function AuditRunner({
                               <PeopleOptions people={people} />
                             </select>
                           </div>
+                          <PhotoPicker compact label="Evidence photos" files={photos[item.id] ?? []}
+                            onChange={(f) => setPhotos((p) => ({ ...p, [item.id]: f }))} />
                         </div>
                       )}
                     </div>
@@ -228,10 +244,6 @@ export function AuditRunner({
             </div>
           ))}
 
-          {/*
-            No "Evidence photos" button: it counted the photos chosen and discarded them, and the
-            finding then claimed them. Nothing stores a photo against an audit yet.
-          */}
 
           <div className="grid grid-cols-1 gap-2">
             <button onClick={captureGps} className="flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold text-ink-2 hover:bg-accent-soft coarse:min-h-11">
@@ -258,6 +270,15 @@ export function AuditRunner({
               {fails.length} finding(s) → {fails.length} corrective action(s) will be created on submit.
             </p>
           )}
+          {photosFailed > 0 && (
+            <Alert tone="warning" title="Audit submitted">
+              {photosFailed === 1 ? 'One photo' : `${photosFailed} photos`} did not upload. Add {photosFailed === 1 ? 'it' : 'them'} from
+              the audit within 24 hours.
+            </Alert>
+          )}
+          {photosFailed > 0 ? (
+            <Button className="w-full" size="lg" onClick={onCompleted}>Done</Button>
+          ) : (
           <Button className="w-full" size="lg" icon={<Send size={14} />} loading={busy} disabled={!canSubmit} onClick={() => void submit()}>
             {answered < allItems.length
               ? `Answer ${allItems.length - answered} more item(s)`
@@ -265,6 +286,7 @@ export function AuditRunner({
                 ? 'Complete finding details for failed items'
                 : 'Submit audit'}
           </Button>
+          )}
         </div>
       </aside>
     </div>,

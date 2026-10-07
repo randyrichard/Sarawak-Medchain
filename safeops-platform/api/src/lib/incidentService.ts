@@ -844,7 +844,11 @@ export class IncidentService {
      * than on the screen: the screen can be skipped.
      */
     if (patch.status === 'completed' && action.evidenceRequired) {
+      // An action raised from an incident keeps its files with the incident; one raised
+      // anywhere else keeps them as field evidence. Counting only the first made a
+      // standalone action marked "evidence required" impossible to complete.
       const files = await this.db.incidentAttachment.count({ where: { actionId: action.id } })
+        + await this.db.fieldEvidence.count({ where: { actionId: action.id } })
       if (files === 0) {
         throw new IncidentError(
           'validation',
