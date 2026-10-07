@@ -430,7 +430,7 @@ function BulkImportDialog({ open, onClose, onDone }: { open: boolean; onClose: (
             {result.errors.length > 0 && <ul className="mt-1 list-disc pl-4 text-2xs">{result.errors.slice(0, 5).map((e, i) => <li key={i}>{e}</li>)}</ul>}
           </Alert>
         ) : (
-          <textarea value={csv} onChange={(e) => setCsv(e.target.value)} rows={7}
+          <textarea value={csv} onChange={(e) => setCsv(e.target.value)} rows={7} aria-label="Users to import, as CSV"
             className="w-full rounded-lg border bg-surface px-3 py-2 font-mono text-xs text-ink outline-none focus:border-accent" spellCheck={false} />
         )}
       </div>

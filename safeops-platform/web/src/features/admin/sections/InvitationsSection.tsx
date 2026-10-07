@@ -208,7 +208,7 @@ export function InvitationsSection() {
           )}
 
           {rows && rows.length > 0 && (
-            <div className="relative overflow-x-auto">
+            <div className="relative overflow-x-auto" tabIndex={0} role="region" aria-label="Invitations">
               <ul className="divide-y divide-line">
                 {rows.map((inv) => {
                   const state = invitationState(inv.state)

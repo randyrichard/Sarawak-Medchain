@@ -160,6 +160,20 @@ d('Incident investigation — integration (real Postgres)', () => {
     expect(asHse.reporter).toBe(admin.name)
   })
 
+  it('withholds the reporter from the activity log and evidence too', async () => {
+    // The register and the header said "Reported anonymously" while the activity log
+    // underneath said who filed it: "Incident reported - <name>, employee".
+    const i = await newIncident({ anonymous: true })
+    const asOfficer = await incidents.get(officer, i.id)
+    const shown = JSON.stringify({ events: asOfficer.events, attachments: asOfficer.attachments })
+    expect(shown).not.toContain(admin.name)
+    expect(asOfficer.events.find((e) => e.action === 'Incident reported')?.actor).toBe('Reported anonymously')
+
+    // HSE still sees who it was.
+    const asHse = await incidents.get(hse, i.id)
+    expect(asHse.events.find((e) => e.action === 'Incident reported')?.actor).toBe(admin.name)
+  })
+
   it('withholds the reporter in the register as well as the detail page', async () => {
     await newIncident({ anonymous: true })
     const list = await incidents.list(officer, {

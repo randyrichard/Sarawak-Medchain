@@ -47,7 +47,7 @@ export function InspectionsList({
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={cn('rounded-full border px-3 py-1 text-xs font-medium capitalize transition-colors', filter === f ? 'bg-accent-soft text-ink' : 'text-ink-2 hover:text-ink')}
+            className={cn('rounded-full border px-3 py-1 text-xs font-medium capitalize transition-colors coarse:min-h-11 coarse:px-4', filter === f ? 'bg-accent-soft text-ink' : 'text-ink-2 hover:text-ink')}
             style={filter === f ? { borderColor: 'var(--accent)' } : undefined}
           >
             {f}
@@ -64,12 +64,16 @@ export function InspectionsList({
           <ul className="divide-y">
             {rows.map((i) => (
               <li key={i.id} className={cn('flex flex-wrap items-center gap-3 px-5 py-3', i.overdue && 'bg-critical-soft/40')}>
-                <div className="min-w-0 flex-1 cursor-pointer" onClick={() => onOpenAsset(i.assetId)}>
-                  <p className="text-sm font-semibold leading-snug text-ink">{i.assetName}</p>
-                  <p className="text-2xs text-muted">
+                {/*
+                  The whole first line on a phone. Sharing it with the assignee and the date
+                  left the asset name about 60px, one word per line, with codes broken mid-way.
+                */}
+                <button type="button" className="min-w-0 flex-1 basis-full text-left sm:basis-0" onClick={() => onOpenAsset(i.assetId)}>
+                  <span className="block text-sm font-semibold leading-snug text-ink">{i.assetName}</span>
+                  <span className="block text-2xs text-muted">
                     <span className="font-mono">{i.code}</span> · {i.assetCode} · {i.department}
-                  </p>
-                </div>
+                  </span>
+                </button>
                 <span className="flex items-center gap-1.5 text-xs text-ink-2">
                   <Avatar name={i.assignedTo} size={18} /> {i.assignedTo}
                 </span>

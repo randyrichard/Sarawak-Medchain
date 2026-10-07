@@ -816,6 +816,17 @@ async function seedTraining(companyId: CompanyId): Promise<number> {
   })
   if (roster.length === 0) return 0
 
+  /*
+   * Medicals. The seed recorded none, so nobody in the demo could be named on a permit
+   * (the permit rules refuse anyone without a current medical) and no permit could ever be
+   * started: the flagship workflow could not be shown. A spread like a real workforce: most
+   * in date, one or two due for renewal (to show the warning), one lapsed (to show the block).
+   */
+  for (const [p, employee] of roster.entries()) {
+    const days = p % 9 === 4 ? -(20 + p) : p % 7 === 2 ? 10 + p : 120 + ((p * 37) % 360)
+    await db.employee.update({ where: { id: employee.id }, data: { medicalExpiry: utcDay(ahead(days)) } })
+  }
+
   let issued = 0
   for (const [p, employee] of roster.entries()) {
     const required = TRAINING_COURSES.filter((c) => courseApplies(c, employee.department))

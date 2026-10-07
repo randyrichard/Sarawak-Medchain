@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
+import { cn } from '@/lib/cn'
 import { CheckCheck, FileText, History, Upload } from 'lucide-react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
@@ -125,7 +126,8 @@ export function DocumentsPanel({
                       </span>
                       <div className="min-w-0">
                         <p className="text-sm font-semibold leading-snug text-ink">{d.name}</p>
-                        <p className="text-2xs text-muted">
+                        {/* Muted grey drops to 3.5:1 on the amber "awaiting approval" tint in dark mode. */}
+                        <p className={cn('text-2xs', d.status === 'Pending Approval' ? 'text-ink-2' : 'text-muted')}>
                           {d.sizeKb >= 1024 ? `${(d.sizeKb / 1024).toFixed(1)} MB` : `${d.sizeKb} KB`}
                           {d.approvedBy && ` · approved by ${d.approvedBy}`}
                         </p>

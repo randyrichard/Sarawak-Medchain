@@ -249,4 +249,15 @@ select optgroup {
   textarea:not(.text-lg):not(.text-xl) {
     font-size: 16px !important;
   }
+
+  /*
+   * A checkbox or radio is tapped through its label, so the label is the target. Rows of
+   * them (an invitation's sites, a schedule's recipients, a webhook's events) were 19px
+   * tall: under the 24px WCAG 2.5.8 floor, and easy to tick the wrong one. 44px is the
+   * size iOS and Android both recommend.
+   */
+  label:has(> input[type='checkbox']),
+  label:has(> input[type='radio']) {
+    min-height: 44px;
+  }
 }

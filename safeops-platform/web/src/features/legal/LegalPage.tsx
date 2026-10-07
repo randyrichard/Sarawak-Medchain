@@ -54,14 +54,15 @@ export function LegalPage() {
   return (
     <div className="min-h-full bg-page">
       <header className="border-b bg-surface">
-        <div className="mx-auto flex max-w-[820px] items-center gap-2.5 px-5 py-4">
+        <div className="mx-auto flex max-w-[820px] flex-wrap items-center gap-x-2.5 gap-y-1 px-4 py-4 sm:px-5">
           <Link to="/login" className="flex items-center gap-2.5" aria-label="SafeOps home">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent">
               <ShieldCheck size={17} color="#fff" strokeWidth={2.4} />
             </span>
             <span className="text-sm font-bold tracking-tight text-ink">SafeOps</span>
           </Link>
-          <nav className="ml-auto flex items-center gap-4 text-xs font-semibold" aria-label="Legal documents">
+          {/* Links of text height are under half a fingertip; a touch screen gets 44px rows. */}
+          <nav className="ml-auto flex items-center gap-3 text-xs font-semibold sm:gap-4 [&>a]:coarse:flex [&>a]:coarse:min-h-11 [&>a]:coarse:items-center" aria-label="Legal documents">
             <Link
               to="/privacy"
               className={pathname.startsWith('/privacy') ? 'text-accent' : 'text-ink-2 hover:text-ink'}
@@ -151,7 +152,7 @@ export function LegalPage() {
 
         <p className="mt-10 border-t pt-4 text-xs text-muted">
           The full text, including the parts still to be settled, is kept with the source at{' '}
-          <span className="font-mono">docs/{doc.sourceFile}</span>.
+          <span className="break-all font-mono">docs/{doc.sourceFile}</span>.
         </p>
       </main>
     </div>

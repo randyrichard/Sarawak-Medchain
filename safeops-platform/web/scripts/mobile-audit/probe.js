@@ -32,6 +32,16 @@ window.__probe = () => {
     if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'A'].includes(t)) return true
     return [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())
   }).filter((el) => !el.closest('[role="dialog"]') || document.querySelector('[role="dialog"]'))
+  // False when a scrolling or clipping ancestor cuts the element off at that point.
+  const shownAt = (e, x, y) => {
+    for (let p = e.parentElement; p && p !== document.body; p = p.parentElement) {
+      const cs = getComputedStyle(p)
+      if (cs.overflowX === 'visible' && cs.overflowY === 'visible') continue
+      const r = p.getBoundingClientRect()
+      if (x < r.left || x > r.right || y < r.top || y > r.bottom) return false
+    }
+    return true
+  }
   const pinned = (e) => { for (let p = e; p; p = p.parentElement) { const ps = getComputedStyle(p).position; if (ps === 'sticky' || ps === 'fixed') return true } return false }
   const rects = leaves.filter((el) => !pinned(el)).flatMap((el) => [...el.getClientRects()].filter((r) => r.width > 0 && r.height > 0).map((r) => [el, r]))
   for (let i = 0; i < rects.length; i++) for (let j = i + 1; j < rects.length; j++) {
@@ -45,6 +55,8 @@ window.__probe = () => {
       // The one on top must be what a tap hits; if neither is reachable it is behind an overlay.
       const cx = Math.max(ra.left, rb.left) + ix / 2, cy = Math.max(ra.top, rb.top) + iy / 2
       if (cy < 0 || cy > H) continue
+      // Scrolled out of its scroll box (under the top bar, say): clipped, so not drawn there.
+      if (!shownAt(a, cx, cy) || !shownAt(b, cx, cy)) continue
       const top = document.elementFromPoint(cx, cy)
       if (!top || (!a.contains(top) && !b.contains(top) && !top.contains(a) && !top.contains(b))) continue
       // A button or icon placed inside a field on purpose (show-password, search icon) is

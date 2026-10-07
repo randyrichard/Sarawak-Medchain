@@ -84,6 +84,10 @@ interface ServerAction {
   version: number
   createdAt: string
   notes?: { id: string; body: string; author: string; mentions: string[]; createdAt: string }[]
+  /** On register rows only: the parent incident, when there is one. */
+  incidentNumber?: string | null
+  incidentTitle?: string | null
+  department?: string
 }
 
 /** Server status vocabulary → the labels the existing UI renders. */
@@ -351,6 +355,9 @@ export const incidentsApi = {
         companyId: r.companyId,
         siteId: r.siteId,
         incidentId: r.incidentId,
+        incidentNumber: r.incidentNumber ?? undefined,
+        incidentTitle: r.incidentTitle ?? undefined,
+        department: r.department ?? '',
         source: r.source,
       })),
     }

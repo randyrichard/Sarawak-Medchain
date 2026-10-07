@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
-import { Camera, CheckCircle2, LocateFixed, PenLine, Send, X } from 'lucide-react'
+import { CheckCircle2, LocateFixed, PenLine, Send, X } from 'lucide-react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import type { ChecklistAnswer, ChecklistItem, ChecklistResult, InspectionView } from '@/api/assets'
@@ -36,7 +36,6 @@ export function InspectionRunner({
   const [result, setResult] = useState<InspectionView | null>(null)
   const [savedAt, setSavedAt] = useState<string | null>(null)
   const dirty = useRef(false)
-  const fileRef = useRef<HTMLInputElement>(null)
 
   /*
    * Templates come from the server, which is what validates the submitted answers. The
@@ -151,7 +150,7 @@ export function InspectionRunner({
                 {inspection.overdue && <Badge tone="critical" className="ml-1.5">overdue</Badge>}
               </p>
             </div>
-            <button onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-muted hover:bg-accent-soft hover:text-ink">
+            <button onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft hover:text-ink">
               <X size={16} />
             </button>
           </div>
@@ -253,13 +252,14 @@ export function InspectionRunner({
               })}
 
               {/* Evidence + context */}
-              <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => fileRef.current?.click()} className="flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold text-ink-2 hover:bg-accent-soft">
-                  <Camera size={13} /> Photos ({draft.photoCount})
-                </button>
-                <input ref={fileRef} type="file" accept="image/*" multiple className="hidden"
-                  onChange={(e) => patch({ photoCount: draft.photoCount + (e.target.files?.length ?? 0) })} />
-                <button onClick={captureGps} className="flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold text-ink-2 hover:bg-accent-soft">
+              {/*
+                No photo button. It counted the photos chosen and threw them away - nothing
+                stores a photo against an inspection - and the result then said "2 photo(s)" as
+                if they were on record. Until there is somewhere to keep them, the inspector is
+                not asked to take them.
+              */}
+              <div className="grid grid-cols-1 gap-2">
+                <button onClick={captureGps} className="flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold text-ink-2 hover:bg-accent-soft coarse:min-h-11">
                   <LocateFixed size={13} /> {draft.gps ? 'GPS ✓' : 'Capture GPS'}
                 </button>
               </div>

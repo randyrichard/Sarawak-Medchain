@@ -120,7 +120,7 @@ export function ActionsTable({
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="text-2xs font-semibold uppercase tracking-wider text-muted">Group by</span>
-          <select value={group} onChange={(e) => setGroup(e.target.value as GroupKey)} className="h-8 rounded-lg border bg-surface px-2 text-xs text-ink-2 outline-none">
+          <select value={group} onChange={(e) => setGroup(e.target.value as GroupKey)} aria-label="Group by" className="h-8 coarse:h-11 rounded-lg border bg-surface px-2 text-xs text-ink-2 outline-none">
             <option value="none">None</option>
             <option value="site">Site</option>
             <option value="owner">Owner</option>
@@ -144,7 +144,7 @@ export function ActionsTable({
             </>
           )}
           <Button size="sm" variant="ghost" icon={<Download size={12} />}
-            onClick={() => exportCsv(selected.size > 0 ? sorted.filter((i) => selected.has(i.id)) : sorted, 'safeops-corrective-actions.csv')}>
+            onClick={() => exportCsv(selected.size > 0 ? sorted.filter((i) => selected.has(i.id)) : sorted, 'safeops-corrective-actions.csv', (id) => sites.find((s) => s.id === id)?.name ?? id)}>
             Export CSV
           </Button>
         </div>
@@ -162,7 +162,7 @@ export function ActionsTable({
                       aria-label="Select all"
                       checked={allSelected}
                       onChange={() => setSelected(allSelected ? new Set() : new Set(selectable.map((i) => i.id)))}
-                      className="h-3.5 w-3.5 accent-[var(--accent)]"
+                      className="h-3.5 w-3.5 accent-[var(--accent)] coarse:h-6 coarse:w-6"
                     />
                   )}
                 </th>
@@ -262,7 +262,7 @@ function GroupRows({
                 checked={selected.has(i.id)}
                 onChange={() => toggle(i.id)}
                 onClick={(e) => e.stopPropagation()}
-                className="h-3.5 w-3.5 accent-[var(--accent)]"
+                className="h-3.5 w-3.5 accent-[var(--accent)] coarse:h-6 coarse:w-6"
               />
             )}
           </td>

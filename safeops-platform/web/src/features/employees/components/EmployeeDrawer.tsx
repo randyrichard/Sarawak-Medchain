@@ -10,6 +10,7 @@ import {
 } from '@/components/ui'
 import { MEDICAL_KIND, fmtDate, relativeDays } from '../lib'
 import { EditEmployeeDialog } from './EditEmployeeDialog'
+import { useOrg } from '@/features/org/OrgContext'
 
 type Tab = 'profile' | 'medical' | 'contacts' | 'ppe' | 'training'
 
@@ -122,7 +123,7 @@ export function EmployeeDrawer({
               </>
             )}
           </div>
-          <button onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-muted hover:bg-accent-soft">
+          <button onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft">
             <X size={16} />
           </button>
         </header>
@@ -245,15 +246,22 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   )
 }
 
+/** A number a phone can dial from a tap - the point of having it on a site phone. */
+function Tel({ n }: { n?: string | null }) {
+  if (!n) return null
+  return <a href={`tel:${n.replace(/[^\d+]/g, '')}`} className="text-accent underline-offset-2 hover:underline coarse:inline-flex coarse:min-h-11 coarse:items-center">{n}</a>
+}
+
 function ProfileTab({ item }: { item: EmployeeDetail }) {
+  const { sites } = useOrg()
   return (
     <div>
       <Row label="Employee no." value={<span className="font-mono">{item.employeeNo}</span>} />
       <Row label="Position" value={item.position} />
       <Row label="Department" value={item.department} />
-      <Row label="Site" value={item.siteId.toUpperCase()} />
+      <Row label="Site" value={sites.find((s) => s.id === item.siteId)?.name ?? item.siteId} />
       <Row label="Email" value={item.email} />
-      <Row label="Phone" value={item.phone} />
+      <Row label="Phone" value={<Tel n={item.phone} />} />
       <Row label="Joined" value={fmtDate(item.hireDate)} />
       <Row label="Status" value={item.active ? 'Active' : 'Left'} />
     </div>
@@ -324,7 +332,7 @@ function ContactsTab({
                 </p>
                 <p className="text-2xs text-muted">{c.relationship || 'Contact'}</p>
                 <p className="mt-0.5 font-mono text-xs text-ink-2">
-                  {c.phone}{c.altPhone ? ` · ${c.altPhone}` : ''}
+                  <Tel n={c.phone} />{c.altPhone && <> · <Tel n={c.altPhone} /></>}
                 </p>
               </div>
               {canManage && (

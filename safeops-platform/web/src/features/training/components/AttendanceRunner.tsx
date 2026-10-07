@@ -96,7 +96,7 @@ export function AttendanceRunner({
             <h2 className="text-lg font-semibold leading-snug tracking-tight text-ink">{session.courseName}</h2>
             <p className="text-2xs text-muted">{session.scheduledFor} · {session.venue} · trainer {session.trainer}</p>
           </div>
-          <button onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-muted hover:bg-accent-soft hover:text-ink"><X size={16} /></button>
+          <button onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft hover:text-ink"><X size={16} /></button>
         </div>
 
         {issued ? (

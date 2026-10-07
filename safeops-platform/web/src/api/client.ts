@@ -3,6 +3,7 @@
 // VITE_API_BASE_URL is set; MockApiClient remains for the credential-free static demo.
 
 import { drainRows } from './paging'
+import { employeesApi } from './employeesApi'
 import { ApiError } from './types'
 import type {
   ActivityEvent, AppNotification, Company, Department, Employee,
@@ -375,7 +376,10 @@ const SERVER_ACTIVITY = isBackendConfigured()
  * in one place, keeps a single source of truth for the underlying facts while the view
  * model stays what the existing screens already expect.
  */
-function toCapaItem(a: IncidentAction & { companyId?: string; siteId?: string; incidentId?: string | null }): CapaItem {
+function toCapaItem(a: IncidentAction & {
+  companyId?: string; siteId?: string; incidentId?: string | null
+  incidentNumber?: string; incidentTitle?: string; department?: string
+}): CapaItem {
   // Due dates are date-only. Measuring both ends from UTC midnight keeps "due today" out
   // of "overdue" — comparing against the current time would make it overdue all day.
   const due = new Date(a.dueDate)
@@ -398,8 +402,10 @@ function toCapaItem(a: IncidentAction & { companyId?: string; siteId?: string; i
     title: a.title,
     companyId: a.companyId ?? '',
     siteId: a.siteId ?? '',
-    department: '',
+    department: a.department ?? '',
     incidentId: a.incidentId ?? null,
+    incidentNumber: a.incidentNumber,
+    incidentTitle: a.incidentTitle,
     owner: a.owner,
     ownerId: a.ownerId ?? null,
     priority: a.priority,
@@ -636,7 +642,22 @@ class MockApiClient implements ApiClient {
     return TEAMS.filter((t) => departmentIds.includes(t.departmentId))
   }
 
-  async listEmployees(companyId: string) {
+  /**
+   * The company's active employees.
+   *
+   * This read only the offline demo's fixture people, even with a server. Outside
+   * development those fixtures are empty, so on a real deployment the training "New
+   * session" dialog never listed anyone to enrol and Organization → People showed nobody;
+   * in development it listed invented people whose sites did not match. Now the register.
+   */
+  async listEmployees(companyId: string): Promise<Employee[]> {
+    if (SERVER_INCIDENTS) {
+      const rows = await drainRows((page, pageSize) => employeesApi.list(companyId, { page, pageSize, status: 'active' }))
+      return rows.map((e) => ({
+        id: e.id, companyId: e.companyId, siteId: e.siteId, departmentId: e.departmentId ?? '',
+        teamId: e.teamId ?? undefined, name: e.name, position: e.position, email: e.email ?? undefined,
+      }))
+    }
     await delay(LATENCY())
     return EMPLOYEES.filter((e) => e.companyId === companyId)
   }
@@ -893,6 +914,8 @@ class MockApiClient implements ApiClient {
         verifiedBy: a.verifiedBy ?? undefined,
         verifiedAt: a.verifiedAt ?? undefined,
         completedAt: a.completedAt ?? undefined,
+        incidentNumber: a.incidentNumber ?? undefined,
+        incidentTitle: a.incidentTitle ?? undefined,
         notes: (a.notes ?? []).map((n) => ({ id: n.id, author: n.author, at: n.createdAt, text: n.body, mentions: n.mentions })),
       } as never)
     }

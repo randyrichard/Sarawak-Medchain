@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Camera, LocateFixed, PenLine, Send, X } from 'lucide-react'
+import { LocateFixed, PenLine, Send, X } from 'lucide-react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import type {
@@ -39,8 +39,6 @@ export function AuditRunner({
   const [error, setError] = useState<string | null>(null)
   const [savedAt, setSavedAt] = useState<string | null>(null)
   const dirty = useRef(false)
-  const fileRef = useRef<HTMLInputElement>(null)
-  const photoTarget = useRef<string | null>(null)
 
   const allItems = useMemo(
     () => template.sections.flatMap((s) => s.items.map((i) => ({ ...i, section: s.title }))),
@@ -140,7 +138,7 @@ export function AuditRunner({
               <p className="font-mono text-2xs text-muted">{audit.code} · {template.name}</p>
               <h2 className="text-lg font-semibold leading-snug tracking-tight text-ink">{audit.title}</h2>
             </div>
-            <button onClick={onClose} aria-label="Close checklist" className="rounded-lg p-1.5 text-muted hover:bg-accent-soft hover:text-ink">
+            <button onClick={onClose} aria-label="Close checklist" className="rounded-lg p-1.5 coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft hover:text-ink">
               <X size={16} />
             </button>
           </div>
@@ -206,7 +204,7 @@ export function AuditRunner({
                             <select
                               value={f?.severity ?? 'Minor'}
                               onChange={(e) => setFail(item.id, { severity: e.target.value as FindingSeverity })}
-                              className="h-8 rounded-lg border bg-surface px-2 text-xs text-ink-2 outline-none"
+                              className="h-8 coarse:h-11 rounded-lg border bg-surface px-2 text-xs text-ink-2 outline-none"
                               aria-label="Finding severity"
                             >
                               {SEVERITIES.map((s) => <option key={s}>{s}</option>)}
@@ -214,22 +212,13 @@ export function AuditRunner({
                             <select
                               value={f?.owner ?? ''}
                               onChange={(e) => setFail(item.id, { owner: e.target.value })}
-                              className={cn('h-8 rounded-lg border bg-surface px-2 text-xs text-ink-2 outline-none', !f?.owner && 'border-[var(--critical)]')}
+                              className={cn('h-8 coarse:h-11 rounded-lg border bg-surface px-2 text-xs text-ink-2 outline-none', !f?.owner && 'border-[var(--critical)]')}
                               aria-label="Action owner"
                             >
                               <option value="" disabled>Action owner…</option>
                               <PeopleOptions people={people} />
                             </select>
                           </div>
-                          <button
-                            onClick={() => {
-                              photoTarget.current = item.id
-                              fileRef.current?.click()
-                            }}
-                            className="flex items-center gap-1.5 rounded-lg border bg-surface px-2.5 py-1.5 text-2xs font-semibold text-ink-2 hover:text-ink"
-                          >
-                            <Camera size={12} /> Evidence photos ({a?.photoCount ?? 0})
-                          </button>
                         </div>
                       )}
                     </div>
@@ -239,14 +228,13 @@ export function AuditRunner({
             </div>
           ))}
 
-          <input ref={fileRef} type="file" accept="image/*" multiple className="hidden"
-            onChange={(e) => {
-              const id = photoTarget.current
-              if (id) setAnswer(id, { photoCount: (draft.answers[id]?.photoCount ?? 0) + (e.target.files?.length ?? 0) })
-            }} />
+          {/*
+            No "Evidence photos" button: it counted the photos chosen and discarded them, and the
+            finding then claimed them. Nothing stores a photo against an audit yet.
+          */}
 
           <div className="grid grid-cols-1 gap-2">
-            <button onClick={captureGps} className="flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold text-ink-2 hover:bg-accent-soft">
+            <button onClick={captureGps} className="flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold text-ink-2 hover:bg-accent-soft coarse:min-h-11">
               <LocateFixed size={13} /> {draft.gps ? 'GPS captured ✓' : 'Capture GPS'}
             </button>
             {draft.gps && <Badge tone="accent">{draft.gps}</Badge>}

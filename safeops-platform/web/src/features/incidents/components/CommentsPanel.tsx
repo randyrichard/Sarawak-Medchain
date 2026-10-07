@@ -88,7 +88,7 @@ export function CommentsPanel({ incident, onUpdate }: { incident: Incident; onUp
             <select
               value=""
               onChange={(e) => mention(e.target.value)}
-              className="rounded-lg border bg-surface px-2 py-1 text-2xs text-ink-2 outline-none"
+              className="rounded-lg border bg-surface px-2 py-1 coarse:min-h-11 text-2xs text-ink-2 outline-none"
               aria-label="Mention someone"
             >
               <option value="">Mention…</option>

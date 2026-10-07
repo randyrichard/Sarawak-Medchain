@@ -4,6 +4,7 @@ import { Printer } from 'lucide-react'
 import type { Visitor } from '@/api/visitorsApi'
 import { Button, Dialog } from '@/components/ui'
 import { fmtDate, fmtDateTime } from '@/features/incidents/lib'
+import { useSiteLabel } from '@/features/org/useSiteLabel'
 
 /**
  * The printed visitor pass.
@@ -23,6 +24,7 @@ export function VisitorPass({
   open: boolean
   onClose: () => void
 }) {
+  const siteLabel = useSiteLabel()
   const payload = `${window.location.origin}/visitors?pass=${encodeURIComponent(visitor.passKey)}`
 
   const svg = useMemo(() => {
@@ -61,7 +63,7 @@ export function VisitorPass({
             <PassRow label="Pass" value={visitor.code} mono />
             <PassRow label="Badge" value={visitor.badgeNumber ?? '—'} mono />
             <PassRow label="Host" value={visitor.hostNameAtBooking || '—'} />
-            <PassRow label="Site" value={visitor.siteId.toUpperCase()} />
+            <PassRow label="Site" value={siteLabel(visitor.siteId)} />
             <PassRow label="Visit date" value={fmtDate(visitor.expectedArrival)} />
             <PassRow label="Valid until" value={fmtDateTime(visitor.expectedDeparture)} />
             <PassRow label="Vehicle" value={visitor.vehicleNumber || '—'} mono />

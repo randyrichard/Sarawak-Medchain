@@ -135,7 +135,7 @@ export function ToolboxPage() {
                   </span>
                   <span className="shrink-0 text-xs">
                     {s.held
-                      ? <><span className="font-semibold text-ink">{s.headcount.toLocaleString()}</span> <span className="text-muted">present</span></>
+                      ? <><span className="font-semibold text-ink">{s.headcount.toLocaleString()}</span> <span className="text-ink-2">present</span></>
                       : <span className="font-medium text-warning">Not yet held</span>}
                   </span>
                 </li>

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { PrismaClient } from '@prisma/client'
 import { SiteComparisonService } from './siteComparison.js'
 import type { Caller } from '../domain/caller.js'
+import { startOfLocalDay } from '../domain/businessDay.js'
 
 /**
  * Every site side by side, against a REAL PostgreSQL database.
@@ -35,6 +36,12 @@ const outsider: Caller = { userId: 'cmp-out', name: 'Out', roles: [{ companyId: 
 
 const DAY = 86_400_000
 const ago = (days: number) => new Date(Date.now() - days * DAY)
+/*
+ * A minute ago, but never before today's local midnight. In the first minute after
+ * midnight in the site's zone (16:00 UTC for Kuching) a minute ago is yesterday, and the
+ * comparison is right not to count it - the test was wrong, once a day.
+ */
+const heldToday = () => new Date(Math.max(Date.now() - 60_000, startOfLocalDay().getTime() + 1_000))
 
 d('SiteComparisonService — integration (real Postgres)', () => {
   beforeAll(async () => {
@@ -65,7 +72,7 @@ d('SiteComparisonService — integration (real Postgres)', () => {
       data: { code: 'CA-C2', companyId: COMPANY, siteId: QUIET, title: 'x', owner: 'Kumar', dueDate: ago(-5), createdBy: 'x' },
     })
     await db.toolboxMeeting.create({
-      data: { companyId: COMPANY, siteId: QUIET, number: 'TBM-C1', heldAt: new Date(Date.now() - 60_000),
+      data: { companyId: COMPANY, siteId: QUIET, number: 'TBM-C1', heldAt: heldToday(),
         ledBy: 'A', topic: 'x', headcount: 40, recordedBy: 'x', recordedById: 'x' },
     })
   })

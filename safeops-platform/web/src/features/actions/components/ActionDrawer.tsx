@@ -19,6 +19,7 @@ import { ProgressLine } from './ProgressLine'
 import { canEditItem, canVerifyItem, DERIVED_META, dueLabel, isManager } from '../lib'
 import { cn } from '@/lib/cn'
 import { PeopleOptions } from '@/features/org/PeopleOptions'
+import { useOrg } from '@/features/org/OrgContext'
 
 export function ActionDrawer({
   item, actor, readOnly, onClose, onChanged,
@@ -30,6 +31,8 @@ export function ActionDrawer({
   onChanged: (item: CapaItem) => void
 }) {
   const people = usePeople()
+  const { sites } = useOrg()
+  const siteName = item ? sites.find((s) => s.id === item.siteId)?.name ?? '' : ''
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [completeOpen, setCompleteOpen] = useState(false)
@@ -149,7 +152,7 @@ export function ActionDrawer({
               </Link>
             )}
           </div>
-          <button onClick={onClose} aria-label="Close workspace" className="rounded-lg p-1.5 text-muted hover:bg-accent-soft hover:text-ink">
+          <button onClick={onClose} aria-label="Close workspace" className="rounded-lg p-1.5 coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft hover:text-ink">
             <X size={16} />
           </button>
         </div>
@@ -161,7 +164,7 @@ export function ActionDrawer({
           <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
             <Meta label="Owner"><span className="flex items-center gap-1.5"><Avatar name={item.owner || '?'} size={16} />{item.owner || 'Unassigned'}</span></Meta>
             <Meta label="Reviewer">{item.reviewer ?? '—'}</Meta>
-            <Meta label="Site · Dept">{item.siteId.toUpperCase()} · {item.department}</Meta>
+            <Meta label="Site · Dept">{[siteName, item.department].filter(Boolean).join(' · ')}</Meta>
             <Meta label="Due">{item.dueDate}</Meta>
             <Meta label="Root cause">{item.rootCause ?? '—'}</Meta>
             <Meta label="Created">{item.createdAt ? timeAgo(item.createdAt) : '—'}</Meta>
@@ -310,7 +313,7 @@ export function ActionDrawer({
                       if (!mentions.includes(name)) setMentions((m) => [...m, name])
                       setComment((t) => `${t}${t && !t.endsWith(' ') ? ' ' : ''}@${name} `)
                     }}
-                    className="rounded-md border bg-surface px-1.5 py-0.5 text-2xs text-ink-2 outline-none"
+                    className="rounded-md border bg-surface px-1.5 py-0.5 text-2xs text-ink-2 outline-none coarse:min-h-11"
                     aria-label="Mention someone"
                   >
                     <option value="">Mention…</option>

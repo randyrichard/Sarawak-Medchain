@@ -19,6 +19,9 @@
  * - clipped:   text cut off by a fixed-height box that does not scroll
  * - overlap:   text or controls drawn on top of each other
  * - iosZoom:   a text field under 16px, which an iPhone zooms into on focus
+ * - target:    a control under 24px (WCAG 2.5.8), measured through its label where it has one
+ * - no name:   a control a screen reader cannot name
+ * - blocked:   pinned bars taking more than 30% of the screen for good
  * Navigation: top-bar items overlapping, off-screen or under 44px; the menu drawer reaching
  * its last item. Keyboard: with the screen shrunk by a keyboard's height, each field must
  * be in view and not covered by a pinned bar.
@@ -42,6 +45,7 @@ const BASE = (process.env.MOBILE_AUDIT_URL || 'http://localhost:5173').replace(/
 const EMAIL = process.env.MOBILE_AUDIT_EMAIL || 'admin@demo.safeops.app'
 const PASSWORD = process.env.MOBILE_AUDIT_PASSWORD || 'SafeOpsPlatform2026'
 const PROBE = fs.readFileSync(path.join(__dirname, 'probe.js'), 'utf8')
+const TARGETS = fs.readFileSync(path.join(__dirname, 'targets.js'), 'utf8')
 
 const DEVICES = [
   // name, Playwright device, keyboard height in CSS px
@@ -83,15 +87,26 @@ function layoutFindings(r) {
   return f
 }
 
+// Under 24px fails WCAG 2.5.8; 24-43px passes it and is left to judgement, so not reported.
+function targetFindings(x) {
+  const f = []
+  if (x.tiny.length) f.push(`target under 24px: ${x.tiny.join(' | ')}`)
+  if (x.noName.length) f.push(`control with no name: ${x.noName.join(' | ')}`)
+  if (x.blocked) f.push(`blocked: ${x.blocked}`)
+  return f
+}
+
 async function auditDevice(browser, [name, device, keyboard]) {
   const findings = []
   const ctx = await browser.newContext({ ...device })
   await ctx.addInitScript(PROBE)
+  await ctx.addInitScript(TARGETS)
   const page = await ctx.newPage()
   page.on('pageerror', (e) => findings.push(`script error: ${e.message.slice(0, 160)}`))
 
   await page.goto(BASE + '/login'); await page.waitForTimeout(800)
   for (const f of layoutFindings(await page.evaluate(() => window.__probe()))) findings.push(`/login ${f}`)
+  for (const f of targetFindings(await page.evaluate(() => window.__extra()))) findings.push(`/login ${f}`)
   await signIn(page)
 
   await page.goto(BASE + '/incidents'); await page.waitForTimeout(1500)
@@ -103,6 +118,7 @@ async function auditDevice(browser, [name, device, keyboard]) {
     if (!p) continue
     await page.goto(BASE + p); await page.waitForTimeout(1500)
     for (const f of layoutFindings(await page.evaluate(() => window.__probe()))) findings.push(`${r} ${f}`)
+    for (const f of targetFindings(await page.evaluate(() => window.__extra()))) findings.push(`${r} ${f}`)
   }
 
   // Navigation: the top bar, and the drawer reaching its last item.

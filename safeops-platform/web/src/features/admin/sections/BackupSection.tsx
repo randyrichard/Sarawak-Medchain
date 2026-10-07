@@ -144,7 +144,8 @@ export function BackupSection() {
               {backups.map((b) => (
                 <li key={b.id} className="flex flex-wrap items-center gap-3 rounded-lg border px-3.5 py-2.5">
                   <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent-soft"><DatabaseBackup size={15} className="text-accent" /></span>
-                  <div className="min-w-0 flex-1">
+                  {/* A floor, so on a phone the badge and button wrap below instead of squeezing this to 16px. */}
+                  <div className="min-w-[10rem] flex-1">
                     <p className="text-sm font-medium text-ink">{b.note}</p>
                     <p className="text-2xs text-muted">{fmtDateTime(b.at)} · {b.sizeKb} KB · by {b.by}</p>
                   </div>

@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react'
+import type { CSSProperties, HTMLAttributes, ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 
 export function Card({ children, className, style }: { children: ReactNode; className?: string; style?: CSSProperties }) {
@@ -25,16 +25,18 @@ export function CardHeader({
   as?: 'h2' | 'h3' | 'h4'
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 px-5 pb-1 pt-4">
-      <div className="min-w-0">
+    // Wraps, with a floor under the title: on a 320px phone a header with buttons on the
+    // right squeezed "Departments" into 59px.
+    <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 px-5 pb-1 pt-4">
+      <div className="min-w-[10rem] flex-1">
         <Heading className="text-sm font-semibold tracking-tight text-ink">{title}</Heading>
         {subtitle && <p className="mt-0.5 text-xs text-muted">{subtitle}</p>}
       </div>
-      {right && <div className="shrink-0">{right}</div>}
+      {right && <div className="max-w-full shrink-0">{right}</div>}
     </div>
   )
 }
 
-export function CardBody({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn('px-5 pb-4 pt-2', className)}>{children}</div>
+export function CardBody({ children, className, ...rest }: { children: ReactNode; className?: string } & Omit<HTMLAttributes<HTMLDivElement>, 'children' | 'className'>) {
+  return <div className={cn('px-5 pb-4 pt-2', className)} {...rest}>{children}</div>
 }

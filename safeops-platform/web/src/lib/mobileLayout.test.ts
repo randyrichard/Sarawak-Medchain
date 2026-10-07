@@ -70,4 +70,39 @@ describe('mobile layout', () => {
     // And zoom itself is never disabled - people who need it must keep it (WCAG 1.4.4).
     expect(read('index.html')).not.toMatch(/maximum-scale|user-scalable\s*=\s*no/)
   })
+
+  it('makes every close button a 44px target on a touch screen', () => {
+    // Drawer and dialog close buttons were 24-28px: the control people reach for most on a
+    // phone, in a corner, where a miss lands on the page behind.
+    const offenders: string[] = []
+    for (const file of sources(SRC)) {
+      const text = readFileSync(file, 'utf8')
+      for (const m of text.matchAll(/aria-label="Close[^"]*"/g)) {
+        const start = text.lastIndexOf('<button', m.index)
+        const end = text.indexOf('</button>', m.index)
+        if (start < 0 || end < 0) continue
+        if (!text.slice(start, end).includes('coarse:min-h-11')) offenders.push(`${relative(SRC, file)}: ${m[0]}`)
+      }
+    }
+    expect(offenders).toEqual([])
+  })
+
+  it('makes checkbox and radio rows 44px tall on a touch screen', () => {
+    // The label is the target. Rows of them (an invitation's sites) were 19px tall.
+    const css = read('src/styles/index.css')
+    const rule = css.slice(css.indexOf('@media (pointer: coarse)'))
+    expect(rule).toMatch(/label:has\(> input\[type='checkbox'\]\),\s*label:has\(> input\[type='radio'\]\)\s*\{\s*min-height:\s*44px/)
+    expect(read('src/components/ui/Switch.tsx')).toContain('coarse:h-11 coarse:w-12')
+  })
+
+  it('lists a month by day on a phone instead of drawing seven 45px columns', () => {
+    // In the grid, each entry was a dot and the first character of its code.
+    for (const f of ['src/features/actions/components/CalendarView.tsx', 'src/features/assets/components/InspectionCalendar.tsx']) {
+      const src = read(f)
+      expect(src).toContain('<MonthAgenda')
+      expect(src).toMatch(/className="hidden grid-cols-7[^"]*sm:grid"/)
+      // Fading a whole cell took its text below 4.5:1.
+      expect(src).not.toContain('opacity-45')
+    }
+  })
 })
