@@ -21,6 +21,7 @@ import {
 import { ReportSectionView } from './components/ReportSectionView'
 import { cn } from '@/lib/cn'
 import { useUrlState } from '@/lib/useUrlState'
+import { saveBlob } from '@/lib/saveBlob'
 
 /**
  * Reports.
@@ -168,12 +169,7 @@ export function ReportsPage() {
   const download = async (fn: () => Promise<Blob>, name: string) => {
     try {
       const b = await fn()
-      const url = URL.createObjectURL(b)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = name
-      a.click()
-      URL.revokeObjectURL(url)
+      saveBlob(b, name)
     } catch {
       setError('Could not download that report.')
     }

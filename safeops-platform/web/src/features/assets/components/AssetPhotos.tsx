@@ -5,6 +5,7 @@ import { ApiError } from '@/api/types'
 import { Alert, Skeleton } from '@/components/ui'
 import { fmtDate } from '@/features/incidents/lib'
 import { cn } from '@/lib/cn'
+import { saveBlob } from '@/lib/saveBlob'
 
 /**
  * Photos, manuals and scanned certificates held against a piece of equipment.
@@ -91,12 +92,7 @@ export function AssetPhotos({
     setError(null)
     try {
       const b = await equipmentApi.documentBlob(row.id)
-      const url = URL.createObjectURL(b)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = row.name
-      a.click()
-      URL.revokeObjectURL(url)
+      saveBlob(b, row.name)
     } catch {
       setError('Could not download that file.')
     } finally {

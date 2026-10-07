@@ -18,6 +18,7 @@ import { enqueue, shouldRetry } from './outbox'
 import { EVIDENCE_ACCEPT, EVIDENCE_HINT, screenEvidence, uploadEvidence } from './evidence'
 import { StatusPill } from '@/components/ui'
 import { cn } from '@/lib/cn'
+import { uuid } from '@/lib/uuid'
 
 const STEPS = ['What happened', 'Where & who', 'Details & evidence', 'Review & sign'] as const
 
@@ -110,7 +111,7 @@ export function ReportIncidentPage() {
    * mid-send) - was queued under a new key and filed a second time. One injury, two records.
    * With the key on the first attempt, the server recognises any resend as the same report.
    */
-  const clientRef = useRef(crypto.randomUUID())
+  const clientRef = useRef(uuid())
 
   // Restore banner
   useEffect(() => {

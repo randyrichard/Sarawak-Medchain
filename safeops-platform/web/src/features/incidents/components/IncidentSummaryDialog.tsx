@@ -5,6 +5,7 @@ import type { ReportData } from '@/api/reportsApi'
 import { ApiError } from '@/api/types'
 import { ReportSectionView } from '@/features/reports/components/ReportSectionView'
 import { Button, Dialog, Skeleton } from '@/components/ui'
+import { saveBlob } from '@/lib/saveBlob'
 
 /**
  * The one-page incident summary: the facts, people, investigation and actions, written from
@@ -29,12 +30,7 @@ export function IncidentSummaryDialog({ incidentId, number, onClose }: {
   const download = async () => {
     try {
       const b = await blob(`/incidents/${incidentId}/summary.pdf`)
-      const url = URL.createObjectURL(b)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `incident-summary-${number}.pdf`
-      a.click()
-      URL.revokeObjectURL(url)
+      saveBlob(b, `incident-summary-${number}.pdf`)
     } catch {
       setError('Could not download the summary.')
     }

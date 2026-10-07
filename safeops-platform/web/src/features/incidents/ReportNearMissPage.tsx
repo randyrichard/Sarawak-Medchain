@@ -12,6 +12,7 @@ import { EVIDENCE_ACCEPT, screenEvidence, uploadEvidence } from './evidence'
 import { Alert, Button, Card, LinkButton } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { useUnsavedChangesWarning } from '@/lib/useUnsavedChangesWarning'
+import { uuid } from '@/lib/uuid'
 
 /**
  * Fast near-miss capture.
@@ -89,7 +90,7 @@ export function ReportNearMissPage() {
 
   // One key per near miss, kept across retries: pressing Submit again after a reply was lost
   // must not file it twice (see ReportIncidentPage). A new one after "Report another".
-  const clientRef = useRef(crypto.randomUUID())
+  const clientRef = useRef(uuid())
 
   const submit = async () => {
     if (!company || !valid) return
@@ -161,7 +162,7 @@ export function ReportNearMissPage() {
               open the report and add {queued === 1 ? 'it' : 'them'} under Evidence.
             </Alert>
           )}
-          <Button className="mt-5" onClick={() => { clientRef.current = crypto.randomUUID(); setQueued(null); setWhat(''); setWhere(''); setTags([]); setPhotos([]) }}>
+          <Button className="mt-5" onClick={() => { clientRef.current = uuid(); setQueued(null); setWhat(''); setWhere(''); setTags([]); setPhotos([]) }}>
             Report another
           </Button>
         </Card>
@@ -199,7 +200,7 @@ export function ReportNearMissPage() {
           </p>
 
           <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-center">
-            <Button onClick={() => { clientRef.current = crypto.randomUUID(); setDone(null); setWhat(''); setWhere(''); setTags([]); setPhotos([]) }}>
+            <Button onClick={() => { clientRef.current = uuid(); setDone(null); setWhat(''); setWhere(''); setTags([]); setPhotos([]) }}>
               Report another
             </Button>
             <LinkButton variant="secondary" to="/">Back to home</LinkButton>

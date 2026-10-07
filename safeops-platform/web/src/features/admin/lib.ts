@@ -4,6 +4,7 @@ import type { StatusKind } from '@/components/ui'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useOrg } from '@/features/org/OrgContext'
 import { csvDocument } from '@/lib/csv'
+import { saveBlob } from '@/lib/saveBlob'
 
 /** The acting administrator, with a session-stable device + IP for the audit log. */
 export function useAdminActor(): AdminActor {
@@ -29,22 +30,12 @@ export function downloadCsv(header: string[], rows: (string | number | null | un
   // login-history export carries the raw User-Agent of every login attempt, so an attacker
   // with no account can put a formula into a file an administrator opens.
   const blob = new Blob([csvDocument(header, rows)], { type: 'text/csv;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
+  saveBlob(blob, filename)
 }
 
 export function downloadJson(content: string, filename: string) {
   const blob = new Blob([content], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
+  saveBlob(blob, filename)
 }
 
 /**

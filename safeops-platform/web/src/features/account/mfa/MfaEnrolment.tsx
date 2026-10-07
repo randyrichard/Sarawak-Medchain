@@ -5,6 +5,7 @@ import { mfaApi } from '@/api/mfaApi'
 import { ApiError } from '@/api/types'
 import { Alert, Button, Input } from '@/components/ui'
 import { chunk } from '@/lib/chunk'
+import { saveBlob } from '@/lib/saveBlob'
 
 /**
  * Setting up an authenticator app, start to finish.
@@ -126,12 +127,7 @@ export function RecoveryCodes({ codes }: { codes: string[] }) {
     }
   }
   const download = () => {
-    const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }))
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'safeops-recovery-codes.txt'
-    a.click()
-    URL.revokeObjectURL(url)
+    saveBlob(new Blob([text], { type: 'text/plain' }), 'safeops-recovery-codes.txt')
   }
   return (
     <div className="rounded-xl border p-3">
