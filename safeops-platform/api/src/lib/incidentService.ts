@@ -19,6 +19,9 @@ const MANAGE_ROLES: Role[] = ['admin', 'hse_manager', 'safety_officer']
 const REVIEW_ROLES: Role[] = ['admin', 'hse_manager']
 
 
+/** How far ahead of the server an occurrence time may be: a phone clock running fast. */
+const CLOCK_SKEW_MS = 15 * 60_000
+
 export class IncidentError extends DomainError {}
 
 /**
@@ -382,6 +385,16 @@ export class IncidentService {
 
     if (!input.title?.trim()) throw new IncidentError('validation', 'A title is required.')
     if (!input.location?.trim()) throw new IncidentError('validation', 'A location is required.')
+    /*
+     * Not in the future. A date a year ahead was accepted and then sat on top of the
+     * register, pushed "days since the last incident" below zero and was counted in a month
+     * that has not happened. A few minutes either way is a phone clock, not a mistake.
+     */
+    const occurred = new Date(input.occurredAt)
+    if (Number.isNaN(occurred.getTime())) throw new IncidentError('validation', 'When it happened is not a valid date.')
+    if (occurred.getTime() > Date.now() + CLOCK_SKEW_MS) {
+      throw new IncidentError('validation', 'When it happened is in the future. Check the date and time, and the clock on this device.')
+    }
 
     /*
      * Idempotency, for reports filed offline and replayed later.

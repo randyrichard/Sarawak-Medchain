@@ -297,6 +297,7 @@ export function IncidentsListPage() {
           </div>
         ) : (
           <DataTable
+            caption="Incidents"
             columns={columns}
             rows={rows}
             rowKey={(i) => i.id}

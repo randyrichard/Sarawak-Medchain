@@ -75,6 +75,12 @@ const emptyDraft = (): Draft => ({
   attested: false,
 })
 
+/** Now, as the `datetime-local` value it is compared with: local wall-clock, no zone. */
+const localNow = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+
+/** Later than now, with the same few minutes' allowance for a fast clock as the server. */
+const inFuture = (local: string) => !!local && new Date(local).getTime() > Date.now() + 15 * 60_000
+
 export function ReportIncidentPage() {
   usePageTitle('Report an incident')
   const { user } = useAuth()
@@ -137,7 +143,7 @@ export function ReportIncidentPage() {
 
   const stepValid = useMemo(() => {
     switch (step) {
-      case 0: return draft.type !== null && draft.severity !== '' && draft.title.trim().length >= 8 && !!draft.occurredAt
+      case 0: return draft.type !== null && draft.severity !== '' && draft.title.trim().length >= 8 && !!draft.occurredAt && !inFuture(draft.occurredAt)
       case 1: return !!draft.siteId && draft.department.trim() !== '' && draft.location.trim() !== ''
       case 2: return draft.description.trim().length >= 30 && draft.immediateActions.trim() !== ''
       case 3: return draft.signature.trim().length >= 5 && draft.attested
@@ -421,6 +427,8 @@ export function ReportIncidentPage() {
               <Input
                 label="Date & time of occurrence" required type="datetime-local"
                 value={draft.occurredAt} onChange={(e) => patch({ occurredAt: e.target.value })}
+                max={localNow()}
+                error={inFuture(draft.occurredAt) ? 'That is in the future. Check the date and time.' : undefined}
               />
             </div>
 

@@ -230,6 +230,18 @@ d('PermitService — integration (real Postgres)', () => {
     expect(issued.approver).toBe(officer.name)
   })
 
+  it('refuses to approve a permit whose working window has already ended', async () => {
+    const p = await svc.create(officer, newPermit())
+    await svc.submit(officer, p.id)
+    await confirmAllControls(officer, p.id)
+    // The window ended while it sat in the queue.
+    await db.permit.update({ where: { id: p.id }, data: { validTo: new Date(Date.now() - 60_000) } })
+
+    await expect(svc.approve(officer, p.id, 'Controls verified.'))
+      .rejects.toMatchObject({ code: 'validation', message: expect.stringMatching(/window has already ended/) })
+    expect((await db.permit.findUnique({ where: { id: p.id } }))?.status).toBe('submitted')
+  })
+
   it('requires a gas test before issue for hot work, confined space and line breaking', async () => {
     for (const type of ['hot_work', 'confined_space', 'line_breaking'] as const) {
       const p = await svc.create(officer, newPermit({

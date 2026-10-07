@@ -17,7 +17,7 @@
  * the tenant audit log (what the platform recorded, with actor, IP and device).
  */
 import type { PrismaClient, Role, PermitStatus } from '@prisma/client'
-import { PermitError } from './permitService.js'
+import { PermitError, WINDOW_PASSED } from './permitService.js'
 import { activationBlockers } from './permitCatalog.js'
 import { equipmentBlockers } from './equipmentService.js'
 import { membershipOf, type Caller } from '../domain/caller.js'
@@ -118,6 +118,10 @@ export class PermitReviewService {
         'validation',
         `A ${permit.status.replace(/_/g, ' ')} permit is not awaiting review.`,
       )
+    }
+    // Every stage is a step towards approval, and approval needs a window still to come.
+    if (permit.validTo.getTime() < Date.now()) {
+      throw new PermitError('validation', WINDOW_PASSED)
     }
 
     // The stage being signed is the permit's *current* one, except for `submitted`,

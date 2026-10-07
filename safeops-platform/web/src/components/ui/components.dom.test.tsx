@@ -331,6 +331,18 @@ describe('DataTable', () => {
     expect(screen.getByText('No people yet')).toBeTruthy()
   })
 
+  it('stays reachable by keyboard when a clickable table has no rows yet', () => {
+    // Toolbox meetings with none recorded: the header alone is wider than a 320px phone, so
+    // the box scrolls, and with no rows there was nothing inside it to focus.
+    const { unmount } = render(<DataTable caption="Meetings" columns={COLUMNS} rows={[]} rowKey={(r) => r.id} onRowClick={() => {}} />)
+    const region = screen.getByRole('region', { name: 'Meetings' })
+    expect(region.tabIndex).toBe(0)
+    unmount()
+    // With rows, the rows carry the keyboard and the box is not a second stop.
+    render(<DataTable caption="Meetings" columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} onRowClick={() => {}} />)
+    expect(screen.queryByRole('region')).toBeNull()
+  })
+
   it('names itself with a caption, as a scrollable region a keyboard can reach', () => {
     render(<DataTable caption="Employees" columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} />)
     expect(screen.getByRole('table', { name: 'Employees' })).toBeTruthy()

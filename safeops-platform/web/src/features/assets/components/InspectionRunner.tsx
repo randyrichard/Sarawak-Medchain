@@ -131,7 +131,7 @@ export function InspectionRunner({
       )
       localStorage.removeItem(draftKey)
       // The inspection stands whatever happens to the photos; the result says if any did not arrive.
-      setPhotosFailed(await sendFieldPhotos('inspections', inspection.id, photos))
+      setPhotosFailed((await sendFieldPhotos('inspections', inspection.id, photos)).failed.length)
       setPhotos([])
       setResult(done)
       onCompleted()

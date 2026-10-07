@@ -86,6 +86,16 @@ describe('loadPeople', () => {
     expect(await people.loadPeople('acme')).toEqual(['Aina Rahman'])
   })
 
+  it('does not ask for the member list for a role the server will refuse', async () => {
+    employeesList.mockResolvedValue(page([{ name: 'Site Engineer' }]))
+    expect(await people.loadPeople('acme', 'supervisor')).toEqual(['Site Engineer'])
+    expect(await people.loadPeople('acme', 'employee')).toEqual(['Site Engineer'])
+    expect(recipients).not.toHaveBeenCalled()
+    // A manager on the same browser still gets members, not the register-only answer.
+    recipients.mockResolvedValue([{ userId: 'u1', name: 'HSE Manager', email: 'h@a.test' }])
+    expect(await people.loadPeople('acme', 'hse_manager')).toEqual(['HSE Manager', 'Site Engineer'])
+  })
+
   it('still offers the register when the member list is refused', async () => {
     /*
      * The members endpoint is role-guarded, so a supervisor opening an action drawer gets

@@ -52,6 +52,10 @@ export type EffectivePermitStatus = PermitStatus | 'expired'
 /** The live states. `draft` is not one: an unsubmitted request authorises nothing. */
 const LIVE_STORED: PermitStatus[] = ['submitted', 'approved', 'active', 'suspended']
 
+/** Refusal for approving or reviewing a permit whose working window has already ended. */
+export const WINDOW_PASSED =
+  'This permit\'s working window has already ended, so it can no longer be approved. Send it back to the applicant for new dates.'
+
 const permitInclude = {
   controls: { orderBy: { position: 'asc' } },
   isolations: { orderBy: { id: 'asc' } },
@@ -517,6 +521,12 @@ export class PermitService {
 
     if (permit.status !== 'submitted') {
       throw new PermitError('validation', 'Only a submitted permit can be approved.')
+    }
+    // An approval is a signed statement that the work may go ahead in this window. Once
+    // the window has passed it authorises nothing, and the permit would show as expired
+    // the moment it was signed.
+    if (permit.validTo.getTime() < Date.now()) {
+      throw new PermitError('validation', WINDOW_PASSED)
     }
 
     const outstanding = permit.controls.filter((c) => c.required && !c.confirmed)

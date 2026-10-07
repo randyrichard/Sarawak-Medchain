@@ -94,18 +94,19 @@ export const fmtDate = (iso: string) =>
  * with only its placeholder.
  */
 export function usePeople(): string[] {
-  const companyId = useOrg().company?.id ?? ''
+  const { company, role } = useOrg()
+  const companyId = company?.id ?? ''
   const [people, setPeople] = useState<string[]>([])
 
   useEffect(() => {
     let live = true
-    void loadPeople(companyId).then((names) => {
+    void loadPeople(companyId, role).then((names) => {
       // Guarded because switching workspace unmounts and remounts these dialogs, and a
       // late answer for the previous company would otherwise offer its staff here.
       if (live) setPeople(names)
     })
     return () => { live = false }
-  }, [companyId])
+  }, [companyId, role])
 
   return people
 }

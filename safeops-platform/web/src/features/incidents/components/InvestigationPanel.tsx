@@ -21,10 +21,12 @@ const FISHBONE_CATEGORIES = [
 ] as const
 
 export function InvestigationPanel({
-  incidentId, canEdit, canSignOff, onChanged,
+  incidentId, canEdit, canRecord = true, canSignOff, onChanged,
 }: {
   incidentId: string
   canEdit: boolean
+  /** False when the caller's role may not record an investigation at all. */
+  canRecord?: boolean
   canSignOff: boolean
   onChanged?: () => void
 }) {
@@ -112,6 +114,11 @@ export function InvestigationPanel({
         </p>
 
         {error && <Alert tone="critical" className="mb-2" onDismiss={() => setError(null)}>{error}</Alert>}
+        {!canRecord && !done && data !== null && (
+          <p className="mb-2 text-2xs text-muted">
+            Recorded by a Supervisor, Safety Officer or above. You can add to the Discussion tab.
+          </p>
+        )}
 
         {data === null ? (
           <div className="space-y-2">

@@ -168,6 +168,7 @@ export function ToolboxPage() {
       {rows === null ? <Skeleton className="h-40" /> : (
         <>
           <DataTable
+            caption="Toolbox meetings"
             columns={columns}
             rows={rows}
             rowKey={(m) => m.id}
