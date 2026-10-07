@@ -99,6 +99,11 @@ Safari, and it is not a real keyboard, camera or network. Before go-live, and be
 release that changes forms or layout, go through this on **one real iPhone (Safari)** and
 **one real Android phone (Chrome)**. Use the production address, not localhost.
 
+The supported floor is **iOS 15.4** (Safari 15.4). An older iPhone sees a page saying
+the browser is too old and how to update it, not a broken app. Every iPhone that runs
+iOS 15 can update to 15.8, so this turns away nobody whose phone can be updated. Test on
+the oldest iOS the customer's site phones actually run, and note it.
+
 | # | Do | Pass when |
 |---|---|---|
 | 1 | Open the app and sign in | No zoom-in when tapping the email or password field. The page fits the width, with no sideways scroll. |
@@ -112,6 +117,11 @@ release that changes forms or layout, go through this on **one real iPhone (Safa
 | 9 | Add the app to the home screen and open it from there | It opens the app. Nothing sits under the notch or the home bar. |
 | 10 | Switch to dark mode with the moon button in the top bar | Everything stays readable. |
 | 11 | Increase the system text size | Text grows without overlapping. |
+| 12 | Complete an inspection with a photo; then on an audit, fail an item and add a photo to it | Safari offers "Take Photo" and "Photo Library". The photos appear on the result and in the audit drawer, and open when tapped. |
+| 13 | Attach an iPhone photo saved as HEIC (the camera's default "High Efficiency" format) | It uploads, or is refused with a clear reason. Never a silent failure. |
+| 14 | On a standalone corrective action marked "evidence required", add a photo and mark it complete | The photo is listed under "Photos & documents" and the action completes. |
+| 15 | Download any CSV export and a report PDF | The file opens or is offered to save. A download that starts and then disappears is a failure. |
+| 16 | Open the app over plain `http://` on the site network, if the customer ever does that, and start an incident report | The form opens. (It used to fail on Safari there.) |
 
 Write down the phone, the OS version, the date and any failure. A failure on a real phone
 outranks a pass in the automated audit.
