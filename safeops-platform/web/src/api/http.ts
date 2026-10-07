@@ -19,6 +19,9 @@ export const READ_RETRY_DELAYS_MS = [500, 1500]
  */
 const NO_ANSWER = new Set([502, 503, 504])
 
+/** The public offline demo build (scripts/build-demo.mjs). A build-time constant in the bundle. */
+const offlineDemoBuild = () => import.meta.env.VITE_OFFLINE_DEMO === 'true'
+
 const isRead = (init: RequestInit) => !init.method || ['GET', 'HEAD'].includes(init.method.toUpperCase())
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
@@ -38,6 +41,13 @@ const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
  * session is genuinely gone, and one retry is attempted before giving up.
  */
 export async function request<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
+  /*
+   * The public demo has no server: nothing to ask. Sending the request anyway reached
+   * the static host - index.html for a read, a 405 for a write (every sign-in on the
+   * Cloudflare demo tried POST /auth/refresh) - only to arrive at the same answer below.
+   * Only the demo build: elsewhere an empty base URL can mean "same origin".
+   */
+  if (offlineDemoBuild() && !isBackendConfigured()) throw new ApiError(NOT_API, notApiMessage())
   try {
     await authApi.refreshIfNeeded()
   } catch (e) {
@@ -122,7 +132,10 @@ export const NOT_API = 'not_api'
 
 const notApiMessage = () => isBackendConfigured()
   ? 'The server sent back something that is not SafeOps data. Check that VITE_API_BASE_URL points at the SafeOps API, not the web app.'
-  : 'This screen needs the SafeOps server, and the offline demo does not include it. Set VITE_API_BASE_URL to the API address to use it.'
+  : offlineDemoBuild()
+    // Read by prospects on the public demo, who have no build to reconfigure.
+    ? 'This part of SafeOps needs the SafeOps server, which the online demo does not include.'
+    : 'This screen needs the SafeOps server, and the offline demo does not include it. Set VITE_API_BASE_URL to the API address to use it.'
 
 /** Query string builder that drops empty, null and undefined values. */
 export const qs = (params: Record<string, string | number | boolean | undefined | null>) => {

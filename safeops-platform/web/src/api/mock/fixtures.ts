@@ -22,6 +22,15 @@ import type {
  */
 const INCLUDE = import.meta.env.DEV || import.meta.env.VITE_DEMO_LOGINS === 'true'
 
+/*
+ * The demo accounts' password. In development it matches the API seed (prisma/seed.ts) so
+ * the same sign-in works against either backend. A demo build supplies its own, so the
+ * public demo site never publishes the password a seeded server would accept.
+ */
+const DEMO_PASSWORD = import.meta.env.DEV
+  ? 'SafeOpsPlatform2026'
+  : (import.meta.env.VITE_DEMO_PASSWORD ?? '')
+
 // Two companies so the company switcher is real. Borneo Industrial Group is the
 // primary demo tenant; Kenyalang Construction proves cross-tenant boundaries.
 
@@ -101,7 +110,7 @@ export const EMPLOYEES: Employee[] = INCLUDE ? [
 export const USERS: (User & { password: string })[] = INCLUDE ? [
   {
     id: 'u-ceo', email: 'ceo@demo.safeops.app', name: 'Faridah Abdullah', title: 'Group Managing Director',
-    password: 'SafeOpsPlatform2026',
+    password: DEMO_PASSWORD,
     memberships: [
       { companyId: 'big', role: 'ceo', siteIds: [] },
       { companyId: 'kcs', role: 'ceo', siteIds: [] },
@@ -109,7 +118,7 @@ export const USERS: (User & { password: string })[] = INCLUDE ? [
   },
   {
     id: 'u-admin', email: 'admin@demo.safeops.app', name: 'Randy Richard', title: 'Platform Administrator',
-    password: 'SafeOpsPlatform2026',
+    password: DEMO_PASSWORD,
     memberships: [
       { companyId: 'big', role: 'admin', siteIds: [] },
       { companyId: 'kcs', role: 'admin', siteIds: [] },
@@ -117,22 +126,22 @@ export const USERS: (User & { password: string })[] = INCLUDE ? [
   },
   {
     id: 'u-hse', email: 'hse@demo.safeops.app', name: 'Marcus Tan', title: 'Group HSE Manager',
-    password: 'SafeOpsPlatform2026',
+    password: DEMO_PASSWORD,
     memberships: [{ companyId: 'big', role: 'hse_manager', siteIds: [] }],
   },
   {
     id: 'u-so', email: 'officer@demo.safeops.app', name: 'Amirul Hassan', title: 'Site Safety Officer — Bintulu',
-    password: 'SafeOpsPlatform2026',
+    password: DEMO_PASSWORD,
     memberships: [{ companyId: 'big', role: 'safety_officer', siteIds: ['btu'] }],
   },
   {
     id: 'u-sup', email: 'supervisor@demo.safeops.app', name: 'Ganesh Pillai', title: 'Maintenance Supervisor — Kuching',
-    password: 'SafeOpsPlatform2026',
+    password: DEMO_PASSWORD,
     memberships: [{ companyId: 'big', role: 'supervisor', siteIds: ['kch'] }],
   },
   {
     id: 'u-emp', email: 'employee@demo.safeops.app', name: 'Melissa Bong', title: 'Store Keeper — Kuching',
-    password: 'SafeOpsPlatform2026',
+    password: DEMO_PASSWORD,
     memberships: [{ companyId: 'big', role: 'employee', siteIds: ['kch'] }],
   },
 ] : []

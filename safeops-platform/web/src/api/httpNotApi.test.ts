@@ -21,6 +21,7 @@ vi.mock('./authApi', () => ({
 const fetchMock = vi.fn()
 beforeEach(() => {
   backend = false
+  vi.unstubAllEnvs()
   fetchMock.mockReset()
   vi.stubGlobal('fetch', fetchMock)
 })
@@ -71,5 +72,17 @@ describe('request', () => {
   it('treats 204 as no content', async () => {
     fetchMock.mockResolvedValue(reply(204, async () => { throw new Error('no body') }))
     expect(await request('/x', { method: 'DELETE' })).toBeUndefined()
+  })
+
+  it('sends nothing at all from the public demo build, which has no server to ask', async () => {
+    // The Cloudflare demo answered every such request with index.html or a 405.
+    vi.stubEnv('VITE_OFFLINE_DEMO', 'true')
+    const e = await failure(request('/platform/me'))
+    expect(e.code).toBe(NOT_API)
+    expect(e.message).toMatch(/online demo does not include/)
+    expect(e.message).not.toMatch(/VITE_API_BASE_URL/)
+    const w = await failure(request('/auth/refresh', { method: 'POST' }))
+    expect(w.code).toBe(NOT_API)
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 })
