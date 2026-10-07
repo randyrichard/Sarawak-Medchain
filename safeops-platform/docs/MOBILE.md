@@ -118,7 +118,7 @@ scrolled page had reported that content as overlapping the bar.
 |---|---|---|---|
 | 1 | **Photos on both report forms were never uploaded.** The near-miss form said "1 photo(s) attached", and the incident form listed files with sizes and "Evidence: 2 file(s)". Only the file names went into the report, which the server ignores. A worker who photographed the scene was told the photos were on record. | Report incident, report near miss | The files are uploaded to the new incident (`features/incidents/evidence.ts`). They are screened first against the types and size the server accepts: photos and PDF, 10 MB each. Anything refused is named. If an upload fails, the incident page says so. A report saved offline says its photos could not be kept. Tests: `ReportIncidentPage.dom.test.tsx`, `evidence.test.ts`. Verified in a browser on a phone profile: the photo is in the database. |
 | 2 | **An anonymous report named its reporter in the activity log.** The header said "Reported anonymously", while the log beneath it said "Incident reported — <name>, employee", to everyone who could open it. | Incident page, Activity tab | Below HSE manager, the reporter's own events and uploads are masked too. Test: `incidentInvestigation.integration.test.ts`, which fails without the fix. |
-| 3 | **Inspection and audit "Photos" buttons threw the photos away** and recorded only a count, which the result then showed as "2 photo(s)". | Inspection runner, audit runner | The buttons are removed until the product can store those photos. See "Still open" below. |
+| 3 | **Inspection and audit "Photos" buttons threw the photos away** and recorded only a count, which the result then showed as "2 photo(s)". | Inspection runner, audit runner | The buttons were removed until the product could store those photos. That storage now exists (see "Photo storage" below) and the buttons are back. |
 | 4 | **A corrective action's link to its incident read "·"**, and the actions export had empty Incident and Department columns. The register API never sent the incident's number, title or department. | Action drawer, actions CSV | `listActions` and `getAction` return them. Test: `incidentService.integration.test.ts`. |
 | 5 | **Screens printed site ids.** A site created in the product has an id like `site-a1b2c3d4e5f6`. The printed visitor pass, the asset, worker, employee and action drawers, the incident board, findings, the competency matrix and the actions CSV showed it, uppercased. | 9 places | `useSiteLabel()` gives the site's name. |
 | 6 | **Calendars were unreadable on a phone.** Seven columns of about 45px each showed every entry as a coloured dot and "(", and the colour key is hidden at that width. | Actions and inspection calendars | Below `sm`, an agenda lists each day's entries with code, title and status in words, each a 44px target (`MonthAgenda`). |
@@ -147,6 +147,32 @@ scrolled page had reported that content as overlapping the bar.
 
 | Item | Why it is not done here |
 |---|---|
-| **Photos for inspections and audits** | Nothing stores a photo against an inspection or an audit answer, or against a corrective action that has no incident. This needs storage, routes and permissions: a feature, not a fix. Until then, the runners do not offer a photo button. |
 | Avatar initials at 9–11px | They sit beside the person's name or inside a labelled button, so they are a visual cue rather than text that has to be read. |
-| A real iPhone in Safari | Still needed before an important release (`GO_LIVE.md` §3). |
+| A real iPhone in Safari | Still needed before an important release (`GO_LIVE.md` §3, now with photo and download steps). What could be checked without one is in `BROWSER_COMPATIBILITY.md`, "Safari: what was checked without a device". |
+
+## Photo storage
+
+Photos for inspections, audit answers and corrective actions raised outside an
+investigation are now kept, in the `FieldEvidence` table with the same storage, type
+checks, 10 MB limit and SHA-256 checksum as incident evidence
+(`api/src/lib/fieldEvidenceService.ts`, `api/src/routes/fieldEvidence.ts`).
+
+- **Who may add one** is who may do the work: the inspector, the audit team, the action's
+  owner, or a manager. Inspections and audits accept photos until 24 hours after they are
+  completed, so a phone that lost signal can catch up, and no later. Every photo records
+  who added it and when.
+- **Who may see one** is who may see the record. Every download is checked again, and
+  Postgres row-level security keeps each company's photos to itself.
+- **Counts are real.** An inspection's photo count is the number of photos stored, not a
+  number the browser sends.
+- **An action marked "evidence required"** that is not part of an incident can now be
+  completed. Before, it had nowhere to put its evidence, so it could never be closed.
+- **The data export and `verify:uploads`** both include these files.
+- **On the phone**, the picker offers camera or library and does not force the camera.
+  If a photo fails to upload after the inspection or audit is saved, the screen says
+  which, and photos can still be added from the result for 24 hours.
+
+Run on the iPhone SE profile: an inspection photo stored byte for byte (checksum matches),
+an audit item photo shown in the audit drawer, and a standalone action photo letting the
+action complete. Tests: `fieldEvidence.integration.test.ts` (API) and
+`fieldEvidence.dom.test.tsx` (web).

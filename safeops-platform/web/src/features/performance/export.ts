@@ -1,6 +1,7 @@
 import type { Indicators, PerformanceView, Target, TargetMetric } from '@/api/performanceApi'
 import { csvDocument } from '@/lib/csv'
 import { formatTarget, monthLabel, targetStatus } from './lib'
+import { saveBlob } from '@/lib/saveBlob'
 
 /**
  * HSE performance as files: the figures an HSE manager pastes into a board pack or a
@@ -95,10 +96,5 @@ export function exportFilename(kind: 'sites' | 'monthly', data: PerformanceView)
 }
 
 export function downloadCsv(content: string, filename: string) {
-  const url = URL.createObjectURL(new Blob([content], { type: 'text/csv;charset=utf-8' }))
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
+  saveBlob(new Blob([content], { type: 'text/csv;charset=utf-8' }), filename)
 }

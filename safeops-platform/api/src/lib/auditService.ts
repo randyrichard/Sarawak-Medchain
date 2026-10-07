@@ -492,7 +492,8 @@ export class AuditService {
               text: item?.text ?? a.text,
               result: a.result,
               comment: a.comment?.trim() || undefined,
-              photoCount: a.photoCount ?? 0,
+              // No photo count from the browser: it counted photos it then discarded. The
+              // photos for an item are its field evidence (GET /evidence/audits/:id).
             }
           }) as never,
           signature: input.signature.trim(),
@@ -546,7 +547,7 @@ export class AuditService {
             category,
             description,
             severity: fi.severity,
-            photoCount: fi.photoCount ?? 0,
+            photoCount: 0,
             linkedAssetId: fi.linkedAssetId ?? null,
             actionId: action.id,
             raisedBy: caller.name,

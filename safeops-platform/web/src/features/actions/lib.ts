@@ -2,6 +2,7 @@ import type { CapaDerivedStatus, CapaItem } from '@/api/capa'
 import type { Actor } from '@/api/incidents'
 import type { StatusKind } from '@/components/ui'
 import { csvDocument } from '@/lib/csv'
+import { saveBlob } from '@/lib/saveBlob'
 
 export const DERIVED_META: Record<CapaDerivedStatus, { kind: StatusKind; label: string }> = {
   Open: { kind: 'serious', label: 'Open' },
@@ -68,10 +69,5 @@ export function exportCsv(items: CapaItem[], filename: string, siteName: (id: st
     [i.code, i.title, i.derived, i.priority, i.owner, i.reviewer, siteName(i.siteId), i.department, i.dueDate, i.progress, i.incidentNumber ?? '', i.rootCause ?? '', i.overdue ? 'YES' : ''],
   )
   const blob = new Blob([csvDocument(header, rows)], { type: 'text/csv;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
+  saveBlob(blob, filename)
 }

@@ -5,6 +5,7 @@ import type {
 import type { StatusKind } from '@/components/ui'
 import { csvDocument } from '@/lib/csv'
 import { escapeHtml } from '@/lib/escapeHtml'
+import { saveBlob } from '@/lib/saveBlob'
 
 export const COMPETENCY_META: Record<CompetencyStatus, { color: string; label: string }> = {
   competent: { color: 'var(--good)', label: 'Competent' },
@@ -88,12 +89,7 @@ export function printCertificate(cert: CertificateView, siteName: string) {
 
 function download(content: string, filename: string, type: string) {
   const blob = new Blob([content], { type })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
+  saveBlob(blob, filename)
 }
 
 export function exportMatrixCsv(

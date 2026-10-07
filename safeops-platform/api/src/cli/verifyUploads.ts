@@ -42,7 +42,7 @@ interface StoredFile {
 }
 
 async function collect(): Promise<StoredFile[]> {
-  const [incident, permit, asset] = await Promise.all([
+  const [incident, permit, asset, field] = await Promise.all([
     db.incidentAttachment.findMany({
       select: { id: true, originalName: true, storedName: true, checksum: true },
     }),
@@ -55,11 +55,15 @@ async function collect(): Promise<StoredFile[]> {
       where: { storedName: { not: null } },
       select: { id: true, originalName: true, storedName: true, checksum: true },
     }),
+    db.fieldEvidence.findMany({
+      select: { id: true, originalName: true, storedName: true, checksum: true },
+    }),
   ])
 
   return [
     ...incident.map((r) => ({ kind: 'incident evidence', id: r.id, label: r.originalName, storedName: r.storedName, checksum: r.checksum })),
     ...permit.map((r) => ({ kind: 'permit attachment', id: r.id, label: r.originalName, storedName: r.storedName, checksum: r.checksum })),
+    ...field.map((r) => ({ kind: 'field evidence', id: r.id, label: r.originalName, storedName: r.storedName, checksum: r.checksum })),
     ...asset.map((r) => ({ kind: 'asset document', id: r.id, label: r.originalName ?? '(unnamed)', storedName: r.storedName as string, checksum: r.checksum })),
   ]
 }

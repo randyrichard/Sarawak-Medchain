@@ -12,6 +12,7 @@ import { fmtDateTime } from '@/features/incidents/lib'
 import { timeAgo } from '@/lib/time'
 import { downloadJson, useAdminActor } from '../lib'
 import { localISODate } from '@/lib/localDate'
+import { saveBlob } from '@/lib/saveBlob'
 
 export function BackupSection() {
   const { company } = useOrg()
@@ -58,12 +59,7 @@ export function BackupSection() {
       const archive = await api.adminExportWorkspace(companyId)
       const stamp = localISODate()
       const slug = (company?.name ?? 'workspace').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-      const url = URL.createObjectURL(archive)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `safeops-${slug || 'workspace'}-${stamp}.zip`
-      a.click()
-      URL.revokeObjectURL(url)
+      saveBlob(archive, `safeops-${slug || 'workspace'}-${stamp}.zip`)
       setFlash('Export downloaded. It opens in Excel and needs no SafeOps account to read.')
       setTimeout(() => setFlash(null), 5000)
     } catch (e) {

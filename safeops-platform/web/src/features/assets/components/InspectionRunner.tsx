@@ -10,6 +10,9 @@ import { inspectionsApi } from '@/api/inspectionsApi'
 import { useActor, SITE_COORDS } from '@/features/incidents/lib'
 import { Alert, Badge, Button, Checkbox, Input, Textarea } from '@/components/ui'
 import { cn } from '@/lib/cn'
+import { PhotoPicker } from '@/features/evidence/PhotoPicker'
+import { FieldPhotos } from '@/features/evidence/FieldPhotos'
+import { sendFieldPhotos } from '@/features/evidence/fieldEvidence'
 
 type DraftState = {
   answers: Record<string, { result?: ChecklistResult; comment?: string; measurement?: string }>
@@ -35,6 +38,9 @@ export function InspectionRunner({
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<InspectionView | null>(null)
   const [savedAt, setSavedAt] = useState<string | null>(null)
+  // Held in memory: a draft is text in local storage, and a file cannot be written into it.
+  const [photos, setPhotos] = useState<File[]>([])
+  const [photosFailed, setPhotosFailed] = useState(0)
   const dirty = useRef(false)
 
   /*
@@ -58,6 +64,8 @@ export function InspectionRunner({
     setResult(null)
     setError(null)
     setAttested(false)
+    setPhotos([])
+    setPhotosFailed(0)
     dirty.current = false
     try {
       const raw = localStorage.getItem(draftKey)
@@ -118,10 +126,13 @@ export function InspectionRunner({
     try {
       const done = await api.completeInspection(
         inspection.id,
-        { answers, comments: draft.comments, photoCount: draft.photoCount, gps: draft.gps || undefined, signature: draft.signature },
+        { answers, comments: draft.comments, photoCount: photos.length, gps: draft.gps || undefined, signature: draft.signature },
         actor,
       )
       localStorage.removeItem(draftKey)
+      // The inspection stands whatever happens to the photos; the result says if any did not arrive.
+      setPhotosFailed(await sendFieldPhotos('inspections', inspection.id, photos))
+      setPhotos([])
       setResult(done)
       onCompleted()
     } catch (e) {
@@ -195,6 +206,13 @@ export function InspectionRunner({
                 ))}
               </div>
             )}
+            {photosFailed > 0 && (
+              <Alert tone="warning">
+                {photosFailed === 1 ? 'One photo' : `${photosFailed} photos`} did not upload. The inspection is saved;
+                add {photosFailed === 1 ? 'it' : 'them'} again from Results within 24 hours.
+              </Alert>
+            )}
+            <FieldPhotos kind="inspections" id={inspection.id} />
             <p className="text-center text-2xs text-muted">Next inspection auto-scheduled — this asset cannot fall off the calendar.</p>
             <Button className="w-full" onClick={onClose}>Done</Button>
           </div>
@@ -253,12 +271,11 @@ export function InspectionRunner({
 
               {/* Evidence + context */}
               {/*
-                No photo button. It counted the photos chosen and threw them away - nothing
-                stores a photo against an inspection - and the result then said "2 photo(s)" as
-                if they were on record. Until there is somewhere to keep them, the inspector is
-                not asked to take them.
+                Photos are kept as field evidence, sent once the inspection is saved. This
+                button used to count the photos chosen and throw them away.
               */}
-              <div className="grid grid-cols-1 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <PhotoPicker files={photos} onChange={setPhotos} />
                 <button onClick={captureGps} className="flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold text-ink-2 hover:bg-accent-soft coarse:min-h-11">
                   <LocateFixed size={13} /> {draft.gps ? 'GPS ✓' : 'Capture GPS'}
                 </button>

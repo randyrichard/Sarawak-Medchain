@@ -205,7 +205,7 @@ export async function collectTenantExport(
     contractorCompanies, contractorWorkers,
     visitors, visitorDocuments, visitorBlacklist,
     toolboxMeetings, toolboxGroups,
-    reportRuns, adminAudit,
+    reportRuns, adminAudit, fieldEvidence,
   ] = await db.$transaction([
     db.site.findMany({ where: own }),
     db.incident.findMany({ where: own }),
@@ -256,6 +256,7 @@ export async function collectTenantExport(
 
     db.reportRun.findMany({ where: own }),
     db.adminAuditEntry.findMany({ where: own }),
+    db.fieldEvidence.findMany({ where: own }),
   ])
 
   /*
@@ -294,6 +295,7 @@ export async function collectTenantExport(
     table('asset-documents', 'AssetDocument', assetDocuments),
     table('calibrations', 'Calibration', calibrations),
     table('inspections', 'Inspection', inspections),
+    table('field-evidence', 'FieldEvidence', fieldEvidence),
 
     table('audits', 'Audit', audits),
     table('compliance-obligations', 'ComplianceObligation', obligations),
@@ -345,6 +347,7 @@ export async function collectTenantExport(
   pushFiles(incidentAttachments, 'incident-evidence')
   pushFiles(permitAttachments, 'permit-documents')
   pushFiles(assetDocuments, 'asset-documents')
+  pushFiles(fieldEvidence, 'field-evidence')
   pushFiles(visitorDocuments, 'visitor-documents')
   pushFiles(calibrations, 'calibration-certificates')
   pushFiles(reportRuns, 'generated-reports')
@@ -507,6 +510,13 @@ Every table has an "id" column. Child tables point at their parent by id:
 
   assets.id               <- inspections.assetId
                           <- calibrations.assetId
+
+  inspections.id          <- field-evidence.inspectionId
+  audits.id               <- field-evidence.auditId   (auditItemId: the checklist item)
+  corrective-actions.id   <- field-evidence.actionId  (actions with no incident)
+
+  Each field-evidence row has exactly one of the three. The files are in
+  field-evidence/; the checksum column is the SHA-256 recorded on upload.
 
   employees.id            <- certificates.employeeId
 

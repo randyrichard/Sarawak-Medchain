@@ -6,6 +6,7 @@ import {
 import { ApiError } from '@/api/types'
 import { Alert, Button, Dialog, Select, Skeleton } from '@/components/ui'
 import { cn } from '@/lib/cn'
+import { saveBlob } from '@/lib/saveBlob'
 
 /**
  * The permit's document pack: method statement, JSA, gas test sheet, isolation
@@ -94,12 +95,7 @@ export function AttachmentsPanel({
     setError(null)
     try {
       const blob = await permitWorkflowApi.fetchBlob(att.id)
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = att.originalName
-      a.click()
-      URL.revokeObjectURL(url)
+      saveBlob(blob, att.originalName)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not download that file.')
     }

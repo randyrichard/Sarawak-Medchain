@@ -12,6 +12,8 @@ import { Alert, Avatar, Badge, Button, Skeleton, StatusPill } from '@/components
 import { fmtDateTime } from '@/features/incidents/lib'
 import { AUDIT_STATUS_META, FINDING_STATUS_META, printAuditReport, scoreColor, SEVERITY_META } from '../lib'
 import { AuditRunner } from './AuditRunner'
+import { FieldPhotos } from '@/features/evidence/FieldPhotos'
+import { AddFieldPhotos } from '@/features/evidence/AddFieldPhotos'
 
 interface Detail {
   audit: AuditView
@@ -33,6 +35,7 @@ export function AuditDrawer({
   const [runnerOpen, setRunnerOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [photoKey, setPhotoKey] = useState(0)
 
   const load = (id: string) => api.getAuditDetail(id).then(setDetail)
 
@@ -184,6 +187,18 @@ export function AuditDrawer({
                 )}
               </div>
 
+              {/* Photos taken during the audit, kept as field evidence. */}
+              {audit.status !== 'Planned' && (
+                <div className="space-y-2">
+                  <p className="text-2xs font-bold uppercase tracking-wider text-muted">Photos</p>
+                  <FieldPhotos kind="audits" id={audit.id} refreshKey={photoKey} empty="No photos were kept with this audit." />
+                  {/* The server takes photos while the audit runs and for 24 hours after it completes. */}
+                  {canRun && audit.completedAt && Date.now() - new Date(audit.completedAt).getTime() < 24 * 3_600_000 && (
+                    <AddFieldPhotos kind="audits" id={audit.id} onAdded={() => setPhotoKey((k) => k + 1)} />
+                  )}
+                </div>
+              )}
+
               {/* Timeline */}
               <div>
                 <p className="mb-2 flex items-center gap-1 text-2xs font-bold uppercase tracking-wider text-muted">
@@ -215,6 +230,8 @@ export function AuditDrawer({
           onCompleted={() => {
             setRunnerOpen(false)
             if (auditId) void load(auditId)
+            // The runner sends its photos after saving; show them.
+            setPhotoKey((k) => k + 1)
             onChanged()
           }}
         />

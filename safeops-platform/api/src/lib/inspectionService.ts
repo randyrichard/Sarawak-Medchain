@@ -654,7 +654,9 @@ export class InspectionService {
             measurement: a.measurement?.trim() || undefined,
           })) as never,
           comments: input.comments?.trim() || null,
-          photoCount: input.photoCount ?? 0,
+          // What is stored, not what the browser says it took: photos are uploaded as field
+          // evidence once the inspection exists, and each upload recounts this.
+          photoCount: await tx.fieldEvidence.count({ where: { inspectionId } }),
           gps: input.gps ?? null,
           signature: input.signature.trim(),
         },

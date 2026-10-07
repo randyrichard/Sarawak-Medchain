@@ -84,6 +84,37 @@ Fifteen minutes each. In order, because a failure early makes the rest moot.
 On mobile, add: rotate the device, open a drawer, and check the on-screen keyboard does not
 cover the field being typed into.
 
+## Supported versions
+
+| Browser | Minimum |
+|---|---|
+| Safari on iPhone and iPad | iOS 15.4 |
+| Safari on macOS | 15.4 |
+| Chrome, Edge (desktop and Android) | 98 |
+| Firefox | 94 |
+
+These are the versions that have every feature the app uses (`Object.hasOwn`,
+`structuredClone`, `Array.prototype.at`). Below them, `public/compat.js` shows a page
+saying the browser is too old and how to update it, instead of an app that fails part-way.
+It is a plain script in old JavaScript, so it runs in the browsers it is checking for.
+
+## Safari: what was checked without a device
+
+There is no Safari engine on this machine, so the built app was read against what iOS
+Safari supports. Three problems were found and fixed:
+
+| Problem | Fix | Test |
+|---|---|---|
+| Both report forms called `crypto.randomUUID()` when they opened. It does not exist before iOS 15.4, nor on a page served over plain `http://`. The form would not open at all. | `lib/uuid.ts` falls back to `crypto.getRandomValues`, which exists in both cases | `uuid.test.ts` |
+| Eleven downloads (CSV exports, report PDFs, attachments, backup codes) revoked the file's address immediately after starting the download. Safari can cancel such a download. | `lib/saveBlob.ts` waits 60 seconds before revoking | `safariCompat.dom.test.ts` fails if the pattern returns |
+| On Safari 15.0 to 15.3 the charts would fail: their library uses `Object.hasOwn` and `structuredClone`. | The 15.4 floor above, with a clear message below it | `safariCompat.dom.test.ts`; also checked in Chromium with both features removed, in light and dark mode at 320px |
+
+Also checked, and fine below the floor: CSS `:has()` and `:focus-visible` only refine
+focus rings and layout, and fall back gracefully. Vite builds for Safari 14 syntax.
+
+What this does **not** prove: anything about cookies, the camera, HEIC photos, the
+keyboard or real downloads. Those are the device steps in `GO_LIVE.md` §3.
+
 ## Known engine-sensitive areas
 
 Where a difference would show up first, so a tester knows where to look.
@@ -96,6 +127,8 @@ Where a difference would show up first, so a tester knows where to look.
 | Wide tables | The competency matrix relies on `overflow-x` containment |
 | Sticky headers | Long registers use sticky positioning |
 | CSS custom properties in inline `style` | Used for status colours throughout |
+| Photo picker and HEIC | Inspection, audit and action photos; iPhone cameras save HEIC by default |
+| File downloads | Exports and attachments are saved from in-page data (`lib/saveBlob.ts`) |
 
 ## Honest summary
 

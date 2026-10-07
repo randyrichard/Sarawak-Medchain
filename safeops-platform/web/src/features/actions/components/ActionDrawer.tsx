@@ -20,6 +20,8 @@ import { canEditItem, canVerifyItem, DERIVED_META, dueLabel, isManager } from '.
 import { cn } from '@/lib/cn'
 import { PeopleOptions } from '@/features/org/PeopleOptions'
 import { useOrg } from '@/features/org/OrgContext'
+import { FieldPhotos } from '@/features/evidence/FieldPhotos'
+import { AddFieldPhotos } from '@/features/evidence/AddFieldPhotos'
 
 export function ActionDrawer({
   item, actor, readOnly, onClose, onChanged,
@@ -42,6 +44,7 @@ export function ActionDrawer({
   /** Files attached against this action during this completion. */
   const [uploaded, setUploaded] = useState<string[]>([])
   const [uploadPct, setUploadPct] = useState<number | null>(null)
+  const [photoKey, setPhotoKey] = useState(0)
   const [reason, setReason] = useState('')
   const [comment, setComment] = useState('')
   const [mentions, setMentions] = useState<string[]>([])
@@ -105,16 +108,20 @@ export function ActionDrawer({
    * upload contract in the codebase rather than a second one for corrective actions.
    */
   const sendEvidence = async (file: File) => {
-    if (!item.incidentId) return
     setError(null)
     setUploadPct(0)
     try {
       const form = new FormData()
       form.append('files', file)
-      form.append('actionId', item.id)
-      await upload<{ attachments: { originalName: string }[] }>(
-        `/incidents/${item.incidentId}/attachments`, form, setUploadPct,
+      // An incident's action keeps its files with the incident; any other action keeps them
+      // as field evidence. This used to stop here for an action with no incident, so one
+      // marked "evidence required" could never be completed.
+      if (item.incidentId) form.append('actionId', item.id)
+      await upload<unknown>(
+        item.incidentId ? `/incidents/${item.incidentId}/attachments` : `/evidence/actions/${item.id}`,
+        form, setUploadPct,
       )
+      setPhotoKey((k) => k + 1)
       setUploaded((u) => [...u, file.name])
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Upload failed.')
@@ -172,6 +179,17 @@ export function ActionDrawer({
 
           {item.description && (
             <p className="rounded-lg bg-sunken px-3.5 py-2.5 text-sm leading-relaxed text-ink-2">{item.description}</p>
+          )}
+
+          {/* An action with no incident keeps its photos here; an incident's, on the incident. */}
+          {!item.incidentId && (
+            <div className="space-y-2">
+              <p className="text-2xs font-bold uppercase tracking-wider text-muted">Photos & documents</p>
+              <FieldPhotos kind="actions" id={item.id} refreshKey={photoKey} empty="None yet." />
+              {editable && item.status !== 'Verified' && item.status !== 'Cancelled' && (
+                <AddFieldPhotos kind="actions" id={item.id} onAdded={() => setPhotoKey((k) => k + 1)} />
+              )}
+            </div>
           )}
 
           {/* Progress */}
@@ -374,7 +392,7 @@ export function ActionDrawer({
             supply it here - a rule that can only be satisfied through the API is a dead end
             at the desk. Same upload route, allow-list and progress as incident evidence.
           */}
-          {item.evidenceRequired && item.incidentId && (
+          {item.evidenceRequired && (
             <div>
               <p className="mb-1 text-xs font-medium text-ink">
                 Evidence file <span className="text-critical">*</span>
