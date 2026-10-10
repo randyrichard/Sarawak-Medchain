@@ -1,8 +1,28 @@
+import { useState, type CSSProperties } from 'react'
 import { cn } from '@/lib/cn'
 
-/** Shimmering placeholder. Size it with width/height utilities at the call site. */
+/** One cycle of the light across a placeholder: `.skeleton::after` in index.css (2.4s). */
+export const SKELETON_PERIOD_MS = 2400
+
+/**
+ * Where the shared cycle is right now, as a negative delay. A placeholder that appears late,
+ * because one panel reloads while the others still wait, joins the light where it already is
+ * on the page instead of starting a light of its own.
+ */
+export function skeletonPhase(now: number): string {
+  return `${-Math.round(now % SKELETON_PERIOD_MS)}ms`
+}
+
+/** Placeholder shape while something loads. Size it with width/height utilities at the call site. */
 export function Skeleton({ className }: { className?: string }) {
-  return <div aria-hidden className={cn('animate-pulse rounded-md bg-grid', className)} />
+  const [phase] = useState(() => skeletonPhase(performance.now()))
+  return (
+    <div
+      aria-hidden
+      className={cn('skeleton rounded-md', className)}
+      style={{ '--skeleton-phase': phase } as CSSProperties}
+    />
+  )
 }
 
 export function SkeletonText({ lines = 3, className }: { lines?: number; className?: string }) {

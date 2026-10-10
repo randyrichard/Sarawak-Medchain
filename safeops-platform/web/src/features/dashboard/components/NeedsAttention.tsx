@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ClipboardCheck, ChevronRight } from 'lucide-react'
 import type { AttentionItem, AttentionKind } from '@/api/dashboardApi'
-import { Badge, Card, CardBody, CardHeader, EmptyState } from '@/components/ui'
+import { Badge, Card, CardBody, CardHeader, EmptyState, Skeleton } from '@/components/ui'
 import {
   filterAttention, kindLabel, overdueLabel, priorityLabel, priorityTone, sortAttention,
 } from '../lib'
@@ -79,7 +79,7 @@ export function NeedsAttention({
         {loading && (
           <ul className="space-y-2">
             {[0, 1, 2, 3].map((i) => (
-              <li key={i} className="h-14 animate-pulse rounded-lg bg-[var(--surface-2)]" />
+              <li key={i}><Skeleton className="h-14 rounded-lg" /></li>
             ))}
           </ul>
         )}
