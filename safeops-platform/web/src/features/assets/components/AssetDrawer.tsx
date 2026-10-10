@@ -183,7 +183,7 @@ export function AssetDrawer({
                 <div className="flex gap-2">
                   {nextScheduled && (
                     <Button size="sm" icon={<PlayCircle size={13} />} onClick={() => onRun(nextScheduled)}>
-                      Run now
+                      Run Now
                     </Button>
                   )}
                   {manage && (

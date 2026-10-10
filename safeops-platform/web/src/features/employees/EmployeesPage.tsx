@@ -21,11 +21,11 @@ const PAGE_SIZE = 25
 
 /** The counters across the top. Each one is a filter you can click into. */
 const KPI_DEFS: { key: keyof EmployeeStats; label: string; medical?: MedicalFilter; tone: (n: number) => string }[] = [
-  { key: 'headcount', label: 'Active headcount', tone: () => 'var(--accent)' },
-  { key: 'medicalExpired', label: 'Medical expired', medical: 'expired', tone: (n) => (n > 0 ? 'var(--critical)' : 'var(--good)') },
-  { key: 'medicalExpiring', label: 'Medical expiring', medical: 'expiring', tone: (n) => (n > 0 ? 'var(--warning)' : 'var(--good)') },
-  { key: 'medicalMissing', label: 'No medical on file', medical: 'missing', tone: (n) => (n > 0 ? 'var(--warning)' : 'var(--good)') },
-  { key: 'ppeOverdue', label: 'PPE replacement due', tone: (n) => (n > 0 ? 'var(--serious)' : 'var(--good)') },
+  { key: 'headcount', label: 'Active Headcount', tone: () => 'var(--accent)' },
+  { key: 'medicalExpired', label: 'Medical Expired', medical: 'expired', tone: (n) => (n > 0 ? 'var(--critical)' : 'var(--good)') },
+  { key: 'medicalExpiring', label: 'Medical Expiring', medical: 'expiring', tone: (n) => (n > 0 ? 'var(--warning)' : 'var(--good)') },
+  { key: 'medicalMissing', label: 'No Medical on File', medical: 'missing', tone: (n) => (n > 0 ? 'var(--warning)' : 'var(--good)') },
+  { key: 'ppeOverdue', label: 'PPE Replacement Due', tone: (n) => (n > 0 ? 'var(--serious)' : 'var(--good)') },
 ]
 
 const SORT_COLUMNS: { key: EmployeeSort; label: string; className?: string }[] = [
@@ -136,7 +136,7 @@ export function EmployeesPage() {
         title="Employees"
         subtitle="Who works here, what they are qualified for, and whether they are fit to work"
         right={canManage ? (
-          <Button icon={<Plus size={14} />} onClick={() => setNewOpen(true)}>Add person</Button>
+          <Button icon={<Plus size={14} />} onClick={() => setNewOpen(true)}>Add Person</Button>
         ) : undefined}
       />
 
@@ -222,7 +222,7 @@ export function EmployeesPage() {
             icon={Users}
             title={q || medical !== 'all' || department ? 'Nobody matches these filters' : 'No one on the register yet'}
             action={canManage ? (
-              <Button size="sm" icon={<Plus size={14} />} onClick={() => setNewOpen(true)}>Add person</Button>
+              <Button size="sm" icon={<Plus size={14} />} onClick={() => setNewOpen(true)}>Add Person</Button>
             ) : undefined}
           >
             {q || medical !== 'all' || department

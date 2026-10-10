@@ -66,13 +66,13 @@ export function NewSessionDialog({ open, onClose, onCreated }: { open: boolean; 
       error={error}
       open={open}
       onClose={onClose}
-      title="Schedule training session"
+      title="Schedule Training Session"
       description="Enrol participants now — attendance is captured live when you run the session."
       width="max-w-lg"
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button loading={busy} onClick={() => void submit()}>Schedule session</Button>
+          <Button loading={busy} onClick={() => void submit()}>Schedule Session</Button>
         </>
       }
     >

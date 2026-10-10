@@ -12,7 +12,7 @@ export type CalibrationResult = 'pass' | 'pass_with_adjustment' | 'fail'
 
 export const CALIBRATION_RESULT_LABEL: Record<CalibrationResult, string> = {
   pass: 'Pass',
-  pass_with_adjustment: 'Pass with adjustment',
+  pass_with_adjustment: 'Pass With Adjustment',
   fail: 'Fail',
 }
 
@@ -95,7 +95,7 @@ export const MAINTENANCE_KIND_LABEL: Record<MaintenanceKind, string> = {
 
 export const MAINTENANCE_STATUS_LABEL: Record<MaintenanceStatus, string> = {
   open: 'Open',
-  in_progress: 'In progress',
+  in_progress: 'In Progress',
   completed: 'Completed',
   cancelled: 'Cancelled',
 }

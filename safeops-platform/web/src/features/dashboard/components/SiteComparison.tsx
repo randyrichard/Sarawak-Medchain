@@ -44,7 +44,7 @@ export function SiteComparison({
       <CardBody>
         <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-            Site comparison
+            Site Comparison
           </h2>
           <p className="text-2xs text-muted">Every site side by side · sites needing attention first · click a site to open it</p>
         </div>
@@ -56,13 +56,13 @@ export function SiteComparison({
               <thead>
                 <tr className="border-b text-left text-2xs uppercase tracking-wide text-muted">
                   <th className="px-2 py-1.5 font-medium">Site</th>
-                  <th className="px-2 py-1.5 text-right font-medium">Open incidents</th>
-                  <th className="px-2 py-1.5 text-right font-medium" title="In the period chosen above">Incidents in period</th>
-                  <th className="px-2 py-1.5 text-right font-medium">Days without LTI</th>
-                  <th className="px-2 py-1.5 text-right font-medium">Overdue actions</th>
-                  <th className="px-2 py-1.5 text-right font-medium">Permits active</th>
-                  <th className="px-2 py-1.5 font-medium">Toolbox today</th>
-                  <th className="px-2 py-1.5 text-right font-medium">Visitors on site</th>
+                  <th className="px-2 py-1.5 text-right font-medium">Open Incidents</th>
+                  <th className="px-2 py-1.5 text-right font-medium" title="In the period chosen above">Incidents in Period</th>
+                  <th className="px-2 py-1.5 text-right font-medium">Days Without LTI</th>
+                  <th className="px-2 py-1.5 text-right font-medium">Overdue Actions</th>
+                  <th className="px-2 py-1.5 text-right font-medium">Permits Active</th>
+                  <th className="px-2 py-1.5 font-medium">Toolbox Today</th>
+                  <th className="px-2 py-1.5 text-right font-medium">Visitors on Site</th>
                 </tr>
               </thead>
               <tbody>

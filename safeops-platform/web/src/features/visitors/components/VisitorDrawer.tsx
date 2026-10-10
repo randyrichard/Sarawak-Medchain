@@ -159,19 +159,19 @@ export function VisitorDrawer({
                       <Button size="sm" icon={<LogIn size={11} />}
                         disabled={(gate?.blockers.length ?? 1) > 0}
                         onClick={() => setCheckInOpen(true)}>
-                        Check in
+                        Check In
                       </Button>
                     )}
                     {manage && v.checkedInAt && !v.checkedOutAt && (
                       <Button size="sm" variant="secondary" icon={<LogOut size={11} />}
                         loading={busy === 'out'}
                         onClick={() => void run('out', () => visitorsApi.checkOut(v.id, true))}>
-                        Check out
+                        Check Out
                       </Button>
                     )}
                     <Button size="sm" variant="ghost" icon={<QrCode size={11} />}
                       onClick={() => setPassOpen(true)}>
-                      Visitor pass
+                      Visitor Pass
                     </Button>
                   </div>
                 </section>
@@ -287,7 +287,7 @@ export function VisitorDrawer({
                       await visitorsApi.addNote(v.id, note.trim())
                       setNote('')
                     })}>
-                    Add note
+                    Add Note
                   </Button>
                 </section>
               )}
@@ -425,7 +425,7 @@ function CheckInDialog({
         </p>
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => void submit()} loading={busy}>Check in</Button>
+          <Button onClick={() => void submit()} loading={busy}>Check In</Button>
         </div>
       </div>
     </Dialog>

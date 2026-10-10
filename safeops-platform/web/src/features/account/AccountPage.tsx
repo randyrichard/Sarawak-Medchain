@@ -27,7 +27,7 @@ export function AccountPage() {
 
   return (
     <>
-      <PageHeader title="My account" subtitle="Profile, memberships and session security" />
+      <PageHeader title="My Account" subtitle="Profile, memberships and session security" />
 
       <div className="grid gap-4 xl:grid-cols-2">
         <Card>
@@ -76,7 +76,7 @@ export function AccountPage() {
           <PreferencesCard />
 
           <Card>
-            <CardHeader title="Active session" />
+            <CardHeader title="Active Session" />
             <CardBody className="space-y-3">
               <div className="flex items-start gap-3 text-sm">
                 <Monitor size={16} className="mt-0.5 text-muted" />
@@ -95,7 +95,7 @@ export function AccountPage() {
                 Sessions expire automatically after 8 hours. Sign out on shared site-office computers.
               </Alert>
               <Button variant="danger" size="sm" onClick={() => void logout()}>
-                Sign out of this session
+                Sign Out of This Session
               </Button>
             </CardBody>
           </Card>
@@ -175,13 +175,13 @@ function ChangePasswordDialog({ open, onClose }: { open: boolean; onClose: () =>
       error={error}
       open={open}
       onClose={close}
-      title="Change password"
+      title="Change Password"
       description="Your other devices will be signed out. This one stays signed in."
       footer={
         <>
           <Button variant="secondary" onClick={close} disabled={busy}>Cancel</Button>
           <Button onClick={() => void submit()} disabled={!canSubmit}>
-            {busy ? 'Changing…' : 'Change password'}
+            {busy ? 'Changing…' : 'Change Password'}
           </Button>
         </>
       }

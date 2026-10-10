@@ -17,8 +17,8 @@ export function TrainingOverview({ stats }: { stats: TrainingStats | null }) {
     <div className="space-y-4">
       {/* Two headline gauges */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <GaugeCard label="Overall training compliance" value={stats.compliancePct} color={gaugeColor(stats.compliancePct)} sub="of all required competencies" />
-        <GaugeCard label="Mandatory training completion" value={stats.mandatoryPct} color={gaugeColor(stats.mandatoryPct)} sub="statutory & mandatory courses" />
+        <GaugeCard label="Overall Training Compliance" value={stats.compliancePct} color={gaugeColor(stats.compliancePct)} sub="of all required competencies" />
+        <GaugeCard label="Mandatory Training Completion" value={stats.mandatoryPct} color={gaugeColor(stats.mandatoryPct)} sub="statutory & mandatory courses" />
         <Card className="px-5 py-4">
           <p className="text-2xs font-semibold text-ink-2">Certificate expiry pipeline</p>
           <div className="mt-2 space-y-1.5">
@@ -48,7 +48,7 @@ export function TrainingOverview({ stats }: { stats: TrainingStats | null }) {
 
       <div className="grid gap-4 xl:grid-cols-2">
         <Card>
-          <CardHeader title="Department training score" subtitle="Competency compliance by department — lowest first" />
+          <CardHeader title="Department Training Score" subtitle="Competency compliance by department — lowest first" />
           <CardBody>
             <RankedBars
               data={stats.byDepartment}
@@ -59,7 +59,7 @@ export function TrainingOverview({ stats }: { stats: TrainingStats | null }) {
         </Card>
 
         <Card>
-          <CardHeader title="Site training score" subtitle="Competency compliance by site" />
+          <CardHeader title="Site Training Score" subtitle="Competency compliance by site" />
           <CardBody>
             <RankedBars
               data={stats.bySite}
@@ -70,7 +70,7 @@ export function TrainingOverview({ stats }: { stats: TrainingStats | null }) {
         </Card>
 
         <Card className="xl:col-span-2">
-          <CardHeader title="Training hours delivered" subtitle="Total instructor-led hours per month (present attendees × course duration)" />
+          <CardHeader title="Training Hours Delivered" subtitle="Total instructor-led hours per month (present attendees × course duration)" />
           <CardBody>
             <ChartBlock legend={<ChartLegend items={[{ color: 'var(--s1)', label: 'Training hours' }]} />}>
               <TrendChart

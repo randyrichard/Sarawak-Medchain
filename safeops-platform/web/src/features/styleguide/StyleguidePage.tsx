@@ -63,7 +63,7 @@ function TokensSection() {
     </div>
   )
   return (
-    <Section title="Color tokens" subtitle="Both themes are selected palettes — toggle dark mode in the topbar and everything below re-resolves.">
+    <Section title="Color Tokens" subtitle="Both themes are selected palettes — toggle dark mode in the topbar and everything below re-resolves.">
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         <div>
           <p className="mb-2 text-2xs font-semibold uppercase tracking-wider text-muted">Surfaces</p>
@@ -88,7 +88,7 @@ function TokensSection() {
 
 function TypographySection() {
   return (
-    <Section title="Typography & spacing" subtitle="Eight sizes, one family. Spacing rides Tailwind's 4px grid — components use gap, never ad-hoc margins.">
+    <Section title="Typography & Spacing" subtitle="Eight sizes, one family. Spacing rides Tailwind's 4px grid — components use gap, never ad-hoc margins.">
       <div className="space-y-2">
         <p className="text-3xl font-semibold tracking-tight text-ink">Display 28 — page titles</p>
         <p className="text-2xl font-semibold tracking-tight text-ink">Title 22 — section headers</p>
@@ -127,7 +127,7 @@ function ButtonsSection() {
               setTimeout(() => setBusy(false), 1500)
             }}
           >
-            {busy ? 'Saving…' : 'Click for loading'}
+            {busy ? 'Saving…' : 'Click for Loading'}
           </Button>
         </div>
       </div>
@@ -137,7 +137,7 @@ function ButtonsSection() {
 
 function BadgesSection() {
   return (
-    <Section title="Badges & status" subtitle="Status is never color alone — pills always carry an icon + label.">
+    <Section title="Badges & Status" subtitle="Status is never color alone — pills always carry an icon + label.">
       <div className="space-y-3">
         <div className="flex flex-wrap gap-2">
           <Badge>Neutral</Badge>
@@ -183,7 +183,7 @@ function AlertsSection() {
 function FormsSection() {
   const [val, setVal] = useState('')
   return (
-    <Section title="Forms & inputs" subtitle="36px controls, accent focus, errors replace hints in place. Label to field 6px, field to field 20px: each label is clearly closer to its own control (law of proximity).">
+    <Section title="Forms & Inputs" subtitle="36px controls, accent focus, errors replace hints in place. Label to field 6px, field to field 20px: each label is clearly closer to its own control (law of proximity).">
       <div className={FORM_SPACING.stack}>
         <Input label="Site name" placeholder="e.g. Bintulu LNG Terminal" hint="Shown in switchers and reports." required />
         <Input
@@ -213,21 +213,21 @@ function OverlaysSection() {
   const [confirmed, setConfirmed] = useState(false)
   const [tab, setTab] = useState<'account' | 'security' | 'danger'>('account')
   return (
-    <Section title="Dialogs, dropdowns & tabs" subtitle="Dialogs trap focus and close on Esc; dropdowns close on outside click.">
+    <Section title="Dialogs, Dropdowns & Tabs" subtitle="Dialogs trap focus and close on Esc; dropdowns close on outside click.">
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="secondary" onClick={() => setOpen(true)}>Open dialog</Button>
+          <Button variant="secondary" onClick={() => setOpen(true)}>Open Dialog</Button>
           <Dropdown
-            trigger={(o) => <Button variant="secondary">{o ? 'Close menu' : 'Open dropdown'}</Button>}
+            trigger={(o) => <Button variant="secondary">{o ? 'Close Menu' : 'Open Dropdown'}</Button>}
             align="start"
           >
-            <DropdownLabel>Example menu</DropdownLabel>
-            <DropdownItem icon={<Plus size={14} />}>New item</DropdownItem>
-            <DropdownItem icon={<Save size={14} />}>Save view</DropdownItem>
+            <DropdownLabel>Example Menu</DropdownLabel>
+            <DropdownItem icon={<Plus size={14} />}>New Item</DropdownItem>
+            <DropdownItem icon={<Save size={14} />}>Save View</DropdownItem>
             <DropdownSeparator />
             <DropdownItem danger icon={<Trash2 size={14} />}>Delete</DropdownItem>
           </Dropdown>
-          {confirmed && <Badge tone="good">Dialog confirmed ✓</Badge>}
+          {confirmed && <Badge tone="good">Dialog Confirmed ✓</Badge>}
         </div>
         <Tabs
           items={[
@@ -258,7 +258,7 @@ function OverlaysSection() {
                 setOpen(false)
               }}
             >
-              Confirm close
+              Confirm Close
             </Button>
           </>
         }
@@ -313,7 +313,7 @@ function TableSection() {
     { key: 'trend', header: 'Trend', align: 'right', visibility: 'hidden md:table-cell', render: (r) => <Sparkline data={r.trend} width={80} height={22} stroke={r.status === 'Intervene' ? 'var(--critical)' : 'var(--s1)'} /> },
   ]
   return (
-    <Section title="Data table" subtitle="Declarative columns, responsive visibility, and every state a request can be in - switch them below.">
+    <Section title="Data Table" subtitle="Declarative columns, responsive visibility, and every state a request can be in - switch them below.">
       <Tabs label="Table state" items={TABLE_STATES} value={state} onChange={setState} className="mb-3" />
       <div className="rounded-lg border">
         <DataTable
@@ -333,7 +333,7 @@ function TableSection() {
 
 function LoadingSection() {
   return (
-    <Section title="Loading & empty states" subtitle="Skeletons mirror the final layout; empty states teach the next step.">
+    <Section title="Loading & Empty States" subtitle="Skeletons mirror the final layout; empty states teach the next step.">
       <div className="space-y-5">
         <SkeletonText lines={3} />
         <SkeletonRows rows={2} />
@@ -350,7 +350,7 @@ function LoadingSection() {
           <EmptyState
             icon={Inbox}
             title="No reports yet"
-            action={<Button size="sm" icon={<Plus size={14} />}>Report a hazard</Button>}
+            action={<Button size="sm" icon={<Plus size={14} />}>Report a Hazard</Button>}
           >
             Print the QR poster for each location and workers can file their first report in under a minute.
           </EmptyState>
@@ -379,7 +379,7 @@ function AsyncDemo() {
     <div className="rounded-lg border p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
         <p className="text-xs font-semibold text-ink-2">useAsync + AsyncContent</p>
-        <Button size="sm" variant="secondary" onClick={reports.reload}>Fetch again</Button>
+        <Button size="sm" variant="secondary" onClick={reports.reload}>Fetch Again</Button>
       </div>
       <AsyncContent
         state={reports}
@@ -396,7 +396,7 @@ function AsyncDemo() {
 
 function ChartsSection() {
   return (
-    <Section title="Chart primitives" subtitle="Series tokens only; 2px lines; endpoint emphasis. Full chart layer ships with Analytics.">
+    <Section title="Chart Primitives" subtitle="Series tokens only; 2px lines; endpoint emphasis. Full chart layer ships with Analytics.">
       <div className="flex flex-wrap items-end gap-8">
         <div>
           <p className="mb-1.5 text-2xs font-semibold uppercase tracking-wider text-muted">Sparkline</p>

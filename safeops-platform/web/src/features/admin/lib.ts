@@ -160,9 +160,9 @@ export function invitationDelivery(status: string): {
 } {
   switch (status) {
     case 'sent': return { label: 'Emailed', tone: 'good' }
-    case 'failed': return { label: 'Email failed', tone: 'critical' }
+    case 'failed': return { label: 'Email Failed', tone: 'critical' }
     case 'email_pending': return { label: 'Sending', tone: 'warning' }
-    default: return { label: 'Not emailed', tone: 'neutral' }
+    default: return { label: 'Not Emailed', tone: 'neutral' }
   }
 }
 

@@ -49,7 +49,7 @@ export function OrganizationPage() {
         right={
           <Can capability="org:manage">
             <LinkButton size="sm" icon={<Plus size={14} />} to="/admin?s=invitations">
-              Invite user
+              Invite User
             </LinkButton>
           </Can>
         }
@@ -271,7 +271,7 @@ function RolesView() {
   return (
     <Card>
       <CardHeader
-        title="Permission matrix"
+        title="Permission Matrix"
         subtitle="Deny-by-default. Every route and API call checks a capability, not a role name."
         right={myRole ? <Badge tone="accent">You are: {ROLE_LABEL[myRole]}</Badge> : undefined}
       />

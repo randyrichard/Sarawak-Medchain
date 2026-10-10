@@ -41,7 +41,7 @@ const PAGE_SIZE = 25
 
 export function IncidentBoardPage() {
   const siteLabel = useSiteLabel()
-  usePageTitle('Incident board')
+  usePageTitle('Incident Board')
   const { company, sites } = useOrg()
   const [params, setParams] = useSearchParams()
 
@@ -113,24 +113,24 @@ export function IncidentBoardPage() {
     label: string; value: number | undefined
     tone?: string; hint?: string; go?: Partial<BoardFilters>
   }[] = [
-    { label: 'Open incidents', value: board?.openIncidents,
+    { label: 'Open Incidents', value: board?.openIncidents,
       go: { stage: '', severity: '' } },
-    { label: 'High severity', value: board ? highSeverityCount(board.bySeverity) : undefined,
+    { label: 'High Severity', value: board ? highSeverityCount(board.bySeverity) : undefined,
       tone: 'var(--critical)', hint: 'LTI and above',
       go: { sort: 'severity' } },
-    { label: 'Investigations open', value: board?.openInvestigations,
+    { label: 'Investigations Open', value: board?.openInvestigations,
       tone: board?.openInvestigations ? 'var(--warning)' : undefined,
       hint: 'Started, not signed off', go: { stage: 'investigation' } },
-    { label: 'Overdue actions', value: board?.overdueCapas,
+    { label: 'Overdue Actions', value: board?.overdueCapas,
       tone: board?.overdueCapas ? 'var(--critical)' : undefined,
       hint: 'Past their due date' },
-    { label: 'Lost time', value: board?.lostTime,
+    { label: 'Lost Time', value: board?.lostTime,
       tone: board?.lostTime ? 'var(--critical)' : undefined,
       go: { severity: 'lost_time_injury' } },
-    { label: 'Near misses', value: board?.nearMisses,
+    { label: 'Near Misses', value: board?.nearMisses,
       go: { severity: 'near_miss' } },
-    { label: 'This month', value: board?.thisMonth },
-    { label: 'Total in scope', value: board?.total,
+    { label: 'This Month', value: board?.thisMonth },
+    { label: 'Total in Scope', value: board?.total,
       hint: 'Excludes archived' },
   ]
 
@@ -143,9 +143,9 @@ export function IncidentBoardPage() {
         ]}
       />
       <PageHeader
-        title="Incident board"
+        title="Incident Board"
         subtitle="Open incidents by stage, so you can see what is serious, what is stuck and what to do next"
-        right={<LinkButton to="/incidents/new">Report incident</LinkButton>}
+        right={<LinkButton to="/incidents/new">Report Incident</LinkButton>}
       />
 
       {error && <Alert tone="critical" className="mb-3" onDismiss={() => setError(null)}>{error}</Alert>}
@@ -300,7 +300,7 @@ export function IncidentBoardPage() {
             {activeCount > 0 && (
               <Button variant="secondary" className="mt-3"
                 onClick={() => setParams(new URLSearchParams())}>
-                Clear filters
+                Clear Filters
               </Button>
             )}
           </CardBody>

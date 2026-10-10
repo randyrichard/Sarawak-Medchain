@@ -23,7 +23,7 @@ export function AssetAnalytics({
   return (
     <div className="grid gap-4 xl:grid-cols-2">
       <Card>
-        <CardHeader title="Inspections — completed vs failed" subtitle="Trailing 6 months. Failures are good news: defects found before they hurt someone." />
+        <CardHeader title="Inspections — Completed vs Failed" subtitle="Trailing 6 months. Failures are good news: defects found before they hurt someone." />
         <CardBody>
           <ChartBlock legend={<ChartLegend items={[{ color: 'var(--s2)', label: 'Completed' }, { color: 'var(--s6)', label: 'Of which failed' }]} />}>
             <GroupedBars
@@ -39,7 +39,7 @@ export function AssetAnalytics({
       </Card>
 
       <Card>
-        <CardHeader title="Average asset health by site" subtitle="Lowest first — where inspection discipline is slipping" />
+        <CardHeader title="Average Asset Health by Site" subtitle="Lowest first — where inspection discipline is slipping" />
         <CardBody>
           <RankedBars
             data={stats.bySiteHealth.map((s) => ({ name: siteShort(s.name), value: s.value }))}
@@ -50,7 +50,7 @@ export function AssetAnalytics({
       </Card>
 
       <Card className="xl:col-span-2">
-        <CardHeader title="Highest-risk assets" subtitle="The five assets most likely to bite — click to open" />
+        <CardHeader title="Highest-Risk Assets" subtitle="The five assets most likely to bite — click to open" />
         <CardBody className="grid gap-2 md:grid-cols-2 xl:grid-cols-5">
           {stats.highestRisk.map((a) => (
             <button
@@ -69,7 +69,7 @@ export function AssetAnalytics({
           ))}
           {stats.highestRisk.length === 0 && (
             <p className="col-span-full py-6 text-center text-sm text-muted">
-              <StatusPill kind="good" label="All assets healthy" />
+              <StatusPill kind="good" label="All Assets Healthy" />
             </p>
           )}
         </CardBody>

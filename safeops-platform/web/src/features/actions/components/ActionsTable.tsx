@@ -134,7 +134,7 @@ export function ActionsTable({
               <Badge tone="accent">{selected.size} selected</Badge>
               <Button size="sm" variant="secondary" icon={<Play size={12} />} loading={busy}
                 onClick={() => void bulk((id) => api.updateCapa(id, { status: 'In Progress' }, actor))}>
-                Mark in progress
+                Mark in Progress
               </Button>
               {isManager(actor.role) && (
                 <Button size="sm" variant="secondary" icon={<UserRound size={12} />} onClick={() => setReassignOpen(true)}>

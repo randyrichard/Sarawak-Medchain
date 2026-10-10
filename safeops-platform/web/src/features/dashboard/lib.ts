@@ -38,7 +38,7 @@ export function kpiCards(d: DashboardOverview): KpiCard[] {
   return [
     {
       id: 'activePermits',
-      label: 'Active permits',
+      label: 'Active Permits',
       value: k.activePermits,
       href: linkTo.permits('active'),
       tone: 'neutral',
@@ -46,7 +46,7 @@ export function kpiCards(d: DashboardOverview): KpiCard[] {
     },
     {
       id: 'permitsAwaitingReview',
-      label: 'Permits awaiting review',
+      label: 'Permits Awaiting Review',
       value: k.permitsAwaitingReview,
       href: linkTo.permits('awaiting'),
       tone: k.permitsAwaitingReview > 0 ? 'warning' : 'neutral',
@@ -54,7 +54,7 @@ export function kpiCards(d: DashboardOverview): KpiCard[] {
     },
     {
       id: 'overdueActions',
-      label: 'Overdue actions',
+      label: 'Overdue Actions',
       value: k.overdueActions,
       href: linkTo.actions('overdue'),
       tone: k.overdueActions > 0 ? 'critical' : 'good',
@@ -62,7 +62,7 @@ export function kpiCards(d: DashboardOverview): KpiCard[] {
     },
     {
       id: 'openInvestigations',
-      label: 'Open investigations',
+      label: 'Open Investigations',
       value: k.openInvestigations,
       href: linkTo.incidents('investigating'),
       tone: k.openInvestigations > 0 ? 'serious' : 'good',
@@ -70,7 +70,7 @@ export function kpiCards(d: DashboardOverview): KpiCard[] {
     },
     {
       id: 'expiringEquipment',
-      label: 'Equipment expiring',
+      label: 'Equipment Expiring',
       value: k.expiringEquipment,
       // Calibration: lapsed, missing or due soon. The board counts it; the register cannot filter it.
       href: linkTo.equipmentBoard(),
@@ -79,7 +79,7 @@ export function kpiCards(d: DashboardOverview): KpiCard[] {
     },
     {
       id: 'equipmentOutOfService',
-      label: 'Out of service',
+      label: 'Out of Service',
       value: k.equipmentOutOfService,
       // Out of service and under maintenance together, which the board shows side by side.
       href: linkTo.equipmentBoard(),
@@ -88,7 +88,7 @@ export function kpiCards(d: DashboardOverview): KpiCard[] {
     },
     {
       id: 'visitorsOnSite',
-      label: 'Visitors on site',
+      label: 'Visitors on Site',
       value: k.visitorsOnSite,
       href: linkTo.visitors('on_site'),
       tone: 'neutral',
@@ -96,7 +96,7 @@ export function kpiCards(d: DashboardOverview): KpiCard[] {
     },
     {
       id: 'incidentsInRange',
-      label: 'Incidents in range',
+      label: 'Incidents in Range',
       value: k.incidentsInRange,
       href: '/incidents',
       tone: 'neutral',
@@ -109,9 +109,9 @@ export function kpiCards(d: DashboardOverview): KpiCard[] {
 const PRIORITY_META: Record<AttentionPriority, { label: string; tone: Tone; rank: number }> = {
   critical: { label: 'Critical', tone: 'critical', rank: 0 },
   overdue: { label: 'Overdue', tone: 'critical', rank: 1 },
-  today: { label: 'Due today', tone: 'warning', rank: 2 },
-  soon: { label: 'Expiring soon', tone: 'warning', rank: 3 },
-  review: { label: 'Pending review', tone: 'accent', rank: 4 },
+  today: { label: 'Due Today', tone: 'warning', rank: 2 },
+  soon: { label: 'Expiring Soon', tone: 'warning', rank: 3 },
+  review: { label: 'Pending Review', tone: 'accent', rank: 4 },
 }
 
 export function priorityLabel(p: AttentionPriority) { return PRIORITY_META[p].label }
@@ -221,9 +221,9 @@ const ALWAYS_SHOWN = ['submitted', 'supervisor_review', 'hse_review', 'area_auth
 const STAGE_LABEL: Record<string, string> = {
   draft: 'Draft',
   submitted: 'Submitted',
-  supervisor_review: 'Supervisor review',
-  hse_review: 'HSE review',
-  area_authority: 'Area authority',
+  supervisor_review: 'Supervisor Review',
+  hse_review: 'HSE Review',
+  area_authority: 'Area Authority',
   approved: 'Approved',
   active: 'Active',
   suspended: 'Suspended',

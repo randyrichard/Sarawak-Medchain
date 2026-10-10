@@ -58,7 +58,7 @@ export function ComplianceRegister({
                 <th className="px-5 py-2.5 font-semibold">Regulation / Requirement</th>
                 <th className="px-3 py-2.5 font-semibold">Responsible</th>
                 <th className="px-3 py-2.5 font-semibold">Scope</th>
-                <th className="px-3 py-2.5 font-semibold">Next due</th>
+                <th className="px-3 py-2.5 font-semibold">Next Due</th>
                 <th className="px-3 py-2.5 font-semibold">Evidence</th>
                 <th className="px-5 py-2.5 font-semibold">Status</th>
               </tr>
@@ -116,7 +116,7 @@ export function ComplianceRegister({
         footer={
           <>
             <Button variant="secondary" onClick={() => setRenewFor(null)}>Cancel</Button>
-            <Button loading={busy} onClick={() => void renew()}>Record renewal</Button>
+            <Button loading={busy} onClick={() => void renew()}>Record Renewal</Button>
           </>
         }
       >

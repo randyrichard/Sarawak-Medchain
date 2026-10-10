@@ -128,7 +128,7 @@ export function AttendanceRunner({
                 onClick={() => setRows((cur) => cur.map((r) => ({ ...r, present: !allPresent })))}
                 className="inline-flex items-center gap-1 text-2xs font-semibold text-accent hover:underline"
               >
-                <UserCheck size={12} /> {allPresent ? 'Mark all absent' : 'Mark all present'}
+                <UserCheck size={12} /> {allPresent ? 'Mark All Absent' : 'Mark All Present'}
               </button>
             </div>
 
@@ -186,7 +186,7 @@ export function AttendanceRunner({
             <div className="border-t px-5 py-3">
               {passing > 0 && <p className="mb-2 text-2xs font-semibold text-good">{passing} certificate(s) will be issued on submit.</p>}
               <Button className="w-full" size="lg" icon={<Send size={14} />} loading={busy} disabled={!canSubmit} onClick={() => void submit()}>
-                {incomplete ? 'Set Pass/Fail for every present attendee' : 'Complete session & issue certificates'}
+                {incomplete ? 'Set Pass/Fail for Every Present Attendee' : 'Complete Session & Issue Certificates'}
               </Button>
             </div>
           </>

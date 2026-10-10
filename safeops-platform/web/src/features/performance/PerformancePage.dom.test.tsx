@@ -91,13 +91,13 @@ const tile = (label: string) => screen.getByText(label, { selector: 'p' }).close
 describe('HSE Performance page', () => {
   it('shows the industry rates with what they were calculated from', async () => {
     renderPage()
-    const fr = await waitFor(() => tile('LTI frequency rate'))
+    const fr = await waitFor(() => tile('LTI Frequency Rate'))
     expect(fr.textContent).toContain('11.20')
     expect(fr.textContent).toContain('2 lost-time injuries · per 1M hours')
     expect(tile('TRIR').textContent).toContain('3.36')
-    expect(tile('Severity rate').textContent).toContain('10 days lost')
-    expect(tile('Near-miss ratio').textContent).toContain('1.3:1')
-    expect(tile('Actions closed on time').textContent).toContain('67%')
+    expect(tile('Severity Rate').textContent).toContain('10 days lost')
+    expect(tile('Near-Miss Ratio').textContent).toContain('1.3:1')
+    expect(tile('Actions Closed on Time').textContent).toContain('67%')
     expect(get).toHaveBeenCalledWith({ companyId: 'co1', projectId: undefined, months: 12 }, expect.anything())
   })
 
@@ -113,8 +113,8 @@ describe('HSE Performance page', () => {
     const box = note.closest('div')!
     expect(box.textContent).toContain('Site B')
     expect(box.textContent).toContain('Jan–Feb 26, Apr 26')
-    fireEvent.click(within(box).getByRole('button', { name: 'Record man-hours' }))
-    expect(await screen.findByRole('dialog', { name: 'Record man-hours' })).toBeTruthy()
+    fireEvent.click(within(box).getByRole('button', { name: 'Record Man-Hours' }))
+    expect(await screen.findByRole('dialog', { name: 'Record Man-Hours' })).toBeTruthy()
   })
 
   it('lists the gaps for people who cannot record hours, without offering to', async () => {
@@ -127,16 +127,16 @@ describe('HSE Performance page', () => {
   it('says nothing about estimates when every hour is recorded', async () => {
     get.mockResolvedValue(view({ estimatedShare: 0 }))
     renderPage()
-    await waitFor(() => tile('Hours worked'))
-    expect(tile('Hours worked').textContent).toContain('All hours recorded')
+    await waitFor(() => tile('Hours Worked'))
+    expect(tile('Hours Worked').textContent).toContain('All hours recorded')
     expect(screen.queryByText(/JKKP 8 return/)).toBeNull()
   })
 
   it('never shows an unknown rate as zero', async () => {
     get.mockResolvedValue(view({ frequencyRate: null, hours: 0 }))
     renderPage()
-    await waitFor(() => expect(tile('LTI frequency rate').textContent).toContain('—'))
-    expect(tile('LTI frequency rate').textContent).not.toContain('0.00')
+    await waitFor(() => expect(tile('LTI Frequency Rate').textContent).toContain('—'))
+    expect(tile('LTI Frequency Rate').textContent).not.toContain('0.00')
   })
 
   it('marks a fatality as the one thing on the page that needs attention now', async () => {
@@ -144,7 +144,7 @@ describe('HSE Performance page', () => {
     renderPage()
     await waitFor(() => tile('Fatalities'))
     expect(within(tile('Fatalities')).getByText('Needs attention now')).toBeTruthy()
-    expect(within(tile('LTI frequency rate')).queryByText(/Needs attention/)).toBeNull()
+    expect(within(tile('LTI Frequency Rate')).queryByText(/Needs attention/)).toBeNull()
   })
 
   it('ranks sites worst first, with unknown rates last', async () => {
@@ -179,18 +179,18 @@ describe('HSE Performance page', () => {
       role = r
       renderPage()
       await screen.findByRole('table', { name: /HSE performance by site/ })
-      expect(screen.queryByRole('button', { name: 'Record man-hours' })).toBeNull()
+      expect(screen.queryByRole('button', { name: 'Record Man-Hours' })).toBeNull()
       cleanup()
     }
     role = 'admin'
     renderPage()
-    expect(await screen.findByRole('button', { name: 'Record man-hours' })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: 'Record Man-Hours' })).toBeTruthy()
   })
 
   it('saves only the months that changed, and a cleared month as null', async () => {
     const year = new Date().getUTCFullYear()
     renderPage()
-    fireEvent.click(await screen.findByRole('button', { name: 'Record man-hours' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Record Man-Hours' }))
     const dialog = await screen.findByRole('dialog')
     const jan = await within(dialog).findByLabelText(/^Jan /)
     expect((jan as HTMLInputElement).value).toBe('20,000')
@@ -205,7 +205,7 @@ describe('HSE Performance page', () => {
 
   it('refuses a figure that is not whole hours', async () => {
     renderPage()
-    fireEvent.click(await screen.findByRole('button', { name: 'Record man-hours' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Record Man-Hours' }))
     const dialog = await screen.findByRole('dialog')
     const jan = await within(dialog).findByLabelText(/^Jan /)
     fireEvent.change(jan, { target: { value: '12.5' } })
@@ -229,11 +229,11 @@ describe('HSE Performance page', () => {
     it('marks each tile on or off its target, by icon and words', async () => {
       get.mockResolvedValue(view({}, targets))
       renderPage()
-      const fr = await waitFor(() => tile('LTI frequency rate'))
+      const fr = await waitFor(() => tile('LTI Frequency Rate'))
       expect(fr.textContent).toContain('Target ≤ 0.50')
       expect(fr.textContent).toContain('Off target')
       expect(within(fr).getByText('Needs attention')).toBeTruthy()
-      const onTime = tile('Actions closed on time')
+      const onTime = tile('Actions Closed on Time')
       expect(onTime.textContent).toContain('Target ≥ 60%')
       expect(onTime.textContent).toContain('On target')
       // A target replaces the page's own rule of thumb: 67% is not a warning against a 60% goal.
@@ -262,8 +262,8 @@ describe('HSE Performance page', () => {
     it('lets the figure owners set targets, saving a percentage as a fraction', async () => {
       get.mockResolvedValue(view({}, targets))
       renderPage()
-      fireEvent.click(await screen.findByRole('button', { name: 'Set targets' }))
-      const dialog = await screen.findByRole('dialog', { name: 'Set performance targets' })
+      fireEvent.click(await screen.findByRole('button', { name: 'Set Targets' }))
+      const dialog = await screen.findByRole('dialog', { name: 'Set Performance Targets' })
       const onTime = within(dialog).getByLabelText(/Actions closed on time/) as HTMLInputElement
       expect(onTime.value).toBe('60')
       fireEvent.change(onTime, { target: { value: '90' } })
@@ -278,7 +278,7 @@ describe('HSE Performance page', () => {
       role = 'ceo'
       renderPage()
       await screen.findByRole('table', { name: /HSE performance by site/ })
-      expect(screen.queryByRole('button', { name: 'Set targets' })).toBeNull()
+      expect(screen.queryByRole('button', { name: 'Set Targets' })).toBeNull()
     })
   })
 
@@ -292,7 +292,7 @@ describe('HSE Performance page', () => {
       })
       renderPage()
       fireEvent.click(await screen.findByRole('button', { name: 'Export' }))
-      fireEvent.click(await screen.findByRole('menuitem', { name: /Sites and totals/ }))
+      fireEvent.click(await screen.findByRole('menuitem', { name: /Sites and Totals/ }))
       expect(click).toHaveBeenCalledTimes(1)
       const text = await new Promise<string>((resolve) => {
         const r = new FileReader() // jsdom's Blob has no .text()
@@ -308,7 +308,7 @@ describe('HSE Performance page', () => {
       const print = vi.spyOn(window, 'print').mockImplementation(() => {})
       renderPage()
       fireEvent.click(await screen.findByRole('button', { name: 'Export' }))
-      fireEvent.click(await screen.findByRole('menuitem', { name: /Print or save as PDF/ }))
+      fireEvent.click(await screen.findByRole('menuitem', { name: /Print or Save as PDF/ }))
       expect(print).toHaveBeenCalled()
       print.mockRestore()
     })

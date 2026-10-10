@@ -47,25 +47,25 @@ export function MfaSettings({ backend }: { backend: boolean }) {
           </p>
         </div>
         {status?.available && !status.enabled && (
-          <Button size="sm" className="shrink-0" icon={<ShieldCheck size={13} />} onClick={() => setDialog('setup')}>Set up</Button>
+          <Button size="sm" className="shrink-0" icon={<ShieldCheck size={13} />} onClick={() => setDialog('setup')}>Set Up</Button>
         )}
       </div>
       {error && <Alert tone="critical" className="mt-2">{error}</Alert>}
       {status?.enabled && (
         <div className="mt-2 flex flex-wrap gap-2">
-          <Button size="sm" variant="secondary" onClick={() => setDialog('codes')}>New recovery codes</Button>
+          <Button size="sm" variant="secondary" onClick={() => setDialog('codes')}>New Recovery Codes</Button>
           {status.required ? (
             <p className="self-center text-2xs text-muted">Required by your organisation, so it stays on.</p>
           ) : (
-            <Button size="sm" variant="ghost" icon={<ShieldOff size={13} />} onClick={() => setDialog('off')}>Turn off</Button>
+            <Button size="sm" variant="ghost" icon={<ShieldOff size={13} />} onClick={() => setDialog('off')}>Turn Off</Button>
           )}
         </div>
       )}
 
-      <Dialog open={dialog === 'setup'} onClose={close} title="Set up multi-factor sign-in" width="max-w-lg">
+      <Dialog open={dialog === 'setup'} onClose={close} title="Set Up Multi-Factor Sign-In" width="max-w-lg">
         {dialog === 'setup' && <MfaEnrolment onDone={close} />}
       </Dialog>
-      <Dialog open={dialog === 'codes'} onClose={close} title="New recovery codes"
+      <Dialog open={dialog === 'codes'} onClose={close} title="New Recovery Codes"
         description="Your old recovery codes stop working as soon as these are made.">
         {dialog === 'codes' && <NewRecoveryCodes />}
       </Dialog>
@@ -102,7 +102,7 @@ function NewRecoveryCodes() {
       {error && <Alert tone="critical">{error}</Alert>}
       <Input label="Code from your authenticator app" inputMode="numeric" autoComplete="one-time-code"
         value={code} onChange={(e) => setCode(e.target.value)} className="font-mono tracking-widest" autoFocus />
-      <Button type="submit" loading={busy} disabled={!code.trim()}>Make new codes</Button>
+      <Button type="submit" loading={busy} disabled={!code.trim()}>Make New Codes</Button>
     </form>
   )
 }
@@ -134,7 +134,7 @@ function TurnOff({ onDone }: { onDone: () => void }) {
       <Input label="Code from your authenticator app, or a recovery code" autoComplete="one-time-code"
         value={code} onChange={(e) => setCode(e.target.value)} className="font-mono tracking-widest" />
       <Button type="submit" variant="danger" loading={busy} disabled={!password || !code.trim()}>
-        Turn off
+        Turn Off
       </Button>
     </form>
   )

@@ -22,23 +22,23 @@ type Bucket = NonNullable<CapaFilters['bucket']>
 
 /** What each filter shows, in words, for the chip that says the list is filtered. */
 const BUCKET_LABEL: Record<Bucket, string> = {
-  all: 'All actions',
+  all: 'All Actions',
   open: 'Open',
   overdue: 'Overdue',
-  due_today: 'Due today',
-  due_week: 'Due in the next 7 days',
-  verification: 'Waiting for verification',
-  high_priority: 'High priority',
-  completed: 'Completed in the last 30 days',
+  due_today: 'Due Today',
+  due_week: 'Due in the Next 7 Days',
+  verification: 'Waiting for Verification',
+  high_priority: 'High Priority',
+  completed: 'Completed in the Last 30 Days',
   cancelled: 'Cancelled',
 }
 
 const KPI_DEFS: { key: keyof CapaStats; label: string; bucket: Bucket; tone: (n: number) => string }[] = [
-  { key: 'open', label: 'Open actions', bucket: 'open', tone: () => 'var(--accent)' },
+  { key: 'open', label: 'Open Actions', bucket: 'open', tone: () => 'var(--accent)' },
   { key: 'overdue', label: 'Overdue', bucket: 'overdue', tone: (n) => (n > 0 ? 'var(--critical)' : 'var(--good)') },
-  { key: 'dueToday', label: "Due today", bucket: 'due_today', tone: (n) => (n > 0 ? 'var(--warning)' : 'var(--good)') },
-  { key: 'verificationPending', label: 'Verification pending', bucket: 'verification', tone: (n) => (n > 0 ? 'var(--warning)' : 'var(--good)') },
-  { key: 'highPriority', label: 'High priority', bucket: 'high_priority', tone: (n) => (n > 0 ? 'var(--serious)' : 'var(--good)') },
+  { key: 'dueToday', label: "Due Today", bucket: 'due_today', tone: (n) => (n > 0 ? 'var(--warning)' : 'var(--good)') },
+  { key: 'verificationPending', label: 'Verification Pending', bucket: 'verification', tone: (n) => (n > 0 ? 'var(--warning)' : 'var(--good)') },
+  { key: 'highPriority', label: 'High Priority', bucket: 'high_priority', tone: (n) => (n > 0 ? 'var(--serious)' : 'var(--good)') },
   { key: 'completed30d', label: 'Completed (30d)', bucket: 'completed', tone: () => 'var(--good)' },
 ]
 
@@ -164,11 +164,11 @@ export function ActionsPage() {
       )}
 
       <PageHeader
-        title="Corrective actions"
+        title="Corrective Actions"
         subtitle={`Tasks that fix the causes of incidents and audit findings. Each has an owner and a due date, and stays open until it is checked. ${scopeNote}.`}
         right={
           !readOnlyRole && ['admin', 'hse_manager', 'safety_officer'].includes(role ?? '') ? (
-            <Button icon={<Plus size={15} />} onClick={() => setNewOpen(true)}>New action</Button>
+            <Button icon={<Plus size={15} />} onClick={() => setNewOpen(true)}>New Action</Button>
           ) : undefined
         }
       />

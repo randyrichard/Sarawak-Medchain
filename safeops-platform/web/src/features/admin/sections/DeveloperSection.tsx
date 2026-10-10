@@ -98,7 +98,7 @@ function KeysPanel() {
           onClick={() => setNewOpen(true)}
           disabled={!integrations}
         >
-          Generate key
+          Generate Key
         </Button>
       </div>
       <Card>
@@ -109,8 +109,8 @@ function KeysPanel() {
                 <tr className="border-b text-2xs uppercase tracking-wide text-muted">
                   <th className="px-5 py-2.5 font-semibold">Key</th>
                   <th className="px-3 py-2.5 font-semibold">Scopes</th>
-                  <th className="px-3 py-2.5 font-semibold">Last used</th>
-                  <th className="px-3 py-2.5 font-semibold">Calls today</th>
+                  <th className="px-3 py-2.5 font-semibold">Last Used</th>
+                  <th className="px-3 py-2.5 font-semibold">Calls Today</th>
                   <th className="px-5 py-2.5 text-right font-semibold">Status</th>
                 </tr>
               </thead>
@@ -169,7 +169,7 @@ function NewKeyDialog({ open, onClose, onCreated }: { open: boolean; onClose: ()
 
   return (
     <Dialog
-      error={error} open={open} onClose={close} title="Generate API key" description="Scoped access to the SafeChain REST API."
+      error={error} open={open} onClose={close} title="Generate API Key" description="Scoped access to the SafeChain REST API."
       footer={secret ? <Button onClick={close}>Done</Button> : <><Button variant="secondary" onClick={close}>Cancel</Button><Button loading={busy} onClick={() => void submit()}>Generate</Button></>}>
       <div className="space-y-3">
         {secret ? (
@@ -230,7 +230,7 @@ function WebhooksPanel() {
           onClick={() => setNewOpen(true)}
           disabled={!integrations}
         >
-          Add webhook
+          Add Webhook
         </Button>
       </div>
       {hooks === null ? <Skeleton className="h-40 w-full rounded-xl" /> : hooks.map((wh) => (
@@ -246,7 +246,7 @@ function WebhooksPanel() {
             <span>Secret {wh.secretMasked}
               {wh.lastDelivery && <> · last delivery <span className={wh.lastDelivery.status === 'success' ? 'text-good' : 'text-critical'}>{wh.lastDelivery.code}</span> {timeAgo(wh.lastDelivery.at)}</>}
             </span>
-            <Button size="sm" variant="ghost" icon={<Send size={11} />} onClick={() => void act(() => api.adminTestWebhook(companyId, wh.id, actor))}>Send test</Button>
+            <Button size="sm" variant="ghost" icon={<Send size={11} />} onClick={() => void act(() => api.adminTestWebhook(companyId, wh.id, actor))}>Send Test</Button>
           </div>
         </Card>
       ))}
@@ -273,8 +273,8 @@ function NewWebhookDialog({ open, onClose, onCreated }: { open: boolean; onClose
 
   return (
     <Dialog
-      error={error} open={open} onClose={onClose} title="Add webhook" description="We POST a signed JSON payload for each selected event." width="max-w-lg"
-      footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button><Button loading={busy} onClick={() => void submit()}>Create webhook</Button></>}>
+      error={error} open={open} onClose={onClose} title="Add Webhook" description="We POST a signed JSON payload for each selected event." width="max-w-lg"
+      footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button><Button loading={busy} onClick={() => void submit()}>Create Webhook</Button></>}>
       <div className="space-y-5">
         <Input label="Endpoint URL (HTTPS)" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://example.com/hooks/safechain" />
         <div>
@@ -305,7 +305,7 @@ function UsagePanel() {
       <Card className="px-5 py-4"><p className="text-2xs font-semibold text-ink-2">Error rate (7d)</p><p className="mt-0.5 text-2xl font-semibold" style={{ color: usage.errorRate > 2 ? 'var(--warning)' : 'var(--good)', fontVariantNumeric: 'tabular-nums' }}>{usage.errorRate}%</p></Card>
       <Card className="px-5 py-4"><p className="text-2xs font-semibold text-ink-2">Rate limit</p><p className="mt-0.5 text-2xl font-semibold text-ink">1,000<span className="text-sm text-muted"> / min</span></p></Card>
       <Card className="xl:col-span-3">
-        <CardHeader title="API calls — last 7 days" subtitle="Successful requests per day" />
+        <CardHeader title="API Calls — Last 7 Days" subtitle="Successful requests per day" />
         <CardBody>
           <div className="flex h-40 items-end gap-3">
             {usage.series.map((p) => (
@@ -360,7 +360,7 @@ const ENDPOINTS = [
 function DocsPanel() {
   return (
     <Card>
-      <CardHeader title="REST API reference" subtitle={`Base URL ${apiBase()} · Bearer token auth · JSON`} />
+      <CardHeader title="REST API Reference" subtitle={`Base URL ${apiBase()} · Bearer token auth · JSON`} />
       <CardBody className="space-y-1.5">
         <div className="relative overflow-x-auto whitespace-nowrap rounded-lg border bg-sunken p-3 font-mono text-2xs text-ink-2" tabIndex={0} role="region" aria-label="Example request">
           curl {apiBase()}/v1/incidents \<br />&nbsp;&nbsp;-H "Authorization: Bearer sk_live_…"

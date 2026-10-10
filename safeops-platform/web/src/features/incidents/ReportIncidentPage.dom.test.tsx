@@ -51,7 +51,7 @@ async function fillAndSubmit(files: File[] = []) {
   fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
   fireEvent.change(await screen.findByLabelText(/Type your full name to sign/), { target: { value: 'Melissa Bong' } })
   fireEvent.click(screen.getByLabelText(/I confirm this report is accurate/))
-  fireEvent.click(screen.getByRole('button', { name: 'Submit report' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Submit Report' }))
 }
 
 describe('ReportIncidentPage submission', () => {

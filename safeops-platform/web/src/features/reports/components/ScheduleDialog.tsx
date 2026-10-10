@@ -114,7 +114,7 @@ export function ScheduleDialog({
     <Dialog
       open={open}
       onClose={onClose}
-      title={editing ? `Edit ${editing.name}` : 'Schedule a report'}
+      title={editing ? `Edit ${editing.name}` : 'Schedule a Report'}
       description="Generated from live data at the moment it runs."
       width="max-w-lg"
       footer={
@@ -122,7 +122,7 @@ export function ScheduleDialog({
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button loading={busy} onClick={() => void submit()}
             disabled={!name.trim() || chosen.length === 0}>
-            {editing ? 'Save changes' : 'Create schedule'}
+            {editing ? 'Save Changes' : 'Create Schedule'}
           </Button>
         </>
       }

@@ -75,12 +75,12 @@ export function TrainingPage() {
   }
 
   const KPIS: { label: string; value: string | number | undefined; tone?: string }[] = [
-    { label: 'Training compliance', value: stats !== null ? `${stats.compliancePct}%` : undefined, tone: stats ? (stats.compliancePct >= 90 ? 'var(--good)' : stats.compliancePct >= 80 ? 'var(--warning)' : 'var(--critical)') : undefined },
-    { label: 'Fully trained', value: stats ? `${stats.employeesTrained}/${stats.totalEmployees}` : undefined },
-    { label: 'Overdue (mandatory)', value: stats?.employeesOverdue, tone: stats && stats.employeesOverdue > 0 ? 'var(--critical)' : 'var(--good)' },
-    { label: 'Expiring ≤90 days', value: stats?.expiring90, tone: stats && stats.expiring90 > 0 ? 'var(--warning)' : 'var(--good)' },
-    { label: 'Upcoming sessions', value: stats?.upcomingSessions },
-    { label: 'Training hours (month)', value: stats?.trainingHoursMonth },
+    { label: 'Training Compliance', value: stats !== null ? `${stats.compliancePct}%` : undefined, tone: stats ? (stats.compliancePct >= 90 ? 'var(--good)' : stats.compliancePct >= 80 ? 'var(--warning)' : 'var(--critical)') : undefined },
+    { label: 'Fully Trained', value: stats ? `${stats.employeesTrained}/${stats.totalEmployees}` : undefined },
+    { label: 'Overdue (Mandatory)', value: stats?.employeesOverdue, tone: stats && stats.employeesOverdue > 0 ? 'var(--critical)' : 'var(--good)' },
+    { label: 'Expiring ≤90 Days', value: stats?.expiring90, tone: stats && stats.expiring90 > 0 ? 'var(--warning)' : 'var(--good)' },
+    { label: 'Upcoming Sessions', value: stats?.upcomingSessions },
+    { label: 'Training Hours (Month)', value: stats?.trainingHoursMonth },
   ]
 
   const viewTabs: TabItem<View>[] = [
@@ -100,9 +100,9 @@ export function TrainingPage() {
   return (
     <>
       <PageHeader
-        title="Training & competency"
+        title="Training & Competency"
         subtitle={`Courses, sessions and certificates: who is qualified for which work, and what is about to expire. ${scopeNote}.`}
-        right={runner ? <Button icon={<Plus size={15} />} onClick={() => setNewSessionOpen(true)}>New session</Button> : undefined}
+        right={runner ? <Button icon={<Plus size={15} />} onClick={() => setNewSessionOpen(true)}>New Session</Button> : undefined}
       />
 
       <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">

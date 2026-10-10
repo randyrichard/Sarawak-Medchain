@@ -31,20 +31,20 @@ export function CapaAnalyticsView({ companyId, sites }: { companyId: string | nu
   // A rate with nothing behind it is a dash, not a red 0%.
   const tiles: { label: string; value: string; tone?: string; note: string }[] = [
     {
-      label: 'Completion rate',
+      label: 'Completion Rate',
       value: data.completionRate === null ? '—' : `${data.completionRate}%`,
       tone: data.completionRate === null ? undefined : data.completionRate >= 70 ? 'var(--good)' : 'var(--warning)',
       note: data.completionRate === null ? 'no actions raised yet' : 'verified of all raised',
     },
-    { label: 'Avg. close time', value: data.avgCloseDays !== null ? `${data.avgCloseDays}d` : '—', note: 'creation → verification' },
+    { label: 'Avg. Close Time', value: data.avgCloseDays !== null ? `${data.avgCloseDays}d` : '—', note: 'creation → verification' },
     {
-      label: 'On-time completion',
+      label: 'On-Time Completion',
       value: data.onTimeRate === null ? '—' : `${data.onTimeRate}%`,
       tone: data.onTimeRate === null ? undefined : data.onTimeRate >= 80 ? 'var(--good)' : 'var(--serious)',
       note: data.onTimeRate === null ? 'nothing completed yet' : 'completed by due date',
     },
     {
-      label: 'Most overdue site',
+      label: 'Most Overdue Site',
       value: data.mostOverdueSite ? siteShort(data.mostOverdueSite.site) : 'None',
       tone: data.mostOverdueSite ? 'var(--critical)' : 'var(--good)',
       note: data.mostOverdueSite ? `${data.mostOverdueSite.count} overdue action(s)` : 'no overdue actions',
@@ -77,7 +77,7 @@ export function CapaAnalyticsView({ companyId, sites }: { companyId: string | nu
 
       <div className="grid gap-4 xl:grid-cols-2">
         <Card>
-          <CardHeader title="Open workload by site" subtitle="Active + awaiting verification — where the load sits" />
+          <CardHeader title="Open Workload by Site" subtitle="Active + awaiting verification — where the load sits" />
           <CardBody>
             <RankedBars
               data={data.bySite.map((s) => ({ name: siteShort(s.name), value: s.value }))}
@@ -88,7 +88,7 @@ export function CapaAnalyticsView({ companyId, sites }: { companyId: string | nu
         </Card>
 
         <Card>
-          <CardHeader title="Department on-time performance" subtitle="% of completed actions finished by their due date" />
+          <CardHeader title="Department On-Time Performance" subtitle="% of completed actions finished by their due date" />
           <CardBody>
             {data.byDepartment.length === 0 ? (
               <p className="py-8 text-center text-sm text-muted">Not enough completed actions yet.</p>
@@ -105,7 +105,7 @@ export function CapaAnalyticsView({ companyId, sites }: { companyId: string | nu
 
       <div className="grid gap-4 xl:grid-cols-2">
         <Card>
-          <CardHeader title="Created vs completed" subtitle="Is the backlog growing or shrinking? Bars should converge." />
+          <CardHeader title="Created vs Completed" subtitle="Is the backlog growing or shrinking? Bars should converge." />
           <CardBody>
             <ChartBlock legend={<ChartLegend items={[{ color: 'var(--grid)', label: 'Created' }, { color: 'var(--s2)', label: 'Completed' }]} />}>
               <GroupedBars
@@ -121,7 +121,7 @@ export function CapaAnalyticsView({ companyId, sites }: { companyId: string | nu
         </Card>
 
         <Card>
-          <CardHeader title="Owner load" subtitle="Who is carrying the most — and who is behind" />
+          <CardHeader title="Owner Load" subtitle="Who is carrying the most — and who is behind" />
           <CardBody className="space-y-2">
             {data.byOwner.length === 0 && <p className="py-8 text-center text-sm text-muted">No actions to show yet.</p>}
             {data.byOwner.map((o) => (

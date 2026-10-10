@@ -86,7 +86,7 @@ export function ChangePasswordRequiredPage() {
         </>
       ) : (
         <>
-          <h1 className="text-xl font-semibold tracking-tight text-ink">Choose your own password</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-ink">Choose Your Own Password</h1>
           <p className="mt-1 text-sm text-ink-2">
             This account is using a password somebody else set. Choose one only you know before
             continuing.
@@ -134,7 +134,7 @@ export function ChangePasswordRequiredPage() {
           className="w-full"
           disabled={busy || !current || !next || !!problem || mismatch || same}
         >
-          {busy ? 'Saving…' : 'Set my password'}
+          {busy ? 'Saving…' : 'Set My Password'}
         </Button>
       </form>
 
@@ -143,7 +143,7 @@ export function ChangePasswordRequiredPage() {
         onClick={() => { void logout() }}
         className="mt-4 text-xs font-semibold text-muted hover:text-ink"
       >
-        Sign out instead
+        Sign Out Instead
       </button>
     </AuthLayout>
   )

@@ -49,8 +49,8 @@ export function IncidentPanel({ d, className }: { d: DashboardOverview; classNam
       <CardBody className="space-y-3">
         <div className="grid grid-cols-3 gap-1">
           <Stat label="Investigating" value={d.incidents.investigating} href={linkTo.incidents('investigating')} />
-          <Stat label="Awaiting review" value={d.incidents.awaitingReview} href={linkTo.incidents('awaiting_review')} />
-          <Stat label="In range" value={d.incidents.inRange} href="/incidents" />
+          <Stat label="Awaiting Review" value={d.incidents.awaitingReview} href={linkTo.incidents('awaiting_review')} />
+          <Stat label="In Range" value={d.incidents.inRange} href="/incidents" />
         </div>
 
         {bars.length === 0 ? (
@@ -92,7 +92,7 @@ export function IncidentPanel({ d, className }: { d: DashboardOverview; classNam
                   <Link to={`/incidents/${i.id}`} className="flex items-center gap-2 py-1.5 hover:bg-[var(--surface-2)] coarse:min-h-11">
                     <span className="font-mono text-2xs text-muted">{i.number}</span>
                     <span className="min-w-0 flex-1 truncate text-2xs text-ink">{i.title}</span>
-                    {i.highRisk && <Badge tone="critical">High risk</Badge>}
+                    {i.highRisk && <Badge tone="critical">High Risk</Badge>}
                     <span className="shrink-0 text-2xs text-muted">{i.severityLabel}</span>
                   </Link>
                 </li>
@@ -111,7 +111,7 @@ export function PermitPanel({ d, className }: { d: DashboardOverview; className?
   return (
     <Card className={className}>
       <CardHeader
-        title="Permits to work"
+        title="Permits to Work"
         subtitle={`${d.permits.active} active`}
         right={<Link to="/permits" className="text-2xs font-semibold text-accent coarse:inline-flex coarse:min-h-11 coarse:items-center">Open</Link>}
       />
@@ -136,9 +136,9 @@ export function PermitPanel({ d, className }: { d: DashboardOverview; className?
               ))}
             </ul>
             <div className="grid grid-cols-2 gap-1 border-t border-line pt-2">
-              <Stat label="Expiring in 7 days" value={d.permits.expiringSoon} href={linkTo.permits('expiring')} tone="warning" />
+              <Stat label="Expiring in 7 Days" value={d.permits.expiringSoon} href={linkTo.permits('expiring')} tone="warning" />
               {/* Past their window and never signed off - a real gap, not a stage. */}
-              <Stat label="Lapsed, not closed" value={d.permits.expiredOpen} href={linkTo.permits('expired')} tone="critical" />
+              <Stat label="Lapsed, Not Closed" value={d.permits.expiredOpen} href={linkTo.permits('expired')} tone="critical" />
               <Stat label="Rejected" value={d.permits.rejected} href={linkTo.permits('rejected')} />
             </div>
           </>
@@ -165,14 +165,14 @@ export function EquipmentPanel({ d, className }: { d: DashboardOverview; classNa
           </EmptyState>
         ) : (
           <div className="space-y-0.5">
-            <Stat label="In service" value={e.inService} href={linkTo.assets({ status: 'In Service' })} tone="good" />
+            <Stat label="In Service" value={e.inService} href={linkTo.assets({ status: 'In Service' })} tone="good" />
             {/* Includes equipment under maintenance; the board shows the two side by side. */}
-            <Stat label="Out of service" value={e.outOfService} href={linkTo.equipmentBoard()} tone="warning" />
-            <Stat label="Inspection overdue" value={e.inspectionOverdue} href={linkTo.assets({ bucket: 'overdue' })} tone="critical" />
+            <Stat label="Out of Service" value={e.outOfService} href={linkTo.equipmentBoard()} tone="warning" />
+            <Stat label="Inspection Overdue" value={e.inspectionOverdue} href={linkTo.assets({ bucket: 'overdue' })} tone="critical" />
             {/* Calibration is counted on the equipment board; the register cannot filter by it. */}
-            <Stat label="Calibration expired" value={e.calibrationOverdue} href={linkTo.equipmentBoard()} tone="critical" />
-            <Stat label="No certificate on file" value={e.calibrationMissing} href={linkTo.equipmentBoard()} tone="critical" />
-            <Stat label="Calibration due soon" value={e.calibrationDueSoon} href={linkTo.equipmentBoard()} tone="warning" />
+            <Stat label="Calibration Expired" value={e.calibrationOverdue} href={linkTo.equipmentBoard()} tone="critical" />
+            <Stat label="No Certificate on File" value={e.calibrationMissing} href={linkTo.equipmentBoard()} tone="critical" />
+            <Stat label="Calibration Due Soon" value={e.calibrationDueSoon} href={linkTo.equipmentBoard()} tone="warning" />
           </div>
         )}
       </CardBody>
@@ -185,16 +185,16 @@ export function ActionsPanel({ d, className }: { d: DashboardOverview; className
   return (
     <Card className={className}>
       <CardHeader
-        title="Corrective actions"
+        title="Corrective Actions"
         subtitle={a.overdue > 0 ? `${a.overdue} overdue` : 'Nothing overdue'}
         right={<Link to="/actions" className="text-2xs font-semibold text-accent coarse:inline-flex coarse:min-h-11 coarse:items-center">Register</Link>}
       />
       <CardBody className="space-y-3">
         <div className="grid grid-cols-2 gap-1">
           <Stat label="Overdue" value={a.overdue} href={linkTo.actions('overdue')} tone="critical" />
-          <Stat label="Due today" value={a.dueToday} href={linkTo.actions('due_today')} tone="warning" />
-          <Stat label="Due this week" value={a.dueThisWeek} href={linkTo.actions('due_week')} />
-          <Stat label="Closed in range" value={a.completedInRange} href={linkTo.actions('completed')} tone="good" />
+          <Stat label="Due Today" value={a.dueToday} href={linkTo.actions('due_today')} tone="warning" />
+          <Stat label="Due This Week" value={a.dueThisWeek} href={linkTo.actions('due_week')} />
+          <Stat label="Closed in Range" value={a.completedInRange} href={linkTo.actions('completed')} tone="good" />
         </div>
 
         {a.byOwner.length === 0 ? (
@@ -222,15 +222,15 @@ export function VisitorPanel({ d, className }: { d: DashboardOverview; className
   return (
     <Card className={className}>
       <CardHeader
-        title="Site presence"
+        title="Site Presence"
         subtitle={`${v.onSite} on site`}
         right={<Link to="/visitors" className="text-2xs font-semibold text-accent coarse:inline-flex coarse:min-h-11 coarse:items-center">Register</Link>}
       />
       <CardBody className="space-y-3">
         <div className="grid grid-cols-3 gap-1">
-          <Stat label="On site" value={v.onSite} href={linkTo.visitors('on_site')} />
-          <Stat label="Expected today" value={v.expectedToday} href={linkTo.visitors('today')} />
-          <Stat label="Overdue out" value={v.overdueCheckout} href={linkTo.visitors('overdue')} tone="critical" />
+          <Stat label="On Site" value={v.onSite} href={linkTo.visitors('on_site')} />
+          <Stat label="Expected Today" value={v.expectedToday} href={linkTo.visitors('today')} />
+          <Stat label="Overdue Out" value={v.overdueCheckout} href={linkTo.visitors('overdue')} tone="critical" />
         </div>
 
         {v.current.length === 0 ? (
@@ -264,7 +264,7 @@ export function ReportPanel({ d, className }: { d: DashboardOverview; className?
   return (
     <Card className={className}>
       <CardHeader
-        title="Scheduled reports"
+        title="Scheduled Reports"
         subtitle={r.nextScheduled
           ? `Next: ${r.nextScheduled.name}, ${fmtDateTime(r.nextScheduled.at)}`
           : 'No schedule armed'}

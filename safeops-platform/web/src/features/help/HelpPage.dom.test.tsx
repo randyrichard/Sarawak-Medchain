@@ -23,7 +23,7 @@ describe('the Help page', () => {
     const headings = screen.getAllByRole('heading').map((h) => h.textContent)
     expect(headings[0]).toBe('Help')
     expect(screen.getByText(/In an emergency, act first and report afterwards/)).toBeTruthy()
-    expect(headings).toContain('Your role: Employee')
+    expect(headings).toContain('Your Role: Employee')
   })
 
   it('shows an employee only what an employee can do', () => {
@@ -44,7 +44,7 @@ describe('the Help page', () => {
     role = 'employee'
     const { container } = render(<MemoryRouter><HelpPage /></MemoryRouter>)
     const bold = [...container.querySelectorAll('details strong')].map((b) => b.textContent)
-    expect(bold).toContain('Submit near miss')
+    expect(bold).toContain('Submit Near Miss')
   })
 
   it('explains the words', () => {

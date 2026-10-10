@@ -65,7 +65,7 @@ export function HelpPage() {
         SafeChain is where it is recorded, not how the alarm is raised.
       </Alert>
 
-      <Section id="help-what" title="SafeChain in one minute">
+      <Section id="help-what" title="SafeChain in One Minute">
         <p className="text-sm leading-relaxed text-ink-2">
           SafeChain keeps your company's safety work in one place: what went wrong, what is being done
           about it, and the checks that stop it happening again.
@@ -85,7 +85,7 @@ export function HelpPage() {
       </Section>
 
       {guide && role && (
-        <Section id="help-role" title={`Your role: ${ROLE_LABEL[role]}`} subtitle={guide.summary}>
+        <Section id="help-role" title={`Your Role: ${ROLE_LABEL[role]}`} subtitle={guide.summary}>
           <p className="text-2xs font-semibold uppercase tracking-wider text-muted">What you will do most</p>
           <ol className="mt-2 space-y-2">
             {guide.tasks.map((t, i) => (
@@ -113,7 +113,7 @@ export function HelpPage() {
       )}
 
       {howTos.length > 0 && (
-        <Section id="help-how" title="How do I…" subtitle="Step by step, with the names of the buttons you will press.">
+        <Section id="help-how" title="How Do I…" subtitle="Step by step, with the names of the buttons you will press.">
           <div className="divide-y rounded-lg border">
             {howTos.map((h) => (
               <details key={h.id} id={`how-${h.id}`} className="group px-3.5 py-3 [&_summary::-webkit-details-marker]:text-muted">
@@ -133,7 +133,7 @@ export function HelpPage() {
         </Section>
       )}
 
-      <Section id="help-words" title="Words you will see" subtitle="Safety work has its own vocabulary. This is what it means here.">
+      <Section id="help-words" title="Words You Will See" subtitle="Safety work has its own vocabulary. This is what it means here.">
         <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
           {GLOSSARY.map((g) => (
             <div key={g.term}>
@@ -144,7 +144,7 @@ export function HelpPage() {
         </dl>
       </Section>
 
-      <Section id="help-around" title="Getting around">
+      <Section id="help-around" title="Getting Around">
         <ul className="space-y-2 text-sm leading-relaxed text-ink-2">
           <li><strong className="font-semibold text-ink">Search.</strong> Press <Key>/</Key> or <Key>{modKey('K')}</Key> to find an incident, permit, person or piece of equipment by name or number.</li>
           <li><strong className="font-semibold text-ink">Notifications.</strong> The bell at the top lists what is assigned to you or due soon. Click one to open it.</li>

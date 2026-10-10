@@ -86,7 +86,7 @@ export function NotificationsPage() {
         right={
           unread > 0 ? (
             <Button variant="secondary" size="sm" icon={<CheckCheck size={14} />} onClick={() => void markAll()}>
-              Mark all read
+              Mark All Read
             </Button>
           ) : undefined
         }

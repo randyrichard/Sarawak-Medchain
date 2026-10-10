@@ -43,7 +43,7 @@ export function NeedsAttention({
   return (
     <Card className={className}>
       <CardHeader
-        title="Needs attention"
+        title="Needs Attention"
         subtitle={
           loading
             ? undefined

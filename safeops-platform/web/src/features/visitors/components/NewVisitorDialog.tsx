@@ -112,7 +112,7 @@ export function NewVisitorDialog({
       error={error}
       open={open}
       onClose={onClose}
-      title="Register a visit"
+      title="Register a Visit"
       description="A pass and QR are generated automatically. The blacklist is checked on save."
       width="max-w-lg"
       footer={
@@ -120,7 +120,7 @@ export function NewVisitorDialog({
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button loading={busy} onClick={() => void submit()}
             disabled={!name.trim() || !idNumber.trim() || !siteId || !expectedArrival || !expectedDeparture}>
-            Pre-register
+            Pre-Register
           </Button>
         </>
       }
@@ -132,7 +132,7 @@ export function NewVisitorDialog({
         sequence they can hold, fifteen loose boxes is not.
       */}
       <FormSections>
-        <FormSection title="Who is visiting">
+        <FormSection title="Who Is Visiting">
             <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
               <Input label="Full name" required value={name} onChange={(e) => setName(e.target.value)} />
               <Input label="IC or passport" required value={idNumber}
@@ -143,7 +143,7 @@ export function NewVisitorDialog({
               <Input label="Company" value={visitorCompany} onChange={(e) => setVisitorCompany(e.target.value)} />
             </div>
         </FormSection>
-        <FormSection title="The visit">
+        <FormSection title="The Visit">
             <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
               <Select label="Site" required value={siteId} onChange={(e) => setSiteId(e.target.value)}>
                 <option value="">Select…</option>
@@ -178,7 +178,7 @@ export function NewVisitorDialog({
                 onChange={(e) => setExpectedDeparture(e.target.value)} />
             </div>
         </FormSection>
-        <FormSection title="Contact and emergency">
+        <FormSection title="Contact and Emergency">
             <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
               <Input label="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
               <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -190,7 +190,7 @@ export function NewVisitorDialog({
                 onChange={(e) => setEmergencyContactPhone(e.target.value)} />
             </div>
         </FormSection>
-        <FormSection title="Vehicle and notes">
+        <FormSection title="Vehicle and Notes">
           <Input label="Vehicle number" value={vehicleNumber}
             onChange={(e) => setVehicleNumber(e.target.value)} placeholder="e.g. QAB 1234" />
           <Textarea label="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} />

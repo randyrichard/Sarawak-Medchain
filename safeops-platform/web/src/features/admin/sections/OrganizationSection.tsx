@@ -66,7 +66,7 @@ function ProfilePanel({ companyId }: { companyId: string }) {
   return (
     <div className="grid gap-4 xl:grid-cols-3">
       <Card className="xl:col-span-2">
-        <CardHeader title="Company profile" subtitle="Legal identity, locale and default timezone" />
+        <CardHeader title="Company Profile" subtitle="Legal identity, locale and default timezone" />
         <CardBody className="space-y-5">
           {error && <Alert tone="critical">{error}</Alert>}
           {flash && <Alert tone="success">Organisation settings saved.</Alert>}
@@ -83,7 +83,7 @@ function ProfilePanel({ companyId }: { companyId: string }) {
               {['English', 'Bahasa Malaysia', 'Chinese (Simplified)'].map((l) => <option key={l}>{l}</option>)}
             </Select>
           </div>
-          <Button icon={<Save size={14} />} loading={busy} onClick={() => void save()}>Save changes</Button>
+          <Button icon={<Save size={14} />} loading={busy} onClick={() => void save()}>Save Changes</Button>
         </CardBody>
       </Card>
 
@@ -140,7 +140,7 @@ function StructurePanel({ sites }: { sites: { id: string; short: string; name: s
       </Card>
 
       <Card>
-        <CardHeader title="Business units" subtitle="Reporting groups across sites" right={<Button size="sm" variant="ghost" icon={<Plus size={12} />} onClick={() => setAddOpen(true)}>Add</Button>} />
+        <CardHeader title="Business Units" subtitle="Reporting groups across sites" right={<Button size="sm" variant="ghost" icon={<Plus size={12} />} onClick={() => setAddOpen(true)}>Add</Button>} />
         <CardBody className="space-y-2">
           {units === null ? <Skeleton className="h-32 w-full" /> : units.map((u) => (
             <div key={u.id} className="flex items-center gap-3 rounded-lg border px-3.5 py-2.5">
@@ -154,7 +154,7 @@ function StructurePanel({ sites }: { sites: { id: string; short: string; name: s
         </CardBody>
       </Card>
 
-      <AddItemDialog open={addOpen} kind="unit" title="Add business unit" fields={[{ key: 'name', label: 'Name' }, { key: 'lead', label: 'Lead' }, { key: 'sites', label: 'Site count', type: 'number' }]} onClose={() => setAddOpen(false)} onAdded={() => { setAddOpen(false); load() }} />
+      <AddItemDialog open={addOpen} kind="unit" title="Add Business Unit" fields={[{ key: 'name', label: 'Name' }, { key: 'lead', label: 'Lead' }, { key: 'sites', label: 'Site count', type: 'number' }]} onClose={() => setAddOpen(false)} onAdded={() => { setAddOpen(false); load() }} />
     </div>
   )
 }
@@ -169,7 +169,7 @@ function PositionsPanel() {
   useEffect(() => { load() }, [])
   return (
     <Card>
-      <CardHeader title="Job positions" subtitle="Standardised titles and establishment headcount" right={<Button size="sm" icon={<Plus size={13} />} onClick={() => setAddOpen(true)}>Add position</Button>} />
+      <CardHeader title="Job Positions" subtitle="Standardised titles and establishment headcount" right={<Button size="sm" icon={<Plus size={13} />} onClick={() => setAddOpen(true)}>Add Position</Button>} />
       <CardBody className="space-y-2">
         {items === null ? <Skeleton className="h-40 w-full" /> : items.map((p) => (
           <div key={p.id} className="flex items-center gap-3 rounded-lg border px-3.5 py-2.5">
@@ -179,7 +179,7 @@ function PositionsPanel() {
           </div>
         ))}
       </CardBody>
-      <AddItemDialog open={addOpen} kind="position" title="Add job position" fields={[{ key: 'title', label: 'Title' }, { key: 'department', label: 'Department' }, { key: 'headcount', label: 'Establishment headcount', type: 'number' }]} onClose={() => setAddOpen(false)} onAdded={() => { setAddOpen(false); forgetPositions(companyId); load() }} />
+      <AddItemDialog open={addOpen} kind="position" title="Add Job Position" fields={[{ key: 'title', label: 'Title' }, { key: 'department', label: 'Department' }, { key: 'headcount', label: 'Establishment headcount', type: 'number' }]} onClose={() => setAddOpen(false)} onAdded={() => { setAddOpen(false); forgetPositions(companyId); load() }} />
     </Card>
   )
 }
@@ -194,7 +194,7 @@ function ShiftsPanel() {
   useEffect(() => { load() }, [])
   return (
     <Card>
-      <CardHeader title="Shift patterns" subtitle="Working-time templates used for fatigue and coverage analysis" right={<Button size="sm" icon={<Plus size={13} />} onClick={() => setAddOpen(true)}>Add shift</Button>} />
+      <CardHeader title="Shift Patterns" subtitle="Working-time templates used for fatigue and coverage analysis" right={<Button size="sm" icon={<Plus size={13} />} onClick={() => setAddOpen(true)}>Add Shift</Button>} />
       <CardBody className="space-y-2">
         {items === null ? <Skeleton className="h-32 w-full" /> : items.map((sp) => (
           <div key={sp.id} className="flex items-center gap-3 rounded-lg border px-3.5 py-2.5">
@@ -203,7 +203,7 @@ function ShiftsPanel() {
           </div>
         ))}
       </CardBody>
-      <AddItemDialog open={addOpen} kind="shift" title="Add shift pattern" fields={[{ key: 'name', label: 'Name' }, { key: 'start', label: 'Start (HH:MM)' }, { key: 'end', label: 'End (HH:MM)' }, { key: 'days', label: 'Days' }]} onClose={() => setAddOpen(false)} onAdded={() => { setAddOpen(false); load() }} />
+      <AddItemDialog open={addOpen} kind="shift" title="Add Shift Pattern" fields={[{ key: 'name', label: 'Name' }, { key: 'start', label: 'Start (HH:MM)' }, { key: 'end', label: 'End (HH:MM)' }, { key: 'days', label: 'Days' }]} onClose={() => setAddOpen(false)} onAdded={() => { setAddOpen(false); load() }} />
     </Card>
   )
 }
@@ -218,7 +218,7 @@ function HolidaysPanel() {
   useEffect(() => { load() }, [])
   return (
     <Card>
-      <CardHeader title="Holiday calendar" subtitle="Public and regional holidays affecting scheduling" right={<Button size="sm" icon={<Plus size={13} />} onClick={() => setAddOpen(true)}>Add holiday</Button>} />
+      <CardHeader title="Holiday Calendar" subtitle="Public and regional holidays affecting scheduling" right={<Button size="sm" icon={<Plus size={13} />} onClick={() => setAddOpen(true)}>Add Holiday</Button>} />
       <CardBody className="space-y-2">
         {items === null ? <Skeleton className="h-40 w-full" /> : items.slice().sort((a, b) => a.date.localeCompare(b.date)).map((h) => (
           <div key={h.id} className="flex items-center gap-3 rounded-lg border px-3.5 py-2.5">
@@ -229,7 +229,7 @@ function HolidaysPanel() {
           </div>
         ))}
       </CardBody>
-      <AddItemDialog open={addOpen} kind="holiday" title="Add holiday" fields={[{ key: 'name', label: 'Name' }, { key: 'date', label: 'Date', type: 'date' }, { key: 'scope', label: 'Scope' }]} onClose={() => setAddOpen(false)} onAdded={() => { setAddOpen(false); load() }} />
+      <AddItemDialog open={addOpen} kind="holiday" title="Add Holiday" fields={[{ key: 'name', label: 'Name' }, { key: 'date', label: 'Date', type: 'date' }, { key: 'scope', label: 'Scope' }]} onClose={() => setAddOpen(false)} onAdded={() => { setAddOpen(false); load() }} />
     </Card>
   )
 }

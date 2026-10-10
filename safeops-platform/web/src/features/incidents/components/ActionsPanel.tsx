@@ -84,7 +84,7 @@ export function ActionsPanel({ incident, onUpdate }: { incident: Incident; onUpd
         </p>
         {canAdd && (
           <Button size="sm" icon={<Plus size={13} />} onClick={() => { setError(null); setAddOpen(true) }}>
-            Add action
+            Add Action
           </Button>
         )}
       </div>
@@ -139,7 +139,7 @@ export function ActionsPanel({ incident, onUpdate }: { incident: Incident; onUpd
                     {a.status === 'Completed' && canVerify && (
                       <Button size="sm" variant="secondary" icon={<ShieldCheck size={12} />} loading={busy}
                         onClick={() => void run(() => api.updateIncidentAction(incident.id, a.id, { status: 'Verified' }, actor))}>
-                        Verify completion
+                        Verify Completion
                       </Button>
                     )}
                     {a.status === 'Completed' && !canVerify && (
@@ -158,12 +158,12 @@ export function ActionsPanel({ incident, onUpdate }: { incident: Incident; onUpd
         error={error}
         open={addOpen}
         onClose={() => setAddOpen(false)}
-        title="New corrective action"
+        title="New Corrective Action"
         description="Linked to a root cause, owned by one person, verified before closure."
         footer={
           <>
             <Button variant="secondary" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button loading={busy} onClick={() => void submitNew()}>Assign action</Button>
+            <Button loading={busy} onClick={() => void submitNew()}>Assign Action</Button>
           </>
         }
       >
@@ -202,7 +202,7 @@ export function ActionsPanel({ incident, onUpdate }: { incident: Incident; onUpd
         footer={
           <>
             <Button variant="secondary" onClick={() => setCompleteFor(null)}>Cancel</Button>
-            <Button loading={busy} onClick={() => void complete()}>Mark completed</Button>
+            <Button loading={busy} onClick={() => void complete()}>Mark Completed</Button>
           </>
         }
       >

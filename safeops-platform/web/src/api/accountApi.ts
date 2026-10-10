@@ -17,9 +17,9 @@ export const LANDING_PAGE_LABEL: Record<LandingPage, string> = {
   '/': 'Home',
   '/incidents': 'Incidents',
   '/actions': 'Corrective Actions',
-  '/permits': 'Permit to Work',
+  '/permits': 'Permits to Work',
   '/assets': 'Assets & Inspections',
-  '/audits': 'Audit & Compliance',
+  '/audits': 'Audits & Compliance',
   '/training': 'Training & Competency',
 }
 

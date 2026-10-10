@@ -304,7 +304,7 @@ export function InspectionRunner({
                 </p>
               )}
               <Button className="w-full" size="lg" icon={<Send size={14} />} loading={busy} disabled={!canSubmit} onClick={() => void submit()}>
-                {answered < template.length ? `Answer ${template.length - answered} more item(s)` : 'Submit inspection'}
+                {answered < template.length ? `Answer ${template.length - answered} more item(s)` : 'Submit Inspection'}
               </Button>
             </div>
           </>

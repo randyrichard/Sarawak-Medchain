@@ -191,7 +191,7 @@ describe('keyboard shortcuts follow the usual conventions', () => {
     fireEvent.keyDown(screen.getByLabelText('notes'), { key: '?' })
     expect(screen.queryByRole('dialog')).toBeNull()
     fireEvent.keyDown(document.body, { key: '?' })
-    expect(screen.getByRole('dialog', { name: 'Keyboard shortcuts' })).toBeTruthy()
+    expect(screen.getByRole('dialog', { name: 'Keyboard Shortcuts' })).toBeTruthy()
   })
 })
 

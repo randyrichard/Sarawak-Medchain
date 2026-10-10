@@ -111,7 +111,7 @@ export function CalibrationPanel({
       {manage && (
         <Button size="sm" variant="secondary" icon={<Plus size={11} />} className="mt-2"
           onClick={() => setAddOpen(true)}>
-          Record calibration
+          Record Calibration
         </Button>
       )}
 
@@ -164,7 +164,7 @@ function RecordCalibrationDialog({
   }
 
   return (
-    <Dialog open={open} onClose={onClose} title="Record a calibration certificate">
+    <Dialog open={open} onClose={onClose} title="Record a Calibration Certificate">
       <div className="space-y-3">
         {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
 
@@ -202,7 +202,7 @@ function RecordCalibrationDialog({
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button onClick={() => void submit()} loading={busy}
             disabled={!certificateNumber.trim() || !expiresAt}>
-            Record certificate
+            Record Certificate
           </Button>
         </div>
       </div>

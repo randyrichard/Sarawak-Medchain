@@ -97,7 +97,7 @@ export function WorkerDrawer({
               <>
                 <div className="flex items-center gap-2">
                   <h2 className="truncate text-base font-semibold text-ink">{item?.name}</h2>
-                  {item?.onSite && <Badge tone="accent">On site</Badge>}
+                  {item?.onSite && <Badge tone="accent">On Site</Badge>}
                   {item && !item.active && <Badge tone="neutral">Deregistered</Badge>}
                 </div>
                 <p className="truncate text-2xs text-muted">
@@ -148,7 +148,7 @@ export function WorkerDrawer({
                 <Row label="Checked in" value={item.checkedInAt ? fmtDate(item.checkedInAt) : 'Not on site'} />
               </Section>
 
-              <Section title="Emergency contact">
+              <Section title="Emergency Contact">
                 {item.emergencyName ? (
                   <div className="rounded-lg border px-3.5 py-2.5">
                     <p className="text-sm font-semibold text-ink">{item.emergencyName}</p>
@@ -199,7 +199,7 @@ export function WorkerDrawer({
                 {canManage && (
                   <Button size="sm" variant="secondary" icon={<Plus size={12} />} className="mt-2"
                     onClick={() => setCompetencyOpen(true)}>
-                    Record competency
+                    Record Competency
                   </Button>
                 )}
               </Section>
@@ -209,13 +209,13 @@ export function WorkerDrawer({
               {canGate && item.onSite && (
                 <Button size="sm" icon={<LogOut size={12} />} loading={busy}
                   onClick={() => void run(() => contractorsApi.checkOut(item.id), `${item.name} checked out`)}>
-                  Check out
+                  Check Out
                 </Button>
               )}
               {canGate && !item.onSite && !blocked && (
                 <Button size="sm" icon={<LogIn size={12} />} loading={busy}
                   onClick={() => void run(() => contractorsApi.checkIn(item.id), `${item.name} checked in`)}>
-                  Check in
+                  Check In
                 </Button>
               )}
               {canManage && (
@@ -262,7 +262,7 @@ export function WorkerDrawer({
                     const ok = await run(() => contractorsApi.removeWorker(item.id), `${item.name} deleted`)
                     if (ok) { setConfirmDelete(false); onClose() }
                   }}>
-                  Delete permanently
+                  Delete Permanently
                 </Button>
               </>
             }
@@ -350,7 +350,7 @@ function AddCompetencyDialog({
   return (
     <Dialog
       error={error}
-      open={open} onClose={close} title="Record competency"
+      open={open} onClose={close} title="Record Competency"
       description="Evidence supplied by the contractor. Trusted as far as the expiry date on it."
       footer={
         <>

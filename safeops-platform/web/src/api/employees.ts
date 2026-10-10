@@ -11,7 +11,7 @@ export const MEDICAL_LABEL: Record<MedicalStatus, string> = {
   valid: 'Valid',
   expiring: 'Expiring',
   expired: 'Expired',
-  missing: 'Not recorded',
+  missing: 'Not Recorded',
 }
 
 export const EMPLOYEE_SORTS = ['name', 'employeeNo', 'position', 'medicalExpiry', 'hireDate'] as const

@@ -86,7 +86,7 @@ export function NextStepCard({ incident, onUpdate }: { incident: Incident; onUpd
 
   return (
     <Card>
-      <CardHeader title="Next step" subtitle={step.hint} />
+      <CardHeader title="Next Step" subtitle={step.hint} />
       <CardBody className="space-y-2.5">
         {error && !open && <Alert tone="critical">{error}</Alert>}
         <Button className="w-full" icon={step.allowed ? <ArrowRight size={14} /> : <Lock size={13} />} disabled={!step.allowed} loading={busy && !open} onClick={runPrimary}>

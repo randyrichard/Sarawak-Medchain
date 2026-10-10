@@ -77,7 +77,7 @@ export function AssetHolderPanel({
           <p className="flex flex-wrap items-center gap-1.5 text-sm text-ink">
             {holder.kind === 'contractor' && <HardHat size={12} className="text-muted" />}
             {holder.name}
-            {!holder.active && <Badge tone="critical">No longer active</Badge>}
+            {!holder.active && <Badge tone="critical">No Longer Active</Badge>}
           </p>
           <p className="text-2xs text-muted">
             <span className="font-mono">{holder.reference}</span>
@@ -96,7 +96,7 @@ export function AssetHolderPanel({
           {holder && (
             <Button size="sm" variant="ghost" icon={<UserMinus size={11} />} loading={busy}
               onClick={() => void release()}>
-              Return to pool
+              Return to Pool
             </Button>
           )}
         </div>
@@ -192,7 +192,7 @@ function AssignDialog({
   }
 
   return (
-    <Dialog open={open} onClose={onClose} title="Assign this equipment">
+    <Dialog open={open} onClose={onClose} title="Assign This Equipment">
       <div className="space-y-3">
         {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
 

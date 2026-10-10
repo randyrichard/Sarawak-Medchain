@@ -23,11 +23,11 @@ type Bucket = NonNullable<AssetFilters['bucket']>
 
 /** What each filter shows, in words, for the chip that says the register is filtered. */
 const BUCKET_LABEL: Record<Bucket, string> = {
-  all: 'All assets',
-  overdue: 'Inspection overdue',
-  due_week: 'Due this week',
-  high_risk: 'High risk',
-  defects: 'Open defects',
+  all: 'All Assets',
+  overdue: 'Inspection Overdue',
+  due_week: 'Due This Week',
+  high_risk: 'High Risk',
+  defects: 'Open Defects',
 }
 
 export function AssetsPage() {
@@ -98,12 +98,12 @@ export function AssetsPage() {
   const KPIS: { label: string; value: number | string | undefined; bucket?: Bucket; tone?: string }[] = [
     // totalAssets is the whole register, in service or not. Labelling it "in service"
     // made this tile disagree with the dashboard, which counts status = in_service.
-    { label: 'Assets registered', value: stats?.totalAssets },
-    { label: 'Inspection compliance', value: stats !== null ? `${stats.complianceRate}%` : undefined, tone: stats && stats.complianceRate < 85 ? 'var(--serious)' : 'var(--good)' },
-    { label: 'Overdue inspections', value: stats?.overdueInspections, bucket: 'overdue', tone: stats && stats.overdueInspections > 0 ? 'var(--critical)' : 'var(--good)' },
-    { label: 'Due this week', value: stats?.dueThisWeek, bucket: 'due_week', tone: 'var(--warning)' },
-    { label: 'Open defects', value: stats?.openDefects, bucket: 'defects', tone: stats && stats.openDefects > 0 ? 'var(--serious)' : 'var(--good)' },
-    { label: 'Avg. asset health', value: stats !== null ? `${stats.avgHealth}` : undefined, bucket: 'high_risk', tone: stats ? healthColor(stats.avgHealth) : undefined },
+    { label: 'Assets Registered', value: stats?.totalAssets },
+    { label: 'Inspection Compliance', value: stats !== null ? `${stats.complianceRate}%` : undefined, tone: stats && stats.complianceRate < 85 ? 'var(--serious)' : 'var(--good)' },
+    { label: 'Overdue Inspections', value: stats?.overdueInspections, bucket: 'overdue', tone: stats && stats.overdueInspections > 0 ? 'var(--critical)' : 'var(--good)' },
+    { label: 'Due This Week', value: stats?.dueThisWeek, bucket: 'due_week', tone: 'var(--warning)' },
+    { label: 'Open Defects', value: stats?.openDefects, bucket: 'defects', tone: stats && stats.openDefects > 0 ? 'var(--serious)' : 'var(--good)' },
+    { label: 'Avg. Asset Health', value: stats !== null ? `${stats.avgHealth}` : undefined, bucket: 'high_risk', tone: stats ? healthColor(stats.avgHealth) : undefined },
   ]
 
   const viewTabs: TabItem<View>[] = [
@@ -111,15 +111,15 @@ export function AssetsPage() {
     { value: 'inspections', label: 'Inspections' },
     { value: 'calendar', label: 'Calendar' },
     { value: 'analytics', label: 'Analytics' },
-    { value: 'board', label: 'Equipment board' },
+    { value: 'board', label: 'Equipment Board' },
   ]
 
   return (
     <>
       <PageHeader
-        title="Assets & inspections"
+        title="Assets & Inspections"
         subtitle="Equipment that must be inspected regularly. Run inspections here; any item that fails becomes a corrective action automatically."
-        right={manage ? <Button icon={<Plus size={15} />} onClick={() => setNewOpen(true)}>Register asset</Button> : undefined}
+        right={manage ? <Button icon={<Plus size={15} />} onClick={() => setNewOpen(true)}>Register Asset</Button> : undefined}
       />
 
       {/* KPI strip */}
@@ -256,7 +256,7 @@ function RegisterTable({
               <th className="px-3 py-2.5 font-semibold">Category</th>
               <th className="hidden px-3 py-2.5 font-semibold lg:table-cell">Site / Dept</th>
               <th className="px-3 py-2.5 font-semibold">Health</th>
-              <th className="px-3 py-2.5 font-semibold">Next inspection</th>
+              <th className="px-3 py-2.5 font-semibold">Next Inspection</th>
               <th className="hidden px-3 py-2.5 font-semibold xl:table-cell">Defects</th>
               <th className="px-5 py-2.5 font-semibold">Status</th>
             </tr>

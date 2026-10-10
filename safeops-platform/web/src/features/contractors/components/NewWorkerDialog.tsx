@@ -85,7 +85,7 @@ export function NewWorkerDialog({
       error={error}
       open={open}
       onClose={onClose}
-      title="Register a contractor worker"
+      title="Register a Contractor Worker"
       description="They get a worker number automatically. Without a medical and induction date they cannot be checked in."
       footer={
         <>

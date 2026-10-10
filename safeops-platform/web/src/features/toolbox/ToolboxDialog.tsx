@@ -104,13 +104,13 @@ export function ToolboxDialog({
       error={error}
       open
       onClose={onClose}
-      title={meeting ? `Edit ${meeting.number}` : 'Record toolbox meeting'}
+      title={meeting ? `Edit ${meeting.number}` : 'Record Toolbox Meeting'}
       description="The daily site briefing: what was covered, who led it, and how many people from each organisation attended."
       width="max-w-2xl"
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={saving}>Cancel</Button>
-          <Button onClick={save} loading={saving}>{meeting ? 'Save changes' : 'Record meeting'}</Button>
+          <Button onClick={save} loading={saving}>{meeting ? 'Save Changes' : 'Record Meeting'}</Button>
         </>
       }
     >
@@ -190,7 +190,7 @@ export function ToolboxDialog({
               variant="secondary" size="sm" icon={<Plus size={14} />}
               onClick={() => setGroups((gs) => [...gs, line()])}
             >
-              Add organisation
+              Add Organisation
             </Button>
             <p className="text-sm text-ink-2" aria-live="polite">
               Total present: <span className="font-semibold text-ink">{total.toLocaleString()}</span>

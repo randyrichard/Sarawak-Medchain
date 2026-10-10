@@ -103,11 +103,11 @@ export function BackupSection() {
       {serverBacked && (
         <Card>
           <CardHeader
-            title="Export your data"
+            title="Export Your Data"
             subtitle="Everything in this workspace, in a format you can read without SafeChain"
             right={
               <Button size="sm" icon={<Download size={13} />} loading={exporting} onClick={() => void exportWorkspace()}>
-                Export everything
+                Export Everything
               </Button>
             }
           />
@@ -133,7 +133,7 @@ export function BackupSection() {
       )}
 
       <Card>
-        <CardHeader title="Backups" subtitle="Point-in-time snapshots of the entire tenant" right={<Button size="sm" icon={<Save size={13} />} loading={busy} onClick={() => void createBackup()}>Create backup</Button>} />
+        <CardHeader title="Backups" subtitle="Point-in-time snapshots of the entire tenant" right={<Button size="sm" icon={<Save size={13} />} loading={busy} onClick={() => void createBackup()}>Create Backup</Button>} />
         <CardBody>
           {backups === null ? <Skeleton className="h-40 w-full" /> : (
             <ul className="space-y-2">
@@ -180,7 +180,7 @@ export function BackupSection() {
           in a processing agreement. They are now labelled as what they are.
         */}
         <Card>
-          <CardHeader title="Data retention" subtitle="Your policy, and what the software currently enforces" />
+          <CardHeader title="Data Retention" subtitle="Your policy, and what the software currently enforces" />
           <CardBody className="space-y-3">
             {retention === null ? <Skeleton className="h-32 w-full" /> : (
               <>
@@ -273,7 +273,7 @@ export function BackupSection() {
 
       <Dialog open={restoreFor !== null} onClose={() => setRestoreFor(null)} title={`Restore "${restoreFor?.note}"?`}
         description="This reinstates the records in the snapshot and reloads the app."
-        footer={<><Button variant="secondary" onClick={() => setRestoreFor(null)}>Cancel</Button><Button variant="danger" icon={<RotateCcw size={13} />} onClick={() => void restore()}>Restore snapshot</Button></>}>
+        footer={<><Button variant="secondary" onClick={() => setRestoreFor(null)}>Cancel</Button><Button variant="danger" icon={<RotateCcw size={13} />} onClick={() => void restore()}>Restore Snapshot</Button></>}>
         <Alert tone="warning">
           Records across every module — incidents, actions, assets, audits and training — are returned to their state at <span className="font-semibold">{restoreFor ? timeAgo(restoreFor.at) : ''}</span>, and anything deleted since is reinstated. Work created after the snapshot is left alone, and a snapshot of the current state is taken automatically first, so this is reversible.
         </Alert>

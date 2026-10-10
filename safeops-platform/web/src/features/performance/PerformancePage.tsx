@@ -54,7 +54,7 @@ export function PerformancePage() {
   return (
     <>
       <PageHeader
-        title="HSE performance"
+        title="HSE Performance"
         subtitle={`Health, safety and environment (HSE) figures for every site over ${period} months: the rates you report to DOSH, clients and the board.`}
         right={
           <div className="flex flex-wrap items-center gap-2 print:hidden">
@@ -73,25 +73,25 @@ export function PerformancePage() {
             <Dropdown
               trigger={() => <Button variant="secondary" icon={<Download size={15} />} disabled={!state.data}>Export</Button>}
             >
-              <DropdownLabel>Spreadsheet (opens in Excel)</DropdownLabel>
+              <DropdownLabel>Spreadsheet (Opens in Excel)</DropdownLabel>
               <DropdownItem icon={<FileSpreadsheet size={14} />}
                 onSelect={() => state.data && downloadCsv(sitesCsv(state.data), exportFilename('sites', state.data))}>
-                Sites and totals (CSV)
+                Sites and Totals (CSV)
               </DropdownItem>
               <DropdownItem icon={<FileSpreadsheet size={14} />}
                 onSelect={() => state.data && downloadCsv(monthsCsv(state.data), exportFilename('monthly', state.data))}>
-                Monthly trend (CSV)
+                Monthly Trend (CSV)
               </DropdownItem>
               <DropdownSeparator />
               <DropdownItem icon={<Printer size={14} />} onSelect={() => window.print()}>
-                Print or save as PDF
+                Print or Save as PDF
               </DropdownItem>
             </Dropdown>
             {owner && (
-              <Button variant="secondary" icon={<Goal size={15} />} disabled={!state.data} onClick={() => setTargetsOpen(true)}>Set targets</Button>
+              <Button variant="secondary" icon={<Goal size={15} />} disabled={!state.data} onClick={() => setTargetsOpen(true)}>Set Targets</Button>
             )}
             {owner && (
-              <Button icon={<Clock size={15} />} onClick={() => setManHoursOpen(true)}>Record man-hours</Button>
+              <Button icon={<Clock size={15} />} onClick={() => setManHoursOpen(true)}>Record Man-Hours</Button>
             )}
           </div>
         }
@@ -211,9 +211,9 @@ const plural = (n: number, one: string, many: string) => `${n.toLocaleString('en
 
 export function laggingTiles(t: Indicators, targets: Target[] = []): Tile[] {
   return [
-    withTarget({ label: 'LTI frequency rate', value: formatRate(t.frequencyRate), note: `${plural(t.lostTime, 'lost-time injury', 'lost-time injuries')} · per 1M hours` }, t.frequencyRate, 'frequencyRate', targets),
-    withTarget({ label: 'Severity rate', value: formatRate(t.severityRate), note: `${plural(t.daysLost, 'day', 'days')} lost · per 1M hours` }, t.severityRate, 'severityRate', targets),
-    withTarget({ label: 'Incidence rate', value: formatRate(t.incidenceRate), note: `LTIs per 1,000 of ${plural(t.workers, 'worker', 'workers')}` }, t.incidenceRate, 'incidenceRate', targets),
+    withTarget({ label: 'LTI Frequency Rate', value: formatRate(t.frequencyRate), note: `${plural(t.lostTime, 'lost-time injury', 'lost-time injuries')} · per 1M hours` }, t.frequencyRate, 'frequencyRate', targets),
+    withTarget({ label: 'Severity Rate', value: formatRate(t.severityRate), note: `${plural(t.daysLost, 'day', 'days')} lost · per 1M hours` }, t.severityRate, 'severityRate', targets),
+    withTarget({ label: 'Incidence Rate', value: formatRate(t.incidenceRate), note: `LTIs per 1,000 of ${plural(t.workers, 'worker', 'workers')}` }, t.incidenceRate, 'incidenceRate', targets),
     withTarget({ label: 'TRIR', value: formatRate(t.trir), note: `${plural(t.recordable, 'recordable', 'recordables')} · per 200,000 hours` }, t.trir, 'trir', targets),
     withTarget({
       label: 'Fatalities',
@@ -221,31 +221,31 @@ export function laggingTiles(t: Indicators, targets: Target[] = []): Tile[] {
       note: t.fatalities > 0 ? 'Reportable to DOSH immediately' : 'None in the period',
       tone: t.fatalities > 0 ? 'var(--critical)' : undefined,
     }, t.fatalities, 'fatalities', targets),
-    { label: 'Hours worked', value: formatHours(t.hours), note: hoursBasis(t).label },
+    { label: 'Hours Worked', value: formatHours(t.hours), note: hoursBasis(t).label },
   ]
 }
 
 export function leadingTiles(t: Indicators, targets: Target[] = []): Tile[] {
   return [
-    { label: 'Near misses reported', value: t.nearMisses.toLocaleString('en-MY'), note: 'More reporting is a good sign' },
+    { label: 'Near Misses Reported', value: t.nearMisses.toLocaleString('en-MY'), note: 'More reporting is a good sign' },
     withTarget({
-      label: 'Near-miss ratio',
+      label: 'Near-Miss Ratio',
       value: t.nearMissRatio === null ? '—' : `${t.nearMissRatio}:1`,
       note: t.nearMissRatio === null ? 'No recordable injuries to compare' : 'Near misses per recordable injury',
     }, t.nearMissRatio, 'nearMissRatio', targets),
     withTarget({
-      label: 'Actions closed on time',
+      label: 'Actions Closed on Time',
       value: formatPercent(t.onTimeClosure),
       note: `${t.actionsClosedOnTime} of ${plural(t.actionsClosed, 'action', 'actions')} closed`,
       tone: t.onTimeClosure !== null && t.onTimeClosure < 0.8 ? 'var(--warning)' : undefined,
     }, t.onTimeClosure, 'onTimeClosure', targets),
     withTarget({
-      label: 'Overdue actions',
+      label: 'Overdue Actions',
       value: String(t.overdueActions),
       note: 'Open past their due date, now',
       tone: t.overdueActions > 0 ? 'var(--warning)' : undefined,
     }, t.overdueActions, 'overdueActions', targets),
-    { label: 'Toolbox meetings', value: t.toolboxMeetings.toLocaleString('en-MY'), note: 'Held in the period' },
+    { label: 'Toolbox Meetings', value: t.toolboxMeetings.toLocaleString('en-MY'), note: 'Held in the period' },
   ]
 }
 
@@ -287,7 +287,7 @@ function PerformanceBody({ data, scope, onRecordHours }: { data: PerformanceView
                 </ul>
                 {onRecordHours && (
                   <Button size="sm" variant="secondary" className="mt-2 print:hidden" icon={<Clock size={13} />} onClick={onRecordHours}>
-                    Record man-hours
+                    Record Man-Hours
                   </Button>
                 )}
               </div>
@@ -298,21 +298,21 @@ function PerformanceBody({ data, scope, onRecordHours }: { data: PerformanceView
 
       <section aria-labelledby="perf-lagging">
         <h2 id="perf-lagging" className="mb-2 text-sm font-semibold text-ink">
-          Lagging indicators <span className="font-normal text-muted">· outcomes - lower is better</span>
+          Lagging Indicators <span className="font-normal text-muted">· outcomes - lower is better</span>
         </h2>
-        <TileRow label="Lagging indicators" tiles={laggingTiles(total, data.targets)} />
+        <TileRow label="Lagging Indicators" tiles={laggingTiles(total, data.targets)} />
       </section>
 
       <section aria-labelledby="perf-leading">
         <h2 id="perf-leading" className="mb-2 text-sm font-semibold text-ink">
-          Leading indicators <span className="font-normal text-muted">· the activity that prevents injuries</span>
+          Leading Indicators <span className="font-normal text-muted">· the activity that prevents injuries</span>
         </h2>
-        <TileRow label="Leading indicators" tiles={leadingTiles(total, data.targets)} />
+        <TileRow label="Leading Indicators" tiles={leadingTiles(total, data.targets)} />
       </section>
 
       <Card>
         <CardHeader
-          title="Monthly trend"
+          title="Monthly Trend"
           subtitle="Near misses reported against recordable injuries. A healthy reporting culture keeps the first well above the second."
         />
         <CardBody>
@@ -360,18 +360,18 @@ function MonthTable({ data }: { data: PerformanceView }) {
     // which zoomed the page out - even though the table sits in its own scroll box.
     <details ref={ref} className="group mt-3 max-w-full overflow-hidden">
       <summary className="cursor-pointer select-none text-xs font-semibold text-accent hover:underline coarse:py-3 print:hidden">
-        Show the figures as a table
+        Show the Figures as a Table
       </summary>
       <div className="mt-2 relative overflow-x-auto" tabIndex={0} role="region" aria-label="Monthly figures">
         <table className="w-full min-w-[560px] text-xs">
           <thead>
             <tr className="border-b text-left text-2xs uppercase tracking-wide text-muted">
               <th scope="col" className="px-2 py-1.5 font-medium">Month</th>
-              <th scope="col" className="px-2 py-1.5 text-right font-medium">Near misses</th>
-              <th scope="col" className="px-2 py-1.5 text-right font-medium">Recordable injuries</th>
-              <th scope="col" className="px-2 py-1.5 text-right font-medium">Lost-time injuries</th>
+              <th scope="col" className="px-2 py-1.5 text-right font-medium">Near Misses</th>
+              <th scope="col" className="px-2 py-1.5 text-right font-medium">Recordable Injuries</th>
+              <th scope="col" className="px-2 py-1.5 text-right font-medium">Lost-Time Injuries</th>
               <th scope="col" className="px-2 py-1.5 text-right font-medium">Hours</th>
-              <th scope="col" className="px-2 py-1.5 text-right font-medium">LTI frequency rate</th>
+              <th scope="col" className="px-2 py-1.5 text-right font-medium">LTI Frequency Rate</th>
             </tr>
           </thead>
           <tbody>
@@ -443,7 +443,7 @@ export function siteColumns(targets: Target[]): Column<SitePerformance>[] {
     { key: 'fr', header: headed('LTI freq. rate', t('frequencyRate')), align: 'right', render: (s) => judged(s.frequencyRate, formatRate(s.frequencyRate), t('frequencyRate')), sortValue: (s) => s.frequencyRate },
     { key: 'trir', header: headed('TRIR', t('trir')), align: 'right', render: (s) => judged(s.trir, formatRate(s.trir), t('trir')), sortValue: (s) => s.trir, visibility: 'hidden md:table-cell' },
     { key: 'sr', header: headed('Severity rate', t('severityRate')), align: 'right', render: (s) => judged(s.severityRate, formatRate(s.severityRate), t('severityRate')), sortValue: (s) => s.severityRate, visibility: 'hidden lg:table-cell' },
-    { key: 'nm', header: 'Near misses', align: 'right', render: (s) => <span className="tabular-nums">{s.nearMisses}</span>, sortValue: (s) => s.nearMisses, visibility: 'hidden md:table-cell' },
+    { key: 'nm', header: 'Near Misses', align: 'right', render: (s) => <span className="tabular-nums">{s.nearMisses}</span>, sortValue: (s) => s.nearMisses, visibility: 'hidden md:table-cell' },
     { key: 'ontime', header: headed('Closed on time', t('onTimeClosure')), align: 'right', render: (s) => judged(s.onTimeClosure, formatPercent(s.onTimeClosure), t('onTimeClosure')), sortValue: (s) => s.onTimeClosure, visibility: 'hidden lg:table-cell' },
     {
       key: 'overdue',
@@ -470,7 +470,7 @@ function SiteTable({ sites, targets }: { sites: SitePerformance[]; targets: Targ
   return (
     <Card>
       <CardHeader
-        title="Sites compared"
+        title="Sites Compared"
         subtitle="Highest lost-time injury frequency rate first. Rates, not counts, so a small site and a large one compare fairly."
       />
       <DataTable

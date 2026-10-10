@@ -29,7 +29,7 @@ interface Preview {
 }
 
 export function AcceptInvitationPage() {
-  usePageTitle('Accept invitation')
+  usePageTitle('Accept Invitation')
   const { token = '' } = useParams()
   const navigate = useNavigate()
 
@@ -157,7 +157,7 @@ export function AcceptInvitationPage() {
         {error && <Alert tone="critical">{error}</Alert>}
 
         <Button type="submit" className="w-full" disabled={busy || !password || !!problem || mismatch}>
-          {busy ? 'Setting up…' : 'Accept invitation'}
+          {busy ? 'Setting Up…' : 'Accept Invitation'}
         </Button>
       </form>
     </AuthLayout>

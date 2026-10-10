@@ -17,11 +17,11 @@ import { openParam } from '@/lib/links'
 type StatusChip = NonNullable<PermitFilters['status']>
 
 const CHIPS: { value: StatusChip; label: string }[] = [
-  { value: 'live', label: 'Live board' },
-  { value: 'active', label: 'In progress' },
+  { value: 'live', label: 'Live Board' },
+  { value: 'active', label: 'In Progress' },
   // Submitted or anywhere in the approval chain. It matched `submitted` alone, so a permit
   // left this list as soon as its first reviewer signed.
-  { value: 'awaiting', label: 'Awaiting approval' },
+  { value: 'awaiting', label: 'Awaiting Approval' },
   { value: 'approved', label: 'Approved' },
   { value: 'suspended', label: 'Suspended' },
   { value: 'expired', label: 'Expired' },
@@ -36,12 +36,12 @@ const CHIPS: { value: StatusChip; label: string }[] = [
  */
 const OTHER_STATUS: Partial<Record<StatusChip, string>> = {
   draft: 'Drafts',
-  submitted: 'Submitted, not yet in review',
-  supervisor_review: 'Supervisor review',
-  hse_review: 'HSE review',
-  area_authority: 'Area authority',
+  submitted: 'Submitted, Not Yet in Review',
+  supervisor_review: 'Supervisor Review',
+  hse_review: 'HSE Review',
+  area_authority: 'Area Authority',
   rejected: 'Rejected',
-  expiring: 'Expiring within 7 days',
+  expiring: 'Expiring Within 7 Days',
 }
 
 export function PermitsPage() {
@@ -103,24 +103,24 @@ export function PermitsPage() {
    * lapse, then the day's shape.
    */
   const KPIS = useMemo(() => [
-    { label: 'Active permits', value: stats?.activeNow, tone: undefined },
+    { label: 'Active Permits', value: stats?.activeNow, tone: undefined },
     {
-      label: 'Inside confined space',
+      label: 'Inside Confined Space',
       value: stats?.insideConfinedSpace,
       tone: stats && stats.insideConfinedSpace > 0 ? 'var(--accent)' : undefined,
     },
     {
-      label: 'Awaiting review',
+      label: 'Awaiting Review',
       value: stats?.awaitingReview,
       tone: stats && stats.awaitingReview > 0 ? 'var(--warning)' : undefined,
     },
     {
-      label: 'Expiring today',
+      label: 'Expiring Today',
       value: stats?.expiringToday,
       tone: stats && stats.expiringToday > 0 ? 'var(--warning)' : 'var(--good)',
     },
     {
-      label: 'Expired, still open',
+      label: 'Expired, Still Open',
       value: stats?.expiredOpen,
       tone: stats && stats.expiredOpen > 0 ? 'var(--critical)' : 'var(--good)',
     },
@@ -129,8 +129,8 @@ export function PermitsPage() {
       value: stats?.suspended,
       tone: stats && stats.suspended > 0 ? 'var(--critical)' : 'var(--good)',
     },
-    { label: 'Starting today', value: stats?.startingToday, tone: undefined },
-    { label: 'Closed this month', value: stats?.closedThisMonth, tone: undefined },
+    { label: 'Starting Today', value: stats?.startingToday, tone: undefined },
+    { label: 'Closed This Month', value: stats?.closedThisMonth, tone: undefined },
   ], [stats])
 
   const urgent = rows?.filter((r) => r.expiringSoon || r.status === 'expired' || r.status === 'suspended') ?? []
@@ -138,9 +138,9 @@ export function PermitsPage() {
   return (
     <>
       <PageHeader
-        title="Permits to work"
+        title="Permits to Work"
         subtitle="Written permission for high-risk work such as hot work or entering a confined space. A permit must be approved before work starts, and closed when the area is handed back."
-        right={<Button icon={<Plus size={15} />} onClick={() => setNewOpen(true)}>Request permit</Button>}
+        right={<Button icon={<Plus size={15} />} onClick={() => setNewOpen(true)}>Request Permit</Button>}
       />
 
       {/* Widget row — 2 up on phones, 4 across on desktop */}

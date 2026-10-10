@@ -11,7 +11,7 @@ export const EXPIRY_LABEL: Record<ExpiryStatus, string> = {
   valid: 'Valid',
   expiring: 'Expiring',
   expired: 'Expired',
-  missing: 'Not recorded',
+  missing: 'Not Recorded',
 }
 
 export type ContractorStatus = 'active' | 'suspended'

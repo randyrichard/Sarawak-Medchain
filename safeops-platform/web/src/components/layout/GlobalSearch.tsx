@@ -16,11 +16,11 @@ const KIND_LABEL: Record<SearchKind, string> = {
   audit: 'Audit',
   certificate: 'Certificate',
   employee: 'Employee',
-  user: 'User account',
+  user: 'User Account',
   company: 'Workspace',
-  auditlog: 'Audit log',
+  auditlog: 'Audit Log',
   contractor: 'Contractor',
-  contractorWorker: 'Contractor worker',
+  contractorWorker: 'Contractor Worker',
   visitor: 'Visitor',
 }
 

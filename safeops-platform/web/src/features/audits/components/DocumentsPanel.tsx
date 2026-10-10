@@ -97,7 +97,7 @@ export function DocumentsPanel({
         {canManage && (
           <Button size="sm" variant="secondary" icon={<Upload size={13} />} loading={busy === 'new'}
             onClick={() => { uploadTarget.current = null; fileRef.current?.click() }}>
-            Upload document
+            Upload Document
           </Button>
         )}
         <input ref={fileRef} type="file" className="hidden" onChange={(e) => void upload(e.target.files)} />
@@ -151,7 +151,7 @@ export function DocumentsPanel({
                       {canManage && d.status !== 'Pending Approval' && (
                         <Button size="sm" variant="ghost" icon={<Upload size={11} />}
                           onClick={() => { uploadTarget.current = d; fileRef.current?.click() }}>
-                          New version
+                          New Version
                         </Button>
                       )}
                       <Button size="sm" variant="ghost" icon={<History size={11} />} onClick={() => setHistoryFor(d)}>

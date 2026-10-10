@@ -58,7 +58,7 @@ export function TargetsDialog({
     <Dialog
       open={open}
       onClose={onClose}
-      title="Set performance targets"
+      title="Set Performance Targets"
       description="The figures your company commits to for each period. Each tile and site is then marked on or off target. Leave a field blank for no target."
       width="max-w-lg"
       error={error}

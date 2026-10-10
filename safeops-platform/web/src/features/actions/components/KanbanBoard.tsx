@@ -184,7 +184,7 @@ export function KanbanBoard({
         footer={
           <>
             <Button variant="secondary" onClick={() => setCompleteFor(null)}>Cancel</Button>
-            <Button loading={busy} onClick={() => void confirmComplete()}>Mark completed</Button>
+            <Button loading={busy} onClick={() => void confirmComplete()}>Mark Completed</Button>
           </>
         }
       >

@@ -130,7 +130,7 @@ export class ErrorBoundary extends Component<Props, State> {
             className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-semibold text-white transition-colors"
             style={{ background: 'var(--accent-solid)' }}
           >
-            <RotateCw size={14} aria-hidden /> {stale ? 'Reload' : 'Try again'}
+            <RotateCw size={14} aria-hidden /> {stale ? 'Reload' : 'Try Again'}
           </button>
           <button
             onClick={() => { window.location.href = '/' }}

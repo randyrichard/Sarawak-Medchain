@@ -292,7 +292,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         {platformAdmin && (
           <div className="mt-4 border-t pt-3">
             <p className="px-3 pb-1 text-2xs font-semibold uppercase tracking-widest text-muted">
-              SafeChain staff
+              SafeChain Staff
             </p>
             <NavLink
               to="/platform"
@@ -306,7 +306,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                 )
               }
             >
-              <span className="flex-1">SafeChain customers</span>
+              <span className="flex-1">SafeChain Customers</span>
             </NavLink>
             <p className="px-3 pt-1 text-2xs leading-relaxed text-muted">
               Every customer on this deployment. Not part of {company?.name ?? 'this workspace'}.

@@ -46,7 +46,7 @@ export function ToolboxDetail({
           {canDelete && (confirming ? (
             <>
               <span className="mr-auto self-center text-xs text-critical">Delete this record permanently?</span>
-              <Button variant="secondary" onClick={() => setConfirming(false)} disabled={busy}>Keep it</Button>
+              <Button variant="secondary" onClick={() => setConfirming(false)} disabled={busy}>Keep It</Button>
               <Button variant="danger" onClick={remove} loading={busy}>Delete</Button>
             </>
           ) : (
@@ -82,7 +82,7 @@ export function ToolboxDetail({
 
         {meeting.hazards && (
           <section>
-            <h3 className="mb-1 text-xs font-bold uppercase tracking-wider text-muted">Hazards and controls discussed</h3>
+            <h3 className="mb-1 text-xs font-bold uppercase tracking-wider text-muted">Hazards and Controls Discussed</h3>
             <p className="whitespace-pre-wrap text-ink">{meeting.hazards}</p>
           </section>
         )}

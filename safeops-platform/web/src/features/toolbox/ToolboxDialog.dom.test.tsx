@@ -37,7 +37,7 @@ const headcount = (org: string) => screen.getByRole('spinbutton', { name: `Headc
 const tap = (el: HTMLElement) => fireEvent.click(el, { detail: 1 })
 
 function addLine(org: string, count: string) {
-  fireEvent.click(screen.getByRole('button', { name: 'Add organisation' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Add Organisation' }))
   const fields = screen.getAllByRole('combobox', { name: /^Organisation \d/ })
   fireEvent.change(fields[fields.length - 1], { target: { value: org } })
   fireEvent.change(headcount(org), { target: { value: count } })
@@ -92,7 +92,7 @@ describe('the bin beside an attendance line', () => {
     addLine('Kenyalang Scaffolding', '12')
     tap(screen.getByRole('button', { name: 'Remove YS SDN BHD' }))
     create.mockResolvedValue({ id: 'tbm-1' })
-    fireEvent.click(screen.getByRole('button', { name: 'Record meeting' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Record Meeting' }))
     await vi.waitFor(() => expect(create).toHaveBeenCalledTimes(1))
     expect(create.mock.calls[0][1].groups).toEqual([{ organisation: 'Kenyalang Scaffolding', count: 12 }])
   })

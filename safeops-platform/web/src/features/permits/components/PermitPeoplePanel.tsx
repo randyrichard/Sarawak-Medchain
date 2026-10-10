@@ -100,13 +100,13 @@ export function PermitPeoplePanel({
                     <Button size="sm" variant="secondary" icon={<LogOut size={11} />}
                       loading={busy === r.id}
                       onClick={() => void run(r.id, () => permitPeopleApi.setInside(r.id, false))}>
-                      Sign out
+                      Sign Out
                     </Button>
                   ) : r.role !== 'standby' ? (
                     <Button size="sm" variant="ghost" icon={<LogIn size={11} />}
                       loading={busy === r.id}
                       onClick={() => void run(r.id, () => permitPeopleApi.setInside(r.id, true))}>
-                      Sign in
+                      Sign In
                     </Button>
                   ) : null
                 )}
@@ -129,7 +129,7 @@ export function PermitPeoplePanel({
       {canEdit && !settled && (
         <Button size="sm" variant="secondary" icon={<Plus size={11} />} className="mt-2"
           onClick={() => setAddOpen(true)}>
-          Name someone
+          Name Someone
         </Button>
       )}
 
@@ -182,12 +182,12 @@ function AddPersonDialog({
   return (
     <Dialog
       error={error}
-      open={open} onClose={onClose} title="Name someone on this permit"
+      open={open} onClose={onClose} title="Name Someone on This Permit"
       description="Only people the register says are fit for this work can be named."
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={busy}>Cancel</Button>
-          <Button onClick={() => void submit()} loading={busy} disabled={!chosen}>Add to permit</Button>
+          <Button onClick={() => void submit()} loading={busy} disabled={!chosen}>Add to Permit</Button>
         </>
       }
     >

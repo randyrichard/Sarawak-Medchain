@@ -33,15 +33,15 @@ import { uuid } from '@/lib/uuid'
 
 /** The recurring near-miss categories on a multi-contractor SIMOPS site. */
 const QUICK_TAGS = [
-  'Slip / trip hazard',
-  'Dropped object',
-  'Vehicle / pedestrian',
-  'Unsafe act',
+  'Slip / Trip Hazard',
+  'Dropped Object',
+  'Vehicle / Pedestrian',
+  'Unsafe Act',
   'Housekeeping',
-  'PPE not worn',
-  'Guard / barrier missing',
+  'PPE Not Worn',
+  'Guard / Barrier Missing',
   'Electrical',
-  'Chemical / spill',
+  'Chemical / Spill',
   'Lifting',
 ]
 
@@ -163,7 +163,7 @@ export function ReportNearMissPage() {
             </Alert>
           )}
           <Button className="mt-5" onClick={() => { clientRef.current = uuid(); setQueued(null); setWhat(''); setWhere(''); setTags([]); setPhotos([]) }}>
-            Report another
+            Report Another
           </Button>
         </Card>
       </div>
@@ -201,9 +201,9 @@ export function ReportNearMissPage() {
 
           <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-center">
             <Button onClick={() => { clientRef.current = uuid(); setDone(null); setWhat(''); setWhere(''); setTags([]); setPhotos([]) }}>
-              Report another
+              Report Another
             </Button>
-            <LinkButton variant="secondary" to="/">Back to home</LinkButton>
+            <LinkButton variant="secondary" to="/">Back to Home</LinkButton>
           </div>
         </Card>
       </div>
@@ -213,7 +213,7 @@ export function ReportNearMissPage() {
   return (
     <div className="group/nm mx-auto max-w-lg py-2">
       <div className="mb-4">
-        <h1 className="text-lg font-semibold tracking-tight text-ink">Report a near miss</h1>
+        <h1 className="text-lg font-semibold tracking-tight text-ink">Report a Near Miss</h1>
         <p className="text-xs text-ink-2">
           Two questions, about thirty seconds. No injury or damage — just what you saw.
         </p>
@@ -342,7 +342,7 @@ export function ReportNearMissPage() {
           disabled={!valid}
           onClick={() => void submit()}
         >
-          Submit near miss
+          Submit Near Miss
         </Button>
         <p className="mt-2 text-center text-2xs text-muted">
           Need to report an injury, damage or a spill?{' '}

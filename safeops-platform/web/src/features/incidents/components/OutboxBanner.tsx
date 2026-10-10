@@ -37,7 +37,7 @@ export function OutboxBanner() {
           </span>
           {!draining && (
             <Button size="sm" variant="ghost" onClick={() => void flush()} icon={<RefreshCw size={12} />}>
-              Try now
+              Try Now
             </Button>
           )}
         </div>

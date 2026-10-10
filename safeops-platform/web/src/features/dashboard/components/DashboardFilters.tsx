@@ -13,9 +13,9 @@ import { localISODate } from '@/lib/localDate'
  * Every value is held in the URL, so a refresh keeps the view and the link can be sent.
  */
 const RANGES: { label: string; days: number | null }[] = [
-  { label: '7 days', days: 7 },
-  { label: '30 days', days: 30 },
-  { label: '90 days', days: 90 },
+  { label: '7 Days', days: 7 },
+  { label: '30 Days', days: 30 },
+  { label: '90 Days', days: 90 },
 ]
 
 const ymd = (d: Date) => localISODate(d)

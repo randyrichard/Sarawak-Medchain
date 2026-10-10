@@ -55,7 +55,7 @@ describe('SuggestSelect', () => {
   it('does not offer "choose from the list" when there is no list', () => {
     // It would be a button to an empty dropdown.
     const html = render(<SuggestSelect value="" onChange={() => {}} options={[]} />)
-    expect(html).not.toContain('Choose from the list')
+    expect(html).not.toContain('Choose From the List')
   })
 
   it('keeps a saved value that is no longer on the list', () => {
@@ -68,7 +68,7 @@ describe('SuggestSelect', () => {
       <SuggestSelect label="Department" value="Warehouse" onChange={() => {}} options={['Maintenance']} />,
     )
     expect(html).toContain('value="Warehouse"')
-    expect(html).toContain('Choose from the list')
+    expect(html).toContain('Choose From the List')
   })
 
   it('shows the dropdown for a saved value that is on the list', () => {

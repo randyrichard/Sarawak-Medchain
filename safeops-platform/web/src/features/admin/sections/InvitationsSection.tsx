@@ -146,7 +146,7 @@ export function InvitationsSection() {
           subtitle="Invite somebody into this workspace with a role and, if you want, specific sites."
           right={(
             <Button size="sm" icon={<MailPlus size={14} />} onClick={() => setOpen(true)}>
-              Invite user
+              Invite User
             </Button>
           )}
         />
@@ -190,7 +190,7 @@ export function InvitationsSection() {
                       icon={copied ? <Check size={12} /> : <Copy size={12} />}
                       onClick={copy}
                     >
-                      {copied ? 'Copied' : 'Copy link'}
+                      {copied ? 'Copied' : 'Copy Link'}
                     </Button>
                   </div>
                 )}
@@ -281,14 +281,14 @@ export function InvitationsSection() {
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
-        title="Invite a user"
+        title="Invite a User"
         description="They receive a single-use link to set their own password."
         width="max-w-lg"
         footer={(
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>
             <Button onClick={send} disabled={saving || !draft.email.trim()}>
-              {saving ? 'Creating…' : 'Create invitation'}
+              {saving ? 'Creating…' : 'Create Invitation'}
             </Button>
           </div>
         )}

@@ -123,7 +123,7 @@ export function UsersSection() {
         <div className="ml-auto flex items-center gap-2">
           <Button size="sm" variant="ghost" icon={<Download size={13} />} onClick={exportCsv}>Export</Button>
           <Button size="sm" variant="secondary" icon={<Upload size={13} />} onClick={() => setImportOpen(true)}>Import CSV</Button>
-          <Button size="sm" icon={<UserPlus size={14} />} onClick={() => setNewOpen(true)}>Create user</Button>
+          <Button size="sm" icon={<UserPlus size={14} />} onClick={() => setNewOpen(true)}>Create User</Button>
         </div>
       </div>
 
@@ -140,7 +140,7 @@ export function UsersSection() {
                   <th className="px-5 py-2.5 font-semibold">User</th>
                   <th className="px-3 py-2.5 font-semibold">Role</th>
                   <th className="px-3 py-2.5 font-semibold">MFA</th>
-                  <th className="px-3 py-2.5 font-semibold">Last login</th>
+                  <th className="px-3 py-2.5 font-semibold">Last Login</th>
                   <th className="px-3 py-2.5 font-semibold">Status</th>
                   <th className="px-5 py-2.5 text-right font-semibold">Actions</th>
                 </tr>
@@ -168,12 +168,12 @@ export function UsersSection() {
                         align="end"
                         trigger={() => <button className="inline-flex items-center justify-center rounded-lg border p-1.5 text-ink-2 hover:bg-accent-soft coarse:min-h-11 coarse:min-w-11" aria-label="User actions"><MoreHorizontal size={14} /></button>}
                       >
-                        <DropdownItem icon={<KeyRound size={14} />} onSelect={() => void issueReset(u)}>Issue reset link</DropdownItem>
+                        <DropdownItem icon={<KeyRound size={14} />} onSelect={() => void issueReset(u)}>Issue Reset Link</DropdownItem>
                         {/* Only a reset: switching MFA on needs the person's own phone, so they do it from My account. */}
-                        {u.mfaEnabled && <DropdownItem icon={<ShieldCheck size={14} />} onSelect={() => setMfaResetFor(u)}>Reset MFA (lost phone)</DropdownItem>}
-                        <DropdownItem icon={<Play size={14} />} onSelect={() => void run(() => api.adminForcePasswordReset(companyId, u.id, actor), 'Reset forced at next login')}>Force reset at next login</DropdownItem>
+                        {u.mfaEnabled && <DropdownItem icon={<ShieldCheck size={14} />} onSelect={() => setMfaResetFor(u)}>Reset MFA (Lost Phone)</DropdownItem>}
+                        <DropdownItem icon={<Play size={14} />} onSelect={() => void run(() => api.adminForcePasswordReset(companyId, u.id, actor), 'Reset forced at next login')}>Force Reset at Next Login</DropdownItem>
                         <DropdownSeparator />
-                        {u.status === 'locked' && <DropdownItem icon={<Play size={14} />} onSelect={() => void run(() => api.adminSetUserStatus(companyId, u.id, 'active', actor), 'Account unlocked')}>Unlock account</DropdownItem>}
+                        {u.status === 'locked' && <DropdownItem icon={<Play size={14} />} onSelect={() => void run(() => api.adminSetUserStatus(companyId, u.id, 'active', actor), 'Account unlocked')}>Unlock Account</DropdownItem>}
                         {u.status !== 'deactivated' ? (
                           <DropdownItem danger icon={<Ban size={14} />} onSelect={() => void run(() => api.adminSetUserStatus(companyId, u.id, 'deactivated', actor), `${u.name} deactivated`)}>Deactivate</DropdownItem>
                         ) : (
@@ -262,7 +262,7 @@ function ResetLinkDialog({
           </div>
           <div className="flex items-center gap-2">
             <Button size="sm" variant="secondary" onClick={() => void copy()}>
-              {copied ? 'Copied' : 'Copy link'}
+              {copied ? 'Copied' : 'Copy Link'}
             </Button>
             <span className="text-2xs text-muted">
               Their existing sessions have been signed out.
@@ -324,7 +324,7 @@ function UserDetailDrawer({ userId, roleName, onClose }: { userId: string | null
               {devices.map((d) => (
                 <li key={d.id} className="flex items-center gap-2 rounded-lg border px-3 py-2 text-xs">
                   <span className="min-w-0 flex-1"><span className="font-medium text-ink">{d.name}</span> <span className="text-muted">· {d.browser} · {d.os}</span></span>
-                  {d.current && <Badge tone="accent">This session</Badge>}
+                  {d.current && <Badge tone="accent">This Session</Badge>}
                   {d.trusted && <Badge tone="good">Trusted</Badge>}
                   <span className="text-2xs text-muted">{timeAgo(d.lastSeen)}</span>
                 </li>
@@ -376,8 +376,8 @@ function NewUserDialog({ open, roles, sites, onClose, onCreated }: { open: boole
 
   return (
     <Dialog
-      error={error} open={open} onClose={onClose} title="Create user" description="Provision a new account and optionally send an invitation email."
-      footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button><Button loading={busy} onClick={() => void submit()}>Create user</Button></>}>
+      error={error} open={open} onClose={onClose} title="Create User" description="Provision a new account and optionally send an invitation email."
+      footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button><Button loading={busy} onClick={() => void submit()}>Create User</Button></>}>
       <div className="space-y-5">
         <div className="grid grid-cols-2 gap-x-3 gap-y-5">
           <Input label="Full name" required value={name} onChange={(e) => setName(e.target.value)} />
@@ -419,10 +419,10 @@ function BulkImportDialog({ open, onClose, onDone }: { open: boolean; onClose: (
 
   return (
     <Dialog
-      error={error} open={open} onClose={onClose} title="Bulk import users" description="Paste CSV with columns: name, email, role. Duplicates are skipped." width="max-w-lg"
+      error={error} open={open} onClose={onClose} title="Bulk Import Users" description="Paste CSV with columns: name, email, role. Duplicates are skipped." width="max-w-lg"
       footer={result
         ? <Button onClick={() => onDone(result)}>Done</Button>
-        : <><Button variant="secondary" onClick={onClose}>Cancel</Button><Button loading={busy} onClick={() => void submit()}>Import users</Button></>}>
+        : <><Button variant="secondary" onClick={onClose}>Cancel</Button><Button loading={busy} onClick={() => void submit()}>Import Users</Button></>}>
       <div className="space-y-3">
         {result ? (
           <Alert tone="success" title="Import complete">

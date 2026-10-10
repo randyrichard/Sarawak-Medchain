@@ -162,7 +162,7 @@ export function EmployeeDrawer({
 
             {canManage && (
               <footer className="flex flex-wrap gap-2 border-t px-5 py-3">
-                <Button size="sm" variant="secondary" onClick={() => setEditOpen(true)}>Edit details</Button>
+                <Button size="sm" variant="secondary" onClick={() => setEditOpen(true)}>Edit Details</Button>
                 <Button
                   size="sm" variant="secondary" loading={busy}
                   onClick={() => void run(
@@ -170,7 +170,7 @@ export function EmployeeDrawer({
                     item.active ? `${item.name} marked as left` : `${item.name} reactivated`,
                   )}
                 >
-                  {item.active ? 'Mark as left' : 'Reactivate'}
+                  {item.active ? 'Mark as Left' : 'Reactivate'}
                 </Button>
                 {/*
                   Pushed to the far end, away from Edit and the status toggle (law of
@@ -218,7 +218,7 @@ export function EmployeeDrawer({
                     if (ok) { setConfirmDelete(false); onClose() }
                   }}
                 >
-                  Delete permanently
+                  Delete Permanently
                 </Button>
               </>
             }
@@ -328,7 +328,7 @@ function ContactsTab({
               <div className="min-w-0">
                 <p className="flex items-center gap-2 text-sm font-semibold text-ink">
                   {c.name}
-                  {c.isPrimary && <Badge tone="accent">Call first</Badge>}
+                  {c.isPrimary && <Badge tone="accent">Call First</Badge>}
                 </p>
                 <p className="text-2xs text-muted">{c.relationship || 'Contact'}</p>
                 <p className="mt-0.5 font-mono text-xs text-ink-2">
@@ -350,7 +350,7 @@ function ContactsTab({
         </ul>
       )}
       {canManage && (
-        <Button size="sm" variant="secondary" icon={<Plus size={12} />} onClick={onAdd}>Add contact</Button>
+        <Button size="sm" variant="secondary" icon={<Plus size={12} />} onClick={onAdd}>Add Contact</Button>
       )}
     </div>
   )
@@ -458,7 +458,7 @@ function TrainingTab({ item }: { item: EmployeeDetail }) {
                         <p className="mt-0.5 text-2xs text-muted">{fmtDate(c.expiryDate)}</p>
                       </>
                     ) : (
-                      <Badge tone="neutral">No expiry</Badge>
+                      <Badge tone="neutral">No Expiry</Badge>
                     )}
                   </div>
                 </li>
@@ -531,7 +531,7 @@ function AddContactDialog({
   return (
     <Dialog
       error={error}
-      open={open} onClose={close} title="Add emergency contact"
+      open={open} onClose={close} title="Add Emergency Contact"
       footer={
         <>
           <Button variant="secondary" onClick={close} disabled={busy}>Cancel</Button>

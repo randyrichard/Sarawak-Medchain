@@ -40,7 +40,7 @@ describe('AdminPage company switch', () => {
     rerender(ui())
     await waitFor(() => expect((screen.getByLabelText('Minimum length') as HTMLInputElement).value).toBe('20'))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Save policy' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save Policy' }))
     await waitFor(() => expect(adminUpdateSecurity).toHaveBeenCalled())
     const [savedFor, saved] = adminUpdateSecurity.mock.calls[0] as unknown as [string, { passwordMinLength: number }]
     expect(savedFor).toBe('kcs')

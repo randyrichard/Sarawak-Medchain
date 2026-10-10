@@ -97,7 +97,7 @@ export function AuditDrawer({
                       {audit.score}%
                     </span>
                   )}
-                  {audit.overdue && <Badge tone="critical">Overdue to start</Badge>}
+                  {audit.overdue && <Badge tone="critical">Overdue to Start</Badge>}
                 </div>
               </div>
               <button onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft hover:text-ink">
@@ -112,26 +112,26 @@ export function AuditDrawer({
               <div className="flex flex-wrap gap-2">
                 {audit.status === 'Planned' && canRun && (
                   <Button size="sm" icon={<PlayCircle size={13} />} loading={busy} onClick={() => void run(() => api.startAudit(audit.id, actor))}>
-                    Start audit
+                    Start Audit
                   </Button>
                 )}
                 {audit.status === 'In Progress' && canRun && (
                   <Button size="sm" icon={<PlayCircle size={13} />} onClick={() => setRunnerOpen(true)}>
-                    Run checklist
+                    Run Checklist
                   </Button>
                 )}
                 {audit.status === 'Completed' && manage && (
                   <span title={unresolved > 0 ? `${unresolved} finding(s) not yet verified` : undefined}>
                     <Button size="sm" icon={unresolved > 0 ? <Lock size={12} /> : undefined} disabled={unresolved > 0} loading={busy}
                       onClick={() => void run(() => api.closeAudit(audit.id, actor))}>
-                      {unresolved > 0 ? `Close audit (${unresolved} unverified)` : 'Close audit'}
+                      {unresolved > 0 ? `Close audit (${unresolved} unverified)` : 'Close Audit'}
                     </Button>
                   </span>
                 )}
                 {(audit.status === 'Completed' || audit.status === 'Closed') && (
                   <Button size="sm" variant="secondary" icon={<Printer size={13} />}
                     onClick={() => printAuditReport(audit, detail!.findings, siteName)}>
-                    Print report
+                    Print Report
                   </Button>
                 )}
                 {audit.status === 'Planned' && !canRun && (
