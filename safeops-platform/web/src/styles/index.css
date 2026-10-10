@@ -44,6 +44,8 @@
   --line: rgba(11, 11, 11, 0.1);
   --grid: #e1e0d9;
   --baseline: #c3c2b7;
+  /* The soft light that passes across a loading placeholder (.skeleton below). */
+  --skeleton-shine: rgba(255, 255, 255, 0.55);
 
   /* brand accent */
   /* 3.97:1 before, so every link and every text button failed AA in this theme. */
@@ -123,6 +125,7 @@
   --line: rgba(255, 255, 255, 0.1);
   --grid: #2c2c2a;
   --baseline: #383835;
+  --skeleton-shine: rgba(255, 255, 255, 0.06);
 
   --accent: #3987e5;
   --accent-hover: #5598e7;
@@ -221,12 +224,58 @@ select optgroup {
   background: transparent;
 }
 
+/*
+ * Loading placeholders.
+ *
+ * They used to pulse: the whole shape faded to half strength and back. Beside other sites
+ * that read as blinking, and a page of them blinked out of step, each one counting from
+ * whenever it appeared. Now the shape stays still and a soft light passes across it, the way
+ * most sites do it:
+ * - Transform only, so the compositor draws it. It stays smooth while the page is busy
+ *   loading, which is the only time anybody sees one.
+ * - A 2.4s cycle. The light eases across in 1.7s, then rests.
+ * - Every placeholder on the page moves in step. Skeleton.tsx starts each one where the
+ *   shared cycle already is, so a page of them shows one light, not many.
+ * Skeleton.tsx holds the same duration as SKELETON_PERIOD_MS; its test keeps the two equal.
+ */
+@layer components {
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--grid);
+  }
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(90deg, transparent, var(--skeleton-shine), transparent);
+    transform: translateX(-100%);
+    animation: skeleton-shine 2.4s ease-in-out var(--skeleton-phase, 0s) infinite;
+  }
+}
+
+@keyframes skeleton-shine {
+  0% { transform: translateX(-100%); }
+  70%, 100% { transform: translateX(100%); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    /*
+     * Without this an endless animation, such as a loading placeholder or a spinner, never
+     * stopped. It ran its now-instant cycle thousands of times a second, and each screen
+     * refresh caught it at a random point, so it flickered. The people who had asked for
+     * less motion got a strobe.
+     */
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  /* A still placeholder, with no light passing across it. */
+  .skeleton::after {
+    animation: none;
   }
 }
 
