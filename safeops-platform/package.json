@@ -2,7 +2,7 @@
   "name": "@safeops/platform",
   "version": "1.0.0",
   "private": true,
-  "description": "SafeOps platform — development orchestrator for the api and web workspaces",
+  "description": "SafeChain platform — development orchestrator for the api and web workspaces",
   "type": "module",
   "scripts": {
     "setup": "npm install --prefix api && npm install --prefix web",

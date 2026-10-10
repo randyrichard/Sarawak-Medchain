@@ -144,7 +144,7 @@ export function ActionsTable({
             </>
           )}
           <Button size="sm" variant="ghost" icon={<Download size={12} />}
-            onClick={() => exportCsv(selected.size > 0 ? sorted.filter((i) => selected.has(i.id)) : sorted, 'safeops-corrective-actions.csv', (id) => sites.find((s) => s.id === id)?.name ?? id)}>
+            onClick={() => exportCsv(selected.size > 0 ? sorted.filter((i) => selected.has(i.id)) : sorted, 'safechain-corrective-actions.csv', (id) => sites.find((s) => s.id === id)?.name ?? id)}>
             Export CSV
           </Button>
         </div>

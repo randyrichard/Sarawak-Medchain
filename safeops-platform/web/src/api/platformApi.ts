@@ -2,7 +2,7 @@ import { request } from './http'
 import type { PlanEntitlements } from './types'
 
 /**
- * The SafeOps platform console.
+ * The SafeChain platform console.
  *
  * Above every customer rather than inside one, so it is deliberately a separate client
  * from the tenant-scoped admin API. Nothing here takes a companyId to scope a read - these

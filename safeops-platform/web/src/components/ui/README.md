@@ -1,6 +1,6 @@
-# SafeOps UI system
+# SafeChain UI system
 
-The primitives every SafeOps screen is built from. Import them from one place:
+The primitives every SafeChain screen is built from. Import them from one place:
 
 ```tsx
 import { Button, Card, CardHeader, DataTable, Dialog, AsyncContent } from '@/components/ui'
@@ -217,12 +217,12 @@ audit. The live app was also audited across eight pages, in both themes, at 375p
 ## Familiar conventions (Jakob's law)
 
 People spend most of their working day in other products, such as Gmail, GitHub, Jira, Excel
-and their bank's website, and they come to SafeOps expecting it to work the same way. A
-convention they already know costs them nothing to learn, and one SafeOps invents costs every
+and their bank's website, and they come to SafeChain expecting it to work the same way. A
+convention they already know costs them nothing to learn, and one SafeChain invents costs every
 person who uses it. So when a familiar pattern exists, use it, and keep anything new for the
 safety work itself.
 
-| People expect | SafeOps does | How |
+| People expect | SafeChain does | How |
 |---|---|---|
 | The logo goes home | The sidebar logo links to Mission Control | `AppShell` |
 | The URL is the view: Back, refresh and a shared link keep the tab and filters | Tabs, admin sections and register filters live in the query string | `useUrlState('tab', default, allowed)` |
@@ -248,7 +248,7 @@ safety work itself.
 ## Keeping choices small (Hick's law)
 
 Hick's law (Hick 1952, Hyman 1953) says the time to choose grows with the number of options:
-`T = a + b·log₂(n + 1)`. Three findings shape how SafeOps applies it:
+`T = a + b·log₂(n + 1)`. Three findings shape how SafeChain applies it:
 
 - **The cost is in uncertainty, not raw count.** Hyman showed that decision time tracks the
   entropy of the choice. A sensible default or an obviously likely option makes a choice
@@ -287,7 +287,7 @@ Hick's law (Hick 1952, Hyman 1953) says the time to choose grows with the number
 
 The law of proximity is the Gestalt finding (Wertheimer, 1923) that people see things which
 sit close together as belonging together. Spacing does this on its own, before colour, borders
-or boxes come into play, so in SafeOps spacing is the main way to show what belongs with what.
+or boxes come into play, so in SafeChain spacing is the main way to show what belongs with what.
 The rule is a ratio: **the space inside a group must be clearly smaller than the space between
 groups.** A label that sits equally far from two fields belongs to neither, and people slow
 down or fill in the wrong one.
@@ -328,7 +328,7 @@ Miller (1956) found that people can hold about **7 ± 2** chunks in short-term m
 
 The law is about *memory*, not about what is on screen. "Menus must have at most seven items"
 is a misreading: options in view are recognised, not recalled, and grouping them is Hick's law
-(see above). In SafeOps, Miller's law applies wherever a person has to **hold something in
+(see above). In SafeChain, Miller's law applies wherever a person has to **hold something in
 their head**:
 
 | Where | Before | Now |
@@ -415,7 +415,7 @@ one people notice and remember. Two conditions come with it:
    vision deficiency, and a site tablet in sunlight washes colour out (WCAG 1.4.1). Pair colour
    with shape, an icon or words.
 
-SafeOps spends distinctiveness on one thing: **what needs action.**
+SafeChain spends distinctiveness on one thing: **what needs action.**
 
 | Where | Before | Now |
 |---|---|---|
@@ -441,7 +441,7 @@ is signalled by red alone.
 
 ## Icons: only where words cannot do the job
 
-Customers said SafeOps had too many symbols, and they were right: every menu row, tab, tile,
+Customers said SafeChain had too many symbols, and they were right: every menu row, tab, tile,
 heading, button and status pill carried one, so the attention icon that marks a real problem
 was one shape among hundreds. On the thirteen busiest pages there were **617** icons; there are
 now **164**, and most of what is left is a control you press or an alarm.

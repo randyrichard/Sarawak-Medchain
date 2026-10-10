@@ -70,7 +70,7 @@ export function ForgotPasswordPage() {
           <p className="text-xs leading-relaxed text-muted">
             Still nothing? Your workspace administrator can issue a link directly from{' '}
             <span className="font-medium text-ink-2">Administration &rarr; Users</span>. If you
-            are the administrator, contact SafeOps support.
+            are the administrator, contact SafeChain support.
           </p>
           <LinkButton to="/login" variant="secondary" size="lg" className="w-full">
             Back to sign in
@@ -110,7 +110,7 @@ export function ForgotPasswordPage() {
       <p className="mt-5 flex items-start gap-2 text-xs leading-relaxed text-muted">
         <span className="mt-0.5 shrink-0" aria-hidden="true"><MailCheck size={13} /></span>
         <span>
-          Links work once and expire after 30 minutes. Nobody, including SafeOps, ever holds a
+          Links work once and expire after 30 minutes. Nobody, including SafeChain, ever holds a
           working password for your account.
         </span>
       </p>

@@ -103,7 +103,7 @@ d('First customer acceptance — over HTTP, two tenants', () => {
     // ── The platform administrator creates two customers ─────────────────────
     const staff = await db.user.create({
       data: {
-        email: mail(), name: 'SafeOps Staff', passwordHash: 'x',
+        email: mail(), name: 'SafeChain Staff', passwordHash: 'x',
         status: 'active', platformAdmin: true,
       },
     })
@@ -127,7 +127,7 @@ d('First customer acceptance — over HTTP, two tenants', () => {
     // ── Before acceptance, the account is not a way in ───────────────────────
     /*
      * The whole reason provisioning issues an invitation rather than a password: nobody at
-     * SafeOps ever holds a working credential for a customer's workspace. If any password
+     * SafeChain ever holds a working credential for a customer's workspace. If any password
      * worked here, the operator who created the customer would keep a live login to their
      * incident and audit records.
      */

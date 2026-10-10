@@ -79,7 +79,7 @@ d('grantPlatformAdmin', { timeout: SPAWN_TIMEOUT }, () => {
   it('grants to an active account and reports it', async () => {
     const r = run(ACTIVE)
     expect(r.status).toBe(0)
-    expect(r.said).toMatch(/is now a SafeOps platform administrator/)
+    expect(r.said).toMatch(/is now a SafeChain platform administrator/)
     expect(await flagFor(ACTIVE)).toBe(true)
   })
 
@@ -190,7 +190,7 @@ d('grantPlatformAdmin', { timeout: SPAWN_TIMEOUT }, () => {
 
   it('hands over a link, never a password', async () => {
     /*
-     * The property the whole product rests on: whoever installs SafeOps must not end up
+     * The property the whole product rests on: whoever installs SafeChain must not end up
      * holding a working credential for it. The hash is random bytes nothing can reproduce,
      * and the raw reset token is printed once and never stored.
      */

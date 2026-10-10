@@ -1516,7 +1516,7 @@ class MockApiClient implements ApiClient {
    */
   async adminExportWorkspace(companyId: string) {
     if (SERVER_ADMIN) return adminApi.exportWorkspace(companyId)
-    throw new Error('Exporting your data needs the SafeOps server; this is the static demo.')
+    throw new Error('Exporting your data needs the SafeChain server; this is the static demo.')
   }
 
   // ── permits to work ────────────────────────────────────────────────────────

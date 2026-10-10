@@ -1,4 +1,4 @@
-# SafeOps on Kubernetes
+# SafeChain on Kubernetes
 
 For when one server is no longer enough: several API replicas behind a load balancer, rolling
 deploys with no downtime, and a node failing without taking the product with it. Until then
@@ -7,7 +7,7 @@ and is the recommended starting point. See `docs/PRODUCTION_PLATFORM.md` for whe
 
 ```
 deploy/k8s/
-  base/                     what SafeOps is: Deployments, Services, probes, autoscaling,
+  base/                     what SafeChain is: Deployments, Services, probes, autoscaling,
                             disruption budgets, network policies, ingress
   overlays/production/      your domains, your registry, your release tag
   secret.example.yaml       the Secret it expects - never commit a filled-in copy

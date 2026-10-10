@@ -65,8 +65,8 @@ export const PRIVACY_NOTICE: LegalDocument = {
       {
         heading: 'Two different roles',
         body: [
-          'For your SafeOps account — your name, work email and sign-in history — SafeOps is the data controller. We decide what to collect and why, because it exists so you can use the product.',
-          'For your organisation’s safety records — employee details, incidents, medical fitness dates, visitor logs — your employer is the controller and SafeOps is the processor. They decide what goes in and why; we hold it on their instructions. If you want an incident record corrected, your employer decides.',
+          'For your SafeChain account — your name, work email and sign-in history — SafeChain is the data controller. We decide what to collect and why, because it exists so you can use the product.',
+          'For your organisation’s safety records — employee details, incidents, medical fitness dates, visitor logs — your employer is the controller and SafeChain is the processor. They decide what goes in and why; we hold it on their instructions. If you want an incident record corrected, your employer decides.',
         ],
       },
       {
@@ -80,7 +80,7 @@ export const PRIVACY_NOTICE: LegalDocument = {
         ],
       },
       {
-        heading: 'What your employer holds in SafeOps',
+        heading: 'What your employer holds in SafeChain',
         body: ['Depending on your role at their organisation, this may include:'],
         list: [
           'Workforce record: employee number, position, department, site, contact details, hire date',
@@ -96,7 +96,7 @@ export const PRIVACY_NOTICE: LegalDocument = {
         heading: 'Health information',
         body: [
           'Medical certificate expiry dates, medical restriction notes, blood group, and the injury details recorded on an incident are sensitive personal data under the Personal Data Protection Act 2010. Sensitive personal data requires explicit consent rather than ordinary consent.',
-          'Where SafeOps is the processor, obtaining that consent is your employer’s responsibility. We hold the record of it; we do not obtain it for them.',
+          'Where SafeChain is the processor, obtaining that consent is your employer’s responsibility. We hold the record of it; we do not obtain it for them.',
         ],
       },
       {
@@ -121,7 +121,7 @@ export const PRIVACY_NOTICE: LegalDocument = {
         body: [
           'You may ask what we hold about you and receive a copy, ask us to correct it, withdraw consent, or complain to the Personal Data Protection Commissioner.',
           'Where the data belongs to your organisation, ask your employer first — they decide and we act on their instruction. Some records cannot simply be removed: an incident report is a safety and legal record your employer may be required to keep, and removing someone from it would falsify it.',
-          'Your employer can export their entire workspace at any time, as spreadsheets plus every uploaded file, readable without SafeOps.',
+          'Your employer can export their entire workspace at any time, as spreadsheets plus every uploaded file, readable without SafeChain.',
         ],
       },
       {
@@ -155,8 +155,8 @@ export const PRIVACY_NOTICE: LegalDocument = {
       {
         heading: 'Dua peranan yang berbeza',
         body: [
-          'Bagi akaun SafeOps anda — nama, e-mel kerja dan sejarah log masuk anda — SafeOps ialah pengawal data. Kami menentukan apa yang dikumpul dan mengapa, kerana ia wujud supaya anda boleh menggunakan produk ini.',
-          'Bagi rekod keselamatan organisasi anda — butiran pekerja, insiden, tarikh kesihatan, log pelawat — majikan anda ialah pengawal data dan SafeOps ialah pemproses data. Mereka menentukan apa yang dimasukkan dan mengapa; kami menyimpannya atas arahan mereka. Jika anda mahu rekod insiden dibetulkan, majikan anda yang memutuskan.',
+          'Bagi akaun SafeChain anda — nama, e-mel kerja dan sejarah log masuk anda — SafeChain ialah pengawal data. Kami menentukan apa yang dikumpul dan mengapa, kerana ia wujud supaya anda boleh menggunakan produk ini.',
+          'Bagi rekod keselamatan organisasi anda — butiran pekerja, insiden, tarikh kesihatan, log pelawat — majikan anda ialah pengawal data dan SafeChain ialah pemproses data. Mereka menentukan apa yang dimasukkan dan mengapa; kami menyimpannya atas arahan mereka. Jika anda mahu rekod insiden dibetulkan, majikan anda yang memutuskan.',
         ],
       },
       {
@@ -170,7 +170,7 @@ export const PRIVACY_NOTICE: LegalDocument = {
         ],
       },
       {
-        heading: 'Apa yang majikan anda simpan dalam SafeOps',
+        heading: 'Apa yang majikan anda simpan dalam SafeChain',
         body: ['Bergantung pada peranan anda di organisasi mereka, ini mungkin termasuk:'],
         list: [
           'Rekod pekerja: nombor pekerja, jawatan, jabatan, tapak, butiran perhubungan, tarikh mula kerja',
@@ -186,7 +186,7 @@ export const PRIVACY_NOTICE: LegalDocument = {
         heading: 'Maklumat kesihatan',
         body: [
           'Tarikh luput sijil perubatan, nota sekatan perubatan, kumpulan darah, dan butiran kecederaan yang direkodkan dalam sesuatu insiden ialah data peribadi sensitif di bawah Akta Perlindungan Data Peribadi 2010. Data peribadi sensitif memerlukan keizinan yang nyata, bukan keizinan biasa.',
-          'Apabila SafeOps bertindak sebagai pemproses data, tanggungjawab memperoleh keizinan tersebut terletak pada majikan anda. Kami menyimpan rekod keizinan itu; kami tidak memperolehnya bagi pihak mereka.',
+          'Apabila SafeChain bertindak sebagai pemproses data, tanggungjawab memperoleh keizinan tersebut terletak pada majikan anda. Kami menyimpan rekod keizinan itu; kami tidak memperolehnya bagi pihak mereka.',
         ],
       },
       {
@@ -211,7 +211,7 @@ export const PRIVACY_NOTICE: LegalDocument = {
         body: [
           'Anda boleh meminta maklumat tentang apa yang kami simpan mengenai anda dan menerima salinannya, meminta kami membetulkannya, menarik balik keizinan, atau membuat aduan kepada Pesuruhjaya Perlindungan Data Peribadi.',
           'Jika data itu milik organisasi anda, tanya majikan anda terlebih dahulu — mereka yang memutuskan dan kami bertindak atas arahan mereka. Sesetengah rekod tidak boleh dibuang begitu sahaja: laporan insiden ialah rekod keselamatan dan undang-undang yang mungkin wajib disimpan oleh majikan anda, dan membuang seseorang daripadanya bermakna memalsukannya.',
-          'Majikan anda boleh mengeksport keseluruhan ruang kerja mereka pada bila-bila masa, dalam bentuk hamparan berserta setiap fail yang dimuat naik, yang boleh dibaca tanpa SafeOps.',
+          'Majikan anda boleh mengeksport keseluruhan ruang kerja mereka pada bila-bila masa, dalam bentuk hamparan berserta setiap fail yang dimuat naik, yang boleh dibaca tanpa SafeChain.',
         ],
       },
       {
@@ -252,7 +252,7 @@ export const TERMS_OF_SERVICE: LegalDocument = {
       {
         heading: 'What the service is',
         body: [
-          'SafeOps is safety management software: incident reporting and investigation, permits to work, corrective actions, competency records, audits, and contractor and visitor management. It records and organises what your organisation tells it. It does not make safety decisions for you and it is not a substitute for a competent person.',
+          'SafeChain is safety management software: incident reporting and investigation, permits to work, corrective actions, competency records, audits, and contractor and visitor management. It records and organises what your organisation tells it. It does not make safety decisions for you and it is not a substitute for a competent person.',
         ],
       },
       {
@@ -271,7 +271,7 @@ export const TERMS_OF_SERVICE: LegalDocument = {
       {
         heading: 'Your data is yours',
         body: [
-          'Everything your organisation puts into SafeOps remains your organisation’s. You can export all of it at any time, as spreadsheets plus every uploaded file, in formats readable without this product. We do not sell it, and we do not use it to train machine-learning models.',
+          'Everything your organisation puts into SafeChain remains your organisation’s. You can export all of it at any time, as spreadsheets plus every uploaded file, in formats readable without this product. We do not sell it, and we do not use it to train machine-learning models.',
         ],
       },
       {
@@ -295,7 +295,7 @@ export const TERMS_OF_SERVICE: LegalDocument = {
       {
         heading: 'Apakah perkhidmatan ini',
         body: [
-          'SafeOps ialah perisian pengurusan keselamatan: pelaporan dan penyiasatan insiden, permit kerja, tindakan pembetulan, rekod kompetensi, audit, serta pengurusan kontraktor dan pelawat. Ia merekod dan menyusun apa yang dimaklumkan oleh organisasi anda. Ia tidak membuat keputusan keselamatan bagi pihak anda dan ia bukan pengganti kepada orang yang kompeten.',
+          'SafeChain ialah perisian pengurusan keselamatan: pelaporan dan penyiasatan insiden, permit kerja, tindakan pembetulan, rekod kompetensi, audit, serta pengurusan kontraktor dan pelawat. Ia merekod dan menyusun apa yang dimaklumkan oleh organisasi anda. Ia tidak membuat keputusan keselamatan bagi pihak anda dan ia bukan pengganti kepada orang yang kompeten.',
         ],
       },
       {
@@ -314,7 +314,7 @@ export const TERMS_OF_SERVICE: LegalDocument = {
       {
         heading: 'Data anda ialah milik anda',
         body: [
-          'Semua yang dimasukkan oleh organisasi anda ke dalam SafeOps kekal menjadi milik organisasi anda. Anda boleh mengeksport kesemuanya pada bila-bila masa, dalam bentuk hamparan berserta setiap fail yang dimuat naik, dalam format yang boleh dibaca tanpa produk ini. Kami tidak menjualnya, dan kami tidak menggunakannya untuk melatih model pembelajaran mesin.',
+          'Semua yang dimasukkan oleh organisasi anda ke dalam SafeChain kekal menjadi milik organisasi anda. Anda boleh mengeksport kesemuanya pada bila-bila masa, dalam bentuk hamparan berserta setiap fail yang dimuat naik, dalam format yang boleh dibaca tanpa produk ini. Kami tidak menjualnya, dan kami tidak menggunakannya untuk melatih model pembelajaran mesin.',
         ],
       },
       {

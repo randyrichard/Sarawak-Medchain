@@ -1,6 +1,6 @@
-# SafeOps API — authentication service
+# SafeChain API — authentication service
 
-Server-side authentication and authorization for SafeOps. This exists because the controls it
+Server-side authentication and authorization for SafeChain. This exists because the controls it
 provides (password hashing, token signing, lockout) are meaningless in a browser: a client can
 always skip a check it performs on itself.
 

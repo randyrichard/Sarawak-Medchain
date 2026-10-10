@@ -1,4 +1,4 @@
-# SafeOps alert rules for Prometheus (or anything that loads Prometheus rule files:
+# SafeChain alert rules for Prometheus (or anything that loads Prometheus rule files:
 # Grafana Cloud, Mimir, VictoriaMetrics). Scrape config: prometheus.yml beside this file.
 #
 # Few alerts, each one something a person should act on. Every rule says what is wrong for
@@ -13,7 +13,7 @@ groups:
         for: 2m
         labels: { severity: page }
         annotations:
-          summary: The SafeOps API is not answering its metrics endpoint.
+          summary: The SafeChain API is not answering its metrics endpoint.
           runbook: docs/RUNBOOK.md - check `docker compose ps` and `logs api`; roll back with deploy/rollback.sh if the last deploy caused it.
 
       - alert: SafeOpsDatabaseUnreachable

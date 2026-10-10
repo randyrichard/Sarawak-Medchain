@@ -1,4 +1,4 @@
-# SafeOps — pilot deployment.
+# SafeChain — pilot deployment.
 #
 #   cp .env.prod.example .env.prod        # then fill it in
 #   docker compose -f docker-compose.prod.yml --env-file .env.prod --profile tls up -d --build

@@ -100,7 +100,7 @@ export function UsersSection() {
   const exportCsv = () => downloadCsv(
     ['Name', 'Email', 'Role', 'Status', 'MFA', 'Last login', 'Department'],
     (users ?? []).map((u) => [u.name, u.email, roleName.get(u.role) ?? u.role, u.status, u.mfaEnabled ? 'Yes' : 'No', u.lastLoginAt ?? 'never', u.department ?? '']),
-    'safeops-users.csv',
+    'safechain-users.csv',
   )
 
   return (

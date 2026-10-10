@@ -28,7 +28,7 @@ export const DEMO_ENV = {
   VITE_API_BASE_URL: '',
   VITE_OFFLINE_DEMO: 'true',
   VITE_DEMO_LOGINS: 'true',
-  VITE_DEMO_PASSWORD: 'SafeOps-Demo-2026',
+  VITE_DEMO_PASSWORD: 'SafeChain-Demo-2026',
 }
 
 /** The security headers nginx sends on every page, for Cloudflare's _headers file. */

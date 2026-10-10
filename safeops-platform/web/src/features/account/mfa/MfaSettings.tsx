@@ -36,11 +36,11 @@ export function MfaSettings({ backend }: { backend: boolean }) {
           </p>
           <p className="text-2xs text-muted">
             {!backend
-              ? 'Available when this app is connected to a SafeOps server.'
+              ? 'Available when this app is connected to a SafeChain server.'
               : !status
                 ? 'A code from an authenticator app, as well as your password.'
                 : !status.available
-                  ? 'Not set up on this server yet. Ask whoever runs your SafeOps installation.'
+                  ? 'Not set up on this server yet. Ask whoever runs your SafeChain installation.'
                   : status.enabled
                     ? `A code from your authenticator app is needed to sign in. ${status.recoveryCodesRemaining} recovery code(s) left.`
                     : 'Add a code from an authenticator app to your sign-in, so a stolen password is not enough.'}

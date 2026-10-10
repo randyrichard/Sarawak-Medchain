@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { platformApi, type PlatformPlan } from '@/api/platformApi'
 
 /**
- * Whether this session is SafeOps staff, and what it may sell.
+ * Whether this session is SafeChain staff, and what it may sell.
  *
  * Deliberately not derived from the access token: the token carries company memberships,
  * and putting a platform flag in it would mean revoking somebody's access waited for the

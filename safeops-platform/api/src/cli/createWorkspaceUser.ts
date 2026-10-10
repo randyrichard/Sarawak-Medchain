@@ -22,7 +22,7 @@
  * The account is created with random bytes for a hash nothing can reproduce, and whoever
  * runs this is handed a single-use link to set their own. That is the same property the
  * bootstrap command keeps, and it matters for the same reason: the person who installs or
- * repairs SafeOps should not walk away holding a working credential for somebody else's
+ * repairs SafeChain should not walk away holding a working credential for somebody else's
  * account. It also means this command is safe to run on a deployment holding real records -
  * it opens a door, it does not hand over a key to the existing ones.
  */
@@ -256,7 +256,7 @@ async function main() {
    */
   if (existing?.platformAdmin) {
     console.error(
-      `Refusing: ${email} is SafeOps platform staff.
+      `Refusing: ${email} is SafeChain platform staff.
 
 A platform administrator sees every company on this deployment. An account holding both
 that and a seat inside a customer workspace shows one customer the names of the others.

@@ -171,7 +171,7 @@ export function stageLabel(stage: string): string {
  * Labels as a document prints them.
  *
  * The catalogue marks superseded values "(legacy)" so the product can steer new reports
- * away from them. That note is for the people configuring SafeOps, not for a client
+ * away from them. That note is for the people configuring SafeChain, not for a client
  * reading an incident summary - "Critical (legacy)" on a customer's document reads as a
  * defect in the document. A value the catalogue does not know is shown in words rather
  * than as its code ("unsafe_condition" -> "Unsafe condition").

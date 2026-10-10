@@ -39,8 +39,8 @@
       '<div style="padding:0 16px"><main role="alert" style="max-width:32rem;margin:2rem auto;padding:20px 16px;' +
       'background:#fff;color:#1f2937;border-radius:12px;' +
       'font:16px/1.5 -apple-system,system-ui,sans-serif">' +
-      '<h1 style="font-size:1.375rem;margin:0 0 .75rem">This browser is too old for SafeOps</h1>' +
-      '<p style="margin:0 0 .75rem">SafeOps needs iOS 15.4 or later on an iPhone or iPad, ' +
+      '<h1 style="font-size:1.375rem;margin:0 0 .75rem">This browser is too old for SafeChain</h1>' +
+      '<p style="margin:0 0 .75rem">SafeChain needs iOS 15.4 or later on an iPhone or iPad, ' +
       'or a browser updated in the last few years on a computer or Android phone.</p>' +
       '<p style="margin:0 0 .75rem">' + how + '</p>' +
       '<p style="margin:0;color:#4b5563">If you need to report an incident and cannot update ' +

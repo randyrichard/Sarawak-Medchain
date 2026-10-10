@@ -1,4 +1,4 @@
-# SafeOps on Kubernetes - the base. Apply an overlay, not this directly:
+# SafeChain on Kubernetes - the base. Apply an overlay, not this directly:
 #   kubectl apply -k deploy/k8s/overlays/production
 # See deploy/k8s/README.md for what you must supply (database, secrets, ingress, storage).
 apiVersion: kustomize.config.k8s.io/v1beta1

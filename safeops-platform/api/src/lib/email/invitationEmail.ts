@@ -40,7 +40,7 @@ function longDate(d: Date): string {
 }
 
 export function invitationSubject(input: InvitationEmailInput): string {
-  const product = headerSafe(input.productName ?? 'SafeOps')
+  const product = headerSafe(input.productName ?? 'SafeChain')
   // The company name is tenant-controlled and this is a header.
   return `You're invited to join ${headerSafe(input.companyName)} on ${product}`
 }
@@ -60,7 +60,7 @@ function facts(input: InvitationEmailInput): [string, string][] {
 }
 
 export function invitationText(input: InvitationEmailInput): string {
-  const product = input.productName ?? 'SafeOps'
+  const product = input.productName ?? 'SafeChain'
   const lines = [
     `${input.inviterName} has invited you to join ${input.companyName} on ${product}.`,
     '',
@@ -80,7 +80,7 @@ export function invitationText(input: InvitationEmailInput): string {
 }
 
 export function invitationHtml(input: InvitationEmailInput): string {
-  const product = esc(input.productName ?? 'SafeOps')
+  const product = esc(input.productName ?? 'SafeChain')
   const url = esc(input.acceptUrl)
 
   const rows = facts(input).map(([k, v]) => `

@@ -65,7 +65,7 @@ export async function drain<T>(
     // should leave a trace in their console rather than a mystery.
     // eslint-disable-next-line no-console
     console.warn(
-      `[SafeOps] Showing ${Math.min(rows.length, MAX_ROWS)} of ${total} records. ` +
+      `[SafeChain] Showing ${Math.min(rows.length, MAX_ROWS)} of ${total} records. ` +
         'This list is capped; narrow the filters to reach the rest.',
     )
   }

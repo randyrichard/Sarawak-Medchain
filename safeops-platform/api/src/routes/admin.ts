@@ -211,7 +211,7 @@ adminRouter.get('/security', asyncRoute(async (req, res) => {
 const securityBody = z.object({
   companyId: z.string().min(1),
   // 12 is the server's own floor (validatePasswordStrength); a policy can only raise it.
-  passwordMinLength: z.number().int().min(12, 'The minimum length cannot be below 12, the SafeOps minimum.').max(128).optional(),
+  passwordMinLength: z.number().int().min(12, 'The minimum length cannot be below 12, the SafeChain minimum.').max(128).optional(),
   requireUppercase: z.boolean().optional(),
   requireNumber: z.boolean().optional(),
   requireSymbol: z.boolean().optional(),
@@ -489,7 +489,7 @@ adminRouter.get('/export', async (req, res, next) => {
 
     const stamp = snapshot.takenAt.toISOString().slice(0, 10)
     const slug = snapshot.companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-    const fileName = `safeops-${slug || 'workspace'}-${stamp}.zip`
+    const fileName = `safechain-${slug || 'workspace'}-${stamp}.zip`
 
     res.setHeader('Content-Type', 'application/zip')
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileName)}"`)

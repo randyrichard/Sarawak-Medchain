@@ -69,7 +69,7 @@ async function collect(): Promise<StoredFile[]> {
 }
 
 async function main() {
-  console.log('SafeOps — evidence integrity check')
+  console.log('SafeChain — evidence integrity check')
   console.log(`Uploads directory: ${UPLOAD_DIR}\n`)
 
   const files = await collect()

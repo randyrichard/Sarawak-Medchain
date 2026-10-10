@@ -1,4 +1,4 @@
-# SafeOps architecture review
+# SafeChain architecture review
 
 A senior-engineer read of `safeops-platform/`: how it is built, where data flows, what is
 wrong with it, what was fixed in this pass and what should come next. Written
@@ -8,15 +8,15 @@ September 2026 against `feature/permit-to-work`.
 
 | Path | What it is | Status |
 |---|---|---|
-| `safeops-platform/` | **SafeOps** - the product. API, web app, deploy tooling. | Active, CI: `safeops-platform-ci.yml` |
+| `safeops-platform/` | **SafeChain** - the product. API, web app, deploy tooling. | Active, CI: `safeops-platform-ci.yml` |
 | `platform/` | Sarawak MedChain e-MC platform (enterprise redesign) | Active, CI: `emc-platform-ci.yml` |
 | repo root (`contracts/`, `backend/`, `frontend/`) | Original Sarawak MedChain prototype (Hardhat + IPFS) | Prototype |
-| `safeops/` | First SafeOps design prototype, mock data only | **Superseded** - its README says so |
+| `safeops/` | First SafeChain design prototype, mock data only | **Superseded** - its README says so |
 
 Three products and a dead prototype share one repository and one git history. Nothing
 builds across them, so the cost is navigation and review noise, not coupling.
 
-## 2. SafeOps architecture
+## 2. SafeChain architecture
 
 ```
 Browser (React 18 + Vite + Tailwind, lazy-loaded pages)

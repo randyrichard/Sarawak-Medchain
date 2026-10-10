@@ -64,7 +64,7 @@ export function printCertificate(cert: CertificateView, siteName: string) {
     @media print{body{padding:0}.cert{border-radius:0}}
   </style></head><body><div class="cert">
     <div class="qr">${qrSvg}</div>
-    <div class="brand">SAFEOPS · SAFETY INTELLIGENCE PLATFORM</div>
+    <div class="brand">SAFECHAIN · SAFETY INTELLIGENCE PLATFORM</div>
     <div class="title">Certificate of Competency</div>
     <div class="sub">This certifies that</div>
     <div class="holder">${esc(cert.employeeName)}</div>
@@ -101,7 +101,7 @@ export function exportMatrixCsv(
     e.name, e.position, e.siteId.toUpperCase(), e.department, e.level, e.compliancePct,
     ...courses.map((c) => e.cells[c.id]?.status ?? 'na'),
   ])
-  download(csvDocument(header, rows), 'safeops-competency-matrix.csv', 'text/csv;charset=utf-8')
+  download(csvDocument(header, rows), 'safechain-competency-matrix.csv', 'text/csv;charset=utf-8')
 }
 
 export function exportCertsCsv(certs: CertificateView[]) {
@@ -110,5 +110,5 @@ export function exportCertsCsv(certs: CertificateView[]) {
     c.number, c.employeeName, c.courseName, c.siteId.toUpperCase(), c.issueDate,
     c.expiryDate ?? 'No expiry', c.status, c.daysToExpiry ?? '', c.issuedBy,
   ])
-  download(csvDocument(header, rows), 'safeops-certificates.csv', 'text/csv;charset=utf-8')
+  download(csvDocument(header, rows), 'safechain-certificates.csv', 'text/csv;charset=utf-8')
 }

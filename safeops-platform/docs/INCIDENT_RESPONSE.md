@@ -1,6 +1,6 @@
 # Incident response
 
-For when SafeOps itself is the incident. Severity, then the specific playbook.
+For when SafeChain itself is the incident. Severity, then the specific playbook.
 
 ## Severity
 

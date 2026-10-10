@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Smoke-test a running SafeOps deployment from the outside. Read-only and anonymous.
+# Smoke-test a running SafeChain deployment from the outside. Read-only and anonymous.
 #
 # The last step of every deploy and rollback, and of CI's docker job: it answers "is what
 # just started actually serving, and serving safely?" without a login and without touching
@@ -34,7 +34,7 @@ lacks() { # lacks <description> <header regex> <headers>
   if grep -qi "$2" <<<"$3"; then fail "$1"; else pass "$1"; fi
 }
 
-echo "SafeOps smoke test — api $API, web $WEB"
+echo "SafeChain smoke test — api $API, web $WEB"
 
 # ── Up ───────────────────────────────────────────────────────────────────────
 expect "API is alive (/health)" 200 "$(status "$API/health")"

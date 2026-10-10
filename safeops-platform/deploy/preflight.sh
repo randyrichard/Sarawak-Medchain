@@ -66,7 +66,7 @@ own_addresses() {
 }
 
 echo
-echo "SafeOps pre-flight — $ENV_FILE"
+echo "SafeChain pre-flight — $ENV_FILE"
 echo
 
 # ── Nothing left from the template ───────────────────────────────────────────

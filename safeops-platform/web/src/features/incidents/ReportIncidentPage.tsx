@@ -271,7 +271,7 @@ export function ReportIncidentPage() {
         )}
         <p className="mt-3 rounded-lg border bg-sunken px-3 py-2.5 text-xs text-ink-2">
           It is safe to close the app. Keep the phone signed in — the report is held for this
-          account and sends on its own next time SafeOps is open with a connection.
+          account and sends on its own next time SafeChain is open with a connection.
         </p>
         <div className="mt-6 flex flex-wrap gap-2">
           <LinkButton to="/incidents" size="lg">Back to incidents</LinkButton>

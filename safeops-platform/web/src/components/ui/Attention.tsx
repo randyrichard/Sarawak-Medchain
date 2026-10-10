@@ -4,7 +4,7 @@ import { AlertTriangle, OctagonAlert } from 'lucide-react'
  * Making the thing that needs attention stand out - the Von Restorff (isolation) effect.
  *
  * Among items that look alike, the one that differs is noticed and remembered (von Restorff,
- * 1933). SafeOps spends that on one thing only: a number or row that is asking for action.
+ * 1933). SafeChain spends that on one thing only: a number or row that is asking for action.
  * Two rules from the research shape how:
  *
  * - **Never by colour alone.** A red number among black ones is invisible to the one man in

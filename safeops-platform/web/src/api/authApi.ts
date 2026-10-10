@@ -36,7 +36,7 @@ export const MOCK_AUTH_IN_PROD = import.meta.env.PROD && !isBackendConfigured() 
 if (MOCK_AUTH_IN_PROD) {
   // eslint-disable-next-line no-console
   console.error(
-    '[SafeOps] SECURITY: no VITE_API_BASE_URL in a production build — authentication has ' +
+    '[SafeChain] SECURITY: no VITE_API_BASE_URL in a production build — authentication has ' +
       'fallen back to the in-browser mock. This build must not be used by a tenant.',
   )
 }

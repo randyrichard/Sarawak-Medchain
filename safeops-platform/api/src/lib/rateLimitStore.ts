@@ -15,7 +15,7 @@ import type { Options, Store, ClientRateLimitInfo } from 'express-rate-limit'
  * Postgres rather than Redis because the database is already here — already deployed,
  * already backed up, already in the connection pool. Redis is the conventional answer and
  * is faster, but it is another service to run, secure and monitor in exchange for a counter,
- * and this product's compose file deliberately runs one API instance. If SafeOps ever runs
+ * and this product's compose file deliberately runs one API instance. If SafeChain ever runs
  * enough instances for the write rate to matter, Redis is the upgrade; the Store interface
  * is what makes that a swap rather than a rewrite.
  *

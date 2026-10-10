@@ -1,10 +1,10 @@
-# SafeOps
+# SafeChain
 
 > Safety intelligence software for industrial operations in Malaysia: incident reporting
 > and investigation, permit to work, corrective action tracking, competency and training
 > records, audits, and contractor and visitor management.
 
-SafeOps is a multi-tenant SaaS application, not a public website. Everything except the
+SafeChain is a multi-tenant SaaS application, not a public website. Everything except the
 pages listed below sits behind authentication, so there is nothing else here to read or
 index. Each customer's data is isolated per tenant and includes personal and health-related
 information governed by Malaysia's Personal Data Protection Act 2010.
@@ -27,5 +27,5 @@ information governed by Malaysia's Personal Data Protection Act 2010.
 
 ## Contact
 
-There is no public contact address published here yet. People who use SafeOps should
+There is no public contact address published here yet. People who use SafeChain should
 contact their own organisation's administrator.

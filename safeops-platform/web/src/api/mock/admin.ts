@@ -178,7 +178,7 @@ function buildApiKeys(): ApiKey[] {
 
 function buildWebhooks(): Webhook[] {
   return [
-    { id: 'wh-1', url: 'https://hooks.borneo-ind.com.my/safeops/incidents', events: ['incident.created', 'incident.closed'], active: true, secretMasked: 'whsec_••••4f2a', createdAt: daysAgo(50), lastDelivery: { at: hoursAgo(1), status: 'success', code: 200 } },
+    { id: 'wh-1', url: 'https://hooks.borneo-ind.com.my/safechain/incidents', events: ['incident.created', 'incident.closed'], active: true, secretMasked: 'whsec_••••4f2a', createdAt: daysAgo(50), lastDelivery: { at: hoursAgo(1), status: 'success', code: 200 } },
     { id: 'wh-2', url: 'https://intranet.borneo-ind.com.my/api/capa', events: ['action.assigned', 'action.verified'], active: true, secretMasked: 'whsec_••••9b13', createdAt: daysAgo(20), lastDelivery: { at: hoursAgo(3), status: 'failed', code: 504 } },
   ]
 }

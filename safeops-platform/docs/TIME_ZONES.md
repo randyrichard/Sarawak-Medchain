@@ -1,6 +1,6 @@
 # Time zones: when "today" and "this month" roll over
 
-SafeOps counts days and months in the **business time zone**, `APP_TIMEZONE`. The default is
+SafeChain counts days and months in the **business time zone**, `APP_TIMEZONE`. The default is
 `Asia/Kuching` (UTC+8, no daylight saving). It is set per deployment in `.env.prod`, or in
 `deploy/k8s/base/config.yaml` on Kubernetes, and it reaches both the API and the worker.
 The API refuses to start if the name is not a time zone it recognises.

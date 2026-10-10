@@ -1,6 +1,6 @@
-# SafeOps production platform
+# SafeChain production platform
 
-How SafeOps runs in production: the infrastructure, how a change gets from a pull request to
+How SafeChain runs in production: the infrastructure, how a change gets from a pull request to
 customers, how we know it is healthy, and how we keep it up. It is the entry point; the
 step-by-step guides it links to (`DEPLOYMENT.md`, `SERVER_SETUP.md`, `MONITORING.md`,
 `BACKUP.md`, `DISASTER_RECOVERY.md`) hold the detail.

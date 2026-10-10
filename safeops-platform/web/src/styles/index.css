@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── SafeOps design tokens ──────────────────────────────────────────────────
+/* ─── SafeChain design tokens ────────────────────────────────────────────────
    Single source of truth for color. Components consume roles, never raw hex.
    Light and dark are both *selected* palettes (see docs in Styleguide). */
 
@@ -31,7 +31,7 @@
    * Was #898781, which is 3.23:1 against the sunken background — below the 4.5:1 that
    * WCAG AA asks for body text, and this token is used 777 times, always as text. It also
    * pairs with the smallest size in the app 467 times, so the most common piece of text in
-   * SafeOps was both the palest and the smallest. Darkened by the least amount that
+   * SafeChain was both the palest and the smallest. Darkened by the least amount that
    * reaches 4.5:1, with hue and saturation untouched.
    *
    * Darkened once more (#716f69 → #6b6963) after the 2026-10 audit: 4.5:1 against white

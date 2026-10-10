@@ -1,6 +1,6 @@
 # BACKUP
 
-There are two different things in SafeOps called a backup. They protect against different
+There are two different things in SafeChain called a backup. They protect against different
 failures and only one of them is disaster recovery.
 
 | | In-app restore point | `pg_dump` |

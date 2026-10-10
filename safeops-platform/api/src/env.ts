@@ -96,7 +96,7 @@ const schema = z.object({
   RESEND_API_KEY: z.string().optional(),
   /// SMTP, for customers who require mail to leave through their own relay.
   SMTP_URL: z.string().optional(),
-  /// The envelope sender, e.g. "SafeOps <safeops@yourcompany.com>". Required whenever a
+  /// The envelope sender, e.g. "SafeChain <safechain@yourcompany.com>". Required whenever a
   /// provider is configured; checked below.
   REPORT_EMAIL_FROM: z.string().optional(),
   MAIL_REPLY_TO: z.string().optional(),
@@ -530,7 +530,7 @@ if ((raw.RESEND_API_KEY || raw.SMTP_URL) && !raw.REPORT_EMAIL_FROM) {
   // eslint-disable-next-line no-console
   console.error(
     'REPORT_EMAIL_FROM is required when an email provider is configured '
-    + '(e.g. "SafeOps <safeops@yourcompany.com>"). Without it every send is rejected by the '
+    + '(e.g. "SafeChain <safechain@yourcompany.com>"). Without it every send is rejected by the '
     + 'provider and the run history fills with failures caused by a missing line in the environment.',
   )
   process.exit(1)

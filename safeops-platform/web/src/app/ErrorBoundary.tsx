@@ -53,7 +53,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     // No telemetry backend yet — surface it in the console for now so it is never silent.
-    console.error('[SafeOps] Unhandled UI error:', error, info.componentStack)
+    console.error('[SafeChain] Unhandled UI error:', error, info.componentStack)
 
     /*
      * A stale chunk is not a bug in the screen that failed - it is a deploy that happened
@@ -107,12 +107,12 @@ export class ErrorBoundary extends Component<Props, State> {
         </div>
         <h1 className="mt-5 text-lg font-semibold tracking-tight text-ink">
           {stale
-            ? 'A new version of SafeOps is available'
+            ? 'A new version of SafeChain is available'
             : scope ? `${scope} hit a problem` : 'Something went wrong'}
         </h1>
         <p className="mt-1.5 max-w-md text-sm leading-relaxed text-ink-2">
           {stale
-            ? 'SafeOps was updated while this tab was open, so part of the old version is no '
+            ? 'SafeChain was updated while this tab was open, so part of the old version is no '
               + 'longer available. Reload to pick up the new one — nothing you were working on '
               + 'has been lost.'
             : 'The screen stopped responding after an unexpected error. Your data is safe — '

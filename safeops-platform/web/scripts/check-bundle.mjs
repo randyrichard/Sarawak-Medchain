@@ -42,10 +42,10 @@ const FORBIDDEN = [
 const PASSWORD_FIELD = /password\s*:\s*["'][A-Za-z0-9!@#$%^&*()_+=-]{8,}["']/g
 
 /**
- * Real credential formats, as opposed to SafeOps' own demo password above.
+ * Real credential formats, as opposed to SafeChain's own demo password above.
  *
  * The browser is given exactly one setting (the API's address) and talks to nothing but
- * the SafeOps API, so no key of any kind has a reason to be in this bundle. These are the
+ * the SafeChain API, so no key of any kind has a reason to be in this bundle. These are the
  * shapes a key takes when somebody adds a VITE_ variable "just for now", or pastes one into
  * a component to try something: the bundle is public the moment it is deployed, and
  * anything in it belongs to whoever opens the developer tools.

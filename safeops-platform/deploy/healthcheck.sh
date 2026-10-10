@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Is SafeOps healthy?
+# Is SafeChain healthy?
 #
 # Exits 0 when everything is well, 1 when something needs attention. Suitable for cron,
 # a monitoring agent, or an operator who has just been telephoned.
@@ -29,7 +29,7 @@ API_PORT="${API_PORT:-4000}"
 WEB_PORT="${WEB_PORT:-8080}"
 
 say ""
-say "SafeOps health — $(date '+%F %H:%M:%S')"
+say "SafeChain health — $(date '+%F %H:%M:%S')"
 say ""
 
 # ── Containers ───────────────────────────────────────────────────────────────

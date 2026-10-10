@@ -1,4 +1,4 @@
-# SafeOps API: structure and dependency rules
+# SafeChain API: structure and dependency rules
 
 How `api/src` is organised, which way dependencies may point, and what comes next.
 The rules are enforced by `api/src/architecture.test.ts`, so they don't depend on anyone

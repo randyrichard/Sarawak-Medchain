@@ -67,7 +67,7 @@ describe('what the message says', () => {
   }
 
   it('names the product in the subject', () => {
-    expect(passwordResetSubject(base)).toBe('Reset your SafeOps password')
+    expect(passwordResetSubject(base)).toBe('Reset your SafeChain password')
   })
 
   it('tells someone who did not ask for it that they can ignore it', () => {

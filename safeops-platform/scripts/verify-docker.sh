@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Docker deployment verification for SafeOps.
+# Docker deployment verification for SafeChain.
 #
 # Could not be run on the development machine — it has no Docker, no WSL2 and no
 # administrator rights. Run it on a host that does. It stops at the first failure, because

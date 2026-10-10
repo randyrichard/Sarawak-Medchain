@@ -12,27 +12,27 @@ const SECTIONS = [
 
 describe('resolveTitle', () => {
   it('uses the name a page claims for itself', () => {
-    expect(resolveTitle('/incidents/INC-2601', SECTIONS, 'INC-2601')).toBe('INC-2601 · SafeOps')
+    expect(resolveTitle('/incidents/INC-2601', SECTIONS, 'INC-2601')).toBe('INC-2601 · SafeChain')
   })
 
   it('lets a claimed name win over the section it sits in', () => {
     // The shell would otherwise call this "Incidents"; the page knows better.
     expect(resolveTitle('/incidents/new', SECTIONS, 'Report an incident'))
-      .toBe('Report an incident · SafeOps')
+      .toBe('Report an incident · SafeChain')
   })
 
   it('falls back to the section when no page has claimed a name', () => {
-    expect(resolveTitle('/incidents', SECTIONS, null)).toBe('Incidents · SafeOps')
+    expect(resolveTitle('/incidents', SECTIONS, null)).toBe('Incidents · SafeChain')
   })
 
   it('titles a deep route after its section rather than the product', () => {
-    expect(resolveTitle('/incidents/INC-2601', SECTIONS, null)).toBe('Incidents · SafeOps')
+    expect(resolveTitle('/incidents/INC-2601', SECTIONS, null)).toBe('Incidents · SafeChain')
   })
 
   it('prefers the longest matching section, not the first', () => {
     // Every path starts with '/', so an unsorted match would title the whole product
     // "Dashboard". This is the case that guards against that.
-    expect(resolveTitle('/actions', SECTIONS, null)).toBe('Corrective Actions · SafeOps')
+    expect(resolveTitle('/actions', SECTIONS, null)).toBe('Corrective Actions · SafeChain')
   })
 
   it('gives the dashboard the product name, not "Dashboard"', () => {

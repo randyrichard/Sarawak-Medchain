@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Bring SafeOps up.
+# Bring SafeChain up.
 #
 # For a host reboot, or after a planned stop. Not a deploy — it builds nothing and changes
 # no images. Use deploy/deployment.sh to ship a new version.
@@ -15,7 +15,7 @@
 require_docker
 require_env
 
-info "starting SafeOps"
+info "starting SafeChain"
 
 # Compose starts the database first and waits for its health check, so the API never comes
 # up against a database that is not accepting connections yet.

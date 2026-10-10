@@ -1,4 +1,4 @@
-# CI for SafeOps (safeops-platform/).
+# CI for SafeChain (safeops-platform/).
 #
 # There was none before this: the 1,100+ tests in this project ran only when somebody
 # remembered to run them, which for a product holding other companies' safety records is
@@ -18,7 +18,7 @@ name: safeops-platform-ci
 
 on:
   push:
-    # feature/permit-to-work is where SafeOps releases are cut from; main is kept for when
+    # feature/permit-to-work is where SafeChain releases are cut from; main is kept for when
     # it moves there. The release workflow listens for this one finishing green.
     branches: [main, feature/permit-to-work]
     paths: ['safeops-platform/**', '.github/workflows/safeops-platform-ci.yml']

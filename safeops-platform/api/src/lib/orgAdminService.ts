@@ -944,10 +944,10 @@ export class OrgAdminService {
       throw new OrgAdminError('validation', 'That person is already in this workspace.')
     }
     /*
-     * SafeOps staff do not join customer workspaces.
+     * SafeChain staff do not join customer workspaces.
      *
      * Nothing prevented this before, and it happened: a platform administrator was invited
-     * into a workspace as an ordinary admin, accepted, and from then on saw the SafeOps
+     * into a workspace as an ordinary admin, accepted, and from then on saw the SafeChain
      * customer console - every company on the deployment, their plans and the revenue
      * figure - in the sidebar of a customer's own account. Tenant isolation was never
      * breached, and that is the point: the danger is not a broken boundary but a person
@@ -961,7 +961,7 @@ export class OrgAdminService {
     if (existing?.platformAdmin) {
       throw new OrgAdminError(
         'validation',
-        'That address belongs to a SafeOps platform administrator, which cannot join a '
+        'That address belongs to a SafeChain platform administrator, which cannot join a '
         + 'customer workspace. Use an ordinary work address for this person.',
       )
     }
@@ -1197,7 +1197,7 @@ export class OrgAdminService {
      * Checked again here, not only when the invitation was created.
      *
      * Invitations live for seven days, and platform-admin status can be granted inside that
-     * window - so an address that was an ordinary one on Monday can be SafeOps staff by the
+     * window - so an address that was an ordinary one on Monday can be SafeChain staff by the
      * time the link is clicked on Thursday. Without this, that link would still hand them a
      * customer workspace membership. Cheap to check, and the alternative is a rule that
      * holds only at the moment somebody typed the address.
@@ -1209,7 +1209,7 @@ export class OrgAdminService {
     if (target?.platformAdmin) {
       throw new OrgAdminError(
         'forbidden',
-        'This invitation is for a SafeOps platform administrator, which cannot join a '
+        'This invitation is for a SafeChain platform administrator, which cannot join a '
         + 'customer workspace. Ask your administrator to invite an ordinary work address.',
         403,
       )

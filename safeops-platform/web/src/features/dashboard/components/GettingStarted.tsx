@@ -99,7 +99,7 @@ export function GettingStarted({
               </span>
             </div>
             <p className="mt-0.5 text-xs text-ink-2">
-              Four steps and your team can start using SafeOps properly. Nothing here is
+              Four steps and your team can start using SafeChain properly. Nothing here is
               filled in for you — this is your workspace, not a demo.
             </p>
 

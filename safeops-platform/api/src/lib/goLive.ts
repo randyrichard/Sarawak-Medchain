@@ -140,7 +140,7 @@ export function evaluate(f: Facts): Check[] {
       out.push({
         level: 'fail', title: 'Invitation and reset links are dead',
         detail: `APP_PUBLIC_URL is ${f.appPublicUrl}, which is not in CORS_ORIGINS (${f.corsOrigins.join(', ') || 'none'}). `
-          + 'Set APP_PUBLIC_URL to the address people open SafeOps at, and make sure CORS_ORIGINS includes it.',
+          + 'Set APP_PUBLIC_URL to the address people open SafeChain at, and make sure CORS_ORIGINS includes it.',
       })
     } else {
       out.push({ level: 'pass', title: `Links in emails open ${origin}`, detail: '' })

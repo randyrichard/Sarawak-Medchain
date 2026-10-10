@@ -2,7 +2,7 @@
  * A realistic large tenant, for load testing: five years of a 30-site operator.
  *
  * Every test so far ran on the demo dataset - 16 incidents. This builds what a mid-sized
- * Malaysian operator would have after five years on SafeOps, on top of the demo company
+ * Malaysian operator would have after five years on SafeChain, on top of the demo company
  * ("big"), so the heavy screens can be measured against data of the size customers bring:
  *
  *   30 sites, ~14,000 workers  37,500 incidents (5% recordable, ~1% lost time)

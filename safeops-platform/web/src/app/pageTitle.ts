@@ -1,9 +1,9 @@
 import { createContext, useContext, useEffect } from 'react'
 
 /** What the tab says when no page has claimed a name — and what index.html ships with. */
-export const DEFAULT_TITLE = 'SafeOps — Safety Intelligence Platform'
+export const DEFAULT_TITLE = 'SafeChain — Safety Intelligence Platform'
 
-export const titleOf = (page: string) => `${page} · SafeOps`
+export const titleOf = (page: string) => `${page} · SafeChain`
 
 /*
  * Set by AppShell so a page inside the shell can name itself.

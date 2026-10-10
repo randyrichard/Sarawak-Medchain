@@ -1,10 +1,10 @@
-# Putting Cloudflare in front of SafeOps
+# Putting Cloudflare in front of SafeChain
 
 Two separate things, on purpose:
 
 - **The public demo** (below, at the end) can go on Cloudflare today. It is the web app on
   its own with invented sample data, for showing prospects. No customer data, no server.
-- **A real deployment** puts Cloudflare in front of the SafeOps server. That needs a domain
+- **A real deployment** puts Cloudflare in front of the SafeChain server. That needs a domain
   and a server first, and is the rest of this document.
 
 Cloudflare gives you three things this deployment does not have: a WAF, DDoS absorption, and
@@ -173,7 +173,7 @@ check is for customer builds, and the demo is the one build meant to contain the
    | Setting | Value |
    |---|---|
    | Project name | `safeops-demo` (must match `web/wrangler.jsonc`) |
-   | Production branch | `feature/permit-to-work` (where SafeOps lives) |
+   | Production branch | `feature/permit-to-work` (where SafeChain lives) |
    | Root directory | `safeops-platform/web` |
    | Build command | `npm run build:demo` |
    | Deploy command | `npx wrangler deploy` |
@@ -184,7 +184,7 @@ check is for customer builds, and the demo is the one build meant to contain the
    No build variables are needed; the build script sets everything.
 3. Deploy. The address is `https://safeops-demo.<your-subdomain>.workers.dev`.
 4. Optional: in the `sarawak-medchain` Worker, set its build watch path to `frontend/*`, so
-   SafeOps commits stop triggering MedChain builds.
+   SafeChain commits stop triggering MedChain builds.
 
 ### Checking it
 

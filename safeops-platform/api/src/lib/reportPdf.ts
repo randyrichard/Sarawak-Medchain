@@ -33,7 +33,7 @@ export function readStoredReport(storedName: string): Buffer | null {
   return readFileSync(path)
 }
 
-const BRAND = 'SafeOps'
+const BRAND = 'SafeChain'
 const BRAND_SUB = 'Safety Intelligence Platform'
 
 const INK = '#111827'

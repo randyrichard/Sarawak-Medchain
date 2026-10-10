@@ -50,7 +50,7 @@ const showDemoLogins = shouldShowDemoLogins(import.meta.env)
  * `/platform` is the exception, and it is not hypothetical: a customer whose session
  * expired on a page linked from an email, or who simply had /platform open, was bounced to
  * the login screen and then - having signed in perfectly successfully - dropped straight
- * onto "This area is for SafeOps staff." Their first impression of the product is a wall,
+ * onto "This area is for SafeChain staff." Their first impression of the product is a wall,
  * with no indication they are even signed in.
  *
  * The refusal itself is right and stays: the console is staff-only and the server re-checks
@@ -129,7 +129,9 @@ export function LoginPage() {
         <p className="mt-1 text-sm text-ink-2">
           {useRecovery
             ? 'Enter one of the recovery codes you saved when you set up multi-factor sign-in.'
-            : 'Open your authenticator app and enter the 6-digit code for SafeOps.'}
+            // Codes do not depend on the name, so entries added before the product was renamed
+            // keep working; they just still carry the old label.
+            : 'Open your authenticator app and enter the 6-digit code for SafeChain (listed as SafeOps if you set it up before the name changed).'}
         </p>
         <form onSubmit={submitCode} className="mt-6 space-y-4" noValidate>
           {error && <Alert tone="critical">{error}</Alert>}

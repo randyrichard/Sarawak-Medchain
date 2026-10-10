@@ -10,7 +10,7 @@ import { GLOSSARY, howTosFor, ROLE_GUIDE } from './guides'
 /**
  * Help, for somebody in their first week.
  *
- * SafeOps was built for people who already knew the job, and it showed: a new supervisor
+ * SafeChain was built for people who already knew the job, and it showed: a new supervisor
  * met eighteen menu items, words like CAPA and TRIR, and no page saying where to start.
  * This page answers three questions in order - what is this, what do I do in it, and what
  * do the words mean - and only ever points at pages the reader's role can open.
@@ -53,7 +53,7 @@ export function HelpPage() {
     <div className="mx-auto max-w-4xl">
       <PageHeader
         title="Help"
-        subtitle="How SafeOps works, what your role does in it, and what the safety words mean."
+        subtitle="How SafeChain works, what your role does in it, and what the safety words mean."
       />
 
       {/*
@@ -62,12 +62,12 @@ export function HelpPage() {
       */}
       <Alert tone="warning" className="mb-4" title="In an emergency, act first and report afterwards">
         If someone is hurt or in danger, follow your site's emergency procedure and get help.
-        SafeOps is where it is recorded, not how the alarm is raised.
+        SafeChain is where it is recorded, not how the alarm is raised.
       </Alert>
 
-      <Section id="help-what" title="SafeOps in one minute">
+      <Section id="help-what" title="SafeChain in one minute">
         <p className="text-sm leading-relaxed text-ink-2">
-          SafeOps keeps your company's safety work in one place: what went wrong, what is being done
+          SafeChain keeps your company's safety work in one place: what went wrong, what is being done
           about it, and the checks that stop it happening again.
         </p>
         <ol className="mt-3 grid gap-3 sm:grid-cols-3">

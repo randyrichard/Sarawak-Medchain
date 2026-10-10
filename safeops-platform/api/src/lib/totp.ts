@@ -91,7 +91,7 @@ export function verifyTotp(secret: string, code: string, now = Date.now(), after
  * The `otpauth://` URI an authenticator app reads from a QR code.
  *
  * The issuer appears both as a parameter and as the label prefix: older apps read one,
- * newer ones the other, and both have to say SafeOps for the entry to be recognisable on a
+ * newer ones the other, and both have to say SafeChain for the entry to be recognisable on a
  * phone that holds twenty of them.
  */
 export function otpauthUri(issuer: string, account: string, secret: string): string {

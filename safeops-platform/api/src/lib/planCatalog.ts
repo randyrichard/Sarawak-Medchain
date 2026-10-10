@@ -1,5 +1,5 @@
 /**
- * What a SafeOps subscription costs and what it includes, in one place.
+ * What a SafeChain subscription costs and what it includes, in one place.
  *
  * The company row stores only the plan key. Every price, label and entitlement is here, so
  * repricing Standard is one edit rather than an UPDATE across every customer row and a

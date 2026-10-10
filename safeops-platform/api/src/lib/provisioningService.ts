@@ -91,7 +91,7 @@ export class ProvisioningService {
     })
     if (!user || !user.platformAdmin || user.status !== 'active') {
       throw new ProvisioningError(
-        'forbidden', 'This action requires a SafeOps platform administrator.', 403,
+        'forbidden', 'This action requires a SafeChain platform administrator.', 403,
       )
     }
     return user

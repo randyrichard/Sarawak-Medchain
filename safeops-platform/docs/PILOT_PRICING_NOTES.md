@@ -1,7 +1,7 @@
 # PILOT PRICING NOTES
 
 **The prices here are hypotheses and should not be quoted to a customer yet.** The pilot
-exists to replace them with evidence. Until at least three companies have used SafeOps for
+exists to replace them with evidence. Until at least three companies have used SafeChain for
 a month and answered "what would you pay?", every number on this page is a guess.
 
 The *shape* of the offer, however, is now real — see below.

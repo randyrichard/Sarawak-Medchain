@@ -20,7 +20,7 @@ export { GROUP_NAV_ABOVE, NAV, NAV_GROUPS }
 /**
  * Keeps the browser title in step with the route.
  *
- * Every screen announced "SafeOps — Safety Intelligence Platform", because a single-page
+ * Every screen announced "SafeChain — Safety Intelligence Platform", because a single-page
  * app changes the URL without touching the document title. A screen reader reads the title
  * on navigation, so every move around the product was announced identically — and a person
  * with a dozen tabs open had a dozen tabs with the same name.
@@ -171,14 +171,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <Link
         to="/"
         onClick={onNavigate}
-        aria-label="SafeOps home"
+        aria-label="SafeChain home"
         className="mx-2 mt-2 flex items-center gap-2.5 rounded-lg px-3 py-3 hover:bg-accent-soft/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--accent)]"
       >
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent-solid">
           <ShieldCheck size={17} color="#fff" strokeWidth={2.4} aria-hidden />
         </div>
         <div>
-          <p className="text-sm font-bold leading-none tracking-tight text-ink">SafeOps</p>
+          <p className="text-sm font-bold leading-none tracking-tight text-ink">SafeChain</p>
           <p className="mt-0.5 text-2xs font-medium uppercase tracking-widest text-muted">Safety Intelligence</p>
         </div>
       </Link>
@@ -256,7 +256,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         })()}
 
         {/*
-          SafeOps staff tools, kept out of the customer's navigation.
+          SafeChain staff tools, kept out of the customer's navigation.
 
           This link used to be appended to the same list as Incidents and Permits, which
           made it read as part of the workspace somebody was working in. It is not: it
@@ -292,7 +292,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         {platformAdmin && (
           <div className="mt-4 border-t pt-3">
             <p className="px-3 pb-1 text-2xs font-semibold uppercase tracking-widest text-muted">
-              SafeOps staff
+              SafeChain staff
             </p>
             <NavLink
               to="/platform"
@@ -306,7 +306,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                 )
               }
             >
-              <span className="flex-1">SafeOps customers</span>
+              <span className="flex-1">SafeChain customers</span>
             </NavLink>
             <p className="px-3 pt-1 text-2xs leading-relaxed text-muted">
               Every customer on this deployment. Not part of {company?.name ?? 'this workspace'}.

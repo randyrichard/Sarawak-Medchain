@@ -1,6 +1,6 @@
 # Pilot readiness
 
-Whether SafeOps can be given to a real company, what was fixed to get here, and what is
+Whether SafeChain can be given to a real company, what was fixed to get here, and what is
 still true that a customer should be told. Every number below was produced by running
 something; where a check could not be run, it says so.
 

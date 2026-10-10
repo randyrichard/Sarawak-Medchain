@@ -61,7 +61,7 @@ const table = (before: Census, after: Census, label: string) => {
   return gaps
 }
 
-console.log('SafeOps backup / restore drill\n')
+console.log('SafeChain backup / restore drill\n')
 
 const before = await census()
 console.log('Taking a restore point…')

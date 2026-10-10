@@ -77,7 +77,7 @@ export class AuthService {
     if (memberships.length > 0 && live.length === 0 && !user.platformAdmin) {
       throw new AuthError(
         'workspace_suspended',
-        "Your organisation's SafeOps workspace is suspended. Contact your administrator.",
+        "Your organisation's SafeChain workspace is suspended. Contact your administrator.",
         403,
       )
     }

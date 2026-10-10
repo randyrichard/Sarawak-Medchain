@@ -1,6 +1,6 @@
 # INSTALL
 
-Getting SafeOps running on a developer machine. For deploying it to a server, see
+Getting SafeChain running on a developer machine. For deploying it to a server, see
 [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Requirements
