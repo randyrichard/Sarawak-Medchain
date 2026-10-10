@@ -90,9 +90,9 @@ function textBody(data: ReportData, appUrl: string): string {
       ? data.emptyMessage
       : `The detailed report is attached as a PDF (${data.rows.length} row(s)).`,
     '',
-    `Open SafeOps: ${appUrl}`,
+    `Open SafeChain: ${appUrl}`,
     '',
-    'This report was generated automatically by SafeOps.',
+    'This report was generated automatically by SafeChain.',
     'Not for external distribution.',
   ].join('\n')
 }
@@ -119,7 +119,7 @@ function htmlBody(data: ReportData, appUrl: string): string {
   return `<!doctype html><html><body style="margin:0;padding:24px;background:#f3f4f6">
   <table role="presentation" width="100%" style="max-width:640px;margin:0 auto;background:#fff;border-radius:8px;border:1px solid #e5e7eb">
     <tr><td style="padding:24px 24px 8px">
-      <div style="font:700 18px/1.2 Arial,sans-serif;color:#0f766e">SafeOps</div>
+      <div style="font:700 18px/1.2 Arial,sans-serif;color:#0f766e">SafeChain</div>
       <div style="font:400 10px/1.4 Arial,sans-serif;color:#6b7280;letter-spacing:1px">SAFETY INTELLIGENCE PLATFORM</div>
     </td></tr>
     <tr><td style="padding:8px 24px 0">
@@ -138,10 +138,10 @@ function htmlBody(data: ReportData, appUrl: string): string {
         : `The detailed report is attached as a PDF (${data.rows.length} row(s)).`}
     </td></tr>
     <tr><td style="padding:0 24px 24px">
-      <a href="${esc(appUrl)}" style="display:inline-block;background:#0f766e;color:#fff;font:600 13px Arial,sans-serif;padding:10px 16px;border-radius:6px;text-decoration:none">Open SafeOps</a>
+      <a href="${esc(appUrl)}" style="display:inline-block;background:#0f766e;color:#fff;font:600 13px Arial,sans-serif;padding:10px 16px;border-radius:6px;text-decoration:none">Open SafeChain</a>
     </td></tr>
     <tr><td style="padding:12px 24px 20px;border-top:1px solid #e5e7eb;font:400 11px/1.5 Arial,sans-serif;color:#9ca3af">
-      Generated automatically by SafeOps. Not for external distribution.
+      Generated automatically by SafeChain. Not for external distribution.
     </td></tr>
   </table></body></html>`
 }

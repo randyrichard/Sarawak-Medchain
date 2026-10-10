@@ -91,7 +91,7 @@ function KeysPanel() {
       {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
       {!integrations && <PlanGate thing="API keys" planLabel={planLabel} />}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-ink-2">Signed keys for the SafeOps REST API. Treat them like passwords.</p>
+        <p className="text-sm text-ink-2">Signed keys for the SafeChain REST API. Treat them like passwords.</p>
         <Button
           size="sm"
           icon={<Plus size={13} />}
@@ -169,7 +169,7 @@ function NewKeyDialog({ open, onClose, onCreated }: { open: boolean; onClose: ()
 
   return (
     <Dialog
-      error={error} open={open} onClose={close} title="Generate API key" description="Scoped access to the SafeOps REST API."
+      error={error} open={open} onClose={close} title="Generate API key" description="Scoped access to the SafeChain REST API."
       footer={secret ? <Button onClick={close}>Done</Button> : <><Button variant="secondary" onClick={close}>Cancel</Button><Button loading={busy} onClick={() => void submit()}>Generate</Button></>}>
       <div className="space-y-3">
         {secret ? (
@@ -276,7 +276,7 @@ function NewWebhookDialog({ open, onClose, onCreated }: { open: boolean; onClose
       error={error} open={open} onClose={onClose} title="Add webhook" description="We POST a signed JSON payload for each selected event." width="max-w-lg"
       footer={<><Button variant="secondary" onClick={onClose}>Cancel</Button><Button loading={busy} onClick={() => void submit()}>Create webhook</Button></>}>
       <div className="space-y-5">
-        <Input label="Endpoint URL (HTTPS)" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://example.com/hooks/safeops" />
+        <Input label="Endpoint URL (HTTPS)" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://example.com/hooks/safechain" />
         <div>
           <p className="mb-1.5 text-xs font-semibold text-ink-2">Events</p>
           <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">

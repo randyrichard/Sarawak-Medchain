@@ -898,7 +898,7 @@ async function seedTraining(companyId: CompanyId): Promise<number> {
 async function main() {
   const doReset = process.argv.includes('--reset')
   const tidyOnly = process.argv.includes('--tidy')
-  console.log('\nSafeOps pilot demo dataset\n')
+  console.log('\nSafeChain pilot demo dataset\n')
 
   for (const id of COMPANIES) {
     if (!(await db.company.findUnique({ where: { id }, select: { id: true } }))) {

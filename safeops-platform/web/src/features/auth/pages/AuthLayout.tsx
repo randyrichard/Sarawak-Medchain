@@ -26,7 +26,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
               <ShieldCheck size={19} color="#fff" strokeWidth={2.4} />
             </div>
             <div>
-              <p className="text-base font-bold leading-none tracking-tight text-ink">SafeOps</p>
+              <p className="text-base font-bold leading-none tracking-tight text-ink">SafeChain</p>
               <p className="mt-0.5 text-2xs font-medium uppercase tracking-widest text-muted">Safety Intelligence</p>
             </div>
           </header>
@@ -64,7 +64,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
             <li className="flex gap-2.5"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" /> Explainable safety and compliance scores</li>
             <li className="flex gap-2.5"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" /> Corrective actions that chase their owners</li>
           </ul>
-          <p className="mt-8 text-2xs text-muted">SafeOps · Enterprise safety intelligence</p>
+          <p className="mt-8 text-2xs text-muted">SafeChain · Enterprise safety intelligence</p>
         </div>
       </aside>
     </div>

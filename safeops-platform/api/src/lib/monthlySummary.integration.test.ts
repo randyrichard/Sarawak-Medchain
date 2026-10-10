@@ -352,7 +352,7 @@ d('the report as a document', () => {
 
   it('says safety observations are not recorded rather than reporting zero', async () => {
     /*
-     * The honesty rule, as a test. SafeOps has no proactive observation module, and
+     * The honesty rule, as a test. SafeChain has no proactive observation module, and
      * "0 safety observations" would be a claim about the month rather than about the
      * product - a figure a manager could repeat to a regulator.
      */

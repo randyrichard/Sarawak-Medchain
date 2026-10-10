@@ -102,12 +102,12 @@ async function main() {
   console.log(`\nSending one test message to ${sendTo} ...`)
   try {
     const result = await provider.send({
-      to: [{ email: sendTo, name: 'SafeOps test' }],
-      subject: 'SafeOps mail test',
-      text: 'This is a test message from SafeOps. If it arrived, mail delivery works on '
+      to: [{ email: sendTo, name: 'SafeChain test' }],
+      subject: 'SafeChain mail test',
+      text: 'This is a test message from SafeChain. If it arrived, mail delivery works on '
         + 'this deployment - invitations, password resets and scheduled reports will be '
         + 'delivered.',
-      html: '<p>This is a test message from SafeOps. If it arrived, mail delivery works on '
+      html: '<p>This is a test message from SafeChain. If it arrived, mail delivery works on '
         + 'this deployment &mdash; invitations, password resets and scheduled reports will '
         + 'be delivered.</p>',
       attachments: [],

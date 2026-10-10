@@ -15,7 +15,7 @@ updates:
     schedule:
       interval: weekly
 
-  # ── SafeOps (safeops-platform/) ────────────────────────────────────────────
+  # ── SafeChain (safeops-platform/) ──────────────────────────────────────────
   # Minor and patch updates arrive as one grouped PR per package a week, so they get merged
   # rather than ignored; majors stay separate because they are the ones that break.
   - package-ecosystem: npm

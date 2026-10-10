@@ -129,7 +129,7 @@ function ConnectDialog({ connector, onClose, onConnected }: { connector: Connect
           <Input key={f.key} label={f.label} type={f.secret ? 'password' : 'text'} placeholder={f.placeholder}
             value={config[f.key] ?? ''} onChange={(e) => setConfig((c) => ({ ...c, [f.key]: e.target.value }))} />
         ))}
-        <p className="text-2xs text-muted">Credentials are stored encrypted. SafeOps does not initiate live third-party calls until the connector is verified in your environment.</p>
+        <p className="text-2xs text-muted">Credentials are stored encrypted. SafeChain does not initiate live third-party calls until the connector is verified in your environment.</p>
       </div>
     </Dialog>
   )

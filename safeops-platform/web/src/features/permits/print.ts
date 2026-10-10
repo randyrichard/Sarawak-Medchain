@@ -74,7 +74,7 @@ export function printPermit(p: PermitView) {
   </style></head><body>
     <div class="band">
       <div>
-        <div class="brand">SAFEOPS &middot; PERMIT TO WORK</div>
+        <div class="brand">SAFECHAIN &middot; PERMIT TO WORK</div>
         <h1>${esc(p.code)} &mdash; ${esc(p.typeLabel)}</h1>
         <div>${esc(p.title)}</div>
       </div>

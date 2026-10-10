@@ -64,11 +64,11 @@ describe('verifyTotp', () => {
 
 describe('otpauthUri', () => {
   it('names the issuer twice, as both kinds of authenticator app read it', () => {
-    const uri = otpauthUri('SafeOps', 'aziz@kidurong.com', 'JBSWY3DPEHPK3PXP')
-    expect(uri.startsWith('otpauth://totp/SafeOps:aziz%40kidurong.com?')).toBe(true)
+    const uri = otpauthUri('SafeChain', 'aziz@kidurong.com', 'JBSWY3DPEHPK3PXP')
+    expect(uri.startsWith('otpauth://totp/SafeChain:aziz%40kidurong.com?')).toBe(true)
     const q = new URL(uri).searchParams
     expect(q.get('secret')).toBe('JBSWY3DPEHPK3PXP')
-    expect(q.get('issuer')).toBe('SafeOps')
+    expect(q.get('issuer')).toBe('SafeChain')
     expect(q.get('digits')).toBe('6')
     expect(q.get('period')).toBe('30')
   })

@@ -80,7 +80,7 @@ export function MfaEnrolment({ onDone }: { onDone: () => void }) {
           </p>
           <div className="mt-2 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
             <div className="flex h-44 w-44 shrink-0 items-center justify-center rounded-xl border bg-white p-2">
-              {qr ? <img src={qr} alt="QR code to add SafeOps to your authenticator app" className="h-full w-full" /> : (
+              {qr ? <img src={qr} alt="QR code to add SafeChain to your authenticator app" className="h-full w-full" /> : (
                 <span className="text-2xs text-neutral-500">Preparing…</span>
               )}
             </div>
@@ -117,7 +117,7 @@ export function MfaEnrolment({ onDone }: { onDone: () => void }) {
  */
 export function RecoveryCodes({ codes }: { codes: string[] }) {
   const [copied, setCopied] = useState(false)
-  const text = `SafeOps recovery codes - each works once\n\n${codes.join('\n')}\n`
+  const text = `SafeChain recovery codes - each works once\n\n${codes.join('\n')}\n`
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(text)
@@ -127,7 +127,7 @@ export function RecoveryCodes({ codes }: { codes: string[] }) {
     }
   }
   const download = () => {
-    saveBlob(new Blob([text], { type: 'text/plain' }), 'safeops-recovery-codes.txt')
+    saveBlob(new Blob([text], { type: 'text/plain' }), 'safechain-recovery-codes.txt')
   }
   return (
     <div className="rounded-xl border p-3">

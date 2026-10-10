@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  /** Base URL of the SafeOps API. Empty/unset keeps the app in mock mode. */
+  /** Base URL of the SafeChain API. Empty/unset keeps the app in mock mode. */
   readonly VITE_API_BASE_URL?: string
   /** 'true' only in the public offline demo build (scripts/build-demo.mjs). */
   readonly VITE_OFFLINE_DEMO?: string

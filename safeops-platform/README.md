@@ -1,6 +1,20 @@
-# SafeOps Platform
+# SafeChain Platform
 
 Safety intelligence and compliance platform. Two workspaces:
+
+> **SafeChain was called SafeOps until October 2026.** Everything people see uses the new
+> name. Identifiers that running installations depend on keep the old spelling on purpose:
+>
+> - the `safeops-platform/` folder;
+> - the `SAFEOPS_*` variables;
+> - the image, volume and service names;
+> - the database role and its row-level-security settings;
+> - the cookies, browser-storage keys and webhook headers (`X-SafeOps-*`);
+> - the metric and alert names;
+> - the demo accounts (`@demo.safeops.app`) and their password.
+>
+> Renaming any of these would cut a running server off from its data, sign everybody out,
+> or break a customer's webhook receiver, and no user would see the difference.
 
 - `api/` — Express + Prisma + PostgreSQL. Authentication, incidents, corrective actions.
 - `web/` — React + Vite. Currently server-backed for authentication only; the remaining

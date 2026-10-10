@@ -84,14 +84,14 @@ d('GET /admin/export', () => {
 
     const staff = await db.user.create({
       data: {
-        email: mail(), name: 'SafeOps Staff',
+        email: mail(), name: 'SafeChain Staff',
         passwordHash: await hashPassword(PASSWORD), status: 'active', platformAdmin: true,
       },
       select: { id: true },
     })
     adminEmail = mail()
     const r = await provisioning.provisionCompany(
-      { userId: staff.id, name: 'SafeOps Staff', roles: [] }, ctx,
+      { userId: staff.id, name: 'SafeChain Staff', roles: [] }, ctx,
       {
         companyName: `ExportRoute ITest ${uniq()}`, industry: 'Testing', plan: 'standard',
         adminName: 'Aziz Rahman', adminEmail,
@@ -158,7 +158,7 @@ d('GET /admin/export', () => {
     expect(res.headers.get('content-type')).toBe('application/zip')
     expect(res.headers.get('content-disposition')).toMatch(/^attachment; filename=/)
     // Named for the customer and the day, so two exports do not collide in a downloads folder.
-    expect(res.headers.get('content-disposition')).toMatch(/safeops-exportroute-itest/i)
+    expect(res.headers.get('content-disposition')).toMatch(/safechain-exportroute-itest/i)
     // A browser must not be able to sniff this into something it will render.
     expect(res.headers.get('x-content-type-options')).toBe('nosniff')
   })

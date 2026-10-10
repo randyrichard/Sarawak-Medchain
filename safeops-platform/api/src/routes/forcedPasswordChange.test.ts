@@ -9,7 +9,7 @@ import { signAccessToken } from '../lib/tokens.js'
  *
  * This was enforced in the browser and nowhere else. The React app showed a forced-change
  * screen, and the API behind it answered every request as normal - so an administrator who
- * created a user with a temporary password, or whoever deployed SafeOps for a customer,
+ * created a user with a temporary password, or whoever deployed SafeChain for a customer,
  * kept a working credential for that customer's incident and audit records for as long as
  * the person never got around to changing it. `curl` was the entire bypass.
  *

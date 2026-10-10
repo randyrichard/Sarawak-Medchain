@@ -9,7 +9,7 @@ export const UNSAVED_MESSAGE = 'You have unsaved changes. Leave this page and lo
  *
  * - **Closing, reloading or typing a new address.** The browser's own "Leave site?" prompt,
  *   via `beforeunload`. Browsers show their own wording; the message is ignored by design.
- * - **Clicking a link inside SafeOps** - the sidebar, the logo, a notification. These never
+ * - **Clicking a link inside SafeChain** - the sidebar, the logo, a notification. These never
  *   unload the page, so `beforeunload` does not fire; a capture-phase click listener asks
  *   first, and cancels the click if the answer is no.
  *

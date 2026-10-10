@@ -52,7 +52,7 @@ export function printAuditReport(audit: AuditView, findings: { code: string; sev
     @media print{body{margin:12mm}}
   </style></head><body>
     <h1>${audit.code} — ${esc(audit.title)}</h1>
-    <p class="meta">SafeOps Audit Report · ${AUDIT_TYPE_LABEL[audit.type]} · Generated ${new Date().toLocaleString('en-MY')}</p>
+    <p class="meta">SafeChain Audit Report · ${AUDIT_TYPE_LABEL[audit.type]} · Generated ${new Date().toLocaleString('en-MY')}</p>
     <div class="grid">
       <span><b>Site:</b> ${esc(siteName)}</span><span><b>Department:</b> ${esc(audit.department)}</span>
       <span><b>Lead auditor:</b> ${esc(audit.leadAuditor)}</span><span><b>Team:</b> ${esc(audit.team.join(', ') || '—')}</span>

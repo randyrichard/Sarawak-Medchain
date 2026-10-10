@@ -6,7 +6,7 @@ man-hours.
 
 ## Why it exists
 
-An HSE manager asked for SafeOps to have a "wider view". The dashboard answers *what needs
+An HSE manager asked for SafeChain to have a "wider view". The dashboard answers *what needs
 doing today, at this site*. The question asked of an HSE manager by the board, by DOSH and by
 clients during contractor prequalification is a different one: **across every site and over
 months, are we getting safer, and where are we not?** Answering it needs three things the

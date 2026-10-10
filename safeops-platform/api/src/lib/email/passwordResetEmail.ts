@@ -5,7 +5,7 @@ import { headerSafe, type EmailMessage } from './provider.js'
  *
  * Deliberately the same shape, layout and provider as the invitation beside it - a person
  * who has seen one should recognise the other as coming from the same system, because
- * "does this look like the last SafeOps email I got?" is most of how anybody judges whether
+ * "does this look like the last SafeChain email I got?" is most of how anybody judges whether
  * a link is safe to click.
  *
  * Three things differ from the invitation, all on purpose:
@@ -39,7 +39,7 @@ const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
 export function passwordResetSubject(input: PasswordResetEmailInput): string {
-  const product = headerSafe(input.productName ?? 'SafeOps')
+  const product = headerSafe(input.productName ?? 'SafeChain')
   return `Reset your ${product} password`
 }
 
@@ -51,7 +51,7 @@ function reason(input: PasswordResetEmailInput): string {
 }
 
 export function passwordResetText(input: PasswordResetEmailInput): string {
-  const product = input.productName ?? 'SafeOps'
+  const product = input.productName ?? 'SafeChain'
   return [
     reason(input),
     '',
@@ -71,7 +71,7 @@ export function passwordResetText(input: PasswordResetEmailInput): string {
 }
 
 export function passwordResetHtml(input: PasswordResetEmailInput): string {
-  const product = esc(input.productName ?? 'SafeOps')
+  const product = esc(input.productName ?? 'SafeChain')
   const url = esc(input.resetUrl)
 
   /*

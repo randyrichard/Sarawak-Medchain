@@ -1,4 +1,4 @@
-# Nothing reaches a SafeOps pod except through the ingress controller - and the API also
+# Nothing reaches a SafeChain pod except through the ingress controller - and the API also
 # from a Prometheus scraper, if one runs in the `monitoring` namespace. Requires a CNI that
 # enforces NetworkPolicy (Calico, Cilium, most managed clusters).
 apiVersion: networking.k8s.io/v1

@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
  * Where somebody lands after signing in.
  *
  * Written for a defect found by using the product rather than reading it: signing in as a
- * customer administrator dropped them on "This area is for SafeOps staff." They had been
+ * customer administrator dropped them on "This area is for SafeChain staff." They had been
  * bounced off /platform to the login screen, and the redirect faithfully returned them to
  * the one page their account can never open. Sign-in had worked; it just looked like it
  * had not.
@@ -35,7 +35,7 @@ describe('where a sign-in lands', () => {
     expect(await destination('/platform')).toBe('/dashboard')
   })
 
-  it('still takes SafeOps staff to the console they were bounced off', async () => {
+  it('still takes SafeChain staff to the console they were bounced off', async () => {
     // The deep link is honoured for anybody who can actually use it - this is the half
     // that must not regress while fixing the other.
     getPlatformInfo.mockResolvedValue({ platformAdmin: true, plans: [], loading: false })

@@ -30,7 +30,7 @@ Run against the production Docker stack, not a dev server.
 - [x] `verifyRestore` exits 0 and enumerates every tenant
 - [x] **Uploads survive a real round trip** — a file uploaded through the product, the
       volume wiped, restored from its tarball, byte-identical (md5 verified) and downloadable
-      through SafeOps afterwards
+      through SafeChain afterwards
 - [x] Confirmed the uploads file is **not** inside the PostgreSQL dump
 
 ### Security

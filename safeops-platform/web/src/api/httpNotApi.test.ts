@@ -51,7 +51,7 @@ describe('request', () => {
     fetchMock.mockResolvedValue(html())
     const err = await failure(request('/dashboard/overview'))
     expect(err.code).toBe(NOT_API)
-    expect(err.message).toMatch(/VITE_API_BASE_URL points at the SafeOps API/)
+    expect(err.message).toMatch(/VITE_API_BASE_URL points at the SafeChain API/)
   })
 
   it('still returns JSON data, and still reads the server error message', async () => {

@@ -1,6 +1,6 @@
-# SafeOps — Enterprise Security Roadmap
+# SafeChain — Enterprise Security Roadmap
 
-Status of record for hardening SafeOps into software a large manufacturing client can deploy.
+Status of record for hardening SafeChain into software a large manufacturing client can deploy.
 Each phase ends with a security audit and an updated enterprise readiness score. No phase starts
 until the previous one passes validation.
 

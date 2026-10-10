@@ -51,7 +51,7 @@ connection usage against `max_connections`, disk, and backup freshness. Exits no
 anything needs attention, so cron can alert on it:
 
 ```cron
-*/15 * * * * cd /srv/safeops/safeops-platform && deploy/healthcheck.sh --quiet || echo "SafeOps health check failed $(date)" >> /var/log/safeops-health.log
+*/15 * * * * cd /srv/safeops/safeops-platform && deploy/healthcheck.sh --quiet || echo "SafeChain health check failed $(date)" >> /var/log/safeops-health.log
 ```
 
 ## Logs

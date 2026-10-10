@@ -2,7 +2,7 @@
  * One incident, on one page, written from its record.
  *
  * The accident investigation report is the document a safety officer said takes longest
- * to prepare (docs/CUSTOMER_RESEARCH.md, P5): the facts are all in SafeOps already, spread
+ * to prepare (docs/CUSTOMER_RESEARCH.md, P5): the facts are all in SafeChain already, spread
  * across the report, the people, the investigation and the actions, and assembling them
  * for a client or management meant copying each into Word by hand.
  *
@@ -119,7 +119,7 @@ export class IncidentSummaryService {
       // is the page an HSE manager sends out, so "not for external distribution" was wrong.
       timezone: tz,
       periodLabel: `Occurred ${fmt(inc.occurredAt)}`,
-      footer: `Confidential - incident summary prepared by ${company?.name ?? 'the company'} using SafeOps`,
+      footer: `Confidential - incident summary prepared by ${company?.name ?? 'the company'} using SafeChain`,
       periodStart: null,
       periodEnd: new Date(),
       summary: [

@@ -1,4 +1,4 @@
-# SafeOps web app.
+# SafeChain web app.
 #
 # Vite inlines VITE_* variables at build time, so the API URL is a build argument rather
 # than a runtime environment variable. Changing which API a deployed bundle talks to means

@@ -1,5 +1,5 @@
 // ─── Authenticated request helper ────────────────────────────────────────────
-// Shared by every HTTP client that talks to the SafeOps API.
+// Shared by every HTTP client that talks to the SafeChain API.
 
 import { API_BASE_URL, authApi, getAccessToken, isBackendConfigured, SESSION_CHANGED } from './authApi'
 import { explainNetworkFailure } from './networkError'
@@ -127,15 +127,15 @@ export async function request<T>(path: string, init: RequestInit = {}, retry = t
   return body as T
 }
 
-/** Error code for a successful reply that was not the SafeOps API answering. */
+/** Error code for a successful reply that was not the SafeChain API answering. */
 export const NOT_API = 'not_api'
 
 const notApiMessage = () => isBackendConfigured()
-  ? 'The server sent back something that is not SafeOps data. Check that VITE_API_BASE_URL points at the SafeOps API, not the web app.'
+  ? 'The server sent back something that is not SafeChain data. Check that VITE_API_BASE_URL points at the SafeChain API, not the web app.'
   : offlineDemoBuild()
     // Read by prospects on the public demo, who have no build to reconfigure.
-    ? 'This part of SafeOps needs the SafeOps server, which the online demo does not include.'
-    : 'This screen needs the SafeOps server, and the offline demo does not include it. Set VITE_API_BASE_URL to the API address to use it.'
+    ? 'This part of SafeChain needs the SafeChain server, which the online demo does not include.'
+    : 'This screen needs the SafeChain server, and the offline demo does not include it. Set VITE_API_BASE_URL to the API address to use it.'
 
 /** Query string builder that drops empty, null and undefined values. */
 export const qs = (params: Record<string, string | number | boolean | undefined | null>) => {

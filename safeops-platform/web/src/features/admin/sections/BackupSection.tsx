@@ -36,7 +36,7 @@ export function BackupSection() {
     setBusy(true); setError(null)
     try {
       const { backup, snapshot } = await api.adminCreateBackup(companyId, actor, 'Manual snapshot')
-      downloadJson(snapshot, `safeops-backup-${backup.id}.json`)
+      downloadJson(snapshot, `safechain-backup-${backup.id}.json`)
       setFlash('Backup created and downloaded — restorable from the list below.')
       setTimeout(() => setFlash(null), 3500)
       load()
@@ -59,8 +59,8 @@ export function BackupSection() {
       const archive = await api.adminExportWorkspace(companyId)
       const stamp = localISODate()
       const slug = (company?.name ?? 'workspace').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-      saveBlob(archive, `safeops-${slug || 'workspace'}-${stamp}.zip`)
-      setFlash('Export downloaded. It opens in Excel and needs no SafeOps account to read.')
+      saveBlob(archive, `safechain-${slug || 'workspace'}-${stamp}.zip`)
+      setFlash('Export downloaded. It opens in Excel and needs no SafeChain account to read.')
       setTimeout(() => setFlash(null), 5000)
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Could not export the workspace.')
@@ -104,7 +104,7 @@ export function BackupSection() {
         <Card>
           <CardHeader
             title="Export your data"
-            subtitle="Everything in this workspace, in a format you can read without SafeOps"
+            subtitle="Everything in this workspace, in a format you can read without SafeChain"
             right={
               <Button size="sm" icon={<Download size={13} />} loading={exporting} onClick={() => void exportWorkspace()}>
                 Export everything
@@ -229,7 +229,7 @@ export function BackupSection() {
                 <Switch checked={retention.autoBackupDaily} onChange={(v) => void saveRetention({ autoBackupDaily: v })} label="A nightly database dump is scheduled on the server" />
                 <p className="mt-1 text-2xs text-muted">
                   This records that your operator has set up the nightly <span className="font-mono">pg_dump</span> cron.
-                  SafeOps does not schedule it — turning this on tells System Health to flag it
+                  SafeChain does not schedule it — turning this on tells System Health to flag it
                   if the dump stops arriving. It does not create a backup by itself.
                 </p>
               </div>

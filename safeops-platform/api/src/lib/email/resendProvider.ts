@@ -34,7 +34,7 @@ export class ResendEmailProvider implements EmailProvider {
     const addresses = message.to.map((r) => r.email)
     /*
      * Bcc protects a distribution list. With one recipient there is no list to protect,
-     * and hiding them costs real delivery: an invitation addressed to safeops@ourselves
+     * and hiding them costs real delivery: an invitation addressed to safechain@ourselves
      * with the actual person bcc'd is a textbook bulk-mail signature, so the first thing a
      * new customer's administrator ever receives is the message most likely to be filtered
      * - and if it does arrive, it is not addressed to them, which reads as phishing.

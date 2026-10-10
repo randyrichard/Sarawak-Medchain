@@ -46,7 +46,7 @@ export function DashboardPage() {
   /*
    * This dashboard is tenant-scoped, and some people belong to no tenant.
    *
-   * A SafeOps platform administrator has no company membership by design - that is what
+   * A SafeChain platform administrator has no company membership by design - that is what
    * makes their access cross-tenant rather than inside one - so sending them here showed a
    * page that could never populate: an empty company switcher, a search box reading
    * "Search unavailable", and twenty skeleton tiles pulsing forever. Their landing place

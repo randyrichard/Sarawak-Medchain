@@ -4,7 +4,7 @@ import { join } from 'node:path'
 
 /*
  * Fitts's law: the time to hit a target grows as it gets smaller (T = a + b·log2(D/W + 1)),
- * and a fingertip is a far blunter pointer than a cursor. SafeOps sizes targets at 24px or
+ * and a fingertip is a far blunter pointer than a cursor. SafeChain sizes targets at 24px or
  * more for a mouse (WCAG 2.5.8) and 44px on a touch screen (Apple HIG / WCAG 2.5.5), using
  * the `coarse:` variant so a desktop keeps its density.
  *

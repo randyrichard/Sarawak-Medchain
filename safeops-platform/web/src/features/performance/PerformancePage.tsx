@@ -22,7 +22,7 @@ import { downloadCsv, exportFilename, monthsCsv, sitesCsv } from './export'
  * board, to DOSH or to a client's contractor-prequalification asks a different question:
  * across every site, over months, are we getting safer - and where are we not?
  *
- * That needs three things the rest of SafeOps does not give:
+ * That needs three things the rest of SafeChain does not give:
  *
  * - **Rates, not counts.** Two lost-time injuries mean something different on a 40-man site
  *   and a 900-man one. Every injury figure is normalised by exposure hours using the

@@ -28,7 +28,7 @@ export function AuditLogSection() {
   const exportCsv = () => downloadCsv(
     ['Timestamp', 'User', 'Role', 'Action', 'Module', 'Target', 'IP', 'Device', 'Old value', 'New value'],
     (rows ?? []).map((e) => [e.at, e.actor, e.actorRole, e.action, MODULE_TAG(e.module), e.target, e.ip, e.device, e.oldValue ?? '', e.newValue ?? '']),
-    'safeops-audit-log.csv',
+    'safechain-audit-log.csv',
   )
 
   return (

@@ -15,7 +15,7 @@ async function main() {
   const db = new PrismaClient()
   try {
     const checks = evaluate(await gatherFacts(db))
-    console.log('\nSafeOps go-live readiness\n')
+    console.log('\nSafeChain go-live readiness\n')
     for (const c of checks) {
       console.log(`  ${MARK[c.level]}  ${c.title}`)
       if (c.detail && c.level !== 'pass') console.log(`        ${c.detail}`)

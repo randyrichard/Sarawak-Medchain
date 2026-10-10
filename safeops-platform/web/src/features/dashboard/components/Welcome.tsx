@@ -34,7 +34,7 @@ export function Welcome({ role, onDismiss }: { role: Role; onDismiss: () => void
         {/* The close button sits beside the heading only, so the steps below get the full width on a phone. */}
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-1">
-            <h2 className="text-sm font-semibold text-ink">New to SafeOps? Start here.</h2>
+            <h2 className="text-sm font-semibold text-ink">New to SafeChain? Start here.</h2>
             <p className="mt-0.5 text-xs leading-relaxed text-ink-2">{guide.summary}</p>
           </div>
           <button

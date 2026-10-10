@@ -1,4 +1,4 @@
-// SafeOps API — authentication & authorization data model.
+// SafeChain API — authentication & authorization data model.
 // Security notes:
 //  - `passwordHash` stores an Argon2id digest. Plaintext passwords are never persisted or logged.
 //  - Refresh tokens are stored as SHA-256 hashes, never in cleartext, so a database leak does not
@@ -42,7 +42,7 @@ model User {
 
   mustChangePassword Boolean @default(false)
 
-  /// SafeOps staff, not a member of any customer.
+  /// SafeChain staff, not a member of any customer.
   ///
   /// Deliberately a column rather than a Role value: Role lives on Membership and describes
   /// somebody's place *inside* one company, and a platform administrator has no place
@@ -3213,7 +3213,7 @@ model JobRun {
 /// Hours worked at a site in one calendar month - the denominator of every injury rate.
 ///
 /// DOSH's JKKP 8 annual return, and every frequency or severity rate an HSE manager reports,
-/// divide by man-hours worked: lost-time injuries x 1,000,000 / hours. SafeOps had no record
+/// divide by man-hours worked: lost-time injuries x 1,000,000 / hours. SafeChain had no record
 /// of hours at all, so it could count injuries but never say whether a site's rate was rising
 /// or falling as its workforce changed. One row per site per month, entered by the people who
 /// hold the timesheets; months without a row are estimated from headcount and labelled so.

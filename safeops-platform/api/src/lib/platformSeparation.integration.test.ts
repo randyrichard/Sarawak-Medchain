@@ -5,11 +5,11 @@ import { ProvisioningService } from './provisioningService.js'
 import { hashPassword } from './password.js'
 
 /**
- * SafeOps staff and customer workspaces stay apart.
+ * SafeChain staff and customer workspaces stay apart.
  *
  * Tenant isolation was never the weak point here - a platform administrator invited into a
  * workspace breached no boundary, because both grants were real and separately made. The
- * hazard is subtler and worse in practice: one account holding both roles sees the SafeOps
+ * hazard is subtler and worse in practice: one account holding both roles sees the SafeChain
  * customer console, listing every company on the deployment with their plans and the
  * revenue figure, inside a customer's own workspace. One screen-share shows customer A the
  * names of customers B and C.
@@ -63,7 +63,7 @@ async function makePlatformAdmin() {
   return db.user.create({
     data: {
       email: mail(),
-      name: 'SafeOps Staff',
+      name: 'SafeChain Staff',
       passwordHash: await hashPassword('Separation-Itest-2026'),
       status: 'active',
       platformAdmin: true,
@@ -83,7 +83,7 @@ async function makeWorkspace() {
   const provisioner = await makePlatformAdmin()
   const adminEmail = mail()
   const r = await provisioning.provisionCompany(
-    { userId: provisioner.id, name: 'SafeOps Staff', roles: [] },
+    { userId: provisioner.id, name: 'SafeChain Staff', roles: [] },
     ctx,
     {
       companyName: `Separation ITest ${uniq()}`,
@@ -113,7 +113,7 @@ async function makeWorkspace() {
   }
 }
 
-d('SafeOps staff never join a customer workspace', () => {
+d('SafeChain staff never join a customer workspace', () => {
   beforeAll(purge)
   afterAll(async () => { await purge(); await db.$disconnect() })
 

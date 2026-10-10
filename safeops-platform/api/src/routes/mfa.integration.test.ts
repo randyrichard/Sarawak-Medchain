@@ -126,7 +126,7 @@ d('multi-factor sign-in — integration (real Postgres, real HTTP)', () => {
   it('sets up only once a code proves the authenticator has the secret', async () => {
     const token = await signInWithoutMfa('alice')
     const setup = await call('/account/mfa/setup', { token, body: {} })
-    expect(setup.body.otpauthUri).toMatch(/^otpauth:\/\/totp\/SafeOps:/)
+    expect(setup.body.otpauthUri).toMatch(/^otpauth:\/\/totp\/SafeChain:/)
 
     const wrong = await call('/account/mfa/enable', { token, body: { code: '000000' } })
     expect(wrong.res.status).toBe(400)

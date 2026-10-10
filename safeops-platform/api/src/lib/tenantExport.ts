@@ -453,7 +453,7 @@ export function buildReadme(snapshot: TenantExport): string {
 
   const totalRows = snapshot.tables.reduce((n, t) => n + t.rows.length, 0)
 
-  return `SafeOps data export
+  return `SafeChain data export
 ${'='.repeat(60)}
 
 Organisation : ${snapshot.companyName}
@@ -462,7 +462,7 @@ Taken        : ${stamp}
 Contents     : ${snapshot.tables.length} tables, ${totalRows} rows, ${snapshot.files.length} files
 
 This is a complete copy of your organisation's data. It is yours. You do not
-need SafeOps, an account, or a licence to read any of it.
+need SafeChain, an account, or a licence to read any of it.
 
 
 WHAT IS IN HERE

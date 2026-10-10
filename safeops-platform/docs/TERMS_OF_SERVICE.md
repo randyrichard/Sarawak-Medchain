@@ -1,4 +1,4 @@
-# Terms of Service — SafeOps
+# Terms of Service — SafeChain
 
 > **DRAFT. NOT LEGAL ADVICE. NOT YET REVIEWED BY A LAWYER.**
 >
@@ -21,7 +21,7 @@
 ## 1. Who these terms are with
 
 **[REGISTERED COMPANY NAME]** (`[REGISTRATION NUMBER]`), of **[REGISTERED ADDRESS]** —
-"SafeOps", "we", "us".
+"SafeChain", "we", "us".
 
 "You" means the organisation that has agreed to these terms. "Users" means the people your
 administrator invites into your workspace.
@@ -32,7 +32,7 @@ By creating a workspace or signing in, you accept these terms.
 
 ## 2. What the service is
 
-SafeOps is a hosted health-and-safety management system: incident reporting and
+SafeChain is a hosted health-and-safety management system: incident reporting and
 investigation, permits to work, corrective actions, equipment and inspections, contractor
 and visitor management, training records, and reporting across them.
 
@@ -45,7 +45,7 @@ remain yours.
 
 ## 3. Pilot terms
 
-Where you are using SafeOps under a free pilot:
+Where you are using SafeChain under a free pilot:
 
 - The pilot runs for **[PERIOD]** from the day your workspace is created.
 - It is free. No payment is due, and none will be requested during it.
@@ -97,11 +97,11 @@ reasonable chance to fix it. Do not test against another customer's workspace.
 
 ## 7. Your data
 
-**Your data is yours.** We claim no ownership of anything you put into SafeOps.
+**Your data is yours.** We claim no ownership of anything you put into SafeChain.
 
 - You can export your entire workspace at any time from Administration, without asking us.
   It produces a spreadsheet for every register plus every uploaded file, readable in Excel
-  with no SafeOps account.
+  with no SafeChain account.
 - If these terms end, you may export for **[PERIOD]** afterwards.
 - After that we will delete your data within **[PERIOD]**, except where law requires us to
   keep it.
@@ -140,7 +140,7 @@ within your control.
 - Otherwise our total liability is limited to **[AMOUNT — commonly fees paid in the
   preceding 12 months, which during a free pilot is zero]**.
 - We are not liable for indirect or consequential loss, loss of profit, or loss of business.
-- **We are not liable for safety outcomes.** SafeOps records decisions; it does not make
+- **We are not liable for safety outcomes.** SafeChain records decisions; it does not make
   them. If a permit is issued that should not have been, that is a decision a person made.
 
 ---

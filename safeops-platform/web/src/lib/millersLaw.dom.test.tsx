@@ -9,7 +9,7 @@ import { ReportingSummary } from '@/features/incidents/ReportIncidentPage'
 /*
  * Miller's law: working memory holds a handful of chunks (about seven, Miller 1956; nearer
  * four without rehearsal, Cowan 2001). It is about what people must *remember*, not what
- * they can see, so these tests do not cap menus. They hold the three places SafeOps used to
+ * they can see, so these tests do not cap menus. They hold the three places SafeChain used to
  * ask people to hold too much in their heads.
  */
 

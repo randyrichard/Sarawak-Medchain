@@ -1,6 +1,6 @@
 # PILOT ONBOARDING
 
-Taking one company from "yes, we'll try it" to using SafeOps properly.
+Taking one company from "yes, we'll try it" to using SafeChain properly.
 
 Written to be repeatable five to ten times without thinking, because the second pilot should
 cost you an hour, not a day.
@@ -12,14 +12,14 @@ cost you an hour, not a day.
 
 ---
 
-## What SafeOps is, in the words to use
+## What SafeChain is, in the words to use
 
 Say this, not a feature list:
 
 > "Every factory already does safety work — inspections, incident reports, corrective
 > actions. The work gets done; the information is scattered across WhatsApp, notebooks,
 > email and three spreadsheets. So nobody can answer 'has that hazard been fixed yet'
-> without calling three people. SafeOps is one place where every incident, action and
+> without calling three people. SafeChain is one place where every incident, action and
 > permit has an owner and a date."
 
 ## What the pilot includes
@@ -52,7 +52,7 @@ If any of those is unchecked, you are not ready to onboard a company.
 
 ## Step 1 — Create the company (you, 2 minutes)
 
-Sign in as the platform administrator, go to **SafeOps customers**, click **New customer**.
+Sign in as the platform administrator, go to **SafeChain customers**, click **New customer**.
 
 You need from them beforehand:
 
@@ -66,7 +66,7 @@ You need from them beforehand:
 | Administrator name | Lim Mei Ling | Usually the HSE manager |
 | Administrator email | Their **work** address | The invitation goes here |
 
-**Never use your own address as their administrator.** A SafeOps staff account cannot join
+**Never use your own address as their administrator.** A SafeChain staff account cannot join
 a customer workspace — the product refuses it — and that refusal exists because an account
 holding both roles sees your entire customer list inside their workspace.
 
@@ -79,7 +79,7 @@ console shows a link instead — send it to them yourself and say plainly that i
 
 ## Step 3 — They accept (them, 2 minutes)
 
-They click the link, enter their name, choose a password. Nobody at SafeOps ever holds a
+They click the link, enter their name, choose a password. Nobody at SafeChain ever holds a
 working credential for their account — worth saying out loud, because it is unusual and it
 is the answer to a question their IT department will ask.
 
@@ -98,7 +98,7 @@ is honest, and inventing incidents in a safety system would be indefensible.
 Sit with them for this if you can. Watching the first twenty minutes teaches you more than
 any survey.
 
-Everyone they invite is shown a **New to SafeOps? Start here.** card on Home with the first
+Everyone they invite is shown a **New to SafeChain? Start here.** card on Home with the first
 three things their role does, and **Help** at the foot of the menu has a guide for each role,
 step-by-step instructions with the names of the buttons to press, and a glossary of the safety
 terms (near miss, LTI, TRIR, DOSH and the rest). Point a new starter there before you explain

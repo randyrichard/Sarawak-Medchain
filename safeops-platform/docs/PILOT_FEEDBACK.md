@@ -1,6 +1,6 @@
 # PILOT FEEDBACK
 
-A 30-day structure for finding out whether SafeOps is worth paying for.
+A 30-day structure for finding out whether SafeChain is worth paying for.
 
 The purpose is not to be told it is good. A pilot that ends with "yes, very nice" and no
 renewal has failed, and it usually fails quietly at week two when people stop logging in.
@@ -15,7 +15,7 @@ Everything else is detail:
 1. **Did anyone use it without being asked?**
 2. **Did it tell them something they did not already know?**
 
-Usage without prompting is the only honest signal of value. Someone filling in SafeOps
+Usage without prompting is the only honest signal of value. Someone filling in SafeChain
 because you asked them to is doing you a favour, not using a product.
 
 ---
@@ -81,7 +81,7 @@ gets abandoned no matter how good it looks.
 
 This is the one that decides everything. Do it in person if you can.
 
-1. What problem did SafeOps actually solve?
+1. What problem did SafeChain actually solve?
 2. Which feature was most useful?
 3. Which feature was confusing or unused?
 4. What are you still doing manually that you hoped it would handle?
@@ -89,7 +89,7 @@ This is the one that decides everything. Do it in person if you can.
 6. Was the dashboard useful, or did you skip it?
 7. Did management ask to see anything from it?
 8. How often was it used in week 4 compared with week 1?
-9. **What would make your team use SafeOps every day?**
+9. **What would make your team use SafeChain every day?**
 10. **What would make you pay for it?**
 11. **What price would feel reasonable for a site this size?**
 12. **What would stop you renewing?**
@@ -130,7 +130,7 @@ It is worth more than a polite yes.
 
 Write down, in their own words:
 
-1. The one sentence describing what SafeOps did for them
+1. The one sentence describing what SafeChain did for them
 2. The one thing that nearly stopped them using it
 3. The price they named
 4. Whether they want to continue, and on what terms

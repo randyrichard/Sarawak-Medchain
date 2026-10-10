@@ -1,5 +1,5 @@
 /**
- * Grant or revoke SafeOps platform administrator.
+ * Grant or revoke SafeChain platform administrator.
  *
  * Deliberately a command run by whoever holds the server, not a screen in the product.
  * Platform administrators can create customers and see every company on the deployment;
@@ -121,7 +121,7 @@ async function audit(entry: {
  *
  * No password is chosen here, by anybody. The account is created with random bytes for a
  * hash that nothing can produce, and the operator is handed a single-use reset link to set
- * their own. That keeps the property the whole product depends on: whoever installs SafeOps
+ * their own. That keeps the property the whole product depends on: whoever installs SafeChain
  * does not end up holding a working credential.
  */
 async function createFirstAdmin(email: string) {
@@ -192,7 +192,7 @@ async function createFirstAdmin(email: string) {
   })
 
   console.log(
-    `\nCreated ${email} as a SafeOps platform administrator.\n\n`
+    `\nCreated ${email} as a SafeChain platform administrator.\n\n`
     + linkOrSent(delivery, token)
     + 'Nothing above is a password. The JSON line is a log record and the id in it is\n'
     + 'a database id; the link is the only way to set a password.\n'
@@ -320,7 +320,7 @@ async function main() {
   if (user && !revoke && user.memberships.length > 0) {
     console.error(
       `Refusing: ${email} is a member of ${user.memberships.length} customer workspace(s).\n\n`
-      + 'SafeOps staff accounts do not belong to customer workspaces. An account holding both\n'
+      + 'SafeChain staff accounts do not belong to customer workspaces. An account holding both\n'
       + 'sees the customer console - every company on this deployment, their plans and the\n'
       + 'revenue figure - inside a customer\'s own workspace, which is one screen-share away\n'
       + 'from showing one customer the names of the others.\n\n'
@@ -401,7 +401,7 @@ async function main() {
     console.log(
       revoke
         ? `No change: ${user.name} <${email}> is not a platform administrator.`
-        : `No change: ${user.name} <${email}> is already a SafeOps platform administrator.`,
+        : `No change: ${user.name} <${email}> is already a SafeChain platform administrator.`,
     )
     await audit({
       action: revoke ? 'platform_admin_revoked' : 'platform_admin_granted',
@@ -438,7 +438,7 @@ async function main() {
   console.log(
     revoke
       ? `Revoked platform administrator from ${user.name} <${email}>.`
-      : `${user.name} <${email}> is now a SafeOps platform administrator.`,
+      : `${user.name} <${email}> is now a SafeChain platform administrator.`,
   )
 }
 

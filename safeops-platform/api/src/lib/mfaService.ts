@@ -25,7 +25,7 @@ import { base32Encode, generateTotpSecret, otpauthUri, verifyTotp } from './totp
 
 export class MfaError extends DomainError {}
 
-const ISSUER = 'SafeOps'
+const ISSUER = 'SafeChain'
 const RECOVERY_CODE_COUNT = 10
 
 /** Whether this server can hold authenticator secrets at all. See MFA_SECRET_KEY_B64. */
@@ -34,7 +34,7 @@ export function mfaAvailable(): boolean {
 }
 
 const UNAVAILABLE = 'Multi-factor sign-in is not configured on this server (MFA_SECRET_KEY_B64). '
-  + 'Ask whoever runs your SafeOps installation to set it up.'
+  + 'Ask whoever runs your SafeChain installation to set it up.'
 
 function sealKey(): Buffer {
   if (!env.mfaSecretKey) throw new MfaError('mfa_unavailable', UNAVAILABLE, 503)

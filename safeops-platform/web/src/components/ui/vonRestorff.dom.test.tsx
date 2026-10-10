@@ -7,7 +7,7 @@ import { AttentionIcon, attentionOf, attentionStripe } from './Attention'
 
 /*
  * The Von Restorff (isolation) effect: among items that look alike, the one that differs is
- * the one noticed. SafeOps spends that on what needs action - and only that - and never
+ * the one noticed. SafeChain spends that on what needs action - and only that - and never
  * signals it by colour alone (WCAG 1.4.1).
  */
 

@@ -1,4 +1,4 @@
-# Personal Data Protection Notice — SafeOps
+# Personal Data Protection Notice — SafeChain
 
 > **DRAFT. NOT LEGAL ADVICE. NOT YET REVIEWED BY A LAWYER.**
 >
@@ -29,7 +29,7 @@
 
 ## Who this notice is from
 
-**[REGISTERED COMPANY NAME]** (`[COMPANY REGISTRATION NUMBER]`), trading as SafeOps, of
+**[REGISTERED COMPANY NAME]** (`[COMPANY REGISTRATION NUMBER]`), trading as SafeChain, of
 **[REGISTERED ADDRESS]**.
 
 Contact for anything in this notice: **[EMAIL]** · **[PHONE]**
@@ -40,10 +40,10 @@ Contact for anything in this notice: **[EMAIL]** · **[PHONE]**
 
 This distinction runs through everything below and is the thing most notices get wrong.
 
-**For your own account, SafeOps is the data controller.** Your name, work email and sign-in
+**For your own account, SafeChain is the data controller.** Your name, work email and sign-in
 history exist because you use the product. We decide what to collect and why.
 
-**For your organisation's safety records, SafeOps is a data processor.** Employee records,
+**For your organisation's safety records, SafeChain is a data processor.** Employee records,
 incident reports, medical fitness dates, visitor logs — your employer decides what goes in
 and why. We hold it on their instructions. If you want your incident record corrected or
 removed, your employer decides; we act on what they tell us.
@@ -58,7 +58,7 @@ processors as well as controllers, so both roles carry duties.
 Taken from the database schema, not from memory. Everything here is a field the software
 actually stores.
 
-### Your SafeOps account — we are the controller
+### Your SafeChain account — we are the controller
 
 | Data | Why |
 |---|---|
@@ -92,7 +92,7 @@ information about physical or mental health:
 - injury type, body part, treatment and days lost, recorded on an incident.
 
 Sensitive personal data requires **explicit consent**, not the ordinary consent that covers
-the rest. Where SafeOps is the processor, obtaining that consent is your employer's
+the rest. Where SafeChain is the processor, obtaining that consent is your employer's
 responsibility — we provide the record of it, we do not obtain it for them.
 
 ---
@@ -194,18 +194,18 @@ Under the PDPA you may:
 - **Complain** to the Personal Data Protection Commissioner.
 
 **Where the data belongs to your organisation, ask your employer first** — they decide, and
-we act on their instruction. Where it is your SafeOps account, contact us at **[EMAIL]** and
+we act on their instruction. Where it is your SafeChain account, contact us at **[EMAIL]** and
 we will respond within **[NUMBER]** days.
 
 Your employer can export their entire workspace at any time, from Administration → Backup &
 Recovery. It produces a spreadsheet for every register plus every uploaded file, readable
-without SafeOps.
+without SafeChain.
 
 ---
 
 ## Is providing it optional?
 
-Mostly no, and it is worth being plain about that. If your employer uses SafeOps to run its
+Mostly no, and it is worth being plain about that. If your employer uses SafeChain to run its
 safety obligations, your workforce record and your fitness-to-work dates are how it does
 that. You cannot be inducted onto a site, hold a permit or be recorded as competent without
 them. Declining means your employer cannot record you as fit to work — that is a matter
@@ -252,7 +252,7 @@ becoming aware of it, and to affected individuals where significant harm is like
 ## Data Protection Officer
 
 > **[The 2024 amendment introduced a DPO appointment obligation for qualifying controllers
-> and processors. Whether SafeOps qualifies needs a legal view. If one is appointed, their
+> and processors. Whether SafeChain qualifies needs a legal view. If one is appointed, their
 > contact details belong here.]**
 
 ---

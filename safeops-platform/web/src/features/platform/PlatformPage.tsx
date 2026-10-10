@@ -18,7 +18,7 @@ import {
 import { usePlatformInfo } from './usePlatformAdmin'
 
 /**
- * The SafeOps platform console.
+ * The SafeChain platform console.
  *
  * Where a customer is created. Deliberately plain: this is an internal tool used a handful
  * of times a month by somebody who already knows what they are doing, so it optimises for
@@ -116,7 +116,7 @@ export function PlatformPage() {
   return (
     <>
       <PageHeader
-        title="SafeOps customers"
+        title="SafeChain customers"
         subtitle="Every company on this deployment, and where new ones are created"
         right={(
           <Button icon={<Plus size={15} />} onClick={openNew} disabled={plans.length === 0}>
@@ -299,7 +299,7 @@ export function PlatformPage() {
               />
             </div>
             <p className="text-2xs text-muted">
-              They receive an invitation and choose their own password. Nobody at SafeOps
+              They receive an invitation and choose their own password. Nobody at SafeChain
               ever holds a working credential for their workspace.
             </p>
           </div>
@@ -340,7 +340,7 @@ export function PlatformPage() {
 /** Shown in place of the console to anybody who is not platform staff. */
 export function PlatformForbidden() {
   return (
-    <EmptyState icon={ShieldCheck} title="This area is for SafeOps staff.">
+    <EmptyState icon={ShieldCheck} title="This area is for SafeChain staff.">
       Managing customers across the whole deployment is separate from administering your own
       workspace. If you are looking for your company&rsquo;s users, sites or departments,
       they are under Administration.

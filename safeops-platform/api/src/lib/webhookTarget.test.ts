@@ -4,7 +4,7 @@ import { checkUrlShape, isPublicAddress } from './webhookTarget.js'
 /**
  * The SSRF guard.
  *
- * This is the check that decides whether SafeOps will make an HTTP request to an address a
+ * This is the check that decides whether SafeChain will make an HTTP request to an address a
  * customer's administrator typed into a form. Get it wrong and the webhook feature becomes
  * a way for any administrator of any tenant to read whatever this server can reach: the
  * database container beside it, an internal admin tool, or the cloud metadata endpoint that

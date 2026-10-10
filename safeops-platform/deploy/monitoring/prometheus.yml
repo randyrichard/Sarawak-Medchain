@@ -1,4 +1,4 @@
-# Minimal Prometheus scrape config for SafeOps. Point it at the API's /metrics with the
+# Minimal Prometheus scrape config for SafeChain. Point it at the API's /metrics with the
 # METRICS_TOKEN from .env.prod. Works the same for Grafana Agent / Alloy.
 global:
   scrape_interval: 30s

@@ -787,7 +787,7 @@ d('Organisation administration — integration (real Postgres)', () => {
     await svc.createInvitation(admin, CO, ctx, { email: mail(), role: 'employee' })
 
     // An invitation that does not say who it is from is indistinguishable from phishing.
-    expect(fake.sent[0].subject).toBe("You're invited to join OA ITest Co on SafeOps")
+    expect(fake.sent[0].subject).toBe("You're invited to join OA ITest Co on SafeChain")
   })
 
   it('carries a working acceptance link in both bodies', async () => {

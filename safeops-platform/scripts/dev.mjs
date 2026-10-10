@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * SafeOps development orchestrator.
+ * SafeChain development orchestrator.
  *
  * One command brings up the whole stack in dependency order: database, schema, seed,
  * API, web. Each step is verified before the next begins, because the failure mode this
@@ -256,7 +256,7 @@ async function main() {
   }
 
   const TOTAL = 6
-  console.log(c.bold('\nSafeOps development environment\n'))
+  console.log(c.bold('\nSafeChain development environment\n'))
 
   // Preflight — missing dependencies are the most common fresh-clone failure.
   step(1, TOTAL, 'Checking prerequisites')
@@ -311,7 +311,7 @@ async function main() {
   }
   ok('web dev server running')
 
-  console.log(`\n${c.green(c.bold('SafeOps is up.'))}`)
+  console.log(`\n${c.green(c.bold('SafeChain is up.'))}`)
   console.log(`  web  ${c.bold(`http://localhost:${WEB_PORT}`)}`)
   console.log(`  api  http://localhost:${API_PORT}/health/ready`)
   console.log(c.dim('  sign in: hse@demo.safeops.app / SafeOpsPlatform2026'))

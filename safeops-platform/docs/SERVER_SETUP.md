@@ -1,6 +1,6 @@
 # Server setup
 
-Preparing a host to run SafeOps for one customer. Ubuntu 22.04 or 24.04 LTS; adapt as
+Preparing a host to run SafeChain for one customer. Ubuntu 22.04 or 24.04 LTS; adapt as
 needed. Roughly 45 minutes.
 
 **None of this has been executed** — there is no server to execute it on from here. It is
@@ -28,7 +28,7 @@ sudo apt update && sudo apt upgrade -y
 sudo timedatectl set-timezone Asia/Kuching
 ```
 
-Timezone matters more than it looks: SafeOps stores date-only values at UTC midnight, and
+Timezone matters more than it looks: SafeChain stores date-only values at UTC midnight, and
 a host in the wrong zone makes "due today" mean the wrong day to the people using it.
 
 ```bash
@@ -181,7 +181,7 @@ file.
 ```bash
 sudo tee /etc/systemd/system/safeops.service >/dev/null <<'EOF'
 [Unit]
-Description=SafeOps
+Description=SafeChain
 Requires=docker.service
 After=docker.service network-online.target
 
@@ -215,7 +215,7 @@ crontab -e
 ```cron
 0 2 * * * cd /srv/safeops/safeops-platform && deploy/backup.sh >> /var/log/safeops-backup.log 2>&1
 0 3 * * * rclone copy /backups remote:safeops-backups --max-age 48h >> /var/log/safeops-offsite.log 2>&1
-*/15 * * * * cd /srv/safeops/safeops-platform && deploy/healthcheck.sh --quiet || echo "SafeOps health check failed at $(date)" >> /var/log/safeops-health.log
+*/15 * * * * cd /srv/safeops/safeops-platform && deploy/healthcheck.sh --quiet || echo "SafeChain health check failed at $(date)" >> /var/log/safeops-health.log
 ```
 
 ## 10. Verify the host

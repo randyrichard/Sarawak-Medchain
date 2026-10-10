@@ -262,7 +262,7 @@ export default function App() {
                   />
                   {/*
                     Re-authorized server-side on every call; the component renders a plain
-                    explanation rather than the console for anybody who is not SafeOps staff.
+                    explanation rather than the console for anybody who is not SafeChain staff.
                   */}
                   <Route path="/platform" element={<PlatformRoute />} />
                   <Route path="/account" element={<AccountPage />} />

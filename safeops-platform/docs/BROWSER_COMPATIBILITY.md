@@ -46,7 +46,7 @@ keyboard behaviour, or how the platform treats cookies.
 
 Not a general caution — a specific one.
 
-SafeOps keeps the refresh token in an httpOnly cookie with `SameSite=Strict` and `Secure`,
+SafeChain keeps the refresh token in an httpOnly cookie with `SameSite=Strict` and `Secure`,
 and holds the access token in memory only. Safari, and Mobile Safari especially, is the
 strictest mainstream browser about cookies:
 

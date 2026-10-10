@@ -604,7 +604,7 @@ export class ReportService {
         title: '8. Toolbox meetings',
         note: toolboxMeetings.length === 0
           ? 'No daily toolbox meetings were recorded for this period.'
-          : `The daily site briefings recorded in SafeOps. Held on ${new Set(toolboxMeetings.map((t) => t.siteId)).size} `
+          : `The daily site briefings recorded in SafeChain. Held on ${new Set(toolboxMeetings.map((t) => t.siteId)).size} `
             + `of ${sites.length} ${sites.length === 1 ? 'site' : 'sites'} in scope.`,
         stats: [
           { label: 'Meetings held', value: String(toolboxMeetings.length) },
@@ -622,12 +622,12 @@ export class ReportService {
          * dropped: a management report with a numbered section missing invites the question
          * "where is 9", and a fabricated zero is worse than either.
          *
-         * SafeOps has no proactive observation module - no behavioural observation cards,
+         * SafeChain has no proactive observation module - no behavioural observation cards,
          * no safe/unsafe act logging. What it does have is audit findings graded
          * Observation, which is a different thing recorded by a different person for a
          * different reason, so it is reported under its own name.
          */
-        unavailable: 'SafeOps does not currently record proactive safety observations '
+        unavailable: 'SafeChain does not currently record proactive safety observations '
           + '(behavioural observation cards or safe/unsafe act logs), so no figure can be '
           + 'given. The nearest recorded equivalent is audit findings graded Observation, '
           + `of which there were ${findings.filter((f) => f.severity === 'Observation').length} `

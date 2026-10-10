@@ -19,7 +19,7 @@ const companyQuery = z.object({ companyId: z.string().min(1) })
  * Certificate verification is public on purpose.
  *
  * The point of a QR on a printed certificate is that a client or an inspector can check
- * it, and they hold no SafeOps session. It is registered before `requireAuth` and returns
+ * it, and they hold no SafeChain session. It is registered before `requireAuth` and returns
  * only what is already on the certificate the holder handed over.
  */
 const verifyQuery = z.object({ code: z.string().min(1).max(120) })

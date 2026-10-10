@@ -1,4 +1,4 @@
-# Release pipeline for SafeOps: publish versioned images, then (optionally) deploy them.
+# Release pipeline for SafeChain: publish versioned images, then (optionally) deploy them.
 #
 # Runs only after safeops-platform-ci has passed on a push to a release branch, so nothing
 # is published that did not pass the full test suite, the bundle credential scan and the
@@ -143,7 +143,7 @@ jobs:
           WEB_BUILT: ${{ vars.SAFEOPS_VITE_API_BASE_URL != '' }}
         run: |
           {
-            echo "## SafeOps release \`$VERSION\`"
+            echo "## SafeChain release \`$VERSION\`"
             echo
             echo "- API image: \`$API:$VERSION\`"
             if [ "$WEB_BUILT" = true ]; then echo "- Web image: \`$WEB:$VERSION\`"; else echo "- Web image: not built (set SAFEOPS_VITE_API_BASE_URL)"; fi

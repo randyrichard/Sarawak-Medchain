@@ -18,7 +18,7 @@ tests:
         exp_alerts:
           - exp_labels: { severity: page, job: safeops-api }
             exp_annotations:
-              summary: The SafeOps API is not answering its metrics endpoint.
+              summary: The SafeChain API is not answering its metrics endpoint.
               runbook: docs/RUNBOOK.md - check `docker compose ps` and `logs api`; roll back with deploy/rollback.sh if the last deploy caused it.
       - eval_time: 3m
         alertname: SafeOpsApiDown

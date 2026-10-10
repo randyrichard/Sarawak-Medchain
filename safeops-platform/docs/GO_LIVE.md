@@ -1,6 +1,6 @@
 # Going live with a customer
 
-What changes when SafeOps leaves localhost, and what has to be done or decided before a
+What changes when SafeChain leaves localhost, and what has to be done or decided before a
 company relies on it. Most of the list is now checked by a command. The rest are decisions
 only the owner can make, and a check on real phones that no automated test replaces.
 
@@ -48,7 +48,7 @@ Each one needs a named answer, written down, before the first customer signs.
   - who receives the uptime alert;
   - how fast they must respond;
   - who covers when they are away.
-- **Why it matters:** SafeOps is where injuries are reported and permits are signed off, so
+- **Why it matters:** SafeChain is where injuries are reported and permits are signed off, so
   an outage during a shift is noticed on site before anyone else knows.
 - **Setup:**
   - An **external** uptime monitor on `/health/ready` and the web address. See
@@ -61,7 +61,7 @@ Each one needs a named answer, written down, before the first customer signs.
 ### Where the server runs
 
 - A laptop is fine for a demo, but not for a customer: it sleeps, travels and gets
-  updated. Run SafeOps on a server that stays on: a VPS or a cloud VM (`SERVER_SETUP.md`).
+  updated. Run SafeChain on a server that stays on: a VPS or a cloud VM (`SERVER_SETUP.md`).
 - **Size it from the load test** (`LOAD_TEST.md`): at least 2 cores for a customer with
   several hundred users.
 - Re-run the load test before taking on a customer much larger than 30 sites.
@@ -79,7 +79,7 @@ Each one needs a named answer, written down, before the first customer signs.
 
 - **Decide** the sending provider and the sending domain. Set up SPF and DKIM on that domain
   so messages are not marked as spam.
-- Without email, SafeOps still works. Invitations and password resets give the admin a link
+- Without email, SafeChain still works. Invitations and password resets give the admin a link
   to pass on by hand. But nothing is sent automatically:
   - permit expiry warnings;
   - overdue action reminders;

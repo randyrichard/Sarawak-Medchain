@@ -1,5 +1,5 @@
 /*
- * The public SafeOps demo on Cloudflare Workers: static files only, no server.
+ * The public SafeChain demo on Cloudflare Workers: static files only, no server.
  * Built by `npm run build:demo` (scripts/build-demo.mjs); setup in docs/CLOUDFLARE.md,
  * "The public demo". Real deployments do not use this file - they run the Docker stack.
  */

@@ -51,7 +51,7 @@ export async function requireApiKey(req: Request, res: Response, next: NextFunct
     if (result.failure === 'company_suspended') {
       return res.status(403).json({
         error: 'workspace_suspended',
-        message: 'This workspace is suspended. Contact SafeOps.',
+        message: 'This workspace is suspended. Contact SafeChain.',
       })
     }
     return res.status(401).json({ error: 'unauthenticated', message: 'Invalid API key.' })

@@ -126,9 +126,9 @@ function PolicyPanel() {
           {flash && <Alert tone="success">Security policy saved.</Alert>}
           {error && <Alert tone="critical">{error}</Alert>}
           <Input label="Minimum length" type="number" min={12} value={String(s.passwordMinLength)} onChange={(e) => set({ passwordMinLength: Number(e.target.value) || 12 })} className="w-32"
-            hint="12 or more. SafeOps never accepts fewer than 12 characters." />
+            hint="12 or more. SafeChain never accepts fewer than 12 characters." />
           <div className="space-y-2">
-            {/* Always on: SafeOps requires both on every account. Shown so the page says what applies. */}
+            {/* Always on: SafeChain requires both on every account. Shown so the page says what applies. */}
             <Switch checked disabled onChange={() => {}} label="Require an uppercase letter (always required)" />
             <Switch checked disabled onChange={() => {}} label="Require a number (always required)" />
             <Switch checked={s.requireSymbol} onChange={(v) => set({ requireSymbol: v })} label="Require a symbol" />
@@ -171,10 +171,10 @@ function LoginsPanel() {
   const events = history.data ?? null
 
   const exportCsv = () => downloadCsv(
-    // No location column: SafeOps does not look up where an address is, so it was always empty.
+    // No location column: SafeChain does not look up where an address is, so it was always empty.
     ['Time', 'User', 'Email', 'Result', 'IP', 'Device', 'Needs a look'],
     (events ?? []).map((e) => [e.at, e.userName, e.email, e.result, e.ip, e.device, e.suspicious ? 'YES' : '']),
-    'safeops-login-history.csv',
+    'safechain-login-history.csv',
   )
 
   if (events === null && history.status === 'error') return <ErrorState title="Couldn't load the login history" error={history.error} onRetry={history.reload} />

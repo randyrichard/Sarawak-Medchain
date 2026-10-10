@@ -74,7 +74,7 @@ async function purge() {
 async function makeTenant(label: string): Promise<Tenant> {
   const staff = await db.user.create({
     data: {
-      email: mail(), name: 'SafeOps Staff',
+      email: mail(), name: 'SafeChain Staff',
       passwordHash: await hashPassword('Export-Itest-2026'),
       status: 'active', platformAdmin: true,
     },
@@ -82,7 +82,7 @@ async function makeTenant(label: string): Promise<Tenant> {
   })
   const adminEmail = mail()
   const r = await provisioning.provisionCompany(
-    { userId: staff.id, name: 'SafeOps Staff', roles: [] }, ctx,
+    { userId: staff.id, name: 'SafeChain Staff', roles: [] }, ctx,
     {
       companyName: `Export ITest ${label} ${uniq()}`, industry: 'Testing', plan: 'standard',
       adminName: `Admin ${label}`, adminEmail,

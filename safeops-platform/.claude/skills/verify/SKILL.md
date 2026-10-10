@@ -1,9 +1,9 @@
 ---
 name: verify
-description: Build, run and drive SafeOps (api + web) to observe a change at runtime. Use when verifying a diff rather than running its tests.
+description: Build, run and drive SafeChain (api + web) to observe a change at runtime. Use when verifying a diff rather than running its tests.
 ---
 
-# Verifying SafeOps at runtime
+# Verifying SafeChain at runtime
 
 Two surfaces: the **HTTP API** and the **operator GUI**. Most changes need the API;
 anything a user clicks needs both.

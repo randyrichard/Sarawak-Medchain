@@ -1090,7 +1090,7 @@ export class AdminService {
           event: 'webhook.test',
           companyId,
           occurredAt: new Date().toISOString(),
-          data: { message: 'This is a test delivery from SafeOps.', webhookId: wh.id },
+          data: { message: 'This is a test delivery from SafeChain.', webhookId: wh.id },
         },
       )
     } catch (e) {
@@ -1153,7 +1153,7 @@ export class AdminService {
     // The server never accepts a password under 12 characters, so a policy saying fewer would
     // be shown and not applied. Checked here as well as at the route, for direct callers.
     if (typeof patch.passwordMinLength === 'number' && patch.passwordMinLength < 12) {
-      throw new AdminError('validation', 'The minimum length cannot be below 12, the SafeOps minimum.')
+      throw new AdminError('validation', 'The minimum length cannot be below 12, the SafeChain minimum.')
     }
     const allowed = [
       'passwordMinLength', 'requireUppercase', 'requireNumber', 'requireSymbol',

@@ -11,7 +11,7 @@ import { callerOf } from '../http/caller.js'
 import { asyncRoute } from '../http/asyncRoute.js'
 
 /**
- * The SafeOps platform console.
+ * The SafeChain platform console.
  *
  * Deliberately its own router at its own prefix rather than another section of /admin.
  * Everything under /admin is scoped to one customer and answers "what may this person do

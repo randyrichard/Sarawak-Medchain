@@ -1,6 +1,6 @@
 # Load test: a realistic large tenant
 
-Every earlier test ran on the demo dataset, which has 16 incidents. This test measures SafeOps
+Every earlier test ran on the demo dataset, which has 16 incidents. This test measures SafeChain
 against the data a mid-sized operator would have after five years, and the sign-in rush at
 shift start. It found two problems that do not show on localhost. Both are fixed.
 

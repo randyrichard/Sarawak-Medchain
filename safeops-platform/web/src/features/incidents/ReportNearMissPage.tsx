@@ -154,7 +154,7 @@ export function ReportNearMissPage() {
           <h1 className="mt-4 text-lg font-semibold tracking-tight text-ink">Saved on this phone</h1>
           <p className="mt-1.5 text-sm leading-relaxed text-ink-2">
             There is no connection right now. Your report is kept here and sent on its own as soon as
-            SafeOps is open with a signal. Keep the phone signed in.
+            SafeChain is open with a signal. Keep the phone signed in.
           </p>
           {queued > 0 && (
             <Alert tone="warning" className="mt-3 text-left">

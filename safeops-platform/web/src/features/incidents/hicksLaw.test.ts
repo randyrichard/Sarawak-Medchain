@@ -5,7 +5,7 @@ import { MORE_STATUSES, STATUS_CHIPS } from './IncidentsListPage'
 import { GROUP_NAV_ABOVE, NAV, NAV_GROUPS } from '@/components/layout/AppShell'
 
 /*
- * Hick's law: decision time grows with the number of choices, so SafeOps keeps each choice
+ * Hick's law: decision time grows with the number of choices, so SafeChain keeps each choice
  * small - grouping long lists and putting rarer options one step away. Grouping has a
  * failure mode that hurts more than the slow choice it replaced: an option that falls out
  * of every group cannot be chosen at all. These tests hold both halves - small choices, and

@@ -5,7 +5,7 @@
  * as one string are twelve things to hold while comparing them against a card or typing
  * them into an app; the same twelve as 900101-13-5678 are three. This is why phone numbers,
  * card numbers and authenticator keys are always printed in groups, and why anything
- * SafeOps asks a person to read, compare or retype should be too.
+ * SafeChain asks a person to read, compare or retype should be too.
  *
  * Display only. What is stored, searched and matched is the original value, so a blacklist
  * check never depends on how a number happened to be typed.

@@ -11,7 +11,7 @@ import { cn } from '@/lib/cn'
  * than the space between groups** - and form guidance puts it at about 4-8px from a label to
  * its control and 20-32px between fields.
  *
- * SafeOps had the first half (labels are 6px from their control, in FieldShell) and not the
+ * SafeChain had the first half (labels are 6px from their control, in FieldShell) and not the
  * second: fields sat 12, 14 or 16px apart depending on which file laid them out, so a label
  * was barely closer to its own field than to the one above it. These pin the second half:
  *

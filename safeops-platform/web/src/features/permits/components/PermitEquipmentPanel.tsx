@@ -88,7 +88,7 @@ export function PermitEquipmentPanel({
         </div>
       ) : rows.length === 0 ? (
         <p className="rounded-lg border border-dashed px-3 py-4 text-center text-2xs text-muted">
-          No equipment named. Naming the gear from the register is what lets SafeOps check
+          No equipment named. Naming the gear from the register is what lets SafeChain check
           its inspection and calibration before work starts.
         </p>
       ) : (

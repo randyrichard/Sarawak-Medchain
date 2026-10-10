@@ -1,4 +1,4 @@
-# SafeOps reverse proxy — Caddy.
+# SafeChain reverse proxy — Caddy.
 #
 # Recommended over the nginx config beside this file unless you already run nginx. Caddy
 # obtains and renews certificates automatically, redirects HTTP to HTTPS by default, and

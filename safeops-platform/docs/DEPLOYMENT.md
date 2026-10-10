@@ -1,6 +1,6 @@
 # DEPLOYMENT
 
-Putting SafeOps on a server for a pilot customer.
+Putting SafeChain on a server for a pilot customer.
 
 > **The images build and run.** Both were built with the compose file below, started as a
 > three-container stack, and exercised: migrations applied, `/health` and `/health/ready`
@@ -410,7 +410,7 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod exec api npx pris
 
 ### Create the first platform administrator
 
-Customers are created from inside the product, by a SafeOps platform administrator. That
+Customers are created from inside the product, by a SafeChain platform administrator. That
 is a different thing from a customer's own administrator: it is authority over every
 tenant, and nothing in the customer-facing console can grant it. The first one has to be
 made from the shell, once.
@@ -420,7 +420,7 @@ seed refuses to run against production. So the first command opens the account a
 the privilege together:
 
 ```bash
-docker compose -f docker-compose.prod.yml exec api node dist/cli/grantPlatformAdmin.js --create you@safeops.app
+docker compose -f docker-compose.prod.yml exec api node dist/cli/grantPlatformAdmin.js --create you@safechain.app
 ```
 
 It prints a single-use link. Open it, choose your own password, and sign in:
@@ -444,13 +444,13 @@ output anywhere it will be kept.
 Afterwards, `--create` is not needed. For somebody who already has an account:
 
 ```bash
-docker compose -f docker-compose.prod.yml exec api node dist/cli/grantPlatformAdmin.js you@safeops.app
+docker compose -f docker-compose.prod.yml exec api node dist/cli/grantPlatformAdmin.js you@safechain.app
 ```
 
 To take the flag away again:
 
 ```bash
-docker compose -f docker-compose.prod.yml exec api node dist/cli/grantPlatformAdmin.js --revoke someone@safeops.app
+docker compose -f docker-compose.prod.yml exec api node dist/cli/grantPlatformAdmin.js --revoke someone@safechain.app
 ```
 
 The command takes exactly one address and refuses two, rather than guessing which you
@@ -458,7 +458,7 @@ meant; it refuses to grant to a deactivated account, because platform authorizat
 status on every request and the grant would silently do nothing; and it always allows a
 revoke, including from a deactivated account. Re-running it is safe and says "no change".
 
-(In development the same tool is `npm run platform:grant -- you@safeops.app`. The deployed
+(In development the same tool is `npm run platform:grant -- you@safechain.app`. The deployed
 image installs without dev dependencies, so it runs the compiled file directly.)
 
 Keep this list short and review it: a platform administrator can see every customer on the
@@ -468,7 +468,7 @@ expires.
 
 ### Create the customer
 
-Sign in and open **SafeOps customers** in the sidebar — it only appears for platform staff.
+Sign in and open **SafeChain customers** in the sidebar — it only appears for platform staff.
 "New customer" asks for the company, the plan, the first administrator and their first
 site, and in one transaction creates:
 
@@ -477,7 +477,7 @@ site, and in one transaction creates:
 - one administrator, with an `admin` membership scoped to that company alone
 - one invitation, valid for 7 days
 
-Nobody at SafeOps ever holds a working password for a customer's workspace. The
+Nobody at SafeChain ever holds a working password for a customer's workspace. The
 administrator receives an invitation and chooses their own; the account is created in
 `invited` status with no usable credential until they do. If a company name is submitted
 twice the second attempt is refused rather than creating a duplicate tenant, so a
@@ -528,7 +528,7 @@ them. That is tolerable for one pilot customer and does not scale past a handful
 Turning it on means setting a sender and exactly one transport.
 
 ```
-REPORT_EMAIL_FROM="SafeOps <safeops@yourcompany.com>"
+REPORT_EMAIL_FROM="SafeChain <safechain@yourcompany.com>"
 RESEND_API_KEY=            # from the Resend dashboard
 ```
 
@@ -559,7 +559,7 @@ the run history would otherwise fill with failures caused by a missing line here
 For a customer whose mail policy requires their own relay:
 
 ```
-REPORT_EMAIL_FROM="SafeOps <safeops@yourcompany.com>"
+REPORT_EMAIL_FROM="SafeChain <safechain@yourcompany.com>"
 SMTP_URL=smtps://user:password@smtp.yourcompany.com:465
 ```
 
@@ -576,7 +576,7 @@ address you control:
    nothing was sent — check `REPORT_EMAIL_FROM` and the key.
 3. Open the mail. Confirm:
    - the sender is your `REPORT_EMAIL_FROM`;
-   - the subject reads *You're invited to join &lt;Company&gt; on SafeOps*;
+   - the subject reads *You're invited to join &lt;Company&gt; on SafeChain*;
    - the **Accept invitation** link points at your `APP_PUBLIC_URL`, not localhost;
    - it arrived in the inbox rather than the spam folder.
 4. Click it, set a password, sign in.
@@ -597,7 +597,7 @@ The invitation itself is still valid: use **Resend** once the configuration is f
 | `JWT_PUBLIC_KEY_B64` | yes | As above |
 | `CORS_ORIGINS` | yes | Comma-separated. Only these origins may call the API |
 | `APP_PUBLIC_URL` | **yes** | Where users reach the app. Every invitation and report link is built from it. Validated at boot: the API refuses to start without it, and refuses a `localhost`/`127.0.0.1` value — a link nobody outside the machine can reach looks like it worked to whoever sent it |
-| `REPORT_EMAIL_FROM` | when email is on | Envelope sender, e.g. `SafeOps <safeops@yourcompany.com>`. Required as soon as a transport is set; the API refuses to boot without it |
+| `REPORT_EMAIL_FROM` | when email is on | Envelope sender, e.g. `SafeChain <safechain@yourcompany.com>`. Required as soon as a transport is set; the API refuses to boot without it |
 | `RESEND_API_KEY` | no | Resend transport. Server-side only — never sent to the browser, never written to the audit trail, never returned by an endpoint |
 | `SMTP_URL` | no | SMTP transport, for a customer using their own relay. Resend wins if both are set |
 | `MAIL_REPLY_TO` | no | Where replies go, if not the sender |
@@ -697,7 +697,7 @@ can recover the account that creates every customer. Forgetting the password, or
 Issue a fresh link from the server instead:
 
 ```bash
-docker compose -f docker-compose.prod.yml --env-file .env.prod exec -e SAFEOPS_AUDIT_ACTOR="you@safeops.app" api node dist/cli/grantPlatformAdmin.js --reset-link you@safeops.app
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec -e SAFEOPS_AUDIT_ACTOR="you@safechain.app" api node dist/cli/grantPlatformAdmin.js --reset-link you@safechain.app
 ```
 
 It prints a `?token=` link that works once and expires in 30 minutes, and it cancels any
@@ -727,7 +727,7 @@ and the hostname is a container id, so an unattributed row reads `unattributed` 
 no use to anyone asking who made an account staff months later:
 
 ```bash
-docker compose -f docker-compose.prod.yml --env-file .env.prod exec -e SAFEOPS_AUDIT_ACTOR="you@safeops.app" api node dist/cli/grantPlatformAdmin.js someone@safeops.app
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec -e SAFEOPS_AUDIT_ACTOR="you@safechain.app" api node dist/cli/grantPlatformAdmin.js someone@safechain.app
 ```
 
 Review it alongside the current holders:

@@ -1,4 +1,4 @@
-# SafeOps API.
+# SafeChain API.
 #
 # Base image is pinned by digest, not by tag.
 #

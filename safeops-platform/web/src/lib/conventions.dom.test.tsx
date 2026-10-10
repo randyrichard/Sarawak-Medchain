@@ -10,7 +10,7 @@ import { DataTable, sortRows, type Column } from '@/components/ui/Table'
 import { KeyboardShortcuts } from '@/components/layout/KeyboardShortcuts'
 
 /*
- * Jakob's law: people spend most of their time on other products, so SafeOps should work the
+ * Jakob's law: people spend most of their time on other products, so SafeChain should work the
  * way those do. Each test names a convention people already rely on elsewhere, and what they
  * would lose here if it broke.
  */

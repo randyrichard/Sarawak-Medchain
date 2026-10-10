@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Deploy SafeOps.
+# Deploy SafeChain.
 #
 # Takes a backup first, records the image digests it is replacing so rollback.sh has
 # something exact to return to, builds, starts, and refuses to declare success until the
@@ -44,7 +44,7 @@ STAMP="$(date +%F-%H%M%S)"
 RELEASE_DIR="$ROOT/.releases"
 mkdir -p "$RELEASE_DIR"
 
-info "SafeOps deploy $STAMP"
+info "SafeChain deploy $STAMP"
 
 # ── 1. Keep what is running now ──────────────────────────────────────────────
 # The running images are tagged `before-<stamp>` by id before anything changes. A tag on
@@ -58,7 +58,7 @@ if [ -n "$API_NOW" ]; then
   docker tag "$API_NOW" "$API_REPO:$PREVIOUS_TAG"
   [ -n "$WEB_NOW" ] && docker tag "$WEB_NOW" "$WEB_REPO:$PREVIOUS_TAG"
   {
-    echo "# SafeOps release replaced by the deploy at $STAMP"
+    echo "# SafeChain release replaced by the deploy at $STAMP"
     echo "PREVIOUS_TAG=$PREVIOUS_TAG"
     echo "GIT_SHA=$(cat "$RELEASE_DIR/current.sha" 2>/dev/null || echo unknown)"
   } > "$RELEASE_DIR/previous.env"

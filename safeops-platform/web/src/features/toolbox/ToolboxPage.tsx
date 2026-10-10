@@ -61,7 +61,7 @@ export function ToolboxPage() {
     return (
       <>
         <PageHeader title="Toolbox meetings" subtitle="Short safety briefings held before work starts" />
-        <Alert tone="info">Toolbox meetings are recorded on the server. Connect this app to the SafeOps API to use them.</Alert>
+        <Alert tone="info">Toolbox meetings are recorded on the server. Connect this app to the SafeChain API to use them.</Alert>
       </>
     )
   }

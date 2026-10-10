@@ -3,7 +3,7 @@
 # Roll back to the release deployment.sh recorded before it replaced it.
 #
 # Returns the application, not the database. That is deliberate and it is the safe
-# direction: SafeOps migrations are additive, so an older release runs unchanged against a
+# direction: SafeChain migrations are additive, so an older release runs unchanged against a
 # newer schema — verified by checking out the previous release and running it against an
 # already-upgraded database. Restoring the database as well would discard everything the
 # customer has entered since the deploy.
@@ -84,7 +84,7 @@ echo
 ok "rolled back to ${GIT_SHA:-the recorded release}"
 echo
 warn "The database was NOT rolled back."
-echo "  SafeOps migrations are additive, so the previous release runs against the newer"
+echo "  SafeChain migrations are additive, so the previous release runs against the newer"
 echo "  schema unchanged. If the release you are backing out of introduced a DESTRUCTIVE"
 echo "  migration, the data it dropped is only in the pre-deploy backup:"
 echo

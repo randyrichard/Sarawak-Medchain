@@ -13,7 +13,7 @@ import { SmtpEmailProvider } from './smtpProvider.js'
  * controlled error with a safe message comes back on failure, and nothing that could carry
  * a credential is ever surfaced.
  */
-const FROM = 'SafeOps <safeops@example.com>'
+const FROM = 'SafeChain <safeops@example.com>'
 
 const message = {
   to: [{ name: 'Marcus Tan', email: 'marcus@example.com' }],
@@ -84,7 +84,7 @@ describe('ResendEmailProvider', () => {
   it('addresses a lone recipient directly instead of bcc-ing them', async () => {
     /*
      * An invitation always has exactly one recipient, and it is the first thing anybody at
-     * a new customer ever receives from SafeOps. Sent to ourselves with the real person
+     * a new customer ever receives from SafeChain. Sent to ourselves with the real person
      * bcc'd it carries a textbook bulk-mail signature, so the one message that must arrive
      * is the one most likely to be filtered - and if it lands, it is not addressed to the
      * reader, which reads as phishing.
@@ -236,7 +236,7 @@ describe('SmtpEmailProvider', () => {
 
   it('still counts a lone recipient who happens to be our own sender address', async () => {
     /*
-     * Inviting somebody at the address the product sends from is legitimate - a SafeOps
+     * Inviting somebody at the address the product sends from is legitimate - a SafeChain
      * operator onboarding themselves, most obviously. In direct mode that address is a
      * genuine recipient rather than the artefact of bcc addressing, so filtering it would
      * report a delivery that did happen as one that did not.

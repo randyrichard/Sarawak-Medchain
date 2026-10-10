@@ -1,6 +1,6 @@
 # Mobile: iOS and Android
 
-How SafeOps was checked on phones, what was wrong, what changed, and how to check it again.
+How SafeChain was checked on phones, what was wrong, what changed, and how to check it again.
 
 ## How it was checked
 

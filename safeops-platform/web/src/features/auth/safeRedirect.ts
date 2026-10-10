@@ -12,7 +12,7 @@ export function safeInternalPath(path: string | null | undefined, fallback = '/'
   if (path[0] !== '/') return fallback
   // Reject protocol-relative ("//host") and backslash tricks. Browsers read "\" as "/", and
   // the later React Router advisory (GHSA-wrjc-x8rr-h8h6) bypassed a check of the second
-  // character only, so no backslash is accepted anywhere: no SafeOps path contains one.
+  // character only, so no backslash is accepted anywhere: no SafeChain path contains one.
   if (path[1] === '/' || path.includes('\\')) return fallback
   // Nor an encoded slash or backslash where the host would start ("/%2F", "/%5C").
   if (/^\/%(2f|5c)/i.test(path)) return fallback

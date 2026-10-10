@@ -139,7 +139,7 @@ describe('resendPlaceholderProblem', () => {
  *
  * So these tests are about agreement as much as about correctness.
  */
-const FROM = 'SafeOps <safeops@acme.test>'
+const FROM = 'SafeChain <safeops@acme.test>'
 const GOOD_SMTP = 'smtps://ops%40acme.test:s3cret-pw@smtp.acme.test:465'
 
 describe('mailTransportChoice', () => {

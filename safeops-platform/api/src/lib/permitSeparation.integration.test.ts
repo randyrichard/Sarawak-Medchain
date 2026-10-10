@@ -99,7 +99,7 @@ d('a permit is issued by somebody other than the applicant', () => {
     await purge()
     const staff = await db.user.create({
       data: {
-        email: mail(), name: 'SafeOps Staff',
+        email: mail(), name: 'SafeChain Staff',
         passwordHash: await hashPassword('Permitsep-Itest-2026'),
         status: 'active', platformAdmin: true,
       },
@@ -107,7 +107,7 @@ d('a permit is issued by somebody other than the applicant', () => {
     })
     const adminEmail = mail()
     const r = await provisioning.provisionCompany(
-      { userId: staff.id, name: 'SafeOps Staff', roles: [] }, ctx,
+      { userId: staff.id, name: 'SafeChain Staff', roles: [] }, ctx,
       {
         companyName: `PermitSep ITest ${uniq()}`, industry: 'Testing', plan: 'standard',
         adminName: 'Aziz Rahman', adminEmail,
