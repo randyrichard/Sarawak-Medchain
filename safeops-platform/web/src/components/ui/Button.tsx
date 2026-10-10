@@ -1,4 +1,4 @@
-import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react'
+import { Children, forwardRef, isValidElement, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
@@ -9,6 +9,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant
   size?: Size
   loading?: boolean
+  /** Shown only when the button has no words of its own (see hasText). */
   icon?: ReactNode
 }
 
@@ -56,6 +57,25 @@ export function buttonClasses(variant: Variant = 'primary', size: Size = 'md', c
   )
 }
 
+/**
+ * Whether a button says what it does in words.
+ *
+ * Icons are for buttons that have no words: close, menu, notifications. Beside a label they
+ * only repeated it - a plus beside "New action", a printer beside "Print" - and across a page
+ * that was dozens of small symbols competing with the one or two marks that mean something
+ * (an overdue count, a critical incident). So a button with text shows the text, and the
+ * `icon` it was given is kept for the case where it is the only thing on the button.
+ */
+export function hasText(children: ReactNode): boolean {
+  return Children.toArray(children).some((c) => {
+    if (typeof c === 'string' || typeof c === 'number') return String(c).trim().length > 0
+    if (!isValidElement<{ children?: ReactNode; className?: string }>(c)) return false
+    // Words only a screen reader hears leave the button blank to everyone else.
+    if (/(^|\s)sr-only(\s|$)/.test(c.props.className ?? '')) return false
+    return hasText(c.props.children)
+  })
+}
+
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   { variant = 'primary', size = 'md', loading, icon, className, children, disabled, ...rest },
   ref,
@@ -69,7 +89,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       className={buttonClasses(variant, size, className)}
       {...rest}
     >
-      {loading ? <Loader2 size={15} className="animate-spin" aria-hidden /> : icon}
+      {loading ? <Loader2 size={15} className="animate-spin" aria-hidden /> : hasText(children) ? null : icon}
       {children}
     </button>
   )

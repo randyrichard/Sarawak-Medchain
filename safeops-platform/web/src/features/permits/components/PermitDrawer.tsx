@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import {
-  Check, Clock, FlaskConical, Lock, PenLine, Printer, ShieldAlert, Unlock, X, Users,
-} from 'lucide-react'
+import { Check, Printer, ShieldAlert, Unlock, X } from 'lucide-react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import type { Actor } from '@/api/incidents'
@@ -19,7 +17,7 @@ import { permitWorkflowApi, type ReviewStatus } from '@/api/permitWorkflowApi'
 import { permitPeopleApi, type PermitExtension } from '@/api/permitPeopleApi'
 import { Alert, Badge, Button, Checkbox, Input, StatusPill, Textarea } from '@/components/ui'
 import { cn } from '@/lib/cn'
-import { PERMIT_STATUS_KIND, formatRemaining, fmtTime, fmtWindow, remainingTone } from '../lib'
+import { permitStatusKind, formatRemaining, fmtTime, fmtWindow, remainingTone } from '../lib'
 import { printPermit } from '../print'
 
 /** The permit itself: controls, atmosphere, isolations, signatures and the audit trail. */
@@ -105,7 +103,7 @@ export function PermitDrawer({
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="font-mono text-2xs text-muted">{permit.code}</span>
               <Badge tone="neutral">{permit.typeLabel}</Badge>
-              <StatusPill kind={PERMIT_STATUS_KIND[permit.status]} label={permit.statusLabel} />
+              <StatusPill kind={permitStatusKind(permit.status)} label={permit.statusLabel} />
             </div>
             <h2 className="mt-1 text-lg font-semibold leading-snug tracking-tight text-ink">{permit.title}</h2>
             <p className="text-2xs text-muted">{permit.location} · {permit.department} · {permit.workerCount} worker(s)</p>
@@ -138,7 +136,7 @@ export function PermitDrawer({
               <p className="text-xs font-bold uppercase tracking-wider text-muted">Validity</p>
               <span className="text-sm font-bold"
                 style={{ color: remainingTone(permit.hoursRemaining, permit.status), fontVariantNumeric: 'tabular-nums' }}>
-                <Clock size={12} className="mr-1 inline" />{formatRemaining(permit.hoursRemaining)}
+                {formatRemaining(permit.hoursRemaining)}
               </span>
             </div>
             <p className="mt-1 text-sm text-ink-2">{fmtWindow(permit.validFrom)} → {fmtWindow(permit.validTo)}</p>
@@ -185,7 +183,7 @@ export function PermitDrawer({
           {needsGas && (
             <section>
               <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-                <FlaskConical size={12} /> Atmospheric testing
+                Atmospheric testing
               </p>
               {latestGas ? (
                 <div className="rounded-lg border px-3.5 py-2.5" style={latestGas.pass ? undefined : { borderColor: 'var(--critical)' }}>
@@ -263,7 +261,7 @@ export function PermitDrawer({
           {/* Toolbox talk */}
           <section>
             <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-              <Users size={12} /> Toolbox talk
+              Toolbox talk
             </p>
             <div className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5">
               <div className="min-w-0">
@@ -321,7 +319,7 @@ export function PermitDrawer({
           {needsIso && (
             <section>
               <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-                <Lock size={12} /> Isolation points {liveIsolations > 0 && <span className="text-accent">({liveIsolations} applied)</span>}
+                Isolation points {liveIsolations > 0 && <span className="text-accent">({liveIsolations} applied)</span>}
               </p>
               <ul className="space-y-1.5">
                 {permit.isolations.map((i) => (
@@ -373,7 +371,7 @@ export function PermitDrawer({
           {permit.signatures.length > 0 && (
             <section>
               <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-                <PenLine size={12} /> Signatures
+                Signatures
               </p>
               <ul className="space-y-1.5">
                 {permit.signatures.map((s, i) => (
@@ -398,7 +396,7 @@ export function PermitDrawer({
           {extensions.length > 0 && (
             <section>
               <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-                <Clock size={12} /> Extensions ({extensions.length})
+                Extensions ({extensions.length})
               </p>
               <ul className="space-y-1.5">
                 {extensions.map((x) => (

@@ -57,7 +57,7 @@ const DEVICES = [
 ]
 const ROUTES = ['/', '/near-miss', '/incidents', '/incidents/new', '/incidents/board', ':incident', '/actions', '/assets',
   '/permits', '/visitors', '/toolbox', '/performance', '/reports', '/audits', '/training', '/employees', '/contractors',
-  '/organization', '/admin', '/notifications', '/account']
+  '/organization', '/admin', '/notifications', '/account', '/help']
 // page, button that opens the form (optional), field
 const FIELDS = [
   ['/near-miss', null, '#nm-what'],

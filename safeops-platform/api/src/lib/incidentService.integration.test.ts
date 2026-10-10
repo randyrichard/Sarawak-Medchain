@@ -481,6 +481,34 @@ d('IncidentService — integration (real Postgres)', () => {
     expect(summed).toBe(bySource)
   })
 
+  it("draws every analytics panel from the workspace's own actions", async () => {
+    /*
+     * The Analytics tab took its owner, site, department and monthly panels from the
+     * browser's demo data, so a real workspace saw a sample company's people. Every name
+     * and site here has to be one of this workspace's actions.
+     */
+    const stats = await svc.actionAnalytics(manager, COMPANY)
+    const all = await db.correctiveAction.findMany({
+      where: { companyId: COMPANY, status: { not: 'cancelled' } },
+      select: { owner: true, status: true, siteId: true },
+    })
+    expect(all.length).toBeGreaterThan(0)
+    const owners = new Set(all.map((a) => a.owner))
+    for (const o of stats.panels.byOwner) expect(owners.has(o.name), o.name).toBe(true)
+    const sites = new Set(all.map((a) => a.siteId))
+    for (const s of stats.panels.bySite) expect(sites.has(s.siteId), s.siteId).toBe(true)
+    const verified = all.filter((a) => a.status === 'verified').length
+    expect(stats.panels.completionRate).toBe(Math.round((verified / all.length) * 100))
+    expect(stats.panels.sampled).toBe(false)
+    expect(stats.panels.monthly).toHaveLength(6)
+    // Counted, not the length of a 500-row sample.
+    expect(stats.totalClosed).toBe(await db.correctiveAction.count({ where: { companyId: COMPANY, completedAt: { not: null } } }))
+
+    // An employee's analytics are their own actions and nobody else's.
+    const mine = await svc.actionAnalytics(employee, COMPANY)
+    for (const o of mine.panels.byOwner) expect(o.name).toBe(employee.name)
+  })
+
   it('computes dashboard statistics in the database', async () => {
     const stats = await svc.stats(manager, COMPANY)
     expect(stats.total).toBeGreaterThan(0)

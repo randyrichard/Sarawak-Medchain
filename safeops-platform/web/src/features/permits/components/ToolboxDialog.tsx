@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Check, Users, CalendarClock } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { permitWorkflowApi } from '@/api/permitWorkflowApi'
 import { permitPeopleApi, ATTENDEE_ROLE_LABEL, type PermitAttendee } from '@/api/permitPeopleApi'
 import { ApiError } from '@/api/types'
@@ -86,7 +86,7 @@ export function ToolboxDialog({
         {/* Meeting record */}
         <div className="rounded-lg border px-3.5 py-3">
           <p className="mb-2 flex items-center gap-1.5 text-2xs font-bold uppercase tracking-wider text-muted">
-            <CalendarClock size={11} /> The meeting
+            The meeting
           </p>
           {recorded ? (
             <p className="text-sm text-ink">
@@ -125,7 +125,7 @@ export function ToolboxDialog({
         <div>
           <div className="mb-2 flex items-center justify-between">
             <p className="flex items-center gap-1.5 text-2xs font-bold uppercase tracking-wider text-muted">
-              <Users size={11} /> Attendees
+              Attendees
             </p>
             {attendees && attendees.length > 0 && (
               <span className={cn('text-2xs font-semibold', allDone ? 'text-good' : 'text-muted')}>

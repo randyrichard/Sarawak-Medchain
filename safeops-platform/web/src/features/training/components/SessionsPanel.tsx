@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { CalendarClock, MapPin, Monitor, PlayCircle, Plus, Users } from 'lucide-react'
+import { CalendarClock, PlayCircle, Plus } from 'lucide-react'
 import type { SessionView } from '@/api/training'
 import type { Actor } from '@/api/incidents'
 import { Avatar, Badge, Button, Card, EmptyState, Skeleton, StatusPill } from '@/components/ui'
@@ -56,8 +56,8 @@ export function SessionsPanel({
                   <p className="text-sm font-semibold leading-snug text-ink">{s.courseName}</p>
                   <p className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-2xs text-muted">
                     <span className="font-mono">{s.code}</span>
-                    <span className="inline-flex items-center gap-1"><Users size={10} /> {s.enrolledCount} enrolled</span>
-                    <span className="inline-flex items-center gap-1">{s.mode === 'online' ? <Monitor size={10} /> : <MapPin size={10} />} {s.venue}</span>
+                    <span>{s.enrolledCount} enrolled</span>
+                    <span>{s.mode === 'online' ? 'Online: ' : ''}{s.venue}</span>
                   </p>
                 </div>
                 <span className="flex items-center gap-1.5 text-xs text-ink-2" title={`Trainer: ${s.trainer}`}>

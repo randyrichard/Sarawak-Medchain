@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
-import { Award, BookOpen, CalendarClock, GraduationCap, Printer, TriangleAlert, X } from 'lucide-react'
+import { Award, Printer, TriangleAlert, X } from 'lucide-react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import type { EmployeeTrainingProfile } from '@/api/training'
@@ -104,7 +104,7 @@ export function EmployeeTrainingDrawer({
 
               {/* Required competencies */}
               <div>
-                <p className="mb-1.5 flex items-center gap-1 text-2xs font-bold uppercase tracking-wider text-muted"><BookOpen size={11} /> Mandatory & required training</p>
+                <p className="mb-1.5 flex items-center gap-1 text-2xs font-bold uppercase tracking-wider text-muted">Mandatory & required training</p>
                 <ul className="space-y-1.5">
                   {profile!.required.map((r) => {
                     const meta = COMPETENCY_META[r.status]
@@ -138,7 +138,7 @@ export function EmployeeTrainingDrawer({
               {/* Upcoming renewals */}
               {profile!.upcomingRenewals.length > 0 && (
                 <div>
-                  <p className="mb-1.5 flex items-center gap-1 text-2xs font-bold uppercase tracking-wider text-muted"><CalendarClock size={11} /> Upcoming renewals</p>
+                  <p className="mb-1.5 flex items-center gap-1 text-2xs font-bold uppercase tracking-wider text-muted">Upcoming renewals</p>
                   <ul className="space-y-1">
                     {profile!.upcomingRenewals.map((r) => (
                       <li key={r.courseName} className="flex items-center justify-between rounded-lg bg-warning-soft px-3 py-1.5 text-xs" style={{ background: 'var(--warning-soft)' }}>
@@ -167,7 +167,7 @@ export function EmployeeTrainingDrawer({
 
               {/* Certificates */}
               <div>
-                <p className="mb-1.5 flex items-center gap-1 text-2xs font-bold uppercase tracking-wider text-muted"><GraduationCap size={11} /> Digital certificates ({profile!.certificates.length})</p>
+                <p className="mb-1.5 flex items-center gap-1 text-2xs font-bold uppercase tracking-wider text-muted">Digital certificates ({profile!.certificates.length})</p>
                 <ul className="space-y-1.5">
                   {profile!.certificates.map((cert) => (
                     <li key={cert.id} className="flex items-center gap-2 rounded-lg border px-3 py-2">

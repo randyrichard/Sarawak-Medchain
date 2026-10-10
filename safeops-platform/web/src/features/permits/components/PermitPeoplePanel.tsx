@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Users, Plus, Trash2, LogIn, LogOut, ShieldAlert } from 'lucide-react'
+import { Plus, Trash2, LogIn, LogOut } from 'lucide-react'
 import {
   ATTENDEE_ROLE_LABEL, permitPeopleApi,
   type AttendeeRole, type EligiblePerson, type PermitAttendee,
@@ -62,7 +62,7 @@ export function PermitPeoplePanel({
   return (
     <section>
       <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-        <Users size={12} /> People
+        People
         {inside.length > 0 && (
           <span className="text-accent">({inside.length} in the work area)</span>
         )}
@@ -243,7 +243,7 @@ function AddPersonDialog({
           {blocked.length > 0 && (
             <div>
               <p className="mb-1.5 flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-wider text-muted">
-                <ShieldAlert size={11} /> Cannot be named ({blocked.length})
+                Cannot be named ({blocked.length})
               </p>
               <ul className="max-h-40 space-y-1 overflow-y-auto">
                 {blocked.map((p) => (

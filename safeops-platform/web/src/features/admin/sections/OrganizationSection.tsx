@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Building2, CalendarDays, Clock, Layers, Plus, Save, Trash2 } from 'lucide-react'
+import { Building2, CalendarDays, Plus, Save, Trash2 } from 'lucide-react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import type { BusinessUnit, Holiday, JobPosition, OrgSettings, ShiftPattern } from '@/api/admin'
@@ -144,7 +144,6 @@ function StructurePanel({ sites }: { sites: { id: string; short: string; name: s
         <CardBody className="space-y-2">
           {units === null ? <Skeleton className="h-32 w-full" /> : units.map((u) => (
             <div key={u.id} className="flex items-center gap-3 rounded-lg border px-3.5 py-2.5">
-              <Layers size={15} className="text-accent" />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-ink">{u.name}</p>
                 <p className="flex items-center gap-1 text-2xs text-muted"><Avatar name={u.lead} size={13} /> {u.lead} · {u.sites} site(s)</p>
@@ -199,7 +198,6 @@ function ShiftsPanel() {
       <CardBody className="space-y-2">
         {items === null ? <Skeleton className="h-32 w-full" /> : items.map((sp) => (
           <div key={sp.id} className="flex items-center gap-3 rounded-lg border px-3.5 py-2.5">
-            <Clock size={15} className="text-accent" />
             <div className="min-w-0 flex-1"><p className="text-sm font-medium text-ink">{sp.name}</p><p className="text-2xs text-muted">{sp.start}–{sp.end} · {sp.days}</p></div>
             <button onClick={() => void api.adminRemoveConfigItem(companyId, 'shift', sp.id, actor).then(load)} className="rounded p-1 text-muted hover:text-critical" aria-label="Remove"><Trash2 size={13} /></button>
           </div>

@@ -49,8 +49,18 @@ export class PermitError extends DomainError {}
 /** Status as the board reports it — the stored states plus derived `expired`. */
 export type EffectivePermitStatus = PermitStatus | 'expired'
 
+/**
+ * Waiting for a signature: submitted, or anywhere in the approval chain.
+ *
+ * The chain stages were missing from the live board, so a permit dropped off it the moment
+ * its first reviewer signed - and off "Awaiting approval" too, which matched `submitted`
+ * alone. The HSE reviewer and the area authority who had to sign it next could only find
+ * it under All.
+ */
+export const AWAITING_APPROVAL: PermitStatus[] = ['submitted', 'supervisor_review', 'hse_review', 'area_authority']
+
 /** The live states. `draft` is not one: an unsubmitted request authorises nothing. */
-const LIVE_STORED: PermitStatus[] = ['submitted', 'approved', 'active', 'suspended']
+const LIVE_STORED: PermitStatus[] = [...AWAITING_APPROVAL, 'approved', 'active', 'suspended']
 
 /** Refusal for approving or reviewing a permit whose working window has already ended. */
 export const WINDOW_PASSED =
@@ -87,7 +97,7 @@ export interface PermitFilters {
   q?: string
   siteId?: string
   type?: PermitType
-  status?: EffectivePermitStatus | 'all' | 'live'
+  status?: EffectivePermitStatus | 'all' | 'live' | 'awaiting' | 'expiring'
 }
 
 export interface NewPermitInput {
@@ -179,7 +189,7 @@ export class PermitService {
     if (v.expiringSoon) return 0
     if (v.status === 'expired') return 1
     if (v.status === 'active') return 2
-    if (v.status === 'submitted') return 3
+    if ((AWAITING_APPROVAL as string[]).includes(v.status)) return 3
     if (v.status === 'approved') return 4
     return 5
   }
@@ -201,6 +211,11 @@ export class PermitService {
       case 'live':
         // Every expired permit is a stored active/approved row, so this covers it too.
         return { status: { in: LIVE_STORED } }
+      case 'awaiting':
+        return { status: { in: AWAITING_APPROVAL } }
+      case 'expiring':
+        // Home's "Expiring in 7 days": work in progress whose window closes within the week.
+        return { status: 'active', validTo: { gte: now, lte: new Date(now.getTime() + 7 * 86_400_000) } }
       case 'expired':
         return { status: { in: ['active', 'approved'] }, validTo: { lt: now } }
       case 'active':
@@ -317,7 +332,7 @@ export class PermitService {
         // Anywhere in the approval chain, not just at submission: a permit parked with
         // HSE is as stalled as one nobody has looked at.
         this.db.permit.count({
-          where: { ...base, status: { in: ['submitted', 'supervisor_review', 'hse_review', 'area_authority'] } },
+          where: { ...base, status: { in: AWAITING_APPROVAL } },
         }),
         this.db.permit.count({ where: { ...base, status: 'suspended' } }),
         this.db.permit.count({

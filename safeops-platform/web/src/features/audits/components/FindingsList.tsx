@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ClipboardCheck, Link2 } from 'lucide-react'
+import { ClipboardCheck } from 'lucide-react'
 import type { AuditFindingView, FindingSeverity } from '@/api/audits'
 import { Avatar, Card, EmptyState, Skeleton, StatusPill } from '@/components/ui'
 import { FINDING_STATUS_META, SEVERITY_META } from '../lib'
@@ -63,7 +63,7 @@ export function FindingsList({
                   <p className="mt-1 text-sm leading-relaxed text-ink">{f.description}</p>
                   <p className="mt-1 flex flex-wrap items-center gap-2 text-2xs text-muted">
                     <Link to={`/actions?open=${f.actionId}`} className="inline-flex items-center gap-1 font-semibold text-accent hover:underline">
-                      <Link2 size={10} /> {f.actionCode}
+                      Action {f.actionCode}
                     </Link>
                     <span className="inline-flex items-center gap-1"><Avatar name={f.actionOwner} size={14} /> {f.actionOwner}</span>
                     <span className={f.actionOverdue ? 'font-semibold text-critical' : ''}>due {f.actionDue}{f.actionOverdue ? ' · overdue' : ''}</span>

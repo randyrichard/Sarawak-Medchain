@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Building2, ChevronRight, Plus, Users } from 'lucide-react'
+import { ChevronRight, Plus, Users } from 'lucide-react'
 import { api } from '@/api/client'
 import type { Department, Employee, Site, Team } from '@/api/types'
 import { ROLE_LABEL, type Role } from '@/api/types'
@@ -151,7 +151,6 @@ function SiteNode({
           rather than the name squeezing to a word per line and running into the badge. */}
       <button onClick={onToggle} className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 px-3.5 py-3 text-left hover:bg-accent-soft/40">
         <ChevronRight size={15} className={cn('shrink-0 text-muted transition-transform', open && 'rotate-90')} />
-        <Building2 size={16} className="shrink-0 text-accent" />
         <span className="min-w-0 flex-1 basis-40">
           <span className="block text-sm font-semibold text-ink">{site.name}</span>
           <span className="block text-2xs text-muted">{site.city} · {site.headcount.toLocaleString()} workers · {site.timezone}</span>
@@ -170,7 +169,6 @@ function SiteNode({
                   <ul className="mt-1 space-y-0.5">
                     {deptTeams.map((t) => (
                       <li key={t.id} className="flex items-center gap-2 text-xs text-ink-2">
-                        <Users size={12} className="text-muted" />
                         {t.name} <span className="text-muted">· led by {t.lead}</span>
                       </li>
                     ))}
@@ -257,6 +255,7 @@ const CAPABILITY_LABEL: Record<string, string> = {
   'workforce:view': 'See workforce and contractor registers',
   'reports:view': 'See generated reports',
   'incidents:manage': 'Investigate and close incidents',
+  'actions:view': 'See corrective actions (their own, or all for managers)',
   'actions:manage': 'Manage corrective actions',
   'analytics:view': 'View analytics',
   'compliance:manage': 'Manage compliance',

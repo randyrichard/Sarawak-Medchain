@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Wrench, Plus, AlertTriangle } from 'lucide-react'
+import { Plus, AlertTriangle } from 'lucide-react'
 import {
   MAINTENANCE_KIND_LABEL, MAINTENANCE_STATUS_LABEL, equipmentApi,
   type MaintenanceKind, type MaintenancePriority, type WorkOrder,
@@ -63,7 +63,7 @@ export function MaintenancePanel({
   return (
     <section className="mt-5">
       <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-        <Wrench size={12} /> Maintenance
+        Maintenance
         {overdue.length > 0 && <span className="text-critical">({overdue.length} overdue)</span>}
       </p>
 

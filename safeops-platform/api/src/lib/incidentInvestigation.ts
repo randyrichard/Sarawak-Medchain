@@ -673,7 +673,7 @@ function hrefFor(kind: IncidentLinkKind, id: string) {
     case 'permit': return `/permits?open=${id}`
     case 'asset': return `/assets?open=${id}`
     case 'employee': return `/employees?open=${id}`
-    case 'contractor': return `/contractors?open=${id}`
+    case 'contractor': return `/contractors?contractor=${id}`
     case 'contractor_worker': return `/contractors?worker=${id}`
     case 'visitor': return `/visitors?open=${id}`
   }

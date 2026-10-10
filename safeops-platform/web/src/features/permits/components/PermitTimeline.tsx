@@ -63,7 +63,7 @@ export function PermitTimeline({ permit }: { permit: PermitView }) {
   return (
     <section>
       <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-        <History size={12} /> Audit trail
+        Audit trail
         <span className="text-muted">({entries.length})</span>
       </p>
 

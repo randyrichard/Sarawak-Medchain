@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
 import { ThemeProvider } from './theme'
 import { AuthProvider } from '@/features/auth/AuthContext'
 import { OrgProvider } from '@/features/org/OrgContext'
@@ -13,6 +13,7 @@ import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage'
 import { AcceptInvitationPage } from '@/features/auth/pages/AcceptInvitationPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { Canonical } from './Canonical'
+import { linkTo } from '@/lib/links'
 
 // Each business module is code-split into its own chunk, loaded on first visit.
 // The <Suspense> boundary lives in AppShell so the sidebar/topbar stay put while a page loads.
@@ -40,8 +41,19 @@ const AccountPage = lazy(() => import('@/features/account/AccountPage').then((m)
 const PlatformRoute = lazy(() => import('@/features/platform/PlatformRoute').then((m) => ({ default: m.PlatformRoute })))
 const StyleguidePage = lazy(() => import('@/features/styleguide/StyleguidePage').then((m) => ({ default: m.StyleguidePage })))
 const LegalPage = lazy(() => import('@/features/legal/LegalPage').then((m) => ({ default: m.LegalPage })))
+const HelpPage = lazy(() => import('@/features/help/HelpPage').then((m) => ({ default: m.HelpPage })))
 
 // Path routing (not hash): every view is a deep-linkable URL per the PRD.
+
+/**
+ * `/actions/<id>`, the shape the due-date reminders were stored with. No page answers it, so
+ * every one of those reminders led to "page not found". The server keeps the shape - it is
+ * how the scheduler tells one reminder from the next - and this sends it to the action.
+ */
+function ActionLink() {
+  const { id = '' } = useParams()
+  return <Navigate to={linkTo.action(id)} replace />
+}
 
 export default function App() {
   return (
@@ -145,11 +157,12 @@ export default function App() {
                   <Route
                     path="/actions"
                     element={
-                      <RequireCapability capability="actions:manage">
+                      <RequireCapability capability="actions:view">
                         <ActionsPage />
                       </RequireCapability>
                     }
                   />
+                  <Route path="/actions/:id" element={<ActionLink />} />
                   <Route
                     path="/assets"
                     element={
@@ -253,6 +266,8 @@ export default function App() {
                   */}
                   <Route path="/platform" element={<PlatformRoute />} />
                   <Route path="/account" element={<AccountPage />} />
+                  {/* Every role: it only ever points at pages the reader can open. */}
+                  <Route path="/help" element={<HelpPage />} />
                   <Route path="/design" element={<StyleguidePage />} />
                 </Route>
               </Route>

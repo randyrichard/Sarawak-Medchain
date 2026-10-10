@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Gauge, Plus, ShieldAlert, ShieldCheck } from 'lucide-react'
+import { Plus, ShieldAlert, ShieldCheck } from 'lucide-react'
 import {
   CALIBRATION_RESULT_LABEL, equipmentApi,
   type Calibration, type CalibrationResult, type EquipmentFitness,
@@ -49,7 +49,7 @@ export function CalibrationPanel({
   return (
     <section className="mt-5">
       <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-        <Gauge size={12} /> Calibration
+        Calibration
       </p>
 
       {error && <Alert tone="critical" className="mb-2" onDismiss={() => setError(null)}>{error}</Alert>}

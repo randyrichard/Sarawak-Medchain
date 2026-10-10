@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BookOpen, Clock, Monitor, Plus, Users } from 'lucide-react'
+import { BookOpen, Monitor, Plus } from 'lucide-react'
 import type { CourseView } from '@/api/training'
 import { CATEGORY_LABEL } from '@/api/training'
 import { Badge, Button, Card, Skeleton } from '@/components/ui'
@@ -51,14 +51,14 @@ export function CatalogPanel({
             <p className="mt-1 line-clamp-2 flex-1 text-2xs leading-relaxed text-muted">{c.description}</p>
 
             <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-2xs text-muted">
-              <span className="inline-flex items-center gap-1"><Clock size={11} /> {c.durationHours}h</span>
+              <span>{c.durationHours} hours</span>
               <span>{c.validityMonths ? `${c.validityMonths}-mo validity` : 'No expiry'}</span>
               <span className="inline-flex items-center gap-1"><Monitor size={11} /> {c.deliveryModes.join(' / ')}</span>
             </div>
 
             <div className="mt-3 border-t pt-2.5">
               <div className="mb-1 flex items-center justify-between text-2xs">
-                <span className="inline-flex items-center gap-1 text-ink-2"><Users size={11} /> {c.certifiedEmployees}/{c.requiredEmployees} certified</span>
+                <span className="text-ink-2">{c.certifiedEmployees}/{c.requiredEmployees} certified</span>
                 <span className="font-semibold" style={{ color: c.compliancePct >= 90 ? 'var(--good)' : c.compliancePct >= 75 ? 'var(--warning)' : 'var(--critical)' }}>
                   {c.compliancePct}%
                 </span>

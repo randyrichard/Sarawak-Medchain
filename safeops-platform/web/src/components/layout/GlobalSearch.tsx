@@ -1,30 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  Search, Loader2, ClipboardList, ListChecks, HardHat, Wrench, CalendarClock, GraduationCap,
-  UserRound, ShieldCheck, Building2, ScrollText, HardHat as HardHatIcon, Truck, UserCheck,
-} from 'lucide-react'
+import { Search, Loader2 } from 'lucide-react'
 import { searchApi, type SearchHit, type SearchKind } from '@/api/accountApi'
 import { useOrg } from '@/features/org/OrgContext'
 import { isBackendConfigured } from '@/api/authApi'
 import { cn } from '@/lib/cn'
 import { isTypingTarget, modKey } from '@/lib/shortcuts'
 
-const KIND_ICON: Record<SearchKind, typeof ClipboardList> = {
-  incident: ClipboardList,
-  action: ListChecks,
-  permit: HardHat,
-  asset: Wrench,
-  audit: CalendarClock,
-  certificate: GraduationCap,
-  employee: UserRound,
-  user: ShieldCheck,
-  company: Building2,
-  auditlog: ScrollText,
-  contractor: Truck,
-  contractorWorker: HardHatIcon,
-  visitor: UserCheck,
-}
 
 const KIND_LABEL: Record<SearchKind, string> = {
   incident: 'Incident',
@@ -209,7 +191,6 @@ export function GlobalSearch() {
           ) : hits ? (
             <ul className="py-1">
               {hits.map((hit, i) => {
-                const Icon = KIND_ICON[hit.kind]
                 return (
                   <li key={`${hit.kind}-${hit.id}`}>
                     <button
@@ -222,7 +203,6 @@ export function GlobalSearch() {
                         i === active ? 'bg-accent-soft' : 'hover:bg-accent-soft/50',
                       )}
                     >
-                      <Icon size={14} className="mt-0.5 shrink-0 text-muted" />
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2">
                           <span className="font-mono text-2xs text-muted">

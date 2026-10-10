@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
-import {
-  AlertOctagon, AtSign, Ban, CheckCheck, Link2, PenLine, Play, Send, ShieldCheck, Undo2, X, Paperclip,
-} from 'lucide-react'
+import { AlertOctagon, AtSign, Ban, CheckCheck, PenLine, Play, Send, ShieldCheck, Undo2, X, Paperclip } from 'lucide-react'
 import { api } from '@/api/client'
 import { upload } from '@/api/http'
 import { ApiError } from '@/api/types'
@@ -155,7 +153,7 @@ export function ActionDrawer({
                 to={`/incidents/${item.incidentId}`}
                 className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-accent hover:underline"
               >
-                <Link2 size={11} /> {item.incidentNumber} · {item.incidentTitle}
+                From {item.incidentNumber} · {item.incidentTitle}
               </Link>
             )}
           </div>

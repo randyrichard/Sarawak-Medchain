@@ -640,4 +640,16 @@ d('Operational dashboard — integration (real Postgres)', () => {
     expect(item!.status).toMatch(/past its window/)
     expect(item!.overdueDays).toBeGreaterThanOrEqual(1)
   })
+
+  it('counts every lapsed and expiring permit, not just the ten it lists', async () => {
+    // The figures were the lengths of the attention lists, which stop at ten.
+    await purge()
+    for (let i = 0; i < 12; i++) await permit({ status: 'active', validFrom: days(-9), validTo: days(-2) })
+    for (let i = 0; i < 11; i++) await permit({ status: 'active', validFrom: days(-1), validTo: days(3) })
+
+    const r = await svc.overview(admin, { companyId: CO })
+    expect(r.permits.expiredOpen).toBe(12)
+    expect(r.permits.expiringSoon).toBe(11)
+    expect(r.attention.filter((a) => a.kind === 'permit' && a.priority === 'overdue')).toHaveLength(10)
+  })
 })

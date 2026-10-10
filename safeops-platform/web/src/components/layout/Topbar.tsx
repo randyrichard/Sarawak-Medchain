@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Moon, Sun, LogOut, UserRound, Settings, ShieldQuestion, Keyboard } from 'lucide-react'
+import { Moon, Sun } from 'lucide-react'
 import { useTheme } from '@/app/theme'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useOrg } from '@/features/org/OrgContext'
@@ -87,22 +87,26 @@ export function Topbar({ menuButton }: { menuButton: ReactNode }) {
             </span>
           </div>
           <DropdownSeparator />
-          <DropdownItem icon={<UserRound size={15} />} onSelect={() => navigate('/account')}>
+          {/* Words only, like the menu beside it: an icon on every line said nothing the line did not. */}
+          <DropdownItem onSelect={() => navigate('/account')}>
             My account
           </DropdownItem>
-          <DropdownItem icon={<Settings size={15} />} onSelect={() => navigate('/account#preferences')}>
+          <DropdownItem onSelect={() => navigate('/account#preferences')}>
             Preferences
           </DropdownItem>
+          <DropdownItem onSelect={() => navigate('/help')}>
+            Help
+          </DropdownItem>
           {/* Where GitHub and Gmail keep it: discoverable for people who never press "?". */}
-          <DropdownItem icon={<Keyboard size={15} />} onSelect={openShortcuts}>
+          <DropdownItem onSelect={openShortcuts}>
             Keyboard shortcuts
           </DropdownItem>
-          <DropdownItem icon={<ShieldQuestion size={15} />} onSelect={() => navigate('/design')}>
+          <DropdownItem onSelect={() => navigate('/design')}>
             About this build
           </DropdownItem>
           <DropdownSeparator />
           <DropdownLabel>Session</DropdownLabel>
-          <DropdownItem danger icon={<LogOut size={15} />} onSelect={() => void logout()}>
+          <DropdownItem danger onSelect={() => void logout()}>
             Sign out
           </DropdownItem>
         </Dropdown>

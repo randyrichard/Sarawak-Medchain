@@ -12,6 +12,7 @@ import { useDashboard } from './useDashboard'
 import { DashboardFilters } from './components/DashboardFilters'
 import { GettingStarted } from './components/GettingStarted'
 import { useGettingStarted } from './useGettingStarted'
+import { useWelcome, Welcome } from './components/Welcome'
 import { NeedsAttention } from './components/NeedsAttention'
 import { SiteComparison } from './components/SiteComparison'
 import {
@@ -29,10 +30,11 @@ import { headline, kpiCards, scopeCaveats, scopeSummary } from './lib'
  */
 export function DashboardPage() {
   const { user } = useAuth()
-  const { loading: orgLoading, companies, company, project, site, sites, allowed, switchSite } = useOrg()
+  const { loading: orgLoading, companies, company, project, site, sites, allowed, switchSite, role } = useOrg()
   const platformAdmin = usePlatformAdmin()
   const { data, loading, error, filters, setFilter, clearFilters, refresh, filtered } = useDashboard()
   const { progress: gettingStarted, dismiss: dismissGettingStarted } = useGettingStarted()
+  const welcome = useWelcome()
   /*
    * Bumped by the Refresh button only. The comparison used to follow the overview's
    * generatedAt, which changes from nothing to a time as the page first loads - so it
@@ -65,7 +67,7 @@ export function DashboardPage() {
   if (!orgLoading && companies.length === 0) {
     return (
       <>
-        <PageHeader title="Safety operations" subtitle="No workspace yet" />
+        <PageHeader title="Home" subtitle="No workspace yet" />
         <Card>
           <CardBody>
             <EmptyState icon={Building2} title="Your account is not in a workspace yet.">
@@ -89,7 +91,7 @@ export function DashboardPage() {
   return (
     <>
       <PageHeader
-        title="Safety operations"
+        title="Home"
         subtitle={`${greeting}${firstName ? `, ${firstName}` : ''}. Here is what needs attention today.`}
         right={data
           ? (
@@ -121,6 +123,10 @@ export function DashboardPage() {
       */}
       {gettingStarted && (
         <GettingStarted progress={gettingStarted} onDismiss={dismissGettingStarted} />
+      )}
+      {/* Everyone else who is new: their first three jobs and the guide. The administrator has the checklist above. */}
+      {role && !allowed('settings:manage') && !welcome.hidden && (
+        <Welcome role={role} onDismiss={welcome.dismiss} />
       )}
 
       <DashboardFilters

@@ -27,9 +27,10 @@ export function useGettingStarted() {
    * page telling them they do not have access.
    */
   const canSetUp = allowed('settings:manage')
-  const [hidden, setHidden] = useState(
-    () => typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEY) === '1',
-  )
+  const [hidden, setHidden] = useState(() => {
+    // Reading storage can throw (blocked site data, some private windows): then it shows.
+    try { return localStorage.getItem(STORAGE_KEY) === '1' } catch { return false }
+  })
   const [progress, setProgress] = useState<GettingStartedProgress | null>(null)
 
   useEffect(() => {

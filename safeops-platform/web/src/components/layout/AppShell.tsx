@@ -1,13 +1,9 @@
 import { Suspense, useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
-import {
-  LayoutDashboard, ClipboardList, FileText, ListChecks, GraduationCap, ShieldCheck, Bell,
-  Building2, Boxes, Menu, X, Lock, SlidersHorizontal, HardHat, UserCheck, ShieldAlert, Users, Megaphone, TrendingUp,
-} from 'lucide-react'
+import { ShieldCheck, Menu, X, Lock } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useOrg } from '@/features/org/OrgContext'
 import { usePlatformAdmin } from '@/features/platform/usePlatformAdmin'
-import type { Capability } from '@/features/permissions/permissions'
 import { ErrorBoundary } from '@/app/ErrorBoundary'
 import { PageTitleContext, resolveTitle } from '@/app/pageTitle'
 import { Topbar } from './Topbar'
@@ -16,86 +12,10 @@ import { CompanySwitcher } from './Switchers'
 import { KeyboardShortcuts } from './KeyboardShortcuts'
 import { Badge, FullPageSpinner } from '@/components/ui'
 import { isBackendConfigured } from '@/api/authApi'
+import { GROUP_NAV_ABOVE, NAV, NAV_GROUPS, type NavItem } from './nav'
 
-/**
- * Sidebar sections - Hick's law.
- *
- * An administrator saw seventeen items in one flat column. With nothing to separate them
- * the column is read top to bottom every time, and the time to find "Training" grows with
- * everything above it. Five small labelled groups turn that into two quick choices - which
- * area, then which page - and give the eye landmarks to jump to. Each group holds at most
- * four, the size people take in at a glance.
- *
- * The everyday items (home, report a near miss, notifications) have no heading and stay at
- * the top: they are what most people open most often, and the cheapest choice is the one
- * already in front of you.
- */
-type NavGroup = 'Incidents' | 'Operations' | 'People' | 'Assurance' | 'Workspace'
-export const NAV_GROUPS: NavGroup[] = ['Incidents', 'Operations', 'People', 'Assurance', 'Workspace']
-
-/**
- * Below this many visible items the sidebar stays one flat list. A worker who can open four
- * pages gains nothing from four headings over them - grouping pays only once the list is
- * long enough to need scanning.
- */
-export const GROUP_NAV_ABOVE = 7
-
-interface NavItem {
-  to: string
-  label: string
-  /** The section it sits under. None: the everyday items at the top. */
-  group?: NavGroup
-  icon: typeof LayoutDashboard
-  capability: Capability
-  /** future-sprint modules render locked, communicating the roadmap */
-  locked?: string
-  end?: boolean
-  /**
-   * Sub-paths that belong to a different nav item.
-   *
-   * NavLink matches by prefix, so "/incidents" lit up on "/incidents/board" and both rows
-   * highlighted at once - reported exactly that way. Plain `end` is the wrong cure: it
-   * would also stop "Incidents" highlighting on "/incidents/INC-2601", which genuinely is
-   * part of that section. Only the paths that have their own nav row are excluded.
-   */
-  notFor?: string[]
-}
-
-export const NAV: NavItem[] = [
-  { to: '/', label: 'Mission Control', icon: LayoutDashboard, capability: 'dashboard:view', end: true },
-  // Near-miss capture sits in the nav because under-reporting is driven by friction and
-  // forgetting (customer research P1) — it has to be one tap from anywhere.
-  { to: '/near-miss', label: 'Report Near Miss', icon: ShieldAlert, capability: 'reports:submit' },
-  // Everyone gets told what needs them.
-  { to: '/notifications', label: 'Notifications', icon: Bell, capability: 'dashboard:view' },
-  /*
-   * Each item asks for the capability it actually needs.
-   *
-   * Thirteen of these were gated on `dashboard:view`, which every role holds, so an
-   * employee was shown the contractor register, the workforce list, audits, training and
-   * tenant-wide reports. Nothing leaked - the API refused every write, and medical detail
-   * is redacted server-side - but the menu promised a product that was not theirs, and a
-   * worker who opens a screen full of things they cannot use stops opening it.
-   *
-   * Incidents deliberately asks for `:view`, not `:manage`. Reporting one is everybody's
-   * job; triaging it is not, and the difference belongs in the page rather than the menu.
-   */
-  { to: '/incidents', label: 'Incidents', icon: ClipboardList, capability: 'incidents:view', notFor: ['/incidents/board'], group: 'Incidents' },
-  { to: '/incidents/board', label: 'Incident board', icon: LayoutDashboard, capability: 'incidents:view', group: 'Incidents' },
-  { to: '/actions', label: 'Actions', icon: ListChecks, capability: 'actions:manage', group: 'Incidents' },
-  { to: '/assets', label: 'Assets', icon: Boxes, capability: 'equipment:view', group: 'Operations' },
-  { to: '/permits', label: 'Permits', icon: HardHat, capability: 'permits:view', group: 'Operations' },
-  { to: '/visitors', label: 'Visitors', icon: UserCheck, capability: 'visitors:view', group: 'Operations' },
-  { to: '/toolbox', label: 'Toolbox meetings', icon: Megaphone, capability: 'toolbox:view', group: 'Operations' },
-  { to: '/performance', label: 'HSE Performance', icon: TrendingUp, capability: 'analytics:view', group: 'Assurance' },
-  { to: '/reports', label: 'Reports', icon: FileText, capability: 'reports:view', group: 'Assurance' },
-  { to: '/audits', label: 'Compliance', icon: ShieldCheck, capability: 'compliance:manage', group: 'Assurance' },
-  { to: '/training', label: 'Training', icon: GraduationCap, capability: 'training:view', group: 'People' },
-  { to: '/employees', label: 'Workforce', icon: Users, capability: 'workforce:view', group: 'People' },
-  { to: '/contractors', label: 'Contractors', icon: HardHat, capability: 'workforce:view', group: 'People' },
-  { to: '/organization', label: 'Organization', icon: Building2, capability: 'org:view', group: 'Workspace' },
-  { to: '/admin', label: 'Administration', icon: SlidersHorizontal, capability: 'settings:manage', group: 'Workspace' },
-]
+// Re-exported for the tests that check the menu's shape.
+export { GROUP_NAV_ABOVE, NAV, NAV_GROUPS }
 
 /**
  * Keeps the browser title in step with the route.
@@ -289,7 +209,6 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                 className="flex cursor-not-allowed items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-muted opacity-70"
                 title={`Ships in ${item.locked}`}
               >
-                <item.icon size={16} />
                 <span className="flex-1">{item.label}</span>
                 <Badge tone="neutral" className="gap-1"><Lock size={9} /> {item.locked}</Badge>
               </div>
@@ -301,19 +220,17 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                 onClick={onNavigate}
                 className={({ isActive }) =>
                   cn(
-                    'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors coarse:min-h-11',
+                    // Words only. With an icon on every row the list was eighteen symbols before
+                    // it was a single word; the section headings already group it. Where you are
+                    // is marked by weight and an edge bar, not by the colour of an icon.
+                    'flex items-center rounded-lg px-3 py-2 text-sm transition-colors coarse:min-h-11',
                     own(item, isActive)
-                      ? 'bg-accent-soft text-ink'
-                      : 'text-ink-2 hover:bg-accent-soft/60 hover:text-ink',
+                      ? 'bg-accent-soft font-semibold text-ink shadow-[inset_3px_0_0_var(--accent)]'
+                      : 'font-medium text-ink-2 hover:bg-accent-soft/60 hover:text-ink',
                   )
                 }
               >
-                {({ isActive }) => (
-                  <>
-                    <item.icon size={16} className={own(item, isActive) ? 'text-accent' : 'text-muted'} />
-                    <span className="flex-1">{item.label}</span>
-                  </>
-                )}
+                <span className="flex-1">{item.label}</span>
               </NavLink>
             )
           // Short lists stay flat; see GROUP_NAV_ABOVE.
@@ -351,6 +268,27 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           platform call, and nothing in the product can grant it. The label exists so that
           whoever holds it always knows which hat they are wearing.
         */}
+        {/*
+          Help, for everyone and on every page. At the foot of the menu rather than among the
+          everyday items, so it is easy to find once and costs nothing on the hundredth visit.
+        */}
+        <div className="mt-4 border-t pt-3">
+          <NavLink
+            to="/help"
+            onClick={onNavigate}
+            className={({ isActive }) =>
+              cn(
+                'flex items-center rounded-lg px-3 py-2 text-sm transition-colors coarse:min-h-11',
+                isActive
+                  ? 'bg-accent-soft font-semibold text-ink shadow-[inset_3px_0_0_var(--accent)]'
+                  : 'font-medium text-ink-2 hover:bg-accent-soft/60 hover:text-ink',
+              )
+            }
+          >
+            <span className="flex-1">Help</span>
+          </NavLink>
+        </div>
+
         {platformAdmin && (
           <div className="mt-4 border-t pt-3">
             <p className="px-3 pb-1 text-2xs font-semibold uppercase tracking-widest text-muted">
@@ -361,17 +299,14 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               onClick={onNavigate}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors coarse:min-h-11',
-                  isActive ? 'bg-accent-soft text-ink' : 'text-ink-2 hover:bg-accent-soft/60 hover:text-ink',
+                  'flex items-center rounded-lg px-3 py-2 text-sm transition-colors coarse:min-h-11',
+                  isActive
+                    ? 'bg-accent-soft font-semibold text-ink shadow-[inset_3px_0_0_var(--accent)]'
+                    : 'font-medium text-ink-2 hover:bg-accent-soft/60 hover:text-ink',
                 )
               }
             >
-              {({ isActive }) => (
-                <>
-                  <Building2 size={16} className={isActive ? 'text-accent' : 'text-muted'} />
-                  <span className="flex-1">SafeOps customers</span>
-                </>
-              )}
+              <span className="flex-1">SafeOps customers</span>
             </NavLink>
             <p className="px-3 pt-1 text-2xs leading-relaxed text-muted">
               Every customer on this deployment. Not part of {company?.name ?? 'this workspace'}.

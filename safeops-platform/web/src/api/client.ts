@@ -56,6 +56,7 @@ import type {
   GasTest, IsolationPoint, NewPermitInput, PermitFilters, PermitStats, PermitView,
 } from './permits'
 import { delay } from '@/lib/time'
+import { linkTo } from '@/lib/links'
 import type { DemoStores } from './mock/demo'
 
 /** Best-effort device label from the current browser (used for login history). */
@@ -468,6 +469,8 @@ function filterCapa(rows: CapaItem[], f: CapaFilters): CapaItem[] {
         case 'open': return isOpenAction(r)
         case 'overdue': return r.overdue
         case 'due_today': return r.daysToDue === 0 && !r.overdue
+        // Home's "Due this week": tomorrow to seven days out, still being worked.
+        case 'due_week': return isOpenAction(r) && r.daysToDue >= 1 && r.daysToDue <= 7
         case 'verification': return r.derived === 'Waiting Verification'
         // Both restricted to open work: a closed high-priority action is not something
         // the register is asking anyone to go and do.
@@ -496,15 +499,15 @@ class MockApiClient implements ApiClient {
    * not fail the action that rang it.
    */
   private pushNotification = (
-    companyId: string, kind: AppNotification['kind'], title: string, detail: string,
+    companyId: string, kind: AppNotification['kind'], title: string, detail: string, href?: string,
   ) => {
     if (SERVER_NOTIFICATIONS) {
-      if (companyId) void notificationsApi.create(companyId, { kind, title, detail }).catch(() => {})
+      if (companyId) void notificationsApi.create(companyId, { kind, title, detail, href }).catch(() => {})
       return
     }
     this.notifications.unshift({
       id: `n-${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`,
-      kind, title, detail, createdAt: new Date().toISOString(), readAt: null,
+      kind, title, detail, createdAt: new Date().toISOString(), readAt: null, href,
     })
     this.persistNotifications()
   }
@@ -513,8 +516,8 @@ class MockApiClient implements ApiClient {
    * notifier. They only run with no backend configured, where the workspace is unused,
    * so the adapter supplies an empty one rather than inventing a tenant.
    */
-  private demoNotify = (kind: AppNotification['kind'], title: string, detail: string) =>
-    this.pushNotification('', kind, title, detail)
+  private demoNotify = (kind: AppNotification['kind'], title: string, detail: string, href?: string) =>
+    this.pushNotification('', kind, title, detail, href)
 
   /**
    * The demo stores, loaded and built on first use - which only ever happens with no API
@@ -966,16 +969,30 @@ class MockApiClient implements ApiClient {
 
   async capaAnalytics(companyId: string) {
     if (SERVER_INCIDENTS) {
-      const a = await incidentsApi.actionAnalytics(companyId)
-      const mock = (await this.demo()).incidents.capaAnalytics(companyId)
-      // Real counts where the server has them; the trend/ranking panels keep their
-      // illustrative shape until the analytics endpoint reports them.
+      /*
+       * Every panel from the server. This used to spread the browser's demo analytics and
+       * overwrite two of its numbers, so a real workspace was shown a sample company's
+       * owners, sites and monthly trend - and a "completion rate" that was closed against
+       * overdue rather than verified against everything raised, as its label says.
+       */
+      const { panels: p } = await incidentsApi.actionAnalytics(companyId)
+      // An API older than this page has no panels: say nothing rather than break the tab.
+      if (!p) {
+        return {
+          completionRate: null, avgCloseDays: null, onTimeRate: null, mostOverdueSite: null,
+          bySite: [], byDepartment: [], byOwner: [], monthlyCompletions: [],
+        }
+      }
       return {
-        ...mock,
-        completionRate: a.totalClosed + a.overdue > 0
-          ? Math.round((a.totalClosed / (a.totalClosed + a.overdue)) * 100)
-          : mock.completionRate,
-        avgCloseDays: a.avgDaysToComplete ?? mock.avgCloseDays,
+        completionRate: p.completionRate,
+        avgCloseDays: p.avgCloseDays,
+        onTimeRate: p.onTimeRate,
+        mostOverdueSite: p.mostOverdueSite ? { site: p.mostOverdueSite.siteId, count: p.mostOverdueSite.count } : null,
+        bySite: p.bySite.map((s) => ({ name: s.siteId, value: s.open })),
+        byDepartment: p.byDepartment.map((d) => ({ name: d.name, value: d.onTimePct })),
+        byOwner: p.byOwner,
+        monthlyCompletions: p.monthly.map((m) => ({ month: m.month, Created: m.created, Completed: m.completed })),
+        sampled: p.sampled,
       }
     }
     await delay(LATENCY())
@@ -1000,7 +1017,7 @@ class MockApiClient implements ApiClient {
     if (SERVER_INSPECTIONS) {
       const a = await inspectionsApi.createAsset(input)
       this.pushNotification(a.companyId, 'system', `Asset registered: ${a.code}`,
-        `${a.name} — first inspection scheduled ${a.nextDueDate}.`)
+        `${a.name} — first inspection scheduled ${a.nextDueDate}.`, linkTo.asset(a.id))
       return a
     }
     await delay(LATENCY() / 2)
@@ -1011,7 +1028,7 @@ class MockApiClient implements ApiClient {
     if (SERVER_INSPECTIONS) {
       const i = await inspectionsApi.scheduleInspection(assetId, date, inspector)
       this.pushNotification(i.companyId, 'system', `Inspection scheduled: ${i.assetCode}`,
-        `${i.assetName} on ${i.scheduledFor} — inspector ${inspector}.`)
+        `${i.assetName} on ${i.scheduledFor} — inspector ${inspector}.`, linkTo.asset(assetId))
       return i
     }
     await delay(LATENCY() / 2)
@@ -1029,6 +1046,7 @@ class MockApiClient implements ApiClient {
         i.outcome === 'failed' ? 'action' : 'system',
         `${i.code} completed — ${i.outcome === 'failed' ? `${defects} defect(s) found` : 'passed'}`,
         `${i.assetName} inspected by ${actor.name}.`,
+        linkTo.asset(i.assetId),
       )
       return i
     }
@@ -1098,10 +1116,10 @@ class MockApiClient implements ApiClient {
       // many findings it raised, not the answers that were sent.
       for (const f of r.findings.filter((x) => x.status !== 'Closed')) {
         this.pushNotification(r.audit.companyId, 'audit', `Audit finding ${f.code} (${f.severity})`,
-          `${f.description.slice(0, 80)} — action ${f.actionCode} assigned to ${f.actionOwner}.`)
+          `${f.description.slice(0, 80)} — action ${f.actionCode} assigned to ${f.actionOwner}.`, linkTo.action(f.actionId))
       }
       this.pushNotification(r.audit.companyId, 'audit', `${r.audit.code} completed — score ${r.audit.score}%`,
-        `${r.audit.title}: ${r.findings.length} finding(s) raised.`)
+        `${r.audit.title}: ${r.findings.length} finding(s) raised.`, linkTo.audit(r.audit.id))
       return r
     }
     await delay(LATENCY() / 2)
@@ -1112,7 +1130,7 @@ class MockApiClient implements ApiClient {
     if (SERVER_AUDITS) {
       const a = await auditsApi.closeAudit(id)
       this.pushNotification(a.companyId, 'audit', `${a.code} closed`,
-        `${a.title} — every finding verified and closed.`)
+        `${a.title} — every finding verified and closed.`, linkTo.audit(a.id))
       return a
     }
     await delay(LATENCY() / 3)
@@ -1261,7 +1279,7 @@ class MockApiClient implements ApiClient {
   async raiseTrainingAction(employeeId: string, courseId: string, actor: Actor) {
     if (SERVER_TRAINING) {
       const a = await trainingApi.raiseTrainingAction(employeeId, courseId)
-      this.pushNotification(a.companyId, 'action', `Corrective action ${a.code} raised`, a.title)
+      this.pushNotification(a.companyId, 'action', `Corrective action ${a.code} raised`, a.title, linkTo.action(a.id))
       return a
     }
     await delay(LATENCY() / 2)
@@ -1526,7 +1544,7 @@ class MockApiClient implements ApiClient {
   async submitPermit(id: string, actor: Actor) {
     if (SERVER_PERMITS) {
       const p = await permitsApi.submit(id)
-      this.pushNotification(p.companyId, 'system', `Permit ${p.code} awaiting approval`, `${p.typeLabel} — ${p.location}`)
+      this.pushNotification(p.companyId, 'system', `Permit ${p.code} awaiting approval`, `${p.typeLabel} — ${p.location}`, linkTo.permit(p.id))
       return p
     }
     await delay(LATENCY() / 2); return (await this.demo()).permits.submit(id, actor)
@@ -1536,7 +1554,7 @@ class MockApiClient implements ApiClient {
     if (SERVER_PERMITS) {
       const p = await permitsApi.approve(id, statement)
       this.pushNotification(p.companyId, 'system', `Permit ${p.code} issued`,
-        `${p.typeLabel} at ${p.location}. Valid until ${fmtClock(p.validTo)}.`)
+        `${p.typeLabel} at ${p.location}. Valid until ${fmtClock(p.validTo)}.`, linkTo.permit(p.id))
       return p
     }
     await delay(LATENCY() / 2); return (await this.demo()).permits.approve(id, statement, actor)
@@ -1545,7 +1563,7 @@ class MockApiClient implements ApiClient {
   async rejectPermit(id: string, reason: string, actor: Actor) {
     if (SERVER_PERMITS) {
       const p = await permitsApi.reject(id, reason)
-      this.pushNotification(p.companyId, 'system', `Permit ${p.code} rejected`, reason)
+      this.pushNotification(p.companyId, 'system', `Permit ${p.code} rejected`, reason, linkTo.permit(p.id))
       return p
     }
     await delay(LATENCY() / 2); return (await this.demo()).permits.reject(id, reason, actor)
@@ -1559,7 +1577,7 @@ class MockApiClient implements ApiClient {
   async suspendPermit(id: string, reason: string, actor: Actor) {
     if (SERVER_PERMITS) {
       const p = await permitsApi.suspend(id, reason)
-      this.pushNotification(p.companyId, 'incident', `Permit ${p.code} suspended`, `${reason} — work must stop immediately.`)
+      this.pushNotification(p.companyId, 'incident', `Permit ${p.code} suspended`, `${reason} — work must stop immediately.`, linkTo.permit(p.id))
       return p
     }
     await delay(LATENCY() / 3); return (await this.demo()).permits.suspend(id, reason, actor)
@@ -1588,7 +1606,7 @@ class MockApiClient implements ApiClient {
       const latest = p.gasTests[p.gasTests.length - 1]
       if (latest && !latest.pass && p.status === 'suspended') {
         this.pushNotification(p.companyId, 'incident', `Permit ${p.code} suspended — gas test failed`,
-          'Atmosphere outside safe limits. Evacuate and re-test.')
+          'Atmosphere outside safe limits. Evacuate and re-test.', linkTo.permit(p.id))
       }
       return p
     }
@@ -1628,12 +1646,14 @@ class MockApiClient implements ApiClient {
       once(`${p.id}:warn`, () => this.pushNotification(
         companyId, 'action', `Permit ${p.code} expires within the hour`,
         `${p.typeLabel} at ${p.location}. Extend or close before ${fmtClock(p.validTo)}.`,
+        linkTo.permit(p.id),
       ))
     }
     for (const p of expired) {
       once(`${p.id}:expired`, () => this.pushNotification(
         companyId, 'incident', `Permit ${p.code} has EXPIRED with work open`,
         `${p.applicant} at ${p.location}. Work must stop until the permit is renewed.`,
+        linkTo.permit(p.id),
       ))
     }
   }

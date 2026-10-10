@@ -1,4 +1,4 @@
-import { Briefcase, Building2, Check, ChevronsUpDown, Factory, Globe } from 'lucide-react'
+import { Check, ChevronsUpDown } from 'lucide-react'
 import { useOrg } from '@/features/org/OrgContext'
 import { ROLE_LABEL } from '@/api/types'
 import { PROJECT_STATUS_LABEL } from '@/api/orgAdminApi'
@@ -6,9 +6,8 @@ import { Dropdown, DropdownItem, DropdownLabel, Skeleton } from '@/components/ui
 import { cn } from '@/lib/cn'
 
 function SwitcherButton({
-  icon, value, hint, open,
+  value, hint, open,
 }: {
-  icon: React.ReactNode
   value: string
   hint?: string
   open: boolean
@@ -45,7 +44,6 @@ function SwitcherButton({
         open ? 'bg-accent-soft' : 'hover:bg-accent-soft/60',
       )}
     >
-      <span className="text-muted">{icon}</span>
       <span className="truncate">{value}</span>
       {hint && <span className="hidden text-2xs text-muted md:inline">{hint}</span>}
       <ChevronsUpDown size={13} className="shrink-0 text-muted" />
@@ -59,7 +57,7 @@ export function CompanySwitcher() {
   if (!company) return null
   return (
     <Dropdown align="start" width="w-80" trigger={(open) => (
-      <SwitcherButton icon={<Building2 size={14} />} value={company.name} open={open} />
+      <SwitcherButton value={company.name} open={open} />
     )}>
       <DropdownLabel>Company</DropdownLabel>
       {companies.map((c) => (
@@ -109,7 +107,6 @@ export function ProjectSwitcher() {
     <>
     <Dropdown align="start" width="w-80" trigger={(open) => (
       <SwitcherButton
-        icon={<Briefcase size={14} />}
         value={project ? project.name : `All projects (${projects.length})`}
         open={open}
       />
@@ -164,7 +161,6 @@ export function SiteSwitcher() {
   return (
     <Dropdown align="start" width="w-72" trigger={(open) => (
       <SwitcherButton
-        icon={site ? <Factory size={14} /> : <Globe size={14} />}
         value={site ? site.name : allLabel}
         open={open}
       />

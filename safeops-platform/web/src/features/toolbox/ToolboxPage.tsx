@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { CheckCircle2, CircleAlert, Megaphone, Plus, Search } from 'lucide-react'
+import { Megaphone, Plus, Search } from 'lucide-react'
 import { toolboxApi, type ToolboxMeeting, type ToolboxToday } from '@/api/toolboxApi'
 import { ApiError } from '@/api/types'
 import { isBackendConfigured } from '@/api/authApi'
@@ -60,7 +60,7 @@ export function ToolboxPage() {
   if (!isBackendConfigured()) {
     return (
       <>
-        <PageHeader title="Toolbox meetings" subtitle="The daily site briefing, on record" />
+        <PageHeader title="Toolbox meetings" subtitle="Short safety briefings held before work starts" />
         <Alert tone="info">Toolbox meetings are recorded on the server. Connect this app to the SafeOps API to use them.</Alert>
       </>
     )
@@ -96,7 +96,7 @@ export function ToolboxPage() {
     <>
       <PageHeader
         title="Toolbox meetings"
-        subtitle="The daily site briefing on record — what was covered, who led it and who attended"
+        subtitle="Short safety briefings held before work starts. Record what was covered, who led it and who attended."
         right={canRecord && (
           <Button icon={<Plus size={15} />} onClick={() => setEditing('new')}>Record meeting</Button>
         )}
@@ -128,9 +128,6 @@ export function ToolboxPage() {
                   )}
                 >
                   <span className="flex min-w-0 items-center gap-2">
-                    {s.held
-                      ? <CheckCircle2 size={15} className="shrink-0 text-good" aria-hidden="true" />
-                      : <CircleAlert size={15} className="shrink-0 text-warning" aria-hidden="true" />}
                     <span className="truncate text-sm text-ink">{s.siteName}</span>
                   </span>
                   <span className="shrink-0 text-xs">

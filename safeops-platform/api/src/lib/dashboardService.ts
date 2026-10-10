@@ -270,6 +270,7 @@ export class DashboardService {
       assetsInService, assetsOutOfService, inspectionOverdue, calibrationCandidates,
       visitorsOnSite, visitorsExpectedToday, visitorRows,
       recentRuns, incidentDepts, permitDepts, nextSchedule,
+      permitsExpiredOpenCount, permitsExpiringCount,
     ] = await Promise.all([
       // ── Incidents ──────────────────────────────────────────────────────────
       this.db.incident.groupBy({ by: ['stage'], where: incidentWhere, _count: true }),
@@ -477,6 +478,17 @@ export class DashboardService {
         orderBy: { nextRunAt: 'asc' },
         select: { id: true, name: true, nextRunAt: true },
       }),
+      /*
+       * The lapsed and expiring permits, counted. The two lists above are capped at ten
+       * for the attention queue, and their lengths were the figures on Home - so a site
+       * with fifteen lapsed permits read "10".
+       */
+      this.db.permit.count({
+        where: { ...scope, ...dept, status: { in: ['active', 'approved'] }, validTo: { lt: liveNow } },
+      }),
+      this.db.permit.count({
+        where: { ...scope, ...dept, status: 'active', validTo: { gte: liveNow, lte: weekEnd } },
+      }),
     ])
 
     // ── Derive equipment fitness from the shared verdict ─────────────────────
@@ -565,7 +577,7 @@ export class DashboardService {
           ? Math.max(0, daysBetween(x.fitness.calibrationExpiry, today))
           : null,
         detail: x.fitness.reason ?? 'Not fit for use.',
-        href: `/assets?focus=${x.asset.id}`,
+        href: `/assets?open=${x.asset.id}`,
       })
     }
 
@@ -584,7 +596,7 @@ export class DashboardService {
         status: 'past its window, not closed',
         overdueDays: Math.max(0, daysBetween(p.validTo, new Date())),
         detail: `Valid until ${p.validTo.toISOString().slice(0, 16).replace('T', ' ')} and never closed out`,
-        href: `/permits?focus=${p.id}`,
+        href: `/permits?open=${p.id}`,
       })
     }
 
@@ -600,7 +612,7 @@ export class DashboardService {
         status: 'active',
         overdueDays: null,
         detail: `Expires in ${hours < 1 ? 'under an hour' : `${hours} hours`}`,
-        href: `/permits?focus=${p.id}`,
+        href: `/permits?open=${p.id}`,
       })
     }
 
@@ -616,7 +628,7 @@ export class DashboardService {
         status: p.status.replace(/_/g, ' '),
         overdueDays: null,
         detail: `Awaiting ${p.status.replace(/_/g, ' ')} · raised ${waiting} day(s) ago`,
-        href: `/permits?focus=${p.id}`,
+        href: `/permits?open=${p.id}`,
       })
     }
 
@@ -719,9 +731,9 @@ export class DashboardService {
           count: s === 'active' ? permitsActiveNow : permitCount(s),
         })),
         active: permitsActiveNow,
-        expiredOpen: permitsExpiredOpen.length,
+        expiredOpen: permitsExpiredOpenCount,
         awaitingReview: awaitingPermitReview,
-        expiringSoon: permitsExpiring.length,
+        expiringSoon: permitsExpiringCount,
         rejected: permitCount('rejected'),
       },
 

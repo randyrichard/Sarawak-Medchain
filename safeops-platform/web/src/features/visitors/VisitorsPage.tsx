@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Plus, Users, Search, ShieldBan, LayoutDashboard, ClipboardList } from 'lucide-react'
+import { Plus, Users, Search } from 'lucide-react'
 import {
   VISITOR_STATUS_LABEL, VISITOR_STATUS_TONE, visitorsApi,
   type Visitor, type VisitorFilters,
@@ -17,6 +17,11 @@ import { cn } from '@/lib/cn'
 
 type View = 'register' | 'board' | 'blacklist'
 
+const STATUSES: NonNullable<VisitorFilters['status']>[] = [
+  'all', 'on_site', 'today', 'overdue', 'pre_registered', 'waiting',
+  'checked_out', 'expired', 'denied', 'blacklisted', 'cancelled',
+]
+
 /**
  * Visitor management.
  *
@@ -28,7 +33,11 @@ export function VisitorsPage() {
   const [params, setParams] = useSearchParams()
 
   const [view, setView] = useState<View>((params.get('view') as View) ?? 'board')
-  const [status, setStatus] = useState<NonNullable<VisitorFilters['status']>>('all')
+  // Home links straight to "on site", "expected today" and "overdue out".
+  const [status, setStatus] = useState<NonNullable<VisitorFilters['status']>>(() => {
+    const asked = params.get('status') as NonNullable<VisitorFilters['status']> | null
+    return asked && STATUSES.includes(asked) ? asked : 'all'
+  })
   const [q, setQ] = useState('')
   const [rows, setRows] = useState<Visitor[] | null>(null)
   const [total, setTotal] = useState(0)
@@ -72,14 +81,9 @@ export function VisitorsPage() {
   const changed = () => setRevision((n) => n + 1)
 
   const tabs: TabItem<View>[] = [
-    { value: 'board', label: 'Live board', badge: <LayoutDashboard size={13} className="text-muted" /> },
-    { value: 'register', label: 'Register', badge: <ClipboardList size={13} className="text-muted" /> },
-    { value: 'blacklist', label: 'Blacklist', badge: <ShieldBan size={13} className="text-muted" /> },
-  ]
-
-  const STATUSES: NonNullable<VisitorFilters['status']>[] = [
-    'all', 'on_site', 'today', 'overdue', 'pre_registered', 'waiting',
-    'checked_out', 'expired', 'denied', 'blacklisted', 'cancelled',
+    { value: 'board', label: 'Live board' },
+    { value: 'register', label: 'Register' },
+    { value: 'blacklist', label: 'Blacklist' },
   ]
 
   const filterLabel = (s: NonNullable<VisitorFilters['status']>) =>
@@ -93,7 +97,7 @@ export function VisitorsPage() {
     <>
       <PageHeader
         title="Visitors"
-        subtitle="Everyone inside the fence, accounted for"
+        subtitle="Register visitors, check them in after they accept the site rules, and know who is on site in an emergency"
         right={
           <Button icon={<Plus size={15} />} onClick={() => setNewOpen(true)}>
             Register visitor

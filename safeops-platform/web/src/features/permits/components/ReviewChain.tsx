@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, Circle, Clock, PenLine, Undo2, XCircle } from 'lucide-react'
+import { Check, Circle, Clock, Undo2, XCircle } from 'lucide-react'
 import type { PermitView } from '@/api/permits'
 import type { ReviewStatus } from '@/api/permitWorkflowApi'
 import { ApiError } from '@/api/types'
@@ -117,7 +117,7 @@ export function ReviewChain({
   return (
     <section>
       <p className="mb-3 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-        <PenLine size={12} /> Approval chain
+        Approval chain
       </p>
 
       <ol className="relative space-y-0">

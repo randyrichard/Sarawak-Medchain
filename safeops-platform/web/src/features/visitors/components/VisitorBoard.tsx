@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react'
-import {
-  Users, Clock, AlertTriangle, LogIn, ShieldBan, Car, IdCard, CalendarClock,
-} from 'lucide-react'
+import { Clock } from 'lucide-react'
 import { visitorsApi, type VisitorDashboard } from '@/api/visitorsApi'
 import { ApiError } from '@/api/types'
 import { Alert, Badge, Card, CardBody, Skeleton } from '@/components/ui'
@@ -38,19 +36,19 @@ export function VisitorBoard({
 
   if (error) return <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>
 
-  const tiles: { label: string; value: number | undefined; icon: typeof Users; tone?: string; hint?: string }[] = [
-    { label: 'On site now', value: data?.onSite, icon: Users, tone: 'var(--accent)' },
-    { label: 'Overdue', value: data?.overdue, icon: AlertTriangle,
+  const tiles: { label: string; value: number | undefined; tone?: string; hint?: string }[] = [
+    { label: 'On site now', value: data?.onSite, tone: 'var(--accent)' },
+    { label: 'Overdue', value: data?.overdue,
       tone: data?.overdue ? 'var(--critical)' : undefined,
       hint: 'Still inside past their departure time' },
-    { label: 'Expected today', value: data?.expectedToday, icon: CalendarClock },
-    { label: 'Checked in today', value: data?.checkedInToday, icon: LogIn },
-    { label: 'Vehicles on site', value: data?.vehiclesOnSite, icon: Car,
+    { label: 'Expected today', value: data?.expectedToday },
+    { label: 'Checked in today', value: data?.checkedInToday },
+    { label: 'Vehicles on site', value: data?.vehiclesOnSite,
       hint: 'Distinct vehicles, not visitors' },
-    { label: 'Badges out', value: data?.badgesOut, icon: IdCard },
-    { label: 'Denied today', value: data?.deniedToday, icon: ShieldBan,
+    { label: 'Badges out', value: data?.badgesOut },
+    { label: 'Denied today', value: data?.deniedToday,
       tone: data?.deniedToday ? 'var(--warning)' : undefined },
-    { label: 'Blacklisted attempts', value: data?.blacklistedToday, icon: ShieldBan,
+    { label: 'Blacklisted attempts', value: data?.blacklistedToday,
       tone: data?.blacklistedToday ? 'var(--critical)' : undefined },
   ]
 
@@ -61,7 +59,7 @@ export function VisitorBoard({
           <Card key={t.label}>
             <CardBody className="py-3">
               <p className="flex items-center gap-1.5 text-2xs font-medium uppercase tracking-wide text-muted">
-                <t.icon size={11} /> {t.label}
+                {t.label}
               </p>
               {t.value === undefined ? (
                 <Skeleton className="mt-1 h-7 w-12" />
@@ -77,7 +75,7 @@ export function VisitorBoard({
       <Card>
         <CardBody>
           <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-            <Users size={12} /> Muster list
+            Muster list
             {data && <span className="text-accent">({data.onSite} inside)</span>}
           </p>
 

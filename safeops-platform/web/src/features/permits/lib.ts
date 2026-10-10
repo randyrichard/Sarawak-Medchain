@@ -12,6 +12,15 @@ export const PERMIT_STATUS_KIND: Record<PermitStatus, StatusKind> = {
   expired: 'critical',
 }
 
+/**
+ * The colour for any status the server sends. The approval-chain stages are not in the map
+ * above, so a permit with its supervisor or HSE reviewer had no colour at all; they wait for
+ * a signature exactly as a submitted permit does.
+ */
+export const permitStatusKind = (status: string): StatusKind =>
+  PERMIT_STATUS_KIND[status as PermitStatus]
+  ?? (['supervisor_review', 'hse_review', 'area_authority'].includes(status) ? 'warning' : 'info')
+
 /** Series tokens — permit type is an identity, not a status. */
 export const PERMIT_TYPE_COLOR: Record<PermitType, string> = {
   hot_work: 'var(--s3)',

@@ -1,6 +1,7 @@
 import type {
   AttentionItem, AttentionKind, AttentionPriority, DashboardOverview,
 } from '@/api/dashboardApi'
+import { linkTo } from '@/lib/links'
 
 /**
  * The dashboard's presentation decisions.
@@ -39,7 +40,7 @@ export function kpiCards(d: DashboardOverview): KpiCard[] {
       id: 'activePermits',
       label: 'Active permits',
       value: k.activePermits,
-      href: '/permits?status=active',
+      href: linkTo.permits('active'),
       tone: 'neutral',
       quiet: 'No live work under permit',
     },
@@ -47,7 +48,7 @@ export function kpiCards(d: DashboardOverview): KpiCard[] {
       id: 'permitsAwaitingReview',
       label: 'Permits awaiting review',
       value: k.permitsAwaitingReview,
-      href: '/permits?status=awaiting',
+      href: linkTo.permits('awaiting'),
       tone: k.permitsAwaitingReview > 0 ? 'warning' : 'neutral',
       quiet: 'Nothing waiting on a signature',
     },
@@ -55,7 +56,7 @@ export function kpiCards(d: DashboardOverview): KpiCard[] {
       id: 'overdueActions',
       label: 'Overdue actions',
       value: k.overdueActions,
-      href: '/actions?due=overdue',
+      href: linkTo.actions('overdue'),
       tone: k.overdueActions > 0 ? 'critical' : 'good',
       quiet: 'No overdue actions',
     },
@@ -63,7 +64,7 @@ export function kpiCards(d: DashboardOverview): KpiCard[] {
       id: 'openInvestigations',
       label: 'Open investigations',
       value: k.openInvestigations,
-      href: '/incidents/board?status=investigating',
+      href: linkTo.incidents('investigating'),
       tone: k.openInvestigations > 0 ? 'serious' : 'good',
       quiet: 'Nothing under investigation',
     },
@@ -71,7 +72,8 @@ export function kpiCards(d: DashboardOverview): KpiCard[] {
       id: 'expiringEquipment',
       label: 'Equipment expiring',
       value: k.expiringEquipment,
-      href: '/assets?bucket=due',
+      // Calibration: lapsed, missing or due soon. The board counts it; the register cannot filter it.
+      href: linkTo.equipmentBoard(),
       tone: k.expiringEquipment > 0 ? 'warning' : 'good',
       quiet: 'All certificates current',
     },
@@ -79,7 +81,8 @@ export function kpiCards(d: DashboardOverview): KpiCard[] {
       id: 'equipmentOutOfService',
       label: 'Out of service',
       value: k.equipmentOutOfService,
-      href: '/assets?status=out_of_service',
+      // Out of service and under maintenance together, which the board shows side by side.
+      href: linkTo.equipmentBoard(),
       tone: k.equipmentOutOfService > 0 ? 'warning' : 'neutral',
       quiet: 'Everything in service',
     },
@@ -87,7 +90,7 @@ export function kpiCards(d: DashboardOverview): KpiCard[] {
       id: 'visitorsOnSite',
       label: 'Visitors on site',
       value: k.visitorsOnSite,
-      href: '/visitors?status=on_site',
+      href: linkTo.visitors('on_site'),
       tone: 'neutral',
       quiet: 'Nobody signed in',
     },
@@ -213,6 +216,23 @@ export function reportStatusLabel(deliveryStatus: string): { label: string; tone
  * a status strip into a row of zeroes; the stages that always matter stay regardless.
  */
 const ALWAYS_SHOWN = ['submitted', 'supervisor_review', 'hse_review', 'area_authority', 'active']
+
+/** How each stage reads on Home. The server's label is the stage name with spaces ("hse review"). */
+const STAGE_LABEL: Record<string, string> = {
+  draft: 'Draft',
+  submitted: 'Submitted',
+  supervisor_review: 'Supervisor review',
+  hse_review: 'HSE review',
+  area_authority: 'Area authority',
+  approved: 'Approved',
+  active: 'Active',
+  suspended: 'Suspended',
+  closed: 'Closed',
+  rejected: 'Rejected',
+}
+
+export const permitStageLabel = (stage: string, fallback: string) =>
+  STAGE_LABEL[stage] ?? fallback.replace(/^\w/, (c) => c.toUpperCase())
 
 export function visiblePermitStages(d: DashboardOverview) {
   return d.permits.byStage.filter((s) => s.count > 0 || ALWAYS_SHOWN.includes(s.stage))

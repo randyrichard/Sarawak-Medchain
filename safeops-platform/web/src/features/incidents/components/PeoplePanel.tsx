@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Users, Plus, Trash2, HardHat, UserRound, BadgeCheck } from 'lucide-react'
+import { Plus, Trash2, HardHat, UserRound, BadgeCheck } from 'lucide-react'
 import {
   PERSON_ROLE_LABEL, investigationApi,
   type IncidentPerson, type IncidentPersonRole,
@@ -67,7 +67,7 @@ export function PeoplePanel({
     <Card>
       <CardBody>
         <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-          <Users size={12} /> People involved
+          People involved
           {injured.length > 0 && (
             <span className="text-critical">
               ({injured.length} injured{daysLost > 0 ? `, ${daysLost} days lost` : ''})

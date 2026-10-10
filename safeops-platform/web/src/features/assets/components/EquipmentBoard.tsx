@@ -1,9 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import {
-  Boxes, Star, ShieldAlert, Wrench, ClipboardCheck, Gauge, CircleCheck, AlertTriangle,
-  FileCheck, Archive, Clock, PackagePlus,
-} from 'lucide-react'
 import { equipmentApi, type EquipmentDashboard } from '@/api/equipmentApi'
 import { CATEGORY_LABEL, type AssetCategory } from '@/api/assets'
 import { ApiError } from '@/api/types'
@@ -32,31 +28,31 @@ export function EquipmentBoard({ companyId, siteId }: { companyId: string; siteI
 
   if (error) return <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>
 
-  const tiles: { label: string; value: number | undefined; icon: typeof Boxes; tone?: string; hint?: string }[] = [
-    { label: 'Available', value: data?.available, icon: CircleCheck, tone: 'var(--good)',
+  const tiles: { label: string; value: number | undefined; tone?: string; hint?: string }[] = [
+    { label: 'Available', value: data?.available, tone: 'var(--good)',
       hint: 'In service with nothing overdue' },
-    { label: 'Out of service', value: data?.outOfService, icon: ShieldAlert,
+    { label: 'Out of service', value: data?.outOfService,
       tone: data?.outOfService ? 'var(--critical)' : undefined },
-    { label: 'Under maintenance', value: data?.underMaintenance, icon: Wrench,
+    { label: 'Under maintenance', value: data?.underMaintenance,
       tone: data?.underMaintenance ? 'var(--warning)' : undefined },
-    { label: 'Inspection overdue', value: data?.inspectionOverdue, icon: ClipboardCheck,
+    { label: 'Inspection overdue', value: data?.inspectionOverdue,
       tone: data?.inspectionOverdue ? 'var(--critical)' : undefined },
-    { label: 'Inspection due today', value: data?.inspectionDueToday, icon: ClipboardCheck,
+    { label: 'Inspection due today', value: data?.inspectionDueToday,
       tone: data?.inspectionDueToday ? 'var(--warning)' : undefined },
-    { label: 'Calibration expired', value: data?.calibrationExpired, icon: Gauge,
+    { label: 'Calibration expired', value: data?.calibrationExpired,
       tone: data?.calibrationExpired ? 'var(--critical)' : undefined,
       hint: 'Includes instruments with no certificate at all' },
-    { label: 'Calibration due', value: data?.calibrationDue, icon: Gauge,
+    { label: 'Calibration due', value: data?.calibrationDue,
       tone: data?.calibrationDue ? 'var(--warning)' : undefined },
-    { label: 'Maintenance overdue', value: data?.maintenanceOverdue, icon: AlertTriangle,
+    { label: 'Maintenance overdue', value: data?.maintenanceOverdue,
       tone: data?.maintenanceOverdue ? 'var(--critical)' : undefined },
-    { label: 'Maintenance open', value: data?.maintenanceOpen, icon: Wrench },
-    { label: 'Booked to a permit', value: data?.bookedToPermit, icon: FileCheck,
+    { label: 'Maintenance open', value: data?.maintenanceOpen },
+    { label: 'Booked to a permit', value: data?.bookedToPermit,
       hint: 'On a live permit right now' },
-    { label: 'Critical equipment', value: data?.critical, icon: Star,
+    { label: 'Critical equipment', value: data?.critical,
       hint: 'Failure hurts someone directly' },
-    { label: 'Retired or disposed', value: data?.retired, icon: Archive },
-    { label: 'Total in register', value: data?.total, icon: Boxes,
+    { label: 'Retired or disposed', value: data?.retired },
+    { label: 'Total in register', value: data?.total,
       hint: 'Excludes disposed and retired' },
   ]
 
@@ -67,7 +63,7 @@ export function EquipmentBoard({ companyId, siteId }: { companyId: string; siteI
           <Card key={t.label}>
             <CardBody className="py-3">
               <p className="flex items-center gap-1.5 text-2xs font-medium uppercase tracking-wide text-muted">
-                <t.icon size={11} /> {t.label}
+                {t.label}
               </p>
               {t.value === undefined ? (
                 <Skeleton className="mt-1 h-7 w-12" />
@@ -95,7 +91,7 @@ export function EquipmentBoard({ companyId, siteId }: { companyId: string; siteI
         <Card>
           <CardBody>
             <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-              <Clock size={11} /> Work orders coming due
+              Work orders coming due
             </p>
             {data === null ? (
               <Skeleton className="h-20 rounded-lg" />
@@ -124,7 +120,7 @@ export function EquipmentBoard({ companyId, siteId }: { companyId: string; siteI
         <Card>
           <CardBody>
             <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-              <PackagePlus size={11} /> Newest equipment
+              Newest equipment
             </p>
             {data === null ? (
               <Skeleton className="h-20 rounded-lg" />

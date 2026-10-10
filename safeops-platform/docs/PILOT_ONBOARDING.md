@@ -98,6 +98,12 @@ is honest, and inventing incidents in a safety system would be indefensible.
 Sit with them for this if you can. Watching the first twenty minutes teaches you more than
 any survey.
 
+Everyone they invite is shown a **New to SafeOps? Start here.** card on Home with the first
+three things their role does, and **Help** at the foot of the menu has a guide for each role,
+step-by-step instructions with the names of the buttons to press, and a glossary of the safety
+terms (near miss, LTI, TRIR, DOSH and the rest). Point a new starter there before you explain
+anything yourself: if Help does not answer them, that is worth hearing about.
+
 ## Step 5 — First week
 
 Ask them to do these, in this order:

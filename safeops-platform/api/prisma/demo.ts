@@ -532,6 +532,10 @@ async function seedActions(companyId: CompanyId, incidentIds: string[]) {
         evidenceNote: done ? 'Work completed, photographed and handed back to the area owner.' : null,
         verifiedBy: a.status === 'verified' ? 'Marcus Tan' : null,
         verifiedAt: a.status === 'verified' ? ago(1) : null,
+        // Raised well before it was finished, and a week before an overdue due date. Left to
+        // default it was "now", so every finished action was completed before it existed and
+        // the average close time came out negative.
+        createdAt: ago(Math.max(10, 7 - a.dueInDays)),
         createdBy: DEMO_MARK,
       },
     })
@@ -597,6 +601,8 @@ async function seedAssets(companyId: CompanyId) {
           dueDate: utcDay(ahead(4)),
           priority: 'High',
           status: 'in_progress',
+          // Raised by the inspection that failed.
+          createdAt: ago(20),
           createdBy: DEMO_MARK,
         },
       })
@@ -788,6 +794,8 @@ async function seedAudits(companyId: CompanyId) {
           evidenceNote: f.settled ? 'Completed and photographed; closed out with the lead auditor.' : null,
           verifiedBy: f.settled ? a.lead : null,
           verifiedAt: f.settled ? ago(Math.max(1, elapsed - 4)) : null,
+          // Raised on the day of the audit, before it was worked.
+          createdAt: ago(elapsed),
           createdBy: DEMO_MARK,
         },
       })

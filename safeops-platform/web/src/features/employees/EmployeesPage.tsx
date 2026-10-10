@@ -133,7 +133,7 @@ export function EmployeesPage() {
   return (
     <>
       <PageHeader
-        title="Workforce"
+        title="Employees"
         subtitle="Who works here, what they are qualified for, and whether they are fit to work"
         right={canManage ? (
           <Button icon={<Plus size={14} />} onClick={() => setNewOpen(true)}>Add person</Button>

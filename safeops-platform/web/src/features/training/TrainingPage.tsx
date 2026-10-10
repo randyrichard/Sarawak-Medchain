@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import {
-  BookOpen, CalendarClock, GraduationCap, LayoutGrid, Plus, ScrollText, ShieldCheck,
-} from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { api } from '@/api/client'
 import type { CertificateView, CourseView, SessionView, TrainingMatrix, TrainingStats } from '@/api/training'
 import { useOrg } from '@/features/org/OrgContext'
@@ -55,6 +53,21 @@ export function TrainingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  /*
+   * One certificate: /training?cert=<id>, from search and from the expiry reminders. It
+   * opened the overview and left the certificate to be found by hand. It now opens the
+   * holder's training record, where the certificate can be renewed.
+   */
+  const certParam = params.get('cert')
+  useEffect(() => {
+    if (!certParam || certs === null) return
+    const cert = certs.find((c) => c.id === certParam)
+    params.delete('cert')
+    switchView('certificates')
+    if (cert) setOpenEmployee(cert.employeeId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [certParam, certs])
+
   const switchView = (v: View) => {
     setView(v)
     params.set('view', v)
@@ -71,11 +84,11 @@ export function TrainingPage() {
   ]
 
   const viewTabs: TabItem<View>[] = [
-    { value: 'overview', label: 'Overview', badge: <LayoutGrid size={13} className="text-muted" /> },
-    { value: 'matrix', label: 'Competency Matrix', badge: <ShieldCheck size={13} className="text-muted" /> },
-    { value: 'catalog', label: 'Catalog', badge: <BookOpen size={13} className="text-muted" /> },
-    { value: 'sessions', label: 'Sessions', badge: <CalendarClock size={13} className="text-muted" /> },
-    { value: 'certificates', label: 'Certificates', badge: <GraduationCap size={13} className="text-muted" /> },
+    { value: 'overview', label: 'Overview' },
+    { value: 'matrix', label: 'Competency Matrix' },
+    { value: 'catalog', label: 'Catalog' },
+    { value: 'sessions', label: 'Sessions' },
+    { value: 'certificates', label: 'Certificates' },
   ]
 
   const scopeNote =
@@ -87,8 +100,8 @@ export function TrainingPage() {
   return (
     <>
       <PageHeader
-        title="Training & Competency"
-        subtitle={`Every worker trained, competent and certified — ${scopeNote.toLowerCase()}`}
+        title="Training & competency"
+        subtitle={`Courses, sessions and certificates: who is qualified for which work, and what is about to expire. ${scopeNote}.`}
         right={runner ? <Button icon={<Plus size={15} />} onClick={() => setNewSessionOpen(true)}>New session</Button> : undefined}
       />
 
@@ -138,7 +151,6 @@ export function TrainingPage() {
       <NewSessionDialog open={newSessionOpen} onClose={() => setNewSessionOpen(false)} onCreated={() => { setNewSessionOpen(false); refresh() }} />
 
       <p className="mt-4 text-2xs text-muted">
-        <ScrollText size={11} className="mr-1 inline" />
         Passing a session issues a certificate automatically; expiring certificates trigger 90/60/30/7-day reminders,
         and lapsed mandatory training escalates to line managers.
       </p>

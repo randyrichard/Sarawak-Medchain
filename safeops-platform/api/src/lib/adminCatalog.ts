@@ -12,7 +12,7 @@ export const RBAC_ACTIONS = ['view', 'create', 'edit', 'delete', 'approve', 'exp
 export type RbacAction = (typeof RBAC_ACTIONS)[number]
 
 export const MODULE_LABEL: Record<RbacModule, string> = {
-  mission_control: 'Mission Control',
+  mission_control: 'Home',
   incidents: 'Incidents',
   actions: 'Corrective Actions',
   assets: 'Assets & Inspections',

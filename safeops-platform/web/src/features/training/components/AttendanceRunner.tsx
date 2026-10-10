@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
-import { Award, Check, PenLine, Send, UserCheck, X } from 'lucide-react'
+import { Award, Check, Send, UserCheck, X } from 'lucide-react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import type { CertificateView, SessionAttendee, SessionView } from '@/api/training'
@@ -176,7 +176,7 @@ export function AttendanceRunner({
               ))}
 
               <div className="rounded-xl border px-4 py-3" style={{ borderColor: 'var(--accent)' }}>
-                <p className="mb-2 flex items-center gap-1.5 text-2xs font-bold uppercase tracking-wider text-accent"><PenLine size={11} /> Trainer signature</p>
+                <p className="mb-2 flex items-center gap-1.5 text-2xs font-bold uppercase tracking-wider text-accent">Trainer signature</p>
                 <Input placeholder={actor.name} value={signature} onChange={(e) => setSignature(e.target.value)} aria-label="Type your full name to sign" />
                 {signature.trim().length >= 5 && <p className="mt-1.5 border-b pb-1 font-mono text-base italic text-ink">{signature}</p>}
                 <div className="mt-2"><Checkbox label="I confirm attendance and assessment results are accurate." checked={attested} onChange={(e) => setAttested(e.target.checked)} /></div>

@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import {
-  Archive, CalendarDays, FileText, CloudSun, MapPin, ShieldAlert, UserRound, Users,
-} from 'lucide-react'
+import { Archive, FileText, ShieldAlert } from 'lucide-react'
 import { api } from '@/api/client'
 import type { Incident } from '@/api/incidents'
 import { STAGE_LABEL, SEVERITY_LABEL, TYPE_LABEL } from '@/api/incidents'
@@ -13,7 +11,7 @@ import {
 } from '@/components/ui'
 import { ApiError } from '@/api/types'
 import { usePageTitle } from '@/app/pageTitle'
-import { fmtDate, fmtDateTime, severityKind, STAGE_COLOR, TYPE_ICON, useActor } from './lib'
+import { fmtDate, fmtDateTime, severityKind, STAGE_COLOR, useActor } from './lib'
 import { canRecordInvestigation } from './permissions'
 import { StageStepper } from './components/StageStepper'
 import { NextStepCard } from './components/NextStepCard'
@@ -154,7 +152,6 @@ export function IncidentDetailPage() {
     )
   }
 
-  const TypeIcon = TYPE_ICON[incident.type]
   const siteName = sites.find((s) => s.id === incident.siteId)?.name ?? incident.siteId
 
   /*
@@ -203,9 +200,6 @@ export function IncidentDetailPage() {
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent-soft">
-              <TypeIcon size={17} className="text-accent" />
-            </span>
             <h1 className="text-2xl font-semibold tracking-tight text-ink">{incident.title}</h1>
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -414,12 +408,12 @@ function Overview({ incident, siteName }: { incident: Incident; siteName: string
       </div>
 
       <div className="grid gap-x-6 gap-y-2.5 text-sm sm:grid-cols-2">
-        <MetaRow icon={MapPin} label="Site" value={siteName} />
-        <MetaRow icon={MapPin} label="Location" value={incident.location} />
-        <MetaRow icon={UserRound} label="Department" value={incident.department} />
-        <MetaRow icon={CalendarDays} label="Occurred" value={fmtDate(incident.occurredAt)} />
-        {incident.gps && <MetaRow icon={MapPin} label="GPS" value={incident.gps} />}
-        {incident.weather && <MetaRow icon={CloudSun} label="Weather" value={incident.weather} />}
+        <MetaRow label="Site" value={siteName} />
+        <MetaRow label="Location" value={incident.location} />
+        <MetaRow label="Department" value={incident.department} />
+        <MetaRow label="Occurred" value={fmtDate(incident.occurredAt)} />
+        {incident.gps && <MetaRow label="GPS" value={incident.gps} />}
+        {incident.weather && <MetaRow label="Weather" value={incident.weather} />}
       </div>
 
       {/*
@@ -433,7 +427,7 @@ function Overview({ incident, siteName }: { incident: Incident; siteName: string
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <p className="mb-1.5 flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-muted">
-            <Users size={11} /> Named on the report
+            Named on the report
           </p>
           {incident.peopleInvolved.length === 0 ? (
             <p className="text-xs text-muted">None recorded.</p>
@@ -470,10 +464,9 @@ function Overview({ incident, siteName }: { incident: Incident; siteName: string
   )
 }
 
-function MetaRow({ icon: Icon, label, value }: { icon: typeof MapPin; label: string; value: string }) {
+function MetaRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center gap-2">
-      <Icon size={13} className="shrink-0 text-muted" />
       <span className="w-24 shrink-0 text-xs text-muted">{label}</span>
       <span className="min-w-0 truncate text-sm text-ink" title={value}>{value}</span>
     </div>
