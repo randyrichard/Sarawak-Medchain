@@ -93,7 +93,7 @@ export function PpeChecklist({
     <section>
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-          <ShieldCheck size={12} /> Required PPE
+          Required PPE
           {required.length > 0 && <span className="text-muted">({required.length})</span>}
         </p>
         {required.length > 0 && (

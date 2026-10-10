@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Plus, ShieldBan, Undo2 } from 'lucide-react'
+import { Plus, Undo2 } from 'lucide-react'
 import { visitorsApi, type BlacklistEntry } from '@/api/visitorsApi'
 import { ApiError } from '@/api/types'
 import { Alert, Badge, Button, Card, CardBody, Dialog, Input, Skeleton, Textarea } from '@/components/ui'
@@ -59,7 +59,7 @@ export function BlacklistPanel({
     <Card>
       <CardBody>
         <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-          <ShieldBan size={12} /> Blacklist
+          Blacklist
           {inForce.length > 0 && <span className="text-critical">({inForce.length} in force)</span>}
         </p>
 

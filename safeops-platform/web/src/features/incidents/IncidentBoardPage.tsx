@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import {
-  AlertTriangle, Activity, ClipboardCheck, CheckCircle2, Search, X, ChevronLeft, ChevronRight,
-  HeartPulse, ShieldAlert, Microscope,
-} from 'lucide-react'
+import { Search, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { incidentsApi } from '@/api/incidentsApi'
 import { investigationApi, type IncidentBoard } from '@/api/investigationApi'
 import {
@@ -113,27 +110,27 @@ export function IncidentBoardPage() {
 
   /** Widgets jump to the register already filtered for what the number counted. */
   const tiles: {
-    label: string; value: number | undefined; icon: typeof Activity
+    label: string; value: number | undefined
     tone?: string; hint?: string; go?: Partial<BoardFilters>
   }[] = [
-    { label: 'Open incidents', value: board?.openIncidents, icon: Activity,
+    { label: 'Open incidents', value: board?.openIncidents,
       go: { stage: '', severity: '' } },
     { label: 'High severity', value: board ? highSeverityCount(board.bySeverity) : undefined,
-      icon: ShieldAlert, tone: 'var(--critical)', hint: 'LTI and above',
+      tone: 'var(--critical)', hint: 'LTI and above',
       go: { sort: 'severity' } },
-    { label: 'Investigations open', value: board?.openInvestigations, icon: Microscope,
+    { label: 'Investigations open', value: board?.openInvestigations,
       tone: board?.openInvestigations ? 'var(--warning)' : undefined,
       hint: 'Started, not signed off', go: { stage: 'investigation' } },
-    { label: 'Overdue actions', value: board?.overdueCapas, icon: AlertTriangle,
+    { label: 'Overdue actions', value: board?.overdueCapas,
       tone: board?.overdueCapas ? 'var(--critical)' : undefined,
       hint: 'Past their due date' },
-    { label: 'Lost time', value: board?.lostTime, icon: HeartPulse,
+    { label: 'Lost time', value: board?.lostTime,
       tone: board?.lostTime ? 'var(--critical)' : undefined,
       go: { severity: 'lost_time_injury' } },
-    { label: 'Near misses', value: board?.nearMisses, icon: ClipboardCheck,
+    { label: 'Near misses', value: board?.nearMisses,
       go: { severity: 'near_miss' } },
-    { label: 'This month', value: board?.thisMonth, icon: Activity },
-    { label: 'Total in scope', value: board?.total, icon: CheckCircle2,
+    { label: 'This month', value: board?.thisMonth },
+    { label: 'Total in scope', value: board?.total,
       hint: 'Excludes archived' },
   ]
 
@@ -147,7 +144,7 @@ export function IncidentBoardPage() {
       />
       <PageHeader
         title="Incident board"
-        subtitle="What is serious, what is stuck, and what needs you today"
+        subtitle="Open incidents by stage, so you can see what is serious, what is stuck and what to do next"
         right={<LinkButton to="/incidents/new">Report incident</LinkButton>}
       />
 
@@ -169,7 +166,7 @@ export function IncidentBoardPage() {
               >
                 <CardBody className="py-3">
                   <p className="flex items-center gap-1.5 text-2xs font-medium uppercase tracking-wide text-muted hyphens-auto [overflow-wrap:anywhere]">
-                    <t.icon size={11} /> {t.label}
+                    {t.label}
                   </p>
                   {t.value === undefined ? (
                     <Skeleton className="mt-1 h-7 w-12" />

@@ -1,8 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import {
-  FileText, Download, Play, Plus, Pencil, Trash2, History, Clock, Mail, MailWarning,
-  AlertTriangle, Microscope, CheckCircle2, XCircle, CalendarRange, Printer, Activity, ListChecks,
-} from 'lucide-react'
+import { Download, Play, Plus, Pencil, Trash2, Mail, MailWarning, Printer } from 'lucide-react'
 import {
   reportsApi,
   type ReportData, type ReportRun, type ReportSchedule, type ReportScope,
@@ -13,6 +10,7 @@ import { useOrg } from '@/features/org/OrgContext'
 import { fmtDateTime } from '@/features/incidents/lib'
 import {
   Alert, Badge, Button, Card, CardBody, PageHeader, Select, Skeleton, Tabs, type TabItem,
+  StatusPill,
 } from '@/components/ui'
 import { ScheduleDialog } from './components/ScheduleDialog'
 import {
@@ -37,39 +35,34 @@ import { saveBlob } from '@/lib/saveBlob'
 const VIEWS = ['reports', 'schedules', 'history'] as const
 type View = (typeof VIEWS)[number]
 
-const REPORT_CARDS: { type: ReportType; title: string; blurb: string; icon: typeof FileText }[] = [
+const REPORT_CARDS: { type: ReportType; title: string; blurb: string }[] = [
   {
     type: 'overdue_actions',
     title: 'Overdue corrective actions',
     blurb: 'Every open action past its due date, with the owner and how long it has been outstanding.',
-    icon: AlertTriangle,
   },
   {
     type: 'open_investigations',
     title: 'Open investigations',
     blurb: 'Incidents still under investigation, how long they have been open, and what is missing.',
-    icon: Microscope,
   },
   {
     type: 'weekly_actions',
     title: 'Weekly corrective actions',
     blurb: 'Every open action by department, overdue first, with owners and due dates — the weekly '
       + 'list for the heads-of-department meeting. Schedule it for Friday morning.',
-    icon: ListChecks,
   },
   {
     type: 'site_activity',
     title: 'Site activity summary',
     blurb: 'What happened on site today or over the last 7 days: incidents, toolbox meetings, '
       + 'permits, inspections and actions — for a manager or a shift handover.',
-    icon: Activity,
   },
   {
     type: 'monthly_summary',
     title: 'Monthly safety summary',
     blurb: 'The month just finished: what was reported, what it cost, and how many actions closed. '
       + 'Always the last complete month, cut in the site timezone.',
-    icon: CalendarRange,
   },
 ]
 
@@ -222,9 +215,9 @@ export function ReportsPage() {
   }
 
   const tabs: TabItem<View>[] = [
-    { value: 'reports', label: 'Reports', badge: <FileText size={13} className="text-muted" /> },
-    { value: 'schedules', label: 'Scheduled', badge: <Clock size={13} className="text-muted" /> },
-    { value: 'history', label: 'History', badge: <History size={13} className="text-muted" /> },
+    { value: 'reports', label: 'Reports' },
+    { value: 'schedules', label: 'Scheduled' },
+    { value: 'history', label: 'History' },
   ]
 
   return (
@@ -239,8 +232,8 @@ export function ReportsPage() {
          * agree.
          */
         subtitle={mailConfigured === false
-          ? 'What is overdue and what is still open — generate now, or schedule once email is configured'
-          : 'What is overdue and what is still open, on a schedule, without logging in'}
+          ? 'Summaries of what is open and overdue. Make one now; once email is set up, you can also have them sent on a schedule.'
+          : 'Summaries of what is open and overdue. Make one now, or have them emailed on a schedule.'}
         right={manage && view === 'schedules'
           ? <Button icon={<Plus size={15} />} onClick={() => setDialog({ open: true, editing: null })}>
               New schedule
@@ -279,7 +272,7 @@ export function ReportsPage() {
               <Card key={c.type}>
                 <CardBody>
                   <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-                    <c.icon size={14} className="text-accent" /> {c.title}
+                    {c.title}
                   </p>
                   <p className="mt-1 text-2xs text-muted">{c.blurb}</p>
                   {c.type === 'site_activity' && (
@@ -540,9 +533,7 @@ export function ReportsPage() {
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="flex flex-wrap items-center gap-1.5 text-2xs text-ink">
-                          {r.status === 'success'
-                            ? <CheckCircle2 size={12} className="text-good" />
-                            : <XCircle size={12} className="text-critical" />}
+                          <StatusPill kind={r.status === 'success' ? 'good' : 'critical'} label={r.status === 'success' ? 'Done' : 'Failed'} />
                           <span className="font-medium">{r.typeLabel}</span>
                           <Badge tone={r.trigger === 'manual' ? 'accent' : 'neutral'}>
                             {r.trigger === 'manual' ? 'Run now' : 'Scheduled'}

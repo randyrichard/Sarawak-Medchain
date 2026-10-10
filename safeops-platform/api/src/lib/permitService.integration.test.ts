@@ -642,14 +642,36 @@ d('PermitService — integration (real Postgres)', () => {
     expect(ids).not.toContain(closed.id)
   })
 
+  it('keeps a permit on the board, and awaiting approval, while it moves through the chain', async () => {
+    /*
+     * The chain stages were not "live", so a permit dropped off the board the moment its
+     * first reviewer signed, and off "Awaiting approval" too. The next person who had to
+     * sign it could find it only under All.
+     */
+    const waiting = await svc.create(officer, newPermit({ title: 'In the approval chain' }))
+    await db.permit.update({ where: { id: waiting.id }, data: { status: 'hse_review' } })
+
+    const live = await svc.list(officer, { companyId: COMPANY, page: 1, pageSize: 100, status: 'live' })
+    expect(live.rows.map((r) => r.id)).toContain(waiting.id)
+
+    const awaiting = await svc.list(officer, { companyId: COMPANY, page: 1, pageSize: 100, status: 'awaiting' })
+    expect(awaiting.rows.map((r) => r.id)).toContain(waiting.id)
+    expect(awaiting.rows.every((r) => ['submitted', 'supervisor_review', 'hse_review', 'area_authority'].includes(r.status))).toBe(true)
+
+    // The exact-status filter still means exactly that status.
+    const submitted = await svc.list(officer, { companyId: COMPANY, page: 1, pageSize: 100, status: 'submitted' })
+    expect(submitted.rows.map((r) => r.id)).not.toContain(waiting.id)
+  })
+
   it('orders the board with whatever needs attention first', async () => {
     const rows = (await svc.list(officer, {
       companyId: COMPANY, page: 1, pageSize: 100, status: 'live',
     })).rows
 
+    const awaiting = ['submitted', 'supervisor_review', 'hse_review', 'area_authority']
     const rank = (r: (typeof rows)[number]) =>
       r.expiringSoon ? 0 : r.status === 'expired' ? 1 : r.status === 'active' ? 2
-        : r.status === 'submitted' ? 3 : r.status === 'approved' ? 4 : 5
+        : awaiting.includes(r.status) ? 3 : r.status === 'approved' ? 4 : 5
 
     for (let i = 1; i < rows.length; i++) {
       expect(rank(rows[i - 1])).toBeLessThanOrEqual(rank(rows[i]))

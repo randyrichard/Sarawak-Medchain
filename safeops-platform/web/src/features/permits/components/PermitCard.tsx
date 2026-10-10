@@ -1,8 +1,8 @@
-import { AlertTriangle, Clock, MapPin, Users } from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
 import type { PermitView } from '@/api/permits'
 import { Badge, StatusPill } from '@/components/ui'
 import { cn } from '@/lib/cn'
-import { PERMIT_STATUS_KIND, PERMIT_TYPE_COLOR, formatRemaining, remainingTone } from '../lib'
+import { permitStatusKind, PERMIT_TYPE_COLOR, formatRemaining, remainingTone } from '../lib'
 
 /**
  * One permit on the board.
@@ -39,14 +39,14 @@ export function PermitCard({ permit, onOpen }: { permit: PermitView; onOpen: () 
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="font-mono text-2xs text-muted">{permit.code}</span>
             <Badge tone="neutral">{permit.typeLabel}</Badge>
-            <StatusPill kind={PERMIT_STATUS_KIND[permit.status]} label={permit.statusLabel} />
+            <StatusPill kind={permitStatusKind(permit.status)} label={permit.statusLabel} />
           </div>
 
           <p className="mt-1 truncate text-sm font-semibold leading-snug text-ink">{permit.title}</p>
 
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-2xs text-ink-2">
-            <span className="inline-flex items-center gap-1"><MapPin size={11} /> {permit.location}</span>
-            <span className="inline-flex items-center gap-1"><Users size={11} /> {permit.workerCount}</span>
+            <span>{permit.location}</span>
+            <span>{permit.workerCount} {permit.workerCount === 1 ? 'worker' : 'workers'}</span>
             <span className="inline-flex items-center gap-1">{permit.applicant}</span>
           </div>
 
@@ -55,7 +55,7 @@ export function PermitCard({ permit, onOpen }: { permit: PermitView; onOpen: () 
               className="inline-flex items-center gap-1 text-2xs font-bold"
               style={{ color: remainingTone(permit.hoursRemaining, permit.status), fontVariantNumeric: 'tabular-nums' }}
             >
-              <Clock size={11} /> {formatRemaining(permit.hoursRemaining)}
+              {formatRemaining(permit.hoursRemaining)}
             </span>
             {permit.outstandingControls > 0 && (
               <span className="inline-flex items-center gap-1 text-2xs font-semibold" style={{ color: 'var(--warning)' }}>

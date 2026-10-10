@@ -14,7 +14,7 @@ import { RBAC_MODULES } from '../admin'
 import { DEPARTMENTS, EMPLOYEES, SITES, USERS } from './fixtures'
 import { claimIsAuthentic } from './identity'
 
-type Notify = (kind: 'incident' | 'action' | 'audit' | 'system', title: string, detail: string) => void
+type Notify = (kind: 'incident' | 'action' | 'audit' | 'system', title: string, detail: string, href?: string) => void
 
 const OPS_KEY = 'safeops.incidents.v1'
 const ADMIN_KEY = 'safeops.admin.v1'
@@ -791,7 +791,7 @@ export class AdminStore {
 
 function MODULE_LABEL_LOCAL(m: RbacModule): string {
   const map: Record<RbacModule, string> = {
-    mission_control: 'Mission Control', incidents: 'Incidents', actions: 'Corrective Actions',
+    mission_control: 'Home', incidents: 'Incidents', actions: 'Corrective Actions',
     assets: 'Assets & Inspections', audits: 'Audit & Compliance', training: 'Training', admin: 'Administration',
   }
   return map[m]

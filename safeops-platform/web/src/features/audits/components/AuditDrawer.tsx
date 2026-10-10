@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
-import { CalendarClock, Link2, Lock, PlayCircle, Printer, X } from 'lucide-react'
+import { Lock, PlayCircle, Printer, X } from 'lucide-react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import type { AuditFindingView, AuditTemplate, AuditView } from '@/api/audits'
@@ -173,7 +173,7 @@ export function AuditDrawer({
                         <p className="mt-1.5 text-sm leading-relaxed text-ink">{f.description}</p>
                         <div className="mt-1.5 flex flex-wrap items-center gap-2 text-2xs text-muted">
                           <Link to={`/actions?open=${f.actionId}`} className="inline-flex items-center gap-1 font-semibold text-accent hover:underline">
-                            <Link2 size={10} /> {f.actionCode}
+                            Action {f.actionCode}
                           </Link>
                           <span>{f.actionOwner} · due {f.actionDue}{f.actionOverdue ? ' · overdue' : ''}</span>
                           {f.linkedAssetId && (
@@ -202,7 +202,7 @@ export function AuditDrawer({
               {/* Timeline */}
               <div>
                 <p className="mb-2 flex items-center gap-1 text-2xs font-bold uppercase tracking-wider text-muted">
-                  <CalendarClock size={11} /> Timeline
+                  Timeline
                 </p>
                 <ol className="relative space-y-3 before:absolute before:bottom-1.5 before:left-[5px] before:top-1.5 before:w-px before:bg-grid">
                   {audit.timeline.map((t) => (

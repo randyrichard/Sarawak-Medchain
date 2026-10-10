@@ -14,7 +14,7 @@ export type LandingPage = (typeof LANDING_PAGES)[number]
 
 /** Labels for the preference picker. Keyed by route so they cannot drift apart. */
 export const LANDING_PAGE_LABEL: Record<LandingPage, string> = {
-  '/': 'Mission Control',
+  '/': 'Home',
   '/incidents': 'Incidents',
   '/actions': 'Corrective Actions',
   '/permits': 'Permit to Work',

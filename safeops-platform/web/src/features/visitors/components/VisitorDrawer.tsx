@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import {
-  X, LogIn, LogOut, Check, Ban, IdCard, Car, StickyNote, QrCode, History, ShieldCheck,
-} from 'lucide-react'
+import { X, LogIn, LogOut, Check, Ban, IdCard, Car, QrCode } from 'lucide-react'
 import {
   VISITOR_STATUS_TONE, visitorsApi,
   type GateStatus, type Visitor, type VisitorEvent,
@@ -136,7 +134,7 @@ export function VisitorDrawer({
               {!settled && (
                 <section className="mb-5">
                   <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-                    <ShieldCheck size={12} /> Gate
+                    Gate
                   </p>
                   {gate === null ? (
                     <Skeleton className="h-16 rounded-lg" />
@@ -279,7 +277,7 @@ export function VisitorDrawer({
               {manage && (
                 <section className="mb-5">
                   <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-                    <StickyNote size={12} /> Add a note
+                    Add a note
                   </p>
                   <Textarea value={note} onChange={(e) => setNote(e.target.value)}
                     placeholder="e.g. Escorted to the meeting room by the host." />
@@ -297,7 +295,7 @@ export function VisitorDrawer({
               {/* History */}
               <section>
                 <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-                  <History size={12} /> History
+                  History
                 </p>
                 {events === null ? (
                   <Skeleton className="h-20 rounded-lg" />

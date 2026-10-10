@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import {
-  CalendarClock, ClipboardCheck, FileText, LineChart, Plus, ScrollText, Search, ShieldCheck,
-} from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import { api } from '@/api/client'
 import type {
   AuditFindingView, AuditStats, AuditView, ComplianceDocument, ObligationView,
@@ -35,7 +33,8 @@ export function AuditsPage() {
   const [obligations, setObligations] = useState<ObligationView[] | null>(null)
   const [documents, setDocuments] = useState<ComplianceDocument[] | null>(null)
   const [stats, setStats] = useState<AuditStats | null>(null)
-  const [openAuditId, setOpenAuditId] = useState<string | null>(null)
+  // Search links to one audit with `?open=`; it used to land on the list with nothing open.
+  const [openAuditId, setOpenAuditId] = useState<string | null>(() => params.get('open'))
   const [planOpen, setPlanOpen] = useState(false)
 
   const manage = isComplianceManager(role)
@@ -71,18 +70,18 @@ export function AuditsPage() {
   ]
 
   const viewTabs: TabItem<View>[] = [
-    { value: 'audits', label: 'Audits', badge: <CalendarClock size={13} className="text-muted" /> },
-    { value: 'findings', label: 'Findings', badge: <ClipboardCheck size={13} className="text-muted" /> },
-    { value: 'compliance', label: 'Compliance', badge: <ShieldCheck size={13} className="text-muted" /> },
-    { value: 'documents', label: 'Documents', badge: <FileText size={13} className="text-muted" /> },
-    { value: 'analytics', label: 'Analytics', badge: <LineChart size={13} className="text-muted" /> },
+    { value: 'audits', label: 'Audits' },
+    { value: 'findings', label: 'Findings' },
+    { value: 'compliance', label: 'Compliance' },
+    { value: 'documents', label: 'Documents' },
+    { value: 'analytics', label: 'Analytics' },
   ]
 
   return (
     <>
       <PageHeader
-        title="Audit & Compliance"
-        subtitle="Audit-ready every day — not just when the auditor is in the car park"
+        title="Audits & compliance"
+        subtitle="Planned audits, what they found, and the legal requirements your sites must meet. Findings become corrective actions."
         right={manage ? <Button icon={<Plus size={15} />} onClick={() => setPlanOpen(true)}>Plan audit</Button> : undefined}
       />
 
@@ -129,13 +128,16 @@ export function AuditsPage() {
         actor={actor}
         manage={manage}
         sites={sites}
-        onClose={() => setOpenAuditId(null)}
+        onClose={() => {
+          setOpenAuditId(null)
+          // Or a refresh would open it again.
+          if (params.has('open')) { params.delete('open'); setParams(params, { replace: true }) }
+        }}
         onChanged={refresh}
       />
 
       <PlanAuditDialog open={planOpen} onClose={() => setPlanOpen(false)} onCreated={() => { setPlanOpen(false); refresh() }} />
       <p className="mt-4 text-2xs text-muted">
-        <ScrollText size={11} className="mr-1 inline" />
         Findings auto-create corrective actions; audits cannot close until every finding's action is verified.
       </p>
     </>

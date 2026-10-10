@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { CheckCircle2, Clock, Download, FileSpreadsheet, Goal, Info, Printer } from 'lucide-react'
+import { Clock, Download, FileSpreadsheet, Goal, Printer } from 'lucide-react'
 import { performanceApi, type Indicators, type PerformanceView, type SitePerformance, type Target, type TargetMetric } from '@/api/performanceApi'
 import { useOrg } from '@/features/org/OrgContext'
 import { useAsync } from '@/lib/useAsync'
@@ -54,8 +54,8 @@ export function PerformancePage() {
   return (
     <>
       <PageHeader
-        title="HSE Performance"
-        subtitle={`Every site, ${period} months - the rates you report to DOSH, clients and the board`}
+        title="HSE performance"
+        subtitle={`Health, safety and environment (HSE) figures for every site over ${period} months: the rates you report to DOSH, clients and the board.`}
         right={
           <div className="flex flex-wrap items-center gap-2 print:hidden">
             <label className="flex items-center gap-2 text-xs text-ink-2">
@@ -195,7 +195,7 @@ function TileRow({ tiles, label }: { tiles: Tile[]; label: string }) {
               <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-2xs font-semibold text-ink-2">
                 <span className="whitespace-nowrap">Target {t.target.text}</span>
                 {t.target.status === 'met' && (
-                  <span className="inline-flex items-center gap-0.5 whitespace-nowrap text-good"><CheckCircle2 size={12} aria-hidden /> On target</span>
+                  <span className="whitespace-nowrap text-good">On target</span>
                 )}
                 {t.target.status === 'missed' && <span className="whitespace-nowrap text-ink">Off target</span>}
               </p>
@@ -267,7 +267,6 @@ function PerformanceBody({ data, scope, onRecordHours }: { data: PerformanceView
       </p>
       {basis.estimated && (
         <div className="flex items-start gap-2 rounded-lg border bg-sunken px-3 py-2 text-xs text-ink-2">
-          <Info size={14} className="mt-0.5 shrink-0 text-accent" aria-hidden />
           <div className="min-w-0 flex-1">
             <p>
               <strong className="font-semibold text-ink">{basis.label}.</strong>{' '}

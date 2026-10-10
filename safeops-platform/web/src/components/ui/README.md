@@ -439,6 +439,40 @@ is signalled by red alone.
 - `vonRestorff.dom.test.tsx` fails a coloured KPI value without an icon, and a pressed toggle
   in the primary fill.
 
+## Icons: only where words cannot do the job
+
+Customers said SafeOps had too many symbols, and they were right: every menu row, tab, tile,
+heading, button and status pill carried one, so the attention icon that marks a real problem
+was one shape among hundreds. On the thirteen busiest pages there were **617** icons; there are
+now **164**, and most of what is left is a control you press or an alarm.
+
+**An icon earns its place only when it does one of these jobs:**
+
+| Job | Examples |
+|---|---|
+| It is the whole control, with an `aria-label` | close ✕, the bell, the theme toggle, the menu button |
+| A convention everyone reads without a word | the search magnifier, sort arrows, dropdown and expand chevrons |
+| A state that must not be colour alone | `AttentionIcon`, step ticks in a checklist, the approval chain's done/current/rejected marks |
+| An alarm | the warning beside a site that needs attention |
+
+**Never beside words that already say the same thing.** No icons on menu rows, tabs, headings,
+tiles, table cells, badges or status pills. `Button` and `LinkButton` drop their `icon` when the
+button has visible words (`hasText`); the loading spinner still shows. An empty state may keep
+its one muted picture.
+
+## Words: say what it is, in the reader's language
+
+- **A page's title is its menu label.** "Corrective actions" in the menu opens "Corrective
+  actions", not "CAPA". Sentence case everywhere: "Report incident", not "Report Incident".
+- **The subtitle says what the page is for**, in a sentence a new starter can act on.
+- **Every abbreviation is in the Help glossary** (`features/help/guides.ts`): HSE, DOSH, LTI,
+  TRIR, PPE. `guides.test.ts` checks the button names the guides tell people to press still
+  exist on a screen.
+- **A number that is a link opens the list it counts, already filtered.** Build those links
+  with `linkTo` in `lib/links.ts`, which takes each page's own filter type, and have pages read
+  the record to open with `openParam`. `features/dashboard/links.dom.test.tsx` fails a link
+  whose parameters its page never reads, from Home or from the server.
+
 ## Adding or changing a component
 
 1. Check this inventory first. A variant of an existing primitive is better than a new

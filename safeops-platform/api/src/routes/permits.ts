@@ -22,7 +22,7 @@ const MAX_PAGE_SIZE = 100
 const PERMIT_TYPE = z.enum(PERMIT_TYPES)
 const STATUS_FILTER = z.enum([
   'draft', 'submitted', 'approved', 'active', 'suspended', 'closed', 'rejected',
-  'expired', 'live', 'all',
+  'expired', 'live', 'all', 'awaiting', 'expiring',
   'supervisor_review', 'hse_review', 'area_authority', 'archived',
 ])
 

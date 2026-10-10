@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ArrowDown, ArrowUp, Download, Link2, ListChecks, Play, UserRound } from 'lucide-react'
+import { ArrowDown, ArrowUp, Download, ListChecks, Play, UserRound } from 'lucide-react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import type { CapaItem } from '@/api/capa'
@@ -270,7 +270,7 @@ function GroupRows({
             <p className="text-sm font-semibold leading-snug text-ink">{i.title}</p>
             <p className="mt-0.5 flex items-center gap-1.5 text-2xs text-muted">
               <span className="font-mono">{i.code}</span>
-              {i.incidentNumber && <span className="inline-flex items-center gap-0.5"><Link2 size={9} /> {i.incidentNumber}</span>}
+              {i.incidentNumber && <span>{i.incidentNumber}</span>}
               {i.rootCause && <span>· {i.rootCause}</span>}
             </p>
           </td>

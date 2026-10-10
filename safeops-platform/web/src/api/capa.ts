@@ -92,7 +92,7 @@ export interface CapaFilters {
   owner?: string
   priority?: ActionPriority | ''
   /** derived-status bucket */
-  bucket?: 'all' | 'open' | 'overdue' | 'due_today' | 'verification' | 'high_priority' | 'completed' | 'cancelled'
+  bucket?: 'all' | 'open' | 'overdue' | 'due_today' | 'due_week' | 'verification' | 'high_priority' | 'completed' | 'cancelled'
 }
 
 export interface CapaStats {
@@ -130,12 +130,16 @@ export interface CapaPatch {
 }
 
 export interface CapaAnalytics {
-  completionRate: number // % verified/closed of all non-cancelled
+  /** % verified/closed of all non-cancelled; null with nothing raised. */
+  completionRate: number | null
   avgCloseDays: number | null
-  onTimeRate: number
+  /** % of finished actions finished by their due date; null with nothing finished. */
+  onTimeRate: number | null
   mostOverdueSite: { site: string; count: number } | null
   bySite: { name: string; value: number }[] // open+overdue load per site
   byDepartment: { name: string; value: number }[] // on-time completion %
   byOwner: { name: string; open: number; overdue: number; completed: number }[]
   monthlyCompletions: { month: string; Completed: number; Created: number }[]
+  /** Counted from the newest few thousand actions only, not the whole register. */
+  sampled?: boolean
 }

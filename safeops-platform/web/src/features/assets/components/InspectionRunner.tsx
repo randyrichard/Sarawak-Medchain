@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
-import { CheckCircle2, LocateFixed, PenLine, Send, X } from 'lucide-react'
+import { CheckCircle2, LocateFixed, Send, X } from 'lucide-react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import type { ChecklistAnswer, ChecklistItem, ChecklistResult, InspectionView } from '@/api/assets'
@@ -286,7 +286,7 @@ export function InspectionRunner({
 
               <div className="rounded-xl border px-4 py-3" style={{ borderColor: 'var(--accent)' }}>
                 <p className="mb-2 flex items-center gap-1.5 text-2xs font-bold uppercase tracking-wider text-accent">
-                  <PenLine size={11} /> Digital signature
+                  Digital signature
                 </p>
                 <Input placeholder={actor.name} value={draft.signature} onChange={(e) => patch({ signature: e.target.value })} aria-label="Type your full name to sign" />
                 {draft.signature.trim().length >= 5 && <p className="mt-1.5 border-b pb-1 font-mono text-base italic text-ink">{draft.signature}</p>}

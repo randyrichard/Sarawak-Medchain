@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Image as ImageIcon, Upload, Trash2, Download, X, FileText } from 'lucide-react'
+import { Upload, Trash2, Download, X, FileText } from 'lucide-react'
 import { equipmentApi, type AssetDocumentRow } from '@/api/equipmentApi'
 import { ApiError } from '@/api/types'
 import { Alert, Skeleton } from '@/components/ui'
@@ -121,7 +121,7 @@ export function AssetPhotos({
   return (
     <section className="mt-5">
       <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-        <ImageIcon size={12} /> Photos &amp; documents
+        Photos &amp; documents
       </p>
 
       {error && <Alert tone="critical" className="mb-2" onDismiss={() => setError(null)}>{error}</Alert>}

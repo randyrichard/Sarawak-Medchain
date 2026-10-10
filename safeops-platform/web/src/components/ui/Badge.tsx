@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { AlertOctagon, AlertTriangle, CheckCircle2, Info } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
 type Tone = 'neutral' | 'accent' | 'good' | 'warning' | 'serious' | 'critical'
@@ -21,23 +20,28 @@ export function Badge({ tone = 'neutral', children, className }: { tone?: Tone; 
   )
 }
 
-// Status pill: icon + label — state is never conveyed by color alone.
-const STATUS_META = {
-  good: { color: 'var(--good)', icon: CheckCircle2 },
-  warning: { color: 'var(--warning)', icon: AlertTriangle },
-  serious: { color: 'var(--serious)', icon: AlertTriangle },
-  critical: { color: 'var(--critical)', icon: AlertOctagon },
-  info: { color: 'var(--accent)', icon: Info },
+/*
+ * Status pill: the state in words, edged in its colour.
+ *
+ * It carried an icon as well - a tick, a triangle, an octagon - so the state was never told
+ * by colour alone (WCAG 1.4.1). The label already does that: "Critical", "Expired", "Verified"
+ * read the same to everyone. The icon repeated the word on every row of every register, and
+ * a page of tables became a page of symbols. The colour stays, as a second cue for those who
+ * see it; the word is the one that has to be there.
+ */
+const STATUS_COLOR = {
+  good: 'var(--good)',
+  warning: 'var(--warning)',
+  serious: 'var(--serious)',
+  critical: 'var(--critical)',
+  info: 'var(--accent)',
 } as const
 
-export type StatusKind = keyof typeof STATUS_META
+export type StatusKind = keyof typeof STATUS_COLOR
 
 export function StatusPill({ kind, label }: { kind: StatusKind; label: string }) {
-  const meta = STATUS_META[kind]
-  const Icon = meta.icon
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-2xs font-semibold text-ink" style={{ borderColor: meta.color }}>
-      <Icon size={12} style={{ color: meta.color }} />
+    <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-2xs font-semibold text-ink" style={{ borderColor: STATUS_COLOR[kind] }}>
       {label}
     </span>
   )

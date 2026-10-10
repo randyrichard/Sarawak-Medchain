@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react'
-import {
-  AlertTriangle, CheckCircle2, Cpu, Database, HardDrive, Info, RefreshCw, Users, Zap,
-} from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Info, RefreshCw } from 'lucide-react'
 import { api } from '@/api/client'
 import { useOrg } from '@/features/org/OrgContext'
 import type { SystemHealth } from '@/api/admin'
@@ -44,10 +42,10 @@ export function OverviewSection() {
       </div>
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <StatTile icon={Users} label="Users online" value={String(health.usersOnline)} note="active in last 15 min" tone="var(--good)" />
-        <StatTile icon={Zap} label="API" value={statusPill(health.apiStatus)} note={`${health.apiLatencyMs}ms median latency`} />
-        <StatTile icon={Database} label="Database" value={statusPill(health.dbStatus)} note="primary + replica healthy" />
-        <StatTile icon={AlertTriangle} label="Failed notifications" value={String(health.failedNotifications)} note="last 24 hours" tone={health.failedNotifications > 0 ? 'var(--warning)' : 'var(--good)'} />
+        <StatTile label="Users online" value={String(health.usersOnline)} note="active in last 15 min" tone="var(--good)" />
+        <StatTile label="API" value={statusPill(health.apiStatus)} note={`${health.apiLatencyMs}ms median latency`} />
+        <StatTile label="Database" value={statusPill(health.dbStatus)} note="primary + replica healthy" />
+        <StatTile label="Failed notifications" value={String(health.failedNotifications)} note="last 24 hours" tone={health.failedNotifications > 0 ? 'var(--warning)' : 'var(--good)'} />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-3">
@@ -59,7 +57,6 @@ export function OverviewSection() {
               // drop below it. Squeezed onto one line, a 30px text column let the job's
               // description spill across "not yet run".
               <div key={j.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border px-3.5 py-2.5">
-                <Cpu size={15} className="shrink-0 text-muted" />
                 <div className="min-w-0 flex-1 basis-44 [overflow-wrap:anywhere]">
                   <p className="text-sm font-medium text-ink">{j.name}</p>
                   <p className="text-2xs text-muted">{j.detail} · {j.schedule}</p>
@@ -83,7 +80,6 @@ export function OverviewSection() {
           <CardHeader title="Storage" subtitle="Tenant data footprint" />
           <CardBody>
             <div className="flex items-center gap-3">
-              <HardDrive size={20} className="text-accent" />
               <div className="flex-1">
                 <div className="flex items-baseline justify-between">
                   <span className="text-lg font-semibold text-ink" style={{ fontVariantNumeric: 'tabular-nums' }}>{(health.storageUsedKb / 1024).toFixed(2)} MB</span>
@@ -119,13 +115,10 @@ export function OverviewSection() {
   )
 }
 
-function StatTile({ icon: Icon, label, value, note, tone }: { icon: typeof Users; label: string; value: React.ReactNode; note: string; tone?: string }) {
+function StatTile({ label, value, note, tone }: { label: string; value: React.ReactNode; note: string; tone?: string }) {
   return (
     <Card className="px-4 py-3.5" style={attentionStripe(attentionOf(tone))}>
-      <div className="flex items-center gap-2">
-        <Icon size={15} aria-hidden className="text-muted" />
-        <span className="text-2xs font-semibold text-ink-2">{label}</span>
-      </div>
+      <p className="text-2xs font-semibold text-ink-2">{label}</p>
       <div className="mt-1.5 flex items-center gap-1.5 text-2xl font-semibold tracking-tight" style={{ color: tone ?? 'var(--ink)' }}>{value}<AttentionIcon level={attentionOf(tone)} /></div>
       <p className="mt-0.5 text-2xs text-muted">{note}</p>
     </Card>

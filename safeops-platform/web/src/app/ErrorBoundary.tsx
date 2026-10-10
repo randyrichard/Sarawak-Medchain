@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
-import { AlertTriangle, RotateCw, Home } from 'lucide-react'
+import { AlertTriangle, RotateCw } from 'lucide-react'
 
 interface Props {
   children: ReactNode
@@ -116,7 +116,7 @@ export class ErrorBoundary extends Component<Props, State> {
               + 'longer available. Reload to pick up the new one — nothing you were working on '
               + 'has been lost.'
             : 'The screen stopped responding after an unexpected error. Your data is safe — '
-              + 'nothing was lost. You can retry this view or return to Mission Control.'}
+              + 'nothing was lost. You can retry this view or return to Home.'}
         </p>
 
         {/* Focusable, so a long message that scrolls sideways can be scrolled from the keyboard. */}
@@ -136,7 +136,7 @@ export class ErrorBoundary extends Component<Props, State> {
             onClick={() => { window.location.href = '/' }}
             className="inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-sm font-semibold text-ink-2 transition-colors hover:bg-accent-soft"
           >
-            <Home size={14} /> Back to Mission Control
+            Back to Home
           </button>
         </div>
       </div>

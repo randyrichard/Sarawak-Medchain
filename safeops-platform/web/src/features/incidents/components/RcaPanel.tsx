@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CheckCircle2, GitBranch, HelpCircle, Plus, Save, Trash2 } from 'lucide-react'
+import { Plus, Save, Trash2 } from 'lucide-react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import { RCA_CATEGORIES, type Incident, type RcaCategory, type RcaCause } from '@/api/incidents'
@@ -66,7 +66,7 @@ export function RcaPanel({ incident, onUpdate }: { incident: Incident; onUpdate:
       {/* Contributing causes */}
       <div>
         <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-          <GitBranch size={12} /> Contributing causes
+          Contributing causes
         </p>
         {causes.length === 0 && <p className="mb-2 text-xs text-muted">None yet — add every cause that contributed, not just the biggest one.</p>}
         <ul className="space-y-2">
@@ -111,7 +111,7 @@ export function RcaPanel({ incident, onUpdate }: { incident: Incident; onUpdate:
       {/* Guided Five Whys */}
       <div>
         <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-          <HelpCircle size={12} /> Five Whys — guided drill-down
+          Five Whys — guided drill-down
         </p>
         <div className="space-y-2.5 rounded-xl border p-4">
           <Textarea label="Problem statement" rows={2} value={problem} disabled={!editable}
@@ -158,7 +158,7 @@ export function RcaPanel({ incident, onUpdate }: { incident: Incident; onUpdate:
           <Button icon={<Save size={14} />} loading={busy} onClick={() => void save()}>Save RCA</Button>
           {saved && (
             <span className="inline-flex items-center gap-1 text-xs font-semibold" style={{ color: 'var(--delta-good)' }}>
-              <CheckCircle2 size={13} /> Saved
+              Saved
             </span>
           )}
           {error && <span className="text-xs font-medium text-critical">{error}</span>}

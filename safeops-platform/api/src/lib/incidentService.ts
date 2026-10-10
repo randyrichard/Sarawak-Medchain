@@ -7,6 +7,7 @@ import {
 import { DomainError } from '../domain/errors.js'
 import { stageGateProblem } from '../domain/incidentStageGate.js'
 import { recentLocalMonths } from '../domain/businessDay.js'
+import { actionPanels } from '../domain/actionPanels.js'
 import { membershipOf, type Caller } from '../domain/caller.js'
 import { resolveOwnerId } from './actionOwner.js'
 import {
@@ -171,6 +172,9 @@ function withIncidentRef<A extends { incident: { number: string; title: string; 
 ): Omit<A, 'incident'> & { incidentNumber: string | null; incidentTitle: string | null; department: string } {
   return { ...a, incidentNumber: incident?.number ?? null, incidentTitle: incident?.title ?? null, department: incident?.department ?? '' }
 }
+
+/** Rows read for the corrective action analytics panels; see actionAnalytics. */
+const ANALYTICS_ROWS = 5000
 
 export class IncidentService {
   constructor(private db: PrismaClient) {}
@@ -1226,7 +1230,7 @@ export class IncidentService {
     const scope = ['employee', 'supervisor'].includes(m.role) ? ownedByWhere(caller) : {}
     const where = { companyId, ...scope }
 
-    const [byStatus, byPriority, bySource, overdue, closed] = await this.db.$transaction([
+    const [byStatus, byPriority, bySource, overdue, closed, totalClosed, rows] = await this.db.$transaction([
       this.db.correctiveAction.groupBy({ by: ['status'], where, _count: { _all: true }, orderBy: undefined }),
       this.db.correctiveAction.groupBy({ by: ['priority'], where, _count: { _all: true }, orderBy: undefined }),
       this.db.correctiveAction.groupBy({ by: ['source'], where, _count: { _all: true }, orderBy: undefined }),
@@ -1237,6 +1241,20 @@ export class IncidentService {
         where: { ...where, completedAt: { not: null } },
         select: { createdAt: true, completedAt: true },
         take: 500,
+      }),
+      // Counted, not taken from the 500 rows above: that list is a sample for the average.
+      this.db.correctiveAction.count({ where: { ...where, completedAt: { not: null } } }),
+      // The Analytics tab's panels, newest first. A larger register is summarised from its
+      // newest ANALYTICS_ROWS and says so, rather than reading the whole table every time.
+      this.db.correctiveAction.findMany({
+        where: { ...where, status: { not: 'cancelled' } },
+        select: {
+          status: true, owner: true, siteId: true, dueDate: true,
+          createdAt: true, completedAt: true, verifiedAt: true,
+          incident: { select: { department: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: ANALYTICS_ROWS + 1,
       }),
     ])
 
@@ -1261,7 +1279,12 @@ export class IncidentService {
       bySource: shape(bySource, 'source'),
       overdue,
       avgDaysToComplete,
-      totalClosed: closed.length,
+      totalClosed,
+      panels: {
+        ...actionPanels(rows.slice(0, ANALYTICS_ROWS).map(({ incident, ...r }) => ({ ...r, department: incident?.department ?? null }))),
+        /** Only the newest ANALYTICS_ROWS actions were counted. */
+        sampled: rows.length > ANALYTICS_ROWS,
+      },
     }
   }
 

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { buttonClasses, type Size, type Variant } from './Button'
+import { buttonClasses, hasText, type Size, type Variant } from './Button'
 
 /*
  * A link that looks like a button.
@@ -32,11 +32,13 @@ export function LinkButton({
   external?: boolean
 } & Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'href' | 'className'>) {
   const cls = buttonClasses(variant, size, className)
+  // As with Button: an icon only where there are no words.
+  const shown = hasText(children) ? null : icon
 
   if (external) {
     return (
       <a href={to} className={cls} rel="noopener noreferrer" {...rest}>
-        {icon}
+        {shown}
         {children}
       </a>
     )
@@ -44,7 +46,7 @@ export function LinkButton({
 
   return (
     <Link to={to} className={cls} {...rest}>
-      {icon}
+      {shown}
       {children}
     </Link>
   )

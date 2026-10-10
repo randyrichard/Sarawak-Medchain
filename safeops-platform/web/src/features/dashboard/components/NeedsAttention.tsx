@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import {
-  AlertTriangle, ClipboardCheck, FileWarning, HardHat, Mail, UserCheck, ChevronRight,
-} from 'lucide-react'
+import { ClipboardCheck, ChevronRight } from 'lucide-react'
 import type { AttentionItem, AttentionKind } from '@/api/dashboardApi'
 import { Badge, Card, CardBody, CardHeader, EmptyState } from '@/components/ui'
 import {
@@ -17,14 +15,6 @@ import {
  * certificate is. Every row opens the real record in the module that owns it - there is no
  * detail view here, because a second one would drift from the first.
  */
-const ICON: Record<AttentionKind, typeof AlertTriangle> = {
-  incident: AlertTriangle,
-  action: ClipboardCheck,
-  permit: FileWarning,
-  equipment: HardHat,
-  visitor: UserCheck,
-  report: Mail,
-}
 
 const TABS: { value: AttentionKind | 'all'; label: string }[] = [
   { value: 'all', label: 'Everything' },
@@ -108,7 +98,6 @@ export function NeedsAttention({
         {!loading && rows.length > 0 && (
           <ul className="divide-y divide-line">
             {rows.map((r) => {
-              const Icon = ICON[r.kind]
               const late = overdueLabel(r.overdueDays)
               return (
                 <li key={r.id}>
@@ -116,7 +105,6 @@ export function NeedsAttention({
                     to={r.href}
                     className="flex items-start gap-3 py-2.5 transition hover:bg-[var(--surface-2)]"
                   >
-                    <Icon size={15} className="mt-0.5 shrink-0 text-muted" />
                     <div className="min-w-0 flex-1">
                       <p className="flex flex-wrap items-center gap-1.5">
                         <Badge tone={priorityTone(r.priority)}>{priorityLabel(r.priority)}</Badge>

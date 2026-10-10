@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { HardHat, Plus, Search, ShieldAlert } from 'lucide-react'
+import { HardHat, Plus, Search } from 'lucide-react'
 import { api } from '@/api/client'
 import { PERMIT_TYPES, PERMIT_TYPE_LABEL, type PermitFilters, type PermitStats, type PermitType, type PermitView } from '@/api/permits'
 import { useOrg } from '@/features/org/OrgContext'
@@ -12,19 +12,37 @@ import { PermitCard } from './components/PermitCard'
 import { PermitDrawer } from './components/PermitDrawer'
 import { NewPermitDialog } from './components/NewPermitDialog'
 import { pollWhileVisible } from '@/lib/poll'
+import { openParam } from '@/lib/links'
 
 type StatusChip = NonNullable<PermitFilters['status']>
 
 const CHIPS: { value: StatusChip; label: string }[] = [
   { value: 'live', label: 'Live board' },
   { value: 'active', label: 'In progress' },
-  { value: 'submitted', label: 'Awaiting approval' },
+  // Submitted or anywhere in the approval chain. It matched `submitted` alone, so a permit
+  // left this list as soon as its first reviewer signed.
+  { value: 'awaiting', label: 'Awaiting approval' },
   { value: 'approved', label: 'Approved' },
   { value: 'suspended', label: 'Suspended' },
   { value: 'expired', label: 'Expired' },
   { value: 'closed', label: 'Closed' },
   { value: 'all', label: 'All' },
 ]
+
+/**
+ * Names for the statuses a link can ask for that have no chip of their own - Home links
+ * to each stage of the approval chain, and to rejected permits. Shown as a selected chip,
+ * so the list never looks unfiltered while it is filtered.
+ */
+const OTHER_STATUS: Partial<Record<StatusChip, string>> = {
+  draft: 'Drafts',
+  submitted: 'Submitted, not yet in review',
+  supervisor_review: 'Supervisor review',
+  hse_review: 'HSE review',
+  area_authority: 'Area authority',
+  rejected: 'Rejected',
+  expiring: 'Expiring within 7 days',
+}
 
 export function PermitsPage() {
   const { company, site, role } = useOrg()
@@ -36,7 +54,8 @@ export function PermitsPage() {
   const [type, setType] = useState<PermitType | ''>((params.get('type') as PermitType) || '')
   const [rows, setRows] = useState<PermitView[] | null>(null)
   const [stats, setStats] = useState<PermitStats | null>(null)
-  const [openId, setOpenId] = useState<string | null>(params.get('permit'))
+  // `permit` is this page's own name for the open permit; search and Home link with `open`.
+  const [openId, setOpenId] = useState<string | null>(() => openParam(params, 'permit', 'focus'))
   const [newOpen, setNewOpen] = useState(false)
 
   const issuer = canIssuePermits(role)
@@ -66,6 +85,17 @@ export function PermitsPage() {
     else params.delete(k)
     setParams(params, { replace: true })
   }
+
+  // Arrived by another name: rewrite it as `permit`, so closing the drawer clears it.
+  useEffect(() => {
+    if (!openId || params.get('permit') === openId) return
+    params.delete('open')
+    params.delete('focus')
+    setParam('permit', openId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const otherStatus = CHIPS.some((c) => c.value === status) ? null : OTHER_STATUS[status] ?? null
 
   /*
    * The permit office's board. Ordered by how urgently each number changes what someone
@@ -108,8 +138,8 @@ export function PermitsPage() {
   return (
     <>
       <PageHeader
-        title="Permit to Work"
-        subtitle="Every high-risk job authorised, time-bound and handed back"
+        title="Permits to work"
+        subtitle="Written permission for high-risk work such as hot work or entering a confined space. A permit must be approved before work starts, and closed when the area is handed back."
         right={<Button icon={<Plus size={15} />} onClick={() => setNewOpen(true)}>Request permit</Button>}
       />
 
@@ -134,7 +164,7 @@ export function PermitsPage() {
       {urgent.length > 0 && status === 'live' && (
         <Card className="mb-4 border-l-4 border-l-[color:var(--critical)] p-4">
           <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--critical)' }}>
-            <ShieldAlert size={13} /> Needs attention now
+            Needs attention now
           </p>
           <div className="grid gap-2 lg:grid-cols-2">
             {urgent.map((p) => <PermitCard key={p.id} permit={p} onOpen={() => { setOpenId(p.id); setParam('permit', p.id) }} />)}
@@ -184,6 +214,16 @@ export function PermitsPage() {
               {c.label}
             </button>
           ))}
+          {otherStatus && (
+            <button
+              onClick={() => setParam('status', 'live')}
+              aria-pressed
+              aria-label={`${otherStatus}. Show the live board instead`}
+              className="rounded-full border border-[color:var(--accent)] bg-accent-soft px-3 py-1 text-2xs font-semibold text-ink coarse:min-h-11 coarse:px-4"
+            >
+              {otherStatus} ✕
+            </button>
+          )}
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Boxes, CalendarDays, ClipboardCheck, LayoutDashboard, LineChart, Plus, Search } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import { api } from '@/api/client'
 import type { AssetFilters, AssetStats, AssetView, InspectionView } from '@/api/assets'
 import { ASSET_CATEGORIES, CATEGORY_LABEL, type AssetCategory } from '@/api/assets'
@@ -8,7 +8,8 @@ import { useOrg } from '@/features/org/OrgContext'
 import { useActor } from '@/features/incidents/lib'
 import { Badge, Button, Card, PageHeader, Skeleton, StatusPill, Tabs, type TabItem, AttentionIcon, attentionOf, attentionStripe } from '@/components/ui'
 import { cn } from '@/lib/cn'
-import { canManageAssets, CATEGORY_ICON, healthColor, RISK_PILL } from './lib'
+import { assetStatusFromParam, openParam } from '@/lib/links'
+import { canManageAssets, healthColor, RISK_PILL } from './lib'
 import { AssetDrawer } from './components/AssetDrawer'
 import { InspectionsList } from './components/InspectionsList'
 import { InspectionCalendar } from './components/InspectionCalendar'
@@ -20,6 +21,15 @@ import { InspectionRunner } from './components/InspectionRunner'
 type View = 'register' | 'inspections' | 'calendar' | 'analytics' | 'board'
 type Bucket = NonNullable<AssetFilters['bucket']>
 
+/** What each filter shows, in words, for the chip that says the register is filtered. */
+const BUCKET_LABEL: Record<Bucket, string> = {
+  all: 'All assets',
+  overdue: 'Inspection overdue',
+  due_week: 'Due this week',
+  high_risk: 'High risk',
+  defects: 'Open defects',
+}
+
 export function AssetsPage() {
   const { company, role, site, sites } = useOrg()
   const actor = useActor()
@@ -27,6 +37,8 @@ export function AssetsPage() {
 
   const [view, setView] = useState<View>((params.get('view') as View) || 'register')
   const bucket = (params.get('bucket') as Bucket) || 'all'
+  // From Home's "In service" and "Out of service" figures.
+  const status = assetStatusFromParam(params.get('status'))
   const [q, setQ] = useState('')
   const [category, setCategory] = useState<AssetCategory | ''>('')
 
@@ -41,10 +53,10 @@ export function AssetsPage() {
 
   const refresh = useCallback(() => {
     if (!company) return
-    api.listAssets(company.id, { q, category, bucket, siteId: site?.id }).then(setAssets)
+    api.listAssets(company.id, { q, category, bucket, status, siteId: site?.id }).then(setAssets)
     api.listInspections(company.id, { siteId: site?.id, status: 'all' }).then(setInspections)
     api.assetStats(company.id).then(setStats)
-  }, [company, q, category, bucket, site?.id])
+  }, [company, q, category, bucket, status, site?.id])
 
   useEffect(() => {
     setAssets(null)
@@ -52,16 +64,26 @@ export function AssetsPage() {
     return () => clearTimeout(t)
   }, [refresh, q])
 
-  // QR deep link: /assets?qr=AST-1007 (the printed label's payload)
+  /*
+   * Opening one asset from a link. Printed labels carry `?qr=AST-1007`, search and Home
+   * send `?open=`, and inspection and calibration reminders were stored with `?asset=`.
+   * Only `qr` was read, so every other link opened the register and left the asset to be
+   * found by hand.
+   */
   useEffect(() => {
-    const qr = params.get('qr')
-    if (qr) {
-      setOpenAssetId(qr)
-      params.delete('qr')
+    const target = openParam(params, 'qr', 'asset', 'focus')
+    if (target) {
+      setOpenAssetId(target)
+      for (const key of ['open', 'qr', 'asset', 'focus']) params.delete(key)
       setParams(params, { replace: true })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const clearStatus = () => {
+    params.delete('status')
+    setParams(params, { replace: true })
+  }
 
   const setBucket = (b: Bucket) => {
     params.set('bucket', b)
@@ -85,18 +107,18 @@ export function AssetsPage() {
   ]
 
   const viewTabs: TabItem<View>[] = [
-    { value: 'register', label: 'Register', badge: <Boxes size={13} className="text-muted" /> },
-    { value: 'inspections', label: 'Inspections', badge: <ClipboardCheck size={13} className="text-muted" /> },
-    { value: 'calendar', label: 'Calendar', badge: <CalendarDays size={13} className="text-muted" /> },
-    { value: 'analytics', label: 'Analytics', badge: <LineChart size={13} className="text-muted" /> },
-    { value: 'board', label: 'Equipment board', badge: <LayoutDashboard size={13} className="text-muted" /> },
+    { value: 'register', label: 'Register' },
+    { value: 'inspections', label: 'Inspections' },
+    { value: 'calendar', label: 'Calendar' },
+    { value: 'analytics', label: 'Analytics' },
+    { value: 'board', label: 'Equipment board' },
   ]
 
   return (
     <>
       <PageHeader
-        title="Assets & Inspections"
-        subtitle="Every critical asset tracked, inspected on schedule, and impossible to lose"
+        title="Assets & inspections"
+        subtitle="Equipment that must be inspected regularly. Run inspections here; any item that fails becomes a corrective action automatically."
         right={manage ? <Button icon={<Plus size={15} />} onClick={() => setNewOpen(true)}>Register asset</Button> : undefined}
       />
 
@@ -145,7 +167,16 @@ export function AssetsPage() {
               {ASSET_CATEGORIES.map((c) => <option key={c} value={c}>{CATEGORY_LABEL[c]}</option>)}
             </select>
             {bucket !== 'all' && (
-              <Badge tone="accent"><button onClick={() => setBucket('all')}>filter: {bucket.replace('_', ' ')} ✕</button></Badge>
+              <Badge tone="accent">
+                <button onClick={() => setBucket('all')} aria-label={`Clear filter: ${BUCKET_LABEL[bucket]}`}>
+                  {BUCKET_LABEL[bucket]} ✕
+                </button>
+              </Badge>
+            )}
+            {status && (
+              <Badge tone="accent">
+                <button onClick={clearStatus} aria-label={`Clear filter: ${status}`}>{status} ✕</button>
+              </Badge>
             )}
           </>
         )}
@@ -232,14 +263,10 @@ function RegisterTable({
           </thead>
           <tbody>
             {assets.map((a) => {
-              const Icon = CATEGORY_ICON[a.category]
               return (
                 <tr key={a.id} onClick={() => onOpen(a.id)} className="cursor-pointer border-b last:border-0 hover:bg-accent-soft/40">
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2.5">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent-soft">
-                        <Icon size={15} className="text-accent" />
-                      </span>
                       <div className="min-w-0">
                         <p className="text-sm font-semibold leading-snug text-ink">{a.name}</p>
                         <p className="text-2xs text-muted"><span className="font-mono">{a.code}</span> · S/N {a.serialNumber}</p>

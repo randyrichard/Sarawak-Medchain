@@ -28,10 +28,21 @@ export function CapaAnalyticsView({ companyId, sites }: { companyId: string | nu
     )
   }
 
+  // A rate with nothing behind it is a dash, not a red 0%.
   const tiles: { label: string; value: string; tone?: string; note: string }[] = [
-    { label: 'Completion rate', value: `${data.completionRate}%`, tone: data.completionRate >= 70 ? 'var(--good)' : 'var(--warning)', note: 'verified of all raised' },
+    {
+      label: 'Completion rate',
+      value: data.completionRate === null ? '—' : `${data.completionRate}%`,
+      tone: data.completionRate === null ? undefined : data.completionRate >= 70 ? 'var(--good)' : 'var(--warning)',
+      note: data.completionRate === null ? 'no actions raised yet' : 'verified of all raised',
+    },
     { label: 'Avg. close time', value: data.avgCloseDays !== null ? `${data.avgCloseDays}d` : '—', note: 'creation → verification' },
-    { label: 'On-time completion', value: `${data.onTimeRate}%`, tone: data.onTimeRate >= 80 ? 'var(--good)' : 'var(--serious)', note: 'completed by due date' },
+    {
+      label: 'On-time completion',
+      value: data.onTimeRate === null ? '—' : `${data.onTimeRate}%`,
+      tone: data.onTimeRate === null ? undefined : data.onTimeRate >= 80 ? 'var(--good)' : 'var(--serious)',
+      note: data.onTimeRate === null ? 'nothing completed yet' : 'completed by due date',
+    },
     {
       label: 'Most overdue site',
       value: data.mostOverdueSite ? siteShort(data.mostOverdueSite.site) : 'None',
@@ -42,6 +53,9 @@ export function CapaAnalyticsView({ companyId, sites }: { companyId: string | nu
 
   return (
     <div className="space-y-4">
+      {data.sampled && (
+        <p className="text-2xs text-muted">Counted from the most recent 5,000 actions.</p>
+      )}
       <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {tiles.map((t, i) => (
           // A size container, so the figure scales to the tile: "Most overdue site" holds a
@@ -109,6 +123,7 @@ export function CapaAnalyticsView({ companyId, sites }: { companyId: string | nu
         <Card>
           <CardHeader title="Owner load" subtitle="Who is carrying the most — and who is behind" />
           <CardBody className="space-y-2">
+            {data.byOwner.length === 0 && <p className="py-8 text-center text-sm text-muted">No actions to show yet.</p>}
             {data.byOwner.map((o) => (
               <div key={o.name} className="flex items-center gap-3 rounded-lg px-1.5 py-1.5">
                 <Avatar name={o.name} size={26} />

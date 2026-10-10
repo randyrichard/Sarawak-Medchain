@@ -1,8 +1,4 @@
 import { useSearchParams } from 'react-router-dom'
-import {
-  Activity, Building2, DatabaseBackup, KeyRound, ScrollText, ShieldCheck, Plug, Users, UserCog,
-  MailPlus, MapPin, Network, Briefcase,
-} from 'lucide-react'
 import { PageHeader } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { useOrg } from '@/features/org/OrgContext'
@@ -24,20 +20,20 @@ type Section =
   | 'overview' | 'users' | 'invitations' | 'roles' | 'organization' | 'security'
   | 'projects' | 'sites' | 'departments' | 'audit' | 'integrations' | 'developer' | 'backup'
 
-const NAV: { id: Section; label: string; icon: typeof Activity; group: string }[] = [
-  { id: 'overview', label: 'System Health', icon: Activity, group: 'Monitor' },
-  { id: 'users', label: 'Users', icon: Users, group: 'People & Access' },
-  { id: 'invitations', label: 'Invitations', icon: MailPlus, group: 'People & Access' },
-  { id: 'roles', label: 'Roles & Permissions', icon: UserCog, group: 'People & Access' },
-  { id: 'security', label: 'Security Center', icon: ShieldCheck, group: 'People & Access' },
-  { id: 'organization', label: 'Organization', icon: Building2, group: 'Configuration' },
-  { id: 'projects', label: 'Projects', icon: Briefcase, group: 'Configuration' },
-  { id: 'sites', label: 'Sites', icon: MapPin, group: 'Configuration' },
-  { id: 'departments', label: 'Departments', icon: Network, group: 'Configuration' },
-  { id: 'audit', label: 'Audit Log', icon: ScrollText, group: 'Governance' },
-  { id: 'integrations', label: 'Integrations', icon: Plug, group: 'Platform' },
-  { id: 'developer', label: 'API & Webhooks', icon: KeyRound, group: 'Platform' },
-  { id: 'backup', label: 'Backup & Recovery', icon: DatabaseBackup, group: 'Platform' },
+const NAV: { id: Section; label: string; group: string }[] = [
+  { id: 'overview', label: 'System Health', group: 'Monitor' },
+  { id: 'users', label: 'Users', group: 'People & Access' },
+  { id: 'invitations', label: 'Invitations', group: 'People & Access' },
+  { id: 'roles', label: 'Roles & Permissions', group: 'People & Access' },
+  { id: 'security', label: 'Security Center', group: 'People & Access' },
+  { id: 'organization', label: 'Organization', group: 'Configuration' },
+  { id: 'projects', label: 'Projects', group: 'Configuration' },
+  { id: 'sites', label: 'Sites', group: 'Configuration' },
+  { id: 'departments', label: 'Departments', group: 'Configuration' },
+  { id: 'audit', label: 'Audit Log', group: 'Governance' },
+  { id: 'integrations', label: 'Integrations', group: 'Platform' },
+  { id: 'developer', label: 'API & Webhooks', group: 'Platform' },
+  { id: 'backup', label: 'Backup & Recovery', group: 'Platform' },
 ]
 
 export function AdminPage() {
@@ -62,7 +58,7 @@ export function AdminPage() {
 
   return (
     <>
-      <PageHeader title="Administration" subtitle="Governance, security and integrations — the SafeOps control plane" />
+      <PageHeader title="Administration" subtitle="Users, sign-in security, sites and settings for your company" />
 
       <div className="grid gap-5 lg:grid-cols-[220px_1fr]">
         {/* Sub-navigation */}
@@ -83,11 +79,11 @@ export function AdminPage() {
                       key={n.id}
                       onClick={() => go(n.id)}
                       className={cn(
-                        'flex shrink-0 items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition-colors coarse:min-h-11',
-                        active ? 'bg-accent-soft text-ink' : 'text-ink-2 hover:bg-accent-soft/60 hover:text-ink',
+                        // Words only, and the section you are in marked the way the main menu marks a page.
+                        'flex shrink-0 items-center whitespace-nowrap rounded-lg px-3 py-2 text-sm transition-colors coarse:min-h-11',
+                        active ? 'bg-accent-soft font-semibold text-ink shadow-[inset_3px_0_0_var(--accent)]' : 'font-medium text-ink-2 hover:bg-accent-soft/60 hover:text-ink',
                       )}
                     >
-                      <n.icon size={15} className={active ? 'text-accent' : 'text-muted'} />
                       {n.label}
                     </button>
                   )

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Wrench, Plus, Trash2, ShieldAlert, Star, ExternalLink } from 'lucide-react'
+import { Plus, Trash2, ShieldAlert, Star, ExternalLink } from 'lucide-react'
 import { equipmentApi, type IncidentEquipmentRow, type SelectableEquipment } from '@/api/equipmentApi'
 import { inspectionsApi } from '@/api/inspectionsApi'
 import { ApiError } from '@/api/types'
@@ -58,7 +58,7 @@ export function IncidentEquipmentPanel({
     <Card>
       <CardBody>
         <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-          <Wrench size={12} /> Equipment involved
+          Equipment involved
         </p>
 
         {error && <Alert tone="critical" className="mb-2" onDismiss={() => setError(null)}>{error}</Alert>}

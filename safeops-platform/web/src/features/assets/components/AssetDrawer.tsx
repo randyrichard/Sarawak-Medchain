@@ -10,7 +10,7 @@ import type { CapaItem } from '@/api/capa'
 import { useActor, fmtDate, fmtDateTime } from '@/features/incidents/lib'
 import { usePeople } from '@/features/incidents/lib'
 import { Avatar, Badge, Button, Dialog, ErrorState, Input, Select, Skeleton, StatusPill } from '@/components/ui'
-import { CATEGORY_ICON, healthColor, RISK_PILL } from '../lib'
+import { healthColor, RISK_PILL } from '../lib'
 import { QrBlock } from './QrBlock'
 import { CalibrationPanel } from './CalibrationPanel'
 import { AssetHolderPanel } from './AssetHolderPanel'
@@ -79,7 +79,6 @@ export function AssetDrawer({
   if (!assetId) return null
 
   const asset = profile?.asset
-  const Icon = asset ? CATEGORY_ICON[asset.category] : FileText
   const nextScheduled = profile?.inspections.find((i) => i.status === 'Scheduled')
 
   const schedule = async () => {
@@ -124,9 +123,6 @@ export function AssetDrawer({
             <div className="flex items-start justify-between gap-3 border-b px-5 py-4">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent-soft">
-                    <Icon size={17} className="text-accent" />
-                  </span>
                   <div className="min-w-0">
                     <h2 className="truncate text-lg font-semibold leading-snug tracking-tight text-ink">{asset.name}</h2>
                     <p className="text-2xs text-muted">

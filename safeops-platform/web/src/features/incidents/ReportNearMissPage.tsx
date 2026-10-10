@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Camera, Check, CloudOff, MapPin, ShieldAlert, Zap } from 'lucide-react'
+import { Check, CloudOff, Zap } from 'lucide-react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import type { NewIncidentInput } from '@/api/incidents'
@@ -212,16 +212,11 @@ export function ReportNearMissPage() {
 
   return (
     <div className="group/nm mx-auto max-w-lg py-2">
-      <div className="mb-4 flex items-start gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-soft">
-          <ShieldAlert size={19} className="text-accent" />
-        </span>
-        <div>
-          <h1 className="text-lg font-semibold tracking-tight text-ink">Report a near miss</h1>
-          <p className="text-xs text-ink-2">
-            Two questions, about thirty seconds. No injury or damage — just what you saw.
-          </p>
-        </div>
+      <div className="mb-4">
+        <h1 className="text-lg font-semibold tracking-tight text-ink">Report a near miss</h1>
+        <p className="text-xs text-ink-2">
+          Two questions, about thirty seconds. No injury or damage — just what you saw.
+        </p>
       </div>
 
       {error && <Alert tone="critical" className="mb-3" onDismiss={() => setError(null)}>{error}</Alert>}
@@ -246,14 +241,13 @@ export function ReportNearMissPage() {
         {/* 2. Where */}
         <div>
           <label htmlFor="nm-where" className="text-sm font-semibold text-ink">Where was it?</label>
-          <div className="relative mt-1.5">
-            <MapPin size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+          <div className="mt-1.5">
             <input
               id="nm-where"
               value={where}
               onChange={(e) => setWhere(e.target.value)}
               placeholder="e.g. Jetty 2, near loading arm 3"
-              className="h-11 w-full rounded-lg border bg-surface pl-9 pr-3 text-lg text-ink outline-none placeholder:text-muted focus:border-accent"
+              className="h-11 w-full rounded-lg border bg-surface px-3 text-lg text-ink outline-none placeholder:text-muted focus:border-accent"
             />
           </div>
           {sites.length > 1 && (
@@ -309,7 +303,6 @@ export function ReportNearMissPage() {
         <div>
           <p className="text-xs font-semibold text-ink-2">Photo <span className="font-normal text-muted">(optional)</span></p>
           <label className="mt-1.5 flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed py-3 text-sm text-ink-2 hover:bg-accent-soft/40">
-            <Camera size={16} />
             {photos.length > 0 ? `${photos.length} photo(s) to send` : 'Take or attach a photo'}
             {/*
               No `capture` attribute: it opens the camera directly on Android, so a photo already taken

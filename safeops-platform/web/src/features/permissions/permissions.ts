@@ -32,6 +32,7 @@ export type Capability =
   | 'reports:view'            // generated and scheduled reports
   // ── Acting on a module ─────────────────────────────────────────────────────
   | 'incidents:manage'        // triage, investigate, advance stages
+  | 'actions:view'            // the corrective action register - an employee sees their own
   | 'actions:manage'          // corrective action tracker
   | 'analytics:view'          // trends & comparisons
   | 'compliance:manage'       // audit readiness
@@ -62,7 +63,7 @@ const MATRIX: Record<Role, Capability[]> = {
     'dashboard:view', 'reports:submit',
     'incidents:view', 'permits:view', 'equipment:view', 'visitors:view', 'toolbox:view',
     'training:view', 'workforce:view', 'reports:view',
-    'incidents:manage', 'actions:manage', 'analytics:view', 'compliance:manage',
+    'incidents:manage', 'actions:view', 'actions:manage', 'analytics:view', 'compliance:manage',
     'org:view', 'org:manage', 'audit-log:view', 'settings:manage',
   ],
 
@@ -70,7 +71,7 @@ const MATRIX: Record<Role, Capability[]> = {
     'dashboard:view', 'reports:submit',
     'incidents:view', 'permits:view', 'equipment:view', 'visitors:view', 'toolbox:view',
     'training:view', 'workforce:view', 'reports:view',
-    'incidents:manage', 'actions:manage', 'analytics:view', 'compliance:manage',
+    'incidents:manage', 'actions:view', 'actions:manage', 'analytics:view', 'compliance:manage',
     'org:view', 'audit-log:view',
   ],
 
@@ -94,7 +95,7 @@ const MATRIX: Record<Role, Capability[]> = {
      * Closing an audit stays out of reach: that is REVIEW_ROLES on the server, and this
      * capability only decides whether the nav entry appears.
      */
-    'incidents:manage', 'actions:manage', 'analytics:view', 'compliance:manage',
+    'incidents:manage', 'actions:view', 'actions:manage', 'analytics:view', 'compliance:manage',
   ],
 
   /*
@@ -105,7 +106,7 @@ const MATRIX: Record<Role, Capability[]> = {
   supervisor: [
     'dashboard:view', 'reports:submit',
     'incidents:view', 'permits:view', 'visitors:view', 'equipment:view', 'toolbox:view',
-    'actions:manage',
+    'actions:view', 'actions:manage',
   ],
 
   /*
@@ -118,6 +119,14 @@ const MATRIX: Record<Role, Capability[]> = {
   employee: [
     'dashboard:view', 'reports:submit',
     'incidents:view', 'permits:view',
+    /*
+     * Their own corrective actions. An action can be assigned to anybody, and the server
+     * lists an employee only the ones they own and lets them start and complete those -
+     * but the register sat behind `actions:manage`, so the notification "Corrective action
+     * assigned to you" opened a page saying they had no access. Nothing else of the
+     * register is theirs: no new actions, no reassigning, no sign-off.
+     */
+    'actions:view',
   ],
 }
 

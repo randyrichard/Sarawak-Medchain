@@ -113,8 +113,15 @@ describe('an employee is not shown the back office', () => {
     expect(can('employee', capability)).toBe(false)
   })
 
-  it('shows them four things, not fourteen', () => {
-    expect(capabilitiesOf('employee')).toHaveLength(4)
+  it('shows them five things, not fourteen', () => {
+    expect(capabilitiesOf('employee')).toHaveLength(5)
+  })
+
+  it('lets them open the corrective actions assigned to them', () => {
+    // The notification "Corrective action assigned" links to the register. The server lists
+    // an employee only what they own; the page is where they start and complete it.
+    expect(can('employee', 'actions:view')).toBe(true)
+    expect(can('employee', 'actions:manage')).toBe(false)
   })
 })
 

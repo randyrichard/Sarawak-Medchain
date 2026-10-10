@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Paperclip, Upload, Trash2, Download, FileText, Image as ImageIcon } from 'lucide-react'
+import { Upload, Trash2, Download, FileText, Image as ImageIcon } from 'lucide-react'
 import {
   permitWorkflowApi, ATTACHMENT_KIND_LABEL, type AttachmentKind, type PermitAttachment,
 } from '@/api/permitWorkflowApi'
@@ -116,7 +116,7 @@ export function AttachmentsPanel({
   return (
     <section>
       <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-        <Paperclip size={12} /> Documents
+        Documents
         {rows && rows.length > 0 && <span className="text-muted">({rows.length})</span>}
       </p>
 

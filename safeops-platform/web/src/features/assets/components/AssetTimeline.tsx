@@ -58,7 +58,7 @@ export function AssetTimeline({ assetId, revision = 0 }: { assetId: string; revi
   return (
     <section className="mt-5">
       <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-        <History size={12} /> History
+        History
       </p>
 
       {error && <Alert tone="critical" className="mb-2" onDismiss={() => setError(null)}>{error}</Alert>}

@@ -3,7 +3,8 @@ import { AlertTriangle, HardHat, ClipboardCheck, UserCheck, FileWarning, Mail } 
 import type { DashboardOverview } from '@/api/dashboardApi'
 import { Badge, Card, CardBody, CardHeader, EmptyState } from '@/components/ui'
 import { fmtDateTime } from '@/features/incidents/lib'
-import { reportStatusLabel, severityBars, visiblePermitStages } from '../lib'
+import { linkTo, type PermitStatusFilter } from '@/lib/links'
+import { permitStageLabel, reportStatusLabel, severityBars, visiblePermitStages } from '../lib'
 
 /**
  * The per-module panels below the attention queue.
@@ -47,8 +48,8 @@ export function IncidentPanel({ d, className }: { d: DashboardOverview; classNam
       />
       <CardBody className="space-y-3">
         <div className="grid grid-cols-3 gap-1">
-          <Stat label="Investigating" value={d.incidents.investigating} href="/incidents/board?status=investigating" />
-          <Stat label="Awaiting review" value={d.incidents.awaitingReview} href="/incidents/board?status=awaiting_review" />
+          <Stat label="Investigating" value={d.incidents.investigating} href={linkTo.incidents('investigating')} />
+          <Stat label="Awaiting review" value={d.incidents.awaitingReview} href={linkTo.incidents('awaiting_review')} />
           <Stat label="In range" value={d.incidents.inRange} href="/incidents" />
         </div>
 
@@ -126,19 +127,19 @@ export function PermitPanel({ d, className }: { d: DashboardOverview; className?
               {stages.map((s) => (
                 <li key={s.stage}>
                   <Stat
-                    label={s.label.replace(/^\w/, (c) => c.toUpperCase())}
+                    label={permitStageLabel(s.stage, s.label)}
                     value={s.count}
-                    href={`/permits?status=${s.stage}`}
+                    href={linkTo.permits(s.stage as PermitStatusFilter)}
                     tone={s.stage === 'active' ? 'good' : undefined}
                   />
                 </li>
               ))}
             </ul>
             <div className="grid grid-cols-2 gap-1 border-t border-line pt-2">
-              <Stat label="Expiring in 7 days" value={d.permits.expiringSoon} href="/permits?expiring=1" tone="warning" />
+              <Stat label="Expiring in 7 days" value={d.permits.expiringSoon} href={linkTo.permits('expiring')} tone="warning" />
               {/* Past their window and never signed off - a real gap, not a stage. */}
-              <Stat label="Lapsed, not closed" value={d.permits.expiredOpen} href="/permits?expired=1" tone="critical" />
-              <Stat label="Rejected" value={d.permits.rejected} href="/permits?status=rejected" />
+              <Stat label="Lapsed, not closed" value={d.permits.expiredOpen} href={linkTo.permits('expired')} tone="critical" />
+              <Stat label="Rejected" value={d.permits.rejected} href={linkTo.permits('rejected')} />
             </div>
           </>
         )}
@@ -164,12 +165,14 @@ export function EquipmentPanel({ d, className }: { d: DashboardOverview; classNa
           </EmptyState>
         ) : (
           <div className="space-y-0.5">
-            <Stat label="In service" value={e.inService} href="/assets?status=in_service" tone="good" />
-            <Stat label="Out of service" value={e.outOfService} href="/assets?status=out_of_service" tone="warning" />
-            <Stat label="Inspection overdue" value={e.inspectionOverdue} href="/assets?bucket=overdue" tone="critical" />
-            <Stat label="Calibration expired" value={e.calibrationOverdue} href="/assets?bucket=overdue" tone="critical" />
-            <Stat label="No certificate on file" value={e.calibrationMissing} href="/assets?bucket=overdue" tone="critical" />
-            <Stat label="Calibration due soon" value={e.calibrationDueSoon} href="/assets?bucket=due" tone="warning" />
+            <Stat label="In service" value={e.inService} href={linkTo.assets({ status: 'In Service' })} tone="good" />
+            {/* Includes equipment under maintenance; the board shows the two side by side. */}
+            <Stat label="Out of service" value={e.outOfService} href={linkTo.equipmentBoard()} tone="warning" />
+            <Stat label="Inspection overdue" value={e.inspectionOverdue} href={linkTo.assets({ bucket: 'overdue' })} tone="critical" />
+            {/* Calibration is counted on the equipment board; the register cannot filter by it. */}
+            <Stat label="Calibration expired" value={e.calibrationOverdue} href={linkTo.equipmentBoard()} tone="critical" />
+            <Stat label="No certificate on file" value={e.calibrationMissing} href={linkTo.equipmentBoard()} tone="critical" />
+            <Stat label="Calibration due soon" value={e.calibrationDueSoon} href={linkTo.equipmentBoard()} tone="warning" />
           </div>
         )}
       </CardBody>
@@ -188,10 +191,10 @@ export function ActionsPanel({ d, className }: { d: DashboardOverview; className
       />
       <CardBody className="space-y-3">
         <div className="grid grid-cols-2 gap-1">
-          <Stat label="Overdue" value={a.overdue} href="/actions?due=overdue" tone="critical" />
-          <Stat label="Due today" value={a.dueToday} href="/actions?due=today" tone="warning" />
-          <Stat label="Due this week" value={a.dueThisWeek} href="/actions?due=week" />
-          <Stat label="Closed in range" value={a.completedInRange} href="/actions?status=completed" tone="good" />
+          <Stat label="Overdue" value={a.overdue} href={linkTo.actions('overdue')} tone="critical" />
+          <Stat label="Due today" value={a.dueToday} href={linkTo.actions('due_today')} tone="warning" />
+          <Stat label="Due this week" value={a.dueThisWeek} href={linkTo.actions('due_week')} />
+          <Stat label="Closed in range" value={a.completedInRange} href={linkTo.actions('completed')} tone="good" />
         </div>
 
         {a.byOwner.length === 0 ? (
@@ -225,9 +228,9 @@ export function VisitorPanel({ d, className }: { d: DashboardOverview; className
       />
       <CardBody className="space-y-3">
         <div className="grid grid-cols-3 gap-1">
-          <Stat label="On site" value={v.onSite} href="/visitors?status=on_site" />
-          <Stat label="Expected today" value={v.expectedToday} href="/visitors?status=expected" />
-          <Stat label="Overdue out" value={v.overdueCheckout} href="/visitors?status=overdue" tone="critical" />
+          <Stat label="On site" value={v.onSite} href={linkTo.visitors('on_site')} />
+          <Stat label="Expected today" value={v.expectedToday} href={linkTo.visitors('today')} />
+          <Stat label="Overdue out" value={v.overdueCheckout} href={linkTo.visitors('overdue')} tone="critical" />
         </div>
 
         {v.current.length === 0 ? (

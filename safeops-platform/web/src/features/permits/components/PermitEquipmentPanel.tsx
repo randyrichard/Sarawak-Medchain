@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Wrench, Plus, Trash2, ShieldAlert, ShieldCheck, Star } from 'lucide-react'
+import { Plus, Trash2, ShieldAlert, ShieldCheck, Star } from 'lucide-react'
 import {
   equipmentApi, type PermitEquipmentRow, type SelectableEquipment,
 } from '@/api/equipmentApi'
@@ -64,7 +64,7 @@ export function PermitEquipmentPanel({
   return (
     <section>
       <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-        <Wrench size={12} /> Equipment
+        Equipment
         {unfit.length > 0 && (
           <span className="text-critical">({unfit.length} not fit for use)</span>
         )}

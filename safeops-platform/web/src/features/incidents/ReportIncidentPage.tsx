@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  ArrowLeft, ArrowRight, Check, CloudOff, CloudUpload, FileText, Image as ImageIcon,
-  LocateFixed, PenLine, Send, Trash2, UserPlus, X,
-} from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, CloudOff, CloudUpload, FileText, Image as ImageIcon, LocateFixed, Send, Trash2, UserPlus, X } from 'lucide-react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import type { IncidentSeverity, IncidentType, NewIncidentInput, PersonInvolved } from '@/api/incidents'
@@ -13,7 +10,7 @@ import { useOrg } from '@/features/org/OrgContext'
 import { useDepartments } from '@/features/org/departments'
 import { Alert, Badge, Breadcrumbs, Button, Card, Checkbox, Input, SuggestSelect, LinkButton, Select, Textarea } from '@/components/ui'
 import { usePageTitle } from '@/app/pageTitle'
-import { fmtDateTime, INCIDENT_TYPE_GROUPS, severityKind, SITE_COORDS, TYPE_ICON, useActor } from './lib'
+import { fmtDateTime, INCIDENT_TYPE_GROUPS, severityKind, SITE_COORDS, useActor } from './lib'
 import { enqueue, shouldRetry } from './outbox'
 import { EVIDENCE_ACCEPT, EVIDENCE_HINT, screenEvidence, uploadEvidence } from './evidence'
 import { StatusPill } from '@/components/ui'
@@ -387,7 +384,6 @@ export function ReportIncidentPage() {
                     </legend>
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
                       {group.types.map((t) => {
-                        const Icon = TYPE_ICON[t]
                         const active = draft.type === t
                         return (
                           <button
@@ -401,7 +397,6 @@ export function ReportIncidentPage() {
                             )}
                             style={active ? { borderColor: 'var(--accent)' } : undefined}
                           >
-                            <Icon size={15} aria-hidden className={cn('shrink-0', active ? 'text-accent' : 'text-muted')} />
                             <span className="text-xs font-medium leading-tight text-ink">{TYPE_LABEL[t]}</span>
                           </button>
                         )
@@ -683,7 +678,7 @@ export function ReportIncidentPage() {
 
             <div className="rounded-xl border px-4 py-4" style={{ borderColor: 'var(--accent)' }}>
               <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-accent">
-                <PenLine size={12} /> Digital signature
+                Digital signature
               </p>
               <Input
                 label="Type your full name to sign" required placeholder={user?.name}
@@ -744,13 +739,11 @@ export function ReportingSummary({
   occurredAt: string
   onEdit: () => void
 }) {
-  const Icon = TYPE_ICON[type]
   return (
     <section
       aria-label="You are reporting"
       className="mb-3 flex items-center gap-3 rounded-xl border bg-sunken px-3.5 py-2.5"
     >
-      <Icon size={16} aria-hidden className="shrink-0 text-accent" />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-ink">{title || TYPE_LABEL[type]}</p>
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-2xs text-muted">

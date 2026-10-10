@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Check, ArrowRight, Rocket, X } from 'lucide-react'
+import { Check, X } from 'lucide-react'
 import { Card, CardBody } from '@/components/ui'
 import { cn } from '@/lib/cn'
 
@@ -91,13 +91,6 @@ export function GettingStarted({
     <Card className="mb-4 border-accent/40">
       <CardBody>
         <div className="flex items-start gap-3">
-          <span
-            className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent"
-            aria-hidden="true"
-          >
-            <Rocket size={16} />
-          </span>
-
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <h2 className="text-sm font-semibold text-ink">Getting started</h2>
@@ -161,7 +154,7 @@ export function GettingStarted({
                                    text-accent transition-colors hover:text-ink focus:outline-none
                                    focus-visible:ring-2 focus-visible:ring-accent"
                       >
-                        {step.cta} <ArrowRight size={11} aria-hidden="true" />
+                        {step.cta}
                       </Link>
                     )}
                     {/* Screen readers get the state in words, not only as a tick. */}
@@ -179,7 +172,8 @@ export function GettingStarted({
               aria-label="Hide getting started"
               title="Hide getting started"
               className="shrink-0 rounded-lg p-1.5 text-muted transition-colors hover:bg-accent-soft
-                         hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                         hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent
+                         coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center"
             >
               <X size={14} />
             </button>

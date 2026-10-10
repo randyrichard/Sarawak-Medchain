@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { KanbanSquare, List, CalendarDays, LineChart, Plus, Search } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import { api } from '@/api/client'
 import type { CapaFilters, CapaItem, CapaStats } from '@/api/capa'
 import type { ActionPriority } from '@/api/incidents'
@@ -19,6 +19,19 @@ import { NewActionDialog } from './components/NewActionDialog'
 
 type View = 'board' | 'list' | 'calendar' | 'analytics'
 type Bucket = NonNullable<CapaFilters['bucket']>
+
+/** What each filter shows, in words, for the chip that says the list is filtered. */
+const BUCKET_LABEL: Record<Bucket, string> = {
+  all: 'All actions',
+  open: 'Open',
+  overdue: 'Overdue',
+  due_today: 'Due today',
+  due_week: 'Due in the next 7 days',
+  verification: 'Waiting for verification',
+  high_priority: 'High priority',
+  completed: 'Completed in the last 30 days',
+  cancelled: 'Cancelled',
+}
 
 const KPI_DEFS: { key: keyof CapaStats; label: string; bucket: Bucket; tone: (n: number) => string }[] = [
   { key: 'open', label: 'Open actions', bucket: 'open', tone: () => 'var(--accent)' },
@@ -134,7 +147,6 @@ export function ActionsPage() {
     { value: 'calendar', label: 'Calendar' },
     { value: 'analytics', label: 'Analytics' },
   ]
-  const VIEW_ICON = { board: KanbanSquare, list: List, calendar: CalendarDays, analytics: LineChart }
 
   const scopeNote =
     role === 'employee' ? 'Showing actions assigned to you'
@@ -152,8 +164,8 @@ export function ActionsPage() {
       )}
 
       <PageHeader
-        title="Corrective Actions"
-        subtitle={`Nothing falls through the cracks — ${scopeNote.toLowerCase()}`}
+        title="Corrective actions"
+        subtitle={`Tasks that fix the causes of incidents and audit findings. Each has an owner and a due date, and stays open until it is checked. ${scopeNote}.`}
         right={
           !readOnlyRole && ['admin', 'hse_manager', 'safety_officer'].includes(role ?? '') ? (
             <Button icon={<Plus size={15} />} onClick={() => setNewOpen(true)}>New action</Button>
@@ -208,16 +220,15 @@ export function ActionsPage() {
           <option>High</option><option>Medium</option><option>Low</option>
         </select>
         {bucket !== 'all' && (
-          <Badge tone="accent" className="cursor-pointer" >
-            <button onClick={() => setBucket('all')}>filter: {bucket.replace('_', ' ')} ✕</button>
+          <Badge tone="accent" className="cursor-pointer">
+            <button onClick={() => setBucket('all')} aria-label={`Clear filter: ${BUCKET_LABEL[bucket]}`}>
+              {BUCKET_LABEL[bucket]} ✕
+            </button>
           </Badge>
         )}
         <div className="ml-auto min-w-0">
           <Tabs
-            items={viewTabs.map((t) => {
-              const Icon = VIEW_ICON[t.value]
-              return { ...t, badge: <Icon size={13} className="text-muted" /> }
-            })}
+            items={viewTabs}
             value={view}
             onChange={switchView}
             className="border-b-0"

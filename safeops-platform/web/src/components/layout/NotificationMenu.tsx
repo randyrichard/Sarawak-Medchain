@@ -1,24 +1,26 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Bell, ClipboardList, ListChecks, ShieldCheck, Megaphone, CheckCheck } from 'lucide-react'
+import { Bell, CheckCheck } from 'lucide-react'
 import { api } from '@/api/client'
 import { useOrg } from '@/features/org/OrgContext'
-import type { AppNotification, NotificationKind } from '@/api/types'
+import type { AppNotification } from '@/api/types'
 import { timeAgo } from '@/lib/time'
 import { Dropdown, DropdownItem, DropdownSeparator, SkeletonRows } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { pollWhileVisible } from '@/lib/poll'
+import { notificationTarget } from '@/lib/links'
+import { capabilityFor } from './nav'
 
-const KIND_ICON: Record<NotificationKind, typeof Bell> = {
-  incident: ClipboardList,
-  action: ListChecks,
-  audit: ShieldCheck,
-  system: Megaphone,
-}
 
 export function NotificationMenu() {
-  const { company } = useOrg()
+  const { company, allowed } = useOrg()
   const companyId = company?.id ?? ''
+  // Straight to what it is about, when this person can open it; otherwise the full list.
+  const destination = (href: string | undefined) => {
+    const target = notificationTarget(href)
+    const needs = target ? capabilityFor(target) : null
+    return target && (needs === null || allowed(needs)) ? target : '/notifications'
+  }
   const [items, setItems] = useState<AppNotification[] | null>(null)
   const navigate = useNavigate()
 
@@ -73,26 +75,27 @@ export function NotificationMenu() {
       ) : (
         <div className="max-h-96 overflow-y-auto">
           {items.slice(0, 6).map((n) => {
-            const Icon = KIND_ICON[n.kind]
             return (
               <DropdownItem
                 key={n.id}
                 onSelect={() => {
                   void api.markNotificationRead(companyId, n.id)
                   setItems((cur) => cur?.map((x) => (x.id === n.id ? { ...x, readAt: x.readAt ?? new Date().toISOString() } : x)) ?? null)
-                  navigate('/notifications')
+                  navigate(destination(n.href))
                 }}
               >
                 <span className="flex items-start gap-2.5">
-                  <span className={cn('mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg', n.readAt ? 'bg-sunken text-muted' : 'bg-accent-soft text-accent')}>
-                    <Icon size={14} />
-                  </span>
                   <span className="min-w-0 flex-1">
                     <span className={cn('block truncate text-sm', n.readAt ? 'text-ink-2' : 'font-semibold text-ink')}>{n.title}</span>
                     <span className="block truncate text-2xs text-muted">{n.detail}</span>
                     <span className="block pt-0.5 text-2xs text-muted">{timeAgo(n.createdAt)}</span>
                   </span>
-                  {!n.readAt && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-accent" aria-label="Unread" />}
+                  {!n.readAt && (
+                    <>
+                      <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-accent" aria-hidden />
+                      <span className="sr-only">Unread</span>
+                    </>
+                  )}
                 </span>
               </DropdownItem>
             )

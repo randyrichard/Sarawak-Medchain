@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { UserCheck, UserMinus, HardHat, FileCheck, ExternalLink } from 'lucide-react'
+import { UserCheck, UserMinus, HardHat, ExternalLink } from 'lucide-react'
 import {
   equipmentApi, type AssetCurrentPermit, type AssetHolder,
 } from '@/api/equipmentApi'
@@ -61,7 +61,7 @@ export function AssetHolderPanel({
   return (
     <section className="mt-5">
       <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-        <UserCheck size={12} /> Assignment
+        Assignment
       </p>
 
       {error && <Alert tone="critical" className="mb-2" onDismiss={() => setError(null)}>{error}</Alert>}
@@ -104,7 +104,7 @@ export function AssetHolderPanel({
 
       {/* The live permit. Read-only here: booking happens on the permit, where the gate is. */}
       <p className="mb-2 mt-4 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-        <FileCheck size={12} /> Current permit
+        Current permit
       </p>
       {permit === undefined ? (
         <Skeleton className="h-12 rounded-lg" />

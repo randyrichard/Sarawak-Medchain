@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AlertTriangle, CheckCircle2, CircleAlert, Layers } from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
 import { dashboardApi, type SiteComparisonRow } from '@/api/dashboardApi'
 import { ApiError } from '@/api/types'
 import { Card, CardBody, Skeleton } from '@/components/ui'
@@ -44,7 +44,7 @@ export function SiteComparison({
       <CardBody>
         <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-            <Layers size={14} className="text-accent" /> Site comparison
+            Site comparison
           </h2>
           <p className="text-2xs text-muted">Every site side by side · sites needing attention first · click a site to open it</p>
         </div>
@@ -74,9 +74,7 @@ export function SiteComparison({
                   >
                     <td className="px-2 py-2">
                       <p className="flex items-center gap-1.5 font-medium text-ink">
-                        {r.attention.length > 0
-                          ? <AlertTriangle size={13} className="shrink-0 text-warning" aria-label="Needs attention" />
-                          : <CheckCircle2 size={13} className="shrink-0 text-good" aria-label="Nothing outstanding" />}
+                        {r.attention.length > 0 && <AlertTriangle size={13} className="shrink-0 text-warning" aria-label="Needs attention" />}
                         {r.siteName}
                       </p>
                       {r.attention.length > 0 && <p className="mt-0.5 text-2xs text-warning">{r.attention.join(' · ')}</p>}
@@ -98,8 +96,8 @@ export function SiteComparison({
                     <td className="px-2 py-2 text-right">{num(r.activePermits)}</td>
                     <td className="px-2 py-2">
                       {r.toolboxToday
-                        ? <span className="inline-flex items-center gap-1 text-good"><CheckCircle2 size={12} /> {r.toolboxHeadcount} present</span>
-                        : <span className={cn('inline-flex items-center gap-1', r.activePermits > 0 ? 'text-warning' : 'text-muted')}><CircleAlert size={12} /> Not held</span>}
+                        ? <span className="text-good">{r.toolboxHeadcount} present</span>
+                        : <span className={r.activePermits > 0 ? 'text-warning' : 'text-muted'}>Not held</span>}
                     </td>
                     <td className="px-2 py-2 text-right">{num(r.visitorsOnSite)}</td>
                   </tr>

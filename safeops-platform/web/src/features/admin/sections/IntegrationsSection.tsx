@@ -1,7 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import {
-  Boxes, Building, Cable, Database, KeyRound, MessageSquare, Plug, Users2,
-} from 'lucide-react'
 import { api } from '@/api/client'
 import { useOrg } from '@/features/org/OrgContext'
 import { ApiError } from '@/api/types'
@@ -10,13 +7,13 @@ import { Alert, Badge, Button, Card, Dialog, Input, Skeleton, StatusPill } from 
 import { useAdminActor } from '../lib'
 import { timeAgo } from '@/lib/time'
 
-const CAT_META: Record<ConnectorCategory, { label: string; icon: typeof Plug }> = {
-  identity: { label: 'Identity & SSO', icon: KeyRound },
-  communication: { label: 'Communication', icon: MessageSquare },
-  erp: { label: 'ERP', icon: Building },
-  hr: { label: 'HR Systems', icon: Users2 },
-  developer: { label: 'Developer', icon: Cable },
-  data: { label: 'Data', icon: Database },
+const CAT_META: Record<ConnectorCategory, { label: string }> = {
+  identity: { label: 'Identity & SSO' },
+  communication: { label: 'Communication' },
+  erp: { label: 'ERP' },
+  hr: { label: 'HR Systems' },
+  developer: { label: 'Developer' },
+  data: { label: 'Data' },
 }
 
 export function IntegrationsSection() {
@@ -48,15 +45,13 @@ export function IntegrationsSection() {
     <div className="space-y-5">
       {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
       <Card className="flex items-center gap-3 px-5 py-3.5">
-        <Boxes size={18} className="text-accent" />
         <p className="text-sm text-ink-2"><span className="font-semibold text-ink">{connectors.filter((c) => c.status === 'connected').length} connected</span> · items marked Planned are on the roadmap and cannot be connected yet. Secrets you enter are never stored — only the fact that a field is set.</p>
       </Card>
 
       {grouped.map(([cat, items]) => {
-        const CatIcon = CAT_META[cat].icon
         return (
           <div key={cat}>
-            <p className="mb-2 flex items-center gap-1.5 text-2xs font-bold uppercase tracking-wider text-muted"><CatIcon size={12} /> {CAT_META[cat].label}</p>
+            <p className="mb-2 flex items-center gap-1.5 text-2xs font-bold uppercase tracking-wider text-muted">{CAT_META[cat].label}</p>
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {items.map((c) => (
                 <Card key={c.id} className="flex flex-col p-4">

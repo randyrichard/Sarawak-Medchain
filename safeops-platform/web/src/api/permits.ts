@@ -170,11 +170,18 @@ export interface PermitView extends Permit {
   statusLabel: string
 }
 
+/** The approval chain between submission and approval, as the server stores it. */
+export type PermitReviewStage = 'supervisor_review' | 'hse_review' | 'area_authority'
+
 export interface PermitFilters {
   q?: string
   siteId?: string | null
   type?: PermitType | ''
-  status?: PermitStatus | 'all' | 'live'
+  /**
+   * `awaiting` is submitted or anywhere in the approval chain; `expiring` is work in
+   * progress whose window closes within seven days.
+   */
+  status?: PermitStatus | PermitReviewStage | 'all' | 'live' | 'awaiting' | 'expiring'
 }
 
 export interface PermitStats {

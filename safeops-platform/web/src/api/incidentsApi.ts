@@ -371,6 +371,18 @@ export const incidentsApi = {
       overdue: number
       avgDaysToComplete: number | null
       totalClosed: number
+      /** Absent from an API older than this client. */
+      panels?: {
+        completionRate: number | null
+        avgCloseDays: number | null
+        onTimeRate: number | null
+        mostOverdueSite: { siteId: string; count: number } | null
+        bySite: { siteId: string; open: number }[]
+        byDepartment: { name: string; onTimePct: number; completed: number }[]
+        byOwner: { name: string; open: number; overdue: number; completed: number }[]
+        monthly: { month: string; created: number; completed: number }[]
+        sampled: boolean
+      }
     }>(`/incidents/actions/analytics?${qs({ companyId })}`)
   },
 

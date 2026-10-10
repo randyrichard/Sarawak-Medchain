@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Microscope, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { CheckCircle2, AlertTriangle } from 'lucide-react'
 import { investigationApi, type Investigation } from '@/api/investigationApi'
 import { ApiError } from '@/api/types'
 import { Alert, Badge, Button, Card, CardBody, Input, Skeleton, Textarea } from '@/components/ui'
@@ -104,7 +104,7 @@ export function InvestigationPanel({
     <Card>
       <CardBody>
         <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-          <Microscope size={12} /> Investigation
+          Investigation
           {data?.mandatory && <Badge tone="warning">Required by severity</Badge>}
           {done && <Badge tone="good">Signed off</Badge>}
           {saving && <span className="text-2xs font-normal normal-case text-muted">Saving…</span>}

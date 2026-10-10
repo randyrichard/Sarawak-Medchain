@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Bell, CheckCheck, ClipboardList, ListChecks, Megaphone, ShieldCheck } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Bell, CheckCheck } from 'lucide-react'
 import { api } from '@/api/client'
 import { useOrg } from '@/features/org/OrgContext'
 import type { AppNotification, NotificationKind } from '@/api/types'
@@ -9,22 +10,34 @@ import {
 } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { useUrlState } from '@/lib/useUrlState'
+import { notificationTarget } from '@/lib/links'
+import { capabilityFor } from '@/components/layout/nav'
 
-const KIND_META: Record<NotificationKind, { icon: typeof Bell; label: string }> = {
-  incident: { icon: ClipboardList, label: 'Incident' },
-  action: { icon: ListChecks, label: 'Action' },
-  audit: { icon: ShieldCheck, label: 'Audit' },
-  system: { icon: Megaphone, label: 'System' },
+const KIND_LABEL: Record<NotificationKind, string> = {
+  incident: 'Incident',
+  action: 'Action',
+  audit: 'Audit',
+  system: 'System',
 }
 
 const FILTERS = ['all', 'unread', 'incident', 'action', 'audit', 'system'] as const satisfies readonly ('all' | 'unread' | NotificationKind)[]
 type Filter = (typeof FILTERS)[number]
 
 export function NotificationsPage() {
-  const { company } = useOrg()
+  const { company, allowed } = useOrg()
   const companyId = company?.id ?? ''
   const [items, setItems] = useState<AppNotification[] | null>(null)
   const [filter, setFilter] = useUrlState<Filter>('show', 'all', FILTERS)
+  /*
+   * Reminders go to the whole workspace, so an employee is told about a certificate on a
+   * page their role does not show them. That one stays a plain row: a link that ends in
+   * "you don't have access" is worse than no link.
+   */
+  const opens = (target: string | null) => {
+    if (!target) return null
+    const needs = capabilityFor(target)
+    return needs === null || allowed(needs) ? target : null
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -69,7 +82,7 @@ export function NotificationsPage() {
     <>
       <PageHeader
         title="Notifications"
-        subtitle="Everything SafeOps is telling you, with the noise controls you'd expect"
+        subtitle="Reminders and alerts about work assigned to you, or due soon"
         right={
           unread > 0 ? (
             <Button variant="secondary" size="sm" icon={<CheckCheck size={14} />} onClick={() => void markAll()}>
@@ -101,27 +114,39 @@ export function NotificationsPage() {
         ) : (
           <ul className="divide-y">
             {visible.map((n) => {
-              const meta = KIND_META[n.kind]
-              const Icon = meta.icon
+              /*
+               * A notification opens what it is about. Every one was a button that only
+               * marked itself read, so "Corrective action assigned: CA-419" left the person
+               * it was assigned to with no way to reach the action from it.
+               */
+              const target = opens(notificationTarget(n.href))
+              const row = 'flex w-full items-start gap-3 px-5 py-3.5 text-left transition-colors hover:bg-accent-soft/40'
+              const body = (
+                <>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className={cn('text-sm', n.readAt ? 'text-ink-2' : 'font-semibold text-ink')}>{n.title}</span>
+                      <Badge tone="neutral">{KIND_LABEL[n.kind]}</Badge>
+                    </span>
+                    <span className="mt-0.5 block text-xs text-muted">{n.detail}</span>
+                    <span className="mt-1 block text-2xs text-muted">{timeAgo(n.createdAt)}{n.readAt ? ' · read' : ''}</span>
+                  </span>
+                  {target && <span className="mt-0.5 shrink-0 text-2xs font-semibold text-accent">Open</span>}
+                  {!n.readAt && (
+                    <>
+                      <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-accent" aria-hidden />
+                      <span className="sr-only">Unread</span>
+                    </>
+                  )}
+                </>
+              )
               return (
                 <li key={n.id}>
-                  <button
-                    onClick={() => void markOne(n.id)}
-                    className="flex w-full items-start gap-3 px-5 py-3.5 text-left transition-colors hover:bg-accent-soft/40"
-                  >
-                    <span className={cn('mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg', n.readAt ? 'bg-sunken text-muted' : 'bg-accent-soft text-accent')}>
-                      <Icon size={15} />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="flex flex-wrap items-center gap-2">
-                        <span className={cn('text-sm', n.readAt ? 'text-ink-2' : 'font-semibold text-ink')}>{n.title}</span>
-                        <Badge tone="neutral">{meta.label}</Badge>
-                      </span>
-                      <span className="mt-0.5 block text-xs text-muted">{n.detail}</span>
-                      <span className="mt-1 block text-2xs text-muted">{timeAgo(n.createdAt)}{n.readAt ? ' · read' : ''}</span>
-                    </span>
-                    {!n.readAt && <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-accent" aria-label="Unread" />}
-                  </button>
+                  {target ? (
+                    <Link to={target} onClick={() => void markOne(n.id)} className={row}>{body}</Link>
+                  ) : (
+                    <button onClick={() => void markOne(n.id)} className={row}>{body}</button>
+                  )}
                 </li>
               )
             })}

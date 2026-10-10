@@ -8,6 +8,7 @@ import { OVERDUE_AFTER_DAYS } from '../incidents'
 
 import { ApiError } from '../types'
 import { claimIsAuthentic } from './identity'
+import { linkTo } from '@/lib/links'
 import type {
   Actor, AdvancePayload, FiveWhys, Incident, IncidentAction, IncidentAttachment,
   IncidentFilters, NewIncidentInput, RcaCause,
@@ -63,7 +64,8 @@ const rank = (s: string) => SEVERITY_RANK[s] ?? 99
 // Lives with the incident types so a page can use it without loading this module.
 export { OVERDUE_AFTER_DAYS }
 
-type Notify = (kind: 'incident' | 'action' | 'audit' | 'system', title: string, detail: string) => void
+/** `href` is where the notification opens; see notificationTarget in lib/links.ts. */
+type Notify = (kind: 'incident' | 'action' | 'audit' | 'system', title: string, detail: string, href?: string) => void
 
 const hoursAgo = (h: number) => new Date(Date.now() - h * 3600_000).toISOString()
 const daysAgo = (d: number) => hoursAgo(d * 24)
@@ -406,7 +408,7 @@ export class IncidentStore {
     }
     this.incidents.unshift(incident)
     this.persist()
-    this.notify('incident', `New incident reported: ${incident.number}`, `${incident.title} — awaiting initial assessment.`)
+    this.notify('incident', `New incident reported: ${incident.number}`, `${incident.title} — awaiting initial assessment.`, linkTo.incident(incident.id))
     return clone(incident)
   }
 
@@ -440,7 +442,7 @@ export class IncidentStore {
         if (!payload.investigator.trim()) throw new ApiError('validation', 'An investigator must be assigned.')
         incident.investigator = payload.investigator
         this.log(incident, actor, 'Investigation started', `Lead investigator: ${payload.investigator}`)
-        this.notify('incident', `You lead the investigation for ${incident.number}`, `${payload.investigator} assigned — ${incident.title}`)
+        this.notify('incident', `You lead the investigation for ${incident.number}`, `${payload.investigator} assigned — ${incident.title}`, linkTo.incident(incident.id))
         break
       }
       case 'rca': {
@@ -471,7 +473,7 @@ export class IncidentStore {
           throw new ApiError('validation', `${notDone.length} corrective action(s) are not completed yet.`)
         }
         this.log(incident, actor, 'Submitted for manager review')
-        this.notify('incident', `${incident.number} awaits your review`, `${incident.title} — all corrective actions completed.`)
+        this.notify('incident', `${incident.number} awaits your review`, `${incident.title} — all corrective actions completed.`, linkTo.incident(incident.id))
         break
       }
       case 'verification': {
@@ -493,7 +495,7 @@ export class IncidentStore {
         incident.closeNote = payload.closeNote.trim()
         incident.closedAt = new Date().toISOString()
         this.log(incident, actor, 'Incident closed', payload.closeNote.trim())
-        this.notify('incident', `${incident.number} closed`, `${incident.title} — verification complete.`)
+        this.notify('incident', `${incident.number} closed`, `${incident.title} — verification complete.`, linkTo.incident(incident.id))
         break
       }
     }
@@ -530,7 +532,7 @@ export class IncidentStore {
     }
     incident.actions.push({ ...input, id: uid(), status: 'Open' })
     this.log(incident, actor, 'Corrective action assigned', `${input.title} → ${input.owner}, due ${input.dueDate}`)
-    this.notify('action', `Corrective action assigned to ${input.owner}`, `${input.title} (${incident.number}), due ${input.dueDate}.`)
+    this.notify('action', `Corrective action assigned to ${input.owner}`, `${input.title} (${incident.number}), due ${input.dueDate}.`, linkTo.incident(incident.id))
     incident.version++
     this.persist()
     return clone(incident)
@@ -776,7 +778,7 @@ export class IncidentStore {
     }
     this.standalone.unshift(action)
     this.persist()
-    this.notify('action', `Corrective action assigned to ${input.owner}`, `${action.code} · ${action.title}, due ${input.dueDate}.`)
+    this.notify('action', `Corrective action assigned to ${input.owner}`, `${action.code} · ${action.title}, due ${input.dueDate}.`, linkTo.action(action.id))
     return this.toCapa(action, null, action)
   }
 
@@ -802,7 +804,7 @@ export class IncidentStore {
     if (patch.owner !== undefined && patch.owner !== action.owner) {
       alog('Reassigned', `${action.owner || 'Unassigned'} → ${patch.owner}`)
       action.owner = patch.owner
-      this.notify('action', `Corrective action assigned to ${patch.owner}`, `${action.code} · ${action.title}, due ${action.dueDate}.`)
+      this.notify('action', `Corrective action assigned to ${patch.owner}`, `${action.code} · ${action.title}, due ${action.dueDate}.`, linkTo.action(action.id))
     }
     if (patch.reviewer !== undefined) action.reviewer = patch.reviewer || undefined
     if (patch.dueDate !== undefined && patch.dueDate !== action.dueDate) {
@@ -853,7 +855,7 @@ export class IncidentStore {
           action.completedAt = new Date().toISOString()
           action.progress = 100
           alog('Marked completed', action.evidenceNote)
-          this.notify('action', `${action.code} awaits verification`, `${action.title} — completed by ${action.owner}.`)
+          this.notify('action', `${action.code} awaits verification`, `${action.title} — completed by ${action.owner}.`, linkTo.action(action.id))
           break
         case 'Verified':
           if (action.status !== 'Completed') throw new ApiError('validation', 'Only completed actions can be verified.')
@@ -863,7 +865,7 @@ export class IncidentStore {
           action.verifiedBy = actor.name
           action.verifiedAt = new Date().toISOString()
           alog('Verification sign-off')
-          this.notify('action', `${action.code} verified`, `${action.title} — signed off by ${actor.name}.`)
+          this.notify('action', `${action.code} verified`, `${action.title} — signed off by ${actor.name}.`, linkTo.action(action.id))
           break
         case 'Open':
           throw new ApiError('validation', 'Use "send back for rework" (In Progress) instead of reopening.')
@@ -895,7 +897,7 @@ export class IncidentStore {
       incident.version++
     }
     this.persist()
-    this.notify('action', `${action.code} cancelled`, `${action.title} — ${reason.trim()}`)
+    this.notify('action', `${action.code} cancelled`, `${action.title} — ${reason.trim()}`, linkTo.action(action.id))
     return this.toCapa(action, incident, standalone)
   }
 
@@ -912,7 +914,7 @@ export class IncidentStore {
   capaAnalytics(companyId: string): CapaAnalytics {
     const items = this.allCapa(companyId).filter((i) => i.derived !== 'Cancelled')
     const done = items.filter((i) => i.derived === 'Verified' || i.derived === 'Closed')
-    const completionRate = items.length ? Math.round((done.length / items.length) * 100) : 0
+    const completionRate = items.length ? Math.round((done.length / items.length) * 100) : null
 
     const closeDays = done
       .filter((i) => i.createdAt && (i.verifiedAt ?? i.completedAt))
@@ -921,7 +923,7 @@ export class IncidentStore {
 
     const finished = items.filter((i) => i.completedAt)
     const onTime = finished.filter((i) => i.completedAt!.slice(0, 10) <= i.dueDate)
-    const onTimeRate = finished.length ? Math.round((onTime.length / finished.length) * 100) : 0
+    const onTimeRate = finished.length ? Math.round((onTime.length / finished.length) * 100) : null
 
     const overdueBySite = new Map<string, number>()
     const loadBySite = new Map<string, number>()
@@ -1098,7 +1100,7 @@ export class IncidentStore {
     this.assets.unshift(asset)
     this.scheduleInternal(asset, nextDueDate, input.owner)
     this.persist()
-    this.notify('system', `Asset registered: ${code}`, `${asset.name} — first inspection scheduled ${nextDueDate}.`)
+    this.notify('system', `Asset registered: ${code}`, `${asset.name} — first inspection scheduled ${nextDueDate}.`, linkTo.asset(asset.id))
     return this.toAssetView(asset)
   }
 
@@ -1127,7 +1129,7 @@ export class IncidentStore {
     const insp = this.scheduleInternal(asset, date, inspector)
     asset.nextDueDate = date
     this.persist()
-    this.notify('system', `Inspection scheduled: ${asset.code}`, `${asset.name} on ${date} — inspector ${inspector}.`)
+    this.notify('system', `Inspection scheduled: ${asset.code}`, `${asset.name} on ${date} — inspector ${inspector}.`, linkTo.asset(asset.id))
     return this.toInspectionView(insp)
   }
 
@@ -1187,7 +1189,7 @@ export class IncidentStore {
       }
       this.standalone.unshift(action)
       insp.actionIds.push(action.id)
-      this.notify('action', `Defect action ${action.code} assigned to ${asset.owner}`, `${fail.label} — ${asset.name}, due ${due}.`)
+      this.notify('action', `Defect action ${action.code} assigned to ${asset.owner}`, `${fail.label} — ${asset.name}, due ${due}.`, linkTo.action(action.id))
     }
 
     // roll the schedule forward so the asset can never fall off the calendar
@@ -1200,6 +1202,7 @@ export class IncidentStore {
       insp.outcome === 'failed' ? 'action' : 'system',
       `${insp.code} completed — ${insp.outcome === 'failed' ? `${fails.length} defect(s) found` : 'passed'}`,
       `${asset.name} inspected by ${actor.name}. Next due ${asset.nextDueDate}.`,
+      linkTo.asset(asset.id),
     )
     return this.toInspectionView(insp)
   }
@@ -1407,7 +1410,7 @@ export class IncidentStore {
     }
     this.audits.unshift(audit)
     this.persist()
-    this.notify('audit', `Audit planned: ${audit.code}`, `${audit.title} — lead auditor ${audit.leadAuditor}, ${audit.scheduledFor}.`)
+    this.notify('audit', `Audit planned: ${audit.code}`, `${audit.title} — lead auditor ${audit.leadAuditor}, ${audit.scheduledFor}.`, linkTo.audit(audit.id))
     return this.toAuditView(audit)
   }
 
@@ -1507,12 +1510,12 @@ export class IncidentStore {
       audit.findings.push(finding)
       audit.timeline.push({ id: `atl-${Date.now().toString(36)}${finding.code}`, at: now, actor: actor.name, action: 'Finding raised', detail: `${finding.code} · ${fi.severity} — ${fi.description.trim().slice(0, 60)}` })
       audit.timeline.push({ id: `atl-${Date.now().toString(36)}${action.code}`, at: now, actor: 'System', action: 'Corrective action created', detail: `${action.code} → ${fi.owner}, due ${due}` })
-      this.notify('audit', `Audit finding ${finding.code} (${fi.severity})`, `${fi.description.trim().slice(0, 80)} — action ${action.code} assigned to ${fi.owner}.`)
+      this.notify('audit', `Audit finding ${finding.code} (${fi.severity})`, `${fi.description.trim().slice(0, 80)} — action ${action.code} assigned to ${fi.owner}.`, linkTo.action(action.id))
     }
 
     audit.timeline.push({ id: `atl-${Date.now().toString(36)}done`, at: now, actor: actor.name, action: 'Audit completed', detail: `Score ${audit.score}% · ${fails.length} finding(s)` })
     this.persist()
-    this.notify('audit', `${audit.code} completed — score ${audit.score}%`, `${audit.title}: ${fails.length} finding(s) raised.`)
+    this.notify('audit', `${audit.code} completed — score ${audit.score}%`, `${audit.title}: ${fails.length} finding(s) raised.`, linkTo.audit(audit.id))
     return { audit: this.toAuditView(audit), findings: audit.findings.map((f) => this.toFindingView(f, audit)) }
   }
 
@@ -1532,7 +1535,7 @@ export class IncidentStore {
     audit.closedAt = new Date().toISOString()
     audit.timeline.push({ id: `atl-${Date.now().toString(36)}close`, at: audit.closedAt, actor: actor.name, action: 'Audit closed', detail: 'All findings verified' })
     this.persist()
-    this.notify('audit', `${audit.code} closed`, `${audit.title} — every finding verified and closed.`)
+    this.notify('audit', `${audit.code} closed`, `${audit.title} — every finding verified and closed.`, linkTo.audit(audit.id))
     return this.toAuditView(audit)
   }
 
@@ -2073,7 +2076,7 @@ export class IncidentStore {
     }
     this.standalone.unshift(action)
     this.persist()
-    this.notify('action', `Corrective action ${action.code} raised`, `${emp.name} — ${course.name} competency lapse.`)
+    this.notify('action', `Corrective action ${action.code} raised`, `${emp.name} — ${course.name} competency lapse.`, linkTo.action(action.id))
     return this.toCapa(action, null, action)
   }
 
@@ -2349,6 +2352,7 @@ function matchesBucket(i: CapaItem, bucket: NonNullable<CapaFilters['bucket']>):
     case 'open': return openStates.includes(i.derived)
     case 'overdue': return i.overdue
     case 'due_today': return i.daysToDue === 0 && openStates.includes(i.derived)
+    case 'due_week': return i.daysToDue >= 1 && i.daysToDue <= 7 && openStates.includes(i.derived)
     case 'verification': return i.derived === 'Waiting Verification'
     case 'high_priority': return i.priority === 'High' && openStates.includes(i.derived)
     case 'completed': return i.derived === 'Verified' || i.derived === 'Closed'

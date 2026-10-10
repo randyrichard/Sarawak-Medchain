@@ -10,7 +10,7 @@ import {
   Alert, AttentionIcon, Badge, Card, DataTable, EmptyState, LinkButton, PageHeader, Skeleton, StatusPill,
   type Column, type SortState,
 } from '@/components/ui'
-import { daysOpen, INCIDENT_TYPE_GROUPS, severityKind, severityWeight, STAGE_COLOR, TYPE_ICON } from './lib'
+import { daysOpen, INCIDENT_TYPE_GROUPS, severityKind, severityWeight, STAGE_COLOR } from './lib'
 import { cn } from '@/lib/cn'
 import { useUrlState } from '@/lib/useUrlState'
 
@@ -101,18 +101,14 @@ export function IncidentsListPage() {
       header: 'Incident',
       sortValue: (i) => i.number,
       render: (i) => {
-        const Icon = TYPE_ICON[i.type]
         return (
           <div className="flex items-start gap-2.5">
-            <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-accent-soft">
-              <Icon size={14} className="text-accent" />
-            </span>
             <div className="min-w-0">
               <p className="text-sm font-semibold leading-snug text-ink">{i.title}</p>
               <p className="mt-0.5 text-2xs text-muted">
                 <span className="font-mono">{i.number}</span> · {TYPE_LABEL[i.type]}
                 {i.highRisk && i.stage !== 'closed' && (
-                  <Badge tone="critical" className="ml-1.5 gap-0.5"><ShieldAlert size={9} /> High risk</Badge>
+                  <Badge tone="critical" className="ml-1.5">High risk</Badge>
                 )}
               </p>
             </div>
@@ -187,10 +183,10 @@ export function IncidentsListPage() {
     <>
       <PageHeader
         title="Incidents"
-        subtitle={`${openCount} open in scope · worst severity always on top`}
+        subtitle={`Every incident and near miss reported at your sites. ${openCount} open, most serious first. Open one to see or investigate it.`}
         right={
           <LinkButton icon={<Plus size={15} />} to="/incidents/new">
-            Report Incident
+            Report incident
           </LinkButton>
         }
       />
@@ -312,7 +308,7 @@ export function IncidentsListPage() {
                 title="No incidents match these filters"
                 action={
                   <LinkButton to="/incidents/new" size="sm" icon={<Plus size={14} />}>
-                    Report Incident
+                    Report incident
                   </LinkButton>
                 }
               >

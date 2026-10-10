@@ -138,7 +138,7 @@ export function NextStepCard({ incident, onUpdate }: { incident: Incident; onUpd
               </div>
               <Checkbox label="Full investigation required" checked={requiresInv} onChange={(e) => setRequiresInv(e.target.checked)} />
               <Textarea label="Assessment note (optional)" rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Anything the investigator should know from day one…" />
-              <p className="text-2xs text-muted">High/Extreme ratings flag the case as high-risk on Mission Control.</p>
+              <p className="text-2xs text-muted">High/Extreme ratings flag the case as high-risk on Home.</p>
             </>
           )}
           {incident.stage === 'assessment' && (

@@ -7,6 +7,7 @@ import {
   type PermitStats, type PermitStatus, type PermitType, type PermitView,
 } from '../permits'
 import { claimIsAuthentic } from './identity'
+import { linkTo } from '@/lib/links'
 
 /**
  * In-memory seed board for the credential-free demo. PostgreSQL is the source of truth
@@ -155,7 +156,7 @@ export class PermitStore {
   private nextCode: number
   private remindersSent: Record<string, true> = {}
 
-  constructor(private notify: (kind: 'system' | 'action' | 'incident', title: string, detail: string) => void) {
+  constructor(private notify: (kind: 'system' | 'action' | 'incident', title: string, detail: string, href?: string) => void) {
     this.permits = seed()
     this.nextCode = 4406
     // Clear the retired store from browsers that still carry it, so a stale board
@@ -225,6 +226,8 @@ export class PermitStore {
       .filter((v) => {
         if (!filters.status || filters.status === 'all') return true
         if (filters.status === 'live') return LIVE.includes(v.status)
+        if (filters.status === 'awaiting') return v.status === 'submitted'
+        if (filters.status === 'expiring') return v.status === 'active' && v.hoursRemaining >= 0 && v.hoursRemaining <= 7 * 24
         return v.status === filters.status
       })
       .filter((v) => !q || [v.code, v.title, v.location, v.applicant, v.contractor ?? '', v.department, v.typeLabel]
@@ -321,7 +324,7 @@ export class PermitStore {
       statement: 'I have read and understood the precautions and will comply with them.',
     })
     this.log(p, actor, 'Submitted for approval')
-    this.notify('system', `Permit ${p.code} awaiting approval`, `${PERMIT_TYPE_LABEL[p.type]} — ${p.location}`)
+    this.notify('system', `Permit ${p.code} awaiting approval`, `${PERMIT_TYPE_LABEL[p.type]} — ${p.location}`, linkTo.permit(p.id))
     return this.toView(p)
   }
 
@@ -353,7 +356,7 @@ export class PermitStore {
     p.approvedAt = now()
     p.signatures.push({ role: 'approver', name: actor.name, signedAt: now(), statement: statement || 'Controls verified on site. Permit issued.' })
     this.log(p, actor, 'Approved', statement || undefined)
-    this.notify('system', `Permit ${p.code} issued`, `${PERMIT_TYPE_LABEL[p.type]} at ${p.location}. Valid until ${new Date(p.validTo).toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' })}.`)
+    this.notify('system', `Permit ${p.code} issued`, `${PERMIT_TYPE_LABEL[p.type]} at ${p.location}. Valid until ${new Date(p.validTo).toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' })}.`, linkTo.permit(p.id))
     return this.toView(p)
   }
 
@@ -366,7 +369,7 @@ export class PermitStore {
     p.status = 'rejected'
     p.rejectionReason = reason
     this.log(p, actor, 'Rejected', reason)
-    this.notify('system', `Permit ${p.code} rejected`, reason)
+    this.notify('system', `Permit ${p.code} rejected`, reason, linkTo.permit(p.id))
     return this.toView(p)
   }
 
@@ -391,7 +394,7 @@ export class PermitStore {
     p.status = 'suspended'
     p.suspendedReason = reason
     this.log(p, actor, 'Suspended', reason)
-    this.notify('incident', `Permit ${p.code} suspended`, `${reason} — work must stop immediately.`)
+    this.notify('incident', `Permit ${p.code} suspended`, `${reason} — work must stop immediately.`, linkTo.permit(p.id))
     return this.toView(p)
   }
 
@@ -456,7 +459,7 @@ export class PermitStore {
     if (!pass && p.status === 'active') {
       p.status = 'suspended'
       p.suspendedReason = 'Gas test failed — atmosphere outside safe limits.'
-      this.notify('incident', `Permit ${p.code} suspended — gas test failed`, 'Atmosphere outside safe limits. Evacuate and re-test.')
+      this.notify('incident', `Permit ${p.code} suspended — gas test failed`, 'Atmosphere outside safe limits. Evacuate and re-test.', linkTo.permit(p.id))
     }
     return this.toView(p)
   }

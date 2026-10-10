@@ -13,7 +13,7 @@ export const RBAC_MODULES = [
 export type RbacModule = (typeof RBAC_MODULES)[number]
 
 export const MODULE_LABEL: Record<RbacModule, string> = {
-  mission_control: 'Mission Control',
+  mission_control: 'Home',
   incidents: 'Incidents',
   actions: 'Corrective Actions',
   assets: 'Assets & Inspections',

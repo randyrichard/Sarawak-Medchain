@@ -1,5 +1,5 @@
 import { useMemo, useState, type DragEvent } from 'react'
-import { AlertOctagon, GripVertical, Link2 } from 'lucide-react'
+import { AlertOctagon, GripVertical } from 'lucide-react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import { COLUMN_OF, type CapaItem, type KanbanColumn } from '@/api/capa'
@@ -244,7 +244,7 @@ function KanbanCard({
       <p className="mt-1 line-clamp-2 text-sm font-semibold leading-snug text-ink">{item.title}</p>
       {item.incidentNumber && (
         <p className="mt-1 flex items-center gap-1 text-2xs text-muted">
-          <Link2 size={10} /> {item.incidentNumber}
+          {item.incidentNumber}
           {item.rootCause && <span>· {item.rootCause}</span>}
         </p>
       )}
