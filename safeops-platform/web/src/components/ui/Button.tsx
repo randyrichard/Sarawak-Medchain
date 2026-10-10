@@ -13,11 +13,17 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   icon?: ReactNode
 }
 
+/*
+ * Hover is for a button that can be pressed. A disabled one lit up under the pointer like any
+ * other, so it read as a button that was broken rather than one that was off - which is how
+ * the toolbox attendance bin was reported. The `disabled:hover:` resets outrank the hover
+ * colours on specificity, and never match a LinkButton, since a link cannot be disabled.
+ */
 const variantCls: Record<Variant, string> = {
-  primary: 'bg-accent-solid text-white hover:bg-accent-solid-hover shadow-card',
-  secondary: 'border bg-surface text-ink hover:bg-accent-soft',
-  ghost: 'text-ink-2 hover:bg-accent-soft hover:text-ink',
-  danger: 'bg-critical-solid text-white hover:opacity-90 shadow-card',
+  primary: 'bg-accent-solid text-white hover:bg-accent-solid-hover disabled:hover:bg-accent-solid shadow-card',
+  secondary: 'border bg-surface text-ink hover:bg-accent-soft disabled:hover:bg-surface',
+  ghost: 'text-ink-2 hover:bg-accent-soft hover:text-ink disabled:hover:bg-transparent disabled:hover:text-ink-2',
+  danger: 'bg-critical-solid text-white hover:opacity-90 disabled:hover:opacity-55 shadow-card',
 }
 
 /*
