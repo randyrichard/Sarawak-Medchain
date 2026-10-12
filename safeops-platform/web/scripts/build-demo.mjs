@@ -16,9 +16,15 @@
  * Content-Security-Policy as nginx does for a real deployment. The policy is read from
  * nginx.conf.template rather than copied, so the two cannot drift; with no API, the page
  * may connect only to itself.
+ *
+ * And it refuses to finish if the build contains a _redirects file. The usual single-page
+ * rule, `/* /index.html 200`, is one Cloudflare calls an infinite loop and refuses to deploy
+ * (error 10021): it stopped every MedChain deploy for months, twice, after the file came
+ * back. Nothing here needs one - wrangler.jsonc serves index.html for any route it does not
+ * have a file for.
  */
 import { spawnSync } from 'node:child_process'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -55,6 +61,11 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   }
   run('npx', ['tsc', '-b', 'tsconfig.build.json'])
   run('npx', ['vite', 'build'])
+  if (existsSync(join(root, 'dist', '_redirects'))) {
+    console.error('\ndist/_redirects exists. Cloudflare refuses `/* /index.html 200` (error 10021), and')
+    console.error('wrangler.jsonc already serves the app for every route. Delete public/_redirects.')
+    process.exit(1)
+  }
   writeFileSync(join(root, 'dist', '_headers'), demoHeaders(readFileSync(join(root, 'nginx.conf.template'), 'utf8')))
   console.log('\nOffline demo built in dist/ with _headers. Deploy with: npx wrangler deploy')
 }

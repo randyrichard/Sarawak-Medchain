@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 /**
@@ -48,6 +48,13 @@ describe('public demo build', () => {
 
   it('refuses to build if nginx stops sending a header it copies', () => {
     expect(() => demoHeaders('add_header X-Frame-Options "DENY" always;')).toThrow(/no X-Content-Type-Options/)
+  })
+
+  it('ships no _redirects for Cloudflare to refuse', () => {
+    // `/* /index.html 200` is an infinite loop to Cloudflare, which then refuses the whole
+    // deploy (error 10021). It came back twice in MedChain's frontend/ after being removed.
+    // wrangler.jsonc's single-page-application handling does the job instead.
+    expect(existsSync(resolve(process.cwd(), 'public/_redirects'))).toBe(false)
   })
 
   it('serves the built files as a single-page app on Cloudflare', () => {
