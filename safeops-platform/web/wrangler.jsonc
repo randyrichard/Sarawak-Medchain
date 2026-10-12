@@ -2,9 +2,12 @@
  * The public SafeChain demo on Cloudflare Workers: static files only, no server.
  * Built by `npm run build:demo` (scripts/build-demo.mjs); setup in docs/CLOUDFLARE.md,
  * "The public demo". Real deployments do not use this file - they run the Docker stack.
+ *
+ * The name is the public address, https://<name>.<account>.workers.dev, so it carries the
+ * product's name. It must match the Worker's name in the Cloudflare dashboard.
  */
 {
-  "name": "safeops-demo",
+  "name": "safechain-demo",
   "compatibility_date": "2026-10-01",
   "assets": {
     "directory": "./dist",

@@ -52,7 +52,8 @@ describe('public demo build', () => {
 
   it('serves the built files as a single-page app on Cloudflare', () => {
     const cfg = JSON.parse(read('wrangler.jsonc').replace(/\/\*[\s\S]*?\*\//g, ''))
-    expect(cfg.name).toBe('safeops-demo')
+    // The name is the public address, so it is the product's: safechain-demo.<account>.workers.dev.
+    expect(cfg.name).toBe('safechain-demo')
     expect(cfg.assets).toMatchObject({ directory: './dist', not_found_handling: 'single-page-application' })
     expect(cfg.main).toBeUndefined()
   })
