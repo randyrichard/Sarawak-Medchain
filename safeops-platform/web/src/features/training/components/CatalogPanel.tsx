@@ -27,7 +27,7 @@ export function CatalogPanel({
   return (
     <>
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-xs text-muted">{courses.length} programs in the catalog</p>
+        <p className="text-xs text-muted">{courses.length} programmes in the catalogue</p>
         {manage && <Button size="sm" icon={<Plus size={13} />} onClick={() => setNewOpen(true)}>Add Course</Button>}
       </div>
 

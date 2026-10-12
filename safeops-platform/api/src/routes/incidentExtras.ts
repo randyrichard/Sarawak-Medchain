@@ -187,6 +187,10 @@ const actionPatch = z.object({
   status: z.enum(['open', 'in_progress', 'completed', 'verified', 'cancelled']).optional(),
   evidenceNote: z.string().max(5000).optional(),
   dueDate: z.string().optional(),
+  /** Reassigning, reprioritising and rewording: a manager's, like the target date. */
+  owner: z.string().trim().min(1).max(200).optional(),
+  priority: z.enum(['Low', 'Medium', 'High', 'Critical']).optional(),
+  detail: z.string().max(5000).optional(),
   expectedVersion: z.number().int().optional(),
 })
 
@@ -259,6 +263,8 @@ const standaloneBody = z.object({
   dueDate: z.string().min(1),
   priority: z.enum(['Low', 'Medium', 'High', 'Critical']).optional(),
   source: z.enum(['audit', 'inspection', 'manual', 'training']).optional(),
+  /** Decided at raise time, as on an incident's actions; enforced when it is closed. */
+  evidenceRequired: z.boolean().optional(),
 })
 
 /** Action raised outside an investigation. Mounted before /:id to stay reachable. */

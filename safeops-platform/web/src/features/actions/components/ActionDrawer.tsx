@@ -14,7 +14,7 @@ import { timeAgo } from '@/lib/time'
 import { fmtDateTime } from '@/features/incidents/lib'
 import { usePeople } from '@/features/incidents/lib'
 import { ProgressLine } from './ProgressLine'
-import { canEditItem, canVerifyItem, DERIVED_META, dueLabel, isManager } from '../lib'
+import { canEditItem, canVerifyItem, DERIVED_META, dueLabel, isManager, KEEPS_ACTION_EXTRAS } from '../lib'
 import { cn } from '@/lib/cn'
 import { PeopleOptions } from '@/features/org/PeopleOptions'
 import { useOrg } from '@/features/org/OrgContext'
@@ -197,7 +197,8 @@ export function ActionDrawer({
               <span className="text-xs font-semibold text-ink" style={{ fontVariantNumeric: 'tabular-nums' }}>{item.progress}%</span>
             </div>
             <ProgressLine value={item.progress} overdue={item.overdue} />
-            {editable && active && (
+            {/* On a server progress follows the status, so there is nothing for these to set. */}
+            {editable && active && KEEPS_ACTION_EXTRAS && (
               <div className="mt-2 flex gap-1.5">
                 {[0, 25, 50, 75, 100].map((p) => (
                   <button
@@ -379,7 +380,7 @@ export function ActionDrawer({
       >
         <div className="space-y-5">
           <Textarea
-            label={item.evidenceRequired ? 'Completion evidence (required)' : 'Completion note (optional)'}
+            label="Completion evidence (required)"
             rows={3} value={evidence} onChange={(e) => setEvidence(e.target.value)}
             placeholder="What proves this is done? Photos, records, sign-offs…"
           />
@@ -476,14 +477,16 @@ export function ActionDrawer({
         }
       >
         <div className="space-y-5">
-          <div className="grid grid-cols-2 gap-x-3 gap-y-5">
+          <div className={KEEPS_ACTION_EXTRAS ? 'grid grid-cols-2 gap-x-3 gap-y-5' : undefined}>
             <Select label="Owner" value={owner} onChange={(e) => setOwner(e.target.value)}>
               <PeopleOptions people={people} />
             </Select>
-            <Select label="Reviewer" value={reviewer} onChange={(e) => setReviewer(e.target.value)}>
-              <option value="">None</option>
-              <PeopleOptions people={people} />
-            </Select>
+            {KEEPS_ACTION_EXTRAS && (
+              <Select label="Reviewer" value={reviewer} onChange={(e) => setReviewer(e.target.value)}>
+                <option value="">None</option>
+                <PeopleOptions people={people} />
+              </Select>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-x-3 gap-y-5">
             <Input label="Due date" type="date" value={due} onChange={(e) => setDue(e.target.value)} />

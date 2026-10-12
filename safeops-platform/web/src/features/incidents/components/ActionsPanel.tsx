@@ -10,6 +10,8 @@ import {
 import { usePeople, useActor } from '../lib'
 import { ListChecks } from 'lucide-react'
 import { PeopleOptions } from '@/features/org/PeopleOptions'
+import { KEEPS_ACTION_EXTRAS } from '@/features/actions/lib'
+import { useFormCheck } from '@/lib/useFormCheck'
 
 const statusKind = (s: IncidentAction['status']) =>
   s === 'Verified' ? 'good' : s === 'Completed' ? 'info' : s === 'In Progress' ? 'warning' : 'serious'
@@ -39,6 +41,12 @@ export function ActionsPanel({ incident, onUpdate }: { incident: Incident; onUpd
   const causes = incident.rca?.causes ?? []
   const causeName = (id: string | null) => causes.find((c) => c.id === id)?.category
 
+  const form = useFormCheck({
+    title: !title.trim() && 'Say what must be done.',
+    owner: !owner && 'Choose who will do it.',
+    dueDate: !dueDate && 'Set the date it is due.',
+  }, addOpen)
+
   const run = async (fn: () => Promise<Incident>) => {
     setBusy(true)
     setError(null)
@@ -54,6 +62,7 @@ export function ActionsPanel({ incident, onUpdate }: { incident: Incident; onUpd
   }
 
   const submitNew = async () => {
+    if (!form.check()) return
     const ok = await run(() =>
       api.addIncidentAction(incident.id, { title, causeId: causeId || null, owner, dueDate, priority, evidenceRequired }, actor),
     )
@@ -169,18 +178,21 @@ export function ActionsPanel({ incident, onUpdate }: { incident: Incident; onUpd
       >
         <div className="space-y-5">
           <Input label="What must be done" required value={title} onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Add reinstatement step + sign-back to barrier permit" />
-          <Select label="Addresses root cause" value={causeId} onChange={(e) => setCauseId(e.target.value)}
-            hint={causes.length === 0 ? 'No causes recorded yet — save the RCA first.' : undefined}>
-            <option value="">General / preventive</option>
-            {causes.map((c) => <option key={c.id} value={c.id}>{c.category} — {c.description.slice(0, 40)}…</option>)}
-          </Select>
-          <div className="grid grid-cols-2 gap-x-3 gap-y-5">
-            <Select label="Owner" required value={owner} onChange={(e) => setOwner(e.target.value)}>
+            placeholder="e.g. Add reinstatement step + sign-back to barrier permit" error={form.errorFor('title')} />
+          {/* The server keeps no link from an action to a cause, so it is asked for only where it is kept. */}
+          {KEEPS_ACTION_EXTRAS && (
+            <Select label="Addresses root cause" value={causeId} onChange={(e) => setCauseId(e.target.value)}
+              hint={causes.length === 0 ? 'No causes recorded yet. Record them under Investigation, then save the analysis.' : undefined}>
+              <option value="">General / preventive</option>
+              {causes.map((c) => <option key={c.id} value={c.id}>{c.category} — {c.description.slice(0, 40)}…</option>)}
+            </Select>
+          )}
+          <div className="grid grid-cols-2 items-start gap-x-3 gap-y-5">
+            <Select label="Owner" required value={owner} onChange={(e) => setOwner(e.target.value)} error={form.errorFor('owner')}>
               <option value="" disabled>Select…</option>
               <PeopleOptions people={people} />
             </Select>
-            <Input label="Due date" required type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+            <Input label="Due date" required type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} error={form.errorFor('dueDate')} />
           </div>
           <div className="flex items-center justify-between gap-3">
             <Select label="Priority" value={priority} onChange={(e) => setPriority(e.target.value as ActionPriority)} className="w-full">
@@ -208,7 +220,7 @@ export function ActionsPanel({ incident, onUpdate }: { incident: Incident; onUpd
       >
         <div className="space-y-5">
           <Textarea
-            label={completeFor?.evidenceRequired ? 'Completion evidence (required)' : 'Completion note (optional)'}
+            label="Completion evidence (required)"
             rows={3} value={evidenceNote} onChange={(e) => setEvidenceNote(e.target.value)}
             placeholder="What proves this is done? Reference photos, records, sign-offs…"
           />

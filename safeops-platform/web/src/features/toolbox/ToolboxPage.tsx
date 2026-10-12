@@ -168,7 +168,7 @@ export function ToolboxPage() {
           <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
           <Input
             aria-label="Search toolbox meetings"
-            placeholder="Topic, hazard, leader or TBM number…"
+            placeholder="Topic, hazard, leader or meeting number (TBM-…)"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             className="pl-8"

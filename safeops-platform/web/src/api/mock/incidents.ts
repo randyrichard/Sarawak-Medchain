@@ -555,8 +555,9 @@ export class IncidentStore {
 
     if (patch.status && patch.status !== action.status) {
       if (patch.status === 'Completed') {
-        if (action.evidenceRequired && !action.evidenceNote) {
-          throw new ApiError('validation', 'This action requires completion evidence before it can be marked complete.')
+        // As the server: what was done is always said. A file on top is what evidenceRequired adds.
+        if (!action.evidenceNote) {
+          throw new ApiError('validation', 'Describe the evidence before marking this complete.')
         }
         action.completedAt = new Date().toISOString()
         action.progress = 100
@@ -849,8 +850,9 @@ export class IncidentStore {
           if (action.status !== 'Open' && action.status !== 'In Progress') {
             throw new ApiError('validation', 'Only open or in-progress actions can be completed.')
           }
-          if (action.evidenceRequired && !action.evidenceNote) {
-            throw new ApiError('validation', 'Completion evidence is required before this action can be marked complete.')
+          // As the server: what was done is always said. A file on top is what evidenceRequired adds.
+          if (!action.evidenceNote) {
+            throw new ApiError('validation', 'Describe the evidence before marking this complete.')
           }
           action.completedAt = new Date().toISOString()
           action.progress = 100

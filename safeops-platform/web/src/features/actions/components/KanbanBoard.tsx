@@ -190,7 +190,7 @@ export function KanbanBoard({
       >
         <div className="space-y-5">
           <Textarea
-            label={completeFor?.evidenceRequired ? 'Completion evidence (required)' : 'Completion note (optional)'}
+            label="Completion evidence (required)"
             rows={3}
             value={evidence}
             onChange={(e) => setEvidence(e.target.value)}

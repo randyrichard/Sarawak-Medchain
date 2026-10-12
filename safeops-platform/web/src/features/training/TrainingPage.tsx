@@ -5,7 +5,8 @@ import { api } from '@/api/client'
 import type { CertificateView, CourseView, SessionView, TrainingMatrix, TrainingStats } from '@/api/training'
 import { useOrg } from '@/features/org/OrgContext'
 import { useActor } from '@/features/incidents/lib'
-import { Button, Card, PageHeader, Skeleton, Tabs, type TabItem, AttentionIcon, attentionOf, attentionStripe } from '@/components/ui'
+import { Alert, Button, Card, PageHeader, Skeleton, Tabs, type TabItem, AttentionIcon, attentionOf, attentionStripe } from '@/components/ui'
+import { fmtDateTime } from '@/features/incidents/lib'
 import { cn } from '@/lib/cn'
 import { canManageTraining, canRunSessions } from './lib'
 import { TrainingOverview } from './components/TrainingOverview'
@@ -33,6 +34,8 @@ export function TrainingPage() {
   // Whose training record is open in the drawer.
   const { id: openEmployee, open: setOpenEmployee, close: closeEmployee } = useOpenRecord()
   const [newSessionOpen, setNewSessionOpen] = useState(false)
+  /** What was just scheduled, said once the dialog closes. */
+  const [scheduled, setScheduled] = useState<string | null>(null)
 
   const manage = canManageTraining(role)
   const runner = canRunSessions(role)
@@ -93,7 +96,7 @@ export function TrainingPage() {
   const viewTabs: TabItem<View>[] = [
     { value: 'overview', label: 'Overview' },
     { value: 'matrix', label: 'Competency Matrix' },
-    { value: 'catalog', label: 'Catalog' },
+    { value: 'catalog', label: 'Catalogue' },
     { value: 'sessions', label: 'Sessions' },
     { value: 'certificates', label: 'Certificates' },
   ]
@@ -127,6 +130,10 @@ export function TrainingPage() {
         ))}
       </div>
 
+      {scheduled && (
+        <Alert tone="success" className="mb-3" onDismiss={() => setScheduled(null)}>{scheduled}</Alert>
+      )}
+
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <div className="ml-auto min-w-0">
           <Tabs items={viewTabs} value={view} onChange={switchView} className={cn('border-b-0')} />
@@ -155,7 +162,21 @@ export function TrainingPage() {
         onChanged={refresh}
       />
 
-      <NewSessionDialog open={newSessionOpen} onClose={() => setNewSessionOpen(false)} onCreated={() => { setNewSessionOpen(false); refresh() }} />
+      {/*
+        A session has no page of its own to open, so the list it joins is shown, with a line
+        saying what was scheduled. The dialog used to close and leave whichever tab was
+        open, with nothing to say the session existed.
+      */}
+      <NewSessionDialog
+        open={newSessionOpen}
+        onClose={() => setNewSessionOpen(false)}
+        onCreated={(session) => {
+          setNewSessionOpen(false)
+          refresh()
+          switchView('sessions')
+          setScheduled(`${session.code} scheduled: ${session.courseName}, ${fmtDateTime(session.scheduledFor)}.`)
+        }}
+      />
 
       <p className="mt-4 text-2xs text-muted">
         Passing a session issues a certificate automatically; expiring certificates trigger 90/60/30/7-day reminders,

@@ -234,7 +234,8 @@ export function AssetsPage() {
         onCompleted={() => refresh()}
       />
 
-      <NewAssetDialog open={newOpen} onClose={() => setNewOpen(false)} onCreated={() => { setNewOpen(false); refresh() }} />
+      {/* Opened once registered, as a permit or a visit is: it shows it saved, and its QR label is there. */}
+      <NewAssetDialog open={newOpen} onClose={() => setNewOpen(false)} onCreated={(asset) => { setNewOpen(false); refresh(); setOpenAssetId(asset.id) }} />
     </>
   )
 }

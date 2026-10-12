@@ -15,7 +15,7 @@ import { usePageTitle } from '@/app/pageTitle'
  * so there is nothing to filter and nothing to leak.
  */
 const DESTINATIONS = [
-  { to: '/', label: 'Dashboard', hint: 'What needs you today' },
+  { to: '/', label: 'Home', hint: 'What needs you today' },
   { to: '/incidents', label: 'Incidents', hint: 'Reports and investigations' },
   { to: '/actions', label: 'Corrective Actions', hint: 'What is open and overdue' },
   { to: '/notifications', label: 'Notifications', hint: 'Anything waiting on you' },

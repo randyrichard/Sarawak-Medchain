@@ -107,6 +107,7 @@ function toAction(a: ServerAction): IncidentAction {
     id: a.id,
     code: a.code,
     title: a.title,
+    description: a.detail || undefined,
     causeId: null,
     owner: a.owner,
     ownerId: a.ownerId ?? null,
@@ -302,7 +303,7 @@ export const incidentsApi = {
   // ── Corrective actions ─────────────────────────────────────────────────────
 
   async addAction(incidentId: string, input: {
-    title: string; detail?: string; owner: string; dueDate: string; priority?: string
+    title: string; detail?: string; owner: string; dueDate: string; priority?: string; evidenceRequired?: boolean
   }): Promise<IncidentAction> {
     return toAction(await request<ServerAction>(`/incidents/${incidentId}/actions`, {
       method: 'POST', body: JSON.stringify(input),
@@ -311,7 +312,7 @@ export const incidentsApi = {
 
   async addStandaloneAction(input: {
     companyId: string; siteId: string; title: string; detail?: string
-    owner: string; dueDate: string; priority?: string; source?: string
+    owner: string; dueDate: string; priority?: string; source?: string; evidenceRequired?: boolean
   }): Promise<IncidentAction> {
     return toAction(await request<ServerAction>('/incidents/actions', {
       method: 'POST', body: JSON.stringify(input),
@@ -320,6 +321,7 @@ export const incidentsApi = {
 
   async updateAction(actionId: string, patch: {
     status?: IncidentAction['status']; evidenceNote?: string; dueDate?: string; expectedVersion?: number
+    owner?: string; priority?: IncidentAction['priority']; detail?: string
   }): Promise<IncidentAction> {
     return toAction(await request<ServerAction>(`/incidents/actions/${actionId}`, {
       method: 'PATCH',

@@ -34,7 +34,7 @@ export function OrganizationPage() {
   return (
     <>
       <PageHeader
-        title="Organization"
+        title="Organisation"
         subtitle={company ? `${company.name} — companies hold sites, sites hold departments, departments hold teams` : 'Loading…'}
         /*
          * This button had no onClick at all. It rendered, looked like the page's primary
@@ -43,7 +43,7 @@ export function OrganizationPage() {
          *
          * The invitation flow it advertises is real, it just lives on the admin console. So
          * it now goes there rather than being removed: somebody who reached for "Invite
-         * user" on the Organization page wanted to invite somebody, and sending them to the
+         * user" on the Organisation page wanted to invite somebody, and sending them to the
          * screen that does it is more useful than taking the button away.
          */
         right={
@@ -54,7 +54,7 @@ export function OrganizationPage() {
           </Can>
         }
       />
-      <Tabs id="org-views" label="Organization views" items={tabs} value={view} onChange={setView} className="mb-4" />
+      <Tabs id="org-views" label="Organisation views" items={tabs} value={view} onChange={setView} className="mb-4" />
       <TabPanel tabsId="org-views" value="structure" selected={view}><StructureView /></TabPanel>
       <TabPanel tabsId="org-views" value="people" selected={view}><PeopleView /></TabPanel>
       <TabPanel tabsId="org-views" value="roles" selected={view}><RolesView /></TabPanel>
@@ -109,7 +109,7 @@ function StructureView() {
         <AsyncContent
           state={tree}
           loadingLabel="Loading departments and teams…"
-          errorTitle="Couldn't load the organization structure"
+          errorTitle="Couldn't load the organisation structure"
           loading={
             <div className="space-y-2">
               {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
@@ -259,8 +259,8 @@ const CAPABILITY_LABEL: Record<string, string> = {
   'actions:manage': 'Manage corrective actions',
   'analytics:view': 'View analytics',
   'compliance:manage': 'Manage compliance',
-  'org:view': 'View organization',
-  'org:manage': 'Manage organization',
+  'org:view': 'View organisation',
+  'org:manage': 'Manage organisation',
   'audit-log:view': 'View audit log',
   'settings:manage': 'Manage settings',
 }

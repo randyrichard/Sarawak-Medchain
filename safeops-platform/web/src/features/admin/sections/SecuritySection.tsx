@@ -18,7 +18,7 @@ type Tab = (typeof TABS)[number]
 export function SecuritySection() {
   const [tab, setTab] = useUrlState<Tab>('tab', 'center', TABS)
   const tabs: TabItem<Tab>[] = [
-    { value: 'center', label: 'Security Center' },
+    { value: 'center', label: 'Security Centre' },
     { value: 'policy', label: 'Authentication Policy' },
     { value: 'logins', label: 'Login History' },
   ]
@@ -42,7 +42,7 @@ function CenterPanel() {
   const center = useAsync<SecurityCenter>(() => api.adminSecurityCenter(companyId), [companyId], { enabled: Boolean(companyId) })
   const sc = center.data
 
-  if (!sc && center.status === 'error') return <ErrorState title="Couldn't load the Security Center" error={center.error} onRetry={center.reload} />
+  if (!sc && center.status === 'error') return <ErrorState title="Couldn't load the Security Centre" error={center.error} onRetry={center.reload} />
   if (!sc) return <div className="grid gap-3 md:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
 
   const tiles = [

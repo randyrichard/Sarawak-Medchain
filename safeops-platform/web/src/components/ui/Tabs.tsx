@@ -28,7 +28,7 @@ const panelId = (base: string, value: string) => `${base}-panel-${safe(value)}`
  *   a region belongs to and jump to it. Without `id` the tabs still work; `aria-controls`
  *   is left off rather than pointing at a panel that does not exist.
  *
- *     <Tabs id="org" label="Organization views" items={tabs} value={view} onChange={setView} />
+ *     <Tabs id="org" label="Organisation views" items={tabs} value={view} onChange={setView} />
  *     <TabPanel tabsId="org" value="people" selected={view}>…</TabPanel>
  */
 export function Tabs<T extends string>({

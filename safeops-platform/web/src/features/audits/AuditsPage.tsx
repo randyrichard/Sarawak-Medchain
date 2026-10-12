@@ -146,7 +146,8 @@ export function AuditsPage() {
         onChanged={refresh}
       />
 
-      <PlanAuditDialog open={planOpen} onClose={() => setPlanOpen(false)} onCreated={() => { setPlanOpen(false); refresh() }} />
+      {/* Opened once planned, so it is seen to exist rather than the dialog just closing. */}
+      <PlanAuditDialog open={planOpen} onClose={() => setPlanOpen(false)} onCreated={(audit) => { setPlanOpen(false); refresh(); setOpenAuditId(audit.id) }} />
       <p className="mt-4 text-2xs text-muted">
         Findings auto-create corrective actions; audits cannot close until every finding's action is verified.
       </p>

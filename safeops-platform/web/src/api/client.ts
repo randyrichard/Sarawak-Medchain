@@ -417,7 +417,10 @@ function toCapaItem(a: IncidentAction & {
     overdue: isOpen && daysToDue < 0,
     daysToDue,
     progress: a.status === 'Open' ? 0 : a.status === 'In Progress' ? 50 : 100,
-    evidenceRequired: true,
+    description: a.description,
+    // The row's own rule. Pinned to true, every action on a server demanded a file to close,
+    // including the ones raised without that rule, which the server would have closed on a note.
+    evidenceRequired: a.evidenceRequired,
     evidenceNote: a.evidenceNote,
     verifiedBy: a.verifiedBy,
     verifiedAt: a.verifiedAt,
@@ -651,7 +654,7 @@ class MockApiClient implements ApiClient {
    *
    * This read only the offline demo's fixture people, even with a server. Outside
    * development those fixtures are empty, so on a real deployment the training "New
-   * session" dialog never listed anyone to enrol and Organization → People showed nobody;
+   * session" dialog never listed anyone to enrol and Organisation → People showed nobody;
    * in development it listed invented people whose sites did not match. Now the register.
    */
   async listEmployees(companyId: string): Promise<Employee[]> {
@@ -834,6 +837,7 @@ class MockApiClient implements ApiClient {
     if (SERVER_INCIDENTS) {
       await incidentsApi.addAction(id, {
         title: input.title, owner: input.owner, dueDate: input.dueDate, priority: input.priority,
+        evidenceRequired: input.evidenceRequired,
       })
       return incidentsApi.get(id) // re-read so the caller sees the authoritative row
     }
@@ -929,9 +933,14 @@ class MockApiClient implements ApiClient {
 
   async addStandaloneAction(input: NewStandaloneAction, actor: Actor) {
     if (SERVER_INCIDENTS) {
+      // Everything the server keeps, which is what the form asks for there: the details and
+      // the evidence rule were dropped here, so an action raised "evidence required" closed
+      // on a note.
       const a = await incidentsApi.addStandaloneAction({
         companyId: input.companyId, siteId: input.siteId, title: input.title,
+        detail: input.description || undefined,
         owner: input.owner, dueDate: input.dueDate, priority: input.priority, source: 'manual',
+        evidenceRequired: input.evidenceRequired,
       })
       return toCapaItem({ ...a, companyId: input.companyId, siteId: input.siteId })
     }
@@ -943,6 +952,7 @@ class MockApiClient implements ApiClient {
     if (SERVER_INCIDENTS) {
       const a = await incidentsApi.updateAction(actionId, {
         status: patch.status, evidenceNote: patch.evidenceNote, dueDate: patch.dueDate,
+        owner: patch.owner, priority: patch.priority, detail: patch.description,
       })
       return toCapaItem(a)
     }

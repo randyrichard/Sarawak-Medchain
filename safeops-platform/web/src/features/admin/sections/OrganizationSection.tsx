@@ -135,7 +135,7 @@ function StructurePanel({ sites }: { sites: { id: string; short: string; name: s
               </div>
             </div>
           ))}
-          <p className="text-2xs text-muted">Sites and departments are managed in the Organization module; business units below group them for reporting.</p>
+          <p className="text-2xs text-muted">Sites and departments are managed under Organisation; business units below group them for reporting.</p>
         </CardBody>
       </Card>
 
