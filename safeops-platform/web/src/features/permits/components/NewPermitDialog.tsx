@@ -87,12 +87,12 @@ export function NewPermitDialog({
       error={error}
       open={open}
       onClose={onClose}
-      title="Request a permit to work"
+      title="Request a Permit to Work"
       width="max-w-2xl"
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button loading={busy} disabled={!valid} onClick={() => void submit()}>Create draft</Button>
+          <Button loading={busy} disabled={!valid} onClick={() => void submit()}>Create Draft</Button>
         </>
       }
     >

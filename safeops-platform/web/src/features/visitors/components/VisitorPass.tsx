@@ -35,7 +35,7 @@ export function VisitorPass({
   }, [payload])
 
   return (
-    <Dialog open={open} onClose={onClose} title="Visitor pass">
+    <Dialog open={open} onClose={onClose} title="Visitor Pass">
       <div className="space-y-3">
         {/*
           `print-pass` is targeted by the print stylesheet so the rest of the app is left

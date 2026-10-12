@@ -322,7 +322,7 @@ describe('DataTable', () => {
     const alert = screen.getByRole('alert')
     expect(alert.textContent).toContain('Network down')
     expect(screen.queryByText('No records.')).toBeNull()
-    fireEvent.click(within(alert).getByRole('button', { name: 'Try again' }))
+    fireEvent.click(within(alert).getByRole('button', { name: 'Try Again' }))
     expect(onRetry).toHaveBeenCalledOnce()
   })
 
@@ -408,7 +408,7 @@ describe('AsyncContent', () => {
     const reload = vi.fn()
     render(<AsyncContent state={{ ...base, reload, status: 'error', data: undefined, error: new Error('Timed out') }} errorTitle="Couldn't load people">{() => 'x'}</AsyncContent>)
     expect(screen.getByRole('alert').textContent).toContain("Couldn't load people")
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Try Again' }))
     expect(reload).toHaveBeenCalledOnce()
   })
 
@@ -445,7 +445,7 @@ describe('axe audit', () => {
             <PasswordInput label="Password" />
             <Textarea label="Notes" />
             <Select label="Site"><option>Kuching</option></Select>
-            <Switch checked={on} onChange={setOn} label="Notify me" />
+            <Switch checked={on} onChange={setOn} label="Notify Me" />
             <Button loading>Saving</Button>
             <Menu />
             <DataTable caption="People" columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} />

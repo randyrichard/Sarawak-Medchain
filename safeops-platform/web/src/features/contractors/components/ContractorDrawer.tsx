@@ -162,7 +162,7 @@ export function ContractorDrawer({
             {canManage && (
               <footer className="flex flex-wrap gap-2 border-t px-5 py-3">
                 <Button size="sm" variant="secondary" icon={<PenLine size={12} />} onClick={() => setEditOpen(true)}>
-                  Edit details
+                  Edit Details
                 </Button>
                 <Button size="sm" variant="secondary" loading={busy}
                   onClick={() => void run(
@@ -207,7 +207,7 @@ export function ContractorDrawer({
                     const ok = await run(() => contractorsApi.removeCompany(item.id), `${item.name} deleted`)
                     if (ok) { setConfirmDelete(false); onClose() }
                   }}>
-                  Delete permanently
+                  Delete Permanently
                 </Button>
               </>
             }

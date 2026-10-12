@@ -47,10 +47,10 @@ export type AttachmentKind =
   | 'method_statement' | 'jsa' | 'gas_test_sheet' | 'isolation_certificate' | 'photo' | 'other'
 
 export const ATTACHMENT_KIND_LABEL: Record<AttachmentKind, string> = {
-  method_statement: 'Method statement',
+  method_statement: 'Method Statement',
   jsa: 'JSA',
-  gas_test_sheet: 'Gas test sheet',
-  isolation_certificate: 'Isolation certificate',
+  gas_test_sheet: 'Gas Test Sheet',
+  isolation_certificate: 'Isolation Certificate',
   photo: 'Photo',
   other: 'Other',
 }

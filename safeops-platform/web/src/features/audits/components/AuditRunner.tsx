@@ -247,7 +247,7 @@ export function AuditRunner({
 
           <div className="grid grid-cols-1 gap-2">
             <button onClick={captureGps} className="flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold text-ink-2 hover:bg-accent-soft coarse:min-h-11">
-              <LocateFixed size={13} /> {draft.gps ? 'GPS captured ✓' : 'Capture GPS'}
+              <LocateFixed size={13} /> {draft.gps ? 'GPS Captured ✓' : 'Capture GPS'}
             </button>
             {draft.gps && <Badge tone="accent">{draft.gps}</Badge>}
           </div>
@@ -283,8 +283,8 @@ export function AuditRunner({
             {answered < allItems.length
               ? `Answer ${allItems.length - answered} more item(s)`
               : failsIncomplete.length > 0
-                ? 'Complete finding details for failed items'
-                : 'Submit audit'}
+                ? 'Complete Finding Details for Failed Items'
+                : 'Submit Audit'}
           </Button>
           )}
         </div>

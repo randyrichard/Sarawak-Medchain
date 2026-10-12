@@ -45,7 +45,7 @@ describe('deliveryBadge', () => {
 
   it('shows a failed delivery in the critical tone', () => {
     const b = deliveryBadge(run({ deliveryStatus: 'failed', attempts: 3 }))
-    expect(b).toEqual({ label: 'Delivery failed', tone: 'critical' })
+    expect(b).toEqual({ label: 'Delivery Failed', tone: 'critical' })
   })
 
   it('distinguishes a retry in progress from a send in progress', () => {

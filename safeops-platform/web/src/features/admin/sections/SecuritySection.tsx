@@ -46,15 +46,15 @@ function CenterPanel() {
   if (!sc) return <div className="grid gap-3 md:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
 
   const tiles = [
-    { label: 'MFA adoption', value: `${sc.mfaAdoptionPct}%`, tone: sc.mfaAdoptionPct >= 90 ? 'var(--good)' : 'var(--warning)', note: `${sc.mfaEnabledCount}/${sc.totalUsers} users` },
+    { label: 'MFA Adoption', value: `${sc.mfaAdoptionPct}%`, tone: sc.mfaAdoptionPct >= 90 ? 'var(--good)' : 'var(--warning)', note: `${sc.mfaEnabledCount}/${sc.totalUsers} users` },
     // Not "weak passwords": with Argon2id the server holds only a digest and genuinely
     // cannot tell a weak password from a strong one — that is what the hashing is for.
     // What it does know is which accounts an administrator has flagged for reset.
-    { label: 'Pending resets', value: sc.weakPasswords, tone: sc.weakPasswords > 0 ? 'var(--warning)' : 'var(--good)', note: 'must change at next sign-in' },
-    { label: 'Inactive accounts', value: sc.inactiveUsers, tone: sc.inactiveUsers > 0 ? 'var(--warning)' : 'var(--good)', note: '60+ days idle' },
+    { label: 'Pending Resets', value: sc.weakPasswords, tone: sc.weakPasswords > 0 ? 'var(--warning)' : 'var(--good)', note: 'must change at next sign-in' },
+    { label: 'Inactive Accounts', value: sc.inactiveUsers, tone: sc.inactiveUsers > 0 ? 'var(--warning)' : 'var(--good)', note: '60+ days idle' },
     // Counted over 30 days by the server; this said 7. A few failures are normal (typos), so
     // the colour follows the volume rather than turning red at the first one.
-    { label: 'Failed sign-ins', value: sc.suspiciousLogins, tone: sc.suspiciousLogins === 0 ? 'var(--good)' : sc.suspiciousLogins >= 10 ? 'var(--critical)' : 'var(--warning)', note: 'last 30 days' },
+    { label: 'Failed Sign-Ins', value: sc.suspiciousLogins, tone: sc.suspiciousLogins === 0 ? 'var(--good)' : sc.suspiciousLogins >= 10 ? 'var(--critical)' : 'var(--warning)', note: 'last 30 days' },
   ]
 
   return (
@@ -70,7 +70,7 @@ function CenterPanel() {
       </div>
 
       <Card>
-        <CardHeader title="Security recommendations" subtitle="Ranked by risk — resolve from the top" />
+        <CardHeader title="Security Recommendations" subtitle="Ranked by risk — resolve from the top" />
         <CardBody className="space-y-2">
           {sc.findings.map((f) => {
             const Icon = SEV_ICON[f.severity]
@@ -121,7 +121,7 @@ function PolicyPanel() {
   return (
     <div className="grid gap-4 xl:grid-cols-2">
       <Card>
-        <CardHeader title="Password policy" subtitle="Enforced whenever a password is set: changed, reset or chosen on joining" />
+        <CardHeader title="Password Policy" subtitle="Enforced whenever a password is set: changed, reset or chosen on joining" />
         <CardBody className="space-y-5">
           {flash && <Alert tone="success">Security policy saved.</Alert>}
           {error && <Alert tone="critical">{error}</Alert>}
@@ -150,7 +150,7 @@ function PolicyPanel() {
             <Switch checked={s.mfaRequired} onChange={(v) => set({ mfaRequired: v })} label="Require multi-factor authentication for all users" />
             <p className="mt-1 text-2xs text-muted">Anyone without it is asked to set up an authenticator app the next time they sign in, and can do nothing else until they have.</p>
           </div>
-          <Button icon={<Save size={14} />} loading={busy} onClick={() => void save()}>Save policy</Button>
+          <Button icon={<Save size={14} />} loading={busy} onClick={() => void save()}>Save Policy</Button>
         </CardBody>
       </Card>
     </div>
@@ -181,7 +181,7 @@ function LoginsPanel() {
   if (events === null) return <Card className="p-5"><Skeleton className="h-64 w-full" /></Card>
   return (
     <Card>
-      <CardHeader title="Login history" subtitle="Every sign-in attempt across the tenant" right={<Button size="sm" variant="ghost" onClick={exportCsv}>Export</Button>} />
+      <CardHeader title="Login History" subtitle="Every sign-in attempt across the tenant" right={<Button size="sm" variant="ghost" onClick={exportCsv}>Export</Button>} />
       <div className="relative overflow-x-auto" tabIndex={0} role="region" aria-label="Login history">
         <table className="w-full min-w-[760px] text-left">
           <thead>
@@ -189,7 +189,7 @@ function LoginsPanel() {
               <th className="px-5 py-2.5 font-semibold">User</th>
               <th className="px-3 py-2.5 font-semibold">Result</th>
               <th className="px-3 py-2.5 font-semibold">IP / Device</th>
-              <th className="px-3 py-2.5 font-semibold">Needs a look</th>
+              <th className="px-3 py-2.5 font-semibold">Needs a Look</th>
               <th className="px-5 py-2.5 text-right font-semibold">When</th>
             </tr>
           </thead>

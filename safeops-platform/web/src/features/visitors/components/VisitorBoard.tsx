@@ -37,18 +37,18 @@ export function VisitorBoard({
   if (error) return <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>
 
   const tiles: { label: string; value: number | undefined; tone?: string; hint?: string }[] = [
-    { label: 'On site now', value: data?.onSite, tone: 'var(--accent)' },
+    { label: 'On Site Now', value: data?.onSite, tone: 'var(--accent)' },
     { label: 'Overdue', value: data?.overdue,
       tone: data?.overdue ? 'var(--critical)' : undefined,
       hint: 'Still inside past their departure time' },
-    { label: 'Expected today', value: data?.expectedToday },
-    { label: 'Checked in today', value: data?.checkedInToday },
-    { label: 'Vehicles on site', value: data?.vehiclesOnSite,
+    { label: 'Expected Today', value: data?.expectedToday },
+    { label: 'Checked In Today', value: data?.checkedInToday },
+    { label: 'Vehicles on Site', value: data?.vehiclesOnSite,
       hint: 'Distinct vehicles, not visitors' },
-    { label: 'Badges out', value: data?.badgesOut },
-    { label: 'Denied today', value: data?.deniedToday,
+    { label: 'Badges Out', value: data?.badgesOut },
+    { label: 'Denied Today', value: data?.deniedToday,
       tone: data?.deniedToday ? 'var(--warning)' : undefined },
-    { label: 'Blacklisted attempts', value: data?.blacklistedToday,
+    { label: 'Blacklisted Attempts', value: data?.blacklistedToday,
       tone: data?.blacklistedToday ? 'var(--critical)' : undefined },
   ]
 

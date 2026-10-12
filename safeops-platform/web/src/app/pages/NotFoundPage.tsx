@@ -17,7 +17,7 @@ import { usePageTitle } from '@/app/pageTitle'
 const DESTINATIONS = [
   { to: '/', label: 'Dashboard', hint: 'What needs you today' },
   { to: '/incidents', label: 'Incidents', hint: 'Reports and investigations' },
-  { to: '/actions', label: 'Corrective actions', hint: 'What is open and overdue' },
+  { to: '/actions', label: 'Corrective Actions', hint: 'What is open and overdue' },
   { to: '/notifications', label: 'Notifications', hint: 'Anything waiting on you' },
 ]
 
@@ -36,7 +36,7 @@ const DESTINATIONS = [
 export function NotFoundPage() {
   const { pathname } = useLocation()
   const { user } = useAuth()
-  usePageTitle('Page not found')
+  usePageTitle('Page Not Found')
 
   return (
     <div className="mx-auto flex min-h-full max-w-lg flex-col justify-center px-6 py-16">
@@ -44,7 +44,7 @@ export function NotFoundPage() {
         <Compass size={22} className="text-accent" aria-hidden="true" />
       </div>
 
-      <h1 className="mt-5 text-2xl font-semibold tracking-tight text-ink">Page not found</h1>
+      <h1 className="mt-5 text-2xl font-semibold tracking-tight text-ink">Page Not Found</h1>
       <p className="mt-2 text-sm text-ink-2">
         Nothing lives at{' '}
         {/* The path is rendered as text inside a styled span, never as markup. */}
@@ -75,9 +75,9 @@ export function NotFoundPage() {
         </>
       ) : (
         <div className="mt-8 flex flex-wrap gap-2">
-          <LinkButton to="/login" size="lg">Go to sign in</LinkButton>
+          <LinkButton to="/login" size="lg">Go to Sign In</LinkButton>
           <LinkButton to="/privacy" variant="secondary" size="lg">
-            Privacy notice
+            Privacy Notice
           </LinkButton>
         </div>
       )}

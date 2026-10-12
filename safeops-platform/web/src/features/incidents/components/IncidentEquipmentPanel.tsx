@@ -81,7 +81,7 @@ export function IncidentEquipmentPanel({
                     {r.name}
                     {r.critical && <Badge tone="warning"><Star size={9} className="mr-0.5 inline" />Critical</Badge>}
                     {!r.fit && (
-                      <Badge tone="critical"><ShieldAlert size={9} className="mr-0.5 inline" />Not fit</Badge>
+                      <Badge tone="critical"><ShieldAlert size={9} className="mr-0.5 inline" />Not Fit</Badge>
                     )}
                   </p>
                   <p className="text-2xs text-muted">
@@ -117,7 +117,7 @@ export function IncidentEquipmentPanel({
         {canEdit && (
           <Button size="sm" variant="secondary" icon={<Plus size={11} />} className="mt-2"
             onClick={() => setAddOpen(true)}>
-            Name equipment
+            Name Equipment
           </Button>
         )}
 
@@ -183,7 +183,7 @@ function AddDialog({
   ).slice(0, 60)
 
   return (
-    <Dialog open={open} onClose={onClose} title="Name equipment involved in this incident">
+    <Dialog open={open} onClose={onClose} title="Name Equipment Involved in This Incident">
       <div className="space-y-3">
         {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
 
@@ -235,7 +235,7 @@ function AddDialog({
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button onClick={() => void submit()} loading={busy} disabled={!chosen}>
-            Name equipment
+            Name Equipment
           </Button>
         </div>
       </div>

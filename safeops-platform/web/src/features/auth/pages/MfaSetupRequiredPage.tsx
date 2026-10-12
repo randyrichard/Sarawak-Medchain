@@ -28,7 +28,7 @@ export function MfaSetupRequiredPage() {
 
   return (
     <AuthLayout>
-      <h1 className="text-xl font-semibold tracking-tight text-ink">Set up multi-factor sign-in</h1>
+      <h1 className="text-xl font-semibold tracking-tight text-ink">Set Up Multi-Factor Sign-In</h1>
       <p className="mt-1 text-sm text-ink-2">
         Your organisation requires a code from an authenticator app, as well as your password,
         every time {user?.email ?? 'you'} signs in. It takes about a minute.
@@ -37,7 +37,7 @@ export function MfaSetupRequiredPage() {
         {error && <Alert tone="critical">{error}</Alert>}
         <MfaEnrolment onDone={() => void finish()} />
         <Button variant="ghost" size="sm" icon={<LogOut size={13} />} onClick={() => void logout()}>
-          Sign out instead
+          Sign Out Instead
         </Button>
       </div>
     </AuthLayout>

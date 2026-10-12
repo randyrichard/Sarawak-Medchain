@@ -32,7 +32,7 @@ export function deliveryBadge(run: Pick<
     case 'sent':
       return { label: 'Sent', tone: 'good' }
     case 'failed':
-      return { label: 'Delivery failed', tone: 'critical' }
+      return { label: 'Delivery Failed', tone: 'critical' }
     case 'email_pending':
       return {
         // A time on it means a backoff is running, not that it is stuck.

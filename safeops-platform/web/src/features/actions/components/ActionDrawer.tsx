@@ -223,7 +223,7 @@ export function ActionDrawer({
               {editable && (item.derived === 'Open' || item.derived === 'Assigned') && (
                 <Button size="sm" icon={<Play size={12} />} loading={busy}
                   onClick={() => void run(() => api.updateCapa(item.id, { status: 'In Progress' }, actor))}>
-                  Start work
+                  Start Work
                 </Button>
               )}
               {editable && item.derived === 'In Progress' && (
@@ -234,19 +234,19 @@ export function ActionDrawer({
               {item.derived === 'Waiting Verification' && verifier && (
                 <Button size="sm" icon={<ShieldCheck size={12} />} loading={busy}
                   onClick={() => void run(() => api.updateCapa(item.id, { status: 'Verified' }, actor))}>
-                  Verify & sign off
+                  Verify & Sign Off
                 </Button>
               )}
               {item.derived === 'Waiting Verification' && manager && (
                 <Button size="sm" variant="secondary" icon={<Undo2 size={12} />} loading={busy}
                   onClick={() => void run(() => api.updateCapa(item.id, { status: 'In Progress' }, actor))}>
-                  Send back
+                  Send Back
                 </Button>
               )}
               {manager && active && (
                 <>
                   <Button size="sm" variant="secondary" icon={<PenLine size={12} />} onClick={() => setEditOpen(true)}>
-                    Edit details
+                    Edit Details
                   </Button>
                   <Button size="sm" variant="ghost" icon={<Ban size={12} />} onClick={() => setCancelOpen(true)}>
                     Cancel…
@@ -372,7 +372,7 @@ export function ActionDrawer({
           <>
             <Button variant="secondary" onClick={() => setCompleteOpen(false)}>Cancel</Button>
             <Button loading={busy} onClick={() => void run(() => api.updateCapa(item.id, { status: 'Completed', evidenceNote: evidence }, actor)).then((ok) => ok && setCompleteOpen(false))}>
-              Mark completed
+              Mark Completed
             </Button>
           </>
         }
@@ -446,10 +446,10 @@ export function ActionDrawer({
         description="Cancelled actions stay in the record with the reason — they never silently disappear."
         footer={
           <>
-            <Button variant="secondary" onClick={() => setCancelOpen(false)}>Keep action</Button>
+            <Button variant="secondary" onClick={() => setCancelOpen(false)}>Keep Action</Button>
             <Button variant="danger" loading={busy}
               onClick={() => void run(() => api.cancelCapa(item.id, reason, actor)).then((ok) => ok && setCancelOpen(false))}>
-              Cancel action
+              Cancel Action
             </Button>
           </>
         }
@@ -470,7 +470,7 @@ export function ActionDrawer({
             <Button variant="secondary" onClick={() => setEditOpen(false)}>Cancel</Button>
             <Button loading={busy}
               onClick={() => void run(() => api.updateCapa(item.id, { owner, reviewer, dueDate: due, priority: prio, description: desc }, actor)).then((ok) => ok && setEditOpen(false))}>
-              Save changes
+              Save Changes
             </Button>
           </>
         }

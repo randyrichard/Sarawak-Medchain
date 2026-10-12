@@ -92,7 +92,7 @@ describe('invitationDelivery', () => {
   it('uses the same words as the Reports page', () => {
     // An operator who learnt what "failed" means there should not learn it twice.
     expect(invitationDelivery('sent')).toEqual({ label: 'Emailed', tone: 'good' })
-    expect(invitationDelivery('failed')).toEqual({ label: 'Email failed', tone: 'critical' })
+    expect(invitationDelivery('failed')).toEqual({ label: 'Email Failed', tone: 'critical' })
     expect(invitationDelivery('email_pending')).toEqual({ label: 'Sending', tone: 'warning' })
   })
 
@@ -102,7 +102,7 @@ describe('invitationDelivery', () => {
      * something that went wrong. Colouring it red sends an administrator hunting a bug.
      */
     const created = invitationDelivery('created')
-    expect(created.label).toBe('Not emailed')
+    expect(created.label).toBe('Not Emailed')
     expect(created.tone).toBe('neutral')
   })
 

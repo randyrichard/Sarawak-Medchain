@@ -42,15 +42,15 @@ export function OverviewSection() {
       </div>
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <StatTile label="Users online" value={String(health.usersOnline)} note="active in last 15 min" tone="var(--good)" />
+        <StatTile label="Users Online" value={String(health.usersOnline)} note="active in last 15 min" tone="var(--good)" />
         <StatTile label="API" value={statusPill(health.apiStatus)} note={`${health.apiLatencyMs}ms median latency`} />
         <StatTile label="Database" value={statusPill(health.dbStatus)} note="primary + replica healthy" />
-        <StatTile label="Failed notifications" value={String(health.failedNotifications)} note="last 24 hours" tone={health.failedNotifications > 0 ? 'var(--warning)' : 'var(--good)'} />
+        <StatTile label="Failed Notifications" value={String(health.failedNotifications)} note="last 24 hours" tone={health.failedNotifications > 0 ? 'var(--warning)' : 'var(--good)'} />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-3">
         <Card className="xl:col-span-2">
-          <CardHeader title="Background jobs" subtitle="Scheduled workers keeping the platform current" />
+          <CardHeader title="Background Jobs" subtitle="Scheduled workers keeping the platform current" />
           <CardBody className="space-y-2">
             {health.jobs.map((j) => (
               // Wraps on a phone: the text keeps at least 11rem, and the time and status
@@ -96,7 +96,7 @@ export function OverviewSection() {
       </div>
 
       <Card>
-        <CardHeader title="System alerts" subtitle="Recent platform events" />
+        <CardHeader title="System Alerts" subtitle="Recent platform events" />
         <CardBody className="space-y-1.5">
           {health.alerts.map((a) => {
             const Icon = a.severity === 'critical' ? AlertTriangle : a.severity === 'warning' ? AlertTriangle : a.severity === 'info' ? Info : CheckCircle2

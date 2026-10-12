@@ -124,7 +124,7 @@ export function EmployeeTrainingDrawer({
                             </Link>
                           ) : (
                             <Button size="sm" variant="ghost" className="mt-1.5" icon={<TriangleAlert size={11} />} loading={busy === r.course.id} onClick={() => void raiseAction(r.course.id)}>
-                              Raise corrective action
+                              Raise Corrective Action
                             </Button>
                           )
                         )}

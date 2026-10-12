@@ -27,7 +27,7 @@ export function subscriptionBadge(status: string): { label: string; tone: Tone }
   switch (status) {
     case 'active': return { label: 'Paying', tone: 'good' }
     case 'trial': return { label: 'Trial', tone: 'accent' }
-    case 'past_due': return { label: 'Past due', tone: 'warning' }
+    case 'past_due': return { label: 'Past Due', tone: 'warning' }
     case 'cancelled': return { label: 'Cancelled', tone: 'neutral' }
     default: return { label: status, tone: 'neutral' }
   }

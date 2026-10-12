@@ -47,7 +47,7 @@ export const NAV: NavItem[] = [
   { to: '/', label: 'Home', capability: 'dashboard:view', end: true },
   // Near-miss capture sits in the nav because under-reporting is driven by friction and
   // forgetting (customer research P1) — it has to be one tap from anywhere.
-  { to: '/near-miss', label: 'Report a near miss', capability: 'reports:submit' },
+  { to: '/near-miss', label: 'Report a Near Miss', capability: 'reports:submit' },
   // Everyone gets told what needs them.
   { to: '/notifications', label: 'Notifications', capability: 'dashboard:view' },
   /*
@@ -63,16 +63,16 @@ export const NAV: NavItem[] = [
    * job; triaging it is not, and the difference belongs in the page rather than the menu.
    */
   { to: '/incidents', label: 'Incidents', capability: 'incidents:view', notFor: ['/incidents/board'], group: 'Incidents' },
-  { to: '/incidents/board', label: 'Incident board', capability: 'incidents:view', group: 'Incidents' },
-  { to: '/actions', label: 'Corrective actions', capability: 'actions:view', group: 'Incidents' },
-  { to: '/assets', label: 'Assets & inspections', capability: 'equipment:view', group: 'Operations' },
-  { to: '/permits', label: 'Permits to work', capability: 'permits:view', group: 'Operations' },
+  { to: '/incidents/board', label: 'Incident Board', capability: 'incidents:view', group: 'Incidents' },
+  { to: '/actions', label: 'Corrective Actions', capability: 'actions:view', group: 'Incidents' },
+  { to: '/assets', label: 'Assets & Inspections', capability: 'equipment:view', group: 'Operations' },
+  { to: '/permits', label: 'Permits to Work', capability: 'permits:view', group: 'Operations' },
   { to: '/visitors', label: 'Visitors', capability: 'visitors:view', group: 'Operations' },
-  { to: '/toolbox', label: 'Toolbox meetings', capability: 'toolbox:view', group: 'Operations' },
-  { to: '/performance', label: 'HSE performance', capability: 'analytics:view', group: 'Assurance' },
+  { to: '/toolbox', label: 'Toolbox Meetings', capability: 'toolbox:view', group: 'Operations' },
+  { to: '/performance', label: 'HSE Performance', capability: 'analytics:view', group: 'Assurance' },
   { to: '/reports', label: 'Reports', capability: 'reports:view', group: 'Assurance' },
-  { to: '/audits', label: 'Audits & compliance', capability: 'compliance:manage', group: 'Assurance' },
-  { to: '/training', label: 'Training & competency', capability: 'training:view', group: 'People' },
+  { to: '/audits', label: 'Audits & Compliance', capability: 'compliance:manage', group: 'Assurance' },
+  { to: '/training', label: 'Training & Competency', capability: 'training:view', group: 'People' },
   { to: '/employees', label: 'Employees', capability: 'workforce:view', group: 'People' },
   { to: '/contractors', label: 'Contractors', capability: 'workforce:view', group: 'People' },
   { to: '/organization', label: 'Organization', capability: 'org:view', group: 'Workspace' },

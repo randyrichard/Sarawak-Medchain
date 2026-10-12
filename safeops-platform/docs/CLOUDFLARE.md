@@ -143,7 +143,7 @@ The web app runs entirely in the browser in demo mode: two invented companies, t
 people, incidents, permits and so on, with nothing sent anywhere. That needs no server, so
 it can be hosted on Cloudflare Workers as static files, free, today.
 
-It is a separate Cloudflare Worker, `safeops-demo`. It is not the `sarawak-medchain` Worker,
+It is a separate Cloudflare Worker, `safechain-demo`. It is not the `sarawak-medchain` Worker,
 which is the earlier MedChain product built from `frontend/`.
 
 ### What makes it safe to publish
@@ -172,7 +172,7 @@ check is for customer builds, and the demo is the one build meant to contain the
 
    | Setting | Value |
    |---|---|
-   | Project name | `safeops-demo` (must match `web/wrangler.jsonc`) |
+   | Project name | `safechain-demo` (must match `web/wrangler.jsonc`) |
    | Production branch | `feature/permit-to-work` (where SafeChain lives) |
    | Root directory | `safeops-platform/web` |
    | Build command | `npm run build:demo` |
@@ -182,7 +182,8 @@ check is for customer builds, and the demo is the one build meant to contain the
    | API token | Create new token |
 
    No build variables are needed; the build script sets everything.
-3. Deploy. The address is `https://safeops-demo.<your-subdomain>.workers.dev`.
+3. Deploy. The address is `https://safechain-demo.<your-subdomain>.workers.dev`. The Worker's
+   name is the address, which is why it is `safechain-demo` and not the internal `safeops`.
 4. Optional: in the `sarawak-medchain` Worker, set its build watch path to `frontend/*`, so
    SafeChain commits stop triggering MedChain builds.
 

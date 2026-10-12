@@ -41,7 +41,7 @@ export function SessionsPanel({
             {f}
           </button>
         ))}
-        {runner && <Button size="sm" className="ml-auto" icon={<Plus size={13} />} onClick={onOpenNew}>New session</Button>}
+        {runner && <Button size="sm" className="ml-auto" icon={<Plus size={13} />} onClick={onOpenNew}>New Session</Button>}
       </div>
 
       <Card>

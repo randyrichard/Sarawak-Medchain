@@ -53,13 +53,13 @@ export function NewActionDialog({ open, onClose, onCreated }: { open: boolean; o
       error={error}
       open={open}
       onClose={onClose}
-      title="New corrective action"
+      title="New Corrective Action"
       description="For findings outside an incident — audits, inspections, management of change."
       width="max-w-lg"
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button loading={busy} onClick={() => void submit()}>Create & assign</Button>
+          <Button loading={busy} onClick={() => void submit()}>Create & Assign</Button>
         </>
       }
     >

@@ -132,7 +132,7 @@ export function SitesSection() {
                 disabled={allowance.atLimit}
                 title={allowance.atLimit ? siteLimitNote(allowance, planLabel) : undefined}
               >
-                New site
+                New Site
               </Button>
             </div>
           )}
@@ -221,7 +221,7 @@ export function SitesSection() {
       <Dialog
         open={dialog.open}
         onClose={() => setDialog({ open: false, editing: null })}
-        title={dialog.editing ? `Edit ${dialog.editing.name}` : 'New site'}
+        title={dialog.editing ? `Edit ${dialog.editing.name}` : 'New Site'}
         description="Sites scope incidents, permits, equipment and people."
         width="max-w-lg"
         footer={(
@@ -230,7 +230,7 @@ export function SitesSection() {
               Cancel
             </Button>
             <Button onClick={save} disabled={saving || !draft.name.trim()}>
-              {saving ? 'Saving…' : dialog.editing ? 'Save changes' : 'Create site'}
+              {saving ? 'Saving…' : dialog.editing ? 'Save Changes' : 'Create Site'}
             </Button>
           </div>
         )}

@@ -17,7 +17,7 @@ import { StatusPill } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { uuid } from '@/lib/uuid'
 
-const STEPS = ['What happened', 'Where & who', 'Details & evidence', 'Review & sign'] as const
+const STEPS = ['What Happened', 'Where & Who', 'Details & Evidence', 'Review & Sign'] as const
 
 interface Draft {
   step: number
@@ -79,7 +79,7 @@ const localNow = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60
 const inFuture = (local: string) => !!local && new Date(local).getTime() > Date.now() + 15 * 60_000
 
 export function ReportIncidentPage() {
-  usePageTitle('Report an incident')
+  usePageTitle('Report an Incident')
   const { user } = useAuth()
   const { company, sites } = useOrg()
   const actor = useActor()
@@ -274,9 +274,9 @@ export function ReportIncidentPage() {
           account and sends on its own next time SafeChain is open with a connection.
         </p>
         <div className="mt-6 flex flex-wrap gap-2">
-          <LinkButton to="/incidents" size="lg">Back to incidents</LinkButton>
+          <LinkButton to="/incidents" size="lg">Back to Incidents</LinkButton>
           <LinkButton to="/incidents/new" variant="secondary" size="lg" onClick={() => setQueued(false)}>
-            Report another
+            Report Another
           </LinkButton>
         </div>
       </div>
@@ -288,13 +288,13 @@ export function ReportIncidentPage() {
       <Breadcrumbs
         items={[
           { label: 'Incidents', to: '/incidents' },
-          { label: 'Report an incident' },
+          { label: 'Report an Incident' },
         ]}
       />
 
       <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-ink">Report an incident</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-ink">Report an Incident</h1>
           <p className="mt-1 text-sm text-ink-2">Four short steps — most reports take under three minutes.</p>
         </div>
         <span className="text-2xs text-muted" aria-live="polite">
@@ -320,7 +320,7 @@ export function ReportIncidentPage() {
               setResumeAvailable(false)
             }}
           >
-            Resume where you left off
+            Resume Where You Left Off
           </button>
           {' '}or dismiss to start fresh.
         </Alert>
@@ -484,7 +484,7 @@ export function ReportIncidentPage() {
                   variant="ghost" size="sm" icon={<UserPlus size={13} />}
                   onClick={() => patch({ peopleInvolved: [...draft.peopleInvolved, { name: '', role: 'Employee' }] })}
                 >
-                  Add person
+                  Add Person
                 </Button>
               </div>
               {draft.peopleInvolved.length === 0 && <p className="text-xs text-muted">None added — that's fine for hazards and near misses.</p>}
@@ -711,7 +711,7 @@ export function ReportIncidentPage() {
             </Button>
           ) : (
             <Button onClick={() => (stepValid ? void submit() : setTouchedNext(true))} loading={submitting} icon={<Send size={14} />}>
-              Submit report
+              Submit Report
             </Button>
           )}
         </div>

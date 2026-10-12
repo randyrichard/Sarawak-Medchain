@@ -73,7 +73,7 @@ export function ManHoursDialog({
     <Dialog
       open={open}
       onClose={onClose}
-      title="Record man-hours"
+      title="Record Man-Hours"
       description="Total hours worked at the site each month, employees and contractors together - from payroll or timesheets. Leave a month blank to use the headcount estimate."
       width="max-w-lg"
       error={error}

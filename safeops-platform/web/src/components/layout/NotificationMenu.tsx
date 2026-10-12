@@ -63,7 +63,7 @@ export function NotificationMenu() {
           // A menu item like the rest, so the arrow keys reach it: in a menu, Tab closes
           // the menu rather than moving to the next button.
           <button type="button" role="menuitem" tabIndex={-1} onClick={markAll} className="inline-flex rounded focus-visible:outline-none focus:underline items-center gap-1 text-2xs font-semibold text-accent hover:underline">
-            <CheckCheck size={12} aria-hidden /> Mark all read
+            <CheckCheck size={12} aria-hidden /> Mark All Read
           </button>
         )}
       </div>
@@ -104,7 +104,7 @@ export function NotificationMenu() {
       )}
       <DropdownSeparator />
       <DropdownItem onSelect={() => navigate('/notifications')}>
-        <span className="w-full text-center text-xs font-semibold text-accent">View all notifications</span>
+        <span className="w-full text-center text-xs font-semibold text-accent">View All Notifications</span>
       </DropdownItem>
     </Dropdown>
   )

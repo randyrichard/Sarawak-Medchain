@@ -178,7 +178,7 @@ export function SuggestSelect({
             className="text-2xs font-semibold text-accent hover:underline"
             onClick={() => { setTyping(false); onChange('') }}
           >
-            Choose from the list instead
+            Choose From the List Instead
           </button>
         )}
       </div>

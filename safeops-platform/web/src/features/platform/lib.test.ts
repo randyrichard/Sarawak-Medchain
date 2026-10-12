@@ -52,7 +52,7 @@ describe('status badges', () => {
   it('names every subscription state a company can hold', () => {
     expect(subscriptionBadge('active').label).toBe('Paying')
     expect(subscriptionBadge('trial').label).toBe('Trial')
-    expect(subscriptionBadge('past_due').label).toBe('Past due')
+    expect(subscriptionBadge('past_due').label).toBe('Past Due')
     expect(subscriptionBadge('past_due').tone).toBe('warning')
     expect(subscriptionBadge('cancelled').label).toBe('Cancelled')
   })

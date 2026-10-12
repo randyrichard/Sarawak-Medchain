@@ -35,7 +35,7 @@ async function fillAndSubmit(files: File[] = []) {
   fireEvent.change(screen.getByLabelText(/What happened/), { target: { value: 'Unsecured plank on the scaffold.' } })
   fireEvent.change(screen.getByLabelText(/Where was it/), { target: { value: 'Level 3 walkway' } })
   if (files.length) fireEvent.change(document.querySelector('input[type=file]')!, { target: { files } })
-  fireEvent.click(screen.getByRole('button', { name: /Submit near miss/ }))
+  fireEvent.click(screen.getByRole('button', { name: /Submit Near Miss/ }))
 }
 
 describe('ReportNearMissPage', () => {

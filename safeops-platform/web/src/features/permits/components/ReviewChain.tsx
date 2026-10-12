@@ -41,9 +41,9 @@ const ORDER = [
 const LABEL: Record<string, string> = {
   draft: 'Draft',
   submitted: 'Submitted',
-  supervisor_review: 'Supervisor review',
-  hse_review: 'HSE review',
-  area_authority: 'Area authority',
+  supervisor_review: 'Supervisor Review',
+  hse_review: 'HSE Review',
+  area_authority: 'Area Authority',
   approved: 'Approved',
   active: 'Active',
   closed: 'Closed',
@@ -192,19 +192,19 @@ export function ReviewChain({
         <div className="mt-3 flex flex-wrap gap-2">
           {canSignNow && (
             <Button size="sm" icon={<Check size={12} />} loading={busy} onClick={() => setSignOpen(true)}>
-              {canEnterChain ? 'Start review' : `Sign ${current?.label.toLowerCase()}`}
+              {canEnterChain ? 'Start Review' : `Sign ${current?.label.toLowerCase()}`}
             </Button>
           )}
           <Button size="sm" variant="secondary" icon={<Undo2 size={12} />} loading={busy}
             onClick={() => setReturnOpen(true)}>
-            Return to applicant
+            Return to Applicant
           </Button>
         </div>
       )}
 
       <StatementDialog
         open={signOpen}
-        title={canEnterChain ? 'Start the review chain' : `Sign ${current?.label ?? 'this stage'}`}
+        title={canEnterChain ? 'Start the Review Chain' : `Sign ${current?.label ?? 'this stage'}`}
         description={canEnterChain
           ? 'The permit moves to supervisor review.'
           : 'Record what you checked. This is kept against your name on the permit.'}
@@ -216,7 +216,7 @@ export function ReviewChain({
       />
       <StatementDialog
         open={returnOpen}
-        title="Return to the applicant"
+        title="Return to the Applicant"
         description="The permit goes back to draft and every approval signature so far is voided — the chain starts again."
         placeholder="The method statement is missing the lift plan…"
         confirmLabel="Return"

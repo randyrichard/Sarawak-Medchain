@@ -116,11 +116,11 @@ export function MaintenancePanel({
                   {w.status === 'open' && (
                     <Button size="sm" variant="ghost" loading={busy === w.id}
                       onClick={() => void start(w)}>
-                      Start work
+                      Start Work
                     </Button>
                   )}
                   <Button size="sm" variant="secondary" onClick={() => setClosing(w)}>
-                    Close out
+                    Close Out
                   </Button>
                 </div>
               )}
@@ -132,7 +132,7 @@ export function MaintenancePanel({
       {manage && (
         <Button size="sm" variant="secondary" icon={<Plus size={11} />} className="mt-2"
           onClick={() => setRaiseOpen(true)}>
-          Raise work order
+          Raise Work Order
         </Button>
       )}
 
@@ -198,7 +198,7 @@ function RaiseDialog({
   }
 
   return (
-    <Dialog open={open} onClose={onClose} title="Raise a work order">
+    <Dialog open={open} onClose={onClose} title="Raise a Work Order">
       <div className="space-y-3">
         {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
 
@@ -254,7 +254,7 @@ function RaiseDialog({
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button onClick={() => void submit()} loading={busy} disabled={!description.trim()}>
-            Raise work order
+            Raise Work Order
           </Button>
         </div>
       </div>
@@ -342,7 +342,7 @@ function CloseOutDialog({
           <Button variant="secondary" onClick={onClose}>Back</Button>
           <Button onClick={() => void submit()} loading={busy}
             disabled={!cancel && !closingNote.trim()}>
-            {cancel ? 'Cancel work order' : 'Complete work order'}
+            {cancel ? 'Cancel Work Order' : 'Complete Work Order'}
           </Button>
         </div>
       </div>

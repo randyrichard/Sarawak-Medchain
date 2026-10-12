@@ -164,7 +164,7 @@ export function ProjectsSection() {
           title="Projects"
           subtitle="A body of work, holding the sites it runs. Cancel rather than delete — the sites and their records stay."
           right={(
-            <Button size="sm" icon={<Plus size={14} />} onClick={openNew}>New project</Button>
+            <Button size="sm" icon={<Plus size={14} />} onClick={openNew}>New Project</Button>
           )}
         />
         <CardBody className="space-y-3">
@@ -186,7 +186,7 @@ export function ProjectsSection() {
             <EmptyState
               icon={Briefcase}
               title="No projects yet"
-              action={<Button size="sm" icon={<Plus size={14} />} onClick={openNew}>New project</Button>}
+              action={<Button size="sm" icon={<Plus size={14} />} onClick={openNew}>New Project</Button>}
             >
               {/*
                 Says what a project is for and what it costs to skip. Sites work perfectly
@@ -256,7 +256,7 @@ export function ProjectsSection() {
       <Dialog
         open={dialog.open}
         onClose={() => setDialog({ open: false, editing: null })}
-        title={dialog.editing ? `Edit ${dialog.editing.name}` : 'New project'}
+        title={dialog.editing ? `Edit ${dialog.editing.name}` : 'New Project'}
         description="A project groups the sites it runs. Everything here can be changed later."
         width="max-w-lg"
         footer={(
@@ -265,7 +265,7 @@ export function ProjectsSection() {
               Cancel
             </Button>
             <Button loading={saving} disabled={!draft.name.trim()} onClick={() => void save()}>
-              {dialog.editing ? 'Save changes' : 'Create project'}
+              {dialog.editing ? 'Save Changes' : 'Create Project'}
             </Button>
           </>
         )}

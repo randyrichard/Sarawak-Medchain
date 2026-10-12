@@ -61,12 +61,12 @@ export function AuditsPage() {
   }
 
   const KPIS: { label: string; value: string | number | undefined; tone?: string }[] = [
-    { label: 'Audit readiness', value: stats !== null ? `${stats.readiness}` : undefined, tone: stats ? scoreColor(stats.readiness) : undefined },
+    { label: 'Audit Readiness', value: stats !== null ? `${stats.readiness}` : undefined, tone: stats ? scoreColor(stats.readiness) : undefined },
     { label: 'Compliance', value: stats !== null ? `${stats.compliancePct}%` : undefined, tone: stats && stats.compliancePct < 85 ? 'var(--serious)' : 'var(--good)' },
     { label: 'Upcoming (30d)', value: stats?.upcoming30d },
-    { label: 'Open findings', value: stats?.openFindings, tone: stats && stats.openFindings > 0 ? 'var(--warning)' : 'var(--good)' },
-    { label: 'Critical findings', value: stats?.criticalFindings, tone: stats && stats.criticalFindings > 0 ? 'var(--critical)' : 'var(--good)' },
-    { label: 'Avg. audit score', value: stats?.avgScore !== null && stats !== null ? `${stats.avgScore}%` : stats === null ? undefined : '—' },
+    { label: 'Open Findings', value: stats?.openFindings, tone: stats && stats.openFindings > 0 ? 'var(--warning)' : 'var(--good)' },
+    { label: 'Critical Findings', value: stats?.criticalFindings, tone: stats && stats.criticalFindings > 0 ? 'var(--critical)' : 'var(--good)' },
+    { label: 'Avg. Audit Score', value: stats?.avgScore !== null && stats !== null ? `${stats.avgScore}%` : stats === null ? undefined : '—' },
   ]
 
   const viewTabs: TabItem<View>[] = [
@@ -80,9 +80,9 @@ export function AuditsPage() {
   return (
     <>
       <PageHeader
-        title="Audits & compliance"
+        title="Audits & Compliance"
         subtitle="Planned audits, what they found, and the legal requirements your sites must meet. Findings become corrective actions."
-        right={manage ? <Button icon={<Plus size={15} />} onClick={() => setPlanOpen(true)}>Plan audit</Button> : undefined}
+        right={manage ? <Button icon={<Plus size={15} />} onClick={() => setPlanOpen(true)}>Plan Audit</Button> : undefined}
       />
 
       <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
@@ -186,7 +186,7 @@ function AuditsList({
                   </span>
                 )}
                 {a.openFindings > 0 && <Badge tone={a.criticalFindings > 0 ? 'critical' : 'warning'}>{a.openFindings} open finding{a.openFindings > 1 ? 's' : ''}</Badge>}
-                <StatusPill kind={AUDIT_STATUS_META[a.status].kind} label={a.overdue ? 'Overdue to start' : a.status} />
+                <StatusPill kind={AUDIT_STATUS_META[a.status].kind} label={a.overdue ? 'Overdue to Start' : a.status} />
               </button>
             </li>
           ))}

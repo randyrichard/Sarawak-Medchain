@@ -81,7 +81,7 @@ export function IntegrationsSection() {
                     ) : c.status === 'available' ? (
                       <Button size="sm" onClick={() => setConfigFor(c)}>Connect</Button>
                     ) : (
-                      <Button size="sm" variant="secondary" disabled>Notify me</Button>
+                      <Button size="sm" variant="secondary" disabled>Notify Me</Button>
                     )}
                   </div>
                 </Card>

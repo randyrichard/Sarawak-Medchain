@@ -153,7 +153,7 @@ export function PpeChecklist({
         <div className="mt-2.5 flex flex-wrap items-center gap-2">
           {canAcknowledge ? (
             <Button size="sm" icon={<Check size={12} />} loading={busy} onClick={() => void acknowledge()}>
-              Confirm this PPE is on site
+              Confirm This PPE Is on Site
             </Button>
           ) : (
             <p className="text-2xs text-muted">Awaiting the issuer's confirmation.</p>

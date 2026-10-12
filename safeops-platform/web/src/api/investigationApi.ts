@@ -12,9 +12,9 @@ export type IncidentPersonRole = 'witness' | 'injured' | 'involved' | 'first_aid
 
 export const PERSON_ROLE_LABEL: Record<IncidentPersonRole, string> = {
   witness: 'Witness',
-  injured: 'Injured person',
+  injured: 'Injured Person',
   involved: 'Involved',
-  first_aider: 'First aider',
+  first_aider: 'First Aider',
 }
 
 export type IncidentLinkKind =
@@ -23,8 +23,8 @@ export type IncidentLinkKind =
 export const LINK_KIND_LABEL: Record<IncidentLinkKind, string> = {
   permit: 'Permit',
   employee: 'Employee',
-  contractor: 'Contractor company',
-  contractor_worker: 'Contractor worker',
+  contractor: 'Contractor Company',
+  contractor_worker: 'Contractor Worker',
   visitor: 'Visitor',
   asset: 'Equipment',
 }

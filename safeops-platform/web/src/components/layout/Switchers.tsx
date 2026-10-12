@@ -165,7 +165,7 @@ export function SiteSwitcher() {
         open={open}
       />
     )}>
-      <DropdownLabel>Site scope</DropdownLabel>
+      <DropdownLabel>Site Scope</DropdownLabel>
       {sites.length > 1 && (
         <DropdownItem onSelect={() => switchSite(null)}>
           <span className="flex w-full items-center justify-between">

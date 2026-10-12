@@ -11,8 +11,8 @@ export const COMPETENCY_META: Record<CompetencyStatus, { color: string; label: s
   competent: { color: 'var(--good)', label: 'Competent' },
   expiring: { color: 'var(--warning)', label: 'Expiring' },
   expired: { color: 'var(--critical)', label: 'Expired' },
-  missing: { color: 'var(--critical)', label: 'Not trained' },
-  na: { color: 'var(--grid)', label: 'Not required' },
+  missing: { color: 'var(--critical)', label: 'Not Trained' },
+  na: { color: 'var(--grid)', label: 'Not Required' },
 }
 
 export const LEVEL_META: Record<CompetencyLevel, { kind: StatusKind; color: string }> = {

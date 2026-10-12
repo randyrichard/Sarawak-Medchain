@@ -89,7 +89,7 @@ export function Topbar({ menuButton }: { menuButton: ReactNode }) {
           <DropdownSeparator />
           {/* Words only, like the menu beside it: an icon on every line said nothing the line did not. */}
           <DropdownItem onSelect={() => navigate('/account')}>
-            My account
+            My Account
           </DropdownItem>
           <DropdownItem onSelect={() => navigate('/account#preferences')}>
             Preferences
@@ -99,15 +99,15 @@ export function Topbar({ menuButton }: { menuButton: ReactNode }) {
           </DropdownItem>
           {/* Where GitHub and Gmail keep it: discoverable for people who never press "?". */}
           <DropdownItem onSelect={openShortcuts}>
-            Keyboard shortcuts
+            Keyboard Shortcuts
           </DropdownItem>
           <DropdownItem onSelect={() => navigate('/design')}>
-            About this build
+            About This Build
           </DropdownItem>
           <DropdownSeparator />
           <DropdownLabel>Session</DropdownLabel>
           <DropdownItem danger onSelect={() => void logout()}>
-            Sign out
+            Sign Out
           </DropdownItem>
         </Dropdown>
       </div>

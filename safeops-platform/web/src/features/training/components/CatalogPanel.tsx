@@ -28,7 +28,7 @@ export function CatalogPanel({
     <>
       <div className="mb-3 flex items-center justify-between">
         <p className="text-xs text-muted">{courses.length} programs in the catalog</p>
-        {manage && <Button size="sm" icon={<Plus size={13} />} onClick={() => setNewOpen(true)}>Add course</Button>}
+        {manage && <Button size="sm" icon={<Plus size={13} />} onClick={() => setNewOpen(true)}>Add Course</Button>}
       </div>
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">

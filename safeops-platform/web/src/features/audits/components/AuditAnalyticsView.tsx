@@ -16,7 +16,7 @@ export function AuditAnalyticsView({ stats, sites }: { stats: AuditStats | null;
   return (
     <div className="grid gap-4 xl:grid-cols-2">
       <Card>
-        <CardHeader title="Most common findings" subtitle="Top non-conformity categories across all audits — fix the pattern, not the instance" />
+        <CardHeader title="Most Common Findings" subtitle="Top non-conformity categories across all audits — fix the pattern, not the instance" />
         <CardBody>
           {stats.findingsByCategory.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted">No findings recorded yet.</p>
@@ -28,7 +28,7 @@ export function AuditAnalyticsView({ stats, sites }: { stats: AuditStats | null;
       </Card>
 
       <Card>
-        <CardHeader title="Audits & findings trend" subtitle="Completed audits vs findings raised, trailing 6 months" />
+        <CardHeader title="Audits & Findings Trend" subtitle="Completed audits vs findings raised, trailing 6 months" />
         <CardBody>
           <ChartBlock legend={<ChartLegend items={[{ color: 'var(--s2)', label: 'Audits completed' }, { color: 'var(--s3)', label: 'Findings raised' }]} />}>
             <GroupedBars
@@ -44,7 +44,7 @@ export function AuditAnalyticsView({ stats, sites }: { stats: AuditStats | null;
       </Card>
 
       <Card>
-        <CardHeader title="Open findings by site" subtitle="Where the audit debt sits" />
+        <CardHeader title="Open Findings by Site" subtitle="Where the audit debt sits" />
         <CardBody>
           {stats.bySiteOpenFindings.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted">No open findings — clean slate.</p>
@@ -59,7 +59,7 @@ export function AuditAnalyticsView({ stats, sites }: { stats: AuditStats | null;
       </Card>
 
       <Card>
-        <CardHeader title="Open findings by department" subtitle="Department performance — who clears their findings" />
+        <CardHeader title="Open Findings by Department" subtitle="Department performance — who clears their findings" />
         <CardBody>
           {stats.byDeptOpenFindings.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted">No open findings by department.</p>

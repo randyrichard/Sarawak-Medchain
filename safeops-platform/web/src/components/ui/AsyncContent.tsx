@@ -75,7 +75,7 @@ export function ErrorState({
           icon={<RotateCw size={13} aria-hidden />}
           className={cn(!compact && 'mt-4')}
         >
-          Try again
+          Try Again
         </Button>
       )}
     </div>

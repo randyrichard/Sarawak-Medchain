@@ -57,7 +57,7 @@ export function EditContractorDialog({
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={busy}>Cancel</Button>
-          <Button onClick={() => void submit()} loading={busy} disabled={!!problem}>Save changes</Button>
+          <Button onClick={() => void submit()} loading={busy} disabled={!!problem}>Save Changes</Button>
         </>
       }
     >

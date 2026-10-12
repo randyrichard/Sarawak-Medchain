@@ -9,7 +9,7 @@ import type { Capability } from '@/features/permissions/permissions'
  * starter to a page their role cannot open is worse than no guide: it is the first thing
  * they try, and it tells them they are doing it wrong.
  *
- * Words in **double asterisks** are the names on the screen - a button, a tab, a menu item -
+ * Words in **Double Asterisks** are the names on the screen - a button, a tab, a menu item -
  * and are shown in bold, so they can be matched against what is in front of you.
  */
 
@@ -31,58 +31,58 @@ export const ROLE_GUIDE: Record<Role, RoleGuide> = {
   employee: {
     summary: 'You report what you see, and you complete the corrective actions assigned to you.',
     tasks: [
-      { title: 'Report a near miss', detail: 'Something that could have hurt someone but did not. Two questions, about thirty seconds.', to: '/near-miss', capability: 'reports:submit' },
-      { title: 'Report an incident', detail: 'Someone hurt, something damaged, a spill or a fire. A short form in four steps.', to: '/incidents/new', capability: 'reports:submit' },
-      { title: 'Work on your corrective actions', detail: 'Start the work, add a note or photo, then mark it complete. A manager checks it.', to: '/actions', capability: 'actions:view' },
-      { title: 'Check the permits near you', detail: 'See what high-risk work is going on before you start your own.', to: '/permits', capability: 'permits:view' },
+      { title: 'Report a Near Miss', detail: 'Something that could have hurt someone but did not. Two questions, about thirty seconds.', to: '/near-miss', capability: 'reports:submit' },
+      { title: 'Report an Incident', detail: 'Someone hurt, something damaged, a spill or a fire. A short form in four steps.', to: '/incidents/new', capability: 'reports:submit' },
+      { title: 'Work on Your Corrective Actions', detail: 'Start the work, add a note or photo, then mark it complete. A manager checks it.', to: '/actions', capability: 'actions:view' },
+      { title: 'Check the Permits Near You', detail: 'See what high-risk work is going on before you start your own.', to: '/permits', capability: 'permits:view' },
     ],
   },
   supervisor: {
     summary: 'You run the work on the floor: permits, the daily briefing, and who is on site.',
     tasks: [
-      { title: 'Sign the permits waiting for you', detail: 'The first signature in the approval chain, Supervisor review, is yours.', to: '/permits?status=awaiting', capability: 'permits:view' },
-      { title: 'Record the toolbox meeting', detail: 'The topic, the hazards talked about, and who attended.', to: '/toolbox', capability: 'toolbox:view' },
-      { title: 'Check visitors in and out', detail: 'The live board shows who is on site right now, for a muster or an evacuation.', to: '/visitors', capability: 'visitors:view' },
-      { title: 'Chase overdue corrective actions', detail: 'Start with the ones already late on your site.', to: '/actions?bucket=overdue', capability: 'actions:view' },
-      { title: 'Report near misses and incidents', detail: 'The same quick forms everyone uses.', to: '/near-miss', capability: 'reports:submit' },
+      { title: 'Sign the Permits Waiting for You', detail: 'The first signature in the approval chain, Supervisor review, is yours.', to: '/permits?status=awaiting', capability: 'permits:view' },
+      { title: 'Record the Toolbox Meeting', detail: 'The topic, the hazards talked about, and who attended.', to: '/toolbox', capability: 'toolbox:view' },
+      { title: 'Check Visitors In and Out', detail: 'The live board shows who is on site right now, for a muster or an evacuation.', to: '/visitors', capability: 'visitors:view' },
+      { title: 'Chase Overdue Corrective Actions', detail: 'Start with the ones already late on your site.', to: '/actions?bucket=overdue', capability: 'actions:view' },
+      { title: 'Report Near Misses and Incidents', detail: 'The same quick forms everyone uses.', to: '/near-miss', capability: 'reports:submit' },
     ],
   },
   safety_officer: {
     summary: 'You run safety day to day: reviewing reports, investigating, and checking the controls work.',
     tasks: [
-      { title: 'Review new reports', detail: 'Incidents lists the most serious first. Open one and do the next step shown at the top.', to: '/incidents', capability: 'incidents:view' },
-      { title: 'Investigate and raise corrective actions', detail: 'Find the root cause, then give each fix an owner and a due date.', to: '/incidents', capability: 'incidents:manage' },
-      { title: 'Sign permits at HSE review', detail: 'Check the hazards, controls and gas tests before you sign.', to: '/permits?status=awaiting', capability: 'permits:view' },
-      { title: 'Run inspections', detail: 'Any item that fails becomes a corrective action on its own.', to: '/assets?view=inspections', capability: 'equipment:view' },
-      { title: 'Run audits and training sessions', detail: 'Findings become corrective actions; passing a session issues a certificate.', to: '/audits', capability: 'compliance:manage' },
+      { title: 'Review New Reports', detail: 'Incidents lists the most serious first. Open one and do the next step shown at the top.', to: '/incidents', capability: 'incidents:view' },
+      { title: 'Investigate and Raise Corrective Actions', detail: 'Find the root cause, then give each fix an owner and a due date.', to: '/incidents', capability: 'incidents:manage' },
+      { title: 'Sign Permits at HSE Review', detail: 'Check the hazards, controls and gas tests before you sign.', to: '/permits?status=awaiting', capability: 'permits:view' },
+      { title: 'Run Inspections', detail: 'Any item that fails becomes a corrective action on its own.', to: '/assets?view=inspections', capability: 'equipment:view' },
+      { title: 'Run Audits and Training Sessions', detail: 'Findings become corrective actions; passing a session issues a certificate.', to: '/audits', capability: 'compliance:manage' },
     ],
   },
   hse_manager: {
     summary: 'You own the safety system: the sign-offs, the figures and the compliance record.',
     tasks: [
-      { title: 'Start each day on Home', detail: 'What needs attention, most urgent first.', to: '/', capability: 'dashboard:view' },
-      { title: 'Verify finished corrective actions', detail: 'Only a manager can sign one off, so the person who did the work never checks their own.', to: '/actions?bucket=verification', capability: 'actions:manage' },
-      { title: 'Approve permits', detail: 'You can sign at every stage of the approval chain.', to: '/permits?status=awaiting', capability: 'permits:view' },
-      { title: 'Record hours worked each month', detail: 'Injury rates are worked out from hours worked. Without them they cannot be calculated.', to: '/performance', capability: 'analytics:view' },
-      { title: 'Plan audits and keep compliance current', detail: 'Legal requirements, documents and audits in one place.', to: '/audits', capability: 'compliance:manage' },
+      { title: 'Start Each Day on Home', detail: 'What needs attention, most urgent first.', to: '/', capability: 'dashboard:view' },
+      { title: 'Verify Finished Corrective Actions', detail: 'Only a manager can sign one off, so the person who did the work never checks their own.', to: '/actions?bucket=verification', capability: 'actions:manage' },
+      { title: 'Approve Permits', detail: 'You can sign at every stage of the approval chain.', to: '/permits?status=awaiting', capability: 'permits:view' },
+      { title: 'Record Hours Worked Each Month', detail: 'Injury rates are worked out from hours worked. Without them they cannot be calculated.', to: '/performance', capability: 'analytics:view' },
+      { title: 'Plan Audits and Keep Compliance Current', detail: 'Legal requirements, documents and audits in one place.', to: '/audits', capability: 'compliance:manage' },
     ],
   },
   admin: {
     summary: 'You set up the workspace and decide who can do what. You can also do everything an HSE manager does.',
     tasks: [
-      { title: 'Add your sites', detail: 'Plants, yards and offices. Everything else is filed against a site.', to: '/admin?s=sites', capability: 'settings:manage' },
-      { title: 'Invite your team', detail: 'Give each person the role that matches their job. Their menu follows from it.', to: '/admin?s=invitations', capability: 'settings:manage' },
-      { title: 'Check the security settings', detail: 'Password rules, two-step sign-in and how long a session lasts.', to: '/admin?s=security', capability: 'settings:manage' },
-      { title: 'Start each day on Home', detail: 'What needs attention, most urgent first.', to: '/', capability: 'dashboard:view' },
+      { title: 'Add Your Sites', detail: 'Plants, yards and offices. Everything else is filed against a site.', to: '/admin?s=sites', capability: 'settings:manage' },
+      { title: 'Invite Your Team', detail: 'Give each person the role that matches their job. Their menu follows from it.', to: '/admin?s=invitations', capability: 'settings:manage' },
+      { title: 'Check the Security Settings', detail: 'Password rules, two-step sign-in and how long a session lasts.', to: '/admin?s=security', capability: 'settings:manage' },
+      { title: 'Start Each Day on Home', detail: 'What needs attention, most urgent first.', to: '/', capability: 'dashboard:view' },
     ],
   },
   ceo: {
     summary: 'You see the safety picture across the company. You can read everything here and change nothing, apart from reporting what you see.',
     tasks: [
       { title: 'Read Home', detail: 'A one-line verdict, then the eight figures that matter.', to: '/', capability: 'dashboard:view' },
-      { title: 'Follow the injury rates', detail: 'Trends over months, and every site compared on the same rates.', to: '/performance', capability: 'analytics:view' },
-      { title: 'Read the reports', detail: 'Generated and scheduled reports for the board and for DOSH.', to: '/reports', capability: 'reports:view' },
-      { title: 'Sign permits as area authority', detail: 'Some permits need the plant owner\'s signature at the last stage.', to: '/permits?status=awaiting', capability: 'permits:view' },
+      { title: 'Follow the Injury Rates', detail: 'Trends over months, and every site compared on the same rates.', to: '/performance', capability: 'analytics:view' },
+      { title: 'Read the Reports', detail: 'Generated and scheduled reports for the board and for DOSH.', to: '/reports', capability: 'reports:view' },
+      { title: 'Sign Permits as Area Authority', detail: 'Some permits need the plant owner\'s signature at the last stage.', to: '/permits?status=awaiting', capability: 'permits:view' },
     ],
   },
 }
@@ -107,10 +107,10 @@ export const HOW_TO: HowTo[] = [
     capability: 'reports:submit',
     to: '/near-miss',
     steps: [
-      'Open **Report a near miss** in the menu.',
+      'Open **Report a Near Miss** in the menu.',
       'Say what you saw, in your own words, and where it was.',
       'If it helps, tap a category and add a photo.',
-      'Press **Submit near miss**. An HSE officer reviews every one.',
+      'Press **Submit Near Miss**. An HSE officer reviews every one.',
     ],
     note: 'No signal? The report is kept on your phone and sent as soon as there is a connection.',
   },
@@ -120,9 +120,9 @@ export const HOW_TO: HowTo[] = [
     capability: 'reports:submit',
     to: '/incidents/new',
     steps: [
-      'Go to **Incidents** and press **Report incident**.',
-      'Choose what happened, then fill in the four short steps: **What happened**, **Where & who**, **Details & evidence**, **Review & sign**.',
-      'Press **Submit report**. You can follow it under **Incidents**.',
+      'Go to **Incidents** and press **Report Incident**.',
+      'Choose what happened, then fill in the four short steps: **What Happened**, **Where & Who**, **Details & Evidence**, **Review & Sign**.',
+      'Press **Submit Report**. You can follow it under **Incidents**.',
     ],
     note: 'If someone is hurt, get help first. Report afterwards.',
   },
@@ -132,10 +132,10 @@ export const HOW_TO: HowTo[] = [
     capability: 'actions:view',
     to: '/actions',
     steps: [
-      'Open **Corrective actions**, or the notification that told you about it.',
-      'Open the action and press **Start work**.',
+      'Open **Corrective Actions**, or the notification that told you about it.',
+      'Open the action and press **Start Work**.',
       'When the work is done, press **Complete…**, say what was done and add a photo if one is asked for.',
-      'A manager checks it and presses **Verify & sign off**, or sends it back with a reason.',
+      'A manager checks it and presses **Verify & Sign Off**, or sends it back with a reason.',
     ],
   },
   {
@@ -144,11 +144,11 @@ export const HOW_TO: HowTo[] = [
     capability: 'permits:view',
     to: '/permits',
     steps: [
-      'Go to **Permits to work** and press **Request permit**.',
-      'Choose the type of work, the site, the place and the times, then press **Create draft**.',
+      'Go to **Permits to Work** and press **Request Permit**.',
+      'Choose the type of work, the site, the place and the times, then press **Create Draft**.',
       'In the permit, fill in the hazards, the protective equipment and the people doing the work.',
-      'Press **Sign & submit for approval**.',
-      'It is signed in turn at **Supervisor review**, **HSE review** and **Area authority**. Work may start only once it is approved.',
+      'Press **Sign & Submit for Approval**.',
+      'It is signed in turn at **Supervisor Review**, **HSE Review** and **Area Authority**. Work may start only once it is approved.',
     ],
   },
   {
@@ -159,9 +159,9 @@ export const HOW_TO: HowTo[] = [
     forRoles: ['supervisor', 'safety_officer', 'hse_manager', 'admin', 'ceo'],
     to: '/permits?status=awaiting',
     steps: [
-      'Go to **Permits to work** and choose **Awaiting approval**.',
+      'Go to **Permits to Work** and choose **Awaiting Approval**.',
       'Open the permit. If it is your turn, a **Sign** button shows in the approval chain.',
-      'Check the hazards, the controls and any gas test, then sign - or press **Return to applicant** and say what is missing.',
+      'Check the hazards, the controls and any gas test, then sign - or press **Return to Applicant** and say what is missing.',
     ],
   },
   {
@@ -170,10 +170,10 @@ export const HOW_TO: HowTo[] = [
     capability: 'equipment:view',
     to: '/assets?view=inspections',
     steps: [
-      'Go to **Assets & inspections** and open the **Inspections** tab.',
+      'Go to **Assets & Inspections** and open the **Inspections** tab.',
       'Press **Run** beside the inspection that is due.',
       'Answer every item on the checklist and add photos where they help.',
-      'Press **Submit inspection**. Every item that failed becomes a corrective action.',
+      'Press **Submit Inspection**. Every item that failed becomes a corrective action.',
     ],
     note: 'No **Run** button? The inspection is assigned to someone else. A safety officer or manager can run any of them.',
   },
@@ -183,10 +183,10 @@ export const HOW_TO: HowTo[] = [
     capability: 'toolbox:view',
     to: '/toolbox',
     steps: [
-      'Go to **Toolbox meetings** and press **Record meeting**.',
+      'Go to **Toolbox Meetings** and press **Record Meeting**.',
       'Fill in the site, when it was held, who led it and the topic.',
       'Add the hazards and controls you talked about, and how many people came from each organisation.',
-      'Press **Record meeting** to save it.',
+      'Press **Record Meeting** to save it.',
     ],
   },
   {
@@ -195,9 +195,9 @@ export const HOW_TO: HowTo[] = [
     capability: 'visitors:view',
     to: '/visitors',
     steps: [
-      'Go to **Visitors** and press **Register visitor**. Fill in their details and press **Pre-register**.',
-      'When they arrive, open them and press **Check in**. The site rules and the blacklist are checked at that moment.',
-      'When they leave, press **Check out**, so the live board stays right for an emergency.',
+      'Go to **Visitors** and press **Register Visitor**. Fill in their details and press **Pre-Register**.',
+      'When they arrive, open them and press **Check In**. The site rules and the blacklist are checked at that moment.',
+      'When they leave, press **Check Out**, so the live board stays right for an emergency.',
     ],
   },
   {
@@ -206,10 +206,10 @@ export const HOW_TO: HowTo[] = [
     capability: 'training:view',
     to: '/training?view=sessions',
     steps: [
-      'Go to **Training & competency** and press **New session**.',
-      'Choose the course, date and trainer, add the people attending, and press **Schedule session**.',
+      'Go to **Training & Competency** and press **New Session**.',
+      'Choose the course, date and trainer, add the people attending, and press **Schedule Session**.',
       'On the day, open **Sessions** and press **Run**. Mark who attended and who passed.',
-      'Press **Complete session & issue certificates**. Expiry reminders are sent on their own.',
+      'Press **Complete Session & Issue Certificates**. Expiry reminders are sent on their own.',
     ],
   },
   {
@@ -218,10 +218,10 @@ export const HOW_TO: HowTo[] = [
     capability: 'compliance:manage',
     to: '/audits',
     steps: [
-      'Go to **Audits & compliance** and press **Plan audit**. Choose the checklist, site and lead auditor, then press **Create audit**.',
-      'On the day, open the audit and press **Start audit**, then **Run checklist**.',
+      'Go to **Audits & Compliance** and press **Plan Audit**. Choose the checklist, site and lead auditor, then press **Create Audit**.',
+      'On the day, open the audit and press **Start Audit**, then **Run Checklist**.',
       'Answer every item. A failed item asks for details and becomes a finding with its own corrective action.',
-      'Press **Submit audit**. The audit can be closed once every finding\'s action is verified.',
+      'Press **Submit Audit**. The audit can be closed once every finding\'s action is verified.',
     ],
   },
   {

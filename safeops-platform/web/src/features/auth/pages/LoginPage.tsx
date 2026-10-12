@@ -67,7 +67,7 @@ export async function destination(from: string): Promise<string> {
 }
 
 export function LoginPage() {
-  usePageTitle('Sign in')
+  usePageTitle('Sign In')
   const { login, verifyMfa } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -125,7 +125,7 @@ export function LoginPage() {
   if (challenge) {
     return (
       <AuthLayout>
-        <h1 className="text-xl font-semibold tracking-tight text-ink">Enter your code</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-ink">Enter Your Code</h1>
         <p className="mt-1 text-sm text-ink-2">
           {useRecovery
             ? 'Enter one of the recovery codes you saved when you set up multi-factor sign-in.'
@@ -144,12 +144,12 @@ export function LoginPage() {
           />
           <Button type="submit" size="lg" loading={busy} icon={<ShieldCheck size={15} />} className="w-full"
             disabled={!code.trim()}>
-            Verify and sign in
+            Verify and Sign In
           </Button>
           <div className="flex items-center justify-between gap-3 text-xs">
             <button type="button" className="font-medium text-accent hover:text-ink"
               onClick={() => { setUseRecovery((v) => !v); setCode(''); setError(null) }}>
-              {useRecovery ? 'Use the authenticator app instead' : 'Lost your phone? Use a recovery code'}
+              {useRecovery ? 'Use the Authenticator App Instead' : 'Lost your phone? Use a recovery code'}
             </button>
             <button type="button" className="text-muted hover:text-ink"
               onClick={() => { setChallenge(null); setCode(''); setPassword(''); setError(null) }}>
@@ -175,7 +175,7 @@ export function LoginPage() {
 
   return (
     <AuthLayout>
-      <h1 className="text-xl font-semibold tracking-tight text-ink">Sign in</h1>
+      <h1 className="text-xl font-semibold tracking-tight text-ink">Sign In</h1>
       <p className="mt-1 text-sm text-ink-2">Welcome back. Your sites are waiting.</p>
 
       <form onSubmit={submit} className="mt-6 space-y-4" noValidate>
@@ -218,7 +218,7 @@ export function LoginPage() {
           </Link>
         </div>
         <Button type="submit" size="lg" loading={busy} icon={<LogIn size={15} />} className="w-full">
-          Sign in
+          Sign In
         </Button>
       </form>
 

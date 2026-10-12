@@ -95,13 +95,13 @@ export function NewAssetDialog({ open, onClose, onCreated }: { open: boolean; on
       error={error}
       open={open}
       onClose={onClose}
-      title="Register asset"
+      title="Register Asset"
       description="A QR label and first inspection are created automatically."
       width="max-w-lg"
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button loading={busy} onClick={() => void submit()}>Register & schedule</Button>
+          <Button loading={busy} onClick={() => void submit()}>Register & Schedule</Button>
         </>
       }
     >
@@ -112,7 +112,7 @@ export function NewAssetDialog({ open, onClose, onCreated }: { open: boolean; on
           fields each) are what working memory handles comfortably - Miller's law: people
           keep track of a handful of chunks, not a dozen loose items.
         */}
-        <FormSection title="What it is">
+        <FormSection title="What It Is">
           <Input label="Asset name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. CO₂ Extinguisher — Dock 2 pillar" />
           <div className="grid grid-cols-2 gap-x-3 gap-y-5">
             <Select label="Category" value={category} onChange={(e) => setCategory(e.target.value as AssetCategory)}>
@@ -139,7 +139,7 @@ export function NewAssetDialog({ open, onClose, onCreated }: { open: boolean; on
             <Input label="Model" value={model} onChange={(e) => setModel(e.target.value)} />
           </div>
         </FormSection>
-        <FormSection title="Where it is and who owns it">
+        <FormSection title="Where It Is and Who Owns It">
           <div className="grid grid-cols-2 gap-x-3 gap-y-5">
             <Select label="Site" required value={siteId} onChange={(e) => setSiteId(e.target.value)}>
               <option value="" disabled>Select…</option>
@@ -163,7 +163,7 @@ export function NewAssetDialog({ open, onClose, onCreated }: { open: boolean; on
             </Select>
           </div>
         </FormSection>
-        <FormSection title="Dates and assignment">
+        <FormSection title="Dates and Assignment">
           <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
             <Input label="Purchase date" type="date" value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)} />
             <Input label="Commission date" type="date" value={commissionDate} onChange={(e) => setCommissionDate(e.target.value)} />

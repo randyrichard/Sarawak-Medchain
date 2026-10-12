@@ -116,11 +116,11 @@ export function PlatformPage() {
   return (
     <>
       <PageHeader
-        title="SafeChain customers"
+        title="SafeChain Customers"
         subtitle="Every company on this deployment, and where new ones are created"
         right={(
           <Button icon={<Plus size={15} />} onClick={openNew} disabled={plans.length === 0}>
-            New customer
+            New Customer
           </Button>
         )}
       />
@@ -152,7 +152,7 @@ export function PlatformPage() {
                   icon={copied ? <Check size={12} /> : <Copy size={12} />}
                   onClick={copy}
                 >
-                  {copied ? 'Copied' : 'Copy link'}
+                  {copied ? 'Copied' : 'Copy Link'}
                 </Button>
               </div>
             )}
@@ -231,14 +231,14 @@ export function PlatformPage() {
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
-        title="New customer"
+        title="New Customer"
         description="Creates a workspace, one site and an administrator who is invited to set their own password."
         width="max-w-xl"
         footer={(
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>
             <Button onClick={submit} disabled={saving || !ready}>
-              {saving ? 'Creating…' : 'Create customer'}
+              {saving ? 'Creating…' : 'Create Customer'}
             </Button>
           </div>
         )}

@@ -50,7 +50,7 @@ export function CompetencyMatrix({
           className={cn('rounded-full border px-3 py-1 text-xs font-medium transition-colors coarse:min-h-11 coarse:px-4', gapsOnly ? 'bg-accent-soft text-ink' : 'text-ink-2 hover:text-ink')}
           style={gapsOnly ? { borderColor: 'var(--accent)' } : undefined}
         >
-          Gaps &amp; expiring only
+          Gaps &amp; Expiring Only
         </button>
         <div className="ml-auto flex items-center gap-3">
           <span className="hidden items-center gap-3 text-2xs text-muted sm:flex">

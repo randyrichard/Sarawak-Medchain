@@ -26,13 +26,13 @@ import { useUrlState } from '@/lib/useUrlState'
  */
 export const STATUS_CHIPS: { value: IncidentStatusFilter; label: string }[] = [
   { value: 'open', label: 'Open' },
-  { value: 'high_risk', label: 'High risk' },
+  { value: 'high_risk', label: 'High Risk' },
   { value: 'overdue', label: `Overdue (> ${OVERDUE_AFTER_DAYS}d)` },
   { value: 'all', label: 'All' },
 ]
 export const MORE_STATUSES: { value: IncidentStatusFilter; label: string }[] = [
-  { value: 'investigating', label: 'Investigation ongoing' },
-  { value: 'awaiting_review', label: 'Awaiting review' },
+  { value: 'investigating', label: 'Investigation Ongoing' },
+  { value: 'awaiting_review', label: 'Awaiting Review' },
   { value: 'closed', label: 'Closed' },
   { value: 'archived', label: 'Archived' },
 ]
@@ -108,7 +108,7 @@ export function IncidentsListPage() {
               <p className="mt-0.5 text-2xs text-muted">
                 <span className="font-mono">{i.number}</span> · {TYPE_LABEL[i.type]}
                 {i.highRisk && i.stage !== 'closed' && (
-                  <Badge tone="critical" className="ml-1.5">High risk</Badge>
+                  <Badge tone="critical" className="ml-1.5">High Risk</Badge>
                 )}
               </p>
             </div>
@@ -153,7 +153,7 @@ export function IncidentsListPage() {
     },
     {
       key: 'age',
-      header: 'Days open',
+      header: 'Days Open',
       sortValue: (i) => (i.stage === 'closed' ? null : daysOpen(i)),
       align: 'right',
       render: (i) => {
@@ -186,7 +186,7 @@ export function IncidentsListPage() {
         subtitle={`Every incident and near miss reported at your sites. ${openCount} open, most serious first. Open one to see or investigate it.`}
         right={
           <LinkButton icon={<Plus size={15} />} to="/incidents/new">
-            Report incident
+            Report Incident
           </LinkButton>
         }
       />
@@ -308,7 +308,7 @@ export function IncidentsListPage() {
                 title="No incidents match these filters"
                 action={
                   <LinkButton to="/incidents/new" size="sm" icon={<Plus size={14} />}>
-                    Report incident
+                    Report Incident
                   </LinkButton>
                 }
               >

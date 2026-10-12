@@ -101,7 +101,7 @@ export function PeoplePanel({
                       {r.source === 'visitor' && <BadgeCheck size={11} className="text-muted" />}
                       {r.name}
                       <Badge tone={r.role === 'injured' ? 'critical' : 'neutral'}>{r.roleLabel}</Badge>
-                      {r.source === 'external' && <Badge tone="neutral">Not in a register</Badge>}
+                      {r.source === 'external' && <Badge tone="neutral">Not in a Register</Badge>}
                     </p>
                     {r.company && <p className="text-2xs text-muted">{r.company}</p>}
 
@@ -142,7 +142,7 @@ export function PeoplePanel({
         {canEdit && (
           <Button size="sm" variant="secondary" icon={<Plus size={11} />} className="mt-2"
             onClick={() => setAddOpen(true)}>
-            Name someone
+            Name Someone
           </Button>
         )}
 
@@ -231,7 +231,7 @@ function AddPersonDialog({
   }
 
   return (
-    <Dialog open={open} onClose={onClose} title="Name somebody on this incident">
+    <Dialog open={open} onClose={onClose} title="Name Somebody on This Incident">
       <div className="space-y-3">
         {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
 
@@ -300,7 +300,7 @@ function AddPersonDialog({
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button onClick={() => void submit()} loading={busy} disabled={!who && !name.trim()}>
-            Name them
+            Name Them
           </Button>
         </div>
       </div>

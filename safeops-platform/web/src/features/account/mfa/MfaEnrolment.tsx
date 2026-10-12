@@ -63,7 +63,7 @@ export function MfaEnrolment({ onDone }: { onDone: () => void }) {
         </Alert>
         <RecoveryCodes codes={recoveryCodes} />
         <Button className="w-full" icon={<ShieldCheck size={14} />} onClick={onDone}>
-          I have saved my recovery codes
+          I Have Saved My Recovery Codes
         </Button>
       </div>
     )
@@ -105,7 +105,7 @@ export function MfaEnrolment({ onDone }: { onDone: () => void }) {
         </li>
       </ol>
       <Button type="submit" loading={busy} disabled={!setup || code.replace(/\s/g, '').length !== 6}>
-        Turn on multi-factor sign-in
+        Turn On Multi-Factor Sign-In
       </Button>
     </form>
   )

@@ -38,29 +38,29 @@ type View = (typeof VIEWS)[number]
 const REPORT_CARDS: { type: ReportType; title: string; blurb: string }[] = [
   {
     type: 'overdue_actions',
-    title: 'Overdue corrective actions',
+    title: 'Overdue Corrective Actions',
     blurb: 'Every open action past its due date, with the owner and how long it has been outstanding.',
   },
   {
     type: 'open_investigations',
-    title: 'Open investigations',
+    title: 'Open Investigations',
     blurb: 'Incidents still under investigation, how long they have been open, and what is missing.',
   },
   {
     type: 'weekly_actions',
-    title: 'Weekly corrective actions',
+    title: 'Weekly Corrective Actions',
     blurb: 'Every open action by department, overdue first, with owners and due dates — the weekly '
       + 'list for the heads-of-department meeting. Schedule it for Friday morning.',
   },
   {
     type: 'site_activity',
-    title: 'Site activity summary',
+    title: 'Site Activity Summary',
     blurb: 'What happened on site today or over the last 7 days: incidents, toolbox meetings, '
       + 'permits, inspections and actions — for a manager or a shift handover.',
   },
   {
     type: 'monthly_summary',
-    title: 'Monthly safety summary',
+    title: 'Monthly Safety Summary',
     blurb: 'The month just finished: what was reported, what it cost, and how many actions closed. '
       + 'Always the last complete month, cut in the site timezone.',
   },
@@ -236,7 +236,7 @@ export function ReportsPage() {
           : 'Summaries of what is open and overdue. Make one now, or have them emailed on a schedule.'}
         right={manage && view === 'schedules'
           ? <Button icon={<Plus size={15} />} onClick={() => setDialog({ open: true, editing: null })}>
-              New schedule
+              New Schedule
             </Button>
           : undefined}
       />
@@ -288,7 +288,7 @@ export function ReportsPage() {
                             activityPeriod === p ? 'bg-accent-soft text-ink' : 'text-muted hover:text-ink',
                           )}
                         >
-                          {p === 'day' ? 'Today' : 'Last 7 days'}
+                          {p === 'day' ? 'Today' : 'Last 7 Days'}
                         </button>
                       ))}
                     </div>
@@ -438,7 +438,7 @@ export function ReportsPage() {
               {manage && (
                 <Button className="mt-3" icon={<Plus size={13} />}
                   onClick={() => setDialog({ open: true, editing: null })}>
-                  Create the first schedule
+                  Create the First Schedule
                 </Button>
               )}
             </CardBody>
@@ -456,7 +456,7 @@ export function ReportsPage() {
                           <Badge tone={s.enabled ? 'good' : 'neutral'}>
                             {s.enabled ? 'Active' : 'Disabled'}
                           </Badge>
-                          {s.lastRunStatus === 'failed' && <Badge tone="critical">Last run failed</Badge>}
+                          {s.lastRunStatus === 'failed' && <Badge tone="critical">Last Run Failed</Badge>}
                         </p>
                         <p className="text-2xs text-muted">
                           {s.typeLabel} · {s.scheduleLabel}
@@ -486,7 +486,7 @@ export function ReportsPage() {
                         <div className="flex flex-wrap gap-1.5">
                           <Button size="sm" icon={<Play size={11} />} loading={busy === s.id}
                             onClick={() => void run(s)}>
-                            Run now
+                            Run Now
                           </Button>
                           <Button size="sm" variant="secondary" icon={<Pencil size={11} />}
                             onClick={() => setDialog({ open: true, editing: s })}>
@@ -536,7 +536,7 @@ export function ReportsPage() {
                           <StatusPill kind={r.status === 'success' ? 'good' : 'critical'} label={r.status === 'success' ? 'Done' : 'Failed'} />
                           <span className="font-medium">{r.typeLabel}</span>
                           <Badge tone={r.trigger === 'manual' ? 'accent' : 'neutral'}>
-                            {r.trigger === 'manual' ? 'Run now' : 'Scheduled'}
+                            {r.trigger === 'manual' ? 'Run Now' : 'Scheduled'}
                           </Badge>
                           {/*
                             The delivery outcome, distinct from whether the report built.

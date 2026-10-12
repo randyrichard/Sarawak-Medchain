@@ -227,7 +227,7 @@ export function PermitDrawer({
                       oxygenPct: Number(gas.oxygenPct), lelPct: Number(gas.lelPct),
                       h2sPpm: Number(gas.h2sPpm), coPpm: Number(gas.coPpm),
                     }, actor))}>
-                    Record gas test
+                    Record Gas Test
                   </Button>
                 </div>
               )}
@@ -272,7 +272,7 @@ export function PermitDrawer({
                   </>
                 ) : (
                   <>
-                    <p className="text-sm text-ink-2">Not yet held</p>
+                    <p className="text-sm text-ink-2">Not Yet Held</p>
                     <p className="text-2xs text-muted">Work cannot start until everyone named has acknowledged it.</p>
                   </>
                 )}
@@ -436,7 +436,7 @@ export function PermitDrawer({
           {permit.status === 'draft' && (
             <Button className="w-full" size="lg" loading={busy}
               onClick={() => void run(() => api.submitPermit(permit.id, actor))}>
-              Sign &amp; submit for approval
+              Sign &amp; Submit for Approval
             </Button>
           )}
 
@@ -447,7 +447,7 @@ export function PermitDrawer({
               <div className="flex gap-2">
                 <Button className="flex-1" loading={busy} icon={<Check size={14} />}
                   onClick={() => void run(() => api.approvePermit(permit.id, statement, actor))}>
-                  Approve &amp; issue
+                  Approve &amp; Issue
                 </Button>
                 <Button variant="danger" loading={busy}
                   onClick={() => void run(() => api.rejectPermit(permit.id, statement || reason, actor))}>
@@ -464,7 +464,7 @@ export function PermitDrawer({
           {permit.status === 'approved' && (
             <Button className="w-full" size="lg" loading={busy}
               onClick={() => void run(() => api.activatePermit(permit.id, actor))}>
-              Start work
+              Start Work
             </Button>
           )}
 
@@ -473,12 +473,12 @@ export function PermitDrawer({
               {permit.status === 'active' ? (
                 <Button variant="danger" className="flex-1" icon={<ShieldAlert size={14} />} loading={busy}
                   onClick={() => void run(() => api.suspendPermit(permit.id, reason || 'Suspended by issuing authority.', actor))}>
-                  Suspend work
+                  Suspend Work
                 </Button>
               ) : (
                 <Button variant="secondary" className="flex-1" loading={busy}
                   onClick={() => void run(() => api.resumePermit(permit.id, actor))}>
-                  Resume work
+                  Resume Work
                 </Button>
               )}
             </div>
@@ -492,7 +492,7 @@ export function PermitDrawer({
                 onChange={(e) => setStatement(e.target.value)} aria-label="Closing note" />
               <Button className="mt-2 w-full" variant="secondary" loading={busy} disabled={!handback}
                 onClick={() => void run(() => api.closePermit(permit.id, { handbackConfirmed: handback, statement }, actor))}>
-                Close permit
+                Close Permit
               </Button>
               {liveIsolations > 0 && (
                 <p className="mt-1.5 text-2xs" style={{ color: 'var(--warning)' }}>

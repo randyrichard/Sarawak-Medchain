@@ -73,7 +73,7 @@ export function ToolboxDialog({
       error={error}
       open={open}
       onClose={onClose}
-      title="Toolbox talk"
+      title="Toolbox Talk"
       description="Everyone named on the permit has to acknowledge the briefing before work can start."
       footer={
         <Button variant={allDone ? 'primary' : 'secondary'} onClick={onClose}>
@@ -113,7 +113,7 @@ export function ToolboxDialog({
                   supervisor: leader || undefined,
                 }))}
               >
-                Record the meeting
+                Record the Meeting
               </Button>
             </div>
           ) : (

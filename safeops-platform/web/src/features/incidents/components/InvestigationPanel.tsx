@@ -105,8 +105,8 @@ export function InvestigationPanel({
       <CardBody>
         <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
           Investigation
-          {data?.mandatory && <Badge tone="warning">Required by severity</Badge>}
-          {done && <Badge tone="good">Signed off</Badge>}
+          {data?.mandatory && <Badge tone="warning">Required by Severity</Badge>}
+          {done && <Badge tone="good">Signed Off</Badge>}
           {saving && <span className="text-2xs font-normal normal-case text-muted">Saving…</span>}
           {!saving && savedAt && !done && (
             <span className="text-2xs font-normal normal-case text-muted">Saved</span>
@@ -210,7 +210,7 @@ export function InvestigationPanel({
                 disabled={data.blockers.length > 0}
                 onClick={() => void signOff()}
               >
-                Sign off investigation
+                Sign Off Investigation
               </Button>
             )}
           </div>

@@ -105,8 +105,8 @@ export function IncidentDetailPage() {
           your safety officer or administrator.
         </p>
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-          <LinkButton to="/incidents" variant="secondary" size="sm">Back to incidents</LinkButton>
-          <LinkButton to="/" variant="ghost" size="sm">Go to dashboard</LinkButton>
+          <LinkButton to="/incidents" variant="secondary" size="sm">Back to Incidents</LinkButton>
+          <LinkButton to="/" variant="ghost" size="sm">Go to Dashboard</LinkButton>
         </div>
       </div>
     )
@@ -132,8 +132,8 @@ export function IncidentDetailPage() {
           in the register and can be restored by an administrator.
         </p>
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-          <LinkButton to="/incidents" variant="secondary" size="sm">Back to incidents</LinkButton>
-          <LinkButton to="/" variant="ghost" size="sm">Go to dashboard</LinkButton>
+          <LinkButton to="/incidents" variant="secondary" size="sm">Back to Incidents</LinkButton>
+          <LinkButton to="/" variant="ghost" size="sm">Go to Dashboard</LinkButton>
         </div>
       </div>
     )
@@ -211,7 +211,7 @@ export function IncidentDetailPage() {
               {STAGE_LABEL[incident.stage]}
             </span>
             {incident.highRisk && incident.stage !== 'closed' && (
-              <Badge tone="critical" className="gap-1"><ShieldAlert size={10} /> High risk</Badge>
+              <Badge tone="critical" className="gap-1"><ShieldAlert size={10} /> High Risk</Badge>
             )}
             <span title="Every change bumps the version — full history in the Activity log">
               <Badge tone="neutral">v{incident.version}</Badge>
@@ -366,7 +366,7 @@ export function IncidentDetailPage() {
                 void api.archiveIncident(incident.id, actor).then(() => navigate('/incidents'))
               }}
             >
-              Archive incident
+              Archive Incident
             </Button>
           </>
         }

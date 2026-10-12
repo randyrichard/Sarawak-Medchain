@@ -36,12 +36,12 @@ const KPI_DEFS: {
   params?: Record<string, string>
   tone: (n: number) => string
 }[] = [
-  { key: 'onSite', label: 'On site now', view: 'workers', params: { onSite: 'true' }, tone: () => 'var(--accent)' },
-  { key: 'activeWorkers', label: 'Active workers', view: 'workers', tone: () => 'var(--accent)' },
-  { key: 'medicalExpired', label: 'Medical expired', view: 'workers', params: { medical: 'expired' }, tone: (n) => (n > 0 ? 'var(--critical)' : 'var(--good)') },
-  { key: 'inductionExpired', label: 'Induction expired', view: 'workers', params: { induction: 'expired' }, tone: (n) => (n > 0 ? 'var(--critical)' : 'var(--good)') },
-  { key: 'insuranceExpired', label: 'Insurance expired', view: 'companies', params: { insurance: 'expired' }, tone: (n) => (n > 0 ? 'var(--critical)' : 'var(--good)') },
-  { key: 'contractorCompanies', label: 'Contractor companies', view: 'companies', tone: () => 'var(--accent)' },
+  { key: 'onSite', label: 'On Site Now', view: 'workers', params: { onSite: 'true' }, tone: () => 'var(--accent)' },
+  { key: 'activeWorkers', label: 'Active Workers', view: 'workers', tone: () => 'var(--accent)' },
+  { key: 'medicalExpired', label: 'Medical Expired', view: 'workers', params: { medical: 'expired' }, tone: (n) => (n > 0 ? 'var(--critical)' : 'var(--good)') },
+  { key: 'inductionExpired', label: 'Induction Expired', view: 'workers', params: { induction: 'expired' }, tone: (n) => (n > 0 ? 'var(--critical)' : 'var(--good)') },
+  { key: 'insuranceExpired', label: 'Insurance Expired', view: 'companies', params: { insurance: 'expired' }, tone: (n) => (n > 0 ? 'var(--critical)' : 'var(--good)') },
+  { key: 'contractorCompanies', label: 'Contractor Companies', view: 'companies', tone: () => 'var(--accent)' },
 ]
 
 const WORKER_COLUMNS: { key: WorkerSort; label: string; className?: string }[] = [
@@ -188,9 +188,9 @@ export function ContractorsPage() {
         right={canManage ? (
           <div className="flex gap-2">
             <Button variant="secondary" icon={<Plus size={14} />} onClick={() => setNewContractorOpen(true)}>
-              Add contractor
+              Add Contractor
             </Button>
-            <Button icon={<Plus size={14} />} onClick={() => setNewWorkerOpen(true)}>Register worker</Button>
+            <Button icon={<Plus size={14} />} onClick={() => setNewWorkerOpen(true)}>Register Worker</Button>
           </div>
         ) : undefined}
       />
@@ -264,7 +264,7 @@ export function ContractorsPage() {
               variant={onSiteOnly ? 'primary' : 'secondary'}
               onClick={() => setParam({ onSite: onSiteOnly ? null : 'true' })}
             >
-              On site only
+              On Site Only
             </Button>
           </>
         ) : (
@@ -289,7 +289,7 @@ export function ContractorsPage() {
                 ? 'No workers match these filters'
                 : 'No contractor workers registered'}
               action={canManage ? (
-                <Button size="sm" icon={<Plus size={14} />} onClick={() => setNewWorkerOpen(true)}>Register worker</Button>
+                <Button size="sm" icon={<Plus size={14} />} onClick={() => setNewWorkerOpen(true)}>Register Worker</Button>
               ) : undefined}
             >
               {q || medical !== 'all' || induction !== 'all' || onSiteOnly
@@ -334,7 +334,7 @@ export function ContractorsPage() {
                                 {w.contractorName}{w.position ? ` · ${w.position}` : ''}
                               </p>
                             </div>
-                            {w.onSite && <Badge tone="accent">On site</Badge>}
+                            {w.onSite && <Badge tone="accent">On Site</Badge>}
                           </div>
                         </td>
                         <td className="hidden px-3 py-3 lg:table-cell">
@@ -358,7 +358,7 @@ export function ContractorsPage() {
                           ) : w.onSite ? (
                             <Button size="sm" variant="secondary" icon={<LogOut size={12} />}
                               loading={busyId === w.id} onClick={() => void gate(w, 'out')}>
-                              Check out
+                              Check Out
                             </Button>
                           ) : blocked ? (
                             // Shown rather than hidden: the gate operator needs to know why,
@@ -367,7 +367,7 @@ export function ContractorsPage() {
                           ) : (
                             <Button size="sm" variant="secondary" icon={<LogIn size={12} />}
                               loading={busyId === w.id} onClick={() => void gate(w, 'in')}>
-                              Check in
+                              Check In
                             </Button>
                           )}
                         </td>
@@ -385,7 +385,7 @@ export function ContractorsPage() {
             icon={Building2}
             title={q || insurance !== 'all' ? 'No contractors match these filters' : 'No contractors yet'}
             action={canManage ? (
-              <Button size="sm" icon={<Plus size={14} />} onClick={() => setNewContractorOpen(true)}>Add contractor</Button>
+              <Button size="sm" icon={<Plus size={14} />} onClick={() => setNewContractorOpen(true)}>Add Contractor</Button>
             ) : undefined}
           >
             {q || insurance !== 'all'

@@ -48,12 +48,12 @@ export function NewContractorDialog({
       error={error}
       open={open}
       onClose={onClose}
-      title="Add a contractor"
+      title="Add a Contractor"
       description="They get a contractor code automatically. Record the insurance expiry so it can be chased."
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={busy}>Cancel</Button>
-          <Button onClick={() => void submit()} loading={busy} disabled={!!problem}>Add contractor</Button>
+          <Button onClick={() => void submit()} loading={busy} disabled={!!problem}>Add Contractor</Button>
         </>
       }
     >

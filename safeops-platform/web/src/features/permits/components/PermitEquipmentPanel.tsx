@@ -104,7 +104,7 @@ export function PermitEquipmentPanel({
                   {r.critical && <Badge tone="warning"><Star size={9} className="mr-0.5 inline" />Critical</Badge>}
                   {r.fit
                     ? <Badge tone="good"><ShieldCheck size={9} className="mr-0.5 inline" />Fit</Badge>
-                    : <Badge tone="critical"><ShieldAlert size={9} className="mr-0.5 inline" />Not fit</Badge>}
+                    : <Badge tone="critical"><ShieldAlert size={9} className="mr-0.5 inline" />Not Fit</Badge>}
                 </p>
                 <p className="text-2xs text-muted">
                   <span className="font-mono">{r.code}</span>
@@ -140,7 +140,7 @@ export function PermitEquipmentPanel({
       {canEdit && !settled && (
         <Button size="sm" variant="secondary" icon={<Plus size={11} />} className="mt-2"
           onClick={() => setAddOpen(true)}>
-          Book equipment
+          Book Equipment
         </Button>
       )}
 
@@ -192,7 +192,7 @@ function AddEquipmentDialog({
   )
 
   return (
-    <Dialog open={open} onClose={onClose} title="Book equipment onto this permit">
+    <Dialog open={open} onClose={onClose} title="Book Equipment Onto This Permit">
       <div className="space-y-3">
         {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
 
@@ -238,7 +238,7 @@ function AddEquipmentDialog({
                     <p className="flex flex-wrap items-center gap-1.5 text-sm text-ink">
                       {o.name}
                       {o.critical && <Badge tone="warning">Critical</Badge>}
-                      {o.alreadyBooked && <Badge tone="neutral">Already on this permit</Badge>}
+                      {o.alreadyBooked && <Badge tone="neutral">Already on This Permit</Badge>}
                     </p>
                     <p className="text-2xs text-muted">
                       <span className="font-mono">{o.code}</span>
@@ -265,7 +265,7 @@ function AddEquipmentDialog({
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button onClick={() => void submit()} loading={busy} disabled={!chosen}>
-            Book equipment
+            Book Equipment
           </Button>
         </div>
       </div>

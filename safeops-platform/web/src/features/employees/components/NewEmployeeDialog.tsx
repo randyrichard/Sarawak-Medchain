@@ -50,12 +50,12 @@ export function NewEmployeeDialog({
       error={error}
       open={open}
       onClose={onClose}
-      title="Add a person"
+      title="Add a Person"
       description="They get an employee number automatically. Everything else can be filled in later."
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={busy}>Cancel</Button>
-          <Button onClick={() => void submit()} loading={busy} disabled={!!problem}>Add to register</Button>
+          <Button onClick={() => void submit()} loading={busy} disabled={!!problem}>Add to Register</Button>
         </>
       }
     >

@@ -10,7 +10,7 @@ import { AuthLayout } from './AuthLayout'
 
 
 export function ResetPasswordPage() {
-  usePageTitle('Reset password')
+  usePageTitle('Reset Password')
   const [params] = useSearchParams()
   const token = params.get('token') ?? ''
   const navigate = useNavigate()
@@ -75,7 +75,7 @@ export function ResetPasswordPage() {
             Your password has been changed and every other device has been signed out.
           </Alert>
           <Button size="lg" className="w-full" onClick={() => navigate('/login', { replace: true })}>
-            Go to sign in
+            Go to Sign In
           </Button>
         </div>
       </AuthLayout>
@@ -86,7 +86,7 @@ export function ResetPasswordPage() {
 
   return (
     <AuthLayout>
-      <h1 className="text-xl font-semibold tracking-tight text-ink">Choose a new password</h1>
+      <h1 className="text-xl font-semibold tracking-tight text-ink">Choose a New Password</h1>
       <p className="mt-1 text-sm text-ink-2">
         At least 12 characters, including an uppercase letter and a number.
       </p>
@@ -98,7 +98,7 @@ export function ResetPasswordPage() {
             administrator to issue a new one.
           </Alert>
           <LinkButton to="/login" variant="secondary" size="lg" className="w-full">
-            Back to sign in
+            Back to Sign In
           </LinkButton>
         </div>
       ) : (
@@ -130,7 +130,7 @@ export function ResetPasswordPage() {
             type="submit" size="lg" loading={busy} icon={<KeyRound size={15} />} className="w-full"
             disabled={!!problem || mismatch || confirm.length === 0 || linkValid === null}
           >
-            Set new password
+            Set New Password
           </Button>
         </form>
       )}

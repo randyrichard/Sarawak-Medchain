@@ -462,8 +462,19 @@ its one muted picture.
 
 ## Words: say what it is, in the reader's language
 
-- **A page's title is its menu label.** "Corrective actions" in the menu opens "Corrective
-  actions", not "CAPA". Sentence case everywhere: "Report incident", not "Report Incident".
+- **A page's title is its menu label.** "Corrective Actions" in the menu opens "Corrective
+  Actions", not "CAPA".
+- **Names are in Title Case; sentences stay sentences.**
+  - Names include menu items, page and dialog titles, card and section headings, tabs and
+    filter chips, buttons, table headings, the figures on Home and every page, and status
+    names. Write them "Report a Near Miss", "Permits to Work", "Sign In".
+  - Small joining words (a, an, the, and, or, of, to, in, on, at, by, for, as, per, via, vs)
+    stay lowercase inside a name. A word that finishes a verb does not ("Checked In Today"),
+    and neither does one that opens or ends a hyphenated word ("On-Time", "Day-to-Day").
+  - Sentences stay sentences: descriptions, hints, messages, statements shown as a heading,
+    form field labels, dropdown choices and checklist items.
+  - `lib/titleCase.ts` is the rule. `app/namesOnScreen.test.ts` reads the source and fails a
+    name written in sentence case.
 - **The subtitle says what the page is for**, in a sentence a new starter can act on.
 - **Every abbreviation is in the Help glossary** (`features/help/guides.ts`): HSE, DOSH, LTI,
   TRIR, PPE. `guides.test.ts` checks the button names the guides tell people to press still

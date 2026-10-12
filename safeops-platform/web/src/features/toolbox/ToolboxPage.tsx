@@ -60,7 +60,7 @@ export function ToolboxPage() {
   if (!isBackendConfigured()) {
     return (
       <>
-        <PageHeader title="Toolbox meetings" subtitle="Short safety briefings held before work starts" />
+        <PageHeader title="Toolbox Meetings" subtitle="Short safety briefings held before work starts" />
         <Alert tone="info">Toolbox meetings are recorded on the server. Connect this app to the SafeChain API to use them.</Alert>
       </>
     )
@@ -95,10 +95,10 @@ export function ToolboxPage() {
   return (
     <>
       <PageHeader
-        title="Toolbox meetings"
+        title="Toolbox Meetings"
         subtitle="Short safety briefings held before work starts. Record what was covered, who led it and who attended."
         right={canRecord && (
-          <Button icon={<Plus size={15} />} onClick={() => setEditing('new')}>Record meeting</Button>
+          <Button icon={<Plus size={15} />} onClick={() => setEditing('new')}>Record Meeting</Button>
         )}
       />
 
@@ -133,7 +133,7 @@ export function ToolboxPage() {
                   <span className="shrink-0 text-xs">
                     {s.held
                       ? <><span className="font-semibold text-ink">{s.headcount.toLocaleString()}</span> <span className="text-ink-2">present</span></>
-                      : <span className="font-medium text-warning">Not yet held</span>}
+                      : <span className="font-medium text-warning">Not Yet Held</span>}
                   </span>
                 </li>
               ))}

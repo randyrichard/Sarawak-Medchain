@@ -85,7 +85,7 @@ export function BlacklistPanel({
                   {[formatIdNumber(r.idNumber), r.phone, r.visitorCompany, r.vehicleNumber]
                     .filter(Boolean).join(' · ')}
                   {r.inForce
-                    ? <Badge tone="critical">{r.permanent ? 'Permanent' : 'In force'}</Badge>
+                    ? <Badge tone="critical">{r.permanent ? 'Permanent' : 'In Force'}</Badge>
                     : <Badge tone="neutral">{r.active ? 'Lapsed' : 'Lifted'}</Badge>}
                 </p>
                 <p className="text-2xs text-ink">{r.reason}</p>
@@ -107,7 +107,7 @@ export function BlacklistPanel({
 
         <Button size="sm" variant="secondary" icon={<Plus size={11} />} className="mt-2"
           onClick={() => setAddOpen(true)}>
-          Refuse entry
+          Refuse Entry
         </Button>
 
         <AddDialog
@@ -162,7 +162,7 @@ function AddDialog({
   const hasMatch = [idNumber, phone, visitorCompany, vehicleNumber].some((v) => v.trim())
 
   return (
-    <Dialog open={open} onClose={onClose} title="Refuse entry">
+    <Dialog open={open} onClose={onClose} title="Refuse Entry">
       <div className="space-y-3">
         {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
 
@@ -191,7 +191,7 @@ function AddDialog({
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button onClick={() => void submit()} loading={busy}
             disabled={!hasMatch || !reason.trim()}>
-            Refuse entry
+            Refuse Entry
           </Button>
         </div>
       </div>

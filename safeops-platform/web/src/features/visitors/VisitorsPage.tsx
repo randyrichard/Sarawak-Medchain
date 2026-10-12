@@ -81,7 +81,7 @@ export function VisitorsPage() {
   const changed = () => setRevision((n) => n + 1)
 
   const tabs: TabItem<View>[] = [
-    { value: 'board', label: 'Live board' },
+    { value: 'board', label: 'Live Board' },
     { value: 'register', label: 'Register' },
     { value: 'blacklist', label: 'Blacklist' },
   ]
@@ -100,7 +100,7 @@ export function VisitorsPage() {
         subtitle="Register visitors, check them in after they accept the site rules, and know who is on site in an emergency"
         right={
           <Button icon={<Plus size={15} />} onClick={() => setNewOpen(true)}>
-            Register visitor
+            Register Visitor
           </Button>
         }
       />

@@ -30,6 +30,6 @@ describe('ChangePasswordRequiredPage', () => {
   it('says somebody else set it when an administrator is the reason', () => {
     user = { email: 'a@example.test', mustChangePassword: true }
     render(<ChangePasswordRequiredPage />)
-    expect(screen.getByRole('heading', { name: 'Choose your own password' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Choose Your Own Password' })).toBeTruthy()
   })
 })

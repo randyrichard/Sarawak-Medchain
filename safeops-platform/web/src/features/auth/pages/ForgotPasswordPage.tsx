@@ -28,7 +28,7 @@ import { AuthLayout } from './AuthLayout'
  * different hat.
  */
 export function ForgotPasswordPage() {
-  usePageTitle('Forgot password')
+  usePageTitle('Forgot Password')
   const [email, setEmail] = useState('')
   const [busy, setBusy] = useState(false)
   const [sent, setSent] = useState(false)
@@ -61,7 +61,7 @@ export function ForgotPasswordPage() {
   if (sent) {
     return (
       <AuthLayout>
-        <h1 className="text-xl font-semibold tracking-tight text-ink">Check your email</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-ink">Check Your Email</h1>
         <div className="mt-6 space-y-4">
           <Alert tone="success" title="If that address has an account, a link is on its way">
             It works once and expires in 30 minutes. If nothing arrives within a few minutes,
@@ -73,7 +73,7 @@ export function ForgotPasswordPage() {
             are the administrator, contact SafeChain support.
           </p>
           <LinkButton to="/login" variant="secondary" size="lg" className="w-full">
-            Back to sign in
+            Back to Sign In
           </LinkButton>
         </div>
       </AuthLayout>
@@ -82,7 +82,7 @@ export function ForgotPasswordPage() {
 
   return (
     <AuthLayout>
-      <h1 className="text-xl font-semibold tracking-tight text-ink">Reset your password</h1>
+      <h1 className="text-xl font-semibold tracking-tight text-ink">Reset Your Password</h1>
       <p className="mt-1 text-sm text-ink-2">
         Enter your work email and we will send you a link to choose a new one.
       </p>
@@ -103,7 +103,7 @@ export function ForgotPasswordPage() {
           type="submit" size="lg" loading={busy} icon={<Send size={15} />} className="w-full"
           disabled={email.trim().length === 0}
         >
-          Send reset link
+          Send Reset Link
         </Button>
       </form>
 

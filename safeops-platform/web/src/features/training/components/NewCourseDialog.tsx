@@ -59,13 +59,13 @@ export function NewCourseDialog({ open, onClose, onCreated }: { open: boolean; o
       error={error}
       open={open}
       onClose={onClose}
-      title="Add training course"
+      title="Add Training Course"
       description="Custom programs appear in the catalog and can be scheduled as sessions."
       width="max-w-lg"
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button loading={busy} onClick={() => void submit()}>Add course</Button>
+          <Button loading={busy} onClick={() => void submit()}>Add Course</Button>
         </>
       }
     >

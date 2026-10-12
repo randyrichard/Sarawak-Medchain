@@ -31,28 +31,28 @@ export function EquipmentBoard({ companyId, siteId }: { companyId: string; siteI
   const tiles: { label: string; value: number | undefined; tone?: string; hint?: string }[] = [
     { label: 'Available', value: data?.available, tone: 'var(--good)',
       hint: 'In service with nothing overdue' },
-    { label: 'Out of service', value: data?.outOfService,
+    { label: 'Out of Service', value: data?.outOfService,
       tone: data?.outOfService ? 'var(--critical)' : undefined },
-    { label: 'Under maintenance', value: data?.underMaintenance,
+    { label: 'Under Maintenance', value: data?.underMaintenance,
       tone: data?.underMaintenance ? 'var(--warning)' : undefined },
-    { label: 'Inspection overdue', value: data?.inspectionOverdue,
+    { label: 'Inspection Overdue', value: data?.inspectionOverdue,
       tone: data?.inspectionOverdue ? 'var(--critical)' : undefined },
-    { label: 'Inspection due today', value: data?.inspectionDueToday,
+    { label: 'Inspection Due Today', value: data?.inspectionDueToday,
       tone: data?.inspectionDueToday ? 'var(--warning)' : undefined },
-    { label: 'Calibration expired', value: data?.calibrationExpired,
+    { label: 'Calibration Expired', value: data?.calibrationExpired,
       tone: data?.calibrationExpired ? 'var(--critical)' : undefined,
       hint: 'Includes instruments with no certificate at all' },
-    { label: 'Calibration due', value: data?.calibrationDue,
+    { label: 'Calibration Due', value: data?.calibrationDue,
       tone: data?.calibrationDue ? 'var(--warning)' : undefined },
-    { label: 'Maintenance overdue', value: data?.maintenanceOverdue,
+    { label: 'Maintenance Overdue', value: data?.maintenanceOverdue,
       tone: data?.maintenanceOverdue ? 'var(--critical)' : undefined },
-    { label: 'Maintenance open', value: data?.maintenanceOpen },
-    { label: 'Booked to a permit', value: data?.bookedToPermit,
+    { label: 'Maintenance Open', value: data?.maintenanceOpen },
+    { label: 'Booked to a Permit', value: data?.bookedToPermit,
       hint: 'On a live permit right now' },
-    { label: 'Critical equipment', value: data?.critical,
+    { label: 'Critical Equipment', value: data?.critical,
       hint: 'Failure hurts someone directly' },
-    { label: 'Retired or disposed', value: data?.retired },
-    { label: 'Total in register', value: data?.total,
+    { label: 'Retired or Disposed', value: data?.retired },
+    { label: 'Total in Register', value: data?.total,
       hint: 'Excludes disposed and retired' },
   ]
 
@@ -78,13 +78,13 @@ export function EquipmentBoard({ companyId, siteId }: { companyId: string; siteI
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Breakdown
-          title="By category"
+          title="By Category"
           rows={data?.byCategory.map((r) => ({
             ...r,
             name: CATEGORY_LABEL[r.name as AssetCategory] ?? r.name,
           }))}
         />
-        <Breakdown title="By site" rows={data?.bySite} />
+        <Breakdown title="By Site" rows={data?.bySite} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -196,7 +196,7 @@ export function EquipmentBoard({ companyId, siteId }: { companyId: string; siteI
                       </Link>
                     </div>
                     <Badge tone={w.status === 'completed' ? 'good' : w.kind === 'emergency' ? 'critical' : 'accent'}>
-                      {w.status === 'in_progress' ? 'In progress' : w.status}
+                      {w.status === 'in_progress' ? 'In Progress' : w.status}
                     </Badge>
                   </li>
                 ))}

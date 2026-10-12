@@ -187,7 +187,7 @@ export function JsaTable({
       {canEdit && (
         <Button size="sm" variant="secondary" icon={<Plus size={11} />} className="mt-2"
           loading={adding} onClick={() => void addRow()}>
-          Add hazard
+          Add Hazard
         </Button>
       )}
     </section>
@@ -257,5 +257,5 @@ function SaveIndicator({ state }: { state: SaveState }) {
       </span>
     )
   }
-  return <span className="text-2xs text-critical">Not saved</span>
+  return <span className="text-2xs text-critical">Not Saved</span>
 }

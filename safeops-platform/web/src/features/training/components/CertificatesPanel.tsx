@@ -126,7 +126,7 @@ export function CertificatesPanel({
       <Dialog
         open={verifyOpen}
         onClose={() => setVerifyOpen(false)}
-        title="Verify a certificate"
+        title="Verify a Certificate"
         description="Scan a certificate QR code or enter its number — anyone can confirm authenticity."
         footer={<Button variant="secondary" onClick={() => setVerifyOpen(false)}>Close</Button>}
       >

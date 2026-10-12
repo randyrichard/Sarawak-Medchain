@@ -12,10 +12,10 @@ export type AttendeeRole = 'supervisor' | 'receiver' | 'worker' | 'standby' | 'g
 
 export const ATTENDEE_ROLE_LABEL: Record<AttendeeRole, string> = {
   supervisor: 'Supervisor',
-  receiver: 'Permit receiver',
+  receiver: 'Permit Receiver',
   worker: 'Worker',
-  standby: 'Standby attendant',
-  gas_tester: 'Gas tester',
+  standby: 'Standby Attendant',
+  gas_tester: 'Gas Tester',
 }
 
 export interface PermitAttendee {

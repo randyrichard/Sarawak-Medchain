@@ -125,7 +125,7 @@ export function DepartmentsSection() {
           subtitle="Grouped by site, with the person accountable for each."
           right={(
             <Button size="sm" icon={<Plus size={14} />} onClick={openNew} disabled={sites.length === 0}>
-              New department
+              New Department
             </Button>
           )}
         />
@@ -196,7 +196,7 @@ export function DepartmentsSection() {
       <Dialog
         open={dialog.open}
         onClose={() => setDialog({ open: false, editing: null })}
-        title={dialog.editing ? `Edit ${dialog.editing.name}` : 'New department'}
+        title={dialog.editing ? `Edit ${dialog.editing.name}` : 'New Department'}
         width="max-w-lg"
         footer={(
           <div className="flex justify-end gap-2">
@@ -207,7 +207,7 @@ export function DepartmentsSection() {
               onClick={save}
               disabled={saving || !draft.name.trim() || (!dialog.editing && !draft.siteId)}
             >
-              {saving ? 'Saving…' : dialog.editing ? 'Save changes' : 'Create department'}
+              {saving ? 'Saving…' : dialog.editing ? 'Save Changes' : 'Create Department'}
             </Button>
           </div>
         )}

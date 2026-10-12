@@ -21,7 +21,7 @@ export const SHORTCUT_GROUPS: { title: string; items: { keys: string[]; label: s
     ],
   },
   {
-    title: 'Lists and tables',
+    title: 'Lists and Tables',
     items: [
       { keys: ['Enter'], label: 'Open the focused record' },
       { keys: [modKey('click')], label: 'Open a record in a new tab' },
@@ -29,7 +29,7 @@ export const SHORTCUT_GROUPS: { title: string; items: { keys: string[]; label: s
     ],
   },
   {
-    title: 'Tabs and menus',
+    title: 'Tabs and Menus',
     items: [
       { keys: ['←', '→'], label: 'Previous or next tab' },
       { keys: ['↑', '↓'], label: 'Move through a menu' },
@@ -61,7 +61,7 @@ export function KeyboardShortcuts() {
     <Dialog
       open={open}
       onClose={() => setOpen(false)}
-      title="Keyboard shortcuts"
+      title="Keyboard Shortcuts"
       description="The same keys you use in Gmail, GitHub and most web apps."
     >
       <div className="space-y-4">

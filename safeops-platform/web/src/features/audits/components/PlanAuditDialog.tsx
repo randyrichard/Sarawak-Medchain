@@ -89,19 +89,19 @@ export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; o
       error={error}
       open={open}
       onClose={onClose}
-      title="Plan audit"
+      title="Plan Audit"
       description="Lead auditor is notified; the checklist becomes the digital working document."
       width="max-w-lg"
       footer={
         tplMode ? (
           <>
             <Button variant="secondary" onClick={() => setTplMode(false)}>Back</Button>
-            <Button loading={busy} onClick={() => void createTemplate()}>Save template</Button>
+            <Button loading={busy} onClick={() => void createTemplate()}>Save Template</Button>
           </>
         ) : (
           <>
             <Button variant="secondary" onClick={onClose}>Cancel</Button>
-            <Button loading={busy} onClick={() => void submit()}>Create audit</Button>
+            <Button loading={busy} onClick={() => void submit()}>Create Audit</Button>
           </>
         )
       }
@@ -156,7 +156,7 @@ export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; o
                 {templates.map((t) => <option key={t.id} value={t.id}>{t.name}{t.custom ? ' (custom)' : ''}</option>)}
               </Select>
               <button onClick={() => setTplMode(true)} className="text-2xs font-semibold text-accent hover:underline">
-                + Create a custom template
+                + Create a Custom Template
               </button>
             </div>
             <div className="grid grid-cols-3 gap-x-3 gap-y-5">
