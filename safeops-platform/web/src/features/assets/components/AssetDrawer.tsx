@@ -131,7 +131,7 @@ export function AssetDrawer({
                   </div>
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <StatusPill kind={RISK_PILL[asset.risk]} label={`${asset.risk} risk`} />
+                  <StatusPill kind={RISK_PILL[asset.risk]} label={`${asset.risk} Risk`} />
                   <Badge tone={asset.status === 'In Service' ? 'good' : asset.status === 'Under Maintenance' ? 'warning' : 'neutral'}>{asset.status}</Badge>
                   {asset.overdue && <Badge tone="critical">Inspection {Math.abs(asset.daysToDue)}d overdue</Badge>}
                 </div>
@@ -274,7 +274,7 @@ export function AssetDrawer({
                         {i.status === 'Completed' ? `${fmtDateTime(i.completedAt!)} · ${i.completedBy}` : `Scheduled ${i.scheduledFor} · ${i.assignedTo}`}
                       </span>
                       {i.status === 'Completed' ? (
-                        <StatusPill kind={i.outcome === 'passed' ? 'good' : 'critical'} label={i.outcome === 'passed' ? 'Passed' : `Failed · ${i.actionCodes.length} defect(s)`} />
+                        <StatusPill kind={i.outcome === 'passed' ? 'good' : 'critical'} label={i.outcome === 'passed' ? 'Passed' : `Failed · ${i.actionCodes.length} ${i.actionCodes.length === 1 ? 'Defect' : 'Defects'}`} />
                       ) : (
                         <StatusPill kind={i.overdue ? 'critical' : 'info'} label={i.overdue ? 'Overdue' : 'Scheduled'} />
                       )}
@@ -292,7 +292,7 @@ export function AssetDrawer({
         error={error}
         open={scheduleOpen}
         onClose={() => setScheduleOpen(false)}
-        title={`Schedule inspection — ${asset?.code ?? ''}`}
+        title={`Schedule Inspection — ${asset?.code ?? ''}`}
         footer={
           <>
             <Button variant="secondary" onClick={() => setScheduleOpen(false)}>Cancel</Button>

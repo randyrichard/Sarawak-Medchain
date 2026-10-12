@@ -143,7 +143,7 @@ The web app runs entirely in the browser in demo mode: two invented companies, t
 people, incidents, permits and so on, with nothing sent anywhere. That needs no server, so
 it can be hosted on Cloudflare Workers as static files, free, today.
 
-It is a separate Cloudflare Worker, `safechain-demo`. It is not the `sarawak-medchain` Worker,
+It is a separate Cloudflare Worker, `sarawak-safechain`. It is not the `sarawak-medchain` Worker,
 which is the earlier MedChain product built from `frontend/`.
 
 ### What makes it safe to publish
@@ -172,18 +172,27 @@ check is for customer builds, and the demo is the one build meant to contain the
 
    | Setting | Value |
    |---|---|
-   | Project name | `safechain-demo` (must match `web/wrangler.jsonc`) |
+   | Project name | `sarawak-safechain` (must match `web/wrangler.jsonc`) |
    | Production branch | `feature/permit-to-work` (where SafeChain lives) |
    | Root directory | `safeops-platform/web` |
    | Build command | `npm run build:demo` |
    | Deploy command | `npx wrangler deploy` |
-   | Non-production branch deploy command | `npx wrangler versions upload` |
+   | Non-production branch deploy command | Cloudflare's default (`npx wrangler preview`), or `npx wrangler versions upload` |
    | Build watch paths, include | `safeops-platform/web/*` |
    | API token | Create new token |
 
-   No build variables are needed; the build script sets everything.
-3. Deploy. The address is `https://safechain-demo.<your-subdomain>.workers.dev`. The Worker's
-   name is the address, which is why it is `safechain-demo` and not the internal `safeops`.
+   No build variables are needed; the build script sets everything. `npx wrangler preview`
+   needs the `previews` block in `web/wrangler.jsonc`, which is why it is there.
+
+   **Check the branch, root directory and build command after creating it.** The import
+   builds the repository's default branch, `main`, which holds an older SafeChain without
+   this configuration, and it left the root at `/` with no build command the first time.
+   That build "succeeds" and publishes the wrong thing. Fix them under the Worker's
+   **Settings → Build**: Branch control (production branch), and Build configuration.
+3. Deploy. **Retry build** re-runs the same commit, so it will not pick up a changed branch;
+   the next commit on `feature/permit-to-work` starts the right build. The address is
+   `https://sarawak-safechain.<your-subdomain>.workers.dev` — the Worker's name is the
+   address.
 4. Optional: in the `sarawak-medchain` Worker, set its build watch path to `frontend/*`, so
    SafeChain commits stop triggering MedChain builds.
 

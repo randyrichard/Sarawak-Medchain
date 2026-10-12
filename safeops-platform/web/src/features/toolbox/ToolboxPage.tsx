@@ -12,7 +12,9 @@ import {
 import { cn } from '@/lib/cn'
 import { ToolboxDialog } from './ToolboxDialog'
 import { ToolboxDetail } from './ToolboxDetail'
+import { useOpenRecord } from '@/lib/useOpenRecord'
 import { canDeleteToolbox, canRecordToolbox } from './lib'
+import { NoMatches } from '@/features/org/NoMatches'
 
 /**
  * The daily site toolbox meeting.
@@ -33,8 +35,16 @@ export function ToolboxPage() {
   const [to, setTo] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState<ToolboxMeeting | 'new' | null>(null)
-  const [open, setOpen] = useState<ToolboxMeeting | null>(null)
   const [revision, setRevision] = useState(0)
+  /*
+   * The meeting being read, by id in the address, so Back closes it rather than leaving the
+   * register. It is usually a row of the list; one that is not - a link, or a meeting just
+   * saved while the list reloads - is fetched on its own.
+   */
+  const { id: openId, open: openMeeting, close: closeMeeting } = useOpenRecord()
+  const [fetched, setFetched] = useState<ToolboxMeeting | null>(null)
+  const listed = rows?.find((m) => m.id === openId) ?? null
+  const open = listed ?? (fetched && fetched.id === openId ? fetched : null)
 
   const load = useCallback(() => {
     if (!company || !isBackendConfigured()) return
@@ -56,6 +66,15 @@ export function ToolboxPage() {
   }, [load, q, revision])
 
   const changed = () => setRevision((n) => n + 1)
+
+  useEffect(() => {
+    if (!company || !openId || listed || fetched?.id === openId || !isBackendConfigured()) return
+    let live = true
+    toolboxApi.get(company.id, openId)
+      .then((m) => { if (live) setFetched(m) })
+      .catch((e) => { if (live) setError(e instanceof ApiError ? e.message : 'That meeting could not be opened.') })
+    return () => { live = false }
+  }, [company, openId, listed, fetched])
 
   if (!isBackendConfigured()) {
     return (
@@ -169,13 +188,20 @@ export function ToolboxPage() {
             columns={columns}
             rows={rows}
             rowKey={(m) => m.id}
-            onRowClick={setOpen}
+            onRowClick={(m) => openMeeting(m.id)}
             empty={
-              <EmptyState icon={Megaphone} title={q || from || to ? 'No meetings match these filters' : 'No toolbox meetings recorded yet'}>
-                {canRecord
-                  ? 'Record this morning\'s briefing — the topic, who led it and a headcount for each organisation that attended.'
-                  : 'Meetings recorded by your site safety team will appear here.'}
-              </EmptyState>
+              q.trim() || from || to || site ? (
+                <NoMatches
+                  what="toolbox meetings" search={q} filtered={Boolean(from || to)}
+                  onClear={q.trim() || from || to ? () => { setFrom(''); setTo(''); setQ('') } : undefined}
+                />
+              ) : (
+                <EmptyState icon={Megaphone} title="No toolbox meetings recorded yet">
+                  {canRecord
+                    ? 'Record this morning\'s briefing — the topic, who led it and a headcount for each organisation that attended.'
+                    : 'Meetings recorded by your site safety team will appear here.'}
+                </EmptyState>
+              )
             }
           />
           {total > rows.length && (
@@ -189,7 +215,7 @@ export function ToolboxPage() {
           companyId={company.id}
           meeting={editing === 'new' ? null : editing}
           onClose={() => setEditing(null)}
-          onSaved={(m) => { setEditing(null); setOpen(m); changed() }}
+          onSaved={(m) => { setEditing(null); setFetched(m); openMeeting(m.id); changed() }}
         />
       )}
 
@@ -199,9 +225,9 @@ export function ToolboxPage() {
           meeting={open}
           canEdit={canRecord}
           canDelete={canDeleteToolbox(role)}
-          onClose={() => setOpen(null)}
+          onClose={closeMeeting}
           onEdit={() => setEditing(open)}
-          onDeleted={() => { setOpen(null); changed() }}
+          onDeleted={() => { closeMeeting(); changed() }}
         />
       )}
     </>

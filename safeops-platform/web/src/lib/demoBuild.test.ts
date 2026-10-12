@@ -59,9 +59,12 @@ describe('public demo build', () => {
 
   it('serves the built files as a single-page app on Cloudflare', () => {
     const cfg = JSON.parse(read('wrangler.jsonc').replace(/\/\*[\s\S]*?\*\//g, ''))
-    // The name is the public address, so it is the product's: safechain-demo.<account>.workers.dev.
-    expect(cfg.name).toBe('safechain-demo')
+    // The Worker in the Cloudflare dashboard is sarawak-safechain, and this must match it: the
+    // name is also the public address, sarawak-safechain.<account>.workers.dev.
+    expect(cfg.name).toBe('sarawak-safechain')
     expect(cfg.assets).toMatchObject({ directory: './dist', not_found_handling: 'single-page-application' })
     expect(cfg.main).toBeUndefined()
+    // Cloudflare builds other branches with `npx wrangler preview`, which fails without it.
+    expect(cfg.previews).toEqual({})
   })
 })

@@ -3,8 +3,9 @@ import { contractorsApi } from '@/api/contractorsApi'
 import type { ContractorCompanyRow } from '@/api/contractors'
 import { ApiError } from '@/api/types'
 import { Button, Dialog } from '@/components/ui'
+import { useFormCheck } from '@/lib/useFormCheck'
 import {
-  ContractorForm, contractorFormProblem, toContractorPayload, type ContractorFormState,
+  ContractorForm, contractorFormProblems, toContractorPayload, type ContractorFormState,
 } from './ContractorForm'
 
 const dateOnly = (iso: string | null) => (iso ? new Date(iso).toISOString().slice(0, 10) : '')
@@ -21,9 +22,10 @@ export function EditContractorDialog({
     if (open) { setForm(fromContractor(contractor)); setError(null) }
   }, [open, contractor])
 
-  const problem = contractorFormProblem(form)
+  const check = useFormCheck(contractorFormProblems(form), open)
 
   const submit = async () => {
+    if (!check.check()) return
     setBusy(true)
     setError(null)
     try {
@@ -57,12 +59,11 @@ export function EditContractorDialog({
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={busy}>Cancel</Button>
-          <Button onClick={() => void submit()} loading={busy} disabled={!!problem}>Save Changes</Button>
+          <Button onClick={() => void submit()} loading={busy}>Save Changes</Button>
         </>
       }
     >
-      <ContractorForm value={form} onChange={setForm} />
-      {problem && <p className="mt-2 text-2xs text-muted">{problem}</p>}
+      <ContractorForm value={form} onChange={setForm} errors={{ name: check.errorFor('name'), email: check.errorFor('email') }} />
     </Dialog>
   )
 }

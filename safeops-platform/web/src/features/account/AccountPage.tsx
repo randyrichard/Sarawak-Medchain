@@ -8,6 +8,7 @@ import {
   type LandingPage, type UserPreferences,
 } from '@/api/accountApi'
 import { useTheme } from '@/app/theme'
+import { usePageTitle } from '@/app/pageTitle'
 import { setCachedPreferences } from './preferences'
 import {
   Alert, Avatar, Badge, Button, Card, CardBody, CardHeader, Dialog, Input, PageHeader,
@@ -16,6 +17,9 @@ import { loadSession } from '@/features/auth/session'
 import { MfaSettings } from './mfa/MfaSettings'
 
 export function AccountPage() {
+  // Not in the menu, so the shell cannot name the tab from the route; it said "SafeChain —
+  // Safety Intelligence Platform", the same as every unnamed screen.
+  usePageTitle('My Account')
   const { user, logout, backend } = useAuth()
   const { company } = useOrg()
   const [pwOpen, setPwOpen] = useState(false)

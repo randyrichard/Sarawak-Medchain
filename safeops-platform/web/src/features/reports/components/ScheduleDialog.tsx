@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import {
   TIMEZONES, WEEKDAYS, reportsApi,
   type ReportFrequency, type ReportRecipient, type ReportSchedule, type ReportType,
 } from '@/api/reportsApi'
-import { ApiError } from '@/api/types'
+import { ApiError, ROLE_LABEL, type Role } from '@/api/types'
 import { useOrg } from '@/features/org/OrgContext'
 import { Alert, Button, Dialog, Input, Select, Skeleton } from '@/components/ui'
 import { cn } from '@/lib/cn'
+import { useFormCheck } from '@/lib/useFormCheck'
 
 /**
  * Creating or editing a schedule.
@@ -26,6 +27,7 @@ export function ScheduleDialog({
 }) {
   const { company, sites, projects } = useOrg()
 
+  const recipientsId = useId()
   const [name, setName] = useState('')
   const [reportType, setReportType] = useState<ReportType>('overdue_actions')
   const [frequency, setFrequency] = useState<ReportFrequency>('weekly')
@@ -76,8 +78,13 @@ export function ScheduleDialog({
       })
   }, [open, company, editing])
 
+  const check = useFormCheck({
+    name: !name.trim() && 'Give the schedule a name, such as "Monday HSE pack".',
+    recipients: chosen.length === 0 && 'Tick at least one person to send it to.',
+  }, open)
+
   const submit = async () => {
-    if (!company) return
+    if (!company || !check.check()) return
     setBusy(true)
     setError(null)
     try {
@@ -120,8 +127,7 @@ export function ScheduleDialog({
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button loading={busy} onClick={() => void submit()}
-            disabled={!name.trim() || chosen.length === 0}>
+          <Button loading={busy} onClick={() => void submit()}>
             {editing ? 'Save Changes' : 'Create Schedule'}
           </Button>
         </>
@@ -130,7 +136,7 @@ export function ScheduleDialog({
       <div className="space-y-3">
         {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
 
-        <Input label="Name" required value={name} onChange={(e) => setName(e.target.value)} />
+        <Input label="Name" required value={name} onChange={(e) => setName(e.target.value)} error={check.errorFor('name')} />
 
         <Select
           label="Report"
@@ -185,9 +191,14 @@ export function ScheduleDialog({
           {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </Select>
 
-        <div>
-          <p className="mb-1 text-xs font-medium text-ink">
-            Recipients <span className="text-critical">*</span>
+        <div
+          role="group" aria-labelledby={recipientsId} tabIndex={-1}
+          aria-invalid={check.errorFor('recipients') ? true : undefined}
+          aria-describedby={check.errorFor('recipients') ? `${recipientsId}-message` : undefined}
+          className="outline-none"
+        >
+          <p id={recipientsId} className="mb-1 text-xs font-medium text-ink">
+            Recipients <span aria-hidden className="text-critical">*</span>
           </p>
           {people === null ? (
             <Skeleton className="h-24 rounded-lg" />
@@ -198,7 +209,7 @@ export function ScheduleDialog({
           ) : (
             // Only members of this workspace are listed, and the server checks again on
             // save — a report is the whole safety picture and must not leave the tenant.
-            <ul className="max-h-44 space-y-1 overflow-y-auto rounded-lg border p-1.5">
+            <ul className={cn('max-h-44 space-y-1 overflow-y-auto rounded-lg border p-1.5', check.errorFor('recipients') && 'border-critical')}>
               {people.map((p) => (
                 <li key={p.userId}>
                   <label className={cn(
@@ -211,11 +222,14 @@ export function ScheduleDialog({
                       <span className="text-ink">{p.name}</span>
                       <span className="block truncate text-muted">{p.email}</span>
                     </span>
-                    <span className="shrink-0 text-muted">{p.role.replace(/_/g, ' ')}</span>
+                    <span className="shrink-0 text-muted">{ROLE_LABEL[p.role as Role] ?? p.role.replace(/_/g, ' ')}</span>
                   </label>
                 </li>
               ))}
             </ul>
+          )}
+          {check.errorFor('recipients') && (
+            <p id={`${recipientsId}-message`} role="alert" className="mt-1.5 text-xs font-medium text-critical">{check.errorFor('recipients')}</p>
           )}
         </div>
 

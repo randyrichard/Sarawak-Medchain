@@ -5,6 +5,7 @@ import type { ReviewStatus } from '@/api/permitWorkflowApi'
 import { ApiError } from '@/api/types'
 import { Alert, Button, Dialog, Textarea } from '@/components/ui'
 import { cn } from '@/lib/cn'
+import { useFormCheck } from '@/lib/useFormCheck'
 
 /**
  * The approval chain, as the thing it actually is: a transfer of authority signed by
@@ -246,8 +247,13 @@ function StatementDialog({
   const [error, setError] = useState<string | null>(null)
 
   const close = () => { setText(''); setError(null); onClose() }
+  const check = useFormCheck({
+    text: text.trim().length === 0 ? 'Say what was checked, in a few words.'
+      : text.trim().length < 3 && 'Say a little more.',
+  }, open)
 
   const submit = async () => {
+    if (!check.check()) return
     setError(null)
     try {
       await onConfirm(text.trim())
@@ -267,7 +273,6 @@ function StatementDialog({
           <Button
             variant={danger ? 'danger' : 'primary'}
             loading={busy}
-            disabled={text.trim().length < 3}
             onClick={() => void submit()}
           >
             {confirmLabel}
@@ -279,7 +284,7 @@ function StatementDialog({
         label="Comment" rows={3} autoFocus placeholder={placeholder}
         value={text} onChange={(e) => setText(e.target.value)}
         hint="At least a few words — this is the record of what was checked."
-        error={text.length > 0 && text.trim().length < 3 ? 'Say a little more.' : undefined}
+        error={check.errorFor('text') ?? (text.length > 0 && text.trim().length < 3 ? 'Say a little more.' : undefined)}
       />
     </Dialog>
   )

@@ -23,12 +23,19 @@ export const emptyContractorForm = (): ContractorFormState => ({
   insuranceExpiry: '',
 })
 
-export function contractorFormProblem(f: ContractorFormState): string | null {
-  if (!f.name.trim()) return 'A contractor name is required.'
-  if (f.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) {
-    return 'That email address does not look right.'
+/** What is wrong with each field, if anything - shown under that field. */
+export function contractorFormProblems(f: ContractorFormState) {
+  return {
+    name: !f.name.trim() && 'A contractor name is required.',
+    email: Boolean(f.email.trim()) && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim()) && 'That email address does not look right.',
   }
-  return null
+}
+
+export type ContractorFormErrors = Partial<Record<keyof ReturnType<typeof contractorFormProblems>, string>>
+
+/** The first thing wrong with the form, or null when it can be saved. */
+export function contractorFormProblem(f: ContractorFormState): string | null {
+  return Object.values(contractorFormProblems(f)).find(Boolean) || null
 }
 
 /** Strips blanks so the API receives absent rather than empty-string fields. */
@@ -46,10 +53,11 @@ export function toContractorPayload(f: ContractorFormState) {
 }
 
 export function ContractorForm({
-  value, onChange,
+  value, onChange, errors = {},
 }: {
   value: ContractorFormState
   onChange: Dispatch<SetStateAction<ContractorFormState>>
+  errors?: ContractorFormErrors
 }) {
   const set = <K extends keyof ContractorFormState>(k: K, v: ContractorFormState[K]) =>
     onChange((s) => ({ ...s, [k]: v }))
@@ -57,7 +65,7 @@ export function ContractorForm({
   return (
     <div className="space-y-3">
       <Input label="Company name" value={value.name} required autoFocus
-        onChange={(e) => set('name', e.target.value)} />
+        onChange={(e) => set('name', e.target.value)} error={errors.name} />
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Input
@@ -77,7 +85,7 @@ export function ContractorForm({
         <Input label="Phone" type="tel" value={value.phone} onChange={(e) => set('phone', e.target.value)} />
       </div>
 
-      <Input label="Email" type="email" value={value.email} onChange={(e) => set('email', e.target.value)} />
+      <Input label="Email" type="email" value={value.email} onChange={(e) => set('email', e.target.value)} error={errors.email} />
       <Textarea label="Address" rows={2} value={value.address} onChange={(e) => set('address', e.target.value)} />
     </div>
   )

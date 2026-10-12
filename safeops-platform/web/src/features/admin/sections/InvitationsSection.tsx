@@ -12,6 +12,7 @@ import { fmtDateTime } from '@/features/incidents/lib'
 import {
   canResendInvitation, invitationDelivery, invitationState,
 } from '../lib'
+import { useFormCheck } from '@/lib/useFormCheck'
 
 /**
  * Invitations.
@@ -65,8 +66,13 @@ export function InvitationsSection() {
 
   useEffect(load, [load])
 
+  const check = useFormCheck({
+    email: !draft.email.trim() ? 'Enter the email address the invitation goes to.'
+      : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.email.trim()) && 'That email address does not look right.',
+  }, open)
+
   const send = async () => {
-    if (!company) return
+    if (!company || !check.check()) return
     setSaving(true)
     setError(null)
     try {
@@ -287,7 +293,7 @@ export function InvitationsSection() {
         footer={(
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={send} disabled={saving || !draft.email.trim()}>
+            <Button onClick={send} disabled={saving}>
               {saving ? 'Creating…' : 'Create Invitation'}
             </Button>
           </div>
@@ -296,7 +302,7 @@ export function InvitationsSection() {
         <div className="space-y-5">
           <Input
             label="Email address" required type="email" value={draft.email}
-            onChange={(e) => setDraft({ ...draft, email: e.target.value })}
+            onChange={(e) => setDraft({ ...draft, email: e.target.value })} error={check.errorFor('email')}
             placeholder="name@company.com"
           />
           <Input

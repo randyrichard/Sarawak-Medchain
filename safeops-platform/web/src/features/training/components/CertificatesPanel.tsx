@@ -6,6 +6,7 @@ import { useOrg } from '@/features/org/OrgContext'
 import { Avatar, Badge, Button, Card, Dialog, EmptyState, Input, Skeleton, StatusPill } from '@/components/ui'
 import { certStatusKind, exportCertsCsv, printCertificate } from '../lib'
 import { cn } from '@/lib/cn'
+import { NoMatches } from '@/features/org/NoMatches'
 
 type Filter = 'all' | 'expired' | 'expiring' | 'competent'
 
@@ -80,7 +81,11 @@ export function CertificatesPanel({
 
       <Card>
         {rows.length === 0 ? (
-          <EmptyState icon={BadgeCheck} title="No certificates match">Certificates are issued when a training session is passed.</EmptyState>
+          certs && certs.length > 0 && (q.trim() || filter !== 'all') ? (
+            <NoMatches what="certificates" search={q} filtered={filter !== 'all'} onClear={() => { setQ(''); setFilter('all') }} />
+          ) : (
+            <EmptyState icon={BadgeCheck} title="No certificates yet">Certificates are issued when a training session is passed.</EmptyState>
+          )
         ) : (
           <div className="relative overflow-x-auto">
             <table className="w-full min-w-[840px] text-left">

@@ -9,6 +9,7 @@ import { Alert, Badge, Button, Dialog, Input, Select, Skeleton } from '@/compone
 import { fmtDate } from '@/features/incidents/lib'
 import { cn } from '@/lib/cn'
 import { localISODate } from '@/lib/localDate'
+import { useFormCheck } from '@/lib/useFormCheck'
 
 /**
  * Calibration certificates for a measuring instrument.
@@ -147,7 +148,14 @@ function RecordCalibrationDialog({
     setCertificateNumber(''); setVendor(''); setResult('pass'); setRemarks(''); setError(null)
   }, [open, today])
 
+  const check = useFormCheck({
+    certificateNumber: !certificateNumber.trim() && 'Enter the number printed on the certificate.',
+    expiresAt: !expiresAt ? 'Enter the date the certificate runs out.'
+      : calibratedAt && expiresAt <= calibratedAt && 'It must run out after the day it was calibrated.',
+  }, open)
+
   const submit = async () => {
+    if (!check.check()) return
     setBusy(true)
     setError(null)
     try {
@@ -169,13 +177,13 @@ function RecordCalibrationDialog({
         {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
 
         <Input label="Certificate number" value={certificateNumber} required
-          onChange={(e) => setCertificateNumber(e.target.value)} />
+          onChange={(e) => setCertificateNumber(e.target.value)} error={check.errorFor('certificateNumber')} />
 
         <div className="grid grid-cols-2 gap-x-3 gap-y-5">
           <Input label="Calibrated on" type="date" value={calibratedAt}
             onChange={(e) => setCalibratedAt(e.target.value)} />
-          <Input label="Valid until" type="date" value={expiresAt}
-            onChange={(e) => setExpiresAt(e.target.value)} />
+          <Input label="Valid until" type="date" value={expiresAt} required
+            onChange={(e) => setExpiresAt(e.target.value)} error={check.errorFor('expiresAt')} />
         </div>
 
         <Input label="Calibration house" value={vendor} placeholder="e.g. Kuching Calibration Services"
@@ -200,8 +208,7 @@ function RecordCalibrationDialog({
 
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => void submit()} loading={busy}
-            disabled={!certificateNumber.trim() || !expiresAt}>
+          <Button onClick={() => void submit()} loading={busy}>
             Record Certificate
           </Button>
         </div>

@@ -33,13 +33,20 @@ export const emptyEmployeeForm = (siteId = ''): EmployeeFormState => ({
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
 
 /** Returns a message when the form cannot be submitted, or null when it can. */
-export function employeeFormProblem(f: EmployeeFormState): string | null {
-  if (!f.name.trim()) return 'A name is required.'
-  if (!f.siteId) return 'Choose the site this person works at.'
-  if (f.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) {
-    return 'That email address does not look right.'
+/** What is wrong with each field, if anything - shown under that field. */
+export function employeeFormProblems(f: EmployeeFormState) {
+  return {
+    name: !f.name.trim() && 'A name is required.',
+    siteId: !f.siteId && 'Choose the site this person works at.',
+    email: Boolean(f.email.trim()) && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim()) && 'That email address does not look right.',
   }
-  return null
+}
+
+export type EmployeeFormErrors = Partial<Record<keyof ReturnType<typeof employeeFormProblems>, string>>
+
+/** The first thing wrong with the form, or null when it can be saved. */
+export function employeeFormProblem(f: EmployeeFormState): string | null {
+  return Object.values(employeeFormProblems(f)).find(Boolean) || null
 }
 
 /** Strips blanks so the API receives absent rather than empty-string fields. */
@@ -60,11 +67,12 @@ export function toEmployeePayload(f: EmployeeFormState) {
 }
 
 export function EmployeeForm({
-  value, onChange, disableSite,
+  value, onChange, disableSite, errors = {},
 }: {
   value: EmployeeFormState
   onChange: Dispatch<SetStateAction<EmployeeFormState>>
   disableSite?: boolean
+  errors?: EmployeeFormErrors
 }) {
   const departments = useDepartments()
   const positions = usePositions()
@@ -77,13 +85,13 @@ export function EmployeeForm({
     <div className="space-y-3">
       <Input
         label="Full name" value={value.name} required autoFocus
-        onChange={(e) => set('name', e.target.value)}
+        onChange={(e) => set('name', e.target.value)} error={errors.name}
       />
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Select
-          label="Site" value={value.siteId} disabled={disableSite}
-          onChange={(e) => set('siteId', e.target.value)}
+          label="Site" value={value.siteId} disabled={disableSite} required
+          onChange={(e) => set('siteId', e.target.value)} error={errors.siteId}
         >
           <option value="">Choose a site…</option>
           {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -111,7 +119,7 @@ export function EmployeeForm({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <Input label="Email" type="email" value={value.email} onChange={(e) => set('email', e.target.value)} />
+        <Input label="Email" type="email" value={value.email} onChange={(e) => set('email', e.target.value)} error={errors.email} />
         <Input label="Phone" type="tel" value={value.phone} onChange={(e) => set('phone', e.target.value)} />
       </div>
 

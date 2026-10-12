@@ -172,7 +172,7 @@ export function DocumentsPanel({
       <Dialog
         open={historyFor !== null}
         onClose={() => setHistoryFor(null)}
-        title={`Version history — ${historyFor?.name ?? ''}`}
+        title={`Version History — ${historyFor?.name ?? ''}`}
       >
         <ul className="max-h-[50vh] space-y-2 overflow-y-auto">
           {historyFor?.history.map((h) => (

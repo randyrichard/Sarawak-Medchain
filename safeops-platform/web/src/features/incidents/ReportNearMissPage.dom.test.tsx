@@ -69,4 +69,45 @@ describe('ReportNearMissPage', () => {
     await screen.findByText('Location is required.')
     expect(enqueue).not.toHaveBeenCalled()
   })
+
+  /*
+   * "Submit Near Miss" stayed grey until "What happened" had five letters and "Where" two,
+   * written nowhere. "Fire" was refused without a word.
+   */
+  it('can always be pressed, and then says what is missing under the field', () => {
+    render(<MemoryRouter><ReportNearMissPage /></MemoryRouter>)
+    const submit = screen.getByRole('button', { name: /Submit Near Miss/ }) as HTMLButtonElement
+    expect(submit.disabled).toBe(false)
+
+    fireEvent.click(submit)
+    expect(createIncident).not.toHaveBeenCalled()
+    const what = screen.getByLabelText(/What happened/)
+    expect(what.getAttribute('aria-invalid')).toBe('true')
+    expect(screen.getByText('Say what happened or what you saw.')).toBeTruthy()
+    expect(screen.getByText(/Say where it was/)).toBeTruthy()
+    // The keyboard is taken to the first thing to put right.
+    expect(document.activeElement).toBe(what)
+  })
+
+  it('asks for a few more words rather than refusing "Fire" in silence', () => {
+    render(<MemoryRouter><ReportNearMissPage /></MemoryRouter>)
+    fireEvent.change(screen.getByLabelText(/What happened/), { target: { value: 'Fire' } })
+    fireEvent.change(screen.getByLabelText(/Where was it/), { target: { value: 'Jetty 2' } })
+    fireEvent.click(screen.getByRole('button', { name: /Submit Near Miss/ }))
+    expect(screen.getByText(/A few more words/)).toBeTruthy()
+    expect(screen.queryByText(/Say where it was/)).toBeNull()
+    expect(document.activeElement).toBe(screen.getByLabelText(/What happened/))
+  })
+
+  it('clears each message as the field is put right, then sends', async () => {
+    createIncident.mockResolvedValue({ id: 'inc-10', number: 'INC-10' })
+    render(<MemoryRouter><ReportNearMissPage /></MemoryRouter>)
+    fireEvent.click(screen.getByRole('button', { name: /Submit Near Miss/ }))
+    fireEvent.change(screen.getByLabelText(/What happened/), { target: { value: 'Oil on the stairs to the control room' } })
+    expect(screen.queryByText('Say what happened or what you saw.')).toBeNull()
+    fireEvent.change(screen.getByLabelText(/Where was it/), { target: { value: 'Control room stairs' } })
+    fireEvent.click(screen.getByRole('button', { name: /Submit Near Miss/ }))
+    await screen.findByText(/worth reporting/)
+    expect(createIncident).toHaveBeenCalledTimes(1)
+  })
 })

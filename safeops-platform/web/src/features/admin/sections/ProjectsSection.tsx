@@ -10,6 +10,7 @@ import {
   Alert, Badge, Button, Card, CardBody, CardHeader, Dialog, EmptyState, Input, Select,
   Skeleton, Textarea,
 } from '@/components/ui'
+import { useFormCheck } from '@/lib/useFormCheck'
 
 /**
  * Projects, and which sites sit under them.
@@ -93,8 +94,10 @@ export function ProjectsSection() {
     setDialog({ open: true, editing: p })
   }
 
+  const check = useFormCheck({ name: !draft.name.trim() && 'Give the project a name.' }, dialog.open)
+
   const save = async () => {
-    if (!company) return
+    if (!company || !check.check()) return
     setSaving(true)
     setError(null)
     // Empty date fields mean "not set", which the API takes as null rather than as "".
@@ -264,7 +267,7 @@ export function ProjectsSection() {
             <Button variant="secondary" onClick={() => setDialog({ open: false, editing: null })}>
               Cancel
             </Button>
-            <Button loading={saving} disabled={!draft.name.trim()} onClick={() => void save()}>
+            <Button loading={saving} onClick={() => void save()}>
               {dialog.editing ? 'Save Changes' : 'Create Project'}
             </Button>
           </>
@@ -272,7 +275,7 @@ export function ProjectsSection() {
       >
         <div className="space-y-5">
           <Input label="Project name" required value={draft.name}
-            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+            onChange={(e) => setDraft({ ...draft, name: e.target.value })} error={check.errorFor('name')}
             placeholder="e.g. Bintulu Tank Farm Upgrade" />
           <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
             <Input label="Project code" value={draft.code}

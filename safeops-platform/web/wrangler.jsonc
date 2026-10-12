@@ -5,10 +5,16 @@
  *
  * The name is the public address, https://<name>.<account>.workers.dev, so it carries the
  * product's name. It must match the Worker's name in the Cloudflare dashboard.
+ *
+ * `previews` is what lets a branch or pull request get its own preview. Cloudflare's builds
+ * now run `npx wrangler preview` for every branch but the production one, and that command
+ * refuses to run without this block ("Your Wrangler configuration is missing a `previews`
+ * block"). Empty is enough: assets and compatibility settings stay at the top level.
  */
 {
-  "name": "safechain-demo",
+  "name": "sarawak-safechain",
   "compatibility_date": "2026-10-01",
+  "previews": {},
   "assets": {
     "directory": "./dist",
     "not_found_handling": "single-page-application"

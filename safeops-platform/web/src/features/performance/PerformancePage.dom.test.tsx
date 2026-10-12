@@ -268,7 +268,7 @@ describe('HSE Performance page', () => {
       expect(onTime.value).toBe('60')
       fireEvent.change(onTime, { target: { value: '90' } })
       fireEvent.change(within(dialog).getByLabelText(/^TRIR/), { target: { value: '1.2' } })
-      fireEvent.click(within(dialog).getByRole('button', { name: 'Save 2 targets' }))
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Save 2 Targets' }))
       await waitFor(() => expect(setTarget).toHaveBeenCalledTimes(2))
       expect(setTarget).toHaveBeenCalledWith({ companyId: 'co1', metric: 'onTimeClosure', value: 0.9 })
       expect(setTarget).toHaveBeenCalledWith({ companyId: 'co1', metric: 'trir', value: 1.2 })

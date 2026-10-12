@@ -277,6 +277,114 @@ describe('Dialog', () => {
   })
 })
 
+/*
+ * A click outside, Esc or the X used to close a form at once, and everything typed into it
+ * went with it. Once something has been entered, they ask first.
+ */
+describe('Dialog with something typed into it', () => {
+  function Form({ guard }: { guard?: boolean }) {
+    const [open, setOpen] = useState(true)
+    const [reason, setReason] = useState('')
+    const [site, setSite] = useState('')
+    return open ? (
+      <Dialog
+        open
+        onClose={() => setOpen(false)}
+        title="Close incident"
+        guardUnsaved={guard}
+        footer={<><Button variant="secondary" onClick={() => setOpen(false)}>Cancel</Button><Button>Save</Button></>}
+      >
+        <Input label="Reason" value={reason} onChange={(e) => setReason(e.target.value)} />
+        <Select label="Site" value={site} onChange={(e) => setSite(e.target.value)}>
+          <option value="">Choose…</option>
+          <option value="kch">Kuching</option>
+        </Select>
+      </Dialog>
+    ) : <p>closed</p>
+  }
+  const type = (text: string) => fireEvent.change(screen.getByLabelText('Reason'), { target: { value: text } })
+  const backdrop = () => document.querySelector('.bg-black\\/40') as HTMLElement
+
+  it('asks before Esc throws it away, with keeping it as the answer under the finger', () => {
+    render(<Form />)
+    type('Gas reading normal')
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.getByRole('dialog')).toBeTruthy()
+    expect(screen.getByRole('alert').textContent).toMatch(/Discard what you.ve entered\?/)
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Keep Editing' }))
+  })
+
+  it('asks before a click outside or the X does the same', () => {
+    render(<Form />)
+    type('Gas reading normal')
+    fireEvent.click(backdrop())
+    expect(screen.getByRole('button', { name: 'Keep Editing' })).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Keep Editing' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Close dialog' }))
+    expect(screen.getByRole('button', { name: 'Keep Editing' })).toBeTruthy()
+  })
+
+  it('goes back to the field, with what was typed still in it', () => {
+    render(<Form />)
+    const field = screen.getByLabelText('Reason') as HTMLInputElement
+    type('Gas reading normal')
+    field.focus()
+    fireEvent.keyDown(document, { key: 'Escape' })
+    fireEvent.click(screen.getByRole('button', { name: 'Keep Editing' }))
+    expect(screen.queryByRole('button', { name: 'Keep Editing' })).toBeNull()
+    expect(document.activeElement).toBe(field)
+    expect(field.value).toBe('Gas reading normal')
+    // The footer is back.
+    expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy()
+  })
+
+  it('treats a second Esc as "keep editing", the safe answer', () => {
+    render(<Form />)
+    type('Gas reading normal')
+    fireEvent.keyDown(document, { key: 'Escape' })
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.getByRole('dialog')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Keep Editing' })).toBeNull()
+  })
+
+  it('discards when told to', () => {
+    render(<Form />)
+    type('Gas reading normal')
+    fireEvent.keyDown(document, { key: 'Escape' })
+    fireEvent.click(screen.getByRole('button', { name: 'Discard' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('counts a choice made from a list', () => {
+    render(<Form />)
+    fireEvent.change(screen.getByLabelText('Site'), { target: { value: 'kch' } })
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.getByRole('button', { name: 'Keep Editing' })).toBeTruthy()
+  })
+
+  it('closes at once when nothing would be lost', () => {
+    render(<Form />)
+    type('Gas')
+    type('')
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('does not second-guess Cancel, or a dialog that opts out', () => {
+    render(<Form />)
+    type('Gas reading normal')
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    cleanup()
+
+    render(<Form guard={false} />)
+    type('Gas reading normal')
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+})
+
 // ─── DataTable ───────────────────────────────────────────────────────────────
 
 interface Row { id: string; name: string; score: number }

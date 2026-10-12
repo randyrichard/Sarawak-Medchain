@@ -9,6 +9,7 @@ import { Alert, Badge, Button, Dialog, Input, SuggestSelect, Select, Skeleton, T
 import { usePeople } from '@/features/incidents/lib'
 import { fmtDate } from '@/features/incidents/lib'
 import { cn } from '@/lib/cn'
+import { useFormCheck } from '@/lib/useFormCheck'
 
 /**
  * Work orders against a piece of equipment.
@@ -177,7 +178,10 @@ function RaiseDialog({
     setAssignedTo(''); setDueAt(''); setTakeOut(false); setError(null)
   }, [open])
 
+  const check = useFormCheck({ description: !description.trim() && 'Say what needs doing.' }, open)
+
   const submit = async () => {
+    if (!check.check()) return
     setBusy(true)
     setError(null)
     try {
@@ -219,7 +223,7 @@ function RaiseDialog({
         </div>
 
         <Textarea label="What needs doing" value={description} required
-          onChange={(e) => setDescription(e.target.value)} />
+          onChange={(e) => setDescription(e.target.value)} error={check.errorFor('description')} />
 
         <div className="grid grid-cols-2 gap-x-3 gap-y-5">
           <SuggestSelect
@@ -253,7 +257,7 @@ function RaiseDialog({
 
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => void submit()} loading={busy} disabled={!description.trim()}>
+          <Button onClick={() => void submit()} loading={busy}>
             Raise Work Order
           </Button>
         </div>
@@ -280,8 +284,12 @@ function CloseOutDialog({
     setReturnToService(true); setCancel(false); setError(null)
   }, [workOrder])
 
+  const closeCheck = useFormCheck({
+    closingNote: !cancel && !closingNote.trim() && 'Say what was done, or tick "Cancel this work order" below.',
+  }, !!workOrder)
+
   const submit = async () => {
-    if (!workOrder) return
+    if (!workOrder || !closeCheck.check()) return
     setBusy(true)
     setError(null)
     try {
@@ -302,7 +310,7 @@ function CloseOutDialog({
   }
 
   return (
-    <Dialog open={!!workOrder} onClose={onClose} title={`Close out ${workOrder?.code ?? ''}`}>
+    <Dialog open={!!workOrder} onClose={onClose} title={`Close Out ${workOrder?.code ?? ''}`}>
       <div className="space-y-3">
         {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
 
@@ -315,8 +323,8 @@ function CloseOutDialog({
 
         <Input label="Parts used" value={partsUsed} onChange={(e) => setPartsUsed(e.target.value)} />
 
-        <Textarea label="What was done" value={closingNote} required
-          onChange={(e) => setClosingNote(e.target.value)} />
+        <Textarea label="What was done" value={closingNote} required={!cancel}
+          onChange={(e) => setClosingNote(e.target.value)} error={closeCheck.errorFor('closingNote')} />
 
         {/*
           Asked, not assumed. A completed work order does not always mean the equipment is
@@ -340,8 +348,7 @@ function CloseOutDialog({
 
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose}>Back</Button>
-          <Button onClick={() => void submit()} loading={busy}
-            disabled={!cancel && !closingNote.trim()}>
+          <Button onClick={() => void submit()} loading={busy}>
             {cancel ? 'Cancel Work Order' : 'Complete Work Order'}
           </Button>
         </div>

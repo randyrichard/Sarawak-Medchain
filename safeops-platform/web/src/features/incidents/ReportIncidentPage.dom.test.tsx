@@ -106,3 +106,24 @@ describe('ReportIncidentPage submission', () => {
     expect(addIncidentAttachment).not.toHaveBeenCalled()
   })
 })
+
+describe('ReportIncidentPage, getting through and out of it', () => {
+  it('offers a way out on the first step, instead of a Back that cannot be pressed', () => {
+    render(<MemoryRouter><ReportIncidentPage /></MemoryRouter>)
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull()
+    expect(screen.getByRole('link', { name: 'Cancel' }).getAttribute('href')).toBe('/incidents')
+  })
+
+  it('takes the keyboard to the first thing to put right when Continue is pressed too soon', () => {
+    render(<MemoryRouter><ReportIncidentPage /></MemoryRouter>)
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
+    expect(screen.getByText('Pick the type that fits best.')).toBeTruthy()
+    // The first type in the picker: the first thing on the step still to be answered.
+    expect(document.activeElement).toBe(document.querySelector('[aria-labelledby="incident-type-label"] button'))
+
+    fireEvent.click(document.querySelector('[aria-labelledby="incident-type-label"] button')!)
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
+    expect(document.activeElement).toBe(screen.getByLabelText(/Severity/))
+  })
+})
+

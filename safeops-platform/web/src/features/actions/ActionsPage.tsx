@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Plus, Search } from 'lucide-react'
+import { useOpenRecord } from '@/lib/useOpenRecord'
+import { ListChecks, Plus, Search } from 'lucide-react'
 import { api } from '@/api/client'
 import type { CapaFilters, CapaItem, CapaStats } from '@/api/capa'
 import type { ActionPriority } from '@/api/incidents'
 import { useOrg } from '@/features/org/OrgContext'
 import { useActor, usePeople } from '@/features/incidents/lib'
-import { Alert, Badge, Button, Card, PageHeader, Skeleton, Tabs, type TabItem, AttentionIcon, attentionOf, attentionStripe } from '@/components/ui'
+import { Alert, Badge, Button, Card, EmptyState, PageHeader, Skeleton, Tabs, type TabItem, AttentionIcon, attentionOf, attentionStripe } from '@/components/ui'
+import { NoMatches } from '@/features/org/NoMatches'
 import { ApiError } from '@/api/types'
 import { cn } from '@/lib/cn'
 import { isManager } from './lib'
@@ -56,7 +58,7 @@ export function ActionsPage() {
 
   const [items, setItems] = useState<CapaItem[] | null>(null)
   const [stats, setStats] = useState<CapaStats | null>(null)
-  const [openId, setOpenId] = useState<string | null>(null)
+  const { id: openId, open: setOpenId, close: closeAction } = useOpenRecord()
   const [newOpen, setNewOpen] = useState(false)
 
   const refresh = useCallback(() => {
@@ -75,6 +77,12 @@ export function ActionsPage() {
 
   const setBucket = (b: Bucket) => {
     params.set('bucket', b)
+    setParams(params, { replace: true })
+  }
+  const filtered = Boolean(q.trim() || owner || priority || bucket !== 'all')
+  const clearFilters = () => {
+    setQ(''); setOwner(''); setPriority('')
+    params.delete('bucket')
     setParams(params, { replace: true })
   }
   const switchView = (v: View) => {
@@ -108,15 +116,6 @@ export function ActionsPage() {
    */
   const [deepLinked, setDeepLinked] = useState<CapaItem | null>(null)
   const [deepLinkError, setDeepLinkError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const openParam = params.get('open')
-    if (!openParam) return
-    setOpenId(openParam)
-    params.delete('open')
-    setParams(params, { replace: true })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   useEffect(() => {
     if (!openId) { setDeepLinked(null); setDeepLinkError(null); return }
@@ -158,7 +157,7 @@ export function ActionsPage() {
     <>
       {/* A stale or forbidden deep link says so rather than opening nothing. */}
       {deepLinkError && (
-        <Alert tone="critical" className="mb-3" onDismiss={() => setDeepLinkError(null)}>
+        <Alert tone="critical" className="mb-3" onDismiss={closeAction}>
           {deepLinkError}
         </Alert>
       )}
@@ -236,20 +235,42 @@ export function ActionsPage() {
         </div>
       </div>
 
-      {view === 'board' && (
-        <KanbanBoard items={items} actor={actor} readOnly={readOnlyRole} onOpen={setOpenId} onChanged={onChanged} />
+      {/*
+        Nothing to show on the board, the list or the calendar: say why once, in place of five
+        columns each reading "Empty".
+      */}
+      {view !== 'analytics' && items?.length === 0 ? (
+        <Card>
+          {filtered || site ? (
+            <NoMatches
+              what="corrective actions" search={q}
+              filtered={Boolean(owner || priority || bucket !== 'all')}
+              onClear={filtered ? clearFilters : undefined}
+            />
+          ) : (
+            <EmptyState icon={ListChecks} title="No corrective actions yet">
+              They are raised from incidents, audit findings and failed inspections, or here with New Action.
+            </EmptyState>
+          )}
+        </Card>
+      ) : (
+        <>
+          {view === 'board' && (
+            <KanbanBoard items={items} actor={actor} readOnly={readOnlyRole} onOpen={setOpenId} onChanged={onChanged} />
+          )}
+          {view === 'list' && (
+            <ActionsTable items={items} actor={actor} readOnly={readOnlyRole} sites={sites} onOpen={setOpenId} onChanged={refresh} />
+          )}
+          {view === 'calendar' && <CalendarView items={items} onOpen={setOpenId} />}
+        </>
       )}
-      {view === 'list' && (
-        <ActionsTable items={items} actor={actor} readOnly={readOnlyRole} sites={sites} onOpen={setOpenId} onChanged={refresh} />
-      )}
-      {view === 'calendar' && <CalendarView items={items} onOpen={setOpenId} />}
       {view === 'analytics' && <CapaAnalyticsView companyId={company?.id ?? null} sites={sites} />}
 
       <ActionDrawer
         item={openItem}
         actor={actor}
         readOnly={readOnlyRole}
-        onClose={() => setOpenId(null)}
+        onClose={closeAction}
         onChanged={onChanged}
       />
 

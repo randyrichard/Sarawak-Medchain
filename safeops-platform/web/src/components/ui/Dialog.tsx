@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/cn'
@@ -41,6 +41,22 @@ export const DIALOG_LAYOUT = {
   error: 'shrink-0 border-t px-5 pt-3',
 } as const
 
+/**
+ * Has the person put something in a field that closing would throw away?
+ *
+ * `changed` is every control they have typed into, picked from or ticked since the dialog
+ * opened. A text field they emptied again holds nothing to lose; a choice they made does.
+ */
+export function holdsUnsavedWork(changed: Iterable<Element>): boolean {
+  for (const el of changed) {
+    if (!el.isConnected) continue
+    const text = (el instanceof HTMLInputElement && !['checkbox', 'radio', 'file', 'range', 'color'].includes(el.type))
+      || el instanceof HTMLTextAreaElement
+    if (!text || (el as HTMLInputElement).value.trim() !== '') return true
+  }
+  return false
+}
+
 /** What can take focus inside the panel. Disabled controls are skipped, as the browser does. */
 const FOCUSABLE =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -68,7 +84,7 @@ export function initialFocusTarget(panel: HTMLElement): HTMLElement {
 }
 
 export function Dialog({
-  open, onClose, title, description, children, footer, width = 'max-w-md', error,
+  open, onClose, title, description, children, footer, width = 'max-w-md', error, guardUnsaved = true,
 }: {
   open: boolean
   onClose: () => void
@@ -88,10 +104,62 @@ export function Dialog({
    * pinned with the footer, in view whatever the body's scroll position.
    */
   error?: ReactNode
+  /**
+   * Ask before a click outside, Esc or the close button throws away what was typed.
+   *
+   * A form dialog used to vanish, with everything in it, the moment the pointer landed a
+   * few pixels outside the panel - reaching for the page behind, a mis-tap on a phone, Esc
+   * pressed to dismiss a browser's autofill list. Twenty fields of a permit request, gone,
+   * and no way to get them back. Now those three ask first. The footer's own Cancel is a
+   * decision and is not second-guessed; a dialog nobody has typed into closes at once.
+   */
+  guardUnsaved?: boolean
 }) {
   const panelRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
   const descriptionId = useId()
+  const discardId = useId()
+
+  /** Controls the person has changed since this opening. */
+  const changed = useRef(new Set<Element>())
+  const [askingToDiscard, setAskingToDiscard] = useState(false)
+  /** Where they were when asked, so "Keep Editing" puts them back there. */
+  const returnTo = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+    changed.current = new Set()
+    setAskingToDiscard(false)
+  }, [open])
+
+  useEffect(() => {
+    if (askingToDiscard) panelRef.current?.querySelector<HTMLElement>('[data-keep-editing]')?.focus()
+  }, [askingToDiscard])
+
+  const noteChange = (e: FormEvent) => { changed.current.add(e.target as Element) }
+
+  /** A click outside, Esc or the X: close, unless that would lose what was typed. */
+  const dismiss = () => {
+    if (guardUnsaved && holdsUnsavedWork(changed.current)) {
+      returnTo.current = document.activeElement as HTMLElement | null
+      setAskingToDiscard(true)
+    } else {
+      onClose()
+    }
+  }
+  const keepEditing = () => {
+    setAskingToDiscard(false)
+    // Back to the field they were in; failing that, the panel, never the page behind.
+    const back = returnTo.current
+    ;(back && panelRef.current?.contains(back) && !back.hasAttribute('data-keep-editing') ? back : panelRef.current)?.focus()
+  }
+  // The key handler is bound once per opening; it reads the latest of these through refs.
+  const dismissRef = useRef(dismiss)
+  dismissRef.current = dismiss
+  const askingRef = useRef(askingToDiscard)
+  askingRef.current = askingToDiscard
+  const keepEditingRef = useRef(keepEditing)
+  keepEditingRef.current = keepEditing
 
   /*
    * Focus moves into the dialog once, when it opens - and only then.
@@ -130,7 +198,11 @@ export function Dialog({
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      // Esc while being asked is "no, keep editing": the safe answer to a second press.
+      if (e.key === 'Escape') {
+        if (askingRef.current) keepEditingRef.current()
+        else dismissRef.current()
+      }
       if (e.key === 'Tab' && panelRef.current) {
         const focusables = panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)
         if (focusables.length === 0) return
@@ -158,7 +230,7 @@ export function Dialog({
   if (!open) return null
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 short:p-2">
-      <div className="absolute inset-0 animate-fade-in bg-black/40" onClick={onClose} aria-hidden />
+      <div className="absolute inset-0 animate-fade-in bg-black/40" onClick={dismiss} aria-hidden />
       <div
         ref={panelRef}
         role="dialog"
@@ -169,13 +241,15 @@ export function Dialog({
         aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
         className={cn(DIALOG_LAYOUT.panel, 'outline-none', width)}
+        onInput={noteChange}
+        onChange={noteChange}
       >
         <div className={DIALOG_LAYOUT.header}>
           <div>
             <h2 id={titleId} className="text-base font-semibold tracking-tight text-ink">{title}</h2>
             {description && <p id={descriptionId} className="mt-0.5 text-xs text-muted">{description}</p>}
           </div>
-          <button type="button" onClick={onClose} aria-label="Close dialog" className="shrink-0 rounded-lg p-1 coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft hover:text-ink">
+          <button type="button" onClick={dismiss} aria-label="Close dialog" className="shrink-0 rounded-lg p-1 coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft hover:text-ink">
             <X size={16} aria-hidden />
           </button>
         </div>
@@ -185,9 +259,20 @@ export function Dialog({
             <Alert tone="critical">{error}</Alert>
           </div>
         )}
-        <div className={cn(DIALOG_LAYOUT.footer, Boolean(error) && 'border-t-0')}>
-          {footer ?? <Button variant="secondary" onClick={onClose}>Close</Button>}
-        </div>
+        {askingToDiscard ? (
+          // In place of the buttons, so the only way on is to answer.
+          <div className={cn(DIALOG_LAYOUT.footer, 'flex-wrap items-center bg-warning-soft')}>
+            <p id={discardId} role="alert" className="w-full text-sm font-medium text-ink sm:mr-auto sm:w-auto">
+              Discard what you&rsquo;ve entered?
+            </p>
+            <Button variant="secondary" data-keep-editing aria-describedby={discardId} onClick={keepEditing}>Keep Editing</Button>
+            <Button variant="danger" onClick={onClose}>Discard</Button>
+          </div>
+        ) : (
+          <div className={cn(DIALOG_LAYOUT.footer, Boolean(error) && 'border-t-0')}>
+            {footer ?? <Button variant="secondary" onClick={onClose}>Close</Button>}
+          </div>
+        )}
       </div>
     </div>,
     document.body,

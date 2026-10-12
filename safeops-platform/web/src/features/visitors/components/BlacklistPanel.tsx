@@ -6,6 +6,7 @@ import { Alert, Badge, Button, Card, CardBody, Dialog, Input, Skeleton, Textarea
 import { fmtDate } from '@/features/incidents/lib'
 import { cn } from '@/lib/cn'
 import { formatIdNumber } from '@/lib/chunk'
+import { useFormCheck } from '@/lib/useFormCheck'
 
 /**
  * People, companies and vehicles refused entry.
@@ -138,7 +139,14 @@ function AddDialog({
     setReason(''); setExpiresAt(''); setError(null)
   }, [open])
 
+  const hasMatch = [idNumber, phone, visitorCompany, vehicleNumber].some((v) => v.trim())
+  const check = useFormCheck({
+    match: !hasMatch && 'Give at least one of these four, so the gate can recognise them.',
+    reason: !reason.trim() && 'Say why they are refused entry. It is shown to the gate.',
+  }, open)
+
   const submit = async () => {
+    if (!check.check()) return
     setBusy(true)
     setError(null)
     try {
@@ -159,8 +167,6 @@ function AddDialog({
     }
   }
 
-  const hasMatch = [idNumber, phone, visitorCompany, vehicleNumber].some((v) => v.trim())
-
   return (
     <Dialog open={open} onClose={onClose} title="Refuse Entry">
       <div className="space-y-3">
@@ -172,7 +178,8 @@ function AddDialog({
         </p>
 
         <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
-          <Input label="IC or passport" value={idNumber} onChange={(e) => setIdNumber(e.target.value)} />
+          <Input label="IC or passport" value={idNumber} onChange={(e) => setIdNumber(e.target.value)}
+            error={check.errorFor('match')} />
           <Input label="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
         </div>
         <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
@@ -181,7 +188,7 @@ function AddDialog({
         </div>
 
         <Textarea label="Reason" required value={reason} onChange={(e) => setReason(e.target.value)}
-          placeholder="e.g. Removed from site for tampering with an isolation." />
+          placeholder="e.g. Removed from site for tampering with an isolation." error={check.errorFor('reason')} />
 
         <Input label="Expires" type="date" value={expiresAt}
           onChange={(e) => setExpiresAt(e.target.value)}
@@ -189,8 +196,7 @@ function AddDialog({
 
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => void submit()} loading={busy}
-            disabled={!hasMatch || !reason.trim()}>
+          <Button onClick={() => void submit()} loading={busy}>
             Refuse Entry
           </Button>
         </div>

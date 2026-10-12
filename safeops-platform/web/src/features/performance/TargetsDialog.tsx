@@ -66,7 +66,7 @@ export function TargetsDialog({
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button loading={saving} disabled={changed.length === 0 || invalid} onClick={() => void save()}>
-            {changed.length > 1 ? `Save ${changed.length} targets` : 'Save'}
+            {changed.length > 1 ? `Save ${changed.length} Targets` : 'Save'}
           </Button>
         </>
       }
