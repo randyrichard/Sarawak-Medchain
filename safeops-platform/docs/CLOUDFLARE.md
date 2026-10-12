@@ -177,11 +177,12 @@ check is for customer builds, and the demo is the one build meant to contain the
    | Root directory | `safeops-platform/web` |
    | Build command | `npm run build:demo` |
    | Deploy command | `npx wrangler deploy` |
-   | Non-production branch deploy command | `npx wrangler versions upload` |
+   | Non-production branch deploy command | Cloudflare's default (`npx wrangler preview`), or `npx wrangler versions upload` |
    | Build watch paths, include | `safeops-platform/web/*` |
    | API token | Create new token |
 
-   No build variables are needed; the build script sets everything.
+   No build variables are needed; the build script sets everything. `npx wrangler preview`
+   needs the `previews` block in `web/wrangler.jsonc`, which is why it is there.
 
    **Check the branch, root directory and build command after creating it.** The import
    builds the repository's default branch, `main`, which holds an older SafeChain without

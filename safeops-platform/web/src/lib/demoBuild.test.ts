@@ -64,5 +64,7 @@ describe('public demo build', () => {
     expect(cfg.name).toBe('sarawak-safechain')
     expect(cfg.assets).toMatchObject({ directory: './dist', not_found_handling: 'single-page-application' })
     expect(cfg.main).toBeUndefined()
+    // Cloudflare builds other branches with `npx wrangler preview`, which fails without it.
+    expect(cfg.previews).toEqual({})
   })
 })
