@@ -7,7 +7,7 @@
  * product's name. It must match the Worker's name in the Cloudflare dashboard.
  */
 {
-  "name": "safechain-demo",
+  "name": "sarawak-safechain",
   "compatibility_date": "2026-10-01",
   "assets": {
     "directory": "./dist",
