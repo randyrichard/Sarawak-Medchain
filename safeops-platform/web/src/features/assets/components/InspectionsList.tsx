@@ -8,6 +8,7 @@ import { fmtDateTime } from '@/features/incidents/lib'
 import { cn } from '@/lib/cn'
 import { FieldPhotos } from '@/features/evidence/FieldPhotos'
 import { AddFieldPhotos } from '@/features/evidence/AddFieldPhotos'
+import { NoMatches } from '@/features/org/NoMatches'
 
 type Filter = 'all' | 'scheduled' | 'overdue' | 'completed' | 'failed'
 
@@ -60,9 +61,13 @@ export function InspectionsList({
 
       <Card>
         {rows.length === 0 ? (
-          <EmptyState icon={ClipboardCheck} title="No inspections match">
-            Schedule inspections from any asset's profile in the Register.
-          </EmptyState>
+          inspections.length > 0 && filter !== 'all' ? (
+            <NoMatches what="inspections" filtered onClear={() => setFilter('all')} />
+          ) : (
+            <EmptyState icon={ClipboardCheck} title="No inspections scheduled">
+              Schedule inspections from any asset&rsquo;s profile in the Register.
+            </EmptyState>
+          )
         ) : (
           <ul className="divide-y">
             {rows.map((i) => (

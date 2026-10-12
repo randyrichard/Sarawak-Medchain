@@ -4,6 +4,7 @@ import { listEquipmentHolders, type EquipmentHolderOption } from '@/api/equipmen
 import { ApiError } from '@/api/types'
 import { useOrg, useSiteScope } from '@/features/org/OrgContext'
 import { Button, Dialog, FormSection, FormSections, Input, Select, Textarea, personRegisterHint } from '@/components/ui'
+import { useFormCheck } from '@/lib/useFormCheck'
 
 /**
  * Pre-registering a visit.
@@ -73,8 +74,19 @@ export function NewVisitorDialog({
       })
   }, [open, company, sites])
 
+  const arrives = new Date(expectedArrival).getTime()
+  const leaves = new Date(expectedDeparture).getTime()
+  const form = useFormCheck({
+    name: !name.trim() && 'Enter the visitor’s full name.',
+    idNumber: !idNumber.trim() && 'Enter their IC or passport number. It is checked against the blacklist.',
+    siteId: !siteId && 'Choose the site they are visiting.',
+    expectedArrival: !expectedArrival && 'Enter when they are expected.',
+    expectedDeparture: !expectedDeparture ? 'Enter when they are expected to leave.'
+      : leaves <= arrives && 'Departure must be after arrival.',
+  }, open)
+
   const submit = async () => {
-    if (!company) return
+    if (!company || !form.check()) return
     setBusy(true)
     setError(null)
     try {
@@ -118,8 +130,7 @@ export function NewVisitorDialog({
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button loading={busy} onClick={() => void submit()}
-            disabled={!name.trim() || !idNumber.trim() || !siteId || !expectedArrival || !expectedDeparture}>
+          <Button loading={busy} onClick={() => void submit()}>
             Pre-Register
           </Button>
         </>
@@ -134,9 +145,10 @@ export function NewVisitorDialog({
       <FormSections>
         <FormSection title="Who Is Visiting">
             <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
-              <Input label="Full name" required value={name} onChange={(e) => setName(e.target.value)} />
+              <Input label="Full name" required value={name} onChange={(e) => setName(e.target.value)}
+                error={form.errorFor('name')} />
               <Input label="IC or passport" required value={idNumber}
-                onChange={(e) => setIdNumber(e.target.value)} />
+                onChange={(e) => setIdNumber(e.target.value)} error={form.errorFor('idNumber')} />
             </div>
             <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
               <Input label="Nationality" value={nationality} onChange={(e) => setNationality(e.target.value)} />
@@ -145,7 +157,8 @@ export function NewVisitorDialog({
         </FormSection>
         <FormSection title="The Visit">
             <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
-              <Select label="Site" required value={siteId} onChange={(e) => setSiteId(e.target.value)}>
+              <Select label="Site" required value={siteId} onChange={(e) => setSiteId(e.target.value)}
+                error={form.errorFor('siteId')}>
                 <option value="">Select…</option>
                 {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </Select>
@@ -173,9 +186,9 @@ export function NewVisitorDialog({
             placeholder="e.g. Vendor meeting, pump commissioning" />
             <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
               <Input label="Expected arrival" type="datetime-local" required value={expectedArrival}
-                onChange={(e) => setExpectedArrival(e.target.value)} />
+                onChange={(e) => setExpectedArrival(e.target.value)} error={form.errorFor('expectedArrival')} />
               <Input label="Expected departure" type="datetime-local" required value={expectedDeparture}
-                onChange={(e) => setExpectedDeparture(e.target.value)} />
+                onChange={(e) => setExpectedDeparture(e.target.value)} error={form.errorFor('expectedDeparture')} />
             </div>
         </FormSection>
         <FormSection title="Contact and Emergency">

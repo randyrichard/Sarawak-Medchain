@@ -4,8 +4,9 @@ import { forgetContractorCompanies } from '@/features/org/registers'
 import { ApiError } from '@/api/types'
 import { useOrg } from '@/features/org/OrgContext'
 import { Button, Dialog } from '@/components/ui'
+import { useFormCheck } from '@/lib/useFormCheck'
 import {
-  ContractorForm, contractorFormProblem, emptyContractorForm, toContractorPayload,
+  ContractorForm, contractorFormProblems, emptyContractorForm, toContractorPayload,
   type ContractorFormState,
 } from './ContractorForm'
 
@@ -21,10 +22,10 @@ export function NewContractorDialog({
     if (open) { setForm(emptyContractorForm()); setError(null) }
   }, [open])
 
-  const problem = contractorFormProblem(form)
+  const check = useFormCheck(contractorFormProblems(form), open)
 
   const submit = async () => {
-    if (!company) return
+    if (!company || !check.check()) return
     setBusy(true)
     setError(null)
     try {
@@ -53,12 +54,11 @@ export function NewContractorDialog({
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={busy}>Cancel</Button>
-          <Button onClick={() => void submit()} loading={busy} disabled={!!problem}>Add Contractor</Button>
+          <Button onClick={() => void submit()} loading={busy}>Add Contractor</Button>
         </>
       }
     >
-      <ContractorForm value={form} onChange={setForm} />
-      {problem && <p className="mt-2 text-2xs text-muted">{problem}</p>}
+      <ContractorForm value={form} onChange={setForm} errors={{ name: check.errorFor('name'), email: check.errorFor('email') }} />
     </Dialog>
   )
 }

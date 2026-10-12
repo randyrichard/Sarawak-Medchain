@@ -3,8 +3,9 @@ import { employeesApi } from '@/api/employeesApi'
 import type { EmployeeDetail } from '@/api/employees'
 import { ApiError } from '@/api/types'
 import { Button, Dialog } from '@/components/ui'
+import { useFormCheck } from '@/lib/useFormCheck'
 import {
-  EmployeeForm, employeeFormProblem, toEmployeePayload, type EmployeeFormState,
+  EmployeeForm, employeeFormProblems, toEmployeePayload, type EmployeeFormState,
 } from './EmployeeForm'
 
 const dateOnly = (iso: string | null) => (iso ? new Date(iso).toISOString().slice(0, 10) : '')
@@ -22,9 +23,10 @@ export function EditEmployeeDialog({
     if (open) { setForm(fromEmployee(employee)); setError(null) }
   }, [open, employee])
 
-  const problem = employeeFormProblem(form)
+  const check = useFormCheck(employeeFormProblems(form), open)
 
   const submit = async () => {
+    if (!check.check()) return
     setBusy(true)
     setError(null)
     try {
@@ -60,12 +62,11 @@ export function EditEmployeeDialog({
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={busy}>Cancel</Button>
-          <Button onClick={() => void submit()} loading={busy} disabled={!!problem}>Save Changes</Button>
+          <Button onClick={() => void submit()} loading={busy}>Save Changes</Button>
         </>
       }
     >
-      <EmployeeForm value={form} onChange={setForm} />
-      {problem && <p className="mt-2 text-2xs text-muted">{problem}</p>}
+      <EmployeeForm value={form} onChange={setForm} errors={{ name: check.errorFor('name'), siteId: check.errorFor('siteId'), email: check.errorFor('email') }} />
     </Dialog>
   )
 }

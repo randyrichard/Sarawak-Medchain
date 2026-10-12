@@ -74,10 +74,10 @@ describe('AddFieldPhotos', () => {
     render(<AddFieldPhotos kind="inspections" id="ins-1" onAdded={onAdded} />)
     const input = document.querySelector('input[type=file]') as HTMLInputElement
     fireEvent.change(input, { target: { files: Array.from({ length: 6 }, (_, i) => jpg(`${i}.jpg`)) } })
-    fireEvent.click(screen.getByRole('button', { name: 'Upload 6 photos' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Upload 6 Photos' }))
     expect(await screen.findByText(/One photo did not upload; the other 5 did/)).toBeTruthy()
     // The stored five are gone from the selection; pressing Upload again sends only 5.jpg.
-    expect(screen.getByRole('button', { name: 'Upload photo' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Upload Photo' })).toBeTruthy()
     expect(screen.queryByText('0.jpg')).toBeNull()
     expect(screen.getByText('5.jpg')).toBeTruthy()
     expect(onAdded).toHaveBeenCalledTimes(1)

@@ -10,6 +10,7 @@ import { Alert, Badge, Button, Card, CardBody, Dialog, Input, PersonRegisterOpti
 import { useSiteScope } from '@/features/org/OrgContext'
 import { fmtDate } from '../lib'
 import { cn } from '@/lib/cn'
+import { useFormCheck } from '@/lib/useFormCheck'
 
 /**
  * Who was involved: witnesses, the injured, first aiders.
@@ -203,7 +204,12 @@ function AddPersonDialog({
       })
   }, [open, companyId])
 
+  const check = useFormCheck({
+    name: !who && !name.trim() && 'Choose them from the registers above, or type their name.',
+  }, open)
+
   const submit = async () => {
+    if (!check.check()) return
     setBusy(true)
     setError(null)
     try {
@@ -270,7 +276,7 @@ function AddPersonDialog({
 
         {!who && (
           <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
-            <Input label="Name" required value={name} onChange={(e) => setName(e.target.value)} />
+            <Input label="Name" required value={name} onChange={(e) => setName(e.target.value)} error={check.errorFor('name')} />
             <Input label="Company or department" value={company}
               onChange={(e) => setCompany(e.target.value)} />
           </div>
@@ -299,7 +305,7 @@ function AddPersonDialog({
 
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={() => void submit()} loading={busy} disabled={!who && !name.trim()}>
+          <Button onClick={() => void submit()} loading={busy}>
             Name Them
           </Button>
         </div>

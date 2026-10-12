@@ -281,7 +281,7 @@ export function AuditRunner({
           ) : (
           <Button className="w-full" size="lg" icon={<Send size={14} />} loading={busy} disabled={!canSubmit} onClick={() => void submit()}>
             {answered < allItems.length
-              ? `Answer ${allItems.length - answered} more item(s)`
+              ? `Answer ${allItems.length - answered} More ${allItems.length - answered === 1 ? 'Item' : 'Items'}`
               : failsIncomplete.length > 0
                 ? 'Complete Finding Details for Failed Items'
                 : 'Submit Audit'}

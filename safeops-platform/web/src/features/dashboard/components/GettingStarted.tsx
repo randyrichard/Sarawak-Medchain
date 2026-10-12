@@ -50,28 +50,28 @@ const STEPS: Step[] = [
     title: 'Add Your Sites',
     detail: 'Plants, yards, offices — anywhere work happens. Everything else is filed against a site.',
     to: '/admin?s=sites',
-    cta: 'Add a site',
+    cta: 'Add a Site',
   },
   {
     key: 'hasPeople',
     title: 'Invite Your Team',
     detail: 'Your HSE officers and supervisors. They can report and investigate as soon as they accept.',
     to: '/admin?s=invitations',
-    cta: 'Invite someone',
+    cta: 'Invite Someone',
   },
   {
     key: 'hasIncidents',
     title: 'Report Something That Happened',
     detail: 'A near miss from last week is a good first one. It takes about three minutes.',
     to: '/incidents/new',
-    cta: 'Report an incident',
+    cta: 'Report an Incident',
   },
   {
     key: 'hasPermits',
     title: 'Raise a Permit to Work',
     detail: 'Hot work, confined space, working at height — whatever your next high-risk job is.',
     to: '/permits',
-    cta: 'Open permits',
+    cta: 'Open Permits',
   },
 ]
 

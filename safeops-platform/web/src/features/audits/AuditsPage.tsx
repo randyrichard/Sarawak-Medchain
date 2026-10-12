@@ -1,13 +1,14 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Plus, Search } from 'lucide-react'
+import { ClipboardCheck, Plus, Search } from 'lucide-react'
 import { api } from '@/api/client'
 import type {
   AuditFindingView, AuditStats, AuditView, ComplianceDocument, ObligationView,
 } from '@/api/audits'
 import { useOrg } from '@/features/org/OrgContext'
 import { useActor } from '@/features/incidents/lib'
-import { Badge, Button, Card, PageHeader, Skeleton, StatusPill, Tabs, type TabItem, AttentionIcon, attentionOf, attentionStripe } from '@/components/ui'
+import { Badge, Button, Card, EmptyState, PageHeader, Skeleton, StatusPill, Tabs, type TabItem, AttentionIcon, attentionOf, attentionStripe } from '@/components/ui'
+import { NoMatches } from '@/features/org/NoMatches'
 import { cn } from '@/lib/cn'
 import { isComplianceManager, scoreColor, AUDIT_STATUS_META } from './lib'
 import { AUDIT_TYPE_LABEL } from '@/api/audits'
@@ -18,6 +19,7 @@ import { ComplianceRegister } from './components/ComplianceRegister'
 import { DocumentsPanel } from './components/DocumentsPanel'
 import { AuditAnalyticsView } from './components/AuditAnalyticsView'
 import { Avatar } from '@/components/ui'
+import { useOpenRecord } from '@/lib/useOpenRecord'
 
 type View = 'audits' | 'findings' | 'compliance' | 'documents' | 'analytics'
 
@@ -34,7 +36,7 @@ export function AuditsPage() {
   const [documents, setDocuments] = useState<ComplianceDocument[] | null>(null)
   const [stats, setStats] = useState<AuditStats | null>(null)
   // Search links to one audit with `?open=`; it used to land on the list with nothing open.
-  const [openAuditId, setOpenAuditId] = useState<string | null>(() => params.get('open'))
+  const { id: openAuditId, open: setOpenAuditId, close: closeAudit } = useOpenRecord()
   const [planOpen, setPlanOpen] = useState(false)
 
   const manage = isComplianceManager(role)
@@ -117,8 +119,20 @@ export function AuditsPage() {
         </div>
       </div>
 
-      {view === 'audits' && <AuditsList audits={audits} sites={sites} onOpen={setOpenAuditId} />}
-      {view === 'findings' && <FindingsList findings={findings} q={q} onOpenAudit={setOpenAuditId} />}
+      {view === 'audits' && (
+        <AuditsList
+          audits={audits} sites={sites} onOpen={setOpenAuditId}
+          // "No audits in scope - plan one" was said under a search, as though there were none.
+          empty={q.trim() || site ? (
+            <NoMatches what="audits" search={q} filtered={false} onClear={q.trim() ? () => setQ('') : undefined} />
+          ) : (
+            <EmptyState icon={ClipboardCheck} title="No audits planned yet">
+              Plan one with Plan Audit: what it covers, who leads it and when.
+            </EmptyState>
+          )}
+        />
+      )}
+      {view === 'findings' && <FindingsList findings={findings} q={q} onClearSearch={() => setQ('')} onOpenAudit={setOpenAuditId} />}
       {view === 'compliance' && <ComplianceRegister obligations={obligations} manage={manage} sites={sites} onChanged={refresh} />}
       {view === 'documents' && <DocumentsPanel documents={documents} q={q} role={role} onChanged={refresh} />}
       {view === 'analytics' && <AuditAnalyticsView stats={stats} sites={sites} />}
@@ -128,11 +142,7 @@ export function AuditsPage() {
         actor={actor}
         manage={manage}
         sites={sites}
-        onClose={() => {
-          setOpenAuditId(null)
-          // Or a refresh would open it again.
-          if (params.has('open')) { params.delete('open'); setParams(params, { replace: true }) }
-        }}
+        onClose={closeAudit}
         onChanged={refresh}
       />
 
@@ -145,11 +155,13 @@ export function AuditsPage() {
 }
 
 function AuditsList({
-  audits, sites, onOpen,
+  audits, sites, onOpen, empty,
 }: {
   audits: AuditView[] | null
   sites: { id: string; short: string }[]
   onOpen: (id: string) => void
+  /** What to say when there is nothing to list. */
+  empty: ReactNode
 }) {
   if (audits === null) {
     return <Card className="space-y-3 p-5">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</Card>
@@ -158,7 +170,7 @@ function AuditsList({
   return (
     <Card>
       {audits.length === 0 ? (
-        <p className="px-5 py-10 text-center text-sm text-muted">No audits in scope — plan one to get started.</p>
+        empty
       ) : (
         <ul className="divide-y">
           {audits.map((a) => (

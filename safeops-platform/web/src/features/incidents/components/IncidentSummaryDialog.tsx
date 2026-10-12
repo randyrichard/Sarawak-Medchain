@@ -41,7 +41,7 @@ export function IncidentSummaryDialog({ incidentId, number, onClose }: {
       error={error}
       open
       onClose={onClose}
-      title={`Incident summary — ${number}`}
+      title={`Incident Summary — ${number}`}
       description="Prepared from the incident record — ready to share with management or your client."
       width="max-w-3xl"
       footer={

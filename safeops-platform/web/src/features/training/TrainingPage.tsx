@@ -14,6 +14,7 @@ import { CatalogPanel } from './components/CatalogPanel'
 import { SessionsPanel } from './components/SessionsPanel'
 import { CertificatesPanel } from './components/CertificatesPanel'
 import { EmployeeTrainingDrawer } from './components/EmployeeTrainingDrawer'
+import { useOpenRecord } from '@/lib/useOpenRecord'
 import { NewSessionDialog } from './components/NewSessionDialog'
 
 type View = 'overview' | 'matrix' | 'catalog' | 'sessions' | 'certificates'
@@ -29,7 +30,8 @@ export function TrainingPage() {
   const [courses, setCourses] = useState<CourseView[] | null>(null)
   const [sessions, setSessions] = useState<SessionView[] | null>(null)
   const [certs, setCerts] = useState<CertificateView[] | null>(null)
-  const [openEmployee, setOpenEmployee] = useState<string | null>(null)
+  // Whose training record is open in the drawer.
+  const { id: openEmployee, open: setOpenEmployee, close: closeEmployee } = useOpenRecord()
   const [newSessionOpen, setNewSessionOpen] = useState(false)
 
   const manage = canManageTraining(role)
@@ -56,15 +58,20 @@ export function TrainingPage() {
   /*
    * One certificate: /training?cert=<id>, from search and from the expiry reminders. It
    * opened the overview and left the certificate to be found by hand. It now opens the
-   * holder's training record, where the certificate can be renewed.
+   * holder's training record, where the certificate can be renewed. One change to the
+   * address, in place: the link is what brought them here, so closing the record should
+   * not take them back to an address that opens it again.
    */
   const certParam = params.get('cert')
   useEffect(() => {
     if (!certParam || certs === null) return
     const cert = certs.find((c) => c.id === certParam)
-    params.delete('cert')
-    switchView('certificates')
-    if (cert) setOpenEmployee(cert.employeeId)
+    const next = new URLSearchParams(params)
+    next.delete('cert')
+    next.set('view', 'certificates')
+    if (cert) next.set('open', cert.employeeId)
+    setView('certificates')
+    setParams(next, { replace: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [certParam, certs])
 
@@ -144,7 +151,7 @@ export function TrainingPage() {
         employeeId={openEmployee}
         actor={actor}
         manage={manage}
-        onClose={() => setOpenEmployee(null)}
+        onClose={closeEmployee}
         onChanged={refresh}
       />
 

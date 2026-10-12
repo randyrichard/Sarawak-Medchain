@@ -5,6 +5,7 @@ import { ApiError } from '@/api/types'
 import { useOrg } from '@/features/org/OrgContext'
 import { Alert, Button, Dialog, Input, SuggestSelect, Select } from '@/components/ui'
 import { usePositions } from '@/features/org/registers'
+import { useFormCheck } from '@/lib/useFormCheck'
 
 interface FormState {
   contractorCompanyId: string
@@ -24,11 +25,13 @@ const empty = (siteId: string): FormState => ({
   medicalExpiry: '', inductionExpiry: '', emergencyName: '', emergencyPhone: '', emergencyRelation: '',
 })
 
-function problemWith(f: FormState): string | null {
-  if (!f.name.trim()) return 'A worker name is required.'
-  if (!f.contractorCompanyId) return 'Choose which contractor they work for.'
-  if (!f.siteId) return 'Choose the site they will be working at.'
-  return null
+/** What is wrong with each field, if anything - shown under that field. */
+function problemsWith(f: FormState) {
+  return {
+    name: !f.name.trim() && 'A worker name is required.',
+    contractorCompanyId: !f.contractorCompanyId && 'Choose which contractor they work for.',
+    siteId: !f.siteId && 'Choose the site they will be working at.',
+  }
 }
 
 export function NewWorkerDialog({
@@ -51,11 +54,11 @@ export function NewWorkerDialog({
   }, [open, site?.id])
 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm((s) => ({ ...s, [k]: v }))
-  const problem = problemWith(form)
+  const check = useFormCheck(problemsWith(form), open)
   const active = contractors.filter((c) => c.status === 'active')
 
   const submit = async () => {
-    if (!company) return
+    if (!company || !check.check()) return
     setBusy(true)
     setError(null)
     try {
@@ -90,7 +93,7 @@ export function NewWorkerDialog({
       footer={
         <>
           <Button variant="secondary" onClick={onClose} disabled={busy}>Cancel</Button>
-          <Button onClick={() => void submit()} loading={busy} disabled={!!problem}>Register</Button>
+          <Button onClick={() => void submit()} loading={busy}>Register</Button>
         </>
       }
     >
@@ -102,17 +105,19 @@ export function NewWorkerDialog({
       )}
 
       <div className="space-y-5">
-        <Input label="Full name" value={form.name} required autoFocus onChange={(e) => set('name', e.target.value)} />
+        <Input label="Full name" value={form.name} required autoFocus onChange={(e) => set('name', e.target.value)}
+          error={check.errorFor('name')} />
 
         <div className="grid gap-3 sm:grid-cols-2">
           {/* Suspended firms are omitted: registering someone to a suspended contractor
               produces a worker who can never be admitted. */}
-          <Select label="Contractor" value={form.contractorCompanyId}
-            onChange={(e) => set('contractorCompanyId', e.target.value)}>
+          <Select label="Contractor" required value={form.contractorCompanyId}
+            onChange={(e) => set('contractorCompanyId', e.target.value)} error={check.errorFor('contractorCompanyId')}>
             <option value="">Choose a contractor…</option>
             {active.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </Select>
-          <Select label="Site" value={form.siteId} onChange={(e) => set('siteId', e.target.value)}>
+          <Select label="Site" required value={form.siteId} onChange={(e) => set('siteId', e.target.value)}
+            error={check.errorFor('siteId')}>
             <option value="">Choose a site…</option>
             {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </Select>
@@ -148,7 +153,6 @@ export function NewWorkerDialog({
         </div>
       </div>
 
-      {problem && <p className="mt-2 text-2xs text-muted">{problem}</p>}
     </Dialog>
   )
 }

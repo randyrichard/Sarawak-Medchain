@@ -143,7 +143,7 @@ export default function AppShell() {
   )
 }
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { allowed, company } = useOrg()
   // Platform staff only, and answered by the server rather than by a tenant capability -
   // managing customers sits above every workspace rather than inside one.
@@ -218,6 +218,10 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                 to={item.to}
                 end={item.end}
                 onClick={onNavigate}
+                // NavLink marks itself the current page by the same prefix rule, so on the
+                // Incident Board a screen reader heard two current pages. Only the row that
+                // owns the page says so; NavLink applies this only when it matches at all.
+                aria-current={own(item, true) ? 'page' : false}
                 className={({ isActive }) =>
                   cn(
                     // Words only. With an icon on every row the list was eighteen symbols before

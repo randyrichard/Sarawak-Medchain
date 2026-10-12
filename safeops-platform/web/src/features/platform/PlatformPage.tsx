@@ -16,6 +16,7 @@ import {
   subscriptionBadge,
 } from './lib'
 import { usePlatformInfo } from './usePlatformAdmin'
+import { useFormCheck } from '@/lib/useFormCheck'
 
 /**
  * The SafeChain platform console.
@@ -71,6 +72,7 @@ export function PlatformPage() {
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     if (saving) return // a double-click must not reach the server twice
+    if (!check.check()) return
     setSaving(true)
     setError(null)
     try {
@@ -110,8 +112,13 @@ export function PlatformPage() {
   const outcome = result ? provisionOutcome(result) : null
   const idPreview = previewCompanyId(draft.companyName)
   const selectedPlan = plans.find((p) => p.key === draft.plan)
-  const ready = draft.companyName.trim() && draft.adminName.trim()
-    && draft.adminEmail.trim() && draft.siteName.trim() && draft.plan
+  const check = useFormCheck({
+    companyName: !draft.companyName.trim() && 'Enter the customer’s company name.',
+    adminName: !draft.adminName.trim() && 'Enter the administrator’s full name.',
+    adminEmail: !draft.adminEmail.trim() ? 'Enter the email the invitation goes to.'
+      : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.adminEmail.trim()) && 'That email address does not look right.',
+    siteName: !draft.siteName.trim() && 'Name their first site.',
+  }, open)
 
   return (
     <>
@@ -237,7 +244,7 @@ export function PlatformPage() {
         footer={(
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={submit} disabled={saving || !ready}>
+            <Button onClick={submit} disabled={saving}>
               {saving ? 'Creating…' : 'Create Customer'}
             </Button>
           </div>
@@ -248,7 +255,7 @@ export function PlatformPage() {
             <p className="text-2xs font-bold uppercase tracking-wider text-muted">Company</p>
             <Input
               label="Company name" required value={draft.companyName}
-              onChange={(e) => setDraft({ ...draft, companyName: e.target.value })}
+              onChange={(e) => setDraft({ ...draft, companyName: e.target.value })} error={check.errorFor('companyName')}
               placeholder="Borneo Industrial Group Sdn Bhd"
               hint={idPreview ? `Workspace id will be "${idPreview}"` : undefined}
             />
@@ -290,11 +297,11 @@ export function PlatformPage() {
             <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
               <Input
                 label="Full name" required value={draft.adminName}
-                onChange={(e) => setDraft({ ...draft, adminName: e.target.value })}
+                onChange={(e) => setDraft({ ...draft, adminName: e.target.value })} error={check.errorFor('adminName')}
               />
               <Input
                 label="Email" required type="email" value={draft.adminEmail}
-                onChange={(e) => setDraft({ ...draft, adminEmail: e.target.value })}
+                onChange={(e) => setDraft({ ...draft, adminEmail: e.target.value })} error={check.errorFor('adminEmail')}
                 placeholder="hse.manager@customer.com"
               />
             </div>
@@ -309,7 +316,7 @@ export function PlatformPage() {
             <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
               <Input
                 label="Site name" required value={draft.siteName}
-                onChange={(e) => setDraft({ ...draft, siteName: e.target.value })}
+                onChange={(e) => setDraft({ ...draft, siteName: e.target.value })} error={check.errorFor('siteName')}
                 placeholder="Bintulu Plant"
               />
               <Input

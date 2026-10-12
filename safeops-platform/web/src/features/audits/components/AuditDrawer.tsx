@@ -121,10 +121,10 @@ export function AuditDrawer({
                   </Button>
                 )}
                 {audit.status === 'Completed' && manage && (
-                  <span title={unresolved > 0 ? `${unresolved} finding(s) not yet verified` : undefined}>
+                  <span title={unresolved > 0 ? `${unresolved} ${unresolved === 1 ? 'finding' : 'findings'} not yet verified` : undefined}>
                     <Button size="sm" icon={unresolved > 0 ? <Lock size={12} /> : undefined} disabled={unresolved > 0} loading={busy}
                       onClick={() => void run(() => api.closeAudit(audit.id, actor))}>
-                      {unresolved > 0 ? `Close audit (${unresolved} unverified)` : 'Close Audit'}
+                      {unresolved > 0 ? `Close Audit (${unresolved} Unverified)` : 'Close Audit'}
                     </Button>
                   </span>
                 )}

@@ -32,13 +32,13 @@ export function NextStepCard({ incident, onUpdate }: { incident: Incident; onUpd
   const canReview = REVIEW.includes(role ?? '')
 
   const STEP: Record<string, { title: string; hint: string; cta: string; allowed: boolean; needsDialog: boolean } | null> = {
-    reported: { title: 'Complete the initial assessment', hint: 'Rate the risk and decide the investigation path. Target: within 24h of reporting.', cta: 'Start assessment', allowed: canManage, needsDialog: true },
-    assessment: { title: 'Assign the investigation', hint: 'Pick a lead investigator — the clock is running.', cta: 'Start investigation', allowed: canManage, needsDialog: true },
-    investigation: { title: 'Record findings and open RCA', hint: 'Summarise what the investigation established, then analyse root causes.', cta: 'Record findings', allowed: canManage, needsDialog: true },
-    rca: { title: 'Submit the root cause analysis', hint: 'Needs at least one contributing cause and a 5-Why root statement (Investigation tab).', cta: 'Submit RCA', allowed: canManage, needsDialog: false },
-    actions: { title: 'Submit for manager review', hint: 'Every cause must have an action, and every action must be completed first.', cta: 'Submit for review', allowed: canManage, needsDialog: false },
-    review: { title: 'Manager review', hint: 'Approve the root cause and corrective actions to begin verification.', cta: 'Approve → verification', allowed: canReview, needsDialog: true },
-    verification: { title: 'Verify and close', hint: 'Verify each action\'s evidence (Actions tab), then close the incident.', cta: 'Close incident', allowed: canReview, needsDialog: true },
+    reported: { title: 'Complete the Initial Assessment', hint: 'Rate the risk and decide the investigation path. Target: within 24h of reporting.', cta: 'Start Assessment', allowed: canManage, needsDialog: true },
+    assessment: { title: 'Assign the Investigation', hint: 'Pick a lead investigator — the clock is running.', cta: 'Start Investigation', allowed: canManage, needsDialog: true },
+    investigation: { title: 'Record Findings and Start the Root Cause Analysis', hint: 'Summarise what the investigation established, then analyse root causes.', cta: 'Record Findings', allowed: canManage, needsDialog: true },
+    rca: { title: 'Submit the Root Cause Analysis', hint: 'Needs at least one contributing cause and a 5-Why root statement (Investigation tab).', cta: 'Submit Root Cause Analysis', allowed: canManage, needsDialog: false },
+    actions: { title: 'Submit for Manager Review', hint: 'Every cause must have an action, and every action must be completed first.', cta: 'Submit for Review', allowed: canManage, needsDialog: false },
+    review: { title: 'Manager Review', hint: 'Approve the root cause and corrective actions to begin verification.', cta: 'Approve → Verification', allowed: canReview, needsDialog: true },
+    verification: { title: 'Verify and Close', hint: 'Verify each action\'s evidence (Actions tab), then close the incident.', cta: 'Close Incident', allowed: canReview, needsDialog: true },
     closed: null,
   }
 

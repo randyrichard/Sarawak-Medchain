@@ -412,7 +412,7 @@ function CheckInDialog({
   }
 
   return (
-    <Dialog open={open} onClose={onClose} title={`Check in ${visitor.name}`}>
+    <Dialog open={open} onClose={onClose} title={`Check In ${visitor.name}`}>
       <div className="space-y-3">
         {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
         <Input label="Badge number" value={badgeNumber} onChange={(e) => setBadgeNumber(e.target.value)}

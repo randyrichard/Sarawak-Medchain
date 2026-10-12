@@ -12,6 +12,7 @@ import {
   Alert, Badge, Button, Card, CardBody, CardHeader, Dialog, EmptyState, Input, Skeleton,
 } from '@/components/ui'
 import { departmentInUseSummary } from '../lib'
+import { useFormCheck } from '@/lib/useFormCheck'
 
 /**
  * Departments.
@@ -68,8 +69,12 @@ export function DepartmentsSection() {
     setDialog({ open: true, editing: d })
   }
 
+  const check = useFormCheck({
+    name: !draft.name.trim() && 'Give the department a name.',
+  }, dialog.open)
+
   const save = async () => {
-    if (!company) return
+    if (!company || !check.check()) return
     setSaving(true)
     setError(null)
     try {
@@ -205,7 +210,7 @@ export function DepartmentsSection() {
             </Button>
             <Button
               onClick={save}
-              disabled={saving || !draft.name.trim() || (!dialog.editing && !draft.siteId)}
+              disabled={saving}
             >
               {saving ? 'Saving…' : dialog.editing ? 'Save Changes' : 'Create Department'}
             </Button>
@@ -215,7 +220,7 @@ export function DepartmentsSection() {
         <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
           <Input
             label="Department name" required value={draft.name}
-            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+            onChange={(e) => setDraft({ ...draft, name: e.target.value })} error={check.errorFor('name')}
             placeholder="Maintenance"
           />
           <Input

@@ -7,12 +7,13 @@ import { INCIDENT_STAGES, STAGE_LABEL, SEVERITY_LABEL, TYPE_LABEL } from '@/api/
 import { OVERDUE_AFTER_DAYS } from '@/api/incidents'
 import { useOrg } from '@/features/org/OrgContext'
 import {
-  Alert, AttentionIcon, Badge, Card, DataTable, EmptyState, LinkButton, PageHeader, Skeleton, StatusPill,
+  Alert, AttentionIcon, Badge, Button, Card, DataTable, EmptyState, LinkButton, PageHeader, Skeleton, StatusPill,
   type Column, type SortState,
 } from '@/components/ui'
 import { daysOpen, INCIDENT_TYPE_GROUPS, severityKind, severityWeight, STAGE_COLOR } from './lib'
 import { cn } from '@/lib/cn'
 import { useUrlState } from '@/lib/useUrlState'
+import { NoMatches } from '@/features/org/NoMatches'
 
 /*
  * Status filters, split by how often they are wanted - Hick's law.
@@ -84,6 +85,15 @@ export function IncidentsListPage() {
       clearTimeout(t)
     }
   }, [company, site, q, type, severity, status])
+
+  /** One change to the address, so Back is one step; setting each in turn kept only the last. */
+  const clearFilters = () => {
+    setParams((current) => {
+      const next = new URLSearchParams(current)
+      for (const key of ['q', 'type', 'severity', 'status']) next.delete(key)
+      return next
+    }, { replace: true })
+  }
 
   const setStatus = (s: IncidentStatusFilter) => {
     setParams((current) => {
@@ -303,17 +313,31 @@ export function IncidentsListPage() {
             sort={sort}
             onSortChange={(next) => setSortParam(`${next.key}-${next.direction}`, { replace: true })}
             empty={
-              <EmptyState
-                icon={ShieldAlert}
-                title="No incidents match these filters"
-                action={
-                  <LinkButton to="/incidents/new" size="sm" icon={<Plus size={14} />}>
-                    Report Incident
-                  </LinkButton>
-                }
-              >
-                Try widening the status or clearing the search — or report something you've seen.
-              </EmptyState>
+              q.trim() || type || severity || (status !== 'open' && status !== 'all') ? (
+                <NoMatches
+                  what="incidents" search={q} filtered={Boolean(type || severity || status !== 'open')}
+                  onClear={clearFilters}
+                />
+              ) : site ? (
+                <NoMatches what={status === 'open' ? 'open incidents' : 'incidents'} filtered={false} />
+              ) : (
+                <EmptyState
+                  icon={ShieldAlert}
+                  title={status === 'open' ? 'No open incidents' : 'No incidents reported yet'}
+                  action={
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {status === 'open' && <Button size="sm" variant="secondary" onClick={() => setStatus('all')}>Show All Incidents</Button>}
+                      <LinkButton to="/incidents/new" size="sm" icon={<Plus size={14} />}>
+                        Report Incident
+                      </LinkButton>
+                    </div>
+                  }
+                >
+                  {status === 'open'
+                    ? 'Every incident reported so far has been closed.'
+                    : 'Report something you have seen: an injury, damage, a spill, or a near miss.'}
+                </EmptyState>
+              )
             }
           />
         )}

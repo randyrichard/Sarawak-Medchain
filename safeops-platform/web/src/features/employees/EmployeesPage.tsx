@@ -16,6 +16,8 @@ import { cn } from '@/lib/cn'
 import { canManageEmployees, MEDICAL_KIND, relativeDays } from './lib'
 import { EmployeeDrawer } from './components/EmployeeDrawer'
 import { NewEmployeeDialog } from './components/NewEmployeeDialog'
+import { useOpenRecord } from '@/lib/useOpenRecord'
+import { NoMatches } from '@/features/org/NoMatches'
 
 const PAGE_SIZE = 25
 
@@ -50,7 +52,8 @@ export function EmployeesPage() {
   const [newOpen, setNewOpen] = useState(false)
 
   // URL-driven so a filtered register is a shareable link and survives a refresh.
-  const openId = params.get('open')
+  // Opening a person keeps the page of the list they were on: `setParam` would reset it.
+  const { id: openId, open: openPerson, close: closePerson } = useOpenRecord()
   const page = Math.max(1, Number(params.get('page') ?? 1))
   const medical = (params.get('medical') as MedicalFilter) || 'all'
   const status = (params.get('status') as 'active' | 'inactive' | 'all') || 'active'
@@ -143,23 +146,17 @@ export function EmployeesPage() {
       {flash && <Alert tone="success" className="mb-3">{flash}</Alert>}
       {error && <Alert tone="critical" className="mb-3">{error}</Alert>}
 
-      {/* Counters. Clicking one filters the register to it. */}
+      {/*
+        Counters. The medical ones filter the register when clicked. The others are figures
+        only, and are drawn as figures: they were buttons that could not be pressed - greyed
+        out, skipped by the keyboard, and read out as "dimmed" - which looks broken.
+      */}
       <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5">
         {KPI_DEFS.map((k) => {
           const value = stats?.[k.key]
           const active = !!k.medical && medical === k.medical
-          return (
-            <button
-              key={k.key}
-              disabled={!k.medical}
-              onClick={() => k.medical && setParam({ medical: active ? null : k.medical })}
-              className={cn(
-                'rounded-xl border bg-surface px-3.5 py-3 text-left transition-colors',
-                k.medical && 'hover:bg-accent-soft',
-                active && 'ring-2 ring-accent',
-                !k.medical && 'cursor-default',
-              )}
-            >
+          const body = (
+            <>
               <p className="text-2xs font-semibold uppercase tracking-wider text-muted">{k.label}</p>
               {value === undefined ? (
                 <Skeleton className="mt-1 h-6 w-10" />
@@ -168,7 +165,22 @@ export function EmployeesPage() {
                   {value}
                 </p>
               )}
+            </>
+          )
+          return k.medical ? (
+            <button
+              key={k.key}
+              aria-pressed={active}
+              onClick={() => setParam({ medical: active ? null : k.medical! })}
+              className={cn(
+                'rounded-xl border bg-surface px-3.5 py-3 text-left transition-colors hover:bg-accent-soft',
+                active && 'ring-2 ring-accent',
+              )}
+            >
+              {body}
             </button>
+          ) : (
+            <div key={k.key} className="rounded-xl border bg-surface px-3.5 py-3">{body}</div>
           )
         })}
       </div>
@@ -218,17 +230,24 @@ export function EmployeesPage() {
             ))}
           </div>
         ) : rows.length === 0 ? (
-          <EmptyState
-            icon={Users}
-            title={q || medical !== 'all' || department ? 'Nobody matches these filters' : 'No one on the register yet'}
-            action={canManage ? (
-              <Button size="sm" icon={<Plus size={14} />} onClick={() => setNewOpen(true)}>Add Person</Button>
-            ) : undefined}
-          >
-            {q || medical !== 'all' || department
-              ? 'Try widening the filters or clearing the search.'
-              : 'Add your workforce so actions, permits and certificates can be assigned to real people.'}
-          </EmptyState>
+          q.trim() || medical !== 'all' || department || status !== 'active' || site ? (
+            <NoMatches
+              what="people" search={q} filtered={medical !== 'all' || Boolean(department) || status !== 'active'}
+              onClear={q.trim() || medical !== 'all' || department || status !== 'active'
+                ? () => { setQ(''); setParam({ medical: null, department: null, status: null }) }
+                : undefined}
+            />
+          ) : (
+            <EmptyState
+              icon={Users}
+              title="No one on the register yet"
+              action={canManage ? (
+                <Button size="sm" icon={<Plus size={14} />} onClick={() => setNewOpen(true)}>Add Person</Button>
+              ) : undefined}
+            >
+              Add your workforce so actions, permits and certificates can be assigned to real people.
+            </EmptyState>
+          )
         ) : (
           <div className="relative overflow-x-auto">
             <table className="w-full text-left text-sm">
@@ -253,7 +272,7 @@ export function EmployeesPage() {
                 {rows.map((r) => (
                   <tr
                     key={r.id}
-                    onClick={() => setParam({ open: r.id })}
+                    onClick={() => openPerson(r.id)}
                     className="cursor-pointer border-b last:border-0 hover:bg-accent-soft/40"
                   >
                     <td className="px-3 py-3 font-mono text-2xs text-muted">{r.employeeNo}</td>
@@ -319,7 +338,7 @@ export function EmployeesPage() {
       <EmployeeDrawer
         employeeId={openId}
         canManage={canManage}
-        onClose={() => setParam({ open: null })}
+        onClose={closePerson}
         onChanged={onChanged}
       />
       <NewEmployeeDialog

@@ -13,6 +13,7 @@ import { Alert, Button, Dialog, Input, SuggestSelect, Select, Textarea } from '@
 import { cn } from '@/lib/cn'
 import { PERMIT_TYPE_COLOR } from '../lib'
 import { PeopleOptions } from '@/features/org/PeopleOptions'
+import { useFormCheck } from '@/lib/useFormCheck'
 
 /** Local datetime string for <input type="datetime-local">. */
 function localInput(d: Date) {
@@ -62,10 +63,17 @@ export function NewPermitDialog({
   const tooLong = requestedHours > maxHours
   const requiredCount = PERMIT_CONTROLS[type].filter((c) => c.required).length
   const effectiveSite = siteId || site?.id || sites[0]?.id || ''
-  const valid = title.trim() && location.trim() && effectiveSite && requestedHours > 0 && !tooLong
+  const form = useFormCheck({
+    title: !title.trim() && 'Describe the work, in a line.',
+    site: !effectiveSite && 'Choose the site.',
+    location: !location.trim() && 'Say exactly where the work will be done.',
+    validTo: Number.isNaN(requestedHours) ? 'Enter when the permit starts and ends.'
+      : requestedHours <= 0 ? 'The end must be after the start.'
+      : tooLong && `No more than ${maxHours} hours for this type of permit.`,
+  }, open)
 
   const submit = async () => {
-    if (!company) return
+    if (!company || !form.check()) return
     setBusy(true); setError(null)
     try {
       const p = await api.createPermit({
@@ -92,7 +100,7 @@ export function NewPermitDialog({
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button loading={busy} disabled={!valid} onClick={() => void submit()}>Create Draft</Button>
+          <Button loading={busy} onClick={() => void submit()}>Create Draft</Button>
         </>
       }
     >
@@ -123,13 +131,13 @@ export function NewPermitDialog({
         </div>
 
         <Input label="Work description" required value={title} onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. Weld repair on jetty pipe support" />
+          placeholder="e.g. Weld repair on jetty pipe support" error={form.errorFor('title')} />
 
         <Textarea label="Scope and method" rows={2} value={description} onChange={(e) => setDescription(e.target.value)}
           placeholder="What will be done, with what equipment…" />
 
         <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
-          <Select label="Site" required value={effectiveSite} onChange={(e) => setSiteId(e.target.value)}>
+          <Select label="Site" required value={effectiveSite} onChange={(e) => setSiteId(e.target.value)} error={form.errorFor('site')}>
             {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </Select>
           <SuggestSelect
@@ -141,7 +149,7 @@ export function NewPermitDialog({
             addLabel="Add a new department…"
           />
           <Input label="Exact location" required value={location} onChange={(e) => setLocation(e.target.value)}
-            placeholder="e.g. Jetty 2, loading arm 3" />
+            placeholder="e.g. Jetty 2, loading arm 3" error={form.errorFor('location')} />
           <Select label="Applicant" value={applicant} onChange={(e) => setApplicant(e.target.value)}>
             <PeopleOptions people={people} />
           </Select>
@@ -157,17 +165,10 @@ export function NewPermitDialog({
             onChange={(e) => setWorkerCount(e.target.value.replace(/\D/g, '').slice(0, 3))} />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="text-xs font-semibold text-ink-2">
-            Valid from
-            <input type="datetime-local" value={validFrom} onChange={(e) => setValidFrom(e.target.value)}
-              className="mt-1 h-9 coarse:h-11 w-full rounded-lg border bg-surface px-3 text-sm text-ink outline-none focus:border-accent" />
-          </label>
-          <label className="text-xs font-semibold text-ink-2">
-            Valid to
-            <input type="datetime-local" value={validTo} onChange={(e) => setValidTo(e.target.value)}
-              className="mt-1 h-9 coarse:h-11 w-full rounded-lg border bg-surface px-3 text-sm text-ink outline-none focus:border-accent" />
-          </label>
+        <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
+          <Input label="Valid from" type="datetime-local" required value={validFrom} onChange={(e) => setValidFrom(e.target.value)} />
+          <Input label="Valid to" type="datetime-local" required value={validTo} onChange={(e) => setValidTo(e.target.value)}
+            error={form.errorFor('validTo')} />
         </div>
 
         {tooLong && (

@@ -59,6 +59,11 @@ function paramsReadBy(route: string): Set<string> {
       read.add('open')
       for (const alias of m[1].matchAll(/'([a-zA-Z]+)'/g)) read.add(alias[1])
     }
+    // The drawer's record: `useOpenRecord()` reads `open`; named arguments add its older names.
+    for (const m of src.matchAll(/useOpenRecord\(((?:\s*'[a-zA-Z]+',?)*)\s*\)/g)) {
+      const names = [...m[1].matchAll(/'([a-zA-Z]+)'/g)].map((n) => n[1])
+      for (const name of names.length ? names : ['open']) read.add(name)
+    }
   }
   if (read.size === 0) throw new Error(`Found no parameters read in ${files.join(', ')} - the patterns above need updating.`)
   return read

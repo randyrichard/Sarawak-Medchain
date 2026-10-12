@@ -81,7 +81,7 @@ export function ManHoursDialog({
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button loading={saving} disabled={!site || changed.length === 0 || !!invalid} onClick={() => void save()}>
-            {changed.length > 1 ? `Save ${changed.length} months` : 'Save'}
+            {changed.length > 1 ? `Save ${changed.length} Months` : 'Save'}
           </Button>
         </>
       }

@@ -42,7 +42,7 @@ export function AddFieldPhotos({
       <PhotoPicker files={files} onChange={setFiles} label={label} />
       {files.length > 0 && (
         <Button size="sm" className="w-full" icon={<Upload size={13} />} loading={busy} onClick={() => void send()}>
-          Upload {files.length === 1 ? 'photo' : `${files.length} photos`}
+          Upload {files.length === 1 ? 'Photo' : `${files.length} Photos`}
         </Button>
       )}
     </div>

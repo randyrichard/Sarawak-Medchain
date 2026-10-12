@@ -8,6 +8,7 @@ import {
 } from '@/components/ui'
 import { TIMEZONES } from '@/api/reportsApi'
 import { siteAllowanceLabel, siteAllowanceOf, siteInUseSummary, siteLimitNote } from '../lib'
+import { useFormCheck } from '@/lib/useFormCheck'
 
 /**
  * Sites.
@@ -63,8 +64,10 @@ export function SitesSection() {
     setDialog({ open: true, editing: s })
   }
 
+  const check = useFormCheck({ name: !draft.name.trim() && 'Give the site a name.' }, dialog.open)
+
   const save = async () => {
-    if (!company) return
+    if (!company || !check.check()) return
     setSaving(true)
     setError(null)
     try {
@@ -229,7 +232,7 @@ export function SitesSection() {
             <Button variant="secondary" onClick={() => setDialog({ open: false, editing: null })}>
               Cancel
             </Button>
-            <Button onClick={save} disabled={saving || !draft.name.trim()}>
+            <Button onClick={save} disabled={saving}>
               {saving ? 'Saving…' : dialog.editing ? 'Save Changes' : 'Create Site'}
             </Button>
           </div>
@@ -238,7 +241,7 @@ export function SitesSection() {
         <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">
           <Input
             label="Site name" required value={draft.name}
-            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+            onChange={(e) => setDraft({ ...draft, name: e.target.value })} error={check.errorFor('name')}
             placeholder="Bintulu Fabrication Yard"
           />
           <Input

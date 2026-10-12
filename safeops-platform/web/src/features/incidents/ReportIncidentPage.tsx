@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, Check, CloudOff, CloudUpload, FileText, Image as ImageIcon, LocateFixed, Send, Trash2, UserPlus, X } from 'lucide-react'
 import { api } from '@/api/client'
@@ -16,6 +17,7 @@ import { EVIDENCE_ACCEPT, EVIDENCE_HINT, screenEvidence, uploadEvidence } from '
 import { StatusPill } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { uuid } from '@/lib/uuid'
+import { focusFirstInvalid } from '@/lib/useFormCheck'
 
 const STEPS = ['What Happened', 'Where & Who', 'Details & Evidence', 'Review & Sign'] as const
 
@@ -148,9 +150,15 @@ export function ReportIncidentPage() {
     }
   }, [draft, step])
 
+  /** Show what this step still needs, and take the keyboard to the first of it. */
+  const showProblems = () => {
+    flushSync(() => setTouchedNext(true))
+    focusFirstInvalid()
+  }
+
   const next = () => {
     if (!stepValid) {
-      setTouchedNext(true)
+      showProblems()
       return
     }
     setTouchedNext(false)
@@ -383,7 +391,7 @@ export function ReportIncidentPage() {
                       <span className="ml-1.5 font-normal text-muted">{group.hint}</span>
                     </legend>
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-                      {group.types.map((t) => {
+                      {group.types.map((t, i) => {
                         const active = draft.type === t
                         return (
                           <button
@@ -391,6 +399,8 @@ export function ReportIncidentPage() {
                             type="button"
                             onClick={() => patch({ type: t })}
                             aria-pressed={active}
+                            // Where Continue takes the keyboard when no type has been picked.
+                            data-invalid={touchedNext && !draft.type && i === 0 && group === INCIDENT_TYPE_GROUPS[0] ? '' : undefined}
                             className={cn(
                               'flex items-center gap-2 rounded-lg border p-2.5 text-left transition-all hover:-translate-y-0.5 coarse:min-h-12',
                               active ? 'bg-accent-soft shadow-card' : 'hover:bg-accent-soft/40',
@@ -693,6 +703,7 @@ export function ReportIncidentPage() {
                   label="I confirm this report is accurate to the best of my knowledge."
                   checked={draft.attested}
                   onChange={(e) => patch({ attested: e.target.checked })}
+                  aria-invalid={touchedNext && !draft.attested ? true : undefined}
                 />
                 {touchedNext && !draft.attested && <p className="mt-1 text-xs font-medium text-critical" role="alert">Please confirm before submitting.</p>}
               </div>
@@ -702,15 +713,24 @@ export function ReportIncidentPage() {
 
         {/* Wizard nav */}
         <div className="mt-6 flex items-center justify-between border-t pt-4">
-          <Button variant="ghost" onClick={back} disabled={step === 0} icon={<ArrowLeft size={14} />}>
-            Back
-          </Button>
+          {/*
+            The first step used to show a Back that could not be pressed: the only way out of
+            the form was the menu. Cancel goes back to the incidents; what has been typed so far
+            is kept as a draft, and offered again next time.
+          */}
+          {step === 0 ? (
+            <LinkButton variant="ghost" to="/incidents">Cancel</LinkButton>
+          ) : (
+            <Button variant="ghost" onClick={back} icon={<ArrowLeft size={14} />}>
+              Back
+            </Button>
+          )}
           {step < 3 ? (
             <Button onClick={next} icon={<ArrowRight size={14} />}>
               Continue
             </Button>
           ) : (
-            <Button onClick={() => (stepValid ? void submit() : setTouchedNext(true))} loading={submitting} icon={<Send size={14} />}>
+            <Button onClick={() => (stepValid ? void submit() : showProblems())} loading={submitting} icon={<Send size={14} />}>
               Submit Report
             </Button>
           )}

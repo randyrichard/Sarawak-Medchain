@@ -9,8 +9,9 @@ import { useAuth } from '@/features/auth/AuthContext'
 import { enqueue, shouldRetry } from './outbox'
 import { useActor, SITE_COORDS } from './lib'
 import { EVIDENCE_ACCEPT, screenEvidence, uploadEvidence } from './evidence'
-import { Alert, Button, Card, LinkButton } from '@/components/ui'
+import { Alert, Button, Card, LinkButton, fieldA11y } from '@/components/ui'
 import { cn } from '@/lib/cn'
+import { useFormCheck } from '@/lib/useFormCheck'
 import { useUnsavedChangesWarning } from '@/lib/useUnsavedChangesWarning'
 import { uuid } from '@/lib/uuid'
 
@@ -45,6 +46,9 @@ const QUICK_TAGS = [
   'Lifting',
 ]
 
+/** Under "What happened": reassurance for someone who does not write reports for a living. */
+const WHAT_HINT = 'Plain words are fine. No form language needed.'
+
 export function ReportNearMissPage() {
   const { company, site, sites } = useOrg()
   const actor = useActor()
@@ -78,7 +82,14 @@ export function ReportNearMissPage() {
     } catch { /* storage unavailable — count is cosmetic */ }
   }, [])
 
-  const valid = what.trim().length >= 5 && where.trim().length >= 2 && effectiveSite
+  // Said under the field when Submit is pressed without it, rather than greying Submit out.
+  const form = useFormCheck({
+    what: what.trim() === '' ? 'Say what happened or what you saw.'
+      : what.trim().length < 5 ? 'A few more words, please, so the safety team can picture it.' : null,
+    where: where.trim() === '' ? 'Say where it was: an area, a building or a piece of equipment.'
+      : where.trim().length < 2 ? 'A little more detail on where, please.' : null,
+    site: !effectiveSite && 'Choose the site.',
+  })
 
   const toggleTag = (t: string) =>
     setTags((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]))
@@ -93,7 +104,7 @@ export function ReportNearMissPage() {
   const clientRef = useRef(uuid())
 
   const submit = async () => {
-    if (!company || !valid) return
+    if (!company || !form.check()) return
     setBusy(true)
     setError(null)
     let input: NewIncidentInput | null = null
@@ -231,11 +242,18 @@ export function ReportNearMissPage() {
             onChange={(e) => setWhat(e.target.value)}
             rows={4}
             autoFocus
+            required
             placeholder="e.g. Scaffold plank not secured on level 3 — could have fallen onto the walkway below"
             // 16px (text-lg in this scale): anything smaller makes iOS zoom on focus.
-            className="mt-1.5 w-full rounded-lg border bg-surface px-3 py-2.5 text-lg text-ink outline-none placeholder:text-muted focus:border-accent"
+            className={cn(
+              'mt-1.5 w-full rounded-lg border bg-surface px-3 py-2.5 text-lg text-ink outline-none placeholder:text-muted focus:border-accent',
+              form.errorFor('what') && 'border-critical',
+            )}
+            {...fieldA11y('nm-what', { hint: WHAT_HINT, error: form.errorFor('what') })}
           />
-          <p className="mt-1 text-2xs text-muted">Plain words are fine. No form language needed.</p>
+          {form.errorFor('what')
+            ? <p id="nm-what-message" role="alert" className="mt-1 text-xs font-medium text-critical">{form.errorFor('what')}</p>
+            : <p id="nm-what-message" className="mt-1 text-2xs text-muted">{WHAT_HINT}</p>}
         </div>
 
         {/* 2. Where */}
@@ -246,10 +264,18 @@ export function ReportNearMissPage() {
               id="nm-where"
               value={where}
               onChange={(e) => setWhere(e.target.value)}
+              required
               placeholder="e.g. Jetty 2, near loading arm 3"
-              className="h-11 w-full rounded-lg border bg-surface px-3 text-lg text-ink outline-none placeholder:text-muted focus:border-accent"
+              className={cn(
+                'h-11 w-full rounded-lg border bg-surface px-3 text-lg text-ink outline-none placeholder:text-muted focus:border-accent',
+                form.errorFor('where') && 'border-critical',
+              )}
+              {...fieldA11y('nm-where', { error: form.errorFor('where') })}
             />
           </div>
+          {form.errorFor('where') && (
+            <p id="nm-where-message" role="alert" className="mt-1 text-xs font-medium text-critical">{form.errorFor('where')}</p>
+          )}
           {sites.length > 1 && (
             <select
               value={effectiveSite}
@@ -339,7 +365,6 @@ export function ReportNearMissPage() {
           size="lg"
           icon={<Zap size={16} />}
           loading={busy}
-          disabled={!valid}
           onClick={() => void submit()}
         >
           Submit Near Miss

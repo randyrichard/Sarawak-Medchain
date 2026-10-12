@@ -16,8 +16,10 @@ import { cn } from '@/lib/cn'
 import { canManageContractors, canWorkGate, EXPIRY_KIND, gateBlockReason, relativeDays } from './lib'
 import { WorkerDrawer } from './components/WorkerDrawer'
 import { ContractorDrawer } from './components/ContractorDrawer'
+import { useOpenRecord } from '@/lib/useOpenRecord'
 import { NewContractorDialog } from './components/NewContractorDialog'
 import { NewWorkerDialog } from './components/NewWorkerDialog'
+import { NoMatches } from '@/features/org/NoMatches'
 
 const PAGE_SIZE = 25
 
@@ -68,8 +70,9 @@ export function ContractorsPage() {
 
   // URL-driven so a filtered register is shareable and survives a refresh.
   const view = (params.get('view') as View) || 'workers'
-  const openWorker = params.get('worker')
-  const openContractor = params.get('contractor')
+  // Two kinds of drawer, each under its own name. Opening one keeps the page of the list.
+  const { id: openWorker, open: showWorker, close: closeWorker } = useOpenRecord('worker')
+  const { id: openContractor, open: showContractor, close: closeContractor } = useOpenRecord('contractor')
   const page = Math.max(1, Number(params.get('page') ?? 1))
   const medical = (params.get('medical') as ComplianceFilter) || 'all'
   const induction = (params.get('induction') as ComplianceFilter) || 'all'
@@ -90,6 +93,7 @@ export function ContractorsPage() {
   }
 
   const canManage = canManageContractors(role)
+  const workersFiltered = Boolean(q.trim()) || medical !== 'all' || induction !== 'all' || onSiteOnly || Boolean(contractorFilter)
   const canGate = canWorkGate(role)
 
   const loadWorkers = useCallback(() => {
@@ -283,19 +287,25 @@ export function ContractorsPage() {
           workers === null ? (
             <ListSkeleton />
           ) : workers.length === 0 ? (
-            <EmptyState
-              icon={HardHat}
-              title={q || medical !== 'all' || induction !== 'all' || onSiteOnly
-                ? 'No workers match these filters'
-                : 'No contractor workers registered'}
-              action={canManage ? (
-                <Button size="sm" icon={<Plus size={14} />} onClick={() => setNewWorkerOpen(true)}>Register Worker</Button>
-              ) : undefined}
-            >
-              {q || medical !== 'all' || induction !== 'all' || onSiteOnly
-                ? 'Try widening the filters or clearing the search.'
-                : 'Register the people your contractors send so the gate can check them.'}
-            </EmptyState>
+            workersFiltered || site ? (
+              <NoMatches
+                what="workers" search={q}
+                filtered={medical !== 'all' || induction !== 'all' || onSiteOnly || Boolean(contractorFilter)}
+                onClear={workersFiltered
+                  ? () => { setQ(''); setParam({ medical: null, induction: null, onSite: null, contractorCompanyId: null }) }
+                  : undefined}
+              />
+            ) : (
+              <EmptyState
+                icon={HardHat}
+                title="No contractor workers registered"
+                action={canManage ? (
+                  <Button size="sm" icon={<Plus size={14} />} onClick={() => setNewWorkerOpen(true)}>Register Worker</Button>
+                ) : undefined}
+              >
+                Register the people your contractors send so the gate can check them.
+              </EmptyState>
+            )
           ) : (
             <div className="relative overflow-x-auto">
               <table className="w-full text-left text-sm">
@@ -322,7 +332,7 @@ export function ContractorsPage() {
                     return (
                       <tr
                         key={w.id}
-                        onClick={() => setParam({ worker: w.id })}
+                        onClick={() => showWorker(w.id)}
                         className="cursor-pointer border-b last:border-0 hover:bg-accent-soft/40"
                       >
                         <td className="px-3 py-3 font-mono text-2xs text-muted">{w.workerNo}</td>
@@ -381,17 +391,22 @@ export function ContractorsPage() {
         ) : firms === null ? (
           <ListSkeleton />
         ) : firms.length === 0 ? (
-          <EmptyState
-            icon={Building2}
-            title={q || insurance !== 'all' ? 'No contractors match these filters' : 'No contractors yet'}
-            action={canManage ? (
-              <Button size="sm" icon={<Plus size={14} />} onClick={() => setNewContractorOpen(true)}>Add Contractor</Button>
-            ) : undefined}
-          >
-            {q || insurance !== 'all'
-              ? 'Try widening the filters or clearing the search.'
-              : 'Add the firms working on your sites so their insurance and workers can be tracked.'}
-          </EmptyState>
+          q.trim() || insurance !== 'all' ? (
+            <NoMatches
+              what="contractors" search={q} filtered={insurance !== 'all'}
+              onClear={() => { setQ(''); setParam({ insurance: null }) }}
+            />
+          ) : (
+            <EmptyState
+              icon={Building2}
+              title="No contractors yet"
+              action={canManage ? (
+                <Button size="sm" icon={<Plus size={14} />} onClick={() => setNewContractorOpen(true)}>Add Contractor</Button>
+              ) : undefined}
+            >
+              Add the firms working on your sites so their insurance and workers can be tracked.
+            </EmptyState>
+          )
         ) : (
           <div className="relative overflow-x-auto">
             <table className="w-full text-left text-sm">
@@ -408,7 +423,7 @@ export function ContractorsPage() {
                 {firms.map((f) => (
                   <tr
                     key={f.id}
-                    onClick={() => setParam({ contractor: f.id })}
+                    onClick={() => showContractor(f.id)}
                     className="cursor-pointer border-b last:border-0 hover:bg-accent-soft/40"
                   >
                     <td className="px-3 py-3 font-mono text-2xs text-muted">{f.code}</td>
@@ -459,12 +474,12 @@ export function ContractorsPage() {
 
       <WorkerDrawer
         workerId={openWorker} canManage={canManage} canGate={canGate}
-        onClose={() => setParam({ worker: null })}
+        onClose={closeWorker}
         onChanged={onChanged}
       />
       <ContractorDrawer
         contractorId={openContractor} canManage={canManage}
-        onClose={() => setParam({ contractor: null })}
+        onClose={closeContractor}
         onChanged={onChanged}
         onViewWorkers={(id) => setParam({ contractor: null, view: 'workers', contractorCompanyId: id })}
       />

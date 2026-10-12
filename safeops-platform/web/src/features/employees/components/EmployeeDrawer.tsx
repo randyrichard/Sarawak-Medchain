@@ -11,6 +11,7 @@ import {
 import { MEDICAL_KIND, fmtDate, relativeDays } from '../lib'
 import { EditEmployeeDialog } from './EditEmployeeDialog'
 import { useOrg } from '@/features/org/OrgContext'
+import { useFormCheck } from '@/lib/useFormCheck'
 
 type Tab = 'profile' | 'medical' | 'contacts' | 'ppe' | 'training'
 
@@ -515,7 +516,13 @@ function AddContactDialog({
     onClose()
   }
 
+  const check = useFormCheck({
+    name: !name.trim() && 'Enter who to call.',
+    phone: !phone.trim() && 'Enter a number they can be reached on.',
+  }, open)
+
   const submit = async () => {
+    if (!check.check()) return
     setBusy(true); setError(null)
     try {
       await employeesApi.addContact(employeeId, {
@@ -535,17 +542,17 @@ function AddContactDialog({
       footer={
         <>
           <Button variant="secondary" onClick={close} disabled={busy}>Cancel</Button>
-          <Button onClick={() => void submit()} loading={busy} disabled={!name.trim() || !phone.trim()}>Add</Button>
+          <Button onClick={() => void submit()} loading={busy}>Add</Button>
         </>
       }
     >
       <div className="space-y-5">
-        <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
+        <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} required autoFocus error={check.errorFor('name')} />
         <Input
           label="Relationship" placeholder="Spouse, parent, sibling…"
           value={relationship} onChange={(e) => setRelationship(e.target.value)}
         />
-        <Input label="Phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required />
+        <Input label="Phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required error={check.errorFor('phone')} />
         <Input label="Alternative phone" type="tel" value={altPhone} onChange={(e) => setAltPhone(e.target.value)} />
       </div>
     </Dialog>
@@ -567,7 +574,10 @@ function IssuePpeDialog({
     onClose()
   }
 
+  const check = useFormCheck({ item: !item.trim() && 'Choose what was issued.' }, open)
+
   const submit = async () => {
+    if (!check.check()) return
     setBusy(true); setError(null)
     try {
       await employeesApi.issuePpe(employeeId, {
@@ -589,14 +599,14 @@ function IssuePpeDialog({
       footer={
         <>
           <Button variant="secondary" onClick={close} disabled={busy}>Cancel</Button>
-          <Button onClick={() => void submit()} loading={busy} disabled={!item.trim()}>Issue</Button>
+          <Button onClick={() => void submit()} loading={busy}>Issue</Button>
         </>
       }
     >
       <div className="space-y-3">
         {/* A picked item keeps the register countable; free text produces three spellings
             of "harness" and three different answers to how many are overdue. */}
-        <Select label="Item" value={item} onChange={(e) => setItem(e.target.value)}>
+        <Select label="Item" required value={item} onChange={(e) => setItem(e.target.value)} error={check.errorFor('item')}>
           <option value="">Choose an item…</option>
           {PPE_ITEMS.map((p) => <option key={p} value={p}>{p}</option>)}
         </Select>

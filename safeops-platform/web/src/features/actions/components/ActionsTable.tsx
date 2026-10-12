@@ -206,7 +206,7 @@ export function ActionsTable({
       <Dialog
         open={reassignOpen}
         onClose={() => setReassignOpen(false)}
-        title={`Reassign ${selected.size} action(s)`}
+        title={`Reassign ${selected.size} ${selected.size === 1 ? 'Action' : 'Actions'}`}
         footer={
           <>
             <Button variant="secondary" onClick={() => setReassignOpen(false)}>Cancel</Button>

@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ClipboardCheck } from 'lucide-react'
 import type { AuditFindingView, FindingSeverity } from '@/api/audits'
-import { Avatar, Card, EmptyState, Skeleton, StatusPill } from '@/components/ui'
+import { Avatar, Button, Card, EmptyState, Skeleton, StatusPill } from '@/components/ui'
+import { NoMatches } from '@/features/org/NoMatches'
 import { FINDING_STATUS_META, SEVERITY_META } from '../lib'
 import { cn } from '@/lib/cn'
 import { useSiteLabel } from '@/features/org/useSiteLabel'
@@ -10,10 +11,11 @@ import { useSiteLabel } from '@/features/org/useSiteLabel'
 type Filter = 'all' | FindingSeverity | 'open'
 
 export function FindingsList({
-  findings, q, onOpenAudit,
+  findings, q, onClearSearch, onOpenAudit,
 }: {
   findings: AuditFindingView[] | null
   q: string
+  onClearSearch: () => void
   onOpenAudit: (auditId: string) => void
 }) {
   const siteLabel = useSiteLabel()
@@ -44,9 +46,20 @@ export function FindingsList({
       </div>
       <Card>
         {rows.length === 0 ? (
-          <EmptyState icon={ClipboardCheck} title="No findings match">
-            Findings raised during audits appear here with their corrective actions.
-          </EmptyState>
+          findings.length > 0 && (filter !== 'all' || q.trim()) ? (
+            // "Open" is the default, so "none match" usually means none are open - which is good news.
+            filter === 'open' && !q.trim() ? (
+              <EmptyState icon={ClipboardCheck} title="No open findings" action={<Button variant="secondary" onClick={() => setFilter('all')}>Show All Findings</Button>}>
+                Every finding raised so far has been closed.
+              </EmptyState>
+            ) : (
+              <NoMatches what="findings" search={q} filtered={filter !== 'all'} onClear={() => { setFilter('all'); onClearSearch() }} />
+            )
+          ) : (
+            <EmptyState icon={ClipboardCheck} title="No findings yet">
+              Findings raised during audits appear here with their corrective actions.
+            </EmptyState>
+          )
         ) : (
           <ul className="divide-y">
             {rows.map((f) => (

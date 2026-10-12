@@ -12,7 +12,8 @@ import { PermitCard } from './components/PermitCard'
 import { PermitDrawer } from './components/PermitDrawer'
 import { NewPermitDialog } from './components/NewPermitDialog'
 import { pollWhileVisible } from '@/lib/poll'
-import { openParam } from '@/lib/links'
+import { useOpenRecord } from '@/lib/useOpenRecord'
+import { NoMatches } from '@/features/org/NoMatches'
 
 type StatusChip = NonNullable<PermitFilters['status']>
 
@@ -54,8 +55,8 @@ export function PermitsPage() {
   const [type, setType] = useState<PermitType | ''>((params.get('type') as PermitType) || '')
   const [rows, setRows] = useState<PermitView[] | null>(null)
   const [stats, setStats] = useState<PermitStats | null>(null)
-  // `permit` is this page's own name for the open permit; search and Home link with `open`.
-  const [openId, setOpenId] = useState<string | null>(() => openParam(params, 'permit', 'focus'))
+  // Reminders were stored with `?permit=` and `?focus=`; they still open the permit.
+  const { id: openId, open: openPermit, close: closePermit } = useOpenRecord('open', 'permit', 'focus')
   const [newOpen, setNewOpen] = useState(false)
 
   const issuer = canIssuePermits(role)
@@ -85,15 +86,6 @@ export function PermitsPage() {
     else params.delete(k)
     setParams(params, { replace: true })
   }
-
-  // Arrived by another name: rewrite it as `permit`, so closing the drawer clears it.
-  useEffect(() => {
-    if (!openId || params.get('permit') === openId) return
-    params.delete('open')
-    params.delete('focus')
-    setParam('permit', openId)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   const otherStatus = CHIPS.some((c) => c.value === status) ? null : OTHER_STATUS[status] ?? null
 
@@ -167,7 +159,7 @@ export function PermitsPage() {
             Needs attention now
           </p>
           <div className="grid gap-2 lg:grid-cols-2">
-            {urgent.map((p) => <PermitCard key={p.id} permit={p} onOpen={() => { setOpenId(p.id); setParam('permit', p.id) }} />)}
+            {urgent.map((p) => <PermitCard key={p.id} permit={p} onOpen={() => openPermit(p.id)} />)}
           </div>
         </Card>
       )}
@@ -234,16 +226,34 @@ export function PermitsPage() {
         </div>
       ) : rows.length === 0 ? (
         <Card className="p-6">
-          <EmptyState icon={HardHat} title="No permits match">
-            {status === 'live'
-              ? 'No live permits in this scope. High-risk work should not proceed without one.'
-              : 'Try a different filter, or clear the search.'}
-          </EmptyState>
+          {q.trim() || type ? (
+            <NoMatches
+              what="permits" search={q} filtered={Boolean(type) || status !== 'live'}
+              onClear={() => { setQ(''); setType(''); setParam('q', ''); setParam('type', ''); setParam('status', '') }}
+            />
+          ) : status === 'all' ? (
+            site ? <NoMatches what="permits" filtered={false} /> : (
+              <EmptyState icon={HardHat} title="No permits yet">
+                Hot work, confined space, work at height: request one with Request Permit before the work starts.
+              </EmptyState>
+            )
+          ) : (
+            <EmptyState
+              icon={HardHat}
+              title={status === 'live' ? 'No live permits' : `Nothing under ${CHIPS.find((c) => c.value === status)?.label ?? otherStatus ?? 'this filter'}`}
+              action={<Button variant="secondary" onClick={() => setParam('status', 'all')}>Show All Permits</Button>}
+            >
+              {status === 'live'
+                ? 'Nothing is approved or in progress right now. High-risk work should not go ahead without a permit.'
+                : 'Other permits are under the other tabs above.'}
+              {site && ` Only ${site.name} is being shown.`}
+            </EmptyState>
+          )}
         </Card>
       ) : (
         <div className="grid gap-2.5 lg:grid-cols-2">
           {rows.map((p) => (
-            <PermitCard key={p.id} permit={p} onOpen={() => { setOpenId(p.id); setParam('permit', p.id) }} />
+            <PermitCard key={p.id} permit={p} onOpen={() => openPermit(p.id)} />
           ))}
         </div>
       )}
@@ -254,7 +264,7 @@ export function PermitsPage() {
         issuer={issuer}
         operator={operator}
         gasTester={gasTester}
-        onClose={() => { setOpenId(null); setParam('permit', '') }}
+        onClose={closePermit}
         onChanged={refresh}
       />
 
@@ -262,7 +272,7 @@ export function PermitsPage() {
         open={newOpen}
         actor={actor}
         onClose={() => setNewOpen(false)}
-        onCreated={(id) => { setNewOpen(false); refresh(); setOpenId(id); setParam('permit', id) }}
+        onCreated={(id) => { setNewOpen(false); refresh(); openPermit(id) }}
       />
     </>
   )

@@ -1,14 +1,16 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Plus, Search } from 'lucide-react'
+import { HardHat, Plus, Search } from 'lucide-react'
 import { api } from '@/api/client'
 import type { AssetFilters, AssetStats, AssetView, InspectionView } from '@/api/assets'
 import { ASSET_CATEGORIES, CATEGORY_LABEL, type AssetCategory } from '@/api/assets'
 import { useOrg } from '@/features/org/OrgContext'
 import { useActor } from '@/features/incidents/lib'
-import { Badge, Button, Card, PageHeader, Skeleton, StatusPill, Tabs, type TabItem, AttentionIcon, attentionOf, attentionStripe } from '@/components/ui'
+import { Badge, Button, Card, EmptyState, PageHeader, Skeleton, StatusPill, Tabs, type TabItem, AttentionIcon, attentionOf, attentionStripe } from '@/components/ui'
+import { NoMatches } from '@/features/org/NoMatches'
 import { cn } from '@/lib/cn'
-import { assetStatusFromParam, openParam } from '@/lib/links'
+import { assetStatusFromParam } from '@/lib/links'
+import { useOpenRecord } from '@/lib/useOpenRecord'
 import { canManageAssets, healthColor, RISK_PILL } from './lib'
 import { AssetDrawer } from './components/AssetDrawer'
 import { InspectionsList } from './components/InspectionsList'
@@ -45,7 +47,12 @@ export function AssetsPage() {
   const [assets, setAssets] = useState<AssetView[] | null>(null)
   const [inspections, setInspections] = useState<InspectionView[] | null>(null)
   const [stats, setStats] = useState<AssetStats | null>(null)
-  const [openAssetId, setOpenAssetId] = useState<string | null>(null)
+  /*
+   * The asset open in the drawer. Printed labels carry `?qr=AST-1007`, search and Home send
+   * `?open=`, and inspection and calibration reminders were stored with `?asset=`; all of
+   * them open it.
+   */
+  const { id: openAssetId, open: setOpenAssetId, close: closeAsset } = useOpenRecord('open', 'qr', 'asset', 'focus')
   const [runInspection, setRunInspection] = useState<InspectionView | null>(null)
   const [newOpen, setNewOpen] = useState(false)
 
@@ -64,24 +71,14 @@ export function AssetsPage() {
     return () => clearTimeout(t)
   }, [refresh, q])
 
-  /*
-   * Opening one asset from a link. Printed labels carry `?qr=AST-1007`, search and Home
-   * send `?open=`, and inspection and calibration reminders were stored with `?asset=`.
-   * Only `qr` was read, so every other link opened the register and left the asset to be
-   * found by hand.
-   */
-  useEffect(() => {
-    const target = openParam(params, 'qr', 'asset', 'focus')
-    if (target) {
-      setOpenAssetId(target)
-      for (const key of ['open', 'qr', 'asset', 'focus']) params.delete(key)
-      setParams(params, { replace: true })
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
   const clearStatus = () => {
     params.delete('status')
+    setParams(params, { replace: true })
+  }
+  const filtered = Boolean(q.trim() || category || bucket !== 'all' || status)
+  const clearFilters = () => {
+    setQ(''); setCategory('')
+    params.delete('status'); params.delete('bucket')
     setParams(params, { replace: true })
   }
 
@@ -186,7 +183,19 @@ export function AssetsPage() {
       </div>
 
       {view === 'register' && (
-        <RegisterTable assets={assets} sites={sites} onOpen={setOpenAssetId} />
+        <RegisterTable
+          assets={assets} sites={sites} onOpen={setOpenAssetId}
+          empty={filtered || site ? (
+            <NoMatches
+              what="assets" search={q} filtered={Boolean(category || bucket !== 'all' || status)}
+              onClear={filtered ? clearFilters : undefined}
+            />
+          ) : (
+            <EmptyState icon={HardHat} title="No assets registered yet">
+              Register the equipment that has to be inspected — cranes, harnesses, gas detectors — and SafeChain schedules the inspections.
+            </EmptyState>
+          )}
+        />
       )}
       {view === 'inspections' && (
         <InspectionsList
@@ -214,7 +223,7 @@ export function AssetsPage() {
       <AssetDrawer
         assetId={openAssetId}
         manage={manage}
-        onClose={() => setOpenAssetId(null)}
+        onClose={closeAsset}
         onRun={(i) => setRunInspection(i)}
         onChanged={refresh}
       />
@@ -231,11 +240,13 @@ export function AssetsPage() {
 }
 
 function RegisterTable({
-  assets, sites, onOpen,
+  assets, sites, onOpen, empty,
 }: {
   assets: AssetView[] | null
   sites: { id: string; short: string }[]
   onOpen: (id: string) => void
+  /** What to say when there is nothing to list. */
+  empty: ReactNode
 }) {
   if (assets === null) {
     return (
@@ -297,7 +308,7 @@ function RegisterTable({
               )
             })}
             {assets.length === 0 && (
-              <tr><td colSpan={7} className="px-5 py-10 text-center text-sm text-muted">No assets match these filters.</td></tr>
+              <tr><td colSpan={7}>{empty}</td></tr>
             )}
           </tbody>
         </table>
