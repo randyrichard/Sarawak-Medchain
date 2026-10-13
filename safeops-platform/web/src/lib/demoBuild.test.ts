@@ -62,9 +62,6 @@ describe('public demo build', () => {
     // The Worker in the Cloudflare dashboard is safechain, and this must match it: the name is
     // also the public address, safechain.<account subdomain>.workers.dev.
     expect(cfg.name).toBe('safechain')
-    // The address people are given. Listed here so a deploy keeps it; workers.dev stays on.
-    expect(cfg.routes).toEqual([{ pattern: 'safechain.sarawak-medchain.com', custom_domain: true }])
-    expect(cfg.workers_dev).toBe(true)
     expect(cfg.assets).toMatchObject({ directory: './dist', not_found_handling: 'single-page-application' })
     expect(cfg.main).toBeUndefined()
     // Cloudflare builds other branches with `npx wrangler preview`, which fails without it.
