@@ -6,7 +6,6 @@ import type { CertificateView, CourseView, SessionView, TrainingMatrix, Training
 import { useOrg } from '@/features/org/OrgContext'
 import { useActor } from '@/features/incidents/lib'
 import { Alert, Button, Card, PageHeader, Skeleton, Tabs, type TabItem, AttentionIcon, attentionOf, attentionStripe } from '@/components/ui'
-import { fmtDateTime } from '@/features/incidents/lib'
 import { cn } from '@/lib/cn'
 import { canManageTraining, canRunSessions } from './lib'
 import { TrainingOverview } from './components/TrainingOverview'
@@ -174,7 +173,9 @@ export function TrainingPage() {
           setNewSessionOpen(false)
           refresh()
           switchView('sessions')
-          setScheduled(`${session.code} scheduled: ${session.courseName}, ${fmtDateTime(session.scheduledFor)}.`)
+          // A day, not a moment: the form asks for a date, and a time here read "12:00 am".
+          const day = new Date(session.scheduledFor).toLocaleDateString('en-MY', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' })
+          setScheduled(`${session.code} scheduled: ${session.courseName}, ${day}.`)
         }}
       />
 

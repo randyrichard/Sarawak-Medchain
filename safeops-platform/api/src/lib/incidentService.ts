@@ -1017,7 +1017,7 @@ export class IncidentService {
         create: { companyId: input.companyId, kind: 'capa', next: 401 },
         select: { next: true },
       })
-      return tx.correctiveAction.create({
+      const action = await tx.correctiveAction.create({
         data: {
           code: 'CA-' + counter.next,
           incidentId: null,
@@ -1034,6 +1034,22 @@ export class IncidentService {
           createdBy: caller.name,
         },
       })
+      // Told, as the owner of an incident's action is. "Create & Assign" assigned it to
+      // somebody who heard nothing until they happened to open the register.
+      await tx.notification.create({
+        data: {
+          companyId: input.companyId,
+          kind: 'action',
+          title: 'Corrective action assigned: ' + action.code,
+          detail: action.title + '. Due ' + due.toISOString().slice(0, 10)
+            + (action.evidenceRequired ? '. Evidence required before it can be completed.' : '.'),
+          href: '/actions?open=' + action.id,
+          recipientUserId: action.ownerId,
+          recipientName: action.owner,
+          recipientRole: 'capa_owner',
+        },
+      })
+      return action
     })
 
     await enqueueEvent(this.db, input.companyId, 'action.assigned', actionPayload(raised))

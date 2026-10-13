@@ -47,7 +47,7 @@ export async function request<T>(path: string, init: RequestInit = {}, retry = t
    * Cloudflare demo tried POST /auth/refresh) - only to arrive at the same answer below.
    * Only the demo build: elsewhere an empty base URL can mean "same origin".
    */
-  if (offlineDemoBuild() && !isBackendConfigured()) throw new ApiError(NOT_API, notApiMessage())
+  if (offlineDemoBuild() && !isBackendConfigured()) throw notApiError()
   try {
     await authApi.refreshIfNeeded()
   } catch (e) {
@@ -123,12 +123,22 @@ export async function request<T>(path: string, init: RequestInit = {}, retry = t
    * on the first field it read: the dashboard, the incident board, Workforce, Contractors,
    * Visitors and HSE Performance all did. As an error, each shows its own error state.
    */
-  if (!parsed.ok) throw new ApiError(NOT_API, notApiMessage())
+  if (!parsed.ok) throw notApiError()
   return body as T
 }
 
 /** Error code for a successful reply that was not the SafeChain API answering. */
 export const NOT_API = 'not_api'
+
+/**
+ * The refusal for a reply that was not the API. Without a server configured it is the demo
+ * saying a part needs the server: no fault, and nothing a retry could change, so it carries
+ * `unavailableHere` and ErrorState shows it calmly (see `isUnavailableHere`). Shown as an
+ * error with Try Again, it read on the public demo as something broken, and the button
+ * could only fail again. With a server configured it means a wrong address, a real fault.
+ */
+export const notApiError = () =>
+  Object.assign(new ApiError(NOT_API, notApiMessage()), { unavailableHere: !isBackendConfigured() })
 
 const notApiMessage = () => isBackendConfigured()
   ? 'The server sent back something that is not SafeChain data. Check that VITE_API_BASE_URL points at the SafeChain API, not the web app.'

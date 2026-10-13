@@ -97,6 +97,14 @@ export function useAsync<T>(
   }
 }
 
+/**
+ * Whether a failure means "not available here" rather than "something went wrong": the demo
+ * build asked for a part that needs the server. The API layer marks it (`notApiError`);
+ * this reads only the mark, so the primitives that show errors stay below the API layer.
+ */
+export const isUnavailableHere = (error: unknown): boolean =>
+  typeof error === 'object' && error !== null && (error as { unavailableHere?: unknown }).unavailableHere === true
+
 /** A message safe to show a person for whatever a loader threw. */
 export function errorMessage(error: unknown, fallback = 'Something went wrong.'): string {
   if (error instanceof Error && error.message) return error.message

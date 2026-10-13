@@ -5,7 +5,7 @@ import type { Department, Employee, Site, Team } from '@/api/types'
 import { ROLE_LABEL, type Role } from '@/api/types'
 import { useOrg } from '@/features/org/OrgContext'
 import { Can } from '@/features/auth/guards'
-import { capabilitiesOf } from '@/features/permissions/permissions'
+import { CAPABILITY_LABEL, capabilitiesOf, type Capability } from '@/features/permissions/permissions'
 import {
   AsyncContent, Avatar, Badge, Card, LinkButton, CardBody, CardHeader, DataTable, EmptyState,
   PageHeader, Skeleton, TabPanel, Tabs, type Column, type TabItem,
@@ -238,36 +238,9 @@ function PeopleView() {
 
 const ALL_ROLES: Role[] = ['ceo', 'admin', 'hse_manager', 'safety_officer', 'supervisor', 'employee']
 
-/*
- * Read by an administrator deciding what a role can do, so every capability needs a plain
- * English name. A key that falls through to its raw form ("workforce:view") reads as a bug
- * on the one screen where somebody is making a permissions decision.
- */
-const CAPABILITY_LABEL: Record<string, string> = {
-  'dashboard:view': 'View dashboard',
-  'reports:submit': 'Submit field reports',
-  'incidents:view': 'See incidents',
-  'permits:view': 'See permits to work',
-  'equipment:view': 'See equipment register',
-  'visitors:view': 'See visitors on site',
-  'toolbox:view': 'See toolbox meetings',
-  'training:view': 'See training records',
-  'workforce:view': 'See workforce and contractor registers',
-  'reports:view': 'See generated reports',
-  'incidents:manage': 'Investigate and close incidents',
-  'actions:view': 'See corrective actions (their own, or all for managers)',
-  'actions:manage': 'Manage corrective actions',
-  'analytics:view': 'View analytics',
-  'compliance:manage': 'Manage compliance',
-  'org:view': 'View organisation',
-  'org:manage': 'Manage organisation',
-  'audit-log:view': 'View audit log',
-  'settings:manage': 'Manage settings',
-}
-
 function RolesView() {
   const { role: myRole } = useOrg()
-  const capabilities = Object.keys(CAPABILITY_LABEL)
+  const capabilities = Object.keys(CAPABILITY_LABEL) as Capability[]
   return (
     <Card>
       <CardHeader
@@ -292,7 +265,7 @@ function RolesView() {
               <tr key={cap} className="border-b last:border-0">
                 <td className="py-2.5 pr-4 text-sm text-ink">{CAPABILITY_LABEL[cap]}</td>
                 {ALL_ROLES.map((r) => {
-                  const has = capabilitiesOf(r).includes(cap as never)
+                  const has = capabilitiesOf(r).includes(cap)
                   return (
                     <td key={r} className="px-3 py-2.5 text-center">
                       <span

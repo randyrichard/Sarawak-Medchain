@@ -180,6 +180,10 @@ d('corrective-action ownership by account — integration (real Postgres)', () =
       dueDate: '2030-01-01', evidenceRequired: true,
     })
     expect(strict).toMatchObject({ evidenceRequired: true, detail: 'Block C, level 2' })
+    // And its owner is told, as an incident action's owner is.
+    const notice = await db.notification.findFirst({ where: { companyId: CO, href: `/actions?open=${strict.id}` } })
+    expect(notice).toMatchObject({ recipientUserId: ahmad.userId, recipientName: 'Ahmad Ali' })
+    expect(notice?.detail).toMatch(/Evidence required/)
     const relaxed = await incidents.createStandaloneAction(manager, {
       companyId: CO, siteId: SITE, title: 'Sweep the yard', owner: 'Ahmad Ali', dueDate: '2030-01-01',
     })

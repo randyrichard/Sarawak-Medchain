@@ -139,3 +139,32 @@ export function can(role: Role | null | undefined, capability: Capability): bool
 export function capabilitiesOf(role: Role): Capability[] {
   return [...(MATRIX[role] ?? [])]
 }
+
+/*
+ * Read by an administrator deciding what a role can do, so every capability needs a plain
+ * English name. A key that falls through to its raw form ("workforce:view") reads as a bug
+ * on the one screen where somebody is making a permissions decision - and on the page that
+ * tells somebody they cannot open something, which named the key itself. Keyed by the
+ * Capability type, so a new capability cannot be added without a name.
+ */
+export const CAPABILITY_LABEL: Record<Capability, string> = {
+  'dashboard:view': 'View dashboard',
+  'reports:submit': 'Submit field reports',
+  'incidents:view': 'See incidents',
+  'permits:view': 'See permits to work',
+  'equipment:view': 'See equipment register',
+  'visitors:view': 'See visitors on site',
+  'toolbox:view': 'See toolbox meetings',
+  'training:view': 'See training records',
+  'workforce:view': 'See workforce and contractor registers',
+  'reports:view': 'See generated reports',
+  'incidents:manage': 'Investigate and close incidents',
+  'actions:view': 'See corrective actions (their own, or all for managers)',
+  'actions:manage': 'Manage corrective actions',
+  'analytics:view': 'View analytics',
+  'compliance:manage': 'Manage compliance',
+  'org:view': 'View organisation',
+  'org:manage': 'Manage organisation',
+  'audit-log:view': 'View audit log',
+  'settings:manage': 'Manage settings',
+}
