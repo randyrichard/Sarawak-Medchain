@@ -22,8 +22,8 @@
  * - target:    a control under 24px (WCAG 2.5.8), measured through its label where it has one
  * - no name:   a control a screen reader cannot name
  * - blocked:   pinned bars taking more than 30% of the screen for good
- * Navigation: top-bar items overlapping, off-screen or under 44px; the menu drawer reaching
- * its last item. Keyboard: with the screen shrunk by a keyboard's height, each field must
+ * Navigation: top-bar items overlapping, off-screen or under 44px; each top-bar menu opening
+ * inside the screen; the menu drawer reaching its last item. Keyboard: with the screen shrunk by a keyboard's height, each field must
  * be in view and not covered by a pinned bar.
  *
  * It runs Chromium with each device's size, touch and user agent. That is how Android
@@ -140,6 +140,23 @@ async function auditDevice(browser, [name, device, keyboard]) {
     return out
   })
   findings.push(...bar)
+  // Each top-bar menu opens inside the screen. The notifications panel, 384px wide and hung
+  // from the bell's right edge, began 110px off the left of a 390px iPhone.
+  const menus = page.locator('header [aria-haspopup="menu"]')
+  for (let i = 0; i < await menus.count(); i++) {
+    const trigger = menus.nth(i)
+    if (!(await trigger.isVisible())) continue
+    const name = ((await trigger.getAttribute('aria-label')) || (await trigger.innerText()) || '').trim().slice(0, 24)
+    await trigger.click(); await page.waitForTimeout(300)
+    const off = await page.evaluate(() => {
+      const m = document.querySelector('[role="menu"]')
+      if (!m) return null
+      const r = m.getBoundingClientRect(), w = document.documentElement.clientWidth
+      return r.left < 0 || r.right > w + 1 ? `${Math.round(r.left)} to ${Math.round(r.right)} on a ${w}px screen` : null
+    })
+    if (off) findings.push(`top bar menu off-screen: ${name} spans ${off}`)
+    await page.keyboard.press('Escape'); await page.waitForTimeout(150)
+  }
   const menu = page.getByRole('button', { name: 'Open menu' })
   if (await menu.count()) {
     await menu.click(); await page.waitForTimeout(400)

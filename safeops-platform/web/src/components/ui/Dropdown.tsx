@@ -1,5 +1,5 @@
 import {
-  cloneElement, createContext, isValidElement, useContext, useEffect, useRef, useState,
+  cloneElement, createContext, isValidElement, useContext, useEffect, useLayoutEffect, useRef, useState,
   type ReactElement, type ReactNode, type HTMLAttributes, type KeyboardEvent,
 } from 'react'
 import { cn } from '@/lib/cn'
@@ -16,6 +16,23 @@ import { cn } from '@/lib/cn'
 const ITEM = '[role="menuitem"]:not([disabled])'
 
 const DropdownCtx = createContext<{ close: () => void }>({ close: () => {} })
+
+/** The closest a menu comes to the edge of the screen, in CSS pixels. */
+const EDGE = 8
+
+/**
+ * How far to move a menu sideways to keep it on screen: 0 when it fits.
+ *
+ * A menu hangs from its trigger's edge at a fixed width, and on a phone that edge is not the
+ * screen's. The notifications panel, 384px wide and aligned to the bell's right edge, began
+ * 110px off the left of a 390px iPhone and cut off the start of every notification. The menu
+ * is also never wider than the screen less EDGE either side, so moving it is always enough.
+ */
+export function nudgeOnScreen(left: number, width: number, screenWidth: number, edge = EDGE): number {
+  if (left < edge) return edge - left
+  const over = left + width - (screenWidth - edge)
+  return over > 0 ? -over : 0
+}
 
 /**
  * Adds the menu-button semantics to whatever the caller rendered as its trigger.
@@ -48,6 +65,8 @@ export function Dropdown({
   const [open, setOpen] = useState(false)
   // Which item takes focus when the menu opens: the first, or the last for ArrowUp.
   const [entry, setEntry] = useState<'first' | 'last'>('first')
+  /** Sideways shift that keeps the open menu on screen; see nudgeOnScreen. */
+  const [nudge, setNudge] = useState(0)
   const rootRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -68,6 +87,18 @@ export function Dropdown({
     }
     document.addEventListener('mousedown', onDown)
     return () => document.removeEventListener('mousedown', onDown)
+  }, [open])
+
+  // Measured before paint, so the menu never shows off screen first. From the layout box,
+  // not the drawn one: the menu is mid scale-in as it opens, drawn smaller than it is.
+  useLayoutEffect(() => {
+    const menu = menuRef.current
+    const root = rootRef.current
+    const screenWidth = document.documentElement.clientWidth
+    // Nothing to measure without a layout (a test's DOM), so the menu stays where it hangs.
+    if (!open || !menu || !root || screenWidth === 0) { setNudge(0); return }
+    const left = root.getBoundingClientRect().left + menu.offsetLeft
+    setNudge(nudgeOnScreen(left, menu.offsetWidth, screenWidth))
   }, [open])
 
   // Focus moves into the menu as it opens, so the arrow keys act on it straight away.
@@ -159,10 +190,11 @@ export function Dropdown({
           role="menu"
           onKeyDown={onMenuKeyDown}
           className={cn(
-            'absolute z-40 mt-1.5 animate-scale-in rounded-xl border bg-raised p-1.5 shadow-pop',
+            'absolute z-40 mt-1.5 max-w-[calc(100vw_-_1rem)] animate-scale-in rounded-xl border bg-raised p-1.5 shadow-pop',
             width,
             align === 'end' ? 'right-0' : 'left-0',
           )}
+          style={nudge === 0 ? undefined : align === 'end' ? { right: -nudge } : { left: nudge }}
         >
           <DropdownCtx.Provider value={{ close: () => close(true) }}>{children}</DropdownCtx.Provider>
         </div>

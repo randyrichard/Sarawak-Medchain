@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import axe from 'axe-core'
 import { Tabs, TabPanel, type TabItem } from './Tabs'
-import { Dropdown, DropdownItem, DropdownLabel, DropdownSeparator } from './Dropdown'
+import { Dropdown, DropdownItem, DropdownLabel, DropdownSeparator, nudgeOnScreen } from './Dropdown'
 import { Dialog } from './Dialog'
 import { DataTable, type Column } from './Table'
 import { Input, PasswordInput, Select, Textarea } from './Field'
@@ -183,6 +183,56 @@ describe('Dropdown', () => {
       expect(item.tabIndex).toBe(-1)
       expect(item.getAttribute('type')).toBe('button')
     }
+  })
+})
+
+/*
+ * On a phone the notifications panel, 384px wide and hung from the bell's right edge, began
+ * 110px off the left of the screen and cut off the start of every notification.
+ */
+describe('Dropdown on a narrow screen', () => {
+  const layout = (screenWidth: number, triggerLeft: number, menuLeft: number, menuWidth: number) => {
+    Object.defineProperty(document.documentElement, 'clientWidth', { configurable: true, value: screenWidth })
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ left: triggerLeft } as DOMRect)
+    vi.spyOn(HTMLElement.prototype, 'offsetLeft', 'get').mockReturnValue(menuLeft)
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(menuWidth)
+  }
+  afterEach(() => {
+    vi.restoreAllMocks()
+    Object.defineProperty(document.documentElement, 'clientWidth', { configurable: true, value: 0 })
+  })
+
+  it('moves a menu back on screen, 8px from the edge', () => {
+    expect(nudgeOnScreen(-66, 384, 390)).toBe(74)
+    expect(nudgeOnScreen(68, 320, 360)).toBe(-36)
+    expect(nudgeOnScreen(8, 374, 390)).toBe(0)
+    expect(nudgeOnScreen(100, 200, 390)).toBe(0)
+  })
+
+  it('shifts the bell\'s panel right when it would start off the left edge', () => {
+    // The bell's wrapper at x=274 on a 390px phone; the panel hangs 340px to its left.
+    layout(390, 274, -340, 384)
+    render(<Menu />)
+    fireEvent.click(screen.getByRole('button', { name: 'Actions' }))
+    expect(screen.getByRole('menu').style.right).toBe('-74px')
+  })
+
+  it('shifts a start-aligned menu left when it would run off the right edge', () => {
+    layout(360, 68, 0, 320)
+    render(
+      <Dropdown align="start" trigger={() => <button type="button">Site</button>}>
+        <DropdownItem>Kuching</DropdownItem>
+      </Dropdown>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Site' }))
+    expect(screen.getByRole('menu').style.left).toBe('-36px')
+  })
+
+  it('leaves a menu that fits where it hangs', () => {
+    layout(1280, 900, -340, 384)
+    render(<Menu />)
+    fireEvent.click(screen.getByRole('button', { name: 'Actions' }))
+    expect(screen.getByRole('menu').getAttribute('style')).toBeNull()
   })
 })
 
