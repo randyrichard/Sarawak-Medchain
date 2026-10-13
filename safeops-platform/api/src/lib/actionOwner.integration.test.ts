@@ -142,4 +142,51 @@ d('corrective-action ownership by account — integration (real Postgres)', () =
     const ids = await listIds(manager)
     expect(ids.length).toBeGreaterThanOrEqual(6)
   })
+
+  /*
+   * The Actions register offered Reassign, and an Edit with owner, priority and details, and
+   * this route accepted none of them: the change looked saved, the old owner kept the work and
+   * the new one never heard of it.
+   */
+  it('moves a reassigned action to its new owner, and tells them', async () => {
+    const a = await raise('Muhammad Hafiz', hafiz1.userId)
+    const moved = await incidents.updateAction(manager, a.id, { owner: 'Ahmad Ali', priority: 'High', detail: 'Guard refit, both sides' })
+    expect(moved).toMatchObject({ owner: 'Ahmad Ali', ownerId: ahmad.userId, priority: 'High', detail: 'Guard refit, both sides' })
+
+    expect(await listIds(ahmad)).toContain(a.id)
+    expect(await listIds(hafiz1)).not.toContain(a.id)
+    const notices = await db.notification.findMany({ where: { companyId: CO, href: `/actions?open=${a.id}` } })
+    expect(notices.map((n) => n.recipientUserId)).toEqual(expect.arrayContaining([hafiz1.userId, ahmad.userId]))
+  })
+
+  it('leaves reassigning, priority and details to a manager', async () => {
+    const a = await raise('Ahmad Ali')
+    for (const patch of [{ owner: 'Muhammad Hafiz' }, { priority: 'High' }, { detail: 'Mine now' }]) {
+      await expect(incidents.updateAction(ahmad, a.id, patch)).rejects.toMatchObject({ status: 403 })
+    }
+    await expect(incidents.updateAction(ahmad, a.id, { status: 'in_progress' })).resolves.toBeTruthy()
+  })
+
+  it('does not tell anybody when the owner is saved unchanged', async () => {
+    const a = await raise('Ahmad Ali')
+    const before = await db.notification.count({ where: { companyId: CO, href: `/actions?open=${a.id}` } })
+    await incidents.updateAction(manager, a.id, { owner: 'Ahmad Ali', priority: 'Low' })
+    expect(await db.notification.count({ where: { companyId: CO, href: `/actions?open=${a.id}` } })).toBe(before)
+  })
+
+  it('keeps the evidence rule an action was raised with outside an investigation', async () => {
+    const strict = await incidents.createStandaloneAction(manager, {
+      companyId: CO, siteId: SITE, title: 'Replace extinguisher', detail: 'Block C, level 2', owner: 'Ahmad Ali',
+      dueDate: '2030-01-01', evidenceRequired: true,
+    })
+    expect(strict).toMatchObject({ evidenceRequired: true, detail: 'Block C, level 2' })
+    // And its owner is told, as an incident action's owner is.
+    const notice = await db.notification.findFirst({ where: { companyId: CO, href: `/actions?open=${strict.id}` } })
+    expect(notice).toMatchObject({ recipientUserId: ahmad.userId, recipientName: 'Ahmad Ali' })
+    expect(notice?.detail).toMatch(/Evidence required/)
+    const relaxed = await incidents.createStandaloneAction(manager, {
+      companyId: CO, siteId: SITE, title: 'Sweep the yard', owner: 'Ahmad Ali', dueDate: '2030-01-01',
+    })
+    expect(relaxed.evidenceRequired).toBe(false)
+  })
 })

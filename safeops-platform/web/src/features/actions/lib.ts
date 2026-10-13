@@ -1,5 +1,6 @@
 import type { CapaDerivedStatus, CapaItem } from '@/api/capa'
 import type { Actor } from '@/api/incidents'
+import { isBackendConfigured } from '@/api/authApi'
 import type { StatusKind } from '@/components/ui'
 import { csvDocument } from '@/lib/csv'
 import { saveBlob } from '@/lib/saveBlob'
@@ -15,6 +16,17 @@ export const DERIVED_META: Record<CapaDerivedStatus, { kind: StatusKind; label: 
 }
 
 export const ACTIVE_STATES: CapaDerivedStatus[] = ['Open', 'Assigned', 'In Progress', 'Waiting Verification']
+
+/**
+ * Whether the store in use keeps an action's department, named reviewer, source, the root
+ * cause it answers and progress in quarters. The demo's own store does; the server has no
+ * place for any of them (it verifies with any manager, and progress follows the status).
+ *
+ * The forms asked for all five either way, and on a server they were dropped on the way in:
+ * a reviewer was named who never heard of it, and a progress bar set to 75% went back to 50.
+ * Where they cannot be kept, they are not asked for.
+ */
+export const KEEPS_ACTION_EXTRAS = !isBackendConfigured()
 
 /**
  * Whether the actor owns this action - the server's rule (api/src/lib/actionOwner.ts).

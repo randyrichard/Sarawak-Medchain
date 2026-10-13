@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
-import type { AuditPriority, AuditTemplate, AuditType } from '@/api/audits'
+import type { AuditPriority, AuditTemplate, AuditType, AuditView } from '@/api/audits'
 import { AUDIT_TYPES, AUDIT_TYPE_LABEL } from '@/api/audits'
 import { useOrg } from '@/features/org/OrgContext'
 import { useDepartments } from '@/features/org/departments'
 import { usePeople, useActor } from '@/features/incidents/lib'
 import { Badge, Button, Dialog, Input, SuggestSelect, Select, Textarea } from '@/components/ui'
 import { PeopleOptions } from '@/features/org/PeopleOptions'
+import { useFormCheck } from '@/lib/useFormCheck'
 
-export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
+export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: (audit: AuditView) => void }) {
   const { company, sites } = useOrg()
   const actor = useActor()
   const people = usePeople()
@@ -44,12 +45,25 @@ export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; o
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, company?.id])
 
+  const form = useFormCheck({
+    title: !title.trim() && 'Give the audit a title.',
+    siteId: !siteId && 'Choose the site.',
+    leadAuditor: !leadAuditor && 'Choose who leads it.',
+    templateId: !templateId && 'Choose a checklist, or create one.',
+    scheduledFor: !scheduledFor && 'Choose the date.',
+  }, open && !tplMode)
+  const checklist = tplItems.split('\n').map((l) => l.trim()).filter(Boolean)
+  const tplForm = useFormCheck({
+    tplName: !tplName.trim() && 'Name the template.',
+    tplItems: checklist.length < 3 && `List at least 3 items, one per line (${checklist.length} so far).`,
+  }, open && tplMode)
+
   const createTemplate = async () => {
-    if (!company) return
+    if (!company || !tplForm.check()) return
     setBusy(true)
     setError(null)
     try {
-      const tpl = await api.createAuditTemplate(company.id, tplName, tplItems.split('\n'), actor)
+      const tpl = await api.createAuditTemplate(company.id, tplName, checklist, actor)
       const list = await api.listAuditTemplates(company.id)
       setTemplates(list)
       setTemplateId(tpl.id)
@@ -64,16 +78,16 @@ export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; o
   }
 
   const submit = async () => {
-    if (!company) return
+    if (!company || !form.check()) return
     setBusy(true)
     setError(null)
     try {
-      await api.createAudit(
+      const created = await api.createAudit(
         { title, type, companyId: company.id, siteId, department, leadAuditor, team, templateId, scheduledFor, durationDays, priority },
         actor,
       )
       setTitle(''); setLeadAuditor(''); setTeam([]); setScheduledFor('')
-      onCreated()
+      onCreated(created)
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Could not create the audit.')
     } finally {
@@ -109,23 +123,24 @@ export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; o
       <div className="max-h-[62vh] space-y-5 overflow-y-auto pr-1">
         {tplMode ? (
           <>
-            <Input label="Template name" required value={tplName} onChange={(e) => setTplName(e.target.value)} placeholder="e.g. Warehouse racking audit" />
-            <Textarea label="Checklist items (one per line, min 3)" rows={7} value={tplItems} onChange={(e) => setTplItems(e.target.value)}
+            <Input label="Template name" required value={tplName} onChange={(e) => setTplName(e.target.value)} placeholder="e.g. Warehouse racking audit" error={tplForm.errorFor('tplName')} />
+            <Textarea label="Checklist items (one per line, at least 3)" required rows={7} value={tplItems} onChange={(e) => setTplItems(e.target.value)}
+              error={tplForm.errorFor('tplItems')}
               placeholder={'Racking free of visible damage\nLoad signage displayed and legible\nAisle widths meet standard'} />
           </>
         ) : (
           <>
-            <Input label="Audit title" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Q3 contractor HSE audit — Miri" />
-            <div className="grid grid-cols-2 gap-x-3 gap-y-5">
+            <Input label="Audit title" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Q3 contractor HSE audit — Miri" error={form.errorFor('title')} />
+            <div className="grid grid-cols-2 items-start gap-x-3 gap-y-5">
               <Select label="Audit type" value={type} onChange={(e) => setType(e.target.value as AuditType)}>
                 {AUDIT_TYPES.map((t) => <option key={t} value={t}>{AUDIT_TYPE_LABEL[t]}</option>)}
               </Select>
-              <Select label="Site" required value={siteId} onChange={(e) => setSiteId(e.target.value)}>
+              <Select label="Site" required value={siteId} onChange={(e) => setSiteId(e.target.value)} error={form.errorFor('siteId')}>
                 <option value="" disabled>Select…</option>
                 {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-x-3 gap-y-5">
+            <div className="grid grid-cols-2 items-start gap-x-3 gap-y-5">
               <SuggestSelect
                 options={departments}
                 label="Department"
@@ -134,7 +149,7 @@ export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; o
                 placeholder="Select a department…"
                 addLabel="Add a new department…"
               />
-              <Select label="Lead auditor" required value={leadAuditor} onChange={(e) => setLeadAuditor(e.target.value)}>
+              <Select label="Lead auditor" required value={leadAuditor} onChange={(e) => setLeadAuditor(e.target.value)} error={form.errorFor('leadAuditor')}>
                 <option value="" disabled>Select…</option>
                 <PeopleOptions people={people} />
               </Select>
@@ -143,7 +158,7 @@ export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; o
               <p className="mb-1.5 text-xs font-semibold text-ink-2">Audit team (optional)</p>
               <div className="flex flex-wrap gap-1.5">
                 {people.filter((p) => p !== leadAuditor).slice(0, 10).map((p) => (
-                  <button key={p} onClick={() => toggleTeam(p)}
+                  <button key={p} type="button" aria-pressed={team.includes(p)} onClick={() => toggleTeam(p)}
                     className="rounded-full border px-2.5 py-1 text-2xs font-medium transition-colors"
                     style={team.includes(p) ? { borderColor: 'var(--accent)', background: 'var(--accent-soft)' } : undefined}>
                     {p}
@@ -152,22 +167,22 @@ export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; o
               </div>
             </div>
             <div className="space-y-1.5">
-              <Select label="Checklist template" value={templateId} onChange={(e) => setTemplateId(e.target.value)}>
+              <Select label="Checklist template" required value={templateId} onChange={(e) => setTemplateId(e.target.value)} error={form.errorFor('templateId')}>
                 {templates.map((t) => <option key={t.id} value={t.id}>{t.name}{t.custom ? ' (custom)' : ''}</option>)}
               </Select>
               <button onClick={() => setTplMode(true)} className="text-2xs font-semibold text-accent hover:underline">
                 + Create a Custom Template
               </button>
             </div>
-            <div className="grid grid-cols-3 gap-x-3 gap-y-5">
-              <Input label="Date" required type="date" value={scheduledFor} onChange={(e) => setScheduledFor(e.target.value)} />
+            <div className="grid grid-cols-3 items-start gap-x-3 gap-y-5">
+              <Input label="Date" required type="date" value={scheduledFor} onChange={(e) => setScheduledFor(e.target.value)} error={form.errorFor('scheduledFor')} />
               <Input label="Duration (days)" type="number" min={1} max={10} value={durationDays}
                 onChange={(e) => setDurationDays(Math.max(1, Number(e.target.value) || 1))} />
               <Select label="Priority" value={priority} onChange={(e) => setPriority(e.target.value as AuditPriority)}>
                 <option>High</option><option>Medium</option><option>Low</option>
               </Select>
             </div>
-            {team.length > 0 && <Badge tone="accent">{team.length} team member(s) selected</Badge>}
+            {team.length > 0 && <Badge tone="accent">{team.length} team {team.length === 1 ? 'member' : 'members'} selected</Badge>}
           </>
         )}
       </div>

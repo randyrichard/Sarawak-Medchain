@@ -143,7 +143,7 @@ The web app runs entirely in the browser in demo mode: two invented companies, t
 people, incidents, permits and so on, with nothing sent anywhere. That needs no server, so
 it can be hosted on Cloudflare Workers as static files, free, today.
 
-It is a separate Cloudflare Worker, `sarawak-safechain`. It is not the `sarawak-medchain` Worker,
+It is a separate Cloudflare Worker, `safechain`. It is not the `sarawak-medchain` Worker,
 which is the earlier MedChain product built from `frontend/`.
 
 ### What makes it safe to publish
@@ -172,7 +172,7 @@ check is for customer builds, and the demo is the one build meant to contain the
 
    | Setting | Value |
    |---|---|
-   | Project name | `sarawak-safechain` (must match `web/wrangler.jsonc`) |
+   | Project name | `safechain` (must match `web/wrangler.jsonc`) |
    | Production branch | `feature/permit-to-work` (where SafeChain lives) |
    | Root directory | `safeops-platform/web` |
    | Build command | `npm run build:demo` |
@@ -191,8 +191,16 @@ check is for customer builds, and the demo is the one build meant to contain the
    **Settings → Build**: Branch control (production branch), and Build configuration.
 3. Deploy. **Retry build** re-runs the same commit, so it will not pick up a changed branch;
    the next commit on `feature/permit-to-work` starts the right build. The address is
-   `https://sarawak-safechain.<your-subdomain>.workers.dev` — the Worker's name is the
-   address.
+   `https://safechain.<your-subdomain>.workers.dev` — the Worker's name is the address.
+
+   **The subdomain is the account's, and Cloudflare starts it from the email address you
+   signed up with.** Every Worker on the account shares it, so out of the box the public demo
+   carries part of somebody's email. Change it under **Workers & Pages → Change** (next to
+   "Your subdomain", on the right of the overview page) to something that belongs on a public
+   address, such as `sarawak`. It changes the address of every Worker on the account,
+   `sarawak-medchain` included, and may only take effect at each Worker's next deploy.
+   `workers.dev` always keeps this second part; an address that is only `safechain` needs a
+   custom domain.
 4. Optional: in the `sarawak-medchain` Worker, set its build watch path to `frontend/*`, so
    SafeChain commits stop triggering MedChain builds.
 

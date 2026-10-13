@@ -63,7 +63,7 @@ function TokensSection() {
     </div>
   )
   return (
-    <Section title="Color Tokens" subtitle="Both themes are selected palettes — toggle dark mode in the topbar and everything below re-resolves.">
+    <Section title="Colour Tokens" subtitle="Both themes are selected palettes — toggle dark mode in the topbar and everything below re-resolves.">
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         <div>
           <p className="mb-2 text-2xs font-semibold uppercase tracking-wider text-muted">Surfaces</p>

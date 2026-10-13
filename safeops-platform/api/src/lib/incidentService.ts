@@ -828,6 +828,9 @@ export class IncidentService {
     status?: string
     evidenceNote?: string
     dueDate?: string
+    owner?: string
+    priority?: string
+    detail?: string
     expectedVersion?: number
   }) {
     const action = await this.db.correctiveAction.findUnique({ where: { id: actionId } })
@@ -891,6 +894,16 @@ export class IncidentService {
     if (patch.dueDate && !isManager) {
       throw new IncidentError('forbidden', 'Changing the target date requires an HSE Manager or Admin.', 403)
     }
+    /*
+     * Who does the work, how urgent it is and what it says are a manager's to change, as the
+     * target date is. The screens offered all three and this route accepted none of them, so
+     * a reassignment looked saved while the old owner kept the action and nobody was told.
+     */
+    if ((patch.owner !== undefined || patch.priority !== undefined || patch.detail !== undefined) && !isManager) {
+      throw new IncidentError('forbidden', 'Changing the owner, priority or details requires an HSE Manager or Admin.', 403)
+    }
+    const newOwner = patch.owner?.trim()
+    const reassigned = Boolean(newOwner) && newOwner !== action.owner
     if (patch.expectedVersion !== undefined && patch.expectedVersion !== action.version) {
       throw new IncidentError('conflict', 'This action was updated by someone else. Reload to see the latest.', 409)
     }
@@ -903,6 +916,11 @@ export class IncidentService {
           ...(patch.status ? { status: patch.status as never } : {}),
           ...(patch.evidenceNote ? { evidenceNote: patch.evidenceNote.trim() } : {}),
           ...(patch.dueDate ? { dueDate: new Date(patch.dueDate) } : {}),
+          ...(reassigned && newOwner
+            ? { owner: newOwner, ownerId: await resolveOwnerId(tx, action.companyId, newOwner) }
+            : {}),
+          ...(patch.priority ? { priority: patch.priority as never } : {}),
+          ...(patch.detail !== undefined ? { detail: patch.detail.trim() } : {}),
           ...(patch.status === 'completed' ? { completedAt: new Date() } : {}),
           ...(patch.status === 'verified' ? { verifiedBy: caller.name, verifiedAt: new Date() } : {}),
           // A reopened action is genuinely unfinished again: clear the sign-off and the
@@ -920,9 +938,26 @@ export class IncidentService {
           data: {
             incidentId: action.incidentId,
             action: patch.status ? 'Action ' + updated.code + ' -> ' + patch.status : 'Action ' + updated.code + ' updated',
-            detail: patch.evidenceNote?.slice(0, 140),
+            detail: reassigned ? 'Reassigned from ' + action.owner + ' to ' + updated.owner : patch.evidenceNote?.slice(0, 140),
             actor: caller.name,
             actorRole: m.role,
+          },
+        })
+      }
+      // The new owner is told, as the first one was when it was raised: an action passed to
+      // somebody who never hears of it is how a due date goes by unnoticed.
+      if (reassigned) {
+        await tx.notification.create({
+          data: {
+            companyId: updated.companyId,
+            kind: 'action',
+            title: 'Corrective action assigned: ' + updated.code,
+            detail: updated.title + '. Due ' + updated.dueDate.toISOString().slice(0, 10)
+              + (updated.evidenceRequired ? '. Evidence required before it can be completed.' : '.'),
+            href: '/actions?open=' + updated.id,
+            recipientUserId: updated.ownerId,
+            recipientName: updated.owner,
+            recipientRole: 'capa_owner',
           },
         })
       }
@@ -940,6 +975,7 @@ export class IncidentService {
         verifiedBy: caller.name,
       })
     }
+    if (reassigned) await enqueueEvent(this.db, saved.companyId, 'action.assigned', actionPayload(saved))
     return saved
   }
 
@@ -958,6 +994,7 @@ export class IncidentService {
     dueDate: string
     priority?: string
     source?: string
+    evidenceRequired?: boolean
   }) {
     this.requireRole(caller, input.companyId, MANAGE_ROLES)
     if (!input.title?.trim()) throw new IncidentError('validation', 'An action title is required.')
@@ -980,7 +1017,7 @@ export class IncidentService {
         create: { companyId: input.companyId, kind: 'capa', next: 401 },
         select: { next: true },
       })
-      return tx.correctiveAction.create({
+      const action = await tx.correctiveAction.create({
         data: {
           code: 'CA-' + counter.next,
           incidentId: null,
@@ -993,9 +1030,26 @@ export class IncidentService {
           ownerId: await resolveOwnerId(tx, input.companyId, input.owner),
           dueDate: due,
           priority: (input.priority ?? 'Medium') as never,
+          evidenceRequired: input.evidenceRequired ?? false,
           createdBy: caller.name,
         },
       })
+      // Told, as the owner of an incident's action is. "Create & Assign" assigned it to
+      // somebody who heard nothing until they happened to open the register.
+      await tx.notification.create({
+        data: {
+          companyId: input.companyId,
+          kind: 'action',
+          title: 'Corrective action assigned: ' + action.code,
+          detail: action.title + '. Due ' + due.toISOString().slice(0, 10)
+            + (action.evidenceRequired ? '. Evidence required before it can be completed.' : '.'),
+          href: '/actions?open=' + action.id,
+          recipientUserId: action.ownerId,
+          recipientName: action.owner,
+          recipientRole: 'capa_owner',
+        },
+      })
+      return action
     })
 
     await enqueueEvent(this.db, input.companyId, 'action.assigned', actionPayload(raised))

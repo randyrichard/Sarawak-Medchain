@@ -155,7 +155,7 @@ export function RcaPanel({ incident, onUpdate }: { incident: Incident; onUpdate:
 
       {editable && (
         <div className="flex items-center gap-3">
-          <Button icon={<Save size={14} />} loading={busy} onClick={() => void save()}>Save RCA</Button>
+          <Button icon={<Save size={14} />} loading={busy} onClick={() => void save()}>Save Analysis</Button>
           {saved && (
             <span className="inline-flex items-center gap-1 text-xs font-semibold" style={{ color: 'var(--delta-good)' }}>
               Saved

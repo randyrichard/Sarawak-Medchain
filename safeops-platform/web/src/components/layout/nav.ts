@@ -75,7 +75,7 @@ export const NAV: NavItem[] = [
   { to: '/training', label: 'Training & Competency', capability: 'training:view', group: 'People' },
   { to: '/employees', label: 'Employees', capability: 'workforce:view', group: 'People' },
   { to: '/contractors', label: 'Contractors', capability: 'workforce:view', group: 'People' },
-  { to: '/organization', label: 'Organization', capability: 'org:view', group: 'Workspace' },
+  { to: '/organization', label: 'Organisation', capability: 'org:view', group: 'Workspace' },
   { to: '/admin', label: 'Administration', capability: 'settings:manage', group: 'Workspace' },
 ]
 

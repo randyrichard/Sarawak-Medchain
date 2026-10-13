@@ -2,14 +2,17 @@ import { useState } from 'react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
 import type { ActionPriority } from '@/api/incidents'
+import type { CapaItem } from '@/api/capa'
 import { useOrg } from '@/features/org/OrgContext'
 import { useDepartments } from '@/features/org/departments'
 import { usePeople, useActor } from '@/features/incidents/lib'
 import { Button, Checkbox, Dialog, Input, SuggestSelect, Select, Textarea } from '@/components/ui'
 import { PeopleOptions } from '@/features/org/PeopleOptions'
+import { useFormCheck } from '@/lib/useFormCheck'
+import { KEEPS_ACTION_EXTRAS } from '../lib'
 
 /** Standalone corrective action (audit finding, inspection, MOC…). */
-export function NewActionDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
+export function NewActionDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: (action: CapaItem) => void }) {
   const { company, sites } = useOrg()
   const actor = useActor()
   const people = usePeople()
@@ -30,17 +33,29 @@ export function NewActionDialog({ open, onClose, onCreated }: { open: boolean; o
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  /*
+   * Said under each field, before sending. On a server the site went unchecked until the
+   * reply, which read "String must contain at least 1 character(s)" and named no field.
+   */
+  const form = useFormCheck({
+    title: !title.trim() && 'Say what must be done.',
+    siteId: !siteId && 'Choose the site.',
+    department: KEEPS_ACTION_EXTRAS && !department.trim() && 'Choose the department.',
+    owner: !owner && 'Choose who will do it.',
+    dueDate: !dueDate && 'Set the date it is due.',
+  }, open)
+
   const submit = async () => {
-    if (!company) return
+    if (!company || !form.check()) return
     setBusy(true)
     setError(null)
     try {
-      await api.addStandaloneAction(
+      const created = await api.addStandaloneAction(
         { title, description, companyId: company.id, siteId, department, rootCause, owner, reviewer: reviewer || undefined, priority, dueDate, evidenceRequired },
         actor,
       )
       setTitle(''); setDescription(''); setOwner(''); setDueDate(''); setDepartment('')
-      onCreated()
+      onCreated(created)
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Could not create the action.')
     } finally {
@@ -65,40 +80,47 @@ export function NewActionDialog({ open, onClose, onCreated }: { open: boolean; o
     >
       <div className="space-y-5">
         <Input label="What must be done" required value={title} onChange={(e) => setTitle(e.target.value)}
-          placeholder="e.g. Replace expired fire extinguishers — Block C" />
+          placeholder="e.g. Replace expired fire extinguishers — Block C" error={form.errorFor('title')} />
         <Textarea label="Details (optional)" rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
-        <div className="grid grid-cols-2 gap-x-3 gap-y-5">
-          <Select label="Site" required value={siteId} onChange={(e) => setSiteId(e.target.value)}>
+        <div className={KEEPS_ACTION_EXTRAS ? 'grid grid-cols-2 gap-x-3 gap-y-5' : undefined}>
+          <Select label="Site" required value={siteId} onChange={(e) => setSiteId(e.target.value)} error={form.errorFor('siteId')}>
             <option value="" disabled>Select…</option>
             {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </Select>
-          <SuggestSelect
-            options={departments}
-            label="Department"
-            required
-            value={department}
-            onChange={setDepartment}
-            placeholder="Select a department…"
-            addLabel="Add a new department…"
-          />
+          {KEEPS_ACTION_EXTRAS && (
+            <SuggestSelect
+              options={departments}
+              label="Department"
+              required
+              value={department}
+              onChange={setDepartment}
+              placeholder="Select a department…"
+              addLabel="Add a new department…"
+              error={form.errorFor('department')}
+            />
+          )}
         </div>
-        <Select label="Source / root cause" value={rootCause} onChange={(e) => setRootCause(e.target.value)}>
-          {['Inspection finding', 'Audit finding (ISO 45001)', 'Audit finding (CIMAH)', 'Compliance schedule', 'Management of change', 'Observation'].map((r) => (
-            <option key={r}>{r}</option>
-          ))}
-        </Select>
-        <div className="grid grid-cols-2 gap-x-3 gap-y-5">
-          <Select label="Owner" required value={owner} onChange={(e) => setOwner(e.target.value)}>
+        {KEEPS_ACTION_EXTRAS && (
+          <Select label="Source / root cause" value={rootCause} onChange={(e) => setRootCause(e.target.value)}>
+            {['Inspection finding', 'Audit finding (ISO 45001)', 'Audit finding (CIMAH)', 'Compliance schedule', 'Management of change', 'Observation'].map((r) => (
+              <option key={r}>{r}</option>
+            ))}
+          </Select>
+        )}
+        <div className={KEEPS_ACTION_EXTRAS ? 'grid grid-cols-2 gap-x-3 gap-y-5' : undefined}>
+          <Select label="Owner" required value={owner} onChange={(e) => setOwner(e.target.value)} error={form.errorFor('owner')}>
             <option value="" disabled>Select…</option>
             <PeopleOptions people={people} />
           </Select>
-          <Select label="Reviewer" value={reviewer} onChange={(e) => setReviewer(e.target.value)} hint="Verifies completion evidence.">
-            <option value="">HSE Manager (default)</option>
-            <PeopleOptions people={people} />
-          </Select>
+          {KEEPS_ACTION_EXTRAS && (
+            <Select label="Reviewer" value={reviewer} onChange={(e) => setReviewer(e.target.value)} hint="Verifies completion evidence.">
+              <option value="">HSE Manager (default)</option>
+              <PeopleOptions people={people} />
+            </Select>
+          )}
         </div>
-        <div className="grid grid-cols-2 items-end gap-x-3 gap-y-5">
-          <Input label="Due date" required type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+        <div className="grid grid-cols-2 items-start gap-x-3 gap-y-5">
+          <Input label="Due date" required type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} error={form.errorFor('dueDate')} />
           <Select label="Priority" value={priority} onChange={(e) => setPriority(e.target.value as ActionPriority)}>
             <option>High</option><option>Medium</option><option>Low</option>
           </Select>

@@ -126,6 +126,17 @@ describe('the glossary', () => {
 
   it('explains the abbreviations the product uses', () => {
     const terms = GLOSSARY.map((g) => g.term).join(' ')
-    for (const word of ['HSE', 'DOSH', 'TRIR', 'LTI', 'PPE']) expect(terms).toContain(word)
+    for (const word of [
+      'CIDB', 'CIMAH', 'DOSH', 'HIRARC', 'HSE', 'IC', 'ISO 45001', 'JSA', 'LEL', 'LOTO', 'LTI', 'MFA', 'NIOSH',
+      'OSHA', 'PDPA', 'PPE', 'PTW', 'RCA', 'SCBA', 'SDS', 'SHO', 'SOP', 'TBM', 'TRIR',
+    ]) expect(terms).toMatch(new RegExp(`\\b${word}\\b`))
+  })
+
+  it('explains only abbreviations somebody can meet on a screen', () => {
+    const text = corpus()
+    const abbreviations = GLOSSARY.flatMap((g) => g.term.match(/\b[A-Z]{2,}\b/g) ?? [])
+    for (const word of abbreviations) {
+      expect(new RegExp(`\\b${word}\\b`).test(text), `${word} is not on any screen - is it still worth explaining?`).toBe(true)
+    }
   })
 })

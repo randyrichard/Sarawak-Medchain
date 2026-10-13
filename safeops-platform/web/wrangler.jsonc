@@ -3,8 +3,9 @@
  * Built by `npm run build:demo` (scripts/build-demo.mjs); setup in docs/CLOUDFLARE.md,
  * "The public demo". Real deployments do not use this file - they run the Docker stack.
  *
- * The name is the public address, https://<name>.<account>.workers.dev, so it carries the
- * product's name. It must match the Worker's name in the Cloudflare dashboard.
+ * The name is the public address, https://<name>.<account subdomain>.workers.dev, so it is the
+ * product's name and nothing else. It must match the Worker's name in the Cloudflare dashboard,
+ * or Cloudflare's build stops. The account subdomain is set in the dashboard, not here.
  *
  * `previews` is what lets a branch or pull request get its own preview. Cloudflare's builds
  * now run `npx wrangler preview` for every branch but the production one, and that command
@@ -12,7 +13,7 @@
  * block"). Empty is enough: assets and compatibility settings stay at the top level.
  */
 {
-  "name": "sarawak-safechain",
+  "name": "safechain",
   "compatibility_date": "2026-10-01",
   "previews": {},
   "assets": {

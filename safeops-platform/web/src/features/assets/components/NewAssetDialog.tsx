@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
-import { ASSET_CATEGORIES, CATEGORY_LABEL, type AssetCategory, type InspectionFrequency, FREQUENCY_LABEL } from '@/api/assets'
+import { ASSET_CATEGORIES, CATEGORY_LABEL, type AssetCategory, type AssetView, type InspectionFrequency, FREQUENCY_LABEL } from '@/api/assets'
 import { useOrg, useSiteScope } from '@/features/org/OrgContext'
 import { useDepartments } from '@/features/org/departments'
 import { usePeople, useActor } from '@/features/incidents/lib'
 import { Button, Dialog, FormSection, FormSections, Input, SuggestSelect, PersonRegisterOptions, Select, Textarea } from '@/components/ui'
 import { listEquipmentHolders, type EquipmentHolderOption } from '@/api/equipmentHolders'
 import { PeopleOptions } from '@/features/org/PeopleOptions'
+import { useFormCheck } from '@/lib/useFormCheck'
 
-export function NewAssetDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: () => void }) {
+export function NewAssetDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: (asset: AssetView) => void }) {
   const { company, sites } = useOrg()
   const actor = useActor()
   const people = usePeople()
@@ -58,13 +59,26 @@ export function NewAssetDialog({ open, onClose, onCreated }: { open: boolean; on
       })
   }, [open, company])
 
+  /*
+   * Five sections in a scrolling box: a missing site in the third said only, at the foot,
+   * "String must contain at least 1 character(s)". Each field now says what it needs, and
+   * the box scrolls to the first.
+   */
+  const form = useFormCheck({
+    name: !name.trim() && 'Name the asset as people know it.',
+    serialNumber: !serialNumber.trim() && 'Enter the serial number from the nameplate.',
+    siteId: !siteId && 'Choose the site.',
+    department: !department.trim() && 'Choose the department.',
+    owner: !owner && 'Choose who owns it.',
+  }, open)
+
   const submit = async () => {
-    if (!company) return
+    if (!company || !form.check()) return
     setBusy(true)
     setError(null)
     try {
       const [holderKind, holderId] = holder ? holder.split(':') : []
-      await api.createAsset(
+      const created = await api.createAsset(
         {
           name, category, customCategory: category === 'custom' ? customCategory : undefined,
           serialNumber, manufacturer, model, companyId: company.id, siteId, department, owner, location, frequency,
@@ -82,7 +96,7 @@ export function NewAssetDialog({ open, onClose, onCreated }: { open: boolean; on
       setName(''); setSerialNumber(''); setManufacturer(''); setModel(''); setLocation(''); setDepartment('')
       setPurchaseDate(''); setCommissionDate(''); setCritical(false)
       setRequiresCalibration(false); setNotes(''); setHolder('')
-      onCreated()
+      onCreated(created)
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Could not register the asset.')
     } finally {
@@ -113,7 +127,7 @@ export function NewAssetDialog({ open, onClose, onCreated }: { open: boolean; on
           keep track of a handful of chunks, not a dozen loose items.
         */}
         <FormSection title="What It Is">
-          <Input label="Asset name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. CO₂ Extinguisher — Dock 2 pillar" />
+          <Input label="Asset name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. CO₂ Extinguisher — Dock 2 pillar" error={form.errorFor('name')} />
           <div className="grid grid-cols-2 gap-x-3 gap-y-5">
             <Select label="Category" value={category} onChange={(e) => setCategory(e.target.value as AssetCategory)}>
               {ASSET_CATEGORIES.map((c) => <option key={c} value={c}>{CATEGORY_LABEL[c]}</option>)}
@@ -133,21 +147,21 @@ export function NewAssetDialog({ open, onClose, onCreated }: { open: boolean; on
           )}
         </FormSection>
         <FormSection title="Identification" description="As printed on the nameplate.">
-          <div className="grid grid-cols-2 gap-x-3 gap-y-5">
-            <Input label="Serial number" required value={serialNumber} onChange={(e) => setSerialNumber(e.target.value)} />
+          <div className="grid grid-cols-2 items-start gap-x-3 gap-y-5">
+            <Input label="Serial number" required value={serialNumber} onChange={(e) => setSerialNumber(e.target.value)} error={form.errorFor('serialNumber')} />
             <Input label="Manufacturer" value={manufacturer} onChange={(e) => setManufacturer(e.target.value)} />
             <Input label="Model" value={model} onChange={(e) => setModel(e.target.value)} />
           </div>
         </FormSection>
         <FormSection title="Where It Is and Who Owns It">
-          <div className="grid grid-cols-2 gap-x-3 gap-y-5">
-            <Select label="Site" required value={siteId} onChange={(e) => setSiteId(e.target.value)}>
+          <div className="grid grid-cols-2 items-start gap-x-3 gap-y-5">
+            <Select label="Site" required value={siteId} onChange={(e) => setSiteId(e.target.value)} error={form.errorFor('siteId')}>
               <option value="" disabled>Select…</option>
               {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </Select>
             <Input label="Exact location" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="e.g. Compressor room, bay 2" />
           </div>
-          <div className="grid grid-cols-2 gap-x-3 gap-y-5">
+          <div className="grid grid-cols-2 items-start gap-x-3 gap-y-5">
             <SuggestSelect
               options={departments}
               label="Department"
@@ -156,8 +170,9 @@ export function NewAssetDialog({ open, onClose, onCreated }: { open: boolean; on
               onChange={setDepartment}
               placeholder="Select a department…"
               addLabel="Add a new department…"
+              error={form.errorFor('department')}
             />
-            <Select label="Owner" required value={owner} onChange={(e) => setOwner(e.target.value)} hint="Becomes the default inspector.">
+            <Select label="Owner" required value={owner} onChange={(e) => setOwner(e.target.value)} hint="Becomes the default inspector." error={form.errorFor('owner')}>
               <option value="" disabled>Select…</option>
               <PeopleOptions people={people} />
             </Select>

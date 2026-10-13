@@ -277,9 +277,12 @@ export function ActionsPage() {
       <NewActionDialog
         open={newOpen}
         onClose={() => setNewOpen(false)}
-        onCreated={() => {
+        // Opened straight away: the new action is the proof it was saved, and the next thing
+        // anybody does with it - attach evidence, check the owner - is in its drawer.
+        onCreated={(action) => {
           setNewOpen(false)
           refresh()
+          setOpenId(action.id)
         }}
       />
 

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
-import { AlertOctagon, RotateCw } from 'lucide-react'
+import { AlertOctagon, RotateCw, ServerOff } from 'lucide-react'
 import { cn } from '@/lib/cn'
-import { errorMessage, type AsyncState } from '@/lib/useAsync'
+import { errorMessage, isUnavailableHere, type AsyncState } from '@/lib/useAsync'
 import { Button } from './Button'
 import { SkeletonRows } from './Skeleton'
 
@@ -49,6 +49,19 @@ export function ErrorState({
   className?: string
 }) {
   const detail = errorMessage(error, 'Check your connection and try again.')
+  if (isUnavailableHere(error)) {
+    return (
+      <div role="status" className={cn(compact ? 'px-4 py-6 text-center' : 'flex flex-col items-center px-6 py-10 text-center', className)}>
+        {!compact && (
+          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-sunken">
+            <ServerOff size={19} className="text-muted" aria-hidden />
+          </div>
+        )}
+        <p className="text-sm font-semibold text-ink">Not in this demo</p>
+        <p className="mt-1 max-w-sm text-xs leading-relaxed text-muted">{detail}</p>
+      </div>
+    )
+  }
   return (
     <div
       role="alert"

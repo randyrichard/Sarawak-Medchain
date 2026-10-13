@@ -5,7 +5,7 @@ import type { Department, Employee, Site, Team } from '@/api/types'
 import { ROLE_LABEL, type Role } from '@/api/types'
 import { useOrg } from '@/features/org/OrgContext'
 import { Can } from '@/features/auth/guards'
-import { capabilitiesOf } from '@/features/permissions/permissions'
+import { CAPABILITY_LABEL, capabilitiesOf, type Capability } from '@/features/permissions/permissions'
 import {
   AsyncContent, Avatar, Badge, Card, LinkButton, CardBody, CardHeader, DataTable, EmptyState,
   PageHeader, Skeleton, TabPanel, Tabs, type Column, type TabItem,
@@ -34,7 +34,7 @@ export function OrganizationPage() {
   return (
     <>
       <PageHeader
-        title="Organization"
+        title="Organisation"
         subtitle={company ? `${company.name} — companies hold sites, sites hold departments, departments hold teams` : 'Loading…'}
         /*
          * This button had no onClick at all. It rendered, looked like the page's primary
@@ -43,7 +43,7 @@ export function OrganizationPage() {
          *
          * The invitation flow it advertises is real, it just lives on the admin console. So
          * it now goes there rather than being removed: somebody who reached for "Invite
-         * user" on the Organization page wanted to invite somebody, and sending them to the
+         * user" on the Organisation page wanted to invite somebody, and sending them to the
          * screen that does it is more useful than taking the button away.
          */
         right={
@@ -54,7 +54,7 @@ export function OrganizationPage() {
           </Can>
         }
       />
-      <Tabs id="org-views" label="Organization views" items={tabs} value={view} onChange={setView} className="mb-4" />
+      <Tabs id="org-views" label="Organisation views" items={tabs} value={view} onChange={setView} className="mb-4" />
       <TabPanel tabsId="org-views" value="structure" selected={view}><StructureView /></TabPanel>
       <TabPanel tabsId="org-views" value="people" selected={view}><PeopleView /></TabPanel>
       <TabPanel tabsId="org-views" value="roles" selected={view}><RolesView /></TabPanel>
@@ -109,7 +109,7 @@ function StructureView() {
         <AsyncContent
           state={tree}
           loadingLabel="Loading departments and teams…"
-          errorTitle="Couldn't load the organization structure"
+          errorTitle="Couldn't load the organisation structure"
           loading={
             <div className="space-y-2">
               {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
@@ -238,36 +238,9 @@ function PeopleView() {
 
 const ALL_ROLES: Role[] = ['ceo', 'admin', 'hse_manager', 'safety_officer', 'supervisor', 'employee']
 
-/*
- * Read by an administrator deciding what a role can do, so every capability needs a plain
- * English name. A key that falls through to its raw form ("workforce:view") reads as a bug
- * on the one screen where somebody is making a permissions decision.
- */
-const CAPABILITY_LABEL: Record<string, string> = {
-  'dashboard:view': 'View dashboard',
-  'reports:submit': 'Submit field reports',
-  'incidents:view': 'See incidents',
-  'permits:view': 'See permits to work',
-  'equipment:view': 'See equipment register',
-  'visitors:view': 'See visitors on site',
-  'toolbox:view': 'See toolbox meetings',
-  'training:view': 'See training records',
-  'workforce:view': 'See workforce and contractor registers',
-  'reports:view': 'See generated reports',
-  'incidents:manage': 'Investigate and close incidents',
-  'actions:view': 'See corrective actions (their own, or all for managers)',
-  'actions:manage': 'Manage corrective actions',
-  'analytics:view': 'View analytics',
-  'compliance:manage': 'Manage compliance',
-  'org:view': 'View organization',
-  'org:manage': 'Manage organization',
-  'audit-log:view': 'View audit log',
-  'settings:manage': 'Manage settings',
-}
-
 function RolesView() {
   const { role: myRole } = useOrg()
-  const capabilities = Object.keys(CAPABILITY_LABEL)
+  const capabilities = Object.keys(CAPABILITY_LABEL) as Capability[]
   return (
     <Card>
       <CardHeader
@@ -292,7 +265,7 @@ function RolesView() {
               <tr key={cap} className="border-b last:border-0">
                 <td className="py-2.5 pr-4 text-sm text-ink">{CAPABILITY_LABEL[cap]}</td>
                 {ALL_ROLES.map((r) => {
-                  const has = capabilitiesOf(r).includes(cap as never)
+                  const has = capabilitiesOf(r).includes(cap)
                   return (
                     <td key={r} className="px-3 py-2.5 text-center">
                       <span

@@ -15,7 +15,7 @@ import { useOrg } from '@/features/org/OrgContext'
  *
  * Two sources, because they answer different questions:
  *
- *   - The organisation tree, which is what an administrator created under Organization.
+ *   - The organisation tree, which is what an administrator created under Organisation.
  *     This is the structure the product means by a department.
  *   - The distinct values already on employee records, because a workspace that has been
  *     typing them in has real departments that were never added to the tree, and hiding
@@ -75,7 +75,7 @@ export function loadDepartments(companyId: string, siteIds: string[]): Promise<s
 }
 
 /**
- * Drops what is remembered, so a department created under Organization is offered
+ * Drops what is remembered, so a department created under Organisation is offered
  * immediately rather than after a reload.
  */
 export function forgetDepartments(companyId?: string) {

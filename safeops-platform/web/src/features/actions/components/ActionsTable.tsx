@@ -13,6 +13,7 @@ import { canEditItem, DERIVED_META, dueLabel, exportCsv, isManager } from '../li
 import { usePeople } from '@/features/incidents/lib'
 import { cn } from '@/lib/cn'
 import { PeopleOptions } from '@/features/org/PeopleOptions'
+import { useFormCheck } from '@/lib/useFormCheck'
 
 type SortKey = 'due' | 'priority' | 'status' | 'owner' | 'site'
 type GroupKey = 'none' | 'site' | 'owner' | 'status' | 'priority'
@@ -37,6 +38,7 @@ export function ActionsTable({
   const [busy, setBusy] = useState(false)
   const [reassignOpen, setReassignOpen] = useState(false)
   const [newOwner, setNewOwner] = useState('')
+  const reassign = useFormCheck({ newOwner: !newOwner && 'Choose who takes them over.' }, reassignOpen)
 
   const siteShort = (id: string) => sites.find((s) => s.id === id)?.short ?? id.toUpperCase()
 
@@ -212,17 +214,17 @@ export function ActionsTable({
             <Button variant="secondary" onClick={() => setReassignOpen(false)}>Cancel</Button>
             <Button
               loading={busy}
-              disabled={!newOwner}
-              onClick={() =>
+              onClick={() => {
+                if (!reassign.check()) return
                 void bulk((id) => api.updateCapa(id, { owner: newOwner }, actor)).then(() => setReassignOpen(false))
-              }
+              }}
             >
               Reassign
             </Button>
           </>
         }
       >
-        <Select label="New owner" value={newOwner} onChange={(e) => setNewOwner(e.target.value)} hint="Each owner is notified.">
+        <Select label="New owner" value={newOwner} onChange={(e) => setNewOwner(e.target.value)} hint="They are notified." error={reassign.errorFor('newOwner')}>
           <option value="" disabled>Select…</option>
           <PeopleOptions people={people} />
         </Select>
