@@ -252,6 +252,31 @@ d('monthly safety summary', () => {
     // implying the month finished what it started.
     expect(data.summary.find((s) => s.label === 'Actions closed')?.value).toBe('0 of 1')
   })
+
+  it('leaves an action raised after the month out of that month', async () => {
+    /*
+     * The other side of the boundary the test above pins, and the reason that one is worth
+     * backdating rather than loosening: the follow-up raised in October against a September
+     * incident must not land in September's figure, or every month-end pack claims work it
+     * had not started yet.
+     *
+     * createdAt is set explicitly here too, for the same reason it is set above. Leaving it
+     * to the database clock would pass today and fail every September, which is the bug the
+     * test above was written to stop repeating.
+     */
+    const parent = await incidentAt('2026-09-06T02:00:00.000Z')
+    const action = await incidents.addAction(admin, parent.id, {
+      title: 'Fit a guard late', owner: 'ITest Owner', dueDate: '2026-10-20',
+    } as never)
+    await db.correctiveAction.update({
+      where: { id: action.id },
+      data: { createdAt: new Date('2026-10-05T03:00:00.000Z') },
+    })
+
+    const data = await reports.preview(admin, COMPANY, 'monthly_summary')
+
+    expect(data.summary.find((s) => s.label === 'Actions closed')?.value).toBe('0 of 0')
+  })
 })
 
 d('project scope and month selection', () => {
