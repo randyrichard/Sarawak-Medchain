@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { equipmentApi, type EquipmentDashboard } from '@/api/equipmentApi'
 import { CATEGORY_LABEL, type AssetCategory } from '@/api/assets'
 import { ApiError } from '@/api/types'
-import { Alert, Badge, Card, CardBody, Skeleton } from '@/components/ui'
+import { Badge, Card, CardBody, ErrorAlert, Skeleton } from '@/components/ui'
 import { fmtDate, fmtDateTime } from '@/features/incidents/lib'
 import { cn } from '@/lib/cn'
 
@@ -17,16 +17,17 @@ import { cn } from '@/lib/cn'
  */
 export function EquipmentBoard({ companyId, siteId }: { companyId: string; siteId?: string }) {
   const [data, setData] = useState<EquipmentDashboard | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  /** What was caught, kept whole: ErrorAlert tells the demo's refusal from a fault by it. */
+  const [error, setError] = useState<unknown>(null)
 
   useEffect(() => {
     setData(null)
     equipmentApi.dashboard(companyId, siteId)
       .then(setData)
-      .catch((e) => setError(e instanceof ApiError ? e.message : 'Could not load the equipment board.'))
+      .catch((e) => setError(e instanceof ApiError ? e : 'Could not load the equipment board.'))
   }, [companyId, siteId])
 
-  if (error) return <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>
+  if (error) return <ErrorAlert error={error} onDismiss={() => setError(null)} />
 
   const tiles: { label: string; value: number | undefined; tone?: string; hint?: string }[] = [
     { label: 'Available', value: data?.available, tone: 'var(--good)',

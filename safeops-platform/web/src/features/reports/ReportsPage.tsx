@@ -9,7 +9,7 @@ import { ApiError } from '@/api/types'
 import { useOrg } from '@/features/org/OrgContext'
 import { fmtDateTime } from '@/features/incidents/lib'
 import {
-  Alert, Badge, Button, Card, CardBody, PageHeader, Select, Skeleton, Tabs, type TabItem,
+  Alert, Badge, Button, Card, CardBody, ErrorAlert, PageHeader, Select, Skeleton, Tabs, type TabItem,
   StatusPill,
 } from '@/components/ui'
 import { ScheduleDialog } from './components/ScheduleDialog'
@@ -100,7 +100,8 @@ export function ReportsPage() {
   const [schedules, setSchedules] = useState<ReportSchedule[] | null>(null)
   const [runs, setRuns] = useState<ReportRun[] | null>(null)
   const [mailConfigured, setMailConfigured] = useState<boolean | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  /** What was caught, kept whole: ErrorAlert tells the demo's refusal from a fault by it. */
+  const [error, setError] = useState<unknown>(null)
   const [flash, setFlash] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [dialog, setDialog] = useState<{ open: boolean; editing: ReportSchedule | null }>(
@@ -115,7 +116,7 @@ export function ReportsPage() {
       .then(setSchedules)
       .catch((e) => {
         setSchedules([])
-        setError(e instanceof ApiError ? e.message : 'Could not load the schedules.')
+        setError(e instanceof ApiError ? e : 'Could not load the schedules.')
       })
   }, [company])
 
@@ -155,7 +156,7 @@ export function ReportsPage() {
       setPreview(await reportsApi.preview(company.id, type, scopeFor(type)))
     } catch (e) {
       setPreviewing(null)
-      setError(e instanceof ApiError ? e.message : 'Could not build that report.')
+      setError(e instanceof ApiError ? e : 'Could not build that report.')
     }
   }
 
@@ -163,8 +164,8 @@ export function ReportsPage() {
     try {
       const b = await fn()
       saveBlob(b, name)
-    } catch {
-      setError('Could not download that report.')
+    } catch (e) {
+      setError(e instanceof ApiError ? e : 'Could not download that report.')
     }
   }
 
@@ -183,7 +184,7 @@ export function ReportsPage() {
       loadRuns()
       setView('history')
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'That report could not be run.')
+      setError(e instanceof ApiError ? e : 'That report could not be run.')
     } finally {
       setBusy(null)
     }
@@ -195,7 +196,7 @@ export function ReportsPage() {
       await reportsApi.updateSchedule(s.id, { enabled: !s.enabled })
       loadSchedules()
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Could not change that schedule.')
+      setError(e instanceof ApiError ? e : 'Could not change that schedule.')
     } finally {
       setBusy(null)
     }
@@ -208,7 +209,7 @@ export function ReportsPage() {
       loadSchedules()
       say(`${s.name} deleted. Its run history is kept.`)
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Could not delete that schedule.')
+      setError(e instanceof ApiError ? e : 'Could not delete that schedule.')
     } finally {
       setBusy(null)
     }
@@ -241,7 +242,7 @@ export function ReportsPage() {
           : undefined}
       />
 
-      {error && <Alert tone="critical" className="mb-3" onDismiss={() => setError(null)}>{error}</Alert>}
+      <ErrorAlert error={error} className="mb-3" onDismiss={() => setError(null)} />
       {flash && <Alert tone="success" className="mb-3" onDismiss={() => setFlash(null)}>{flash}</Alert>}
 
       {/*

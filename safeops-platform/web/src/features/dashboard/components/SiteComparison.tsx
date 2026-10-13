@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { AlertTriangle } from 'lucide-react'
-import { dashboardApi, type SiteComparisonRow } from '@/api/dashboardApi'
+import { api } from '@/api/client'
+import type { DashboardSection, SiteComparisonRow } from '@/api/dashboardApi'
 import { ApiError } from '@/api/types'
 import { Card, CardBody, Skeleton } from '@/components/ui'
+import { useActor } from '@/features/incidents/lib'
 import { cn } from '@/lib/cn'
 
 /**
@@ -22,18 +24,25 @@ export function SiteComparison({
   refresh: number
   onOpenSite: (siteId: string) => void
 }) {
+  const actor = useActor()
   const [rows, setRows] = useState<SiteComparisonRow[] | null>(null)
+  /** Columns this answer could not count - toolbox and visitors, in the demo - are left out. */
+  const [notCounted, setNotCounted] = useState<DashboardSection[]>([])
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let live = true
     setRows(null)
     setError(null)
-    dashboardApi.sites({ companyId, projectId, from, to })
-      .then((r) => { if (live) setRows(r.rows) })
+    api.compareSites({ companyId, projectId, from, to }, actor)
+      .then((r) => { if (live) { setRows(r.rows); setNotCounted(r.notCounted ?? []) } })
       .catch((e) => { if (live) { setRows([]); setError(e instanceof ApiError ? e.message : 'Could not compare sites.') } })
     return () => { live = false }
-  }, [companyId, projectId, from, to, refresh])
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the actor is rebuilt each render; who it is is its name and role
+  }, [companyId, projectId, from, to, refresh, actor.name, actor.role])
+
+  const toolbox = !notCounted.includes('toolbox')
+  const visitors = !notCounted.includes('visitors')
 
   const num = (n: number, bad = false) => (
     <span className={cn('tabular-nums', n === 0 ? 'text-muted' : bad ? 'font-semibold text-critical' : 'text-ink')}>{n}</span>
@@ -52,7 +61,7 @@ export function SiteComparison({
         {error && <p className="text-xs text-critical">{error}</p>}
         {rows === null ? <Skeleton className="h-40" /> : rows.length > 0 && (
           <div className="relative overflow-x-auto" tabIndex={0} role="region" aria-label="Site comparison">
-            <table className="w-full min-w-[900px] text-xs">
+            <table className={cn('w-full text-xs', toolbox && visitors ? 'min-w-[900px]' : 'min-w-[720px]')}>
               <thead>
                 <tr className="border-b text-left text-2xs uppercase tracking-wide text-muted">
                   <th className="px-2 py-1.5 font-medium">Site</th>
@@ -61,8 +70,8 @@ export function SiteComparison({
                   <th className="px-2 py-1.5 text-right font-medium">Days Without LTI</th>
                   <th className="px-2 py-1.5 text-right font-medium">Overdue Actions</th>
                   <th className="px-2 py-1.5 text-right font-medium">Permits Active</th>
-                  <th className="px-2 py-1.5 font-medium">Toolbox Today</th>
-                  <th className="px-2 py-1.5 text-right font-medium">Visitors on Site</th>
+                  {toolbox && <th className="px-2 py-1.5 font-medium">Toolbox Today</th>}
+                  {visitors && <th className="px-2 py-1.5 text-right font-medium">Visitors on Site</th>}
                 </tr>
               </thead>
               <tbody>
@@ -94,12 +103,14 @@ export function SiteComparison({
                     </td>
                     <td className="px-2 py-2 text-right">{num(r.overdueActions, true)}</td>
                     <td className="px-2 py-2 text-right">{num(r.activePermits)}</td>
-                    <td className="px-2 py-2">
-                      {r.toolboxToday
-                        ? <span className="text-good">{r.toolboxHeadcount} present</span>
-                        : <span className={r.activePermits > 0 ? 'text-warning' : 'text-muted'}>Not held</span>}
-                    </td>
-                    <td className="px-2 py-2 text-right">{num(r.visitorsOnSite)}</td>
+                    {toolbox && (
+                      <td className="px-2 py-2">
+                        {r.toolboxToday
+                          ? <span className="text-good">{r.toolboxHeadcount} present</span>
+                          : <span className={r.activePermits > 0 ? 'text-warning' : 'text-muted'}>Not held</span>}
+                      </td>
+                    )}
+                    {visitors && <td className="px-2 py-2 text-right">{num(r.visitorsOnSite)}</td>}
                   </tr>
                 ))}
               </tbody>

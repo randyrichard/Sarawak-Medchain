@@ -4,7 +4,7 @@ import type { DashboardOverview } from '@/api/dashboardApi'
 import { Badge, Card, CardBody, CardHeader, EmptyState } from '@/components/ui'
 import { fmtDateTime } from '@/features/incidents/lib'
 import { linkTo, type PermitStatusFilter } from '@/lib/links'
-import { permitStageLabel, reportStatusLabel, severityBars, visiblePermitStages } from '../lib'
+import { counts, permitStageLabel, reportStatusLabel, severityBars, visiblePermitStages } from '../lib'
 
 /**
  * The per-module panels below the attention queue.
@@ -170,9 +170,13 @@ export function EquipmentPanel({ d, className }: { d: DashboardOverview; classNa
             <Stat label="Out of Service" value={e.outOfService} href={linkTo.equipmentBoard()} tone="warning" />
             <Stat label="Inspection Overdue" value={e.inspectionOverdue} href={linkTo.assets({ bucket: 'overdue' })} tone="critical" />
             {/* Calibration is counted on the equipment board; the register cannot filter by it. */}
-            <Stat label="Calibration Expired" value={e.calibrationOverdue} href={linkTo.equipmentBoard()} tone="critical" />
-            <Stat label="No Certificate on File" value={e.calibrationMissing} href={linkTo.equipmentBoard()} tone="critical" />
-            <Stat label="Calibration Due Soon" value={e.calibrationDueSoon} href={linkTo.equipmentBoard()} tone="warning" />
+            {counts(d, 'calibration') && (
+              <>
+                <Stat label="Calibration Expired" value={e.calibrationOverdue} href={linkTo.equipmentBoard()} tone="critical" />
+                <Stat label="No Certificate on File" value={e.calibrationMissing} href={linkTo.equipmentBoard()} tone="critical" />
+                <Stat label="Calibration Due Soon" value={e.calibrationDueSoon} href={linkTo.equipmentBoard()} tone="warning" />
+              </>
+            )}
           </div>
         )}
       </CardBody>
@@ -248,7 +252,8 @@ export function VisitorPanel({ d, className }: { d: DashboardOverview; className
                 {p.overdueMinutes !== null && p.overdueMinutes > 0
                   ? <Badge tone="critical">{p.overdueMinutes} min over</Badge>
                   : <span className="shrink-0 text-2xs text-muted">
-                    out {new Date(p.expectedDeparture).toISOString().slice(11, 16)}
+                    {/* The viewer's clock. toISOString() gave UTC: 07:05 for a 15:05 departure in Kuching. */}
+                    out {new Date(p.expectedDeparture).toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' })}
                   </span>}
               </li>
             ))}

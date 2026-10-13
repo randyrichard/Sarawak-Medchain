@@ -15,6 +15,7 @@ vi.mock('@/api/authApi', async (orig) => ({
 }))
 
 const { ErrorState } = await import('./AsyncContent')
+const { ErrorAlert } = await import('./ErrorAlert')
 const { notApiError } = await import('@/api/http')
 
 afterEach(() => { cleanup(); backend.on = false })
@@ -43,5 +44,33 @@ describe('a part of the app the demo does not include', () => {
     render(<ErrorState title="Couldn't load this" error={new Error('Server unavailable')} onRetry={() => {}} />)
     expect(screen.getByRole('alert').textContent).toContain('Server unavailable')
     expect(screen.getByRole('button', { name: /Try Again/ })).toBeTruthy()
+  })
+})
+
+/*
+ * The same refusal above a page. Visitors, Employees, Contractors, Reports, the Incident Board
+ * and the Equipment Board kept only its message, so each showed it as a red alarm.
+ */
+describe('a failure shown above a page', () => {
+  it('is a calm note, with nothing to dismiss, where the demo does not include the part', () => {
+    render(<ErrorAlert error={refusal()} onDismiss={() => {}} />)
+    expect(screen.getByRole('status').textContent).toContain('Not in this demo')
+    expect(screen.getByText(/needs the SafeChain server/)).toBeTruthy()
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Dismiss' })).toBeNull()
+  })
+
+  it('is still an alarm where a server is configured', () => {
+    backend.on = true
+    render(<ErrorAlert error={refusal()} onDismiss={() => {}} />)
+    expect(screen.getByRole('alert').textContent).toContain('not SafeChain data')
+    expect(screen.getByRole('button', { name: 'Dismiss' })).toBeTruthy()
+  })
+
+  it('shows a message it is given as it is, and nothing for no error', () => {
+    const { container } = render(<ErrorAlert error={null} />)
+    expect(container.textContent).toBe('')
+    render(<ErrorAlert error="Could not download that report." />)
+    expect(screen.getByRole('alert').textContent).toContain('Could not download that report.')
   })
 })

@@ -15,7 +15,8 @@ import { AttachmentsPanel } from './AttachmentsPanel'
 import { PermitTimeline } from './PermitTimeline'
 import { permitWorkflowApi, type ReviewStatus } from '@/api/permitWorkflowApi'
 import { permitPeopleApi, type PermitExtension } from '@/api/permitPeopleApi'
-import { Alert, Badge, Button, Checkbox, Input, StatusPill, Textarea } from '@/components/ui'
+import { Alert, Badge, Button, Checkbox, Input, NotInDemo, StatusPill, Textarea } from '@/components/ui'
+import { isBackendConfigured } from '@/api/authApi'
 import { cn } from '@/lib/cn'
 import { permitStatusKind, formatRemaining, fmtTime, fmtWindow, remainingTone } from '../lib'
 import { printPermit } from '../print'
@@ -258,62 +259,75 @@ export function PermitDrawer({
             </Alert>
           )}
 
-          {/* Toolbox talk */}
-          <section>
-            <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
-              Toolbox talk
-            </p>
-            <div className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5">
-              <div className="min-w-0">
-                {permit.toolboxAt ? (
-                  <>
-                    <p className="text-sm text-ink">Held {new Date(permit.toolboxAt).toLocaleString()}</p>
-                    <p className="text-2xs text-muted">Led by {permit.toolboxBy ?? 'not recorded'}</p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-sm text-ink-2">Not Yet Held</p>
-                    <p className="text-2xs text-muted">Work cannot start until everyone named has acknowledged it.</p>
-                  </>
-                )}
-              </div>
-              <Button size="sm" variant="secondary" onClick={() => setToolboxOpen(true)}>
-                {permit.toolboxAt ? 'View' : 'Record'}
-              </Button>
-            </div>
-          </section>
-
-          {/* People named on the permit, and who is currently inside the work area. */}
-          <PermitPeoplePanel
-            permitId={permit.id}
-            permitStatus={permit.status}
-            canEdit={open && operator}
-            onChanged={onChanged}
-          />
-
           {/*
-            Directly under the people, because they are the same kind of claim: this named
-            person and this named item are fit to be on the job. Reloading the permit on
-            change keeps the activation blockers in the header honest.
+            The toolbox talk, the people and equipment on the permit, its JSA and PPE are kept
+            by the server only. The demo said so in red, once per section; now one line does.
           */}
-          <PermitEquipmentPanel
-            permitId={permit.id}
-            permitStatus={permit.status}
-            canEdit={open}
-            onChanged={() => { load(); onChanged() }}
-          />
+          {isBackendConfigured() ? (
+            <>
+              {/* Toolbox talk */}
+              <section>
+                <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
+                  Toolbox talk
+                </p>
+                <div className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5">
+                  <div className="min-w-0">
+                    {permit.toolboxAt ? (
+                      <>
+                        <p className="text-sm text-ink">Held {new Date(permit.toolboxAt).toLocaleString()}</p>
+                        <p className="text-2xs text-muted">Led by {permit.toolboxBy ?? 'not recorded'}</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm text-ink-2">Not Yet Held</p>
+                        <p className="text-2xs text-muted">Work cannot start until everyone named has acknowledged it.</p>
+                      </>
+                    )}
+                  </div>
+                  <Button size="sm" variant="secondary" onClick={() => setToolboxOpen(true)}>
+                    {permit.toolboxAt ? 'View' : 'Record'}
+                  </Button>
+                </div>
+              </section>
 
-          <JsaTable permitId={permit.id} canEdit={open} onChanged={() => { load(); onChanged() }} />
+              {/* People named on the permit, and who is currently inside the work area. */}
+              <PermitPeoplePanel
+                permitId={permit.id}
+                permitStatus={permit.status}
+                canEdit={open && operator}
+                onChanged={onChanged}
+              />
 
-          <PpeChecklist
-            permitId={permit.id}
-            required={permit.requiredPpe ?? []}
-            acknowledgedAt={permit.ppeAcknowledgedAt ?? null}
-            acknowledgedBy={permit.ppeAcknowledgedBy ?? null}
-            canEdit={open}
-            canAcknowledge={issuer && open}
-            onChanged={() => { load(); onChanged() }}
-          />
+              {/*
+                Directly under the people, because they are the same kind of claim: this named
+                person and this named item are fit to be on the job. Reloading the permit on
+                change keeps the activation blockers in the header honest.
+              */}
+              <PermitEquipmentPanel
+                permitId={permit.id}
+                permitStatus={permit.status}
+                canEdit={open}
+                onChanged={() => { load(); onChanged() }}
+              />
+
+              <JsaTable permitId={permit.id} canEdit={open} onChanged={() => { load(); onChanged() }} />
+
+              <PpeChecklist
+                permitId={permit.id}
+                required={permit.requiredPpe ?? []}
+                acknowledgedAt={permit.ppeAcknowledgedAt ?? null}
+                acknowledgedBy={permit.ppeAcknowledgedBy ?? null}
+                canEdit={open}
+                canAcknowledge={issuer && open}
+                onChanged={() => { load(); onChanged() }}
+              />
+            </>
+          ) : (
+            <NotInDemo>
+              Not in this demo: the toolbox talk, the people and equipment on the permit, its job
+              safety analysis, PPE and attachments. They need the SafeChain server.
+            </NotInDemo>
+          )}
 
           {/* Isolations */}
           {needsIso && (
@@ -389,7 +403,9 @@ export function PermitDrawer({
           )}
 
           {/* Timeline */}
-          <AttachmentsPanel permitId={permit.id} canEdit={open} canRemove={open && operator} onChanged={() => { load(); onChanged() }} />
+          {isBackendConfigured() && (
+            <AttachmentsPanel permitId={permit.id} canEdit={open} canRemove={open && operator} onChanged={() => { load(); onChanged() }} />
+          )}
 
           {/* Extension history — how long this job was actually authorised for, and who
               kept extending it. */}

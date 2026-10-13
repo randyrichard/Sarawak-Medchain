@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { Building2, RefreshCw } from 'lucide-react'
 import {
-  Alert, Badge, Button, Card, CardBody, EmptyState, PageHeader, Skeleton,
+  Alert, Badge, Button, Card, CardBody, EmptyState, NotInDemo, PageHeader, Skeleton,
 } from '@/components/ui'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useOrg } from '@/features/org/OrgContext'
@@ -18,7 +18,7 @@ import { SiteComparison } from './components/SiteComparison'
 import {
   ActionsPanel, EquipmentPanel, IncidentPanel, PermitPanel, ReportPanel, VisitorPanel,
 } from './components/ModulePanels'
-import { headline, kpiCards, scopeCaveats, scopeSummary } from './lib'
+import { counts, headline, kpiCards, notCountedNote, scopeCaveats, scopeSummary } from './lib'
 
 /**
  * The safety operations dashboard.
@@ -87,6 +87,7 @@ export function DashboardPage() {
   const cards = data ? kpiCards(data) : []
   const verdict = data ? headline(data) : null
   const caveats = data ? scopeCaveats(data) : []
+  const leftOut = data ? notCountedNote(data) : null
 
   return (
     <>
@@ -211,7 +212,8 @@ export function DashboardPage() {
         />
         <div className="min-w-0 space-y-3">
           {data ? <ActionsPanel d={data} /> : <Skeleton className="h-64 rounded-xl" />}
-          {data ? <VisitorPanel d={data} /> : <Skeleton className="h-48 rounded-xl" />}
+          {/* Left out where nothing counted them: the demo keeps no visitors or report runs. */}
+          {!data ? <Skeleton className="h-48 rounded-xl" /> : counts(data, 'visitors') && <VisitorPanel d={data} />}
         </div>
       </div>
 
@@ -222,9 +224,13 @@ export function DashboardPage() {
         {data ? <EquipmentPanel d={data} className="min-w-0" /> : <Skeleton className="h-72 rounded-xl" />}
       </div>
 
-      <div className="mt-3">
-        {data ? <ReportPanel d={data} /> : <Skeleton className="h-40 rounded-xl" />}
-      </div>
+      {(!data || counts(data, 'reports')) && (
+        <div className="mt-3">
+          {data ? <ReportPanel d={data} /> : <Skeleton className="h-40 rounded-xl" />}
+        </div>
+      )}
+
+      {leftOut && <NotInDemo className="mt-3">{leftOut}</NotInDemo>}
     </>
   )
 }

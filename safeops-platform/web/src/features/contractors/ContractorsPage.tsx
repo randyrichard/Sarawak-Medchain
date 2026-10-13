@@ -9,10 +9,11 @@ import { EXPIRY_LABEL } from '@/api/contractors'
 import { ApiError } from '@/api/types'
 import { useOrg } from '@/features/org/OrgContext'
 import {
-  Alert, Badge, Button, Card, EmptyState, Input, PageHeader, Select, Skeleton, StatusPill,
+  Alert, Badge, Button, Card, EmptyState, ErrorAlert, Input, PageHeader, Select, Skeleton, StatusPill,
   Tabs, type TabItem,
 } from '@/components/ui'
 import { cn } from '@/lib/cn'
+import { isUnavailableHere } from '@/lib/useAsync'
 import { canManageContractors, canWorkGate, EXPIRY_KIND, gateBlockReason, relativeDays } from './lib'
 import { WorkerDrawer } from './components/WorkerDrawer'
 import { ContractorDrawer } from './components/ContractorDrawer'
@@ -62,7 +63,8 @@ export function ContractorsPage() {
   const [workers, setWorkers] = useState<ContractorWorkerRow[] | null>(null)
   const [total, setTotal] = useState(0)
   const [firms, setFirms] = useState<ContractorCompanyRow[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  /** What was caught, kept whole: ErrorAlert tells the demo's refusal from a fault by it. */
+  const [error, setError] = useState<unknown>(null)
   const [flash, setFlash] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [newContractorOpen, setNewContractorOpen] = useState(false)
@@ -115,7 +117,7 @@ export function ContractorsPage() {
       .catch((e) => {
         if (cancelled) return
         setWorkers([])
-        setError(e instanceof ApiError ? e.message : 'Could not load contractor workers.')
+        setError(e instanceof ApiError ? e : 'Could not load contractor workers.')
       })
     return () => { cancelled = true }
   }, [company, q, site?.id, contractorFilter, medical, induction, onSiteOnly, sort, dir, page])
@@ -128,7 +130,7 @@ export function ContractorsPage() {
       .then(setFirms)
       .catch((e) => {
         setFirms([])
-        setError(e instanceof ApiError ? e.message : 'Could not load contractors.')
+        setError(e instanceof ApiError ? e : 'Could not load contractors.')
       })
   }, [company, q, insurance])
 
@@ -167,7 +169,7 @@ export function ContractorsPage() {
       await (action === 'in' ? contractorsApi.checkIn(w.id) : contractorsApi.checkOut(w.id))
       onChanged(`${w.name} checked ${action === 'in' ? 'in' : 'out'}`)
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'That did not work.')
+      setError(e instanceof ApiError ? e : 'That did not work.')
     } finally {
       setBusyId(null)
     }
@@ -183,6 +185,19 @@ export function ContractorsPage() {
     if (!company || firms !== null) return
     contractorsApi.listCompanies(company.id, { status: 'all' }).then(setFirms).catch(() => setFirms([]))
   }, [company, firms])
+
+  /*
+   * The demo keeps no contractors. Said once, calmly, in place of the page: it was a red
+   * alarm over counters that never filled and two buttons that could only fail.
+   */
+  if (isUnavailableHere(error)) {
+    return (
+      <>
+        <PageHeader title="Contractors" subtitle="Who is on site, who they work for, and whether they are allowed to be here" />
+        <ErrorAlert error={error} />
+      </>
+    )
+  }
 
   return (
     <>
@@ -200,7 +215,7 @@ export function ContractorsPage() {
       />
 
       {flash && <Alert tone="success" className="mb-3">{flash}</Alert>}
-      {error && <Alert tone="critical" className="mb-3" onDismiss={() => setError(null)}>{error}</Alert>}
+      <ErrorAlert error={error} className="mb-3" onDismiss={() => setError(null)} />
 
       <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
         {KPI_DEFS.map((k) => {

@@ -126,7 +126,18 @@ export interface DashboardOverview {
     failed: number
     nextScheduled: { name: string; at: string } | null
   }
+  /**
+   * Parts of the page this answer could not count, which Home then leaves out.
+   *
+   * Only the offline demo sets it: it keeps no visitor register, scheduled reports or
+   * calibration certificates. Their figures are zero here, and shown, a zero would say
+   * "nobody on site" or "all certificates current" about records that do not exist.
+   */
+  notCounted?: DashboardSection[]
 }
+
+/** A part of Home that rests on records a build may not keep. See `notCounted`. */
+export type DashboardSection = 'visitors' | 'reports' | 'calibration' | 'toolbox'
 
 export interface DashboardQuery {
   companyId: string
@@ -160,8 +171,18 @@ export interface SiteComparisonRow {
   attention: string[]
 }
 
+export type SiteComparisonQuery = Pick<DashboardQuery, 'companyId' | 'projectId' | 'from' | 'to'>
+
+export interface SiteComparison {
+  from: string
+  to: string
+  rows: SiteComparisonRow[]
+  /** Columns this answer could not count; the table leaves them out. As on the overview. */
+  notCounted?: DashboardSection[]
+}
+
 export const dashboardApi = {
-  sites(q: Pick<DashboardQuery, 'companyId' | 'projectId' | 'from' | 'to'>): Promise<{ from: string; to: string; rows: SiteComparisonRow[] }> {
+  sites(q: SiteComparisonQuery): Promise<SiteComparison> {
     return request(`/dashboard/sites?${qs({
       companyId: q.companyId,
       projectId: q.projectId ?? undefined,

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { dashboardApi, type DashboardOverview } from '@/api/dashboardApi'
+import { api } from '@/api/client'
+import type { DashboardOverview } from '@/api/dashboardApi'
 import { ApiError } from '@/api/types'
+import { useActor } from '@/features/incidents/lib'
 import { useOrg } from '@/features/org/OrgContext'
 
 /**
@@ -21,6 +23,7 @@ export interface DashboardFilterState {
 
 export function useDashboard() {
   const { company, project, site } = useOrg()
+  const actor = useActor()
   const [params, setParams] = useSearchParams()
 
   const filters = useMemo<DashboardFilterState>(() => ({
@@ -51,7 +54,7 @@ export function useDashboard() {
     setLoading(true)
     setError(null)
 
-    dashboardApi.overview({
+    api.dashboardOverview({
       companyId: company.id,
       /*
        * Sent even when a site is also chosen. The server treats the site as the narrower
@@ -63,7 +66,7 @@ export function useDashboard() {
       department: filters.department,
       from: filters.from,
       to: filters.to,
-    })
+    }, actor)
       .then((d) => { if (!cancelled) { setData(d); setLoading(false) } })
       .catch((e) => {
         if (cancelled) return
@@ -77,7 +80,8 @@ export function useDashboard() {
       })
 
     return () => { cancelled = true }
-  }, [company, project, site, filters.department, filters.from, filters.to, nonce])
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the actor is rebuilt each render; who it is is its name and role
+  }, [company, project, site, filters.department, filters.from, filters.to, nonce, actor.name, actor.role])
 
   const setFilter = useCallback((patch: Partial<DashboardFilterState>) => {
     const next = new URLSearchParams(params)

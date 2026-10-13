@@ -12,7 +12,7 @@ import { useOrg } from '@/features/org/OrgContext'
 import { useDepartments } from '@/features/org/departments'
 import { usePeople } from './lib'
 import {
-  Alert, Badge, Breadcrumbs, Button, Card, LinkButton, CardBody, ErrorState, Input, SuggestSelect, PageHeader, Select, Skeleton,
+  Badge, Breadcrumbs, Button, Card, LinkButton, CardBody, ErrorAlert, ErrorState, Input, SuggestSelect, PageHeader, Select, Skeleton,
   StatusPill,
 } from '@/components/ui'
 import { usePageTitle } from '@/app/pageTitle'
@@ -23,6 +23,7 @@ import {
   type BoardFilters, type SortKey,
 } from './boardFilters'
 import { cn } from '@/lib/cn'
+import { isUnavailableHere } from '@/lib/useAsync'
 import { useSiteLabel } from '@/features/org/useSiteLabel'
 
 /**
@@ -59,7 +60,8 @@ export function IncidentBoardPage() {
   const [rows, setRows] = useState<Incident[] | null>(null)
   const [total, setTotal] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
-  const [error, setError] = useState<string | null>(null)
+  /** What was caught, kept whole: ErrorAlert tells the demo's refusal from a fault by it. */
+  const [error, setError] = useState<unknown>(null)
   /** Kept local so typing does not fight a round trip; pushed to the URL on a debounce. */
   const [qDraft, setQDraft] = useState(filters.q)
 
@@ -91,7 +93,7 @@ export function IncidentBoardPage() {
         // A rejected request must not render as an empty board. "No incidents" is the most
         // dangerous wrong answer this screen can give.
         setRows([])
-        setError(e instanceof ApiError ? e.message : 'Could not load the incident register.')
+        setError(e instanceof ApiError ? e : 'Could not load the incident register.')
       })
   }, [company, filters])
 
@@ -134,7 +136,7 @@ export function IncidentBoardPage() {
       hint: 'Excludes archived' },
   ]
 
-  return (
+  const header = (
     <>
       <Breadcrumbs
         items={[
@@ -147,8 +149,22 @@ export function IncidentBoardPage() {
         subtitle="Open incidents by stage, so you can see what is serious, what is stuck and what to do next"
         right={<LinkButton to="/incidents/new">Report Incident</LinkButton>}
       />
+    </>
+  )
 
-      {error && <Alert tone="critical" className="mb-3" onDismiss={() => setError(null)}>{error}</Alert>}
+  /*
+   * The demo has no server to page the register through. Said once, calmly: it was a red
+   * alarm, the same words again under it, and eight tiles that never stopped loading.
+   * Reporting an incident works in the demo, so that button stays.
+   */
+  const unavailable = [error, boardError].find(isUnavailableHere)
+  if (unavailable) return <>{header}<ErrorAlert error={unavailable} /></>
+
+  return (
+    <>
+      {header}
+
+      <ErrorAlert error={error} className="mb-3" onDismiss={() => setError(null)} />
 
       {boardError != null && (
         <ErrorState compact className="mb-3" title="Couldn't load the summary" error={boardError} onRetry={() => setBoardAttempt((n) => n + 1)} />
