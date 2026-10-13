@@ -193,6 +193,13 @@ check is for customer builds, and the demo is the one build meant to contain the
    the next commit on `feature/permit-to-work` starts the right build. The address is
    `https://safechain.<your-subdomain>.workers.dev` — the Worker's name is the address.
 
+   **The address people are given is `https://safechain.sarawak-medchain.com`.** A
+   workers.dev address did not load for some people (a network blocking workers.dev, or an
+   account subdomain that had just changed), so the demo has a custom domain on a zone already
+   in the account: Worker → **Domains** → **Add Domain**. It is also listed under `routes` in
+   `web/wrangler.jsonc`, so a deploy keeps it. The workers.dev address stays on as a second
+   way in.
+
    **The subdomain is the account's, and Cloudflare starts it from the email address you
    signed up with.** Every Worker on the account shares it, so out of the box the public demo
    carries part of somebody's email. Change it under **Workers & Pages → Change** (next to
