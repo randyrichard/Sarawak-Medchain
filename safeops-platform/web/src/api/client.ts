@@ -11,7 +11,8 @@ import type {
 } from './types'
 import type { DashboardData } from './dashboard'
 import {
-  dashboardApi, type DashboardOverview, type DashboardQuery, type SiteComparison, type SiteComparisonQuery,
+  dashboardApi, type AttentionCounts, type AttentionCountsQuery, type DashboardOverview, type DashboardQuery,
+  type SiteComparison, type SiteComparisonQuery,
 } from './dashboardApi'
 import type {
   Actor, AdvancePayload, FiveWhys, Incident, IncidentAction, IncidentAttachment,
@@ -101,6 +102,8 @@ export interface ApiClient {
   dashboardOverview(q: DashboardQuery, actor: Actor): Promise<DashboardOverview>
   /** Home: every site side by side. */
   compareSites(q: SiteComparisonQuery, actor: Actor): Promise<SiteComparison>
+  /** The menu: how many items Needs Attention holds for each module. */
+  attentionCounts(q: AttentionCountsQuery, actor: Actor): Promise<AttentionCounts>
 
   // incidents
   listIncidents(companyId: string, filters: IncidentFilters): Promise<Incident[]>
@@ -800,6 +803,13 @@ class MockApiClient implements ApiClient {
     await delay(LATENCY())
     const [stores, { compareSites }] = await Promise.all([this.demo(), import('./mock/demo')])
     return compareSites(stores, q, actor)
+  }
+
+  // No pretend latency: these are the menu's badges, nobody waits on them.
+  async attentionCounts(q: AttentionCountsQuery, actor: Actor) {
+    if (SERVER_DASHBOARD) return dashboardApi.attentionCounts(q)
+    const [stores, { countAttention }] = await Promise.all([this.demo(), import('./mock/demo')])
+    return countAttention(stores, q, actor)
   }
 
   // ── incidents ──────────────────────────────────────────────────────────────

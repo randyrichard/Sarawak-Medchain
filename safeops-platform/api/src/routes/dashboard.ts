@@ -41,6 +41,18 @@ dashboardRouter.get('/overview', asyncRoute(async (req, res) => {
   res.json(await svc.overview(callerOf(req), q))
 }))
 
+/**
+ * How many items Needs Attention holds for each module: the counts beside the menu.
+ *
+ * Asked on every page, so it counts rather than lists. Same scope as the overview (company,
+ * project, site); the date range and department filter are Home's own and not the menu's.
+ */
+const COUNTS_QUERY = QUERY.pick({ companyId: true, siteId: true, projectId: true })
+
+dashboardRouter.get('/attention-counts', asyncRoute(async (req, res) => {
+  res.json(await svc.attentionCounts(callerOf(req), COUNTS_QUERY.parse(req.query)))
+}))
+
 /** Every site side by side - the "wider view" of the dashboard. */
 const siteComparison = new SiteComparisonService(prisma)
 

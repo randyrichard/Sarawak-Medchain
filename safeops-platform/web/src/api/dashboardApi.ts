@@ -173,6 +173,12 @@ export interface SiteComparisonRow {
 
 export type SiteComparisonQuery = Pick<DashboardQuery, 'companyId' | 'projectId' | 'from' | 'to'>
 
+/** How many items Needs Attention holds for each module: the counts beside the menu. */
+export type AttentionCounts = Record<AttentionKind, number>
+
+/** The menu counts the same scope as Home - company, project, site - without Home's own filters. */
+export type AttentionCountsQuery = Pick<DashboardQuery, 'companyId' | 'projectId' | 'siteId'>
+
 export interface SiteComparison {
   from: string
   to: string
@@ -182,6 +188,14 @@ export interface SiteComparison {
 }
 
 export const dashboardApi = {
+  attentionCounts(q: AttentionCountsQuery): Promise<AttentionCounts> {
+    return request(`/dashboard/attention-counts?${qs({
+      companyId: q.companyId,
+      projectId: q.projectId ?? undefined,
+      siteId: q.siteId ?? undefined,
+    })}`)
+  },
+
   sites(q: SiteComparisonQuery): Promise<SiteComparison> {
     return request(`/dashboard/sites?${qs({
       companyId: q.companyId,

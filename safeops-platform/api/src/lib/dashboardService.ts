@@ -1,5 +1,5 @@
 import type { PrismaClient, Prisma, IncidentSeverity } from '@prisma/client'
-import { membershipOf, type Caller } from '../domain/caller.js'
+import { membershipOf, type Caller, type Membership } from '../domain/caller.js'
 import { INVESTIGATING_STAGES, AWAITING_REVIEW_STAGES } from './incidentService.js'
 import { overdueActionWhere, actionScopeWhere, incidentScopeWhere } from '../domain/access.js'
 import { SEVERITY_LABEL, SEVERITY_RANK, stageLabel } from './incidentCatalog.js'
@@ -113,6 +113,12 @@ const PRIORITY_ORDER: Record<AttentionPriority, number> = {
 /** Above this rank an incident is a serious-injury-or-fatality class event. */
 const CRITICAL_RANK = SEVERITY_RANK.Serious
 
+/** How many recent report runs the page looks at for a failed delivery. */
+const RECENT_RUNS = 5
+
+/** The counts beside the menu: how many Needs Attention items belong to each module. */
+export type AttentionCounts = Record<AttentionItem['kind'], number>
+
 export class DashboardService {
   constructor(private db: PrismaClient) {}
 
@@ -186,20 +192,12 @@ export class DashboardService {
     return f.department ? { department: { name: f.department } } : {}
   }
 
-  async overview(caller: Caller, f: DashboardFilters) {
-    this.membership(caller, f.companyId)
-
-    const today = startOfToday()
-    const { from, to } = this.window(f)
-    const dept = this.dept(f)
-    const vdept = this.visitorDept(f)
-    const weekEnd = new Date(today.getTime() + 7 * DAY)
-    const tomorrow = new Date(today.getTime() + DAY)
-    // `today`/`tomorrow` are calendar dates for date-only fields; arrivals are moments,
-    // so "arriving today" is local midnight to local midnight.
-    const dayStart = startOfLocalDay()
-    const dayEnd = startOfLocalDateString(new Date(today.getTime() + DAY).toISOString().slice(0, 10))
-
+  /**
+   * The workspace, site and project a request names, checked against the caller and one
+   * another, and the location clause every section starts from.
+   */
+  private async place(caller: Caller, f: Pick<DashboardFilters, 'companyId' | 'projectId' | 'siteId'>) {
+    const membership = this.membership(caller, f.companyId)
     const company = await this.db.company.findUnique({
       where: { id: f.companyId },
       select: { name: true },
@@ -233,7 +231,23 @@ export class DashboardService {
       throw new DashboardError('not_found', 'Project not found in this workspace.', 404)
     }
     const projectSiteIds = project ? project.sites.map((x) => x.id) : null
-    const scope = this.scope(f, projectSiteIds)
+    return { membership, company, site, project, scope: this.scope(f, projectSiteIds) }
+  }
+
+  /**
+   * The rows each section counts, and what Needs Attention is made of, as where-clauses.
+   *
+   * Shared by overview(), which lists the queue, and attentionCounts(), which counts it for
+   * the menu. One definition, so the number beside "Permits to Work" is the number of
+   * permits the queue on Home holds.
+   */
+  private rules(
+    caller: Caller,
+    f: Pick<DashboardFilters, 'companyId' | 'siteId' | 'department'>,
+    scope: ReturnType<DashboardService['scope']>,
+    membership: Membership,
+  ) {
+    const dept = this.dept(f)
 
     /*
      * Actions carry no department of their own.
@@ -264,11 +278,15 @@ export class DashboardService {
       ...incidentWhere,
       stage: { notIn: ['closed', 'draft'] },
     }
+    // Rank, not the enum's declaration order: appended values sort by storage order,
+    // which would put a near miss above a fatality.
+    const critical: Prisma.IncidentWhereInput = { ...openIncidents, severityRank: { gte: CRITICAL_RANK } }
 
     /* Actions are scoped by owner for the roles that only own their own work. */
     const actionScope: Prisma.CorrectiveActionWhereInput = {
       ...scope, ...actionDept, ...actionScopeWhere(caller, f.companyId),
     }
+    const overdueActions: Prisma.CorrectiveActionWhereInput = { ...actionScope, ...overdueActionWhere() }
 
     /*
      * "Active" means active now, exactly as the permit board means it.
@@ -279,14 +297,118 @@ export class DashboardService {
      * eight jobs are running when none are.
      */
     const liveNow = new Date()
+    const weekEnd = new Date(startOfToday().getTime() + 7 * DAY)
+    /* Past their window and still open: nobody signed them off. */
+    const lapsedPermits: Prisma.PermitWhereInput = {
+      ...scope, ...dept, status: { in: ['active', 'approved'] }, validTo: { lt: liveNow },
+    }
+    const expiringPermits: Prisma.PermitWhereInput = {
+      ...scope, ...dept, status: 'active', validTo: { gte: liveNow, lte: weekEnd },
+    }
+    const permitsInReview: Prisma.PermitWhereInput = {
+      ...scope, ...dept, status: { in: [...REVIEW_CHAIN, 'submitted'] },
+    }
 
     /* The equipment register limits a supervisor or officer to their own sites. */
-    const membership = this.membership(caller, f.companyId)
     const assetScope: Prisma.AssetWhereInput =
       !f.siteId && membership.siteIds.length > 0
         && ['safety_officer', 'supervisor', 'employee'].includes(membership.role)
         ? { siteId: { in: membership.siteIds } }
         : {}
+    const calibrationCandidates: Prisma.AssetWhereInput = {
+      ...scope, ...dept, ...assetScope,
+      status: { in: ['in_service', 'under_maintenance'] },
+      OR: [{ requiresCalibration: true }, { category: { in: CALIBRATED_CATEGORIES } }],
+    }
+
+    const onSite: Prisma.VisitorWhereInput = { ...scope, ...this.visitorDept(f), status: { in: ON_SITE_STATUSES } }
+
+    return {
+      dept, incidentWhere, openIncidents, actionScope, assetScope, liveNow, weekEnd,
+      critical, overdueActions, lapsedPermits, expiringPermits, permitsInReview,
+      calibrationCandidates, onSite,
+    }
+  }
+
+  /*
+   * Only the items whose calibration can lapse.
+   *
+   * Loading the whole register to ask each row about its certificate is the query that
+   * makes this page slow as a customer grows. Prisma resolves the nested take:1 as one
+   * extra statement rather than one per asset, so this stays two queries whatever the
+   * count. The verdict itself comes from assessFitness - the same function the permit
+   * gate uses, so the register, the gate and this card cannot disagree.
+   */
+  private calibrated(where: Prisma.AssetWhereInput) {
+    return this.db.asset.findMany({
+      where,
+      select: {
+        id: true, code: true, name: true, status: true, nextDueDate: true,
+        requiresCalibration: true, category: true,
+        calibrations: {
+          orderBy: { expiresAt: 'desc' }, take: 1,
+          select: { expiresAt: true, certificateNumber: true, result: true },
+        },
+      },
+      take: 500,
+    })
+  }
+
+  /**
+   * How many items Needs Attention holds for each module: the counts beside the menu.
+   *
+   * The menu is on every page, so this counts the queue rather than building it: the same
+   * rules as overview(), a few counts, none of its lists. The counts are not capped where
+   * the queue's lists are: twenty overdue actions count 20, where the list stops at 15.
+   * Report runs are the exception, as on Home: a failed delivery among the latest few.
+   */
+  async attentionCounts(caller: Caller, f: Pick<DashboardFilters, 'companyId' | 'projectId' | 'siteId'>): Promise<AttentionCounts> {
+    const { membership, scope } = await this.place(caller, f)
+    const r = this.rules(caller, f, scope, membership)
+    // overdueBy's rule: a visitor is overdue once a whole minute past their expected time out.
+    const minuteAgo = new Date(Date.now() - 60_000)
+
+    const [incident, action, lapsed, expiring, inReview, calibrated, visitor, runs] = await Promise.all([
+      this.db.incident.count({ where: r.critical }),
+      this.db.correctiveAction.count({ where: r.overdueActions }),
+      this.db.permit.count({ where: r.lapsedPermits }),
+      this.db.permit.count({ where: r.expiringPermits }),
+      this.db.permit.count({ where: r.permitsInReview }),
+      this.calibrated(r.calibrationCandidates),
+      this.db.visitor.count({ where: { ...r.onSite, expectedDeparture: { lte: minuteAgo } } }),
+      this.db.reportRun.findMany({
+        where: { companyId: f.companyId },
+        orderBy: [{ startedAt: 'desc' }, { id: 'desc' }],
+        take: RECENT_RUNS,
+        select: { deliveryStatus: true },
+      }),
+    ])
+
+    return {
+      incident,
+      action,
+      permit: lapsed + expiring + inReview,
+      equipment: calibrated.filter((a) => !assessFitness(a).fit).length,
+      visitor,
+      report: runs.filter((x) => x.deliveryStatus === 'failed').length,
+    }
+  }
+
+  async overview(caller: Caller, f: DashboardFilters) {
+    this.membership(caller, f.companyId)
+
+    const today = startOfToday()
+    const { from, to } = this.window(f)
+    const vdept = this.visitorDept(f)
+    const tomorrow = new Date(today.getTime() + DAY)
+    // `today`/`tomorrow` are calendar dates for date-only fields; arrivals are moments,
+    // so "arriving today" is local midnight to local midnight.
+    const dayStart = startOfLocalDay()
+    const dayEnd = startOfLocalDateString(new Date(today.getTime() + DAY).toISOString().slice(0, 10))
+
+    const { membership, company, site, project, scope } = await this.place(caller, f)
+    const r = this.rules(caller, f, scope, membership)
+    const { dept, incidentWhere, openIncidents, actionScope, assetScope, liveNow, weekEnd } = r
 
     const [
       incidentStages, incidentSeverity, incidentsInRange, recentIncidents,
@@ -319,7 +441,7 @@ export class DashboardService {
       // Rank, not the enum's declaration order: appended values sort by storage order,
       // which would put a near miss above a fatality.
       this.db.incident.findMany({
-        where: { ...openIncidents, severityRank: { gte: CRITICAL_RANK } },
+        where: r.critical,
         orderBy: [{ severityRank: 'desc' }, { occurredAt: 'asc' }],
         take: 10,
         select: {
@@ -335,9 +457,7 @@ export class DashboardService {
       }),
 
       // ── Actions (CAPA) ─────────────────────────────────────────────────────
-      this.db.correctiveAction.count({
-        where: { ...actionScope, ...overdueActionWhere() },
-      }),
+      this.db.correctiveAction.count({ where: r.overdueActions }),
       this.db.correctiveAction.count({
         where: {
           ...actionScope, status: { in: ['open', 'in_progress'] },
@@ -357,7 +477,7 @@ export class DashboardService {
         },
       }),
       this.db.correctiveAction.findMany({
-        where: { ...actionScope, ...overdueActionWhere() },
+        where: r.overdueActions,
         orderBy: [{ dueDate: 'asc' }, { id: 'asc' }],
         take: 15,
         select: {
@@ -367,7 +487,7 @@ export class DashboardService {
       }),
       this.db.correctiveAction.groupBy({
         by: ['owner'],
-        where: { ...actionScope, ...overdueActionWhere() },
+        where: r.overdueActions,
         _count: true,
         orderBy: { _count: { owner: 'desc' } },
         take: 6,
@@ -379,12 +499,8 @@ export class DashboardService {
         where: { ...scope, ...dept, status: { not: 'archived' } },
         _count: true,
       }),
-      /* Past their window and still open: nobody signed them off. */
       this.db.permit.findMany({
-        where: {
-          ...scope, ...dept,
-          status: { in: ['active', 'approved'] }, validTo: { lt: liveNow },
-        },
+        where: r.lapsedPermits,
         orderBy: { validTo: 'asc' },
         take: 10,
         select: { id: true, code: true, title: true, applicant: true, validTo: true },
@@ -393,7 +509,7 @@ export class DashboardService {
         where: { ...scope, ...dept, status: 'active', validTo: { gte: liveNow } },
       }),
       this.db.permit.findMany({
-        where: { ...scope, ...dept, status: 'active', validTo: { gte: liveNow, lte: weekEnd } },
+        where: r.expiringPermits,
         orderBy: { validTo: 'asc' },
         take: 10,
         select: {
@@ -401,7 +517,7 @@ export class DashboardService {
         },
       }),
       this.db.permit.findMany({
-        where: { ...scope, ...dept, status: { in: [...REVIEW_CHAIN, 'submitted'] } },
+        where: r.permitsInReview,
         orderBy: { createdAt: 'asc' },
         take: 12,
         select: {
@@ -425,36 +541,10 @@ export class DashboardService {
           nextDueDate: { lt: today },
         },
       }),
-      /*
-       * Only the items whose calibration can lapse.
-       *
-       * Loading the whole register to ask each row about its certificate is the query that
-       * makes this page slow as a customer grows. Prisma resolves the nested take:1 as one
-       * extra statement rather than one per asset, so this stays two queries whatever the
-       * count. The verdict itself comes from assessFitness - the same function the permit
-       * gate uses, so the register, the gate and this card cannot disagree.
-       */
-      this.db.asset.findMany({
-        where: {
-          ...scope, ...dept, ...assetScope,
-          status: { in: ['in_service', 'under_maintenance'] },
-          OR: [{ requiresCalibration: true }, { category: { in: CALIBRATED_CATEGORIES } }],
-        },
-        select: {
-          id: true, code: true, name: true, status: true, nextDueDate: true,
-          requiresCalibration: true, category: true,
-          calibrations: {
-            orderBy: { expiresAt: 'desc' }, take: 1,
-            select: { expiresAt: true, certificateNumber: true, result: true },
-          },
-        },
-        take: 500,
-      }),
+      this.calibrated(r.calibrationCandidates),
 
       // ── Visitors ───────────────────────────────────────────────────────────
-      this.db.visitor.count({
-        where: { ...scope, ...vdept, status: { in: ON_SITE_STATUSES } },
-      }),
+      this.db.visitor.count({ where: r.onSite }),
       this.db.visitor.count({
         where: {
           ...scope, ...vdept,
@@ -463,7 +553,7 @@ export class DashboardService {
         },
       }),
       this.db.visitor.findMany({
-        where: { ...scope, ...vdept, status: { in: ON_SITE_STATUSES } },
+        where: r.onSite,
         orderBy: { expectedDeparture: 'asc' },
         take: 25,
         select: {
@@ -479,7 +569,7 @@ export class DashboardService {
       this.db.reportRun.findMany({
         where: { companyId: f.companyId },
         orderBy: [{ startedAt: 'desc' }, { id: 'desc' }],
-        take: 5,
+        take: RECENT_RUNS,
         select: {
           id: true, reportType: true, startedAt: true, status: true,
           deliveryStatus: true, failureReason: true, recipientCount: true,
@@ -510,12 +600,8 @@ export class DashboardService {
        * for the attention queue, and their lengths were the figures on Home - so a site
        * with fifteen lapsed permits read "10".
        */
-      this.db.permit.count({
-        where: { ...scope, ...dept, status: { in: ['active', 'approved'] }, validTo: { lt: liveNow } },
-      }),
-      this.db.permit.count({
-        where: { ...scope, ...dept, status: 'active', validTo: { gte: liveNow, lte: weekEnd } },
-      }),
+      this.db.permit.count({ where: r.lapsedPermits }),
+      this.db.permit.count({ where: r.expiringPermits }),
     ])
 
     // ── Derive equipment fitness from the shared verdict ─────────────────────

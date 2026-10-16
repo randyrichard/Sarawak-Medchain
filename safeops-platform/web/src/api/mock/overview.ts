@@ -6,8 +6,8 @@ import type { CapaFilters, CapaItem } from '../capa'
 import type { PermitFilters, PermitView } from '../permits'
 import type { AssetFilters } from '../assets'
 import type {
-  AttentionItem, AttentionPriority, DashboardOverview, DashboardQuery, DashboardSection,
-  SiteComparison, SiteComparisonQuery, SiteComparisonRow,
+  AttentionCounts, AttentionCountsQuery, AttentionItem, AttentionPriority, DashboardOverview,
+  DashboardQuery, DashboardSection, SiteComparison, SiteComparisonQuery, SiteComparisonRow,
 } from '../dashboardApi'
 import { COMPANIES, SITES } from './fixtures'
 import type { DemoStores } from './demo'
@@ -152,12 +152,23 @@ function inScope(stores: Stores, q: DashboardQuery, actor: Actor) {
   }
 }
 
-export function buildOverview(stores: Stores, q: DashboardQuery, actor: Actor): DashboardOverview {
+/** The workspace and site a request names, refused as the server refuses them. */
+function place(q: AttentionCountsQuery) {
   const company = COMPANIES.find((c) => c.id === q.companyId)
   if (!company) throw new ApiError('not_found', 'Workspace not found.')
   const site = q.siteId ? SITES.find((s) => s.id === q.siteId && s.companyId === q.companyId) : null
   if (q.siteId && !site) throw new ApiError('not_found', 'Site not found in this workspace.')
   refuseProject(q.projectId)
+  return { company, site }
+}
+
+/** Open incidents of Serious and worse: Needs Attention's critical band. */
+const criticalOf = (incidents: Incident[]) => incidents
+  .filter(isOpen)
+  .filter((i) => SEVERITY_RANK[i.severity] >= CRITICAL_RANK)
+
+export function buildOverview(stores: Stores, q: DashboardQuery, actor: Actor): DashboardOverview {
+  const { company, site } = place(q)
 
   const { from, to } = window(q)
   const now = new Date()
@@ -170,8 +181,7 @@ export function buildOverview(stores: Stores, q: DashboardQuery, actor: Actor): 
   const investigating = r.incidents('investigating').length
   const awaitingReview = r.incidents('awaiting_review').length
   const inRange = incidents.filter((i) => within(i.occurredAt, from, to)).length
-  const critical = open
-    .filter((i) => SEVERITY_RANK[i.severity] >= CRITICAL_RANK)
+  const critical = criticalOf(open)
     .sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity] || Date.parse(a.occurredAt) - Date.parse(b.occurredAt))
     .slice(0, 10)
 
@@ -367,6 +377,24 @@ export function buildOverview(stores: Stores, q: DashboardQuery, actor: Actor): 
     ])].filter(Boolean).sort(),
     reports: { recent: [], failed: 0, nextScheduled: null },
     notCounted: OVERVIEW_NOT_COUNTED,
+  }
+}
+
+/**
+ * The menu's counts in the demo: how many items Needs Attention holds for each module, by
+ * the rules buildOverview lists them with, uncapped as on the server. The demo keeps no
+ * calibration certificates, visitors or report runs, so those count nothing.
+ */
+export function countAttention(stores: Stores, q: AttentionCountsQuery, actor: Actor): AttentionCounts {
+  place(q)
+  const r = inScope(stores, q, actor)
+  return {
+    incident: criticalOf(r.incidents()).length,
+    action: r.actions('overdue').length,
+    permit: r.permits('expired').length + r.permits('expiring').length + r.permits('awaiting').length,
+    equipment: 0,
+    visitor: 0,
+    report: 0,
   }
 }
 

@@ -1,47 +1,25 @@
-import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bell, CheckCheck } from 'lucide-react'
-import { api } from '@/api/client'
 import { useOrg } from '@/features/org/OrgContext'
-import type { AppNotification } from '@/api/types'
 import { timeAgo } from '@/lib/time'
 import { Dropdown, DropdownItem, DropdownSeparator, SkeletonRows } from '@/components/ui'
 import { cn } from '@/lib/cn'
-import { pollWhileVisible } from '@/lib/poll'
 import { notificationTarget } from '@/lib/links'
 import { capabilityFor } from './nav'
+import { useNotificationFeed } from './notificationFeed'
 
 
 export function NotificationMenu() {
-  const { company, allowed } = useOrg()
-  const companyId = company?.id ?? ''
+  const { allowed } = useOrg()
   // Straight to what it is about, when this person can open it; otherwise the full list.
   const destination = (href: string | undefined) => {
     const target = notificationTarget(href)
     const needs = target ? capabilityFor(target) : null
     return target && (needs === null || allowed(needs)) ? target : '/notifications'
   }
-  const [items, setItems] = useState<AppNotification[] | null>(null)
+  // Shared with the menu's Notifications row, so the two counts are one count.
+  const { items, unread, markRead, markAllRead } = useNotificationFeed()
   const navigate = useNavigate()
-
-  useEffect(() => {
-    let cancelled = false
-    const load = () => api.listNotifications(companyId).then((n) => !cancelled && setItems(n))
-    load()
-    // light poll so workflow events (assignments, mentions, escalations) surface live
-    const stop = pollWhileVisible(load, 15_000)
-    return () => {
-      cancelled = true
-      stop()
-    }
-  }, [companyId])
-
-  const unread = items?.filter((n) => !n.readAt).length ?? 0
-
-  const markAll = async () => {
-    await api.markAllNotificationsRead(companyId)
-    setItems((cur) => cur?.map((n) => ({ ...n, readAt: n.readAt ?? new Date().toISOString() })) ?? null)
-  }
 
   return (
     <Dropdown
@@ -62,7 +40,7 @@ export function NotificationMenu() {
         {unread > 0 && (
           // A menu item like the rest, so the arrow keys reach it: in a menu, Tab closes
           // the menu rather than moving to the next button.
-          <button type="button" role="menuitem" tabIndex={-1} onClick={markAll} className="inline-flex rounded focus-visible:outline-none focus:underline items-center gap-1 text-2xs font-semibold text-accent hover:underline">
+          <button type="button" role="menuitem" tabIndex={-1} onClick={() => void markAllRead()} className="inline-flex rounded focus-visible:outline-none focus:underline items-center gap-1 text-2xs font-semibold text-accent hover:underline">
             <CheckCheck size={12} aria-hidden /> Mark All Read
           </button>
         )}
@@ -79,8 +57,7 @@ export function NotificationMenu() {
               <DropdownItem
                 key={n.id}
                 onSelect={() => {
-                  void api.markNotificationRead(companyId, n.id)
-                  setItems((cur) => cur?.map((x) => (x.id === n.id ? { ...x, readAt: x.readAt ?? new Date().toISOString() } : x)) ?? null)
+                  markRead(n.id)
                   navigate(destination(n.href))
                 }}
               >

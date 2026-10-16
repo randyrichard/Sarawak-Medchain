@@ -148,6 +148,7 @@ export function HelpPage() {
         <ul className="space-y-2 text-sm leading-relaxed text-ink-2">
           <li><strong className="font-semibold text-ink">Search.</strong> Press <Key>/</Key> or <Key>{modKey('K')}</Key> to find an incident, permit, person or piece of equipment by name or number.</li>
           <li><strong className="font-semibold text-ink">Notifications.</strong> The bell at the top lists what is assigned to you or due soon. Click one to open it.</li>
+          <li><strong className="font-semibold text-ink">Counts in the menu.</strong> A red number beside a menu item counts what needs attention there now, the same items Home lists. Beside Notifications it counts what you have not read. On a phone, a red dot on the menu button means something is waiting.</li>
           <li><strong className="font-semibold text-ink">Numbers are links.</strong> A figure on Home opens the list it counts, already filtered.</li>
           <li><strong className="font-semibold text-ink">Keyboard.</strong> Press <Key>?</Key> for every shortcut.</li>
           <li><strong className="font-semibold text-ink">This page.</strong> Help is always at the bottom of the menu and in your account menu.</li>

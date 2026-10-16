@@ -1,3 +1,4 @@
+import type { AttentionKind } from '@/api/dashboardApi'
 import type { Capability } from '@/features/permissions/permissions'
 
 /**
@@ -41,6 +42,11 @@ export interface NavItem {
    * part of that section. Only the paths that have their own nav row are excluded.
    */
   notFor?: string[]
+  /**
+   * The count beside it: unread notifications, or how many items of this kind Home's Needs
+   * Attention holds. Each kind belongs to one row, so nothing is counted twice.
+   */
+  count?: AttentionKind | 'unread'
 }
 
 export const NAV: NavItem[] = [
@@ -49,7 +55,7 @@ export const NAV: NavItem[] = [
   // forgetting (customer research P1) — it has to be one tap from anywhere.
   { to: '/near-miss', label: 'Report a Near Miss', capability: 'reports:submit' },
   // Everyone gets told what needs them.
-  { to: '/notifications', label: 'Notifications', capability: 'dashboard:view' },
+  { to: '/notifications', label: 'Notifications', capability: 'dashboard:view', count: 'unread' },
   /*
    * Each item asks for the capability it actually needs.
    *
@@ -62,15 +68,15 @@ export const NAV: NavItem[] = [
    * Incidents deliberately asks for `:view`, not `:manage`. Reporting one is everybody's
    * job; triaging it is not, and the difference belongs in the page rather than the menu.
    */
-  { to: '/incidents', label: 'Incidents', capability: 'incidents:view', notFor: ['/incidents/board'], group: 'Incidents' },
+  { to: '/incidents', label: 'Incidents', capability: 'incidents:view', notFor: ['/incidents/board'], group: 'Incidents', count: 'incident' },
   { to: '/incidents/board', label: 'Incident Board', capability: 'incidents:view', group: 'Incidents' },
-  { to: '/actions', label: 'Corrective Actions', capability: 'actions:view', group: 'Incidents' },
-  { to: '/assets', label: 'Assets & Inspections', capability: 'equipment:view', group: 'Operations' },
-  { to: '/permits', label: 'Permits to Work', capability: 'permits:view', group: 'Operations' },
-  { to: '/visitors', label: 'Visitors', capability: 'visitors:view', group: 'Operations' },
+  { to: '/actions', label: 'Corrective Actions', capability: 'actions:view', group: 'Incidents', count: 'action' },
+  { to: '/assets', label: 'Assets & Inspections', capability: 'equipment:view', group: 'Operations', count: 'equipment' },
+  { to: '/permits', label: 'Permits to Work', capability: 'permits:view', group: 'Operations', count: 'permit' },
+  { to: '/visitors', label: 'Visitors', capability: 'visitors:view', group: 'Operations', count: 'visitor' },
   { to: '/toolbox', label: 'Toolbox Meetings', capability: 'toolbox:view', group: 'Operations' },
   { to: '/performance', label: 'HSE Performance', capability: 'analytics:view', group: 'Assurance' },
-  { to: '/reports', label: 'Reports', capability: 'reports:view', group: 'Assurance' },
+  { to: '/reports', label: 'Reports', capability: 'reports:view', group: 'Assurance', count: 'report' },
   { to: '/audits', label: 'Audits & Compliance', capability: 'compliance:manage', group: 'Assurance' },
   { to: '/training', label: 'Training & Competency', capability: 'training:view', group: 'People' },
   { to: '/employees', label: 'Employees', capability: 'workforce:view', group: 'People' },

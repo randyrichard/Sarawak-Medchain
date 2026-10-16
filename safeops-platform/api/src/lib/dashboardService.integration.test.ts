@@ -690,6 +690,79 @@ d('Operational dashboard — integration (real Postgres)', () => {
       .toEqual(['Awaiting HSE review · raised today', 'Awaiting approval · raised today'])
   })
 
+  // ── The counts beside the menu ────────────────────────────────────────────
+  // How many items Needs Attention holds for each module, counted rather than listed.
+
+  it('counts for each module exactly what Needs Attention lists', async () => {
+    await purge()
+    await incident({ severity: 'fatality', severityRank: 7, stage: 'investigation' })
+    await incident({ severity: 'lost_time_injury', severityRank: 5, stage: 'rca' })
+    await incident({ severity: 'Minor', severityRank: 1, stage: 'investigation' }) // not critical
+    await incident({ severity: 'fatality', severityRank: 7, stage: 'closed' })      // not open
+    await action({ dueDate: days(-3) })
+    await action({ dueDate: days(-1) })
+    await action({ dueDate: days(5) })                                               // not late
+    await permit({ status: 'active', validFrom: days(-9), validTo: days(-2) })       // lapsed
+    await permit({ status: 'active', validFrom: days(-1), validTo: days(2) })        // expiring
+    await permit({ status: 'submitted', validFrom: days(1), validTo: days(2) })      // in review
+    await permit({ status: 'hse_review', validFrom: days(1), validTo: days(2) })     // in review
+    await permit({ status: 'active', validFrom: days(-1), validTo: days(20) })       // fine
+    const expired = await asset()
+    await db.calibration.create({
+      data: {
+        assetId: expired.id, certificateNumber: 'CAL-OLD', result: 'pass',
+        calibratedAt: days(-400), expiresAt: days(-10), recordedBy: 'Lab',
+      } as never,
+    })
+    await visitor({ status: 'on_site', expectedDeparture: days(-1) })
+    await visitor({ status: 'on_site', expectedDeparture: days(1) })                 // not late
+    await db.reportRun.create({
+      data: {
+        companyId: CO, reportType: 'overdue_actions', trigger: 'scheduled',
+        triggeredBy: 'system', status: 'success', deliveryStatus: 'failed', recipientCount: 1,
+      } as never,
+    })
+
+    const counts = await svc.attentionCounts(admin, { companyId: CO })
+    const r = await svc.overview(admin, { companyId: CO })
+    expect(counts).toEqual({ incident: 2, action: 2, permit: 4, equipment: 1, visitor: 1, report: 1 })
+    for (const kind of Object.keys(counts) as (keyof typeof counts)[]) {
+      expect(counts[kind], kind).toBe(r.attention.filter((a) => a.kind === kind).length)
+    }
+  })
+
+  it('counts past the lengths the queue stops listing at', async () => {
+    await purge()
+    for (let i = 0; i < 12; i++) await permit({ status: 'active', validFrom: days(-9), validTo: days(-2) })
+    for (let i = 0; i < 17; i++) await action({ dueDate: days(-(i + 1)) })
+
+    const counts = await svc.attentionCounts(admin, { companyId: CO })
+    expect(counts.permit).toBe(12)
+    expect(counts.action).toBe(17)
+  })
+
+  it('counts only what this caller could open, and only in this workspace', async () => {
+    await purge()
+    await incident({ severity: 'fatality', severityRank: 7, stage: 'investigation' })
+    await action({ dueDate: days(-2), owner: 'Somebody Else' })
+
+    // An employee sees the incidents they reported and the actions they own; none of these.
+    expect(await svc.attentionCounts(employee, { companyId: CO }))
+      .toMatchObject({ incident: 0, action: 0 })
+    await expect(svc.attentionCounts(outsider, { companyId: CO })).rejects.toMatchObject({ status: 403 })
+    await expect(svc.attentionCounts(admin, { companyId: CO, siteId: OTHER_SITE }))
+      .rejects.toMatchObject({ status: 404 })
+  })
+
+  it('narrows to the site in view, as Home does', async () => {
+    await purge()
+    await action({ dueDate: days(-2), siteId: SITE_A })
+    await action({ dueDate: days(-2), siteId: SITE_B })
+
+    expect((await svc.attentionCounts(admin, { companyId: CO, siteId: SITE_B })).action).toBe(1)
+    expect((await svc.attentionCounts(admin, { companyId: CO })).action).toBe(2)
+  })
+
   /** Runs with the business clock in Kuching, whatever this machine's APP_TIMEZONE says. */
   async function inKuching(fn: () => Promise<void>) {
     const zone = process.env.APP_TIMEZONE
