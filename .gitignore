@@ -64,3 +64,6 @@ Thumbs.db
 # e-MC platform build output
 platform/web/.next/
 platform/api/dist/
+
+# Personal data: NRIC, home address, mobile. Never commit this.
+safeops-platform/docs/vdp-appendix/B-founder-profile.md
