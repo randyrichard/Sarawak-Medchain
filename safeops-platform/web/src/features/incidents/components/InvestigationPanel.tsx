@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { CheckCircle2, AlertTriangle } from 'lucide-react'
 import { investigationApi, type Investigation } from '@/api/investigationApi'
 import { ApiError } from '@/api/types'
-import { Alert, Badge, Button, Card, CardBody, Input, Skeleton, Textarea } from '@/components/ui'
+import { Alert, Badge, Button, Card, CardBody, ErrorAlert, Input, Skeleton, Textarea } from '@/components/ui'
+import { isUnavailableHere } from '@/lib/useAsync'
 import { fmtDateTime } from '../lib'
 
 /**
@@ -31,7 +32,8 @@ export function InvestigationPanel({
   onChanged?: () => void
 }) {
   const [data, setData] = useState<Investigation | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  /** What was caught, kept whole: ErrorAlert tells the demo's refusal from a fault by it. */
+  const [error, setError] = useState<unknown>(null)
   const [saving, setSaving] = useState(false)
   const [savedAt, setSavedAt] = useState<string | null>(null)
   const [signing, setSigning] = useState(false)
@@ -43,7 +45,7 @@ export function InvestigationPanel({
   const load = useCallback(() => {
     investigationApi.get(incidentId)
       .then((d) => { setData(d); setDraft({}) })
-      .catch((e) => setError(e instanceof ApiError ? e.message : 'Could not load the investigation.'))
+      .catch((e) => setError(e instanceof ApiError ? e : 'Could not load the investigation.'))
   }, [incidentId])
 
   useEffect(() => { load() }, [load])
@@ -77,7 +79,7 @@ export function InvestigationPanel({
       setData(fresh)
       onChanged?.()
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Could not save the investigation.')
+      setError(e instanceof ApiError ? e : 'Could not save the investigation.')
     } finally {
       setSaving(false)
     }
@@ -91,7 +93,7 @@ export function InvestigationPanel({
       load()
       onChanged?.()
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Could not sign off the investigation.')
+      setError(e instanceof ApiError ? e : 'Could not sign off the investigation.')
     } finally {
       setSigning(false)
     }
@@ -113,14 +115,15 @@ export function InvestigationPanel({
           )}
         </p>
 
-        {error && <Alert tone="critical" className="mb-2" onDismiss={() => setError(null)}>{error}</Alert>}
+        <ErrorAlert error={error} className="mb-2" onDismiss={() => setError(null)} />
         {!canRecord && !done && data !== null && (
           <p className="mb-2 text-2xs text-muted">
             Recorded by a Supervisor, Safety Officer or above. You can add to the Discussion tab.
           </p>
         )}
 
-        {data === null ? (
+        {/* Not in the demo: the note above says so, and no skeleton waits for it. */}
+        {isUnavailableHere(error) ? null : data === null ? (
           <div className="space-y-2">
             {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-lg" />)}
           </div>

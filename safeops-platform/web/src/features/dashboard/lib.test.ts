@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import type { AttentionItem, DashboardOverview } from '@/api/dashboardApi'
 import {
-  filterAttention, headline, kindLabel, kpiCards, overdueLabel, priorityRank,
+  filterAttention, headline, kindLabel, kpiCards, notCountedNote, overdueLabel, priorityRank,
   priorityTone, reportStatusLabel, scopeCaveats, scopeSummary, severityBars,
   sortAttention, visiblePermitStages,
 } from './lib'
@@ -326,5 +326,26 @@ describe('scope', () => {
       scope: { ...overview().scope, siteName: 'Bintulu' },
     }))
     expect(c.some((x) => /company-wide/.test(x))).toBe(true)
+  })
+})
+
+describe('parts of the page an answer did not count', () => {
+  it('leaves out only the tiles that rest on them', () => {
+    const ids = kpiCards(overview({ notCounted: ['visitors'] })).map((c) => c.id)
+    expect(ids).not.toContain('visitorsOnSite')
+    expect(ids).toContain('expiringEquipment')
+    expect(ids).toHaveLength(7)
+  })
+
+  it('says nothing when everything was counted', () => {
+    expect(notCountedNote(overview())).toBeNull()
+    expect(notCountedNote(overview({ notCounted: [] }))).toBeNull()
+  })
+
+  it('names what is missing in a sentence', () => {
+    expect(notCountedNote(overview({ notCounted: ['reports'] })))
+      .toBe('Not in this demo: scheduled reports. They need the SafeChain server.')
+    expect(notCountedNote(overview({ notCounted: ['visitors', 'toolbox'] })))
+      .toBe('Not in this demo: visitors on site and toolbox meetings. They need the SafeChain server.')
   })
 })

@@ -13,6 +13,7 @@ import { AdminStore } from './admin'
 import { PermitStore } from './permits'
 
 export { buildDashboard } from './dashboard'
+export { buildOverview, compareSites } from './overview'
 
 type Notify = ConstructorParameters<typeof IncidentStore>[0]
 

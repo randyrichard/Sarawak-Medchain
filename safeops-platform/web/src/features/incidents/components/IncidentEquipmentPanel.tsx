@@ -4,8 +4,9 @@ import { Plus, Trash2, ShieldAlert, Star, ExternalLink } from 'lucide-react'
 import { equipmentApi, type IncidentEquipmentRow, type SelectableEquipment } from '@/api/equipmentApi'
 import { inspectionsApi } from '@/api/inspectionsApi'
 import { ApiError } from '@/api/types'
-import { Alert, Badge, Button, Card, CardBody, Dialog, Input, Skeleton, Textarea } from '@/components/ui'
+import { Alert, Badge, Button, Card, CardBody, Dialog, ErrorAlert, Input, Skeleton, Textarea } from '@/components/ui'
 import { cn } from '@/lib/cn'
+import { isUnavailableHere } from '@/lib/useAsync'
 
 /**
  * Equipment involved in an incident.
@@ -26,7 +27,8 @@ export function IncidentEquipmentPanel({
   canEdit: boolean
 }) {
   const [rows, setRows] = useState<IncidentEquipmentRow[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  /** What was caught, kept whole: ErrorAlert tells the demo's refusal from a fault by it. */
+  const [error, setError] = useState<unknown>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
 
@@ -35,7 +37,7 @@ export function IncidentEquipmentPanel({
       .then(setRows)
       .catch((e) => {
         setRows([])
-        setError(e instanceof ApiError ? e.message : 'Could not load the equipment on this incident.')
+        setError(e instanceof ApiError ? e : 'Could not load the equipment on this incident.')
       })
   }, [incidentId])
 
@@ -48,11 +50,13 @@ export function IncidentEquipmentPanel({
       await equipmentApi.unlinkFromIncident(row.id)
       load()
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Could not remove that equipment.')
+      setError(e instanceof ApiError ? e : 'Could not remove that equipment.')
     } finally {
       setBusy(null)
     }
   }
+
+  const offline = isUnavailableHere(error)
 
   return (
     <Card>
@@ -61,9 +65,10 @@ export function IncidentEquipmentPanel({
           Equipment involved
         </p>
 
-        {error && <Alert tone="critical" className="mb-2" onDismiss={() => setError(null)}>{error}</Alert>}
+        <ErrorAlert error={error} className="mb-2" onDismiss={() => setError(null)} />
 
-        {rows === null ? (
+        {/* Not in the demo: the note above says so, with nothing below it to wait for or fill in. */}
+        {offline ? null : rows === null ? (
           <div className="space-y-1.5">
             {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-11 rounded-lg" />)}
           </div>
@@ -114,7 +119,7 @@ export function IncidentEquipmentPanel({
           </ul>
         )}
 
-        {canEdit && (
+        {canEdit && !offline && (
           <Button size="sm" variant="secondary" icon={<Plus size={11} />} className="mt-2"
             onClick={() => setAddOpen(true)}>
             Name Equipment

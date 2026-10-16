@@ -2,12 +2,14 @@ import type { PrismaClient, Prisma, IncidentSeverity } from '@prisma/client'
 import { membershipOf, type Caller } from '../domain/caller.js'
 import { INVESTIGATING_STAGES, AWAITING_REVIEW_STAGES } from './incidentService.js'
 import { overdueActionWhere, actionScopeWhere, incidentScopeWhere } from '../domain/access.js'
-import { SEVERITY_LABEL, SEVERITY_RANK } from './incidentCatalog.js'
+import { SEVERITY_LABEL, SEVERITY_RANK, stageLabel } from './incidentCatalog.js'
 import { assessFitness, CALIBRATED_CATEGORIES, DUE_WARN_DAYS } from './equipmentService.js'
 import { ON_SITE_STATUSES, overdueBy } from './visitorService.js'
 import { REVIEW_CHAIN } from './permitReview.js'
 import { DomainError } from '../domain/errors.js'
-import { endOfLocalDateString, startOfLocalDateString, startOfLocalDay, todayDate } from '../domain/businessDay.js'
+import {
+  businessTimeZone, endOfLocalDateString, localParts, startOfLocalDateString, startOfLocalDay, todayDate,
+} from '../domain/businessDay.js'
 
 /**
  * The morning dashboard.
@@ -36,6 +38,31 @@ function startOfToday(): Date {
 
 const DAY = 86_400_000
 const daysBetween = (from: Date, to: Date) => Math.round((to.getTime() - from.getTime()) / DAY)
+
+/*
+ * The attention queue's own words. Read on Home by everybody, so they are sentences: "1
+ * hours", "raised 0 day(s) ago" and "Awaiting submitted" were what it said.
+ */
+const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
+const raised = (days: number) => (days <= 0 ? 'today' : `${plural(days, 'day')} ago`)
+
+/** What a permit in review is waiting for. */
+const AWAITING: Record<string, string> = {
+  submitted: 'approval',
+  supervisor_review: 'supervisor review',
+  hse_review: 'HSE review',
+  area_authority: 'area authority review',
+}
+
+/**
+ * A moment on the business clock: "2026-10-13 15:05". These were written with toISOString(),
+ * which is UTC, so a permit that lapsed at 15:05 in Kuching said it was valid until 07:05.
+ */
+function localStamp(d: Date): string {
+  const p = localParts(d, businessTimeZone())
+  const two = (n: number) => String(n).padStart(2, '0')
+  return `${p.year}-${two(p.month)}-${two(p.day)} ${two(p.hour)}:${two(p.minute)}`
+}
 
 export interface DashboardFilters {
   companyId: string
@@ -520,6 +547,7 @@ export class DashboardService {
     const attention: AttentionItem[] = []
 
     for (const i of criticalOpen) {
+      const open = daysBetween(i.occurredAt, new Date())
       attention.push({
         id: `incident-${i.id}`,
         kind: 'incident',
@@ -527,9 +555,15 @@ export class DashboardService {
         reference: i.number,
         title: i.title,
         owner: i.investigator ?? null,
-        status: i.stage.replace(/_/g, ' '),
-        overdueDays: daysBetween(i.occurredAt, new Date()),
-        detail: `${SEVERITY_LABEL[i.severity]} · open ${daysBetween(i.occurredAt, new Date())} days`,
+        // As the register names the stage: "rca" and "actions" said nothing to a reader.
+        status: stageLabel(i.stage),
+        /*
+         * Not late: open. The band already says it is urgent, and how long it has been open
+         * is in the detail. As days overdue it read "18 days overdue" in red, and it sorted
+         * the band by age, so an older Serious incident came above a newer Critical one.
+         */
+        overdueDays: null,
+        detail: `${SEVERITY_LABEL[i.severity]} · ${open <= 0 ? 'opened today' : `open ${plural(open, 'day')}`}`,
         href: `/incidents/${i.id}`,
       })
     }
@@ -559,7 +593,7 @@ export class DashboardService {
         owner: x.v.hostEmployee?.name || x.v.hostNameAtBooking || null,
         status: 'on site',
         overdueDays: Math.floor(x.late! / 1440),
-        detail: `Expected out ${x.v.expectedDeparture.toISOString().slice(11, 16)} · ${x.late} min overdue`,
+        detail: `Expected out ${localStamp(x.v.expectedDeparture).slice(11)} · ${x.late} min overdue`,
         href: '/visitors',
       })
     }
@@ -595,7 +629,7 @@ export class DashboardService {
         owner: p.applicant,
         status: 'past its window, not closed',
         overdueDays: Math.max(0, daysBetween(p.validTo, new Date())),
-        detail: `Valid until ${p.validTo.toISOString().slice(0, 16).replace('T', ' ')} and never closed out`,
+        detail: `Valid until ${localStamp(p.validTo)} and never closed out`,
         href: `/permits?open=${p.id}`,
       })
     }
@@ -611,7 +645,7 @@ export class DashboardService {
         owner: p.applicant,
         status: 'active',
         overdueDays: null,
-        detail: `Expires in ${hours < 1 ? 'under an hour' : `${hours} hours`}`,
+        detail: `Expires in ${hours < 1 ? 'under an hour' : plural(hours, 'hour')}`,
         href: `/permits?open=${p.id}`,
       })
     }
@@ -627,7 +661,7 @@ export class DashboardService {
         owner: p.applicant,
         status: p.status.replace(/_/g, ' '),
         overdueDays: null,
-        detail: `Awaiting ${p.status.replace(/_/g, ' ')} · raised ${waiting} day(s) ago`,
+        detail: `Awaiting ${AWAITING[p.status] ?? p.status.replace(/_/g, ' ')} · raised ${raised(waiting)}`,
         href: `/permits?open=${p.id}`,
       })
     }

@@ -6,10 +6,11 @@ import {
 } from '@/api/investigationApi'
 import { listEquipmentHolders, type EquipmentHolderOption } from '@/api/equipmentHolders'
 import { ApiError } from '@/api/types'
-import { Alert, Badge, Button, Card, CardBody, Dialog, Input, PersonRegisterOptions, Select, Skeleton, Textarea, hasRegisteredPeople } from '@/components/ui'
+import { Alert, Badge, Button, Card, CardBody, Dialog, ErrorAlert, Input, PersonRegisterOptions, Select, Skeleton, Textarea, hasRegisteredPeople } from '@/components/ui'
 import { useSiteScope } from '@/features/org/OrgContext'
 import { fmtDate } from '../lib'
 import { cn } from '@/lib/cn'
+import { isUnavailableHere } from '@/lib/useAsync'
 import { useFormCheck } from '@/lib/useFormCheck'
 
 /**
@@ -33,7 +34,8 @@ export function PeoplePanel({
 }) {
 
   const [rows, setRows] = useState<IncidentPerson[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  /** What was caught, kept whole: ErrorAlert tells the demo's refusal from a fault by it. */
+  const [error, setError] = useState<unknown>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
 
@@ -42,7 +44,7 @@ export function PeoplePanel({
       .then(setRows)
       .catch((e) => {
         setRows([])
-        setError(e instanceof ApiError ? e.message : 'Could not load the people on this incident.')
+        setError(e instanceof ApiError ? e : 'Could not load the people on this incident.')
       })
   }, [incidentId])
 
@@ -55,12 +57,13 @@ export function PeoplePanel({
       await investigationApi.removePerson(row.id)
       load()
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Could not remove that person.')
+      setError(e instanceof ApiError ? e : 'Could not remove that person.')
     } finally {
       setBusy(null)
     }
   }
 
+  const offline = isUnavailableHere(error)
   const injured = rows?.filter((r) => r.role === 'injured') ?? []
   const daysLost = injured.reduce((s, r) => s + (r.daysLost ?? 0), 0)
 
@@ -76,9 +79,10 @@ export function PeoplePanel({
           )}
         </p>
 
-        {error && <Alert tone="critical" className="mb-2" onDismiss={() => setError(null)}>{error}</Alert>}
+        <ErrorAlert error={error} className="mb-2" onDismiss={() => setError(null)} />
 
-        {rows === null ? (
+        {/* Not in the demo: the note above says so, with nothing below it to wait for or fill in. */}
+        {offline ? null : rows === null ? (
           <div className="space-y-1.5">
             {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-12 rounded-lg" />)}
           </div>
@@ -140,7 +144,7 @@ export function PeoplePanel({
           </ul>
         )}
 
-        {canEdit && (
+        {canEdit && !offline && (
           <Button size="sm" variant="secondary" icon={<Plus size={11} />} className="mt-2"
             onClick={() => setAddOpen(true)}>
             Name Someone

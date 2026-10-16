@@ -3,10 +3,11 @@ import { Megaphone, Plus, Search } from 'lucide-react'
 import { toolboxApi, type ToolboxMeeting, type ToolboxToday } from '@/api/toolboxApi'
 import { ApiError } from '@/api/types'
 import { isBackendConfigured } from '@/api/authApi'
+import { notApiError } from '@/api/http'
 import { useOrg } from '@/features/org/OrgContext'
 import { fmtDateTime } from '@/features/incidents/lib'
 import {
-  Alert, Button, Card, CardBody, DataTable, EmptyState, Input, PageHeader, Skeleton,
+  Alert, Button, Card, CardBody, DataTable, EmptyState, ErrorAlert, Input, PageHeader, Skeleton,
   type Column,
 } from '@/components/ui'
 import { cn } from '@/lib/cn'
@@ -80,7 +81,8 @@ export function ToolboxPage() {
     return (
       <>
         <PageHeader title="Toolbox Meetings" subtitle="Short safety briefings held before work starts" />
-        <Alert tone="info">Toolbox meetings are recorded on the server. Connect this app to the SafeChain API to use them.</Alert>
+        {/* The same calm words as every part the demo leaves out; it told a prospect to connect an API. */}
+        <ErrorAlert error={notApiError()} />
       </>
     )
   }

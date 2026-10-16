@@ -9,10 +9,11 @@ import { MEDICAL_LABEL } from '@/api/employees'
 import { ApiError } from '@/api/types'
 import { useOrg } from '@/features/org/OrgContext'
 import {
-  Alert, Avatar, Badge, Button, Card, EmptyState, Input, PageHeader, Select, Skeleton,
+  Alert, Avatar, Badge, Button, Card, EmptyState, ErrorAlert, Input, PageHeader, Select, Skeleton,
   StatusPill,
 } from '@/components/ui'
 import { cn } from '@/lib/cn'
+import { isUnavailableHere } from '@/lib/useAsync'
 import { canManageEmployees, MEDICAL_KIND, relativeDays } from './lib'
 import { EmployeeDrawer } from './components/EmployeeDrawer'
 import { NewEmployeeDialog } from './components/NewEmployeeDialog'
@@ -47,7 +48,8 @@ export function EmployeesPage() {
   const [total, setTotal] = useState(0)
   const [stats, setStats] = useState<EmployeeStats | null>(null)
   const [departments, setDepartments] = useState<string[]>([])
-  const [error, setError] = useState<string | null>(null)
+  /** What was caught, kept whole: ErrorAlert tells the demo's refusal from a fault by it. */
+  const [error, setError] = useState<unknown>(null)
   const [flash, setFlash] = useState<string | null>(null)
   const [newOpen, setNewOpen] = useState(false)
 
@@ -93,7 +95,7 @@ export function EmployeesPage() {
       .catch((e) => {
         if (cancelled) return
         setRows([])
-        setError(e instanceof ApiError ? e.message : 'Could not load the register.')
+        setError(e instanceof ApiError ? e : 'Could not load the register.')
       })
     return () => { cancelled = true }
   }, [company, q, site?.id, department, status, medical, sort, dir, page])
@@ -133,6 +135,19 @@ export function EmployeesPage() {
     setParam({ sort: key, dir: sort === key && dir === 'asc' ? 'desc' : 'asc' })
   }
 
+  /*
+   * The demo keeps no employee register. Said once, calmly, in place of the page: it was a
+   * red alarm over counters that never filled and an Add Person that could only fail.
+   */
+  if (isUnavailableHere(error)) {
+    return (
+      <>
+        <PageHeader title="Employees" subtitle="Who works here, what they are qualified for, and whether they are fit to work" />
+        <ErrorAlert error={error} />
+      </>
+    )
+  }
+
   return (
     <>
       <PageHeader
@@ -144,7 +159,7 @@ export function EmployeesPage() {
       />
 
       {flash && <Alert tone="success" className="mb-3">{flash}</Alert>}
-      {error && <Alert tone="critical" className="mb-3">{error}</Alert>}
+      <ErrorAlert error={error} className="mb-3" />
 
       {/*
         Counters. The medical ones filter the register when clicked. The others are figures

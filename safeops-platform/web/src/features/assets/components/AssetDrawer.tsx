@@ -9,7 +9,8 @@ import { CATEGORY_LABEL, FREQUENCY_LABEL } from '@/api/assets'
 import type { CapaItem } from '@/api/capa'
 import { useActor, fmtDate, fmtDateTime } from '@/features/incidents/lib'
 import { usePeople } from '@/features/incidents/lib'
-import { Avatar, Badge, Button, Dialog, ErrorState, Input, Select, Skeleton, StatusPill } from '@/components/ui'
+import { Avatar, Badge, Button, Dialog, ErrorState, Input, NotInDemo, Select, Skeleton, StatusPill } from '@/components/ui'
+import { isBackendConfigured } from '@/api/authApi'
 import { healthColor, RISK_PILL } from '../lib'
 import { QrBlock } from './QrBlock'
 import { CalibrationPanel } from './CalibrationPanel'
@@ -230,20 +231,30 @@ export function AssetDrawer({
                 whether this instrument can be used. Renders nothing for categories where
                 calibration is not a control.
               */}
-              {/* Where it is: who has it, and what live permit it is on. */}
-              <AssetHolderPanel
-                assetId={asset.id} companyId={asset.companyId} manage={manage}
-                revision={revision} onChanged={changed}
-              />
+              {isBackendConfigured() ? (
+                <>
+                  {/* Where it is: who has it, and what live permit it is on. */}
+                  <AssetHolderPanel
+                    assetId={asset.id} companyId={asset.companyId} manage={manage}
+                    revision={revision} onChanged={changed}
+                  />
 
-              <AssetPhotos assetId={asset.id} manage={manage} onChanged={changed} />
+                  <AssetPhotos assetId={asset.id} manage={manage} onChanged={changed} />
 
-              <CalibrationPanel assetId={asset.id} manage={manage} onChanged={changed} />
+                  <CalibrationPanel assetId={asset.id} manage={manage} onChanged={changed} />
 
-              <MaintenancePanel assetId={asset.id} manage={manage} onChanged={changed} />
+                  <MaintenancePanel assetId={asset.id} manage={manage} onChanged={changed} />
 
-              {/* Last, because it is the longest section and the least urgent to read. */}
-              <AssetTimeline assetId={asset.id} revision={revision} />
+                  {/* Last, because it is the longest section and the least urgent to read. */}
+                  <AssetTimeline assetId={asset.id} revision={revision} />
+                </>
+              ) : (
+                /* The demo keeps none of these: one line, where each said so in red. */
+                <NotInDemo>
+                  Not in this demo: who has it, its photos and files, calibration, maintenance and
+                  its history. They need the SafeChain server.
+                </NotInDemo>
+              )}
 
               {/* QR */}
               <QrBlock qrKey={asset.qrKey} />

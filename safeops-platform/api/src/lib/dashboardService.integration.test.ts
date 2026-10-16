@@ -652,4 +652,67 @@ d('Operational dashboard — integration (real Postgres)', () => {
     expect(r.permits.expiringSoon).toBe(11)
     expect(r.attention.filter((a) => a.kind === 'permit' && a.priority === 'overdue')).toHaveLength(10)
   })
+
+  // ── What the queue says ───────────────────────────────────────────────────
+  // Read on Home by everybody. It said "Incident · rca · 18 days overdue", "Expires in 1
+  // hours" and "Awaiting submitted · raised 0 day(s) ago", and gave times in UTC.
+
+  it('names the stage, and does not call an open incident overdue', async () => {
+    await purge()
+    await incident({ severity: 'fatality', severityRank: 7, stage: 'rca', occurredAt: days(-18) })
+
+    const r = await svc.overview(admin, { companyId: CO })
+    const item = r.attention.find((a) => a.kind === 'incident')!
+    expect(item.status).toBe('Root Cause Analysis')
+    expect(item.overdueDays).toBeNull()
+    expect(item.detail).toBe('Fatality · open 18 days')
+  })
+
+  it('keeps the critical band in order of severity, not of age', async () => {
+    await purge()
+    await incident({ severity: 'lost_time_injury', severityRank: 5, stage: 'investigation', occurredAt: days(-20), title: 'Older, lost time' })
+    await incident({ severity: 'fatality', severityRank: 7, stage: 'investigation', occurredAt: days(-2), title: 'Newer, fatality' })
+
+    const r = await svc.overview(admin, { companyId: CO })
+    expect(r.attention.filter((a) => a.priority === 'critical').map((a) => a.title))
+      .toEqual(['Newer, fatality', 'Older, lost time'])
+  })
+
+  it('says how long a permit has left, and what one in review is waiting for, in sentences', async () => {
+    await purge()
+    await permit({ status: 'active', validFrom: days(-1), validTo: new Date(Date.now() + 70 * 60_000) })
+    await permit({ status: 'submitted', validFrom: days(1), validTo: days(2) })
+    await permit({ status: 'hse_review', validFrom: days(1), validTo: days(2) })
+
+    const r = await svc.overview(admin, { companyId: CO })
+    expect(r.attention.find((a) => a.id.startsWith('permit-exp-'))!.detail).toBe('Expires in 1 hour')
+    expect(r.attention.filter((a) => a.id.startsWith('permit-rev-')).map((a) => a.detail).sort())
+      .toEqual(['Awaiting HSE review · raised today', 'Awaiting approval · raised today'])
+  })
+
+  /** Runs with the business clock in Kuching, whatever this machine's APP_TIMEZONE says. */
+  async function inKuching(fn: () => Promise<void>) {
+    const zone = process.env.APP_TIMEZONE
+    process.env.APP_TIMEZONE = 'Asia/Kuching'
+    try { await fn() } finally {
+      if (zone === undefined) delete process.env.APP_TIMEZONE
+      else process.env.APP_TIMEZONE = zone
+    }
+  }
+
+  it('gives a lapsed permit\'s time on the business clock, not in UTC', () => inKuching(async () => {
+    await purge()
+    // 07:05 UTC is 15:05 in Kuching.
+    await permit({ status: 'active', validFrom: new Date('2026-10-01T00:00:00Z'), validTo: new Date('2026-10-01T07:05:00Z') })
+    const r = await svc.overview(admin, { companyId: CO })
+    expect(r.attention.find((a) => a.id.startsWith('permit-lapsed-'))!.detail)
+      .toBe('Valid until 2026-10-01 15:05 and never closed out')
+  }))
+
+  it('gives a visitor\'s expected time out on the business clock, not in UTC', () => inKuching(async () => {
+    await purge()
+    await visitor({ status: 'on_site', expectedDeparture: new Date('2026-10-01T07:05:00Z') })
+    const r = await svc.overview(admin, { companyId: CO })
+    expect(r.attention.find((a) => a.kind === 'visitor')!.detail).toMatch(/^Expected out 15:05 · \d+ min overdue$/)
+  }))
 })

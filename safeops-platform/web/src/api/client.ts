@@ -10,6 +10,9 @@ import type {
   Session, Site, Team, User,
 } from './types'
 import type { DashboardData } from './dashboard'
+import {
+  dashboardApi, type DashboardOverview, type DashboardQuery, type SiteComparison, type SiteComparisonQuery,
+} from './dashboardApi'
 import type {
   Actor, AdvancePayload, FiveWhys, Incident, IncidentAction, IncidentAttachment,
   IncidentFilters, NewIncidentInput, RcaCause,
@@ -94,6 +97,10 @@ export interface ApiClient {
 
   // dashboard
   getDashboard(companyId: string, siteId: string | null, scopeLabel: string): Promise<DashboardData>
+  /** Home: what needs attention today, and each module at a glance. */
+  dashboardOverview(q: DashboardQuery, actor: Actor): Promise<DashboardOverview>
+  /** Home: every site side by side. */
+  compareSites(q: SiteComparisonQuery, actor: Actor): Promise<SiteComparison>
 
   // incidents
   listIncidents(companyId: string, filters: IncidentFilters): Promise<Incident[]>
@@ -366,6 +373,15 @@ const SERVER_NOTIFICATIONS = isBackendConfigured()
  * already keeps — so it describes records that genuinely exist.
  */
 const SERVER_ACTIVITY = isBackendConfigured()
+
+/**
+ * True when Home's figures are counted by the API.
+ *
+ * Without one, the demo counts the same figures from its own records (mock/overview.ts).
+ * It used to ask the server regardless, so the first page of the public demo opened on
+ * "needs the SafeChain server" in red, twice, above an empty Needs Attention.
+ */
+const SERVER_DASHBOARD = isBackendConfigured()
 
 
 
@@ -770,6 +786,20 @@ class MockApiClient implements ApiClient {
     }
     await delay(650 + Math.random() * 350)
     return (await import('./mock/demo')).buildDashboard(companyId, siteId, scopeLabel, live)
+  }
+
+  async dashboardOverview(q: DashboardQuery, actor: Actor) {
+    if (SERVER_DASHBOARD) return dashboardApi.overview(q)
+    await delay(LATENCY())
+    const [stores, { buildOverview }] = await Promise.all([this.demo(), import('./mock/demo')])
+    return buildOverview(stores, q, actor)
+  }
+
+  async compareSites(q: SiteComparisonQuery, actor: Actor) {
+    if (SERVER_DASHBOARD) return dashboardApi.sites(q)
+    await delay(LATENCY())
+    const [stores, { compareSites }] = await Promise.all([this.demo(), import('./mock/demo')])
+    return compareSites(stores, q, actor)
   }
 
   // ── incidents ──────────────────────────────────────────────────────────────

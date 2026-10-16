@@ -1,5 +1,5 @@
 import type {
-  AttentionItem, AttentionKind, AttentionPriority, DashboardOverview,
+  AttentionItem, AttentionKind, AttentionPriority, DashboardOverview, DashboardSection,
 } from '@/api/dashboardApi'
 import { linkTo } from '@/lib/links'
 
@@ -25,17 +25,30 @@ export interface KpiCard {
   tone: Tone
   /** Said under the number when there is nothing to do, instead of a bare zero. */
   quiet: string
+  /** The records the number rests on, when a build may not keep them (see `counts`). */
+  needs?: DashboardSection
 }
+
+/**
+ * Whether this answer counted a part of the page.
+ *
+ * The offline demo keeps no visitors, scheduled reports or calibration certificates, so
+ * their tiles and panels are left out there rather than shown as a zero: a zero would say
+ * "nobody on site" or "all certificates current" about records that do not exist.
+ */
+export const counts = (d: DashboardOverview, section: DashboardSection) => !d.notCounted?.includes(section)
 
 /**
  * A KPI is only coloured when it is asking for something.
  *
  * Ten active permits is not a problem, it is a Tuesday. Colouring every tile by magnitude
  * turns the dashboard into wallpaper and the one number that matters stops standing out.
+ *
+ * A tile whose records this answer did not count is left out (see `counts`).
  */
 export function kpiCards(d: DashboardOverview): KpiCard[] {
   const k = d.kpis
-  return [
+  const cards: KpiCard[] = [
     {
       id: 'activePermits',
       label: 'Active Permits',
@@ -76,6 +89,7 @@ export function kpiCards(d: DashboardOverview): KpiCard[] {
       href: linkTo.equipmentBoard(),
       tone: k.expiringEquipment > 0 ? 'warning' : 'good',
       quiet: 'All certificates current',
+      needs: 'calibration',
     },
     {
       id: 'equipmentOutOfService',
@@ -93,6 +107,7 @@ export function kpiCards(d: DashboardOverview): KpiCard[] {
       href: linkTo.visitors('on_site'),
       tone: 'neutral',
       quiet: 'Nobody signed in',
+      needs: 'visitors',
     },
     {
       id: 'incidentsInRange',
@@ -103,6 +118,26 @@ export function kpiCards(d: DashboardOverview): KpiCard[] {
       quiet: 'None reported in this period',
     },
   ]
+  return cards.filter((c) => !c.needs || counts(d, c.needs))
+}
+
+const SECTION_NAME: Record<DashboardSection, string> = {
+  visitors: 'visitors on site',
+  reports: 'scheduled reports',
+  calibration: 'calibration certificates',
+  toolbox: 'toolbox meetings',
+}
+
+/**
+ * What the page left out, and why, in one line.
+ *
+ * Without it a demo Home with no visitor or report panel reads as a product without them.
+ */
+export function notCountedNote(d: DashboardOverview): string | null {
+  const names = (d.notCounted ?? []).map((s) => SECTION_NAME[s])
+  if (names.length === 0) return null
+  const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
+  return `Not in this demo: ${list}. They need the SafeChain server.`
 }
 
 /** How each urgency band reads. Order here is the order the queue is shown in. */

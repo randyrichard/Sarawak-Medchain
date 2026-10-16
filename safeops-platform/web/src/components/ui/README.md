@@ -45,7 +45,7 @@ hard-codes a colour or spacing value, and it never rebuilds a primitive's behavi
 | Forms | `Input`, `PasswordInput`, `Textarea`, `Select`, `SuggestSelect`, `Checkbox`, `Switch`, `FieldShell`, `fieldA11y` |
 | Layout | `FormStack` / `FormRow` / `FormSection` / `FormSections`, `PageHeader`, `Card` / `CardHeader` / `CardBody`, `Tabs` / `TabPanel`, `Breadcrumbs` |
 | Data | `DataTable`, `Badge`, `StatusPill`, `Avatar` |
-| Feedback | `AttentionIcon` / `attentionOf` / `attentionStripe`, `Alert`, `Dialog`, `EmptyState`, `ErrorState`, `Loading`, `Skeleton*`, `Spinner`, `FullPageSpinner` |
+| Feedback | `AttentionIcon` / `attentionOf` / `attentionStripe`, `Alert`, `Dialog`, `EmptyState`, `ErrorAlert`, `ErrorState`, `NotInDemo`, `Loading`, `Skeleton*`, `Spinner`, `FullPageSpinner` |
 | Async | `useAsync` (hook), `AsyncContent` (renders its states) |
 | Conventions | `useUrlState`, `useUnsavedChangesWarning`, `lib/shortcuts.ts`, `KeyboardShortcuts` |
 
@@ -148,6 +148,9 @@ while rows load:
 - Use `ErrorState` (or the states built into `AsyncContent` and `DataTable`). Say what failed
   and always offer **Try again**.
 - If a reload fails, keep the old data on screen and show the error above it.
+- A failure above a page goes through `ErrorAlert`, given what was caught rather than its
+  message. In the offline demo a part that needs the server is not a fault: it says "Not in
+  this demo", calmly, where an `Alert` would be red.
 
 **Edge cases**
 - Long names truncate (`min-w-0 truncate`).

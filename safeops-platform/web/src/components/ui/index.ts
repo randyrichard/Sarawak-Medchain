@@ -6,6 +6,8 @@ export { FormRow, FormSection, FormSections, FormStack, FORM_SPACING } from './F
 export { Input, PasswordInput, SuggestSelect, Textarea, Select, Checkbox, FieldShell, fieldA11y } from './Field'
 export { Badge, StatusPill, type StatusKind } from './Badge'
 export { Alert } from './Alert'
+export { ErrorAlert } from './ErrorAlert'
+export { NotInDemo } from './NotInDemo'
 export { Switch } from './Switch'
 export { Dialog, initialFocusTarget } from './Dialog'
 export { Dropdown, DropdownItem, DropdownLabel, DropdownSeparator } from './Dropdown'

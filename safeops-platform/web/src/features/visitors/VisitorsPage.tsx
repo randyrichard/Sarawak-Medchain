@@ -8,12 +8,13 @@ import {
 import { ApiError } from '@/api/types'
 import { useOrg } from '@/features/org/OrgContext'
 import { fmtDateTime } from '@/features/incidents/lib'
-import { Alert, Badge, Button, Card, EmptyState, Input, PageHeader, Select, Skeleton, Tabs, type TabItem } from '@/components/ui'
+import { Badge, Button, Card, EmptyState, ErrorAlert, Input, PageHeader, Select, Skeleton, Tabs, type TabItem } from '@/components/ui'
 import { NewVisitorDialog } from './components/NewVisitorDialog'
 import { VisitorDrawer } from './components/VisitorDrawer'
 import { VisitorBoard } from './components/VisitorBoard'
 import { BlacklistPanel } from './components/BlacklistPanel'
 import { cn } from '@/lib/cn'
+import { isUnavailableHere } from '@/lib/useAsync'
 import { useOpenRecord } from '@/lib/useOpenRecord'
 import { NoMatches } from '@/features/org/NoMatches'
 
@@ -43,7 +44,8 @@ export function VisitorsPage() {
   const [q, setQ] = useState('')
   const [rows, setRows] = useState<Visitor[] | null>(null)
   const [total, setTotal] = useState(0)
-  const [error, setError] = useState<string | null>(null)
+  /** What was caught, kept whole: ErrorAlert tells the demo's refusal from a fault by it. */
+  const [error, setError] = useState<unknown>(null)
   const [newOpen, setNewOpen] = useState(false)
   const { id: openId, open: openVisit, close: closeVisit } = useOpenRecord()
   /** Bumped by anything that writes, so the board and the register re-read together. */
@@ -58,7 +60,7 @@ export function VisitorsPage() {
         // A rejected request must not render as an empty register: "nobody is on site"
         // is the most dangerous wrong answer this screen can give.
         setRows([])
-        setError(e instanceof ApiError ? e.message : 'Could not load the visitor register.')
+        setError(e instanceof ApiError ? e : 'Could not load the visitor register.')
       })
   }, [company, status, q, site])
 
@@ -88,6 +90,22 @@ export function VisitorsPage() {
           : s === 'overdue' ? 'Overdue'
             : VISITOR_STATUS_LABEL[s]
 
+  /*
+   * The demo keeps no visitors. Said once, calmly, in place of the page: it was a red alarm,
+   * twice on the live board, over a register and a Register Visitor that could only fail.
+   */
+  if (isUnavailableHere(error)) {
+    return (
+      <>
+        <PageHeader
+          title="Visitors"
+          subtitle="Register visitors, check them in after they accept the site rules, and know who is on site in an emergency"
+        />
+        <ErrorAlert error={error} />
+      </>
+    )
+  }
+
   return (
     <>
       <PageHeader
@@ -100,7 +118,7 @@ export function VisitorsPage() {
         }
       />
 
-      {error && <Alert tone="critical" className="mb-3" onDismiss={() => setError(null)}>{error}</Alert>}
+      <ErrorAlert error={error} className="mb-3" onDismiss={() => setError(null)} />
 
       <Tabs items={tabs} value={view} onChange={switchView} className="mb-4" />
 

@@ -159,8 +159,11 @@ which is the earlier MedChain product built from `frontend/`.
 - **Same security headers as a real deployment.** The build writes `dist/_headers` from
   `nginx.conf.template`, so the Content-Security-Policy cannot drift; the page may connect
   only to itself.
-- **It never calls a server.** Screens that need one (Visitors, Employees, HSE Performance,
-  the incident board, some reports) say so rather than trying.
+- **It never calls a server.** Home counts its figures from the demo's own incidents,
+  actions, permits and equipment (`web/src/api/mock/overview.ts`), by the server's rules.
+  Screens that need a server (Visitors, Employees, Contractors, Toolbox, HSE Performance,
+  Reports, the incident and equipment boards) say "Not in this demo" calmly instead of
+  trying, and a record's server-only sections are left out with one line saying so.
 
 `npm run verify:bundle` reports the demo accounts in a demo build. That is correct: that
 check is for customer builds, and the demo is the one build meant to contain them.
