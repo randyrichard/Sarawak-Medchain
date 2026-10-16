@@ -38,6 +38,12 @@
       "port": 5180
     },
     {
+      "name": "safechain-demo",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "preview", "--prefix", "C:/Users/randyrichardd/Desktop/sarawak-medchain/safeops-platform/web", "--", "--port", "4173"],
+      "port": 4173
+    },
+    {
       "name": "mc-audit-copilot",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--prefix", "C:/Users/randyrichardd/Desktop/mc-audit-copilot"],
