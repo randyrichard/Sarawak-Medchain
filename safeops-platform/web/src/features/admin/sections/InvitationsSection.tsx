@@ -315,7 +315,7 @@ export function InvitationsSection() {
             <select
               value={draft.role}
               onChange={(e) => setDraft({ ...draft, role: e.target.value })}
-              className="h-9 coarse:h-11 w-full rounded-lg border border-line bg-surface px-2 text-xs text-ink"
+              className="h-9 coarse:h-touch w-full rounded-lg border border-line bg-surface px-2 text-xs text-ink"
             >
               {roles.map((r) => <option key={r.role} value={r.role}>{r.label}</option>)}
             </select>
@@ -328,11 +328,11 @@ export function InvitationsSection() {
             <p className="text-2xs text-muted">
               Leave all unticked for organisation-wide access.
             </p>
-            {/* Each row is the tap target, at least 24px (WCAG 2.2) and 44px on touch:
+            {/* Each row is the tap target, at least 24px (WCAG 2.2) and 40px on touch:
                 the 13px boxes 4px apart were easy to miss and easier to mis-tick. */}
             <div className="max-h-48 space-y-0.5 overflow-y-auto">
               {sites.filter((s) => s.active).map((s) => (
-                <label key={s.id} className="flex min-h-6 cursor-pointer items-center gap-2 rounded px-1 text-xs text-ink hover:bg-accent-soft coarse:min-h-11">
+                <label key={s.id} className="flex min-h-6 cursor-pointer items-center gap-2 rounded px-1 text-xs text-ink hover:bg-accent-soft coarse:min-h-touch">
                   <input
                     type="checkbox"
                     checked={draft.siteIds.includes(s.id)}

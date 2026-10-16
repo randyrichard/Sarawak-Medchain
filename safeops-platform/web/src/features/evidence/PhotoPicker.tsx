@@ -27,7 +27,7 @@ export function PhotoPicker({
         type="button"
         onClick={() => ref.current?.click()}
         className={cn(
-          'flex w-full items-center justify-center gap-1.5 rounded-lg border font-semibold text-ink-2 hover:bg-accent-soft coarse:min-h-11',
+          'flex w-full items-center justify-center gap-1.5 rounded-lg border font-semibold text-ink-2 hover:bg-accent-soft coarse:min-h-touch',
           compact ? 'bg-surface px-2.5 py-1.5 text-2xs' : 'py-2 text-xs',
         )}
       >
@@ -51,7 +51,7 @@ export function PhotoPicker({
               <button
                 type="button" aria-label={`Remove ${f.name}`}
                 onClick={() => onChange(files.filter((_, x) => x !== i))}
-                className="rounded-full p-0.5 text-muted hover:text-critical coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center"
+                className="rounded-full p-0.5 text-muted hover:text-critical coarse:flex coarse:min-h-touch-sm coarse:min-w-touch-sm coarse:items-center coarse:justify-center"
               >
                 <X size={11} />
               </button>

@@ -96,7 +96,7 @@ function Shell() {
             <button
               onClick={() => setMobileOpen(false)}
               aria-label="Close menu"
-              className="absolute right-3 top-4 rounded-lg p-1.5 text-muted hover:bg-accent-soft coarse:min-h-11 coarse:min-w-11 coarse:flex coarse:items-center coarse:justify-center"
+              className="absolute right-3 top-4 rounded-lg p-1.5 text-muted hover:bg-accent-soft coarse:min-h-touch coarse:min-w-touch coarse:flex coarse:items-center coarse:justify-center"
             >
               <X size={16} />
             </button>
@@ -113,7 +113,7 @@ function Shell() {
             <button
               onClick={() => setMobileOpen(true)}
               aria-label={waiting > 0 ? `Open menu, ${waiting} waiting` : 'Open menu'}
-              className="relative rounded-lg border p-2 text-ink-2 hover:bg-accent-soft coarse:min-h-11 coarse:min-w-11 lg:hidden"
+              className="relative rounded-lg border p-2 text-ink-2 hover:bg-accent-soft coarse:min-h-touch coarse:min-w-touch lg:hidden"
             >
               <Menu size={15} />
               {waiting > 0 && (
@@ -256,7 +256,7 @@ export function SidebarContent({ onNavigate, counts }: {
                     // Words only. With an icon on every row the list was eighteen symbols before
                     // it was a single word; the section headings already group it. Where you are
                     // is marked by weight and an edge bar, not by the colour of an icon.
-                    'flex items-center rounded-lg px-3 py-2 text-sm transition-colors coarse:min-h-11',
+                    'flex items-center rounded-lg px-3 py-2 text-sm transition-colors coarse:min-h-touch',
                     own(item, isActive)
                       ? 'bg-accent-soft font-semibold text-ink shadow-[inset_3px_0_0_var(--accent)]'
                       : 'font-medium text-ink-2 hover:bg-accent-soft/60 hover:text-ink',
@@ -321,7 +321,7 @@ export function SidebarContent({ onNavigate, counts }: {
             onClick={onNavigate}
             className={({ isActive }) =>
               cn(
-                'flex items-center rounded-lg px-3 py-2 text-sm transition-colors coarse:min-h-11',
+                'flex items-center rounded-lg px-3 py-2 text-sm transition-colors coarse:min-h-touch',
                 isActive
                   ? 'bg-accent-soft font-semibold text-ink shadow-[inset_3px_0_0_var(--accent)]'
                   : 'font-medium text-ink-2 hover:bg-accent-soft/60 hover:text-ink',
@@ -342,7 +342,7 @@ export function SidebarContent({ onNavigate, counts }: {
               onClick={onNavigate}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center rounded-lg px-3 py-2 text-sm transition-colors coarse:min-h-11',
+                  'flex items-center rounded-lg px-3 py-2 text-sm transition-colors coarse:min-h-touch',
                   isActive
                     ? 'bg-accent-soft font-semibold text-ink shadow-[inset_3px_0_0_var(--accent)]'
                     : 'font-medium text-ink-2 hover:bg-accent-soft/60 hover:text-ink',

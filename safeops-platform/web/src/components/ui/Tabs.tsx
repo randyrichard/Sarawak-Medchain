@@ -109,7 +109,7 @@ export function Tabs<T extends string>({
             disabled={item.disabled}
             onClick={() => onChange(item.value)}
             className={cn(
-              '-mb-px inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors coarse:min-h-11 coarse:px-4',
+              '-mb-px inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors coarse:min-h-touch',
               'focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[color:var(--accent)]',
               'disabled:cursor-not-allowed disabled:opacity-50',
               active

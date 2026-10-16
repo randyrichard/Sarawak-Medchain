@@ -258,7 +258,7 @@ export function SitesSection() {
             <select
               value={draft.timezone}
               onChange={(e) => setDraft({ ...draft, timezone: e.target.value })}
-              className="h-9 coarse:h-11 w-full rounded-lg border border-line bg-surface px-2 text-xs text-ink"
+              className="h-9 coarse:h-touch w-full rounded-lg border border-line bg-surface px-2 text-xs text-ink"
             >
               {TIMEZONES.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>

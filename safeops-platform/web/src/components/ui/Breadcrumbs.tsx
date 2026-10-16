@@ -42,7 +42,7 @@ export function Breadcrumbs({ items }: { items: Crumb[] }) {
                     to={crumb.to}
                     className="inline-flex items-center rounded font-medium text-accent transition-colors
                                hover:text-ink hover:underline focus:outline-none
-                               focus-visible:ring-2 focus-visible:ring-accent coarse:min-h-11"
+                               focus-visible:ring-2 focus-visible:ring-accent coarse:min-h-touch-sm"
                   >
                     {crumb.label}
                   </Link>

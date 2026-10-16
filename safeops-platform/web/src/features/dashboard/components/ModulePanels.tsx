@@ -44,7 +44,7 @@ export function IncidentPanel({ d, className }: { d: DashboardOverview; classNam
       <CardHeader
         title="Incidents"
         subtitle={`${d.incidents.open} open`}
-        right={<Link to="/incidents/board" className="text-2xs font-semibold text-accent coarse:inline-flex coarse:min-h-11 coarse:items-center">Board</Link>}
+        right={<Link to="/incidents/board" className="text-2xs font-semibold text-accent coarse:inline-flex coarse:min-h-touch-sm coarse:items-center">Board</Link>}
       />
       <CardBody className="space-y-3">
         <div className="grid grid-cols-3 gap-1">
@@ -89,7 +89,7 @@ export function IncidentPanel({ d, className }: { d: DashboardOverview; classNam
             <ul className="divide-y divide-line">
               {d.incidents.recent.slice(0, 4).map((i) => (
                 <li key={i.id}>
-                  <Link to={`/incidents/${i.id}`} className="flex items-center gap-2 py-1.5 hover:bg-[var(--surface-2)] coarse:min-h-11">
+                  <Link to={`/incidents/${i.id}`} className="flex items-center gap-2 py-1.5 hover:bg-[var(--surface-2)] coarse:min-h-touch">
                     <span className="font-mono text-2xs text-muted">{i.number}</span>
                     <span className="min-w-0 flex-1 truncate text-2xs text-ink">{i.title}</span>
                     {i.highRisk && <Badge tone="critical">High Risk</Badge>}
@@ -113,7 +113,7 @@ export function PermitPanel({ d, className }: { d: DashboardOverview; className?
       <CardHeader
         title="Permits to Work"
         subtitle={`${d.permits.active} active`}
-        right={<Link to="/permits" className="text-2xs font-semibold text-accent coarse:inline-flex coarse:min-h-11 coarse:items-center">Open</Link>}
+        right={<Link to="/permits" className="text-2xs font-semibold text-accent coarse:inline-flex coarse:min-h-touch-sm coarse:items-center">Open</Link>}
       />
       <CardBody className="space-y-3">
         {!anyPermits ? (
@@ -156,7 +156,7 @@ export function EquipmentPanel({ d, className }: { d: DashboardOverview; classNa
       <CardHeader
         title="Equipment"
         subtitle={`${e.inService} in service`}
-        right={<Link to="/assets" className="text-2xs font-semibold text-accent coarse:inline-flex coarse:min-h-11 coarse:items-center">Register</Link>}
+        right={<Link to="/assets" className="text-2xs font-semibold text-accent coarse:inline-flex coarse:min-h-touch-sm coarse:items-center">Register</Link>}
       />
       <CardBody>
         {!anything ? (
@@ -191,7 +191,7 @@ export function ActionsPanel({ d, className }: { d: DashboardOverview; className
       <CardHeader
         title="Corrective Actions"
         subtitle={a.overdue > 0 ? `${a.overdue} overdue` : 'Nothing overdue'}
-        right={<Link to="/actions" className="text-2xs font-semibold text-accent coarse:inline-flex coarse:min-h-11 coarse:items-center">Register</Link>}
+        right={<Link to="/actions" className="text-2xs font-semibold text-accent coarse:inline-flex coarse:min-h-touch-sm coarse:items-center">Register</Link>}
       />
       <CardBody className="space-y-3">
         <div className="grid grid-cols-2 gap-1">
@@ -228,7 +228,7 @@ export function VisitorPanel({ d, className }: { d: DashboardOverview; className
       <CardHeader
         title="Site Presence"
         subtitle={`${v.onSite} on site`}
-        right={<Link to="/visitors" className="text-2xs font-semibold text-accent coarse:inline-flex coarse:min-h-11 coarse:items-center">Register</Link>}
+        right={<Link to="/visitors" className="text-2xs font-semibold text-accent coarse:inline-flex coarse:min-h-touch-sm coarse:items-center">Register</Link>}
       />
       <CardBody className="space-y-3">
         <div className="grid grid-cols-3 gap-1">
@@ -273,7 +273,7 @@ export function ReportPanel({ d, className }: { d: DashboardOverview; className?
         subtitle={r.nextScheduled
           ? `Next: ${r.nextScheduled.name}, ${fmtDateTime(r.nextScheduled.at)}`
           : 'No schedule armed'}
-        right={<Link to="/reports" className="text-2xs font-semibold text-accent coarse:inline-flex coarse:min-h-11 coarse:items-center">Reports</Link>}
+        right={<Link to="/reports" className="text-2xs font-semibold text-accent coarse:inline-flex coarse:min-h-touch-sm coarse:items-center">Reports</Link>}
       />
       <CardBody>
         {r.recent.length === 0 ? (
@@ -286,7 +286,7 @@ export function ReportPanel({ d, className }: { d: DashboardOverview; className?
               const s = reportStatusLabel(run.deliveryStatus)
               return (
                 <li key={run.id}>
-                  <Link to="/reports" className="flex items-center gap-2 py-1.5 hover:bg-[var(--surface-2)] coarse:min-h-11">
+                  <Link to="/reports" className="flex items-center gap-2 py-1.5 hover:bg-[var(--surface-2)] coarse:min-h-touch">
                     <span className="min-w-0 flex-1 truncate text-2xs text-ink">
                       {run.type.replace(/_/g, ' ')}
                     </span>

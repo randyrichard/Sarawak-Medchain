@@ -174,14 +174,14 @@ export function PermitsPage() {
               onChange={(e) => { setQ(e.target.value); setParam('q', e.target.value) }}
               placeholder="Search permit no., work, location, applicant…"
               aria-label="Search permits"
-              className="h-9 coarse:h-11 w-full rounded-lg border bg-surface pl-9 pr-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
+              className="h-9 coarse:h-touch w-full rounded-lg border bg-surface pl-9 pr-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
             />
           </div>
           <select
             value={type}
             onChange={(e) => { setType(e.target.value as PermitType | ''); setParam('type', e.target.value) }}
             aria-label="Filter by permit type"
-            className="h-9 coarse:h-11 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none"
+            className="h-9 coarse:h-touch rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none"
           >
             <option value="">All permit types</option>
             {PERMIT_TYPES.map((t) => <option key={t} value={t}>{PERMIT_TYPE_LABEL[t]}</option>)}
@@ -195,7 +195,7 @@ export function PermitsPage() {
               onClick={() => setParam('status', c.value)}
               aria-pressed={status === c.value}
               className={cn(
-                'rounded-full border px-3 py-1 text-2xs font-semibold transition-colors coarse:min-h-11 coarse:px-4',
+                'rounded-full border px-3 py-1 text-2xs font-semibold transition-colors coarse:min-h-touch-sm',
                 // The selected filter is marked softly - tint and accent border - not with the
                 // solid fill of the page's primary button. Both used to be solid blue, so the
                 // selected chip and "Request permit" competed as equals and neither stood out
@@ -211,7 +211,7 @@ export function PermitsPage() {
               onClick={() => setParam('status', 'live')}
               aria-pressed
               aria-label={`${otherStatus}. Show the live board instead`}
-              className="rounded-full border border-[color:var(--accent)] bg-accent-soft px-3 py-1 text-2xs font-semibold text-ink coarse:min-h-11 coarse:px-4"
+              className="rounded-full border border-[color:var(--accent)] bg-accent-soft px-3 py-1 text-2xs font-semibold text-ink coarse:min-h-touch-sm"
             >
               {otherStatus} ✕
             </button>

@@ -61,8 +61,8 @@ export function LegalPage() {
             </span>
             <span className="text-sm font-bold tracking-tight text-ink">SafeChain</span>
           </Link>
-          {/* Links of text height are under half a fingertip; a touch screen gets 44px rows. */}
-          <nav className="ml-auto flex items-center gap-3 text-xs font-semibold sm:gap-4 [&>a]:coarse:flex [&>a]:coarse:min-h-11 [&>a]:coarse:items-center" aria-label="Legal documents">
+          {/* Links of text height are under half a fingertip; a touch screen gets 36px rows. */}
+          <nav className="ml-auto flex items-center gap-3 text-xs font-semibold sm:gap-4 [&>a]:coarse:flex [&>a]:coarse:min-h-touch-sm [&>a]:coarse:items-center" aria-label="Legal documents">
             <Link
               to="/privacy"
               className={pathname.startsWith('/privacy') ? 'text-accent' : 'text-ink-2 hover:text-ink'}
@@ -116,7 +116,7 @@ export function LegalPage() {
               lang={LANGUAGE_TAG[code]}
               aria-pressed={lang === code}
               className={cn(
-                'rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors coarse:min-h-11',
+                'rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors coarse:min-h-touch-sm',
                 lang === code
                   ? 'border-accent bg-accent-soft text-ink'
                   : 'text-ink-2 hover:bg-accent-soft hover:text-ink',

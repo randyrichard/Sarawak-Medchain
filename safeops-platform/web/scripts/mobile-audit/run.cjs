@@ -45,6 +45,12 @@ const BASE = (process.env.MOBILE_AUDIT_URL || 'http://localhost:5173').replace(/
 const EMAIL = process.env.MOBILE_AUDIT_EMAIL || 'admin@demo.safeops.app'
 const PASSWORD = process.env.MOBILE_AUDIT_PASSWORD || 'SafeOpsPlatform2026'
 const PROBE = fs.readFileSync(path.join(__dirname, 'probe.js'), 'utf8')
+// The app's own touch size, read from where it is defined so the two cannot drift apart.
+const TOUCH_PX = (() => {
+  const m = /\n\s*touch: '([\d.]+)rem'/.exec(fs.readFileSync(path.join(__dirname, '..', '..', 'tailwind.config.js'), 'utf8'))
+  if (!m) throw new Error('tailwind.config.js has no `touch` spacing token')
+  return parseFloat(m[1]) * 16
+})()
 const TARGETS = fs.readFileSync(path.join(__dirname, 'targets.js'), 'utf8')
 
 const DEVICES = [
@@ -121,9 +127,10 @@ async function auditDevice(browser, [name, device, keyboard]) {
     for (const f of targetFindings(await page.evaluate(() => window.__extra()))) findings.push(`${r} ${f}`)
   }
 
-  // Navigation: the top bar, and the drawer reaching its last item.
+  // Navigation: the top bar, and the drawer reaching its last item. Top-bar controls are used
+  // on every page, so each must be at least the touch size (`touch` in tailwind.config.js).
   await page.goto(BASE + '/'); await page.waitForTimeout(1200)
-  const bar = await page.evaluate(() => {
+  const bar = await page.evaluate((TOUCH) => {
     const items = [...document.querySelectorAll('header button, header a')].filter((e) => e.getBoundingClientRect().width > 0)
     const name = (e) => (e.getAttribute('aria-label') || e.innerText || '').trim().slice(0, 24)
     const out = []
@@ -135,10 +142,10 @@ async function auditDevice(browser, [name, device, keyboard]) {
     for (const e of items) {
       const r = e.getBoundingClientRect()
       if (r.right > screen.width + 1) out.push(`top bar off-screen: ${name(e)}`)
-      if (matchMedia('(pointer: coarse)').matches && (r.width < 44 || r.height < 44)) out.push(`top bar target under 44px: ${name(e)} ${Math.round(r.width)}x${Math.round(r.height)}`)
+      if (matchMedia('(pointer: coarse)').matches && (r.width < TOUCH || r.height < TOUCH)) out.push(`top bar target under ${TOUCH}px: ${name(e)} ${Math.round(r.width)}x${Math.round(r.height)}`)
     }
     return out
-  })
+  }, TOUCH_PX)
   findings.push(...bar)
   // Each top-bar menu opens inside the screen. The notifications panel, 384px wide and hung
   // from the bell's right edge, began 110px off the left of a 390px iPhone.

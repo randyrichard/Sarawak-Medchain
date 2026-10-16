@@ -109,11 +109,11 @@ export function UsersSection() {
       {flash && <Alert tone="success" onDismiss={() => setFlash(null)}>{flash}</Alert>}
 
       <div className="flex flex-wrap items-center gap-2">
-        <label className="flex min-w-52 flex-1 cursor-text items-center gap-2 rounded-lg border coarse:min-h-11 bg-surface px-3 py-2 coarse:py-0 md:max-w-xs focus-within:border-accent">
+        <label className="flex min-w-52 flex-1 cursor-text items-center gap-2 rounded-lg border coarse:min-h-touch bg-surface px-3 py-2 coarse:py-0 md:max-w-xs focus-within:border-accent">
           <Search size={14} aria-hidden className="shrink-0 text-muted" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, email, department…" className="w-full coarse:self-stretch bg-transparent text-sm text-ink outline-none placeholder:text-muted" />
         </label>
-        <select value={status} onChange={(e) => setStatus(e.target.value)} className="h-9 coarse:h-11 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none" aria-label="Filter by status">
+        <select value={status} onChange={(e) => setStatus(e.target.value)} className="h-9 coarse:h-touch rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none" aria-label="Filter by status">
           <option value="">All statuses</option>
           <option value="active">Active</option>
           <option value="invited">Invited</option>
@@ -166,7 +166,7 @@ export function UsersSection() {
                     <td className="px-5 py-3 text-right">
                       <Dropdown
                         align="end"
-                        trigger={() => <button className="inline-flex items-center justify-center rounded-lg border p-1.5 text-ink-2 hover:bg-accent-soft coarse:min-h-11 coarse:min-w-11" aria-label="User actions"><MoreHorizontal size={14} /></button>}
+                        trigger={() => <button className="inline-flex items-center justify-center rounded-lg border p-1.5 text-ink-2 hover:bg-accent-soft coarse:min-h-touch coarse:min-w-touch" aria-label="User actions"><MoreHorizontal size={14} /></button>}
                       >
                         <DropdownItem icon={<KeyRound size={14} />} onSelect={() => void issueReset(u)}>Issue Reset Link</DropdownItem>
                         {/* Only a reset: switching MFA on needs the person's own phone, so they do it from My account. */}

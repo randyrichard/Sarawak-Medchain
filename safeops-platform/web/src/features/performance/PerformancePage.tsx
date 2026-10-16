@@ -63,7 +63,7 @@ export function PerformancePage() {
               <select
                 value={period}
                 onChange={(e) => setPeriod(e.target.value as (typeof PERIODS)[number])}
-                className="h-9 coarse:h-11 rounded-lg border bg-surface px-2.5 text-sm text-ink outline-none focus:border-accent"
+                className="h-9 coarse:h-touch rounded-lg border bg-surface px-2.5 text-sm text-ink outline-none focus:border-accent"
               >
                 <option value="6">Last 6 months</option>
                 <option value="12">Last 12 months</option>
@@ -359,7 +359,7 @@ function MonthTable({ data }: { data: PerformanceView }) {
     // removed), and the 560px table inside widened the whole page to 516px on a phone -
     // which zoomed the page out - even though the table sits in its own scroll box.
     <details ref={ref} className="group mt-3 max-w-full overflow-hidden">
-      <summary className="cursor-pointer select-none text-xs font-semibold text-accent hover:underline coarse:py-3 print:hidden">
+      <summary className="cursor-pointer select-none text-xs font-semibold text-accent hover:underline coarse:py-2.5 print:hidden">
         Show the Figures as a Table
       </summary>
       <div className="mt-2 relative overflow-x-auto" tabIndex={0} role="region" aria-label="Monthly figures">

@@ -244,9 +244,10 @@ export function ReportNearMissPage() {
             autoFocus
             required
             placeholder="e.g. Scaffold plank not secured on level 3 — could have fallen onto the walkway below"
-            // 16px (text-lg in this scale): anything smaller makes iOS zoom on focus.
+            // 18px at a desk. On a phone 16px, as every other field there is: the smallest
+            // size iOS will not zoom into on focus, and the medium the rest of the form uses.
             className={cn(
-              'mt-1.5 w-full rounded-lg border bg-surface px-3 py-2.5 text-lg text-ink outline-none placeholder:text-muted focus:border-accent',
+              'mt-1.5 w-full rounded-lg border bg-surface px-3 py-2.5 text-lg text-ink outline-none placeholder:text-muted focus:border-accent coarse:text-base',
               form.errorFor('what') && 'border-critical',
             )}
             {...fieldA11y('nm-what', { hint: WHAT_HINT, error: form.errorFor('what') })}
@@ -267,7 +268,7 @@ export function ReportNearMissPage() {
               required
               placeholder="e.g. Jetty 2, near loading arm 3"
               className={cn(
-                'h-11 w-full rounded-lg border bg-surface px-3 text-lg text-ink outline-none placeholder:text-muted focus:border-accent',
+                'h-11 w-full rounded-lg border bg-surface px-3 text-lg text-ink outline-none placeholder:text-muted focus:border-accent coarse:h-touch coarse:text-base',
                 form.errorFor('where') && 'border-critical',
               )}
               {...fieldA11y('nm-where', { error: form.errorFor('where') })}
@@ -281,7 +282,7 @@ export function ReportNearMissPage() {
               value={effectiveSite}
               onChange={(e) => setSiteId(e.target.value)}
               aria-label="Site"
-              className="mt-2 h-9 coarse:h-11 w-full rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none"
+              className="mt-2 h-9 coarse:h-touch w-full rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none"
             >
               {sites.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
@@ -310,7 +311,7 @@ export function ReportNearMissPage() {
                  */
                 aria-pressed={tags.includes(t)}
                 className={cn(
-                  'inline-flex min-h-[36px] items-center gap-1 rounded-full border px-3 py-1.5 text-2xs font-semibold transition-colors coarse:min-h-11 coarse:px-4',
+                  'inline-flex min-h-[36px] items-center gap-1 rounded-full border px-3 py-1.5 text-2xs font-semibold transition-colors',
                   // Tinted with a check mark, not filled solid: three chosen tags in the same
                   // solid blue as "Submit near miss" made four equal standouts on one form,
                   // and the button that matters stopped being the one that stood out. The

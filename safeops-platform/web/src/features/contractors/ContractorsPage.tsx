@@ -329,7 +329,7 @@ export function ContractorsPage() {
                     {WORKER_COLUMNS.map((c) => (
                       <th key={c.key} className={cn('px-3 py-2.5 font-semibold', c.className)}>
                         <button
-                          className="inline-flex items-center gap-1 uppercase tracking-wide hover:text-ink coarse:min-h-11"
+                          className="inline-flex items-center gap-1 uppercase tracking-wide hover:text-ink coarse:min-h-touch-sm"
                           onClick={() => setParam({ sort: c.key, dir: sort === c.key && dir === 'asc' ? 'desc' : 'asc' })}
                         >
                           {c.label}

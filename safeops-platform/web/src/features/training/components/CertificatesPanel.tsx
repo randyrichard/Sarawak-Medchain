@@ -60,13 +60,13 @@ export function CertificatesPanel({
   return (
     <>
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <label className="flex min-w-52 flex-1 cursor-text items-center gap-2 rounded-lg border coarse:min-h-11 bg-surface px-3 py-2 coarse:py-0 md:max-w-xs focus-within:border-accent">
+        <label className="flex min-w-52 flex-1 cursor-text items-center gap-2 rounded-lg border coarse:min-h-touch bg-surface px-3 py-2 coarse:py-0 md:max-w-xs focus-within:border-accent">
           <Search size={14} aria-hidden className="shrink-0 text-muted" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search number, holder, course…" className="w-full coarse:self-stretch bg-transparent text-sm text-ink outline-none placeholder:text-muted" />
         </label>
         {(['all', 'expired', 'expiring', 'competent'] as Filter[]).map((f) => (
           <button key={f} onClick={() => setFilter(f)}
-            className={cn('rounded-full border px-3 py-1 text-xs font-medium capitalize transition-colors coarse:min-h-11 coarse:px-4', filter === f ? 'bg-accent-soft text-ink' : 'text-ink-2 hover:text-ink')}
+            className={cn('rounded-full border px-3 py-1 text-xs font-medium capitalize transition-colors coarse:min-h-touch-sm', filter === f ? 'bg-accent-soft text-ink' : 'text-ink-2 hover:text-ink')}
             style={filter === f ? { borderColor: 'var(--accent)' } : undefined}>
             {f}
           </button>

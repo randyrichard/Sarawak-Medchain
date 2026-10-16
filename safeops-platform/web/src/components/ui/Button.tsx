@@ -35,13 +35,14 @@ const variantCls: Record<Variant, string> = {
  * is often wearing gloves.
  *
  * Raised only on touch pointers, not on narrow windows: the dense desktop layout is
- * deliberate and a mouse gains nothing from a taller control. Horizontal padding grows with
- * the height so the shape stays right rather than becoming a tall thin slab.
+ * deliberate and a mouse gains nothing from a taller control. Raised to the medium touch
+ * sizes (tailwind.config.js): 36 / 40 / 44px. All three were 44-48px once, which on a phone
+ * made every button a slab around small text.
  */
 const sizeCls: Record<Size, string> = {
-  sm: 'h-7 px-2.5 text-xs gap-1.5 coarse:h-11 coarse:px-3.5',
-  md: 'h-9 px-3.5 text-sm gap-2 coarse:h-11 coarse:px-4',
-  lg: 'h-10 px-4 text-base gap-2 coarse:h-12 coarse:px-5',
+  sm: 'h-7 px-2.5 text-xs gap-1.5 coarse:h-touch-sm coarse:px-3',
+  md: 'h-9 px-3.5 text-sm gap-2 coarse:h-touch',
+  lg: 'h-10 px-4 text-base gap-2 coarse:h-touch-lg',
 }
 
 /*

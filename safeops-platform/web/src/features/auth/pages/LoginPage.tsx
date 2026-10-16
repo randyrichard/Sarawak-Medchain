@@ -212,7 +212,7 @@ export function LoginPage() {
             to="/forgot-password"
             className="rounded text-xs font-medium text-accent transition-colors hover:text-ink
                        focus:outline-none focus-visible:ring-2 focus-visible:ring-accent
-                       coarse:inline-flex coarse:min-h-11 coarse:items-center"
+                       coarse:inline-flex coarse:min-h-touch-sm coarse:items-center"
           >
             Forgot password?
           </Link>
