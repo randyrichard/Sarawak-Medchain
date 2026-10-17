@@ -87,7 +87,7 @@ export function PermitEquipmentPanel({
           {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-11 rounded-lg" />)}
         </div>
       ) : rows.length === 0 ? (
-        <p className="rounded-lg border border-dashed px-3 py-4 text-center text-2xs text-muted">
+        <p className="rounded-lg border border-dashed px-3 py-4 text-2xs text-muted">
           No equipment named. Naming the gear from the register is what lets SafeChain check
           its inspection and calibration before work starts.
         </p>
@@ -208,7 +208,7 @@ function AddEquipmentDialog({
             {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12 rounded-lg" />)}
           </div>
         ) : shown.length === 0 ? (
-          <p className="rounded-lg border border-dashed px-3 py-6 text-center text-2xs text-muted">
+          <p className="rounded-lg border border-dashed px-3 py-6 text-2xs text-muted">
             Nothing in the register matches. Equipment has to be registered before it can be
             named on a permit.
           </p>

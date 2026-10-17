@@ -187,6 +187,7 @@ export function ProjectsSection() {
 
           {rows !== null && rows.length === 0 && (
             <EmptyState
+              flush
               icon={Briefcase}
               title="No projects yet"
               action={<Button size="sm" icon={<Plus size={14} />} onClick={openNew}>New Project</Button>}

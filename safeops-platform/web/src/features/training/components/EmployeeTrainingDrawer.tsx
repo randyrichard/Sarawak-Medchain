@@ -88,14 +88,14 @@ export function EmployeeTrainingDrawer({
               {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
 
               {/* Snapshot */}
-              <div className="grid grid-cols-4 gap-2 text-center">
+              <div className="grid grid-cols-4 gap-2">
                 {[
                   ['Required', c.requiredCount, 'var(--ink)'],
                   ['Current', c.competentCount, 'var(--good)'],
                   ['Expiring', c.expiringCount, 'var(--warning)'],
                   ['Gaps', c.gapCount, 'var(--critical)'],
                 ].map(([label, val, color]) => (
-                  <div key={label as string} className="rounded-lg border py-2">
+                  <div key={label as string} className="rounded-lg border px-2.5 py-2">
                     <p className="text-lg font-semibold" style={{ color: color as string, fontVariantNumeric: 'tabular-nums' }}>{val as number}</p>
                     <p className="text-2xs text-muted">{label}</p>
                   </div>

@@ -68,7 +68,7 @@ export function PermitTimeline({ permit }: { permit: PermitView }) {
       </p>
 
       {entries.length === 0 ? (
-        <p className="rounded-lg border border-dashed px-3 py-4 text-center text-2xs text-muted">
+        <p className="rounded-lg border border-dashed px-3 py-4 text-2xs text-muted">
           Nothing has happened to this permit yet.
         </p>
       ) : (

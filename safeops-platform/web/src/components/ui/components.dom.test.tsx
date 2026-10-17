@@ -440,7 +440,7 @@ describe('Dialog with something typed into it', () => {
 interface Row { id: string; name: string; score: number }
 const COLUMNS: Column<Row>[] = [
   { key: 'name', header: 'Name', render: (r) => r.name },
-  { key: 'score', header: 'Score', render: (r) => r.score, align: 'right' },
+  { key: 'score', header: 'Score', render: (r) => r.score },
 ]
 const ROWS: Row[] = [{ id: '1', name: 'Aisha', score: 9 }, { id: '2', name: 'Ben', score: 7 }]
 
@@ -489,6 +489,15 @@ describe('DataTable', () => {
     expect(screen.getByText('No people yet')).toBeTruthy()
   })
 
+  it("starts the empty state's words on the first column's edge, not indented from it", () => {
+    // The row adds no side padding of its own; the state brings the first column's 20px.
+    const { container } = render(<DataTable columns={COLUMNS} rows={[]} rowKey={(r) => r.id} empty={<EmptyState title="No people yet" />} />)
+    const cell = container.querySelector('tbody td')!
+    expect(cell.className).not.toMatch(/(^|\s)px-/)
+    expect(cell.firstElementChild!.className).toMatch(/(^|\s)px-5(\s|$)/)
+    expect(container.querySelector('th')!.className).toMatch(/(^|\s)first:pl-5(\s|$)/)
+  })
+
   it('stays reachable by keyboard when a clickable table has no rows yet', () => {
     // Toolbox meetings with none recorded: the header alone is wider than a 320px phone, so
     // the box scrolls, and with no rows there was nothing inside it to focus.
@@ -505,6 +514,36 @@ describe('DataTable', () => {
     render(<DataTable caption="Employees" columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} />)
     expect(screen.getByRole('table', { name: 'Employees' })).toBeTruthy()
     expect(screen.getByRole('region', { name: 'Employees' }).tabIndex).toBe(0)
+  })
+})
+
+// ─── Empty and error states ──────────────────────────────────────────────────
+
+describe('EmptyState and ErrorState', () => {
+  // Left-aligned, so their edge shows: indented from the card title or the page title above,
+  // they read as misaligned. A card's own inset by default; none inside something inset.
+  const sidePadding = (el: Element | null) => (el?.className.match(/(^|\s)(px-\S+)/) ?? [])[2] ?? null
+
+  it("bring a card's inset, the 20px of its header and body", () => {
+    const { container, rerender } = render(<EmptyState title="Nothing yet" />)
+    expect(sidePadding(container.firstElementChild)).toBe('px-5')
+    rerender(<ErrorState error={new Error('Network down')} />)
+    expect(sidePadding(container.firstElementChild)).toBe('px-5')
+    rerender(<ErrorState compact error={new Error('Network down')} />)
+    expect(sidePadding(container.firstElementChild)).toBe('px-5')
+  })
+
+  it('bring none inside something that already insets its content', () => {
+    const { container, rerender } = render(<EmptyState flush title="Nothing yet" />)
+    expect(sidePadding(container.firstElementChild)).toBeNull()
+    rerender(<ErrorState flush error={new Error('Network down')} />)
+    expect(sidePadding(container.firstElementChild)).toBeNull()
+    rerender(
+      <AsyncContent flush state={{ status: 'error', data: undefined, error: new Error('Network down'), reload: () => {}, refreshing: false }}>
+        {() => null}
+      </AsyncContent>,
+    )
+    expect(sidePadding(screen.getByRole('alert'))).toBeNull()
   })
 })
 

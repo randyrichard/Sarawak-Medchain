@@ -107,6 +107,7 @@ function StructureView() {
       />
       <CardBody>
         <AsyncContent
+          flush
           state={tree}
           loadingLabel="Loading departments and teams…"
           errorTitle="Couldn't load the organisation structure"

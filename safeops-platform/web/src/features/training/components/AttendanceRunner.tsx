@@ -101,7 +101,7 @@ export function AttendanceRunner({
 
         {issued ? (
           <div className="flex-1 space-y-4 overflow-y-auto px-5 py-6">
-            <div className="flex flex-col items-center gap-2 py-3 text-center">
+            <div className="flex flex-col items-start gap-2 py-3">
               <Award size={36} style={{ color: 'var(--good)' }} />
               <p className="text-lg font-semibold text-ink">{issued.length} certificate(s) issued</p>
               <p className="max-w-sm text-sm leading-relaxed text-ink-2">
@@ -134,7 +134,7 @@ export function AttendanceRunner({
 
             <div className="flex-1 space-y-2 overflow-y-auto px-5 py-4">
               {error && <Alert tone="critical">{error}</Alert>}
-              {rows.length === 0 && <p className="py-6 text-center text-sm text-muted">No one enrolled — add participants first.</p>}
+              {rows.length === 0 && <p className="py-6 text-sm text-muted">No one enrolled — add participants first.</p>}
               {rows.map((r) => (
                 <div key={r.employeeId} className={cn('rounded-xl border p-3 transition-opacity', !r.present && 'opacity-55')}>
                   <div className="flex items-center gap-2.5">

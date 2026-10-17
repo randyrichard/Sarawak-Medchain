@@ -142,7 +142,7 @@ export function UsersSection() {
                   <th className="px-3 py-2.5 font-semibold">MFA</th>
                   <th className="px-3 py-2.5 font-semibold">Last Login</th>
                   <th className="px-3 py-2.5 font-semibold">Status</th>
-                  <th className="px-5 py-2.5 text-right font-semibold">Actions</th>
+                  <th className="px-5 py-2.5 text-left font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -163,7 +163,7 @@ export function UsersSection() {
                     </td>
                     <td className="px-3 py-3 text-xs text-muted">{u.lastLoginAt ? timeAgo(u.lastLoginAt) : 'never'}</td>
                     <td className="px-3 py-3"><StatusPill kind={USER_STATUS_KIND[u.status]} label={u.status[0].toUpperCase() + u.status.slice(1)} /></td>
-                    <td className="px-5 py-3 text-right">
+                    <td className="px-5 py-3 text-left">
                       <Dropdown
                         align="end"
                         trigger={() => <button className="inline-flex items-center justify-center rounded-lg border p-1.5 text-ink-2 hover:bg-accent-soft coarse:min-h-touch coarse:min-w-touch" aria-label="User actions"><MoreHorizontal size={14} /></button>}
@@ -303,7 +303,7 @@ function UserDetailDrawer({ userId, roleName, onClose }: { userId: string | null
   if (!userId) return null
   return (
     <Dialog open onClose={onClose} title={user?.name ?? 'User'} description={user?.email} width="max-w-lg">
-      {!user && loadError ? <ErrorState title="Couldn't load this user" error={loadError} onRetry={() => setAttempt((n) => n + 1)} />
+      {!user && loadError ? <ErrorState flush title="Couldn't load this user" error={loadError} onRetry={() => setAttempt((n) => n + 1)} />
         : !user ? <Skeleton className="h-40 w-full" /> : (
         <div className="max-h-[62vh] space-y-4 overflow-y-auto">
           <div className="flex items-center gap-3">

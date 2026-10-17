@@ -84,7 +84,7 @@ export function CalibrationPanel({
       {rows === null ? (
         <Skeleton className="h-14 rounded-lg" />
       ) : rows.length === 0 ? (
-        <p className="rounded-lg border border-dashed px-3 py-4 text-center text-2xs text-muted">
+        <p className="rounded-lg border border-dashed px-3 py-4 text-2xs text-muted">
           No certificate on file. This instrument cannot be booked onto a permit until one
           is recorded.
         </p>

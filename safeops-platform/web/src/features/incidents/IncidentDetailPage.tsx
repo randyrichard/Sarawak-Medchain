@@ -98,13 +98,13 @@ export function IncidentDetailPage() {
    */
   if (failure === 'forbidden') {
     return (
-      <div className="py-16 text-center">
+      <div className="py-16">
         <p className="text-sm font-medium text-ink">You don't have access to this incident.</p>
-        <p className="mx-auto mt-1.5 max-w-sm text-xs leading-relaxed text-muted">
+        <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-muted">
           Which incidents you can open depends on your role and sites. If you need this one, ask
           your safety officer or administrator.
         </p>
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+        <div className="mt-4 flex flex-wrap items-center gap-2">
           <LinkButton to="/incidents" variant="secondary" size="sm">Back to Incidents</LinkButton>
           <LinkButton to="/" variant="ghost" size="sm">Go to Dashboard</LinkButton>
         </div>
@@ -115,6 +115,7 @@ export function IncidentDetailPage() {
   if (failure && failure !== 'missing') {
     return (
       <ErrorState
+        flush
         className="py-16"
         title="Couldn't load this incident"
         error={failure.error}
@@ -125,13 +126,13 @@ export function IncidentDetailPage() {
 
   if (failure === 'missing') {
     return (
-      <div className="py-16 text-center">
+      <div className="py-16">
         <p className="text-sm font-medium text-ink">This incident is no longer available.</p>
-        <p className="mx-auto mt-1.5 max-w-sm text-xs leading-relaxed text-muted">
+        <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-muted">
           It may have been archived, or the link may be out of date. Archived incidents stay
           in the register and can be restored by an administrator.
         </p>
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+        <div className="mt-4 flex flex-wrap items-center gap-2">
           <LinkButton to="/incidents" variant="secondary" size="sm">Back to Incidents</LinkButton>
           <LinkButton to="/" variant="ghost" size="sm">Go to Dashboard</LinkButton>
         </div>
@@ -273,7 +274,7 @@ export function IncidentDetailPage() {
                       )}
                     </div>
                   ) : (
-                    <p className="rounded-lg border border-dashed px-4 py-5 text-center text-sm text-muted">
+                    <p className="rounded-lg border border-dashed px-4 py-5 text-sm text-muted">
                       Findings appear here once the investigation records them.
                     </p>
                   )}

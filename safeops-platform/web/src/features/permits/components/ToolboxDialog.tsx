@@ -139,7 +139,7 @@ export function ToolboxDialog({
               {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-11 rounded-lg" />)}
             </div>
           ) : attendees.length === 0 ? (
-            <p className="rounded-lg border border-dashed px-3 py-4 text-center text-2xs text-muted">
+            <p className="rounded-lg border border-dashed px-3 py-4 text-2xs text-muted">
               Nobody is named on this permit yet. Name the crew first — a briefing with no
               attendees is not a briefing.
             </p>

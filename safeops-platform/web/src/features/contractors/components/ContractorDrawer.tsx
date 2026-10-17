@@ -4,7 +4,7 @@ import { contractorsApi } from '@/api/contractorsApi'
 import type { ContractorCompanyRow } from '@/api/contractors'
 import { EXPIRY_LABEL } from '@/api/contractors'
 import { ApiError } from '@/api/types'
-import { Alert, Badge, Button, Dialog, Skeleton, StatusPill } from '@/components/ui'
+import { Alert, Badge, Button, DetailRow, Dialog, Skeleton, StatusPill } from '@/components/ui'
 import { EXPIRY_KIND, fmtDate, relativeDays } from '../lib'
 import { EditContractorDialog } from './EditContractorDialog'
 
@@ -132,11 +132,11 @@ export function ContractorDrawer({
 
               <div className="mb-5">
                 <p className="mb-2 text-2xs font-bold uppercase tracking-wider text-muted">Details</p>
-                <Row label="Registration" value={item.registrationNumber} />
-                <Row label="Contact" value={item.contactPerson} />
-                <Row label="Phone" value={item.phone} />
-                <Row label="Email" value={item.email} />
-                <Row label="Address" value={item.address} />
+                <DetailRow label="Registration" value={item.registrationNumber} />
+                <DetailRow label="Contact" value={item.contactPerson} />
+                <DetailRow label="Phone" value={item.phone} />
+                <DetailRow label="Email" value={item.email} />
+                <DetailRow label="Address" value={item.address} />
               </div>
 
               <div>
@@ -224,11 +224,3 @@ export function ContractorDrawer({
   )
 }
 
-function Row({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex items-baseline justify-between gap-4 border-b py-2 last:border-0">
-      <span className="shrink-0 text-2xs font-semibold uppercase tracking-wider text-muted">{label}</span>
-      <span className="text-right text-sm text-ink">{value || '—'}</span>
-    </div>
-  )
-}

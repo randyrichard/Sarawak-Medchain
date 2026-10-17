@@ -158,8 +158,8 @@ export function ReportNearMissPage() {
   if (queued !== null) {
     return (
       <div className="mx-auto max-w-lg py-6">
-        <Card className="p-6 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-soft text-accent">
+        <Card className="p-6">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-soft text-accent">
             <CloudOff size={26} aria-hidden />
           </div>
           <h1 className="mt-4 text-lg font-semibold tracking-tight text-ink">Saved on this phone</h1>
@@ -184,8 +184,8 @@ export function ReportNearMissPage() {
   if (done) {
     return (
       <div className="mx-auto max-w-lg py-6">
-        <Card className="p-6 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl"
+        <Card className="p-6">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl"
             style={{ background: 'var(--good-soft, var(--accent-soft))', color: 'var(--good)' }}>
             <Check size={28} strokeWidth={2.6} />
           </div>
@@ -370,7 +370,7 @@ export function ReportNearMissPage() {
         >
           Submit Near Miss
         </Button>
-        <p className="mt-2 text-center text-2xs text-muted">
+        <p className="mt-2 text-2xs text-muted">
           Need to report an injury, damage or a spill?{' '}
           <Link to="/incidents/new" className="font-semibold text-accent hover:underline">Use the full report</Link>
         </p>

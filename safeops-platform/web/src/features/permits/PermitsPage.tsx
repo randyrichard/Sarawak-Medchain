@@ -225,7 +225,8 @@ export function PermitsPage() {
           {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28 w-full rounded-xl" />)}
         </div>
       ) : rows.length === 0 ? (
-        <Card className="p-6">
+        // No padding of its own: the empty state brings a card's inset.
+        <Card>
           {q.trim() || type ? (
             <NoMatches
               what="permits" search={q} filtered={Boolean(type) || status !== 'live'}

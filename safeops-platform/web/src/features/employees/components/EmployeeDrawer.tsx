@@ -5,8 +5,7 @@ import type { EmployeeDetail } from '@/api/employees'
 import { MEDICAL_LABEL, PPE_ITEMS } from '@/api/employees'
 import { ApiError } from '@/api/types'
 import {
-  Alert, Avatar, Badge, Button, Dialog, Input, Select, Skeleton, StatusPill, Tabs,
-  type TabItem,
+  Alert, Avatar, Badge, Button, DetailRow, Dialog, Input, Select, Skeleton, StatusPill, Tabs, type TabItem,
 } from '@/components/ui'
 import { MEDICAL_KIND, fmtDate, relativeDays } from '../lib'
 import { EditEmployeeDialog } from './EditEmployeeDialog'
@@ -238,15 +237,6 @@ export function EmployeeDrawer({
 
 // ── Tabs ─────────────────────────────────────────────────────────────────────
 
-function Row({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex items-baseline justify-between gap-4 border-b py-2 last:border-0">
-      <span className="shrink-0 text-2xs font-semibold uppercase tracking-wider text-muted">{label}</span>
-      <span className="text-right text-sm text-ink">{value || '—'}</span>
-    </div>
-  )
-}
-
 /** A number a phone can dial from a tap - the point of having it on a site phone. */
 function Tel({ n }: { n?: string | null }) {
   if (!n) return null
@@ -257,14 +247,14 @@ function ProfileTab({ item }: { item: EmployeeDetail }) {
   const { sites } = useOrg()
   return (
     <div>
-      <Row label="Employee no." value={<span className="font-mono">{item.employeeNo}</span>} />
-      <Row label="Position" value={item.position} />
-      <Row label="Department" value={item.department} />
-      <Row label="Site" value={sites.find((s) => s.id === item.siteId)?.name ?? item.siteId} />
-      <Row label="Email" value={item.email} />
-      <Row label="Phone" value={<Tel n={item.phone} />} />
-      <Row label="Joined" value={fmtDate(item.hireDate)} />
-      <Row label="Status" value={item.active ? 'Active' : 'Left'} />
+      <DetailRow label="Employee no." value={<span className="font-mono">{item.employeeNo}</span>} />
+      <DetailRow label="Position" value={item.position} />
+      <DetailRow label="Department" value={item.department} />
+      <DetailRow label="Site" value={sites.find((s) => s.id === item.siteId)?.name ?? item.siteId} />
+      <DetailRow label="Email" value={item.email} />
+      <DetailRow label="Phone" value={<Tel n={item.phone} />} />
+      <DetailRow label="Joined" value={fmtDate(item.hireDate)} />
+      <DetailRow label="Status" value={item.active ? 'Active' : 'Left'} />
     </div>
   )
 }
@@ -292,8 +282,8 @@ function MedicalTab({ item }: { item: EmployeeDetail }) {
       )}
 
       <div>
-        <Row label="Expires" value={fmtDate(item.medicalExpiry)} />
-        <Row label="Blood group" value={item.bloodGroup} />
+        <DetailRow label="Expires" value={fmtDate(item.medicalExpiry)} />
+        <DetailRow label="Blood group" value={item.bloodGroup} />
       </div>
 
       <div>
@@ -315,8 +305,8 @@ function ContactsTab({
   return (
     <div className="space-y-3">
       {item.emergencyContacts.length === 0 ? (
-        <div className="rounded-lg border border-dashed px-4 py-6 text-center">
-          <Phone size={18} className="mx-auto mb-2 text-muted" />
+        <div className="rounded-lg border border-dashed px-4 py-6">
+          <Phone size={18} className="mb-2 text-muted" />
           <p className="text-sm text-ink-2">No emergency contact recorded.</p>
           <p className="mt-0.5 text-2xs text-muted">
             This list is only ever needed on the worst day of the year.
@@ -369,8 +359,8 @@ function PpeTab({
   return (
     <div className="space-y-4">
       {item.ppeIssues.length === 0 ? (
-        <div className="rounded-lg border border-dashed px-4 py-6 text-center">
-          <HardHat size={18} className="mx-auto mb-2 text-muted" />
+        <div className="rounded-lg border border-dashed px-4 py-6">
+          <HardHat size={18} className="mb-2 text-muted" />
           <p className="text-sm text-ink-2">No PPE issued.</p>
         </div>
       ) : (
@@ -452,7 +442,7 @@ function TrainingTab({ item }: { item: EmployeeDetail }) {
                     <p className="truncate text-sm font-medium text-ink">{c.courseName}</p>
                     <p className="font-mono text-2xs text-muted">{c.number}</p>
                   </div>
-                  <div className="shrink-0 text-right">
+                  <div className="shrink-0">
                     {c.expiryDate ? (
                       <>
                         <Badge tone={expired ? 'critical' : 'good'}>{expired ? 'Expired' : 'Valid'}</Badge>
@@ -483,7 +473,7 @@ function TrainingTab({ item }: { item: EmployeeDetail }) {
                   <p className="truncate text-sm text-ink">{t.courseName}</p>
                   <p className="font-mono text-2xs text-muted">{t.code}</p>
                 </div>
-                <div className="shrink-0 text-right text-2xs">
+                <div className="shrink-0 text-2xs">
                   <p className="text-muted">{fmtDate(t.scheduledFor)}</p>
                   <p className={t.present ? 'text-good' : 'text-muted'}>
                     {t.present ? (t.result ?? 'attended') : 'absent'}

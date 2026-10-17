@@ -271,7 +271,7 @@ export function EmployeesPage() {
                   {SORT_COLUMNS.map((c) => (
                     <th key={c.key} className={cn('px-3 py-2.5 font-semibold', c.className)}>
                       <button
-                        className="inline-flex items-center gap-1 uppercase tracking-wide hover:text-ink coarse:min-h-touch-sm"
+                        className="inline-flex items-center gap-1 text-left uppercase tracking-wide hover:text-ink coarse:min-h-touch-sm"
                         onClick={() => toggleSort(c.key)}
                       >
                         {c.label}
@@ -280,7 +280,7 @@ export function EmployeesPage() {
                     </th>
                   ))}
                   <th className="hidden px-3 py-2.5 font-semibold md:table-cell">Site</th>
-                  <th className="px-3 py-2.5 text-right font-semibold">Training</th>
+                  <th className="px-3 py-2.5 text-left font-semibold">Training</th>
                 </tr>
               </thead>
               <tbody>
@@ -316,7 +316,7 @@ export function EmployeesPage() {
                     <td className="hidden px-3 py-3 text-xs text-ink-2 md:table-cell">
                       {siteName.get(r.siteId) ?? r.siteId.toUpperCase()}
                     </td>
-                    <td className="px-3 py-3 text-right text-xs text-ink-2">
+                    <td className="px-3 py-3 text-left text-xs text-ink-2">
                       {r.certificateCount} cert{r.certificateCount === 1 ? '' : 's'}
                     </td>
                   </tr>

@@ -5,6 +5,7 @@ import type { AttentionCounts } from '@/api/dashboardApi'
 import { useActor } from '@/features/incidents/lib'
 import { useOrg } from '@/features/org/OrgContext'
 import { pollWhileVisible } from '@/lib/poll'
+import { onRefresh } from '@/lib/refreshSignal'
 
 /**
  * How many items Needs Attention holds for each module, for the menu.
@@ -35,7 +36,9 @@ export function useAttentionCounts(): AttentionCounts | null {
       .catch(() => {})
     load()
     const stop = pollWhileVisible(load, 60_000)
-    return () => { live = false; stop() }
+    // And at once when somebody presses Refresh, so the menu agrees with the page.
+    const off = onRefresh(load)
+    return () => { live = false; stop(); off() }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- the actor is rebuilt each render; who it is is its name and role
   }, [company, project, site, pathname, actor.name, actor.role])
 

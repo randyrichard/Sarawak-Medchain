@@ -19,7 +19,7 @@ export function AuditAnalyticsView({ stats, sites }: { stats: AuditStats | null;
         <CardHeader title="Most Common Findings" subtitle="Top non-conformity categories across all audits — fix the pattern, not the instance" />
         <CardBody>
           {stats.findingsByCategory.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted">No findings recorded yet.</p>
+            <p className="py-8 text-sm text-muted">No findings recorded yet.</p>
           ) : (
             <RankedBars data={stats.findingsByCategory} color="var(--s1)"
               highlight={(d) => (d.value >= 2 ? 'var(--s6)' : undefined)} />
@@ -47,7 +47,7 @@ export function AuditAnalyticsView({ stats, sites }: { stats: AuditStats | null;
         <CardHeader title="Open Findings by Site" subtitle="Where the audit debt sits" />
         <CardBody>
           {stats.bySiteOpenFindings.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted">No open findings — clean slate.</p>
+            <p className="py-8 text-sm text-muted">No open findings — clean slate.</p>
           ) : (
             <RankedBars
               data={stats.bySiteOpenFindings.map((s) => ({ name: siteShort(s.name), value: s.value }))}
@@ -62,7 +62,7 @@ export function AuditAnalyticsView({ stats, sites }: { stats: AuditStats | null;
         <CardHeader title="Open Findings by Department" subtitle="Department performance — who clears their findings" />
         <CardBody>
           {stats.byDeptOpenFindings.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted">No open findings by department.</p>
+            <p className="py-8 text-sm text-muted">No open findings by department.</p>
           ) : (
             <RankedBars data={stats.byDeptOpenFindings} color="var(--s5)" />
           )}

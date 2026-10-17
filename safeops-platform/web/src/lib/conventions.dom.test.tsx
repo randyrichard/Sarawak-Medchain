@@ -96,7 +96,7 @@ const ROWS: Row[] = [
 const COLUMNS: Column<Row>[] = [
   { key: 'ref', header: 'Ref', render: (r) => r.ref, sortValue: (r) => r.ref },
   { key: 'name', header: 'Name', render: (r) => r.name, sortValue: (r) => r.name },
-  { key: 'days', header: 'Days', render: (r) => r.days ?? '—', sortValue: (r) => r.days, align: 'right' },
+  { key: 'days', header: 'Days', render: (r) => r.days ?? '—', sortValue: (r) => r.days },
 ]
 const firstCells = () => screen.getAllByRole('row').slice(1).map((r) => r.querySelector('td')!.textContent)
 

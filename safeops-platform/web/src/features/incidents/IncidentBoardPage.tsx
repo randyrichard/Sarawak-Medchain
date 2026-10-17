@@ -167,7 +167,7 @@ export function IncidentBoardPage() {
       <ErrorAlert error={error} className="mb-3" onDismiss={() => setError(null)} />
 
       {boardError != null && (
-        <ErrorState compact className="mb-3" title="Couldn't load the summary" error={boardError} onRetry={() => setBoardAttempt((n) => n + 1)} />
+        <ErrorState compact flush className="mb-3" title="Couldn't load the summary" error={boardError} onRetry={() => setBoardAttempt((n) => n + 1)} />
       )}
 
       <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -306,7 +306,7 @@ export function IncidentBoardPage() {
         </div>
       ) : rows.length === 0 ? (
         <Card>
-          <CardBody className="py-10 text-center">
+          <CardBody className="py-10">
             <p className="text-sm text-ink">No incidents match.</p>
             <p className="mt-1 text-2xs text-muted">
               {activeCount > 0

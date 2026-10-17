@@ -49,7 +49,7 @@ export function RcaPanel({ incident, onUpdate }: { incident: Incident; onUpdate:
 
   if (!editable && !rca) {
     return (
-      <p className="rounded-lg border border-dashed px-4 py-6 text-center text-sm text-muted">
+      <p className="rounded-lg border border-dashed px-4 py-6 text-sm text-muted">
         Root cause analysis opens once investigation findings are recorded.
       </p>
     )

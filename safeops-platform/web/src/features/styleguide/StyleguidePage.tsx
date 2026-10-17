@@ -307,10 +307,10 @@ function TableSection() {
       ),
     },
     {
-      key: 'score', header: 'Score', align: 'right',
+      key: 'score', header: 'Score',
       render: (r) => <span className="text-sm font-semibold text-ink" style={{ fontVariantNumeric: 'tabular-nums' }}>{r.score}</span>,
     },
-    { key: 'trend', header: 'Trend', align: 'right', visibility: 'hidden md:table-cell', render: (r) => <Sparkline data={r.trend} width={80} height={22} stroke={r.status === 'Intervene' ? 'var(--critical)' : 'var(--s1)'} /> },
+    { key: 'trend', header: 'Trend', visibility: 'hidden md:table-cell', render: (r) => <Sparkline data={r.trend} width={80} height={22} stroke={r.status === 'Intervene' ? 'var(--critical)' : 'var(--s1)'} /> },
   ]
   return (
     <Section title="Data Table" subtitle="Declarative columns, responsive visibility, and every state a request can be in - switch them below.">
@@ -382,11 +382,12 @@ function AsyncDemo() {
         <Button size="sm" variant="secondary" onClick={reports.reload}>Fetch Again</Button>
       </div>
       <AsyncContent
+        flush
         state={reports}
         loadingLabel="Loading recent reports…"
         errorTitle="Couldn't load recent reports"
         isEmpty={(r) => r.length === 0}
-        empty={<EmptyState title="No reports yet" />}
+        empty={<EmptyState flush title="No reports yet" />}
       >
         {(rows) => <ul className="space-y-1 text-sm text-ink-2">{rows.map((r) => <li key={r}>{r}</li>)}</ul>}
       </AsyncContent>

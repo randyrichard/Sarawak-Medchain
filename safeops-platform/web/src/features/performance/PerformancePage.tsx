@@ -98,6 +98,7 @@ export function PerformancePage() {
       />
 
       <AsyncContent
+        flush
         state={state}
         errorTitle="Could not load HSE performance"
         loading={<PerformanceSkeleton />}
@@ -367,24 +368,24 @@ function MonthTable({ data }: { data: PerformanceView }) {
           <thead>
             <tr className="border-b text-left text-2xs uppercase tracking-wide text-muted">
               <th scope="col" className="px-2 py-1.5 font-medium">Month</th>
-              <th scope="col" className="px-2 py-1.5 text-right font-medium">Near Misses</th>
-              <th scope="col" className="px-2 py-1.5 text-right font-medium">Recordable Injuries</th>
-              <th scope="col" className="px-2 py-1.5 text-right font-medium">Lost-Time Injuries</th>
-              <th scope="col" className="px-2 py-1.5 text-right font-medium">Hours</th>
-              <th scope="col" className="px-2 py-1.5 text-right font-medium">LTI Frequency Rate</th>
+              <th scope="col" className="px-2 py-1.5 text-left font-medium">Near Misses</th>
+              <th scope="col" className="px-2 py-1.5 text-left font-medium">Recordable Injuries</th>
+              <th scope="col" className="px-2 py-1.5 text-left font-medium">Lost-Time Injuries</th>
+              <th scope="col" className="px-2 py-1.5 text-left font-medium">Hours</th>
+              <th scope="col" className="px-2 py-1.5 text-left font-medium">LTI Frequency Rate</th>
             </tr>
           </thead>
           <tbody>
             {data.months.map((m) => (
               <tr key={m.month} className="border-b last:border-0">
                 <th scope="row" className="px-2 py-1.5 text-left font-medium text-ink">{monthLabel(m.month)}</th>
-                <td className="px-2 py-1.5 text-right tabular-nums">{m.nearMisses}</td>
-                <td className="px-2 py-1.5 text-right tabular-nums">{m.recordable}</td>
-                <td className="px-2 py-1.5 text-right tabular-nums">{m.lostTime}</td>
-                <td className="px-2 py-1.5 text-right tabular-nums">
+                <td className="px-2 py-1.5 text-left tabular-nums">{m.nearMisses}</td>
+                <td className="px-2 py-1.5 text-left tabular-nums">{m.recordable}</td>
+                <td className="px-2 py-1.5 text-left tabular-nums">{m.lostTime}</td>
+                <td className="px-2 py-1.5 text-left tabular-nums">
                   {formatHours(m.hours)}{m.estimatedShare > 0 && <span className="text-muted" title="Includes hours estimated from headcount"> est.</span>}
                 </td>
-                <td className="px-2 py-1.5 text-right tabular-nums">{formatRate(m.frequencyRate)}</td>
+                <td className="px-2 py-1.5 text-left tabular-nums">{formatRate(m.frequencyRate)}</td>
               </tr>
             ))}
           </tbody>
@@ -430,7 +431,6 @@ export function siteColumns(targets: Target[]): Column<SitePerformance>[] {
     {
       key: 'hours',
       header: 'Hours',
-      align: 'right',
       render: (s) => (
         <span className="whitespace-nowrap tabular-nums">
           {formatHours(s.hours)}
@@ -439,16 +439,15 @@ export function siteColumns(targets: Target[]): Column<SitePerformance>[] {
       ),
       sortValue: (s) => s.hours,
     },
-    { key: 'lti', header: 'LTIs', align: 'right', render: (s) => <span className="tabular-nums">{s.lostTime}</span>, sortValue: (s) => s.lostTime },
-    { key: 'fr', header: headed('LTI freq. rate', t('frequencyRate')), align: 'right', render: (s) => judged(s.frequencyRate, formatRate(s.frequencyRate), t('frequencyRate')), sortValue: (s) => s.frequencyRate },
-    { key: 'trir', header: headed('TRIR', t('trir')), align: 'right', render: (s) => judged(s.trir, formatRate(s.trir), t('trir')), sortValue: (s) => s.trir, visibility: 'hidden md:table-cell' },
-    { key: 'sr', header: headed('Severity rate', t('severityRate')), align: 'right', render: (s) => judged(s.severityRate, formatRate(s.severityRate), t('severityRate')), sortValue: (s) => s.severityRate, visibility: 'hidden lg:table-cell' },
-    { key: 'nm', header: 'Near Misses', align: 'right', render: (s) => <span className="tabular-nums">{s.nearMisses}</span>, sortValue: (s) => s.nearMisses, visibility: 'hidden md:table-cell' },
-    { key: 'ontime', header: headed('Closed on time', t('onTimeClosure')), align: 'right', render: (s) => judged(s.onTimeClosure, formatPercent(s.onTimeClosure), t('onTimeClosure')), sortValue: (s) => s.onTimeClosure, visibility: 'hidden lg:table-cell' },
+    { key: 'lti', header: 'LTIs', render: (s) => <span className="tabular-nums">{s.lostTime}</span>, sortValue: (s) => s.lostTime },
+    { key: 'fr', header: headed('LTI freq. rate', t('frequencyRate')), render: (s) => judged(s.frequencyRate, formatRate(s.frequencyRate), t('frequencyRate')), sortValue: (s) => s.frequencyRate },
+    { key: 'trir', header: headed('TRIR', t('trir')), render: (s) => judged(s.trir, formatRate(s.trir), t('trir')), sortValue: (s) => s.trir, visibility: 'hidden md:table-cell' },
+    { key: 'sr', header: headed('Severity rate', t('severityRate')), render: (s) => judged(s.severityRate, formatRate(s.severityRate), t('severityRate')), sortValue: (s) => s.severityRate, visibility: 'hidden lg:table-cell' },
+    { key: 'nm', header: 'Near Misses', render: (s) => <span className="tabular-nums">{s.nearMisses}</span>, sortValue: (s) => s.nearMisses, visibility: 'hidden md:table-cell' },
+    { key: 'ontime', header: headed('Closed on time', t('onTimeClosure')), render: (s) => judged(s.onTimeClosure, formatPercent(s.onTimeClosure), t('onTimeClosure')), sortValue: (s) => s.onTimeClosure, visibility: 'hidden lg:table-cell' },
     {
       key: 'overdue',
       header: headed('Overdue actions', t('overdueActions')),
-      align: 'right',
       render: (s) => {
         const target = t('overdueActions')
         // With a target, only a miss is marked; without one, any overdue action is.

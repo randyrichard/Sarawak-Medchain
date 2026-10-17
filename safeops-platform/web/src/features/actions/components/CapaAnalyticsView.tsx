@@ -91,7 +91,7 @@ export function CapaAnalyticsView({ companyId, sites }: { companyId: string | nu
           <CardHeader title="Department On-Time Performance" subtitle="% of completed actions finished by their due date" />
           <CardBody>
             {data.byDepartment.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted">Not enough completed actions yet.</p>
+              <p className="py-8 text-sm text-muted">Not enough completed actions yet.</p>
             ) : (
               <RankedBars
                 data={data.byDepartment}
@@ -123,7 +123,7 @@ export function CapaAnalyticsView({ companyId, sites }: { companyId: string | nu
         <Card>
           <CardHeader title="Owner Load" subtitle="Who is carrying the most — and who is behind" />
           <CardBody className="space-y-2">
-            {data.byOwner.length === 0 && <p className="py-8 text-center text-sm text-muted">No actions to show yet.</p>}
+            {data.byOwner.length === 0 && <p className="py-8 text-sm text-muted">No actions to show yet.</p>}
             {data.byOwner.map((o) => (
               <div key={o.name} className="flex items-center gap-3 rounded-lg px-1.5 py-1.5">
                 <Avatar name={o.name} size={26} />

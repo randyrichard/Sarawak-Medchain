@@ -69,7 +69,7 @@ export function AssetHolderPanel({
       {holder === undefined ? (
         <Skeleton className="h-14 rounded-lg" />
       ) : holder === null ? (
-        <p className="rounded-lg border border-dashed px-3 py-3 text-center text-2xs text-muted">
+        <p className="rounded-lg border border-dashed px-3 py-3 text-2xs text-muted">
           In the pool. Nobody is holding this at the moment.
         </p>
       ) : (
@@ -109,7 +109,7 @@ export function AssetHolderPanel({
       {permit === undefined ? (
         <Skeleton className="h-12 rounded-lg" />
       ) : permit === null ? (
-        <p className="rounded-lg border border-dashed px-3 py-3 text-center text-2xs text-muted">
+        <p className="rounded-lg border border-dashed px-3 py-3 text-2xs text-muted">
           Not booked onto any live permit.
         </p>
       ) : (

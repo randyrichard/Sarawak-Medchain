@@ -42,7 +42,7 @@ function CenterPanel() {
   const center = useAsync<SecurityCenter>(() => api.adminSecurityCenter(companyId), [companyId], { enabled: Boolean(companyId) })
   const sc = center.data
 
-  if (!sc && center.status === 'error') return <ErrorState title="Couldn't load the Security Centre" error={center.error} onRetry={center.reload} />
+  if (!sc && center.status === 'error') return <ErrorState flush title="Couldn't load the Security Centre" error={center.error} onRetry={center.reload} />
   if (!sc) return <div className="grid gap-3 md:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}</div>
 
   const tiles = [
@@ -106,7 +106,7 @@ function PolicyPanel() {
    */
   const loaded = useAsync<SecuritySettings>(() => api.adminGetSecurity(companyId), [companyId], { enabled: Boolean(companyId) })
   useEffect(() => { setS(loaded.data ?? null) }, [loaded.data])
-  if (!s && loaded.status === 'error') return <ErrorState title="Couldn't load the security policy" error={loaded.error} onRetry={loaded.reload} />
+  if (!s && loaded.status === 'error') return <ErrorState flush title="Couldn't load the security policy" error={loaded.error} onRetry={loaded.reload} />
   if (!s) return <Card className="p-5"><Skeleton className="h-64 w-full" /></Card>
   const set = (p: Partial<SecuritySettings>) => setS({ ...s, ...p })
 
@@ -177,7 +177,7 @@ function LoginsPanel() {
     'safechain-login-history.csv',
   )
 
-  if (events === null && history.status === 'error') return <ErrorState title="Couldn't load the login history" error={history.error} onRetry={history.reload} />
+  if (events === null && history.status === 'error') return <ErrorState flush title="Couldn't load the login history" error={history.error} onRetry={history.reload} />
   if (events === null) return <Card className="p-5"><Skeleton className="h-64 w-full" /></Card>
   return (
     <Card>
@@ -190,7 +190,7 @@ function LoginsPanel() {
               <th className="px-3 py-2.5 font-semibold">Result</th>
               <th className="px-3 py-2.5 font-semibold">IP / Device</th>
               <th className="px-3 py-2.5 font-semibold">Needs a Look</th>
-              <th className="px-5 py-2.5 text-right font-semibold">When</th>
+              <th className="px-5 py-2.5 text-left font-semibold">When</th>
             </tr>
           </thead>
           <tbody>
@@ -202,7 +202,7 @@ function LoginsPanel() {
                 <td className="px-3 py-3 text-xs text-ink-2">
                   {e.suspicious && <Badge tone="critical">{OUTCOME_LABEL[e.outcome ?? ''] ?? 'Unusual'}</Badge>}
                 </td>
-                <td className="px-5 py-3 text-right text-2xs text-muted">{timeAgo(e.at)}</td>
+                <td className="px-5 py-3 text-left text-2xs text-muted">{timeAgo(e.at)}</td>
               </tr>
             ))}
           </tbody>

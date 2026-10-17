@@ -162,7 +162,7 @@ export function DocumentsPanel({
                 </tr>
               ))}
               {rows.length === 0 && (
-                <tr><td colSpan={6} className="px-5 py-10 text-center text-sm text-muted">No documents match.</td></tr>
+                <tr><td colSpan={6} className="px-5 py-10 text-sm text-muted">No documents match.</td></tr>
               )}
             </tbody>
           </table>

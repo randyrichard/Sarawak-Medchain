@@ -3,6 +3,7 @@ import { api } from '@/api/client'
 import type { AppNotification } from '@/api/types'
 import { useOrg } from '@/features/org/OrgContext'
 import { pollWhileVisible } from '@/lib/poll'
+import { onRefresh } from '@/lib/refreshSignal'
 
 /**
  * The notifications feed, read once for the bell, the menu and the Notifications page.
@@ -48,6 +49,8 @@ export function NotificationFeedProvider({ children }: { children: ReactNode }) 
   }, [companyId, asked])
 
   const refresh = useCallback(() => setAsked((n) => n + 1), [])
+  // A Refresh pressed anywhere reads the feed again too, so the bell agrees with the page.
+  useEffect(() => onRefresh(refresh), [refresh])
 
   const feed = useMemo<Feed>(() => ({
     items,

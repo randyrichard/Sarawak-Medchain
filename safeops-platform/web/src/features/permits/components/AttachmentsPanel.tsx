@@ -176,7 +176,7 @@ export function AttachmentsPanel({
           {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-12 rounded-lg" />)}
         </div>
       ) : rows.length === 0 ? (
-        <p className="rounded-lg border border-dashed px-3 py-4 text-center text-2xs text-muted">
+        <p className="rounded-lg border border-dashed px-3 py-4 text-2xs text-muted">
           No documents attached. A permit pack usually carries the method statement and the
           risk assessment at minimum.
         </p>

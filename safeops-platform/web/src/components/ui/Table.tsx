@@ -12,7 +12,7 @@ export interface Column<T> {
   key: string
   header: ReactNode
   render: (row: T) => ReactNode
-  align?: 'left' | 'right'
+  // No `align`: words and figures alike start on the left of every column. See the UI README.
   width?: string
   /** Tailwind responsive visibility, e.g. "hidden md:table-cell" */
   visibility?: string
@@ -151,10 +151,11 @@ export function DataTable<T>({
   }
 
   // One full-width row for every state that is not data, so the header stays in place and
-  // the table does not jump when the data arrives.
+  // the table does not jump when the data arrives. No side padding: what goes in brings the
+  // 20px inset of the first column (EmptyState and ErrorState do), so its words start there.
   const stateRow = (content: ReactNode) => (
     <tr>
-      <td colSpan={columns.length} className="px-5 py-10 text-center">{content}</td>
+      <td colSpan={columns.length} className="py-10">{content}</td>
     </tr>
   )
 
@@ -188,7 +189,7 @@ export function DataTable<T>({
                   // bare value out of a grid with no context. WCAG 1.3.1.
                   scope="col"
                   aria-sort={c.sortValue ? (active === 'asc' ? 'ascending' : active === 'desc' ? 'descending' : 'none') : undefined}
-                  className={cn('px-4 py-2.5 font-semibold first:pl-5 last:pr-5', c.align === 'right' && 'text-right', c.visibility)}
+                  className={cn('px-4 py-2.5 font-semibold first:pl-5 last:pr-5', c.visibility)}
                   style={c.width ? { width: c.width } : undefined}
                 >
                   {c.sortValue ? (
@@ -200,9 +201,10 @@ export function DataTable<T>({
                       className={cn(
                         // At least 24px tall for a mouse and 36px on touch (Fitts's law): sized
                         // to its text alone, a header was a 17px strip to tap on a phone.
-                        'inline-flex min-h-6 items-center gap-1 rounded uppercase tracking-wide hover:text-ink coarse:min-h-touch-sm',
+                        // text-left: a button centres by default, and a header that wraps to two
+                        // lines ("Days / Open") came out as a centred stack.
+                        'inline-flex min-h-6 items-center gap-1 rounded text-left uppercase tracking-wide hover:text-ink coarse:min-h-touch-sm',
                         'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--accent)]',
-                        c.align === 'right' && 'flex-row-reverse',
                         active && 'text-ink',
                       )}
                     >
@@ -223,7 +225,7 @@ export function DataTable<T>({
               <tr key={`loading-${i}`} className="border-b last:border-0" aria-hidden>
                 {columns.map((c) => (
                   <td key={c.key} className={cn('px-4 py-3.5 first:pl-5 last:pr-5', c.visibility)}>
-                    <Skeleton className={cn('h-3', i % 2 ? 'w-3/5' : 'w-4/5', c.align === 'right' && 'ml-auto')} />
+                    <Skeleton className={cn('h-3', i % 2 ? 'w-3/5' : 'w-4/5')} />
                   </td>
                 ))}
               </tr>
@@ -231,7 +233,7 @@ export function DataTable<T>({
           ) : failed ? (
             stateRow(<ErrorState compact error={error} onRetry={onRetry} />)
           ) : rows.length === 0 ? (
-            stateRow(empty ?? <span className="text-sm text-muted">No records.</span>)
+            stateRow(empty ?? <p className="px-5 text-sm text-muted">No records.</p>)
           ) : (
             sorted.map((row) => {
               const href = rowHref?.(row)
@@ -274,7 +276,7 @@ export function DataTable<T>({
                 )}
               >
                 {columns.map((c) => (
-                  <td key={c.key} className={cn('px-4 py-3 text-sm text-ink-2 first:pl-5 last:pr-5', c.align === 'right' && 'text-right', c.visibility)}>
+                  <td key={c.key} className={cn('px-4 py-3 text-sm text-ink-2 first:pl-5 last:pr-5', c.visibility)}>
                     {href && c.key === linkColumn ? (
                       <Link
                         to={href}

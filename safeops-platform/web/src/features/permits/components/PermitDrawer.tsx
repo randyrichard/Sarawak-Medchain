@@ -354,7 +354,7 @@ export function PermitDrawer({
                   </li>
                 ))}
                 {permit.isolations.length === 0 && (
-                  <li className="rounded-lg border border-dashed px-3 py-3 text-center text-2xs text-muted">
+                  <li className="rounded-lg border border-dashed px-3 py-3 text-2xs text-muted">
                     No isolation recorded — required before this permit can be issued.
                   </li>
                 )}
@@ -474,7 +474,7 @@ export function PermitDrawer({
             </>
           )}
           {permit.status === 'submitted' && !issuer && (
-            <p className="text-center text-2xs text-muted">Awaiting a Safety Officer or above to verify controls and issue.</p>
+            <p className="text-2xs text-muted">Awaiting a Safety Officer or above to verify controls and issue.</p>
           )}
 
           {permit.status === 'approved' && (

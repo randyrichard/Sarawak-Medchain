@@ -53,7 +53,7 @@ export function CommentsPanel({ incident, onUpdate }: { incident: Incident; onUp
   return (
     <div className="space-y-4">
       {incident.comments.length === 0 ? (
-        <EmptyState icon={MessageSquare} title="No discussion yet">
+        <EmptyState flush icon={MessageSquare} title="No discussion yet">
           Keep the investigation conversation here instead of WhatsApp — it stays with the case record.
         </EmptyState>
       ) : (

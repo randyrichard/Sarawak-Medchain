@@ -161,7 +161,7 @@ export function SitesSection() {
           {rows === null && <div className="space-y-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-14 rounded-lg" />)}</div>}
 
           {rows !== null && visible.length === 0 && (
-            <EmptyState icon={Building2} title={needle ? 'No site matches that search.' : 'No sites yet.'}>
+            <EmptyState flush icon={Building2} title={needle ? 'No site matches that search.' : 'No sites yet.'}>
               {needle
                 ? 'Try a different name, code or city.'
                 : 'Add the first location so incidents, permits and equipment have somewhere to belong.'}
