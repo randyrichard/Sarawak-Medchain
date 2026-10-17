@@ -285,7 +285,7 @@ export function ReportsPage() {
                           aria-pressed={activityPeriod === p}
                           onClick={() => setActivityPeriod(p)}
                           className={cn(
-                            'rounded-md px-2.5 py-1 text-2xs font-medium coarse:min-h-11 coarse:px-3.5',
+                            'rounded-md px-2.5 py-1 text-2xs font-medium coarse:min-h-touch-sm coarse:px-3',
                             activityPeriod === p ? 'bg-accent-soft text-ink' : 'text-muted hover:text-ink',
                           )}
                         >

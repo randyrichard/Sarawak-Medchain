@@ -80,7 +80,7 @@ export function AdminPage() {
                       onClick={() => go(n.id)}
                       className={cn(
                         // Words only, and the section you are in marked the way the main menu marks a page.
-                        'flex shrink-0 items-center whitespace-nowrap rounded-lg px-3 py-2 text-sm transition-colors coarse:min-h-11',
+                        'flex shrink-0 items-center whitespace-nowrap rounded-lg px-3 py-2 text-sm transition-colors coarse:min-h-touch',
                         active ? 'bg-accent-soft font-semibold text-ink shadow-[inset_3px_0_0_var(--accent)]' : 'font-medium text-ink-2 hover:bg-accent-soft/60 hover:text-ink',
                       )}
                     >

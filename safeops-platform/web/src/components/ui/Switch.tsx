@@ -18,9 +18,9 @@ export function Switch({
       aria-checked={checked}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      // The track is 36x20; on a touch screen the button around it is 48x44, so a finger
+      // The track is 36x20; on a touch screen the button around it is 44x40, so a finger
       // does not have to land on the track itself.
-      className="inline-flex shrink-0 items-center justify-center rounded-full disabled:opacity-50 coarse:h-11 coarse:w-12"
+      className="inline-flex shrink-0 items-center justify-center rounded-full disabled:opacity-50 coarse:h-touch coarse:w-touch-lg"
     >
       <span className={cn('relative inline-flex h-5 w-9 items-center rounded-full transition-colors', checked ? 'bg-accent' : 'bg-grid')}>
         <span className={cn('inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform', checked ? 'translate-x-4' : 'translate-x-0.5')} />

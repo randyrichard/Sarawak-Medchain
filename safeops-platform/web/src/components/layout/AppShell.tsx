@@ -13,6 +13,9 @@ import { KeyboardShortcuts } from './KeyboardShortcuts'
 import { Badge, FullPageSpinner } from '@/components/ui'
 import { isBackendConfigured } from '@/api/authApi'
 import { GROUP_NAV_ABOVE, NAV, NAV_GROUPS, type NavItem } from './nav'
+import { badgeText, COUNT_MEANS, countFor, menuTotal, type MenuCounts } from './menuCounts'
+import { NotificationFeedProvider, useNotificationFeed } from './notificationFeed'
+import { useAttentionCounts } from './useAttentionCounts'
 
 // Re-exported for the tests that check the menu's shape.
 export { GROUP_NAV_ABOVE, NAV, NAV_GROUPS }
@@ -40,12 +43,25 @@ function useDocumentTitle(pathname: string, claimed: string | null) {
 }
 
 export default function AppShell() {
+  // One notifications feed for the bell, the menu and the Notifications page; see notificationFeed.tsx.
+  return (
+    <NotificationFeedProvider>
+      <Shell />
+    </NotificationFeedProvider>
+  )
+}
+
+function Shell() {
   const [mobileOpen, setMobileOpen] = useState(false)
   // What the current page calls itself, if it has said. See src/app/pageTitle.ts for why
   // this is state up here rather than the page writing document.title itself.
   const [claimedTitle, setClaimedTitle] = useState<string | null>(null)
   const location = useLocation()
   useDocumentTitle(location.pathname, claimedTitle)
+  const { allowed } = useOrg()
+  const counts: MenuCounts = { attention: useAttentionCounts(), unread: useNotificationFeed().unread }
+  // On a phone the menu is closed: its button says whether anything inside has a number.
+  const waiting = menuTotal(counts, allowed)
   return (
     <div className="flex h-full print:block print:h-auto">
       {/*
@@ -69,7 +85,7 @@ export default function AppShell() {
 
       {/* Desktop sidebar */}
       <aside className="hidden w-60 shrink-0 flex-col border-r bg-surface lg:flex print:hidden">
-        <SidebarContent />
+        <SidebarContent counts={counts} />
       </aside>
 
       {/* Mobile drawer */}
@@ -80,11 +96,11 @@ export default function AppShell() {
             <button
               onClick={() => setMobileOpen(false)}
               aria-label="Close menu"
-              className="absolute right-3 top-4 rounded-lg p-1.5 text-muted hover:bg-accent-soft coarse:min-h-11 coarse:min-w-11 coarse:flex coarse:items-center coarse:justify-center"
+              className="absolute right-3 top-4 rounded-lg p-1.5 text-muted hover:bg-accent-soft coarse:min-h-touch coarse:min-w-touch coarse:flex coarse:items-center coarse:justify-center"
             >
               <X size={16} />
             </button>
-            <SidebarContent onNavigate={() => setMobileOpen(false)} />
+            <SidebarContent counts={counts} onNavigate={() => setMobileOpen(false)} />
           </aside>
         </div>
       )}
@@ -96,10 +112,13 @@ export default function AppShell() {
           menuButton={
             <button
               onClick={() => setMobileOpen(true)}
-              aria-label="Open menu"
-              className="rounded-lg border p-2 text-ink-2 hover:bg-accent-soft coarse:min-h-11 coarse:min-w-11 lg:hidden"
+              aria-label={waiting > 0 ? `Open menu, ${waiting} waiting` : 'Open menu'}
+              className="relative rounded-lg border p-2 text-ink-2 hover:bg-accent-soft coarse:min-h-touch coarse:min-w-touch lg:hidden"
             >
               <Menu size={15} />
+              {waiting > 0 && (
+                <span aria-hidden className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-critical-solid" />
+              )}
             </button>
           }
         />
@@ -143,7 +162,11 @@ export default function AppShell() {
   )
 }
 
-export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+export function SidebarContent({ onNavigate, counts }: {
+  onNavigate?: () => void
+  /** The numbers beside the rows; none until they have loaded. See menuCounts.ts. */
+  counts?: MenuCounts
+}) {
   const { allowed, company } = useOrg()
   // Platform staff only, and answered by the server rather than by a tenant capability -
   // managing customers sits above every workspace rather than inside one.
@@ -201,8 +224,13 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       <nav aria-label="Main" className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-3 pb-2 pt-1">
         {(() => {
           const visible = NAV.filter((item) => allowed(item.capability))
-          const renderItem = (item: NavItem) =>
-            item.locked ? (
+          const renderItem = (item: NavItem) => {
+            const n = countFor(item, counts)
+            // "2 overdue": the badge's tooltip, and read with the row as one name, "Corrective
+            // Actions, 2 overdue". Given whole rather than as hidden text after the label,
+            // which Chrome joins with a space before the comma.
+            const counted = n > 0 && item.count ? `${n} ${COUNT_MEANS[item.count]}` : null
+            return item.locked ? (
               <div
                 key={item.to}
                 aria-disabled
@@ -222,12 +250,13 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                 // Incident Board a screen reader heard two current pages. Only the row that
                 // owns the page says so; NavLink applies this only when it matches at all.
                 aria-current={own(item, true) ? 'page' : false}
+                aria-label={counted ? `${item.label}, ${counted}` : undefined}
                 className={({ isActive }) =>
                   cn(
                     // Words only. With an icon on every row the list was eighteen symbols before
                     // it was a single word; the section headings already group it. Where you are
                     // is marked by weight and an edge bar, not by the colour of an icon.
-                    'flex items-center rounded-lg px-3 py-2 text-sm transition-colors coarse:min-h-11',
+                    'flex items-center rounded-lg px-3 py-2 text-sm transition-colors coarse:min-h-touch',
                     own(item, isActive)
                       ? 'bg-accent-soft font-semibold text-ink shadow-[inset_3px_0_0_var(--accent)]'
                       : 'font-medium text-ink-2 hover:bg-accent-soft/60 hover:text-ink',
@@ -235,8 +264,18 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
                 }
               >
                 <span className="flex-1">{item.label}</span>
+                {counted && (
+                  <span
+                    aria-hidden
+                    title={counted}
+                    className="ml-2 flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-critical-solid px-1.5 text-2xs font-bold tabular-nums text-white"
+                  >
+                    {badgeText(n)}
+                  </span>
+                )}
               </NavLink>
             )
+          }
           // Short lists stay flat; see GROUP_NAV_ABOVE.
           if (visible.length <= GROUP_NAV_ABOVE) return visible.map(renderItem)
           return (
@@ -282,7 +321,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             onClick={onNavigate}
             className={({ isActive }) =>
               cn(
-                'flex items-center rounded-lg px-3 py-2 text-sm transition-colors coarse:min-h-11',
+                'flex items-center rounded-lg px-3 py-2 text-sm transition-colors coarse:min-h-touch',
                 isActive
                   ? 'bg-accent-soft font-semibold text-ink shadow-[inset_3px_0_0_var(--accent)]'
                   : 'font-medium text-ink-2 hover:bg-accent-soft/60 hover:text-ink',
@@ -303,7 +342,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
               onClick={onNavigate}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center rounded-lg px-3 py-2 text-sm transition-colors coarse:min-h-11',
+                  'flex items-center rounded-lg px-3 py-2 text-sm transition-colors coarse:min-h-touch',
                   isActive
                     ? 'bg-accent-soft font-semibold text-ink shadow-[inset_3px_0_0_var(--accent)]'
                     : 'font-medium text-ink-2 hover:bg-accent-soft/60 hover:text-ink',

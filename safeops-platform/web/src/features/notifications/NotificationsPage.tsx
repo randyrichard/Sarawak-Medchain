@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Bell, CheckCheck } from 'lucide-react'
-import { api } from '@/api/client'
 import { useOrg } from '@/features/org/OrgContext'
-import type { AppNotification, NotificationKind } from '@/api/types'
+import type { NotificationKind } from '@/api/types'
 import { timeAgo } from '@/lib/time'
 import {
   Badge, Button, Card, EmptyState, PageHeader, SkeletonRows, Tabs, type TabItem,
@@ -12,6 +11,7 @@ import { cn } from '@/lib/cn'
 import { useUrlState } from '@/lib/useUrlState'
 import { notificationTarget } from '@/lib/links'
 import { capabilityFor } from '@/components/layout/nav'
+import { useNotificationFeed } from '@/components/layout/notificationFeed'
 
 const KIND_LABEL: Record<NotificationKind, string> = {
   incident: 'Incident',
@@ -24,9 +24,9 @@ const FILTERS = ['all', 'unread', 'incident', 'action', 'audit', 'system'] as co
 type Filter = (typeof FILTERS)[number]
 
 export function NotificationsPage() {
-  const { company, allowed } = useOrg()
-  const companyId = company?.id ?? ''
-  const [items, setItems] = useState<AppNotification[] | null>(null)
+  const { allowed } = useOrg()
+  // The bell's and the menu's feed, so what is marked read here is read there at once.
+  const { items, unread, markRead, markAllRead, refresh } = useNotificationFeed()
   const [filter, setFilter] = useUrlState<Filter>('show', 'all', FILTERS)
   /*
    * Reminders go to the whole workspace, so an employee is told about a certificate on a
@@ -39,15 +39,8 @@ export function NotificationsPage() {
     return needs === null || allowed(needs) ? target : null
   }
 
-  useEffect(() => {
-    let cancelled = false
-    api.listNotifications(companyId).then((n) => !cancelled && setItems(n))
-    return () => {
-      cancelled = true
-    }
-  }, [companyId])
-
-  const unread = items?.filter((n) => !n.readAt).length ?? 0
+  // Opening the page reads the feed afresh, not as the last poll left it.
+  useEffect(() => { refresh() }, [refresh])
 
   const tabs: TabItem<Filter>[] = useMemo(
     () => [
@@ -68,16 +61,6 @@ export function NotificationsPage() {
     return items.filter((n) => n.kind === filter)
   }, [items, filter])
 
-  const markAll = async () => {
-    await api.markAllNotificationsRead(companyId)
-    setItems((cur) => cur?.map((n) => ({ ...n, readAt: n.readAt ?? new Date().toISOString() })) ?? null)
-  }
-
-  const markOne = async (id: string) => {
-    await api.markNotificationRead(companyId, id)
-    setItems((cur) => cur?.map((n) => (n.id === id ? { ...n, readAt: n.readAt ?? new Date().toISOString() } : n)) ?? null)
-  }
-
   return (
     <>
       <PageHeader
@@ -85,7 +68,7 @@ export function NotificationsPage() {
         subtitle="Reminders and alerts about work assigned to you, or due soon"
         right={
           unread > 0 ? (
-            <Button variant="secondary" size="sm" icon={<CheckCheck size={14} />} onClick={() => void markAll()}>
+            <Button variant="secondary" size="sm" icon={<CheckCheck size={14} />} onClick={() => void markAllRead()}>
               Mark All Read
             </Button>
           ) : undefined
@@ -143,9 +126,9 @@ export function NotificationsPage() {
               return (
                 <li key={n.id}>
                   {target ? (
-                    <Link to={target} onClick={() => void markOne(n.id)} className={row}>{body}</Link>
+                    <Link to={target} onClick={() => markRead(n.id)} className={row}>{body}</Link>
                   ) : (
-                    <button onClick={() => void markOne(n.id)} className={row}>{body}</button>
+                    <button onClick={() => markRead(n.id)} className={row}>{body}</button>
                   )}
                 </li>
               )

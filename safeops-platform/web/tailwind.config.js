@@ -28,6 +28,28 @@ export default {
          */
         short: { raw: '(max-height: 500px)' },
       },
+      /*
+       * Control sizes on a touch screen, in one place: `coarse:h-touch`, `coarse:min-h-touch-sm`.
+       *
+       * The desk sizes live in the components (h-7, h-9, h-10) and are untouched by these.
+       * On touch, every control used to be raised to 44-48px, Apple's figure for a hit
+       * target, and it was set as a literal in 66 files. On a phone that read as a
+       * large-print edition: a 44px pill around 12px text, five 44px boxes across a 390px
+       * header, every filter a slab. People asked for medium.
+       *
+       * Medium is what well-made products use on a phone: Material's 40dp button, a 36px
+       * chip, a 44px main action. All of it stays far above the 24px floor of WCAG 2.5.8,
+       * and the controls still keep their gaps (the mobile audit checks both). To make the
+       * whole app larger or smaller on touch, change these three numbers, not the pages.
+       */
+      spacing: {
+        /** 40px: a field, button, icon button, menu row, tab or list row. */
+        touch: '2.5rem',
+        /** 36px: a filter chip, small button, column sort, small link or segmented option. */
+        'touch-sm': '2.25rem',
+        /** 44px: a form's main action, and the large choice cards. */
+        'touch-lg': '2.75rem',
+      },
       colors: {
         page: 'var(--page)',
         surface: 'var(--surface)',

@@ -124,7 +124,7 @@ export function EmployeeDrawer({
               </>
             )}
           </div>
-          <button onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft">
+          <button onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 coarse:flex coarse:min-h-touch coarse:min-w-touch coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft">
             <X size={16} />
           </button>
         </header>
@@ -250,7 +250,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 /** A number a phone can dial from a tap - the point of having it on a site phone. */
 function Tel({ n }: { n?: string | null }) {
   if (!n) return null
-  return <a href={`tel:${n.replace(/[^\d+]/g, '')}`} className="text-accent underline-offset-2 hover:underline coarse:inline-flex coarse:min-h-11 coarse:items-center">{n}</a>
+  return <a href={`tel:${n.replace(/[^\d+]/g, '')}`} className="text-accent underline-offset-2 hover:underline coarse:inline-flex coarse:min-h-touch-sm coarse:items-center">{n}</a>
 }
 
 function ProfileTab({ item }: { item: EmployeeDetail }) {

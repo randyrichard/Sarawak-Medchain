@@ -302,7 +302,7 @@ function PreferencesCard() {
             disabled={loading || !prefs}
             value={prefs?.landingPage ?? '/'}
             onChange={(e) => void save({ landingPage: e.target.value as LandingPage })}
-            className="h-9 coarse:h-11 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none disabled:opacity-50"
+            className="h-9 coarse:h-touch rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none disabled:opacity-50"
           >
             {LANDING_PAGES.map((p) => (
               <option key={p} value={p}>{LANDING_PAGE_LABEL[p]}</option>
@@ -320,7 +320,7 @@ function PreferencesCard() {
             disabled={loading || !prefs}
             value={prefs?.defaultSiteId ?? ''}
             onChange={(e) => void save({ defaultSiteId: e.target.value || null })}
-            className="h-9 coarse:h-11 max-w-52 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none disabled:opacity-50"
+            className="h-9 coarse:h-touch max-w-52 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none disabled:opacity-50"
           >
             <option value="">All sites</option>
             {sites.map((s) => (

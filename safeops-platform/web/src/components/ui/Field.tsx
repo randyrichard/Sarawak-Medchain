@@ -61,17 +61,18 @@ export function FieldShell({
 }
 
 /*
- * 36px tall for a mouse, 44px on a touch screen - Fitts's law.
+ * 36px tall for a mouse, 40px on a touch screen (`touch`, tailwind.config.js) - Fitts's law.
  *
  * Time to hit a target grows as it shrinks (T = a + b·log2(D/W + 1)), and a fingertip is a
- * far blunter pointer than a cursor: Apple asks for 44pt and Material for 48dp. The buttons
- * already grew on `coarse:`; the fields beside them did not, so on a phone every input,
- * select and date picker was a 36px strip - in the form people fill in standing in a plant.
- * `coarse:` keys off the pointer, not the screen width, so a desktop keeps its density.
+ * far blunter pointer than a cursor. The buttons already grew on `coarse:`; the fields
+ * beside them did not, so on a phone every input, select and date picker was a 36px strip -
+ * in the form people fill in standing in a plant. They were then raised to 44px, which read
+ * as oversized on a phone; 40px is the medium the buttons beside them use. `coarse:` keys
+ * off the pointer, not the screen width, so a desktop keeps its density.
  */
 const controlCls = (error?: string) =>
   cn(
-    'h-9 w-full rounded-lg border bg-surface px-3 text-sm text-ink outline-none transition-colors coarse:h-11',
+    'h-9 w-full rounded-lg border bg-surface px-3 text-sm text-ink outline-none transition-colors coarse:h-touch',
     'placeholder:text-muted focus:border-accent',
     error && 'border-critical',
   )
@@ -326,9 +327,9 @@ export function Checkbox({
   const inputId = id ?? autoId
   // The 16px box is not the target - the label is, because a <label htmlFor> toggles the
   // input natively across the whole of its own area. So the row is what gets raised on a
-  // touch pointer; inflating the box itself would only make it an ugly 44px square.
+  // touch pointer; inflating the box itself would only make it an ugly 40px square.
   return (
-    <label htmlFor={inputId} className="flex cursor-pointer items-center gap-2 text-sm text-ink coarse:min-h-11">
+    <label htmlFor={inputId} className="flex cursor-pointer items-center gap-2 text-sm text-ink coarse:min-h-touch">
       <input id={inputId} type="checkbox" className={cn('h-4 w-4 rounded border accent-[var(--accent)]', className)} {...rest} />
       {label}
     </label>

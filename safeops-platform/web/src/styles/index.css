@@ -302,11 +302,11 @@ select optgroup {
   /*
    * A checkbox or radio is tapped through its label, so the label is the target. Rows of
    * them (an invitation's sites, a schedule's recipients, a webhook's events) were 19px
-   * tall: under the 24px WCAG 2.5.8 floor, and easy to tick the wrong one. 44px is the
-   * size iOS and Android both recommend.
+   * tall: under the 24px WCAG 2.5.8 floor, and easy to tick the wrong one. They are a row
+   * on a touch screen, so they take a row's height (`touch` in tailwind.config.js).
    */
   label:has(> input[type='checkbox']),
   label:has(> input[type='radio']) {
-    min-height: 44px;
+    min-height: theme('spacing.touch');
   }
 }

@@ -137,7 +137,7 @@ export function AssetDrawer({
                   {asset.overdue && <Badge tone="critical">Inspection {Math.abs(asset.daysToDue)}d overdue</Badge>}
                 </div>
               </div>
-              <button onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft hover:text-ink">
+              <button onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 coarse:flex coarse:min-h-touch coarse:min-w-touch coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft hover:text-ink">
                 <X size={16} />
               </button>
             </div>

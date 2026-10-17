@@ -98,7 +98,7 @@ export function ActionsTable({
   const SortHeader = ({ label, k, className }: { label: string; k: SortKey; className?: string }) => (
     <th className={cn('px-3 py-2.5 font-semibold', className)}>
       <button
-        className="inline-flex items-center gap-1 uppercase tracking-wide hover:text-ink coarse:min-h-11"
+        className="inline-flex items-center gap-1 uppercase tracking-wide hover:text-ink coarse:min-h-touch-sm"
         onClick={() => setSort((s) => ({ key: k, dir: s.key === k ? ((s.dir * -1) as 1 | -1) : 1 }))}
       >
         {label}
@@ -122,7 +122,7 @@ export function ActionsTable({
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="text-2xs font-semibold uppercase tracking-wider text-muted">Group by</span>
-          <select value={group} onChange={(e) => setGroup(e.target.value as GroupKey)} aria-label="Group by" className="h-8 coarse:h-11 rounded-lg border bg-surface px-2 text-xs text-ink-2 outline-none">
+          <select value={group} onChange={(e) => setGroup(e.target.value as GroupKey)} aria-label="Group by" className="h-8 coarse:h-touch rounded-lg border bg-surface px-2 text-xs text-ink-2 outline-none">
             <option value="none">None</option>
             <option value="site">Site</option>
             <option value="owner">Owner</option>

@@ -201,7 +201,7 @@ export function ActionsPage() {
 
       {/* Toolbar */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <label className="flex min-w-52 flex-1 cursor-text items-center gap-2 rounded-lg border coarse:min-h-11 bg-surface px-3 py-2 coarse:py-0 md:max-w-xs focus-within:border-accent">
+        <label className="flex min-w-52 flex-1 cursor-text items-center gap-2 rounded-lg border coarse:min-h-touch bg-surface px-3 py-2 coarse:py-0 md:max-w-xs focus-within:border-accent">
           <Search size={14} aria-hidden className="shrink-0 text-muted" />
           <input
             value={q}
@@ -210,11 +210,11 @@ export function ActionsPage() {
             className="w-full coarse:self-stretch bg-transparent text-sm text-ink outline-none placeholder:text-muted"
           />
         </label>
-        <select value={owner} onChange={(e) => setOwner(e.target.value)} className="h-9 coarse:h-11 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none" aria-label="Filter by owner">
+        <select value={owner} onChange={(e) => setOwner(e.target.value)} className="h-9 coarse:h-touch rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none" aria-label="Filter by owner">
           <option value="">All owners</option>
           {people.map((p) => <option key={p}>{p}</option>)}
         </select>
-        <select value={priority} onChange={(e) => setPriority(e.target.value as ActionPriority | '')} className="h-9 coarse:h-11 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none" aria-label="Filter by priority">
+        <select value={priority} onChange={(e) => setPriority(e.target.value as ActionPriority | '')} className="h-9 coarse:h-touch rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none" aria-label="Filter by priority">
           <option value="">All priorities</option>
           <option>High</option><option>Medium</option><option>Low</option>
         </select>

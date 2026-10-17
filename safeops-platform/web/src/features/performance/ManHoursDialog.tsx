@@ -116,7 +116,7 @@ export function ManHoursDialog({
                     onChange={(e) => setDraft((d) => ({ ...d, [m]: e.target.value }))}
                     placeholder={`est. ${formatHours(site.estimatePerMonth)}`}
                     aria-invalid={!bad.ok || undefined}
-                    className="mt-0.5 h-9 coarse:h-11 w-full rounded-lg border bg-surface px-2.5 text-sm tabular-nums text-ink outline-none placeholder:text-muted focus:border-accent aria-[invalid=true]:border-[color:var(--critical)]"
+                    className="mt-0.5 h-9 coarse:h-touch w-full rounded-lg border bg-surface px-2.5 text-sm tabular-nums text-ink outline-none placeholder:text-muted focus:border-accent aria-[invalid=true]:border-[color:var(--critical)]"
                   />
                   {!bad.ok && <span className="mt-0.5 block text-2xs text-critical">{bad.error}</span>}
                 </label>

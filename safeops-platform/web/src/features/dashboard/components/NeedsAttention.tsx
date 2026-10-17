@@ -62,7 +62,7 @@ export function NeedsAttention({
               type="button"
               onClick={() => setKind(t.value)}
               aria-pressed={kind === t.value}
-              className={`shrink-0 rounded-full border px-2.5 py-1 text-2xs font-semibold transition coarse:min-h-11 coarse:px-4 ${
+              className={`shrink-0 rounded-full border px-2.5 py-1 text-2xs font-semibold transition coarse:min-h-touch-sm coarse:px-3 ${
                 kind === t.value
                   ? 'border-[var(--accent)] bg-accent-soft text-ink'
                   : 'border-line text-muted hover:text-ink'

@@ -71,9 +71,9 @@ describe('mobile layout', () => {
     expect(read('index.html')).not.toMatch(/maximum-scale|user-scalable\s*=\s*no/)
   })
 
-  it('makes every close button a 44px target on a touch screen', () => {
+  it('makes every close button a touch-sized target on a touch screen', () => {
     // Drawer and dialog close buttons were 24-28px: the control people reach for most on a
-    // phone, in a corner, where a miss lands on the page behind.
+    // phone, in a corner, where a miss lands on the page behind. `touch` is 40px.
     const offenders: string[] = []
     for (const file of sources(SRC)) {
       const text = readFileSync(file, 'utf8')
@@ -81,18 +81,18 @@ describe('mobile layout', () => {
         const start = text.lastIndexOf('<button', m.index)
         const end = text.indexOf('</button>', m.index)
         if (start < 0 || end < 0) continue
-        if (!text.slice(start, end).includes('coarse:min-h-11')) offenders.push(`${relative(SRC, file)}: ${m[0]}`)
+        if (!/coarse:min-h-touch\b(?!-)/.test(text.slice(start, end))) offenders.push(`${relative(SRC, file)}: ${m[0]}`)
       }
     }
     expect(offenders).toEqual([])
   })
 
-  it('makes checkbox and radio rows 44px tall on a touch screen', () => {
+  it('makes checkbox and radio rows a touch-sized row on a touch screen', () => {
     // The label is the target. Rows of them (an invitation's sites) were 19px tall.
     const css = read('src/styles/index.css')
     const rule = css.slice(css.indexOf('@media (pointer: coarse)'))
-    expect(rule).toMatch(/label:has\(> input\[type='checkbox'\]\),\s*label:has\(> input\[type='radio'\]\)\s*\{\s*min-height:\s*44px/)
-    expect(read('src/components/ui/Switch.tsx')).toContain('coarse:h-11 coarse:w-12')
+    expect(rule).toMatch(/label:has\(> input\[type='checkbox'\]\),\s*label:has\(> input\[type='radio'\]\)\s*\{\s*min-height:\s*theme\('spacing\.touch'\)/)
+    expect(read('src/components/ui/Switch.tsx')).toContain('coarse:h-touch coarse:w-touch-lg')
   })
 
   it('lists a month by day on a phone instead of drawing seven 45px columns', () => {

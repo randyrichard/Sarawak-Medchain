@@ -402,7 +402,7 @@ export function ReportIncidentPage() {
                             // Where Continue takes the keyboard when no type has been picked.
                             data-invalid={touchedNext && !draft.type && i === 0 && group === INCIDENT_TYPE_GROUPS[0] ? '' : undefined}
                             className={cn(
-                              'flex items-center gap-2 rounded-lg border p-2.5 text-left transition-all hover:-translate-y-0.5 coarse:min-h-12',
+                              'flex items-center gap-2 rounded-lg border p-2.5 text-left transition-all hover:-translate-y-0.5 coarse:min-h-touch-lg',
                               active ? 'bg-accent-soft shadow-card' : 'hover:bg-accent-soft/40',
                             )}
                             style={active ? { borderColor: 'var(--accent)' } : undefined}
@@ -509,7 +509,7 @@ export function ReportIncidentPage() {
                         patch({ peopleInvolved: next })
                       }}
                       placeholder="Name or role, e.g. Reach truck operator"
-                      className="h-9 coarse:h-11 flex-1 rounded-lg border bg-surface px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
+                      className="h-9 coarse:h-touch flex-1 rounded-lg border bg-surface px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent"
                     />
                     <select
                       value={p.role}
@@ -518,7 +518,7 @@ export function ReportIncidentPage() {
                         next[i] = { ...p, role: e.target.value as PersonInvolved['role'] }
                         patch({ peopleInvolved: next })
                       }}
-                      className="h-9 coarse:h-11 rounded-lg border bg-surface px-2 text-sm text-ink-2 outline-none"
+                      className="h-9 coarse:h-touch rounded-lg border bg-surface px-2 text-sm text-ink-2 outline-none"
                     >
                       <option>Employee</option>
                       <option>Contractor</option>
@@ -646,7 +646,7 @@ export function ReportIncidentPage() {
                       <button
                         aria-label={`Remove ${f.name}`}
                         onClick={() => setFiles(files.filter((_, x) => x !== i))}
-                        className="rounded p-1 text-muted hover:text-critical coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center"
+                        className="rounded p-1 text-muted hover:text-critical coarse:flex coarse:min-h-touch coarse:min-w-touch coarse:items-center coarse:justify-center"
                       >
                         <Trash2 size={13} />
                       </button>

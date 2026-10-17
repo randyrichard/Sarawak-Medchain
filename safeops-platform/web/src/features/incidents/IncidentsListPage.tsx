@@ -207,7 +207,7 @@ export function IncidentsListPage() {
           A <label>, so the whole bordered box is the target - the icon and padding included -
           not just the text field inside it (Fitts's law: the target is whatever responds).
         */}
-        <label className="flex min-w-56 flex-1 cursor-text items-center gap-2 rounded-lg border coarse:min-h-11 bg-surface px-3 py-2 coarse:py-0 focus-within:border-accent md:max-w-sm">
+        <label className="flex min-w-56 flex-1 cursor-text items-center gap-2 rounded-lg border coarse:min-h-touch bg-surface px-3 py-2 coarse:py-0 focus-within:border-accent md:max-w-sm">
           <Search size={14} aria-hidden className="shrink-0 text-muted" />
           <input
             type="search"
@@ -221,7 +221,7 @@ export function IncidentsListPage() {
         <select
           value={type}
           onChange={(e) => setType(e.target.value as IncidentType | '')}
-          className="h-9 coarse:h-11 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none"
+          className="h-9 coarse:h-touch rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none"
           aria-label="Filter by incident type"
         >
           <option value="">All types</option>
@@ -235,7 +235,7 @@ export function IncidentsListPage() {
         <select
           value={severity}
           onChange={(e) => setSeverity(e.target.value as IncidentSeverity | '')}
-          className="h-9 coarse:h-11 rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none"
+          className="h-9 coarse:h-touch rounded-lg border bg-surface px-2.5 text-sm text-ink-2 outline-none"
           aria-label="Filter by severity"
         >
           <option value="">All severities</option>
@@ -253,7 +253,7 @@ export function IncidentsListPage() {
             onClick={() => setStatus(chip.value)}
             aria-pressed={status === chip.value}
             className={cn(
-              'rounded-full border px-3 py-1 text-xs font-medium transition-colors coarse:min-h-11 coarse:px-4',
+              'rounded-full border px-3 py-1 text-xs font-medium transition-colors coarse:min-h-touch-sm',
               status === chip.value ? 'bg-accent-soft text-ink' : 'text-ink-2 hover:text-ink',
             )}
             style={status === chip.value ? { borderColor: 'var(--accent)' } : undefined}
@@ -273,7 +273,7 @@ export function IncidentsListPage() {
               value={moreActive?.value ?? ''}
               onChange={(e) => e.target.value && setStatus(e.target.value as IncidentStatusFilter)}
               className={cn(
-                'rounded-full border px-3 py-1 text-xs font-medium outline-none transition-colors coarse:min-h-11 coarse:px-4',
+                'rounded-full border px-3 py-1 text-xs font-medium outline-none transition-colors coarse:min-h-touch-sm',
                 moreActive ? 'bg-accent-soft text-ink' : 'bg-surface text-ink-2 hover:text-ink',
               )}
               style={moreActive ? { borderColor: 'var(--accent)' } : undefined}

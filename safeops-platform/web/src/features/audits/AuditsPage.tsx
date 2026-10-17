@@ -104,7 +104,7 @@ export function AuditsPage() {
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
         {(view === 'audits' || view === 'findings' || view === 'documents') && (
-          <label className="flex min-w-52 flex-1 cursor-text items-center gap-2 rounded-lg border coarse:min-h-11 bg-surface px-3 py-2 coarse:py-0 md:max-w-xs focus-within:border-accent">
+          <label className="flex min-w-52 flex-1 cursor-text items-center gap-2 rounded-lg border coarse:min-h-touch bg-surface px-3 py-2 coarse:py-0 md:max-w-xs focus-within:border-accent">
             <Search size={14} aria-hidden className="shrink-0 text-muted" />
             <input
               value={q}

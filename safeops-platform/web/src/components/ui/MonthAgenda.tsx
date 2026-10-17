@@ -47,7 +47,7 @@ export function MonthAgenda({
                   <span className="shrink-0 text-2xs font-semibold text-ink-2">{e.status}</span>
                 </>
               )
-              const cls = 'flex min-h-11 w-full items-center gap-2 rounded-lg border px-3 py-2 text-left'
+              const cls = 'flex min-h-touch w-full items-center gap-2 rounded-lg border px-3 py-2 text-left'
               return (
                 <li key={e.id}>
                   {e.onSelect ? (

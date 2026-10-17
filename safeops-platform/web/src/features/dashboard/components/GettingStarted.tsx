@@ -173,7 +173,7 @@ export function GettingStarted({
               title="Hide getting started"
               className="shrink-0 rounded-lg p-1.5 text-muted transition-colors hover:bg-accent-soft
                          hover:text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent
-                         coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center"
+                         coarse:flex coarse:min-h-touch coarse:min-w-touch coarse:items-center coarse:justify-center"
             >
               <X size={14} />
             </button>

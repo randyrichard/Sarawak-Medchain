@@ -97,7 +97,7 @@ export function HelpPage() {
                 </div>
                 <Link
                   to={t.to}
-                  className="shrink-0 self-center rounded text-xs font-semibold text-accent hover:underline coarse:inline-flex coarse:min-h-11 coarse:items-center"
+                  className="shrink-0 self-center rounded text-xs font-semibold text-accent hover:underline coarse:inline-flex coarse:min-h-touch-sm coarse:items-center"
                   aria-label={`Open: ${t.title}`}
                 >
                   Open
@@ -117,14 +117,14 @@ export function HelpPage() {
           <div className="divide-y rounded-lg border">
             {howTos.map((h) => (
               <details key={h.id} id={`how-${h.id}`} className="group px-3.5 py-3 [&_summary::-webkit-details-marker]:text-muted">
-                <summary className="cursor-pointer text-sm font-semibold text-ink coarse:min-h-11 coarse:py-2.5">
+                <summary className="cursor-pointer text-sm font-semibold text-ink coarse:min-h-touch coarse:py-2">
                   {h.question}
                 </summary>
                 <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-sm leading-relaxed text-ink-2 marker:text-muted">
                   {h.steps.map((s) => <li key={s}><Marked text={s} /></li>)}
                 </ol>
                 {h.note && <p className="mt-2 text-xs leading-relaxed text-muted"><Marked text={h.note} /></p>}
-                <Link to={h.to} className="mt-2 inline-flex text-xs font-semibold text-accent hover:underline coarse:min-h-11 coarse:items-center">
+                <Link to={h.to} className="mt-2 inline-flex text-xs font-semibold text-accent hover:underline coarse:min-h-touch-sm coarse:items-center">
                   Take me there
                 </Link>
               </details>
@@ -148,6 +148,7 @@ export function HelpPage() {
         <ul className="space-y-2 text-sm leading-relaxed text-ink-2">
           <li><strong className="font-semibold text-ink">Search.</strong> Press <Key>/</Key> or <Key>{modKey('K')}</Key> to find an incident, permit, person or piece of equipment by name or number.</li>
           <li><strong className="font-semibold text-ink">Notifications.</strong> The bell at the top lists what is assigned to you or due soon. Click one to open it.</li>
+          <li><strong className="font-semibold text-ink">Counts in the menu.</strong> A red number beside a menu item counts what needs attention there now, the same items Home lists. Beside Notifications it counts what you have not read. On a phone, a red dot on the menu button means something is waiting.</li>
           <li><strong className="font-semibold text-ink">Numbers are links.</strong> A figure on Home opens the list it counts, already filtered.</li>
           <li><strong className="font-semibold text-ink">Keyboard.</strong> Press <Key>?</Key> for every shortcut.</li>
           <li><strong className="font-semibold text-ink">This page.</strong> Help is always at the bottom of the menu and in your account menu.</li>

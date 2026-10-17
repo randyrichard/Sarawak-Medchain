@@ -179,6 +179,7 @@ d('First customer acceptance — over HTTP, two tenants', () => {
     // ── They can work inside their own tenant ────────────────────────────────
     for (const path of [
       `/dashboard/overview?companyId=${acme.companyId}`,
+      `/dashboard/attention-counts?companyId=${acme.companyId}`,
       `/org/sites?companyId=${acme.companyId}`,
       `/incidents?companyId=${acme.companyId}&page=1&pageSize=5`,
     ]) {
@@ -189,6 +190,7 @@ d('First customer acceptance — over HTTP, two tenants', () => {
     // ── And nowhere near the other customer ──────────────────────────────────
     for (const path of [
       `/dashboard/overview?companyId=${rival.companyId}`,
+      `/dashboard/attention-counts?companyId=${rival.companyId}`,
       `/org/sites?companyId=${rival.companyId}`,
       `/incidents?companyId=${rival.companyId}&page=1&pageSize=5`,
       `/admin/users?companyId=${rival.companyId}`,

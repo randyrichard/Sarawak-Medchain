@@ -64,7 +64,7 @@ export function NotFoundPage() {
                   to={d.to}
                   className="flex items-center justify-between gap-3 px-3.5 py-3 text-sm transition-colors
                              hover:bg-accent-soft focus:outline-none focus-visible:ring-2
-                             focus-visible:ring-accent coarse:min-h-11"
+                             focus-visible:ring-accent coarse:min-h-touch"
                 >
                   <span className="font-medium text-ink">{d.label}</span>
                   <span className="shrink-0 text-xs text-muted">{d.hint}</span>

@@ -157,7 +157,7 @@ export function ActionDrawer({
               </Link>
             )}
           </div>
-          <button onClick={onClose} aria-label="Close workspace" className="rounded-lg p-1.5 coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft hover:text-ink">
+          <button onClick={onClose} aria-label="Close workspace" className="rounded-lg p-1.5 coarse:flex coarse:min-h-touch coarse:min-w-touch coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft hover:text-ink">
             <X size={16} />
           </button>
         </div>
@@ -330,7 +330,7 @@ export function ActionDrawer({
                       if (!mentions.includes(name)) setMentions((m) => [...m, name])
                       setComment((t) => `${t}${t && !t.endsWith(' ') ? ' ' : ''}@${name} `)
                     }}
-                    className="rounded-md border bg-surface px-1.5 py-0.5 text-2xs text-ink-2 outline-none coarse:min-h-11"
+                    className="rounded-md border bg-surface px-1.5 py-0.5 text-2xs text-ink-2 outline-none coarse:min-h-touch"
                     aria-label="Mention someone"
                   >
                     <option value="">Mention…</option>

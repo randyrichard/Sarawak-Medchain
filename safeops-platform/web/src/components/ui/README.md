@@ -206,7 +206,8 @@ audit. The live app was also audited across eight pages, in both themes, at 375p
 - Status is never shown by colour alone: pills carry both an icon and a label.
 - Card titles are `h2` under the page's `h1`. Pass `CardHeader as="h3"` when the card is
   nested inside another section.
-- Touch targets grow to 44px on coarse pointers, using the `coarse:` variant.
+- Touch targets grow to the touch sizes on coarse pointers (`coarse:h-touch` and its kin; see
+  Fitts's law below).
 
 ## Responsive design
 
@@ -369,14 +370,29 @@ pointer than a cursor, so the sizes differ by input:
 | Pointer | Minimum | Source |
 |---|---|---|
 | Mouse / trackpad | **24×24 px**, or smaller only if spaced so a 24px circle around it hits nothing else | WCAG 2.2 SC 2.5.8 (AA) |
-| Touch (`coarse:` variant) | **44×44 px** | Apple HIG 44pt, Material 48dp, WCAG 2.5.5 (AAA) |
+| Touch (`coarse:` variant) | **40px** for a control, **36px** for a compact one, **44px** for a form's main action | The medium sizes of well-made phone UIs: Material's 40dp button, 32–36px chips |
 
 `coarse:` is `(pointer: coarse)`. It checks *how* someone points, not the screen width, so a
 desktop keeps its density and a touch laptop gets touch sizes.
 
-Measured on 12 pages, every visible interactive element, before and after:
+The touch sizes are three spacing tokens in `tailwind.config.js`, and they are the only way a
+control is sized for touch:
 
-| | Mouse (WCAG 2.5.8) | Touch (44px) |
+| Token | Size | For |
+|---|---|---|
+| `touch` | 40px | fields, buttons, icon buttons, menu rows, tabs, list rows |
+| `touch-sm` | 36px | filter chips, small buttons, column sorts, small links, segmented options |
+| `touch-lg` | 44px | a form's main action (`Button size="lg"`), the large choice cards |
+
+They were all 44–48px once (Apple's figure, WCAG 2.5.5 AAA), written as a literal in 66
+files. On a phone that read as oversized: a 44px pill around 12px text, five 44px boxes across
+the header. People asked for medium. To change the size of everything on touch, change the
+tokens; `fittsLaw.test.ts` fails any `coarse:` height written as a number.
+
+When touch sizes were first introduced (at 44px), 12 pages were measured, every visible
+interactive element, before and after:
+
+| | Mouse (WCAG 2.5.8) | Touch (then 44px) |
 |---|---|---|
 | Before | 0 failing | **103 of 258** too small |
 | After | 0 failing | **0 of 242** |
@@ -399,10 +415,11 @@ Where the whole area should respond, it now does:
 **Rules for new screens**
 
 - Use the primitives (`Button`, `Input`, `Select`…), which already size for both pointers. A
-  hand-built control with a fixed height also needs its `coarse:` size: `h-9 coarse:h-11`.
-  `fittsLaw.test.ts` fails any 36px select, input or button without one.
-- Icon-only buttons are at least `h-6 w-6`, and `coarse:min-h-11 coarse:min-w-11` on touch. A
-  negative margin can keep the larger hit area from changing the layout.
+  hand-built control with a fixed height also needs its `coarse:` size from a token:
+  `h-9 coarse:h-touch`, or `coarse:min-h-touch-sm` for a chip. `fittsLaw.test.ts` fails any
+  36px select, input or button without one, and any touch size written as a number.
+- Icon-only buttons are at least `h-6 w-6`, and `coarse:min-h-touch coarse:min-w-touch` on
+  touch. A negative margin can keep the larger hit area from changing the layout.
 - Make the whole thing the target: a label around its field, a link around its row or card.
 - Put frequent actions where the pointer or thumb already is. The near-miss form pins Submit to
   the bottom edge on a phone, and dialog actions sit at the bottom of the dialog.

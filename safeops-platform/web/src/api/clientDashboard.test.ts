@@ -40,6 +40,13 @@ describe('Home without a server', () => {
     expect(request).not.toHaveBeenCalled()
   })
 
+  it('counts the menu\'s badges from the demo, and asks no server', async () => {
+    const api = await client(false)
+    const c = await api.attentionCounts({ companyId: 'big' }, admin)
+    expect(c.incident).toBeGreaterThan(0)
+    expect(request).not.toHaveBeenCalled()
+  })
+
   it('compares the sites from the demo too', async () => {
     const api = await client(false)
     const c = await api.compareSites({ companyId: 'big' }, admin)
@@ -56,5 +63,7 @@ describe('Home with a server', () => {
     expect(request.mock.calls[0][0]).toBe('/dashboard/overview?companyId=c1&siteId=s1&department=Maintenance')
     await api.compareSites({ companyId: 'c1', from: '2026-10-01' }, admin)
     expect(request.mock.calls[1][0]).toBe('/dashboard/sites?companyId=c1&from=2026-10-01')
+    await api.attentionCounts({ companyId: 'c1', siteId: 's1' }, admin)
+    expect(request.mock.calls[2][0]).toBe('/dashboard/attention-counts?companyId=c1&siteId=s1')
   })
 })

@@ -29,7 +29,7 @@ organization, administration, notifications and account.
 | Width ("length") | The page never scrolls sideways. The layout is never wider than the screen, which would make the phone shrink the whole page. Nothing pokes past the screen edge outside a scroll box. |
 | Height | No text is cut off by a fixed-height box that cannot scroll. No pinned panel is taller than the screen. Dialogs stay usable on short screens. |
 | Panels clashing | No text or control is drawn on top of another. No text runs out of its own box. |
-| Navigation clashing | The top-bar items don't overlap, all stay on screen and are at least 44px. The menu drawer scrolls to its last item. Tab rows scroll rather than cut off. |
+| Navigation clashing | The top-bar items don't overlap, all stay on screen and are at least the touch size (40px, read from `tailwind.config.js`). The menu drawer scrolls to its last item. Tab rows scroll rather than cut off. |
 | Keyboard | The screen is shrunk by the keyboard's height, then each form field is focused. The field must be in view and not covered. Fields are checked on near miss, new incident, the incidents search box and four dialogs. |
 | iOS zoom | No text field is under 16px, because an iPhone zooms into those on focus. |
 
@@ -176,3 +176,41 @@ Run on the iPhone SE profile: an inspection photo stored byte for byte (checksum
 an audit item photo shown in the audit drawer, and a standalone action photo letting the
 action complete. Tests: `fieldEvidence.integration.test.ts` (API) and
 `fieldEvidence.dom.test.tsx` (web).
+
+## Medium sizes on touch, October 2026
+
+On a phone the app read as oversized. Every control on a touch screen had been raised to
+44–48px, Apple's minimum hit target, while its text stayed at 12–14px. The result was a 44px
+pill around 12px text, five 44px boxes across the header, and every filter a slab. The
+desktop, at 28–37px, was not affected and has not changed.
+
+Touch sizes are now three tokens in `tailwind.config.js`, at the medium that well-made phone
+interfaces use:
+
+| Token | Size | For |
+|---|---|---|
+| `touch` | 40px | fields, buttons, icon buttons, menu rows, tabs, list rows |
+| `touch-sm` | 36px | filter chips, small buttons, column sorts, small links |
+| `touch-lg` | 44px | a form's main action, the incident-type cards |
+
+Measured on an iPhone 13 profile across nine pages:
+
+| | Before | After |
+|---|---|---|
+| Top-bar buttons | 44px | 40px |
+| Menu rows | 44px | 40px |
+| Fields | 44px | 40px |
+| Tabs | 44px | 40px |
+| Filter chips | 44px | 36px |
+| Small links and column sorts | 44px | 36px |
+| Near-miss fields | 44px, 18px text | 40px, 16px text |
+| Every control on a desktop | unchanged | unchanged |
+
+**What did not change:**
+- Text sizes. A phone shows 12–14px text, the same as a desk.
+- Every field keeps 16px text, the smallest size an iPhone does not zoom into on focus.
+- Every target stays well above WCAG 2.5.8's 24px and keeps its gap from its neighbours. The
+  mobile audit checks both, and holds the top bar to the `touch` token rather than to 44px.
+
+`fittsLaw.test.ts` fails any touch size written as a number instead of a token. To make the
+whole app larger or smaller on touch, change the three tokens.

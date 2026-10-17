@@ -85,7 +85,7 @@ export function TargetsDialog({
                   placeholder="No target"
                   aria-invalid={!result.ok || undefined}
                   aria-describedby={`target-hint-${def.metric}`}
-                  className="h-9 coarse:h-11 w-full rounded-lg border bg-surface px-2.5 pr-8 text-sm tabular-nums text-ink outline-none placeholder:text-muted focus:border-accent aria-[invalid=true]:border-[color:var(--critical)]"
+                  className="h-9 coarse:h-touch w-full rounded-lg border bg-surface px-2.5 pr-8 text-sm tabular-nums text-ink outline-none placeholder:text-muted focus:border-accent aria-[invalid=true]:border-[color:var(--critical)]"
                 />
                 {(def.unit === 'percent' || def.unit === 'ratio') && (
                   <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted" aria-hidden>

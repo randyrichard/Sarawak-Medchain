@@ -161,7 +161,7 @@ export function InspectionRunner({
                 {inspection.overdue && <Badge tone="critical" className="ml-1.5">overdue</Badge>}
               </p>
             </div>
-            <button onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft hover:text-ink">
+            <button onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 coarse:flex coarse:min-h-touch coarse:min-w-touch coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft hover:text-ink">
               <X size={16} />
             </button>
           </div>
@@ -276,7 +276,7 @@ export function InspectionRunner({
               */}
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <PhotoPicker files={photos} onChange={setPhotos} />
-                <button onClick={captureGps} className="flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold text-ink-2 hover:bg-accent-soft coarse:min-h-11">
+                <button onClick={captureGps} className="flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-semibold text-ink-2 hover:bg-accent-soft coarse:min-h-touch">
                   <LocateFixed size={13} /> {draft.gps ? 'GPS ✓' : 'Capture GPS'}
                 </button>
               </div>

@@ -111,9 +111,9 @@ export function PermitDrawer({
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <button onClick={() => printPermit(permit)} aria-label="Print permit"
-              className="rounded-lg p-1.5 coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft hover:text-ink"><Printer size={16} /></button>
+              className="rounded-lg p-1.5 coarse:flex coarse:min-h-touch coarse:min-w-touch coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft hover:text-ink"><Printer size={16} /></button>
             <button onClick={onClose} aria-label="Close"
-              className="rounded-lg p-1.5 coarse:flex coarse:min-h-11 coarse:min-w-11 coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft hover:text-ink"><X size={16} /></button>
+              className="rounded-lg p-1.5 coarse:flex coarse:min-h-touch coarse:min-w-touch coarse:items-center coarse:justify-center text-muted hover:bg-accent-soft hover:text-ink"><X size={16} /></button>
           </div>
         </div>
 
@@ -363,10 +363,10 @@ export function PermitDrawer({
                 <div className="mt-2 flex flex-col gap-2 sm:flex-row">
                   <input value={iso.description} onChange={(e) => setIso((s) => ({ ...s, description: e.target.value }))}
                     placeholder="What is isolated…" aria-label="Isolation description"
-                    className="h-9 coarse:h-11 flex-1 rounded-lg border bg-surface px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent" />
+                    className="h-9 coarse:h-touch flex-1 rounded-lg border bg-surface px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent" />
                   <input value={iso.tagId} onChange={(e) => setIso((s) => ({ ...s, tagId: e.target.value }))}
                     placeholder="LOTO tag" aria-label="Lock/tag id"
-                    className="h-9 coarse:h-11 w-full rounded-lg border bg-surface px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent sm:w-28" />
+                    className="h-9 coarse:h-touch w-full rounded-lg border bg-surface px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent sm:w-28" />
                   <Button size="md" variant="secondary" loading={busy}
                     disabled={!iso.description.trim() || !iso.tagId.trim()}
                     onClick={() => void run(async () => {

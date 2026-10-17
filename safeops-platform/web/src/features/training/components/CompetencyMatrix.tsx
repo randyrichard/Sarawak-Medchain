@@ -40,14 +40,14 @@ export function CompetencyMatrix({
     <>
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <span className="text-2xs font-semibold uppercase tracking-wider text-muted">Group by</span>
-        <select value={group} onChange={(e) => setGroup(e.target.value as GroupBy)} aria-label="Group by" className="h-8 coarse:h-11 rounded-lg border bg-surface px-2 text-xs text-ink-2 outline-none">
+        <select value={group} onChange={(e) => setGroup(e.target.value as GroupBy)} aria-label="Group by" className="h-8 coarse:h-touch rounded-lg border bg-surface px-2 text-xs text-ink-2 outline-none">
           <option value="none">None</option>
           <option value="site">Site</option>
           <option value="department">Department</option>
         </select>
         <button
           onClick={() => setGapsOnly((v) => !v)}
-          className={cn('rounded-full border px-3 py-1 text-xs font-medium transition-colors coarse:min-h-11 coarse:px-4', gapsOnly ? 'bg-accent-soft text-ink' : 'text-ink-2 hover:text-ink')}
+          className={cn('rounded-full border px-3 py-1 text-xs font-medium transition-colors coarse:min-h-touch-sm', gapsOnly ? 'bg-accent-soft text-ink' : 'text-ink-2 hover:text-ink')}
           style={gapsOnly ? { borderColor: 'var(--accent)' } : undefined}
         >
           Gaps &amp; Expiring Only

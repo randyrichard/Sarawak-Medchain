@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { createDemoStores } from './demo'
 import {
-  buildOverview, compareSites, COMPARE_ROLES, INJURY_SEVERITIES, LOST_TIME_SEVERITIES, SEVERITY_RANK,
+  buildOverview, compareSites, COMPARE_ROLES, countAttention, INJURY_SEVERITIES, LOST_TIME_SEVERITIES, SEVERITY_RANK,
 } from './overview'
 import { kpiCards, notCountedNote } from '@/features/dashboard/lib'
 import type { Actor } from '../incidents'
@@ -125,6 +125,26 @@ describe('Home in the offline demo', () => {
     expect(new Date(o.scope.from).getHours()).toBe(0)
     expect(new Date(o.scope.to).getDate()).toBe(31)
     expect(new Date(o.scope.to).getHours()).toBe(23)
+  })
+})
+
+describe('the menu\'s counts in the offline demo', () => {
+  it('are Needs Attention counted by module', () => {
+    const stores = fresh()
+    const counts = countAttention(stores, { companyId: 'big' }, admin)
+    const o = buildOverview(stores, { companyId: 'big' }, admin)
+    expect(o.attentionTotal).toBeLessThan(40) // under the list's cap, so the list is complete
+    for (const kind of Object.keys(counts) as (keyof typeof counts)[]) {
+      expect(counts[kind], kind).toBe(o.attention.filter((a) => a.kind === kind).length)
+    }
+    expect(counts.incident + counts.action + counts.permit).toBeGreaterThan(0)
+  })
+
+  it('narrow to the site in view, and are refused as Home is', () => {
+    const stores = fresh()
+    const atSite = countAttention(stores, { companyId: 'big', siteId: 'btu' }, admin)
+    expect(atSite.action).toBe(stores.incidents.listCapa('big', { bucket: 'overdue', siteId: 'btu' }, admin).length)
+    expect(() => countAttention(stores, { companyId: 'big', siteId: 'pjy' }, admin)).toThrow('Site not found in this workspace.')
   })
 })
 
