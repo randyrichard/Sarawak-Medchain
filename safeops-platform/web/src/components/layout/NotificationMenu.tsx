@@ -49,9 +49,16 @@ export function NotificationMenu() {
       {items === null ? (
         <div className="px-2.5 py-2"><SkeletonRows rows={3} /></div>
       ) : items.length === 0 ? (
-        <p className="px-2.5 py-6 text-center text-xs text-muted">You're all caught up.</p>
+        <p className="px-2.5 py-6 text-xs text-muted">You're all caught up.</p>
       ) : (
-        <div className="max-h-96 overflow-y-auto">
+        /*
+         * On a phone the panel is the width of the screen, and at three lines a notification
+         * six of them covered 71% of it. There it is two lines each - the time shares the
+         * detail's line - and the list stops at about a third of the screen and scrolls; the
+         * row cut off at the bottom says there is more. Written phone-first with `sm:` for
+         * the desk: this config's custom screens leave Tailwind without its max-width variants.
+         */
+        <div className="max-h-[36vh] overflow-y-auto sm:max-h-96">
           {items.slice(0, 6).map((n) => {
             return (
               <DropdownItem
@@ -64,8 +71,12 @@ export function NotificationMenu() {
                 <span className="flex items-start gap-2.5">
                   <span className="min-w-0 flex-1">
                     <span className={cn('block truncate text-sm', n.readAt ? 'text-ink-2' : 'font-semibold text-ink')}>{n.title}</span>
-                    <span className="block truncate text-2xs text-muted">{n.detail}</span>
-                    <span className="block pt-0.5 text-2xs text-muted">{timeAgo(n.createdAt)}</span>
+                    <span className="flex gap-1 text-2xs text-muted">
+                      {/* The time first, so it is never cut off and every row's starts on one edge. */}
+                      <span className="shrink-0 sm:hidden">{timeAgo(n.createdAt)} ·</span>
+                      <span className="min-w-0 truncate">{n.detail}</span>
+                    </span>
+                    <span className="hidden pt-0.5 text-2xs text-muted sm:block">{timeAgo(n.createdAt)}</span>
                   </span>
                   {!n.readAt && (
                     <>
@@ -81,7 +92,7 @@ export function NotificationMenu() {
       )}
       <DropdownSeparator />
       <DropdownItem onSelect={() => navigate('/notifications')}>
-        <span className="w-full text-center text-xs font-semibold text-accent">View All Notifications</span>
+        <span className="text-xs font-semibold text-accent">View All Notifications</span>
       </DropdownItem>
     </Dropdown>
   )

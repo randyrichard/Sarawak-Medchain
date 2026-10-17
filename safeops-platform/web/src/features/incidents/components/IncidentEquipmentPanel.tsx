@@ -73,7 +73,7 @@ export function IncidentEquipmentPanel({
             {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-11 rounded-lg" />)}
           </div>
         ) : rows.length === 0 ? (
-          <p className="rounded-lg border border-dashed px-3 py-4 text-center text-2xs text-muted">
+          <p className="rounded-lg border border-dashed px-3 py-4 text-2xs text-muted">
             No equipment named. Naming it from the register is what makes a repeat failure
             of the same item visible later.
           </p>
@@ -204,7 +204,7 @@ function AddDialog({
             {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12 rounded-lg" />)}
           </div>
         ) : shown.length === 0 ? (
-          <p className="rounded-lg border border-dashed px-3 py-6 text-center text-2xs text-muted">
+          <p className="rounded-lg border border-dashed px-3 py-6 text-2xs text-muted">
             Nothing in the register matches.
           </p>
         ) : (

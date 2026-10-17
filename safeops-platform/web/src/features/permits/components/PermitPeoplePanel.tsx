@@ -75,7 +75,7 @@ export function PermitPeoplePanel({
           {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-11 rounded-lg" />)}
         </div>
       ) : rows.length === 0 ? (
-        <p className="rounded-lg border border-dashed px-3 py-4 text-center text-2xs text-muted">
+        <p className="rounded-lg border border-dashed px-3 py-4 text-2xs text-muted">
           Nobody named yet. A permit without named people cannot be checked against
           medicals or competencies.
         </p>

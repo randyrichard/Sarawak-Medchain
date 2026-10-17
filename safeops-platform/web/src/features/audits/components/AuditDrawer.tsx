@@ -155,7 +155,7 @@ export function AuditDrawer({
                   Findings ({detail!.findings.length})
                 </p>
                 {detail!.findings.length === 0 ? (
-                  <p className="rounded-lg border border-dashed px-3.5 py-4 text-center text-xs text-muted">
+                  <p className="rounded-lg border border-dashed px-3.5 py-4 text-xs text-muted">
                     {audit.status === 'Planned' || audit.status === 'In Progress'
                       ? 'Findings raised during the audit appear here with their corrective actions.'
                       : 'No findings — clean audit.'}

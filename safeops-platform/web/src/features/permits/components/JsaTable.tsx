@@ -121,8 +121,8 @@ export function JsaTable({
           {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 rounded-lg" />)}
         </div>
       ) : rows.length === 0 ? (
-        <div className="rounded-lg border border-dashed px-4 py-6 text-center">
-          <ClipboardList size={18} className="mx-auto mb-2 text-muted" />
+        <div className="rounded-lg border border-dashed px-4 py-6">
+          <ClipboardList size={18} className="mb-2 text-muted" />
           <p className="text-sm text-ink-2">No hazards analysed yet.</p>
           <p className="mt-0.5 text-2xs text-muted">
             One row per step of the job: what could hurt someone, and what stops it.

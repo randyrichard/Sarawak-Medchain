@@ -87,7 +87,7 @@ export function PeoplePanel({
             {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-12 rounded-lg" />)}
           </div>
         ) : rows.length === 0 ? (
-          <p className="rounded-lg border border-dashed px-3 py-4 text-center text-2xs text-muted">
+          <p className="rounded-lg border border-dashed px-3 py-4 text-2xs text-muted">
             Nobody named yet. Naming witnesses from the register is what lets a statement be
             traced back years later.
           </p>

@@ -194,7 +194,7 @@ export function PlatformPage() {
           )}
 
           {companies?.length === 0 && (
-            <EmptyState icon={Building2} title="No customers yet.">
+            <EmptyState flush icon={Building2} title="No customers yet.">
               Create the first one. It gets a workspace, one site, and an administrator who
               receives an invitation to set their own password.
             </EmptyState>
@@ -347,7 +347,7 @@ export function PlatformPage() {
 /** Shown in place of the console to anybody who is not platform staff. */
 export function PlatformForbidden() {
   return (
-    <EmptyState icon={ShieldCheck} title="This area is for SafeChain staff.">
+    <EmptyState flush icon={ShieldCheck} title="This area is for SafeChain staff.">
       Managing customers across the whole deployment is separate from administering your own
       workspace. If you are looking for your company&rsquo;s users, sites or departments,
       they are under Administration.

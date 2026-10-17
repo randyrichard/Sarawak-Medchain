@@ -97,7 +97,8 @@ export class ErrorBoundary extends Component<Props, State> {
     return (
       <div
         role="alert"
-        className="flex min-h-[60vh] flex-col items-center justify-center px-6 py-12 text-center"
+        // The block sits mid-page; its words start on the left, as on every other page.
+        className="mx-auto flex min-h-[60vh] max-w-md flex-col items-start justify-center px-6 py-12"
       >
         <div
           className="flex h-14 w-14 items-center justify-center rounded-2xl"
@@ -124,7 +125,7 @@ export class ErrorBoundary extends Component<Props, State> {
           {error.message || String(error)}
         </pre>
 
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
+        <div className="mt-5 flex flex-wrap items-center gap-2.5">
           <button
             onClick={this.reset}
             className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-semibold text-white transition-colors"

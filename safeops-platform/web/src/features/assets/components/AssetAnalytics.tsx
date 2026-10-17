@@ -68,7 +68,7 @@ export function AssetAnalytics({
             </button>
           ))}
           {stats.highestRisk.length === 0 && (
-            <p className="col-span-full py-6 text-center text-sm text-muted">
+            <p className="col-span-full py-6 text-sm text-muted">
               <StatusPill kind="good" label="All Assets Healthy" />
             </p>
           )}

@@ -329,7 +329,7 @@ export function ContractorsPage() {
                     {WORKER_COLUMNS.map((c) => (
                       <th key={c.key} className={cn('px-3 py-2.5 font-semibold', c.className)}>
                         <button
-                          className="inline-flex items-center gap-1 uppercase tracking-wide hover:text-ink coarse:min-h-touch-sm"
+                          className="inline-flex items-center gap-1 text-left uppercase tracking-wide hover:text-ink coarse:min-h-touch-sm"
                           onClick={() => setParam({ sort: c.key, dir: sort === c.key && dir === 'asc' ? 'desc' : 'asc' })}
                         >
                           {c.label}
@@ -338,7 +338,7 @@ export function ContractorsPage() {
                       </th>
                     ))}
                     <th className="hidden px-3 py-2.5 font-semibold md:table-cell">Site</th>
-                    <th className="px-3 py-2.5 text-right font-semibold">Gate</th>
+                    <th className="px-3 py-2.5 text-left font-semibold">Gate</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -377,7 +377,7 @@ export function ContractorsPage() {
                         <td className="hidden px-3 py-3 text-xs text-ink-2 md:table-cell">
                           {siteName.get(w.siteId) ?? w.siteId.toUpperCase()}
                         </td>
-                        <td className="px-3 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                        <td className="px-3 py-3 text-left" onClick={(e) => e.stopPropagation()}>
                           {!canGate ? (
                             <span className="text-2xs text-muted">—</span>
                           ) : w.onSite ? (
@@ -431,7 +431,7 @@ export function ContractorsPage() {
                   <th className="px-3 py-2.5 font-semibold">Contractor</th>
                   <th className="hidden px-3 py-2.5 font-semibold lg:table-cell">Insurance</th>
                   <th className="hidden px-3 py-2.5 font-semibold md:table-cell">Contact</th>
-                  <th className="px-3 py-2.5 text-right font-semibold">Workers</th>
+                  <th className="px-3 py-2.5 text-left font-semibold">Workers</th>
                 </tr>
               </thead>
               <tbody>
@@ -461,7 +461,7 @@ export function ContractorsPage() {
                       {f.contactPerson || '—'}
                       {f.phone && <span className="block text-2xs text-muted">{f.phone}</span>}
                     </td>
-                    <td className="px-3 py-3 text-right text-xs text-ink-2">
+                    <td className="px-3 py-3 text-left text-xs text-ink-2">
                       {f.workerCount}
                       {f.onSiteCount > 0 && <span className="ml-1.5 text-2xs text-accent">({f.onSiteCount} on site)</span>}
                     </td>

@@ -86,6 +86,7 @@ export function NeedsAttention({
 
         {!loading && rows.length === 0 && (
           <EmptyState
+            flush
             icon={ClipboardCheck}
             title={kind === 'all' ? 'All clear' : `Nothing outstanding in ${kindLabel(kind as AttentionKind).toLowerCase()}s`}
           >

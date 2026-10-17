@@ -65,13 +65,13 @@ export function SiteComparison({
               <thead>
                 <tr className="border-b text-left text-2xs uppercase tracking-wide text-muted">
                   <th className="px-2 py-1.5 font-medium">Site</th>
-                  <th className="px-2 py-1.5 text-right font-medium">Open Incidents</th>
-                  <th className="px-2 py-1.5 text-right font-medium" title="In the period chosen above">Incidents in Period</th>
-                  <th className="px-2 py-1.5 text-right font-medium">Days Without LTI</th>
-                  <th className="px-2 py-1.5 text-right font-medium">Overdue Actions</th>
-                  <th className="px-2 py-1.5 text-right font-medium">Permits Active</th>
+                  <th className="px-2 py-1.5 text-left font-medium">Open Incidents</th>
+                  <th className="px-2 py-1.5 text-left font-medium" title="In the period chosen above">Incidents in Period</th>
+                  <th className="px-2 py-1.5 text-left font-medium">Days Without LTI</th>
+                  <th className="px-2 py-1.5 text-left font-medium">Overdue Actions</th>
+                  <th className="px-2 py-1.5 text-left font-medium">Permits Active</th>
                   {toolbox && <th className="px-2 py-1.5 font-medium">Toolbox Today</th>}
-                  {visitors && <th className="px-2 py-1.5 text-right font-medium">Visitors on Site</th>}
+                  {visitors && <th className="px-2 py-1.5 text-left font-medium">Visitors on Site</th>}
                 </tr>
               </thead>
               <tbody>
@@ -88,21 +88,21 @@ export function SiteComparison({
                       </p>
                       {r.attention.length > 0 && <p className="mt-0.5 text-2xs text-warning">{r.attention.join(' · ')}</p>}
                     </td>
-                    <td className="px-2 py-2 text-right">
+                    <td className="px-2 py-2 text-left">
                       {num(r.openIncidents)}
                       {r.highRiskOpen > 0 && <p className="whitespace-nowrap text-2xs font-semibold text-critical">{r.highRiskOpen} high-risk</p>}
                     </td>
-                    <td className="px-2 py-2 text-right" title={`${r.nearMissesInRange} near miss${r.nearMissesInRange === 1 ? '' : 'es'}, ${r.injuriesInRange} ${r.injuriesInRange === 1 ? 'injury' : 'injuries'}`}>
+                    <td className="px-2 py-2 text-left" title={`${r.nearMissesInRange} near miss${r.nearMissesInRange === 1 ? '' : 'es'}, ${r.injuriesInRange} ${r.injuriesInRange === 1 ? 'injury' : 'injuries'}`}>
                       {num(r.incidentsInRange)}
                       {r.injuriesInRange > 0 && <p className="whitespace-nowrap text-2xs text-muted">{r.injuriesInRange} {r.injuriesInRange === 1 ? 'injury' : 'injuries'}</p>}
                     </td>
-                    <td className="px-2 py-2 text-right">
+                    <td className="px-2 py-2 text-left">
                       {r.daysSinceLostTime === null
                         ? <span className="text-2xs text-muted">None on record</span>
                         : <span className={cn('font-semibold tabular-nums', r.daysSinceLostTime <= 30 ? 'text-critical' : 'text-ink')}>{r.daysSinceLostTime}</span>}
                     </td>
-                    <td className="px-2 py-2 text-right">{num(r.overdueActions, true)}</td>
-                    <td className="px-2 py-2 text-right">{num(r.activePermits)}</td>
+                    <td className="px-2 py-2 text-left">{num(r.overdueActions, true)}</td>
+                    <td className="px-2 py-2 text-left">{num(r.activePermits)}</td>
                     {toolbox && (
                       <td className="px-2 py-2">
                         {r.toolboxToday
@@ -110,7 +110,7 @@ export function SiteComparison({
                           : <span className={r.activePermits > 0 ? 'text-warning' : 'text-muted'}>Not held</span>}
                       </td>
                     )}
-                    {visitors && <td className="px-2 py-2 text-right">{num(r.visitorsOnSite)}</td>}
+                    {visitors && <td className="px-2 py-2 text-left">{num(r.visitorsOnSite)}</td>}
                   </tr>
                 ))}
               </tbody>

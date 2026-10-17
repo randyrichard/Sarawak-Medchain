@@ -103,7 +103,7 @@ export function ToolboxPage() {
       ),
     },
     {
-      key: 'headcount', header: 'Attendance', align: 'right', width: '120px',
+      key: 'headcount', header: 'Attendance', width: '120px',
       render: (m) => (
         <div title={m.groups.map((g) => `${g.organisation}: ${g.count}`).join('\n')}>
           <p className="font-semibold text-ink">{m.headcount.toLocaleString()}</p>

@@ -8,7 +8,10 @@ import { useAuth } from '@/features/auth/AuthContext'
 import { useOrg } from '@/features/org/OrgContext'
 import { usePlatformAdmin } from '@/features/platform/usePlatformAdmin'
 import { timeAgo } from '@/lib/time'
+import { useNow } from '@/lib/useNow'
+import { announceRefresh } from '@/lib/refreshSignal'
 import { useDashboard } from './useDashboard'
+import { useRefreshState } from './useRefreshState'
 import { DashboardFilters } from './components/DashboardFilters'
 import { GettingStarted } from './components/GettingStarted'
 import { useGettingStarted } from './useGettingStarted'
@@ -32,7 +35,7 @@ export function DashboardPage() {
   const { user } = useAuth()
   const { loading: orgLoading, companies, company, project, site, sites, allowed, switchSite, role } = useOrg()
   const platformAdmin = usePlatformAdmin()
-  const { data, loading, error, filters, setFilter, clearFilters, refresh, filtered } = useDashboard()
+  const { data, loading, error, filters, setFilter, clearFilters, refresh, refreshing, filtered } = useDashboard()
   const { progress: gettingStarted, dismiss: dismissGettingStarted } = useGettingStarted()
   const welcome = useWelcome()
   /*
@@ -41,7 +44,14 @@ export function DashboardPage() {
    * fetched every site's figures twice on every visit.
    */
   const [compareTick, setCompareTick] = useState(0)
-  const refreshAll = () => { refresh(); setCompareTick((n) => n + 1) }
+  /*
+   * Everything on screen, not only this page: the menu's counts and the bell read the same
+   * records on their own timers, and after a refresh they must not still show the old ones.
+   */
+  const refreshAll = () => { refresh(); setCompareTick((n) => n + 1); announceRefresh() }
+  const refreshState = useRefreshState(refreshing, Boolean(error))
+  // Keeps "updated 2m ago" true while the page stays open.
+  useNow(30_000)
 
   /*
    * This dashboard is tenant-scoped, and some people belong to no tenant.
@@ -70,7 +80,7 @@ export function DashboardPage() {
         <PageHeader title="Home" subtitle="No workspace yet" />
         <Card>
           <CardBody>
-            <EmptyState icon={Building2} title="Your account is not in a workspace yet.">
+            <EmptyState flush icon={Building2} title="Your account is not in a workspace yet.">
               An administrator needs to add you to a company before there is anything to
               show here. If you were expecting access, ask whoever invited you.
             </EmptyState>
@@ -102,10 +112,13 @@ export function DashboardPage() {
                 size="sm"
                 variant="secondary"
                 icon={<RefreshCw size={12} />}
+                loading={refreshState === 'busy'}
                 onClick={refreshAll}
               >
-                Refresh
+                {refreshState === 'busy' ? 'Refreshing…' : refreshState === 'done' ? 'Updated' : 'Refresh'}
               </Button>
+              {/* Said aloud too: the button's new label is not announced on its own. */}
+              <span role="status" className="sr-only">{refreshState === 'done' ? 'Home is up to date.' : ''}</span>
             </div>
           )
           : undefined}
@@ -132,6 +145,7 @@ export function DashboardPage() {
 
       <DashboardFilters
         filters={filters}
+        shown={data?.scope}
         departments={data?.departments ?? []}
         onChange={setFilter}
         onClear={clearFilters}

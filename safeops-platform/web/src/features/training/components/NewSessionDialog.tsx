@@ -121,7 +121,7 @@ export function NewSessionDialog({ open, onClose, onCreated }: { open: boolean; 
             <Badge tone={enrolled.length > Number(maxParticipants) ? 'critical' : 'accent'}>{enrolled.length}/{maxParticipants || '∞'}</Badge>
           </div>
           {!siteId ? (
-            <p className="rounded-lg border border-dashed px-3 py-3 text-center text-2xs text-muted">Select a site to list its employees.</p>
+            <p className="rounded-lg border border-dashed px-3 py-3 text-2xs text-muted">Select a site to list its employees.</p>
           ) : (
             <div className="max-h-44 space-y-1 overflow-y-auto rounded-lg border p-1.5">
               {siteEmployees.map((e) => (
@@ -136,7 +136,7 @@ export function NewSessionDialog({ open, onClose, onCreated }: { open: boolean; 
                   <span className="truncate text-2xs text-muted">{e.position}</span>
                 </button>
               ))}
-              {siteEmployees.length === 0 && <p className="px-2 py-3 text-center text-2xs text-muted">No employees at this site.</p>}
+              {siteEmployees.length === 0 && <p className="px-2 py-3 text-2xs text-muted">No employees at this site.</p>}
             </div>
           )}
         </div>

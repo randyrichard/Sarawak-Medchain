@@ -207,7 +207,7 @@ export function InvitationsSection() {
           {rows === null && <div className="space-y-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-12 rounded-lg" />)}</div>}
 
           {rows !== null && rows.length === 0 && (
-            <EmptyState icon={MailPlus} title="Nobody invited yet.">
+            <EmptyState flush icon={MailPlus} title="Nobody invited yet.">
               Invite your HSE manager, safety officers and supervisors so they can start
               raising permits and investigating incidents.
             </EmptyState>

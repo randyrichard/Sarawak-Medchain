@@ -37,7 +37,7 @@ export function Loading({
  * that is worth interrupting for, unlike the loading message.
  */
 export function ErrorState({
-  title = "Couldn't load this", error, onRetry, retrying, compact, className,
+  title = "Couldn't load this", error, onRetry, retrying, compact, flush = false, className,
 }: {
   title?: string
   /** The thrown value. Its message is shown when it has one. */
@@ -46,12 +46,14 @@ export function ErrorState({
   retrying?: boolean
   /** Inline single-row layout, for inside a table or a small card. */
   compact?: boolean
+  /** In something that already insets its content; see EmptyState. */
+  flush?: boolean
   className?: string
 }) {
   const detail = errorMessage(error, 'Check your connection and try again.')
   if (isUnavailableHere(error)) {
     return (
-      <div role="status" className={cn(compact ? 'px-4 py-6 text-center' : 'flex flex-col items-center px-6 py-10 text-center', className)}>
+      <div role="status" className={cn(compact ? 'py-6' : 'flex flex-col items-start py-10', !flush && 'px-5', className)}>
         {!compact && (
           <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-sunken">
             <ServerOff size={19} className="text-muted" aria-hidden />
@@ -66,16 +68,18 @@ export function ErrorState({
     <div
       role="alert"
       className={cn(
+        // Left-aligned like the rest of the page's words, and on their edge; see EmptyState.
         compact
-          ? 'flex flex-wrap items-center justify-center gap-x-3 gap-y-2 px-4 py-6 text-center'
-          : 'flex flex-col items-center px-6 py-10 text-center',
+          ? 'flex flex-wrap items-center gap-x-3 gap-y-2 py-6'
+          : 'flex flex-col items-start py-10',
+        !flush && 'px-5',
         className,
       )}
     >
       <div className={cn('flex items-center justify-center rounded-xl bg-critical-soft', compact ? 'h-7 w-7' : 'mb-3 h-10 w-10')}>
         <AlertOctagon size={compact ? 15 : 19} className="text-critical" aria-hidden />
       </div>
-      <div className={cn(compact && 'text-left')}>
+      <div>
         <p className="text-sm font-semibold text-ink">{title}</p>
         <p className={cn('max-w-sm text-xs leading-relaxed text-muted', !compact && 'mt-1')}>{detail}</p>
       </div>
@@ -116,7 +120,7 @@ export function ErrorState({
  * rather than throwing away a list the person was reading because a refresh hiccupped.
  */
 export function AsyncContent<T>({
-  state, children, loading, loadingLabel, empty, isEmpty, errorTitle, className,
+  state, children, loading, loadingLabel, empty, isEmpty, errorTitle, flush, className,
 }: {
   state: Pick<AsyncState<T>, 'status' | 'data' | 'error' | 'reload' | 'refreshing'>
   children: (data: T) => ReactNode
@@ -127,13 +131,15 @@ export function AsyncContent<T>({
   empty?: ReactNode
   isEmpty?: (data: T) => boolean
   errorTitle?: string
+  /** In something that already insets its content: the error states bring no inset. */
+  flush?: boolean
   className?: string
 }) {
   const { status, data, error, reload, refreshing } = state
 
   if (data === undefined) {
     if (status === 'error') {
-      return <ErrorState title={errorTitle} error={error} onRetry={reload} className={className} />
+      return <ErrorState title={errorTitle} error={error} onRetry={reload} flush={flush} className={className} />
     }
     return <Loading label={loadingLabel} className={className}>{loading}</Loading>
   }
@@ -142,7 +148,7 @@ export function AsyncContent<T>({
   return (
     <div className={className} aria-busy={refreshing || undefined}>
       {status === 'error' && (
-        <ErrorState compact title={errorTitle ?? "Couldn't refresh"} error={error} onRetry={reload} />
+        <ErrorState compact flush={flush} title={errorTitle ?? "Couldn't refresh"} error={error} onRetry={reload} />
       )}
       {content}
     </div>

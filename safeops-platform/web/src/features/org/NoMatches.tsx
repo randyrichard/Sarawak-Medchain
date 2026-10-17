@@ -42,7 +42,7 @@ export function NoMatches({
       title={onClear || !oneSite ? title : `No ${what} at ${site!.name}`}
       className={className}
       action={(onClear || oneSite) && (
-        <div className="flex flex-wrap justify-center gap-2">
+        <div className="flex flex-wrap gap-2">
           {onClear && (
             <Button variant="secondary" onClick={onClear}>{filtered ? 'Clear Filters' : 'Clear Search'}</Button>
           )}

@@ -183,7 +183,7 @@ export function InspectionRunner({
         {/* Result screen */}
         {result ? (
           <div className="flex-1 space-y-4 overflow-y-auto px-5 py-6">
-            <div className="flex flex-col items-center gap-2 py-4 text-center">
+            <div className="flex flex-col items-start gap-2 py-4">
               <CheckCircle2 size={36} style={{ color: result.outcome === 'passed' ? 'var(--good)' : 'var(--serious)' }} />
               <p className="text-lg font-semibold text-ink">
                 {result.outcome === 'passed' ? 'Inspection passed' : `Completed — ${result.actionCodes.length} defect(s) found`}
@@ -213,7 +213,7 @@ export function InspectionRunner({
               </Alert>
             )}
             <FieldPhotos kind="inspections" id={inspection.id} />
-            <p className="text-center text-2xs text-muted">Next inspection auto-scheduled — this asset cannot fall off the calendar.</p>
+            <p className="text-2xs text-muted">Next inspection auto-scheduled — this asset cannot fall off the calendar.</p>
             <Button className="w-full" onClick={onClose}>Done</Button>
           </div>
         ) : (

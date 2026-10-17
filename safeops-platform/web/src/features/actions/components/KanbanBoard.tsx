@@ -167,7 +167,7 @@ export function KanbanBoard({
                   />
                 ))}
                 {colItems.length === 0 && (
-                  <p className="px-2 py-6 text-center text-2xs text-muted">{hovered ? 'Drop here' : 'Empty'}</p>
+                  <p className="px-2 py-6 text-2xs text-muted">{hovered ? 'Drop here' : 'Empty'}</p>
                 )}
               </div>
             </div>

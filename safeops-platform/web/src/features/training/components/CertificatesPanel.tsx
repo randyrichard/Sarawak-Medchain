@@ -96,7 +96,7 @@ export function CertificatesPanel({
                   <th className="px-3 py-2.5 font-semibold">Issued</th>
                   <th className="px-3 py-2.5 font-semibold">Expires</th>
                   <th className="px-3 py-2.5 font-semibold">Status</th>
-                  <th className="px-5 py-2.5 text-right font-semibold">Actions</th>
+                  <th className="px-5 py-2.5 text-left font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -117,7 +117,7 @@ export function CertificatesPanel({
                       {c.daysToExpiry !== null && <span className="block text-2xs font-normal text-muted">{c.daysToExpiry < 0 ? `${Math.abs(c.daysToExpiry)}d ago` : `in ${c.daysToExpiry}d`}</span>}
                     </td>
                     <td className="px-3 py-3"><StatusPill kind={certStatusKind(c.status)} label={c.status === 'competent' ? 'Valid' : c.status === 'expiring' ? 'Expiring' : 'Expired'} /></td>
-                    <td className="px-5 py-3 text-right">
+                    <td className="px-5 py-3 text-left">
                       <Button size="sm" variant="ghost" icon={<Printer size={12} />} onClick={() => printCertificate(c, siteName(c.siteId))}>Print</Button>
                     </td>
                   </tr>

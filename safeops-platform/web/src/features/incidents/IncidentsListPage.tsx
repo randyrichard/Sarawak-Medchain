@@ -165,7 +165,6 @@ export function IncidentsListPage() {
       key: 'age',
       header: 'Days Open',
       sortValue: (i) => (i.stage === 'closed' ? null : daysOpen(i)),
-      align: 'right',
       render: (i) => {
         const d = daysOpen(i)
         const overdue = i.stage !== 'closed' && d > OVERDUE_AFTER_DAYS

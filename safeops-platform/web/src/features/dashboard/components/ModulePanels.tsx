@@ -54,7 +54,7 @@ export function IncidentPanel({ d, className }: { d: DashboardOverview; classNam
         </div>
 
         {bars.length === 0 ? (
-          <EmptyState icon={AlertTriangle} title="All clear — no open incidents.">
+          <EmptyState flush icon={AlertTriangle} title="All clear — no open incidents.">
             Nothing is under investigation for this scope.
           </EmptyState>
         ) : (
@@ -117,7 +117,7 @@ export function PermitPanel({ d, className }: { d: DashboardOverview; className?
       />
       <CardBody className="space-y-3">
         {!anyPermits ? (
-          <EmptyState icon={FileWarning} title="No active permits.">
+          <EmptyState flush icon={FileWarning} title="No active permits.">
             Nothing is raised for this scope yet.
           </EmptyState>
         ) : (
@@ -160,7 +160,7 @@ export function EquipmentPanel({ d, className }: { d: DashboardOverview; classNa
       />
       <CardBody>
         {!anything ? (
-          <EmptyState icon={HardHat} title="No equipment registered.">
+          <EmptyState flush icon={HardHat} title="No equipment registered.">
             Add plant and safety-critical items to track calibration and inspection.
           </EmptyState>
         ) : (
@@ -202,7 +202,7 @@ export function ActionsPanel({ d, className }: { d: DashboardOverview; className
         </div>
 
         {a.byOwner.length === 0 ? (
-          <EmptyState icon={ClipboardCheck} title="No overdue actions." />
+          <EmptyState flush icon={ClipboardCheck} title="No overdue actions." />
         ) : (
           <div className="space-y-1">
             <p className="text-2xs font-semibold text-muted">Overdue by owner</p>
@@ -238,7 +238,7 @@ export function VisitorPanel({ d, className }: { d: DashboardOverview; className
         </div>
 
         {v.current.length === 0 ? (
-          <EmptyState icon={UserCheck} title="Nobody signed in.">
+          <EmptyState flush icon={UserCheck} title="Nobody signed in.">
             Visitors appear here as soon as reception checks them in.
           </EmptyState>
         ) : (
@@ -277,7 +277,7 @@ export function ReportPanel({ d, className }: { d: DashboardOverview; className?
       />
       <CardBody>
         {r.recent.length === 0 ? (
-          <EmptyState icon={Mail} title="No reports generated yet.">
+          <EmptyState flush icon={Mail} title="No reports generated yet.">
             Schedule a weekly report and it will be emailed without anyone logging in.
           </EmptyState>
         ) : (

@@ -68,7 +68,7 @@ export function AssetTimeline({ assetId, revision = 0 }: { assetId: string; revi
           {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-10 rounded-lg" />)}
         </div>
       ) : rows.length === 0 ? (
-        <p className="rounded-lg border border-dashed px-3 py-4 text-center text-2xs text-muted">
+        <p className="rounded-lg border border-dashed px-3 py-4 text-2xs text-muted">
           Nothing recorded yet.
         </p>
       ) : (

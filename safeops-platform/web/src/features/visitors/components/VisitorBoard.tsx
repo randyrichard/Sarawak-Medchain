@@ -84,7 +84,7 @@ export function VisitorBoard({
               {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-12 rounded-lg" />)}
             </div>
           ) : data.onSiteList.length === 0 ? (
-            <p className="rounded-lg border border-dashed px-3 py-6 text-center text-2xs text-muted">
+            <p className="rounded-lg border border-dashed px-3 py-6 text-2xs text-muted">
               Nobody is on site.
             </p>
           ) : (

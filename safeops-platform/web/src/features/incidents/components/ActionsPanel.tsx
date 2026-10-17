@@ -99,7 +99,7 @@ export function ActionsPanel({ incident, onUpdate }: { incident: Incident; onUpd
       </div>
 
       {incident.actions.length === 0 ? (
-        <EmptyState icon={ListChecks} title="No corrective actions yet">
+        <EmptyState flush icon={ListChecks} title="No corrective actions yet">
           Actions are raised from the root causes — each cause needs at least one before the case can go to review.
         </EmptyState>
       ) : (

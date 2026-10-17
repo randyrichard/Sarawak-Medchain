@@ -208,6 +208,18 @@ audit. The live app was also audited across eight pages, in both themes, at 375p
   nested inside another section.
 - Touch targets grow to the touch sizes on coarse pointers (`coarse:h-touch` and its kin; see
   Fitts's law below).
+- **Words and sentences start on the left.** Headings, paragraphs, labels, messages, empty and
+  error states, table headers and their columns, and drawer values are all left-aligned, as on
+  the sites people use every day. Text centred in some places and pushed right in others read
+  as "not organised" on a phone. Don't use `text-center` or `text-right` for prose.
+  `DataTable` has no right-aligned columns, and `DetailRow` lines a drawer's values up on one
+  left edge. The few conventional exceptions are listed, with their reasons, in
+  `alignment.test.ts`: matrix columns, calendar weekday names, short number fields, upload
+  areas, and numbers in fixed slots beside bars. Button labels stay centred inside the button.
+- **And on the same left edge as the words around them.** `EmptyState` and `ErrorState` bring a
+  card's own 20px inset (`px-5`), so in a bare `Card` or a `DataTable` row their words line up
+  with the card title and the first column. Inside something that already insets its content,
+  such as a `CardBody`, a dialog or the page itself, pass `flush` so they are not indented twice.
 
 ## Responsive design
 

@@ -61,7 +61,7 @@ export function AuditLogSection() {
                   <th className="px-3 py-2.5 font-semibold">Action</th>
                   <th className="px-3 py-2.5 font-semibold">Change</th>
                   <th className="px-3 py-2.5 font-semibold">Source</th>
-                  <th className="px-5 py-2.5 text-right font-semibold">When</th>
+                  <th className="px-5 py-2.5 text-left font-semibold">When</th>
                 </tr>
               </thead>
               <tbody>
@@ -90,7 +90,7 @@ export function AuditLogSection() {
                       <Badge tone="neutral">{MODULE_TAG(e.module)}</Badge>
                       <p className="mt-0.5 font-mono text-2xs text-muted">{e.ip} · {e.device}</p>
                     </td>
-                    <td className="px-5 py-3 text-right text-2xs text-muted" style={{ fontVariantNumeric: 'tabular-nums' }}>{fmtDateTime(e.at)}</td>
+                    <td className="px-5 py-3 text-left text-2xs text-muted" style={{ fontVariantNumeric: 'tabular-nums' }}>{fmtDateTime(e.at)}</td>
                   </tr>
                 ))}
               </tbody>

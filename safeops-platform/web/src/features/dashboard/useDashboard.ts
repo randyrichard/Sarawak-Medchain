@@ -37,6 +37,8 @@ export function useDashboard() {
   const [error, setError] = useState<string | null>(null)
   /** Bumped by refresh(); the effect below watches it. */
   const [nonce, setNonce] = useState(0)
+  /** A refresh somebody asked for is under way, as opposed to a load a filter started. */
+  const [refreshing, setRefreshing] = useState(false)
 
   useEffect(() => {
     if (!company) {
@@ -48,6 +50,7 @@ export function useDashboard() {
        * empty state while it still believes data is on the way.
        */
       setLoading(false)
+      setRefreshing(false)
       return
     }
     let cancelled = false
@@ -67,10 +70,11 @@ export function useDashboard() {
       from: filters.from,
       to: filters.to,
     }, actor)
-      .then((d) => { if (!cancelled) { setData(d); setLoading(false) } })
+      .then((d) => { if (!cancelled) { setData(d); setLoading(false); setRefreshing(false) } })
       .catch((e) => {
         if (cancelled) return
         setLoading(false)
+        setRefreshing(false)
         /*
          * The error is shown rather than swallowed into an empty dashboard. A page of
          * zeroes that is actually a failed request is the worst outcome here: it reads as
@@ -98,10 +102,13 @@ export function useDashboard() {
     setParams(next, { replace: true })
   }, [params, setParams])
 
-  const refresh = useCallback(() => setNonce((n) => n + 1), [])
+  const refresh = useCallback(() => {
+    setRefreshing(true)
+    setNonce((n) => n + 1)
+  }, [])
 
   return {
-    data, loading, error, filters, setFilter, clearFilters, refresh,
+    data, loading, error, filters, setFilter, clearFilters, refresh, refreshing,
     filtered: Boolean(filters.from || filters.to || filters.department),
   }
 }

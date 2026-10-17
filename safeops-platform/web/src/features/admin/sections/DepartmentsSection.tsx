@@ -153,7 +153,7 @@ export function DepartmentsSection() {
           {rows === null && <div className="space-y-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-12 rounded-lg" />)}</div>}
 
           {rows !== null && visible.length === 0 && (
-            <EmptyState icon={Network} title="No departments yet.">
+            <EmptyState flush icon={Network} title="No departments yet.">
               Departments group people and records inside a site. Add one to start
               filtering incidents and permits by area.
             </EmptyState>

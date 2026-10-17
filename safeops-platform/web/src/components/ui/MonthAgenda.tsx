@@ -28,7 +28,7 @@ export function MonthAgenda({
   empty: string
 }) {
   const shown = days.filter((d) => d.entries.length > 0)
-  if (shown.length === 0) return <p className="py-6 text-center text-sm text-muted sm:hidden">{empty}</p>
+  if (shown.length === 0) return <p className="py-6 text-sm text-muted sm:hidden">{empty}</p>
   return (
     <ol className="space-y-3 sm:hidden">
       {shown.map((d) => (

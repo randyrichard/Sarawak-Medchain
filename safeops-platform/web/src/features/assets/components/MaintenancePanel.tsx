@@ -73,7 +73,7 @@ export function MaintenancePanel({
       {rows === null ? (
         <Skeleton className="h-14 rounded-lg" />
       ) : rows.length === 0 ? (
-        <p className="rounded-lg border border-dashed px-3 py-4 text-center text-2xs text-muted">
+        <p className="rounded-lg border border-dashed px-3 py-4 text-2xs text-muted">
           No work orders. Raising one against this item records the downtime and the cost
           against the equipment, not against a spreadsheet.
         </p>

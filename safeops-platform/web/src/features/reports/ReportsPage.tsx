@@ -377,7 +377,7 @@ export function ReportsPage() {
                     </div>
 
                     {preview.rows.length === 0 ? (
-                      <p className="rounded-lg border border-dashed px-3 py-8 text-center text-2xs text-muted">
+                      <p className="rounded-lg border border-dashed px-3 py-8 text-2xs text-muted">
                         {preview.emptyMessage}
                       </p>
                     ) : (
@@ -431,7 +431,7 @@ export function ReportsPage() {
           </div>
         ) : schedules.length === 0 ? (
           <Card>
-            <CardBody className="py-10 text-center">
+            <CardBody className="py-10">
               <p className="text-sm text-ink">No scheduled reports yet.</p>
               <p className="mt-1 text-2xs text-muted">
                 A Monday 08:00 overdue-actions report is the usual place to start.
@@ -521,7 +521,7 @@ export function ReportsPage() {
           <Skeleton className="h-32 rounded-lg" />
         ) : runs.length === 0 ? (
           <Card>
-            <CardBody className="py-10 text-center text-2xs text-muted">
+            <CardBody className="py-10 text-2xs text-muted">
               Nothing has been run yet.
             </CardBody>
           </Card>

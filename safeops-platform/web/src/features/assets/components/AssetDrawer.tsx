@@ -104,13 +104,13 @@ export function AssetDrawer({
       <div className="absolute inset-0 animate-fade-in bg-black/40" onClick={onClose} aria-hidden />
       <aside role="dialog" aria-label="Asset profile" className="absolute inset-y-0 right-0 flex w-full max-w-[540px] animate-scale-in flex-col border-l bg-surface shadow-modal">
         {missing === 'missing' ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
+          <div className="flex flex-1 flex-col items-start gap-3 p-8">
             <p className="text-sm text-muted">Asset not found — the QR label may be stale.</p>
             <Button variant="secondary" onClick={onClose}>Close</Button>
           </div>
         ) : missing ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
-            <ErrorState title="Couldn't load this asset" error={missing.error} onRetry={() => setAttempt((n) => n + 1)} />
+          <div className="flex flex-1 flex-col items-start gap-3 p-8">
+            <ErrorState flush title="Couldn't load this asset" error={missing.error} onRetry={() => setAttempt((n) => n + 1)} />
             <Button variant="secondary" onClick={onClose}>Close</Button>
           </div>
         ) : !asset ? (

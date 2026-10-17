@@ -111,7 +111,7 @@ function KeysPanel() {
                   <th className="px-3 py-2.5 font-semibold">Scopes</th>
                   <th className="px-3 py-2.5 font-semibold">Last Used</th>
                   <th className="px-3 py-2.5 font-semibold">Calls Today</th>
-                  <th className="px-5 py-2.5 text-right font-semibold">Status</th>
+                  <th className="px-5 py-2.5 text-left font-semibold">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -124,7 +124,7 @@ function KeysPanel() {
                     <td className="px-3 py-3">{k.scopes.map((s) => <Badge key={s} tone="neutral" className="mr-1">{s}</Badge>)}</td>
                     <td className="px-3 py-3 text-2xs text-muted">{k.lastUsedAt ? timeAgo(k.lastUsedAt) : 'never'}</td>
                     <td className="px-3 py-3 text-xs text-ink-2" style={{ fontVariantNumeric: 'tabular-nums' }}>{k.callsToday.toLocaleString()}</td>
-                    <td className="px-5 py-3 text-right">
+                    <td className="px-5 py-3 text-left">
                       {k.revoked ? <Badge tone="neutral">Revoked</Badge> : (
                         <div className="flex items-center justify-end gap-2">
                           <StatusPill kind="good" label="Active" />
@@ -295,7 +295,7 @@ function UsagePanel() {
   // was selected first, and had no error branch.
   const loaded = useAsync(() => api.adminApiUsage(companyId), [companyId], { enabled: Boolean(companyId) })
   const usage = loaded.data
-  if (!usage && loaded.status === 'error') return <ErrorState title="Couldn't load API usage" error={loaded.error} onRetry={loaded.reload} />
+  if (!usage && loaded.status === 'error') return <ErrorState flush title="Couldn't load API usage" error={loaded.error} onRetry={loaded.reload} />
   if (!usage) return <Card className="p-5"><Skeleton className="h-56 w-full" /></Card>
   // At least 1: an empty series made this -Infinity and a quiet week made the bars divide by zero.
   const max = Math.max(1, ...usage.series.map((p) => p.calls))

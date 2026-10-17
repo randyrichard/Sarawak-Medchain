@@ -203,7 +203,7 @@ export function ScheduleDialog({
           {people === null ? (
             <Skeleton className="h-24 rounded-lg" />
           ) : people.length === 0 ? (
-            <p className="rounded-lg border border-dashed px-3 py-4 text-center text-2xs text-muted">
+            <p className="rounded-lg border border-dashed px-3 py-4 text-2xs text-muted">
               Nobody in this workspace can be addressed.
             </p>
           ) : (

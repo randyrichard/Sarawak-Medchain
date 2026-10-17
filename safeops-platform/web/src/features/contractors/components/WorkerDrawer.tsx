@@ -5,7 +5,7 @@ import type { ContractorWorkerDetail } from '@/api/contractors'
 import { COMPETENCIES, EXPIRY_LABEL } from '@/api/contractors'
 import { ApiError } from '@/api/types'
 import {
-  Alert, Avatar, Badge, Button, Dialog, Input, Select, Skeleton, StatusPill,
+  Alert, Avatar, Badge, Button, DetailRow, Dialog, Input, Select, Skeleton, StatusPill,
 } from '@/components/ui'
 import { EXPIRY_KIND, fmtDate, gateBlockReason, relativeDays } from '../lib'
 import { useSiteLabel } from '@/features/org/useSiteLabel'
@@ -141,11 +141,11 @@ export function WorkerDrawer({
               </Section>
 
               <Section title="Identity">
-                <Row label="Worker no." value={<span className="font-mono">{item.workerNo}</span>} />
-                <Row label="IC / passport" value={item.icPassport} />
-                <Row label="Contractor" value={`${item.contractorName} (${item.contractorCode})`} />
-                <Row label="Site" value={siteLabel(item.siteId)} />
-                <Row label="Checked in" value={item.checkedInAt ? fmtDate(item.checkedInAt) : 'Not on site'} />
+                <DetailRow label="Worker no." value={<span className="font-mono">{item.workerNo}</span>} />
+                <DetailRow label="IC / passport" value={item.icPassport} />
+                <DetailRow label="Contractor" value={`${item.contractorName} (${item.contractorCode})`} />
+                <DetailRow label="Site" value={siteLabel(item.siteId)} />
+                <DetailRow label="Checked in" value={item.checkedInAt ? fmtDate(item.checkedInAt) : 'Not on site'} />
               </Section>
 
               <Section title="Emergency Contact">
@@ -156,8 +156,8 @@ export function WorkerDrawer({
                     <p className="mt-0.5 font-mono text-xs text-ink-2">{item.emergencyPhone || 'No number recorded'}</p>
                   </div>
                 ) : (
-                  <div className="rounded-lg border border-dashed px-4 py-5 text-center">
-                    <Phone size={16} className="mx-auto mb-1.5 text-muted" />
+                  <div className="rounded-lg border border-dashed px-4 py-5">
+                    <Phone size={16} className="mb-1.5 text-muted" />
                     <p className="text-2xs text-muted">No emergency contact recorded for this worker.</p>
                   </div>
                 )}
@@ -177,7 +177,7 @@ export function WorkerDrawer({
                           </p>
                         </div>
                         <div className="flex shrink-0 items-center gap-2">
-                          <div className="text-right">
+                          <div>
                             <StatusPill kind={EXPIRY_KIND[c.status]} label={EXPIRY_LABEL[c.status]} />
                             {c.expiryDate && <p className="mt-0.5 text-2xs text-muted">{fmtDate(c.expiryDate)}</p>}
                           </div>
@@ -284,15 +284,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     <div className="mb-5">
       <p className="mb-2 text-2xs font-bold uppercase tracking-wider text-muted">{title}</p>
       {children}
-    </div>
-  )
-}
-
-function Row({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex items-baseline justify-between gap-4 border-b py-2 last:border-0">
-      <span className="shrink-0 text-2xs font-semibold uppercase tracking-wider text-muted">{label}</span>
-      <span className="text-right text-sm text-ink">{value || '—'}</span>
     </div>
   )
 }
