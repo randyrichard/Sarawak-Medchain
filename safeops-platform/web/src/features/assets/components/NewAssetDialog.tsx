@@ -168,7 +168,6 @@ export function NewAssetDialog({ open, onClose, onCreated }: { open: boolean; on
               required
               value={department}
               onChange={setDepartment}
-              placeholder="Select a department…"
               addLabel="Add a new department…"
               error={form.errorFor('department')}
             />

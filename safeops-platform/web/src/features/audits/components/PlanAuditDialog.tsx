@@ -146,7 +146,6 @@ export function PlanAuditDialog({ open, onClose, onCreated }: { open: boolean; o
                 label="Department"
                 value={department}
                 onChange={setDepartment}
-                placeholder="Select a department…"
                 addLabel="Add a new department…"
               />
               <Select label="Lead auditor" required value={leadAuditor} onChange={(e) => setLeadAuditor(e.target.value)} error={form.errorFor('leadAuditor')}>

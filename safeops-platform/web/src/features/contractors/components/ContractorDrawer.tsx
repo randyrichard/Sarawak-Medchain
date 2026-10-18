@@ -4,7 +4,7 @@ import { contractorsApi } from '@/api/contractorsApi'
 import type { ContractorCompanyRow } from '@/api/contractors'
 import { EXPIRY_LABEL } from '@/api/contractors'
 import { ApiError } from '@/api/types'
-import { Alert, Badge, Button, DetailRow, Dialog, Skeleton, StatusPill } from '@/components/ui'
+import { Alert, Badge, Button, DetailRow, Dialog, Skeleton, StatusPill, RowSpacer } from '@/components/ui'
 import { EXPIRY_KIND, fmtDate, relativeDays } from '../lib'
 import { EditContractorDialog } from './EditContractorDialog'
 
@@ -176,9 +176,11 @@ export function ContractorDrawer({
                 {/*
                   Pushed to the far end, away from Edit and the status toggle (law of
                   proximity): buttons side by side read as one group of equally safe
-                  choices, and Delete is not one of them.
+                  choices, and Delete is not one of them. On a line of its own, when a
+                  narrow footer wraps, it starts on the left like the rest.
                 */}
-                <Button size="sm" variant="ghost" className="ml-auto" icon={<Trash2 size={12} />} onClick={() => setConfirmDelete(true)}>
+                <RowSpacer />
+                <Button size="sm" variant="ghost" icon={<Trash2 size={12} />} onClick={() => setConfirmDelete(true)}>
                   Delete
                 </Button>
               </footer>

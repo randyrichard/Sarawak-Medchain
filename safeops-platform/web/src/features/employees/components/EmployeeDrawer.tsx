@@ -5,7 +5,7 @@ import type { EmployeeDetail } from '@/api/employees'
 import { MEDICAL_LABEL, PPE_ITEMS } from '@/api/employees'
 import { ApiError } from '@/api/types'
 import {
-  Alert, Avatar, Badge, Button, DetailRow, Dialog, Input, Select, Skeleton, StatusPill, Tabs, type TabItem,
+  Alert, Avatar, Badge, Button, DetailRow, Dialog, Input, Select, Skeleton, StatusPill, Tabs, type TabItem, RowSpacer,
 } from '@/components/ui'
 import { MEDICAL_KIND, fmtDate, relativeDays } from '../lib'
 import { EditEmployeeDialog } from './EditEmployeeDialog'
@@ -175,9 +175,11 @@ export function EmployeeDrawer({
                 {/*
                   Pushed to the far end, away from Edit and the status toggle (law of
                   proximity): buttons side by side read as one group of equally safe
-                  choices, and Delete is not one of them.
+                  choices, and Delete is not one of them. On a line of its own, when a
+                  narrow footer wraps, it starts on the left like the rest.
                 */}
-                <Button size="sm" variant="ghost" className="ml-auto" icon={<Trash2 size={12} />} onClick={() => setConfirmDelete(true)}>
+                <RowSpacer />
+                <Button size="sm" variant="ghost" icon={<Trash2 size={12} />} onClick={() => setConfirmDelete(true)}>
                   Delete
                 </Button>
               </footer>

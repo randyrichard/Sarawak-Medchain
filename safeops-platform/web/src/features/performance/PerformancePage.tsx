@@ -163,22 +163,24 @@ function withTarget(tile: Tile, value: number | null, metric: TargetMetric, targ
 }
 
 /*
- * A tile's figure, sized to the tile.
+ * A tile's figure, sized to the tile and to its own length.
  *
  * Screen width was the wrong measure on a desktop: at 1280px the row turns six-up beside
  * the sidebar, each tile has 120px for its figure, and "9,710,350" at 24px is 130px - it
  * ran into the tile's edge on exactly the screen most managers use. 13% of the tile's own
- * width fits nine digits with their separators at any column count. A browser without
- * container units (Safari before 16) ignores this and keeps the screen-width class above.
+ * width fits nine characters with their separators at any column count; a longer figure
+ * gets proportionally less, so "10,016,729" man-hours still fits a two-up tile on a 320px
+ * phone, where at 13% it ran 5px past the edge. A browser without container units (Safari
+ * before 16) ignores this and keeps the screen-width class below.
  */
-const TILE_FIGURE = 'clamp(1rem, 13cqw, 1.5rem)'
+const tileFigure = (value: string) => `clamp(1rem, ${Math.min(13, 117 / value.length).toFixed(2)}cqw, 1.5rem)`
 
 function TileRow({ tiles, label }: { tiles: Tile[]; label: string }) {
   return (
     <ul aria-label={label} className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
       {tiles.map((t) => (
         // The tile is a size container, so the figure can scale to the tile rather than to
-        // the screen (TILE_FIGURE below).
+        // the screen (tileFigure above).
         <li key={t.label} style={{ containerType: 'inline-size' }}>
           <Card className="h-full px-4 py-3" style={attentionStripe(attentionOf(t.tone))}>
             <p className="text-2xs font-semibold text-ink-2">{t.label}</p>
@@ -186,7 +188,7 @@ function TileRow({ tiles, label }: { tiles: Tile[]; label: string }) {
               // Scales down on a narrow phone: "9,597,512" at 24px is wider than a
               // two-up tile on a 320-412px screen and ran past the card's edge.
               className="mt-0.5 flex items-center gap-1.5 text-[clamp(1.125rem,5.5vw,1.5rem)] font-semibold tracking-tight"
-              style={{ color: t.tone ?? 'var(--ink)', fontVariantNumeric: 'tabular-nums', fontSize: TILE_FIGURE }}
+              style={{ color: t.tone ?? 'var(--ink)', fontVariantNumeric: 'tabular-nums', fontSize: tileFigure(t.value) }}
             >
               {t.value}
               <AttentionIcon level={attentionOf(t.tone)} />

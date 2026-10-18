@@ -99,9 +99,15 @@ export function DashboardFilters({
     if (!wrong && pending) onChange({ from: draft.from || null, to: draft.to || null })
   }
 
-  // Beside its field at a desk; above it on a phone, where the fields share the width.
-  const labelCls = 'flex flex-col gap-1 text-2xs text-muted sm:flex-row sm:items-center'
-  const fieldCls = 'w-full rounded-lg border border-line bg-transparent px-2 py-1 text-2xs text-ink coarse:min-h-touch coarse:px-3 sm:w-auto'
+  /*
+   * One row on a phone: From, To and Apply side by side, the two dates sharing what Apply
+   * leaves. It was three rows - the labels, the fields, then Apply under them - and on an
+   * iPhone the two dates ran into each other as well (the date rule in index.css). Each
+   * label sits above its field on a phone and beside it at a desk. On the narrowest phones
+   * Apply wraps to the start of the next line rather than squeezing the dates.
+   */
+  const labelCls = 'flex min-w-[7.5rem] flex-1 flex-col gap-1 text-2xs text-muted sm:min-w-0 sm:flex-none sm:flex-row sm:items-center'
+  const fieldCls = 'h-7 w-full rounded-lg border border-line bg-transparent px-2 text-2xs text-ink coarse:h-touch-sm sm:w-auto'
 
   return (
     <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -129,7 +135,7 @@ export function DashboardFilters({
         onSubmit={apply}
         aria-label="Dates to show"
         noValidate
-        className="grid w-full grid-cols-2 items-end gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center"
+        className="flex w-full flex-wrap items-end gap-2 sm:w-auto sm:items-center"
       >
         <label className={labelCls}>
           From
@@ -156,15 +162,14 @@ export function DashboardFilters({
             className={fieldCls}
           />
         </label>
-        <div className="col-span-2 flex items-center gap-2">
-          {/* Solid while there are dates to apply, so the next step stands out. */}
-          <Button type="submit" size="sm" variant={pending ? 'primary' : 'secondary'}>
-            Apply
-          </Button>
-          {pending && !problem && <span className="text-2xs text-muted">Not applied yet</span>}
-        </div>
+        {/* Solid while there are dates to apply, so the next step stands out. */}
+        <Button type="submit" size="sm" variant={pending ? 'primary' : 'secondary'}>
+          Apply
+        </Button>
+        {/* Under the row on a phone, beside Apply at a desk. */}
+        {pending && !problem && <span className="basis-full text-2xs text-muted sm:basis-auto">Not applied yet</span>}
         {problem && (
-          <p id="dash-dates-problem" role="alert" className="col-span-2 text-2xs font-medium text-critical sm:basis-full">
+          <p id="dash-dates-problem" role="alert" className="basis-full text-2xs font-medium text-critical">
             {problem}
           </p>
         )}
@@ -177,7 +182,8 @@ export function DashboardFilters({
           <select
             value={filters.department ?? ''}
             onChange={(e) => onChange({ department: e.target.value || null })}
-            className="rounded-lg border border-line bg-surface px-2 py-1 text-2xs text-ink coarse:min-h-touch coarse:px-3"
+            // The same height as the dates and chips above it: one filter bar.
+            className="h-7 rounded-lg border border-line bg-surface px-2 text-2xs text-ink coarse:h-touch-sm coarse:px-3"
           >
             <option value="">All</option>
             {departments.map((dep) => <option key={dep} value={dep}>{dep}</option>)}

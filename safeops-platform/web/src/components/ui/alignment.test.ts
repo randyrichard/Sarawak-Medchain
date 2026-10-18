@@ -70,6 +70,28 @@ describe('words and sentences start on the left', () => {
     expect(offenders.map((f) => f.slice(SRC.length + 1))).toEqual([])
   })
 
+  it('pushes something right only in a row that never wraps', () => {
+    /*
+     * An auto left margin keeps pushing right after a row wraps: on a phone the view tabs,
+     * New Session, or Export sat alone at the right edge of a line of their own. In a row
+     * that can wrap, RowSpacer pushes right only while the row is one line. These rows are
+     * one line by design, so a value or a time at their end stays there.
+     */
+    const ALLOWED_PUSH: Record<string, number> = {
+      'components/layout/Topbar.tsx': 1, // the top bar's own buttons, at its right end
+      'components/charts/Charts.tsx': 1, // a value at the end of a chart tooltip's row
+      'features/admin/sections/UsersSection.tsx': 1, // when, at the end of a sign-in row
+      'features/admin/sections/DeveloperSection.tsx': 1, // what an endpoint does, at the end of its row
+      'features/legal/LegalPage.tsx': 1, // the legal pages' links, at the right of their header
+    }
+    const found: Record<string, number> = {}
+    for (const file of sources(SRC)) {
+      const n = (readFileSync(file, 'utf8').match(/(?<![\w-])ml-auto(?![\w-])/g) ?? []).length
+      if (n) found[file.slice(SRC.length + 1).split('\\').join('/')] = n
+    }
+    expect(found).toEqual(ALLOWED_PUSH)
+  })
+
   it('lets no table column be right-aligned', () => {
     // DataTable once took `align: 'right'`; the option is gone, so a column cannot ask for it.
     const table = readFileSync(join(SRC, 'components/ui/Table.tsx'), 'utf8')

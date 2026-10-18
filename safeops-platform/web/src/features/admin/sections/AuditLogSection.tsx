@@ -4,7 +4,7 @@ import { api } from '@/api/client'
 import { useOrg } from '@/features/org/OrgContext'
 import type { AuditEntry, RbacModule } from '@/api/admin'
 import { MODULE_LABEL, RBAC_MODULES } from '@/api/admin'
-import { Avatar, Badge, Button, Card, EmptyState, Skeleton } from '@/components/ui'
+import { Avatar, Badge, Button, Card, EmptyState, Skeleton, RowSpacer } from '@/components/ui'
 import { fmtDateTime } from '@/features/incidents/lib'
 import { downloadCsv } from '../lib'
 import { ScrollText } from 'lucide-react'
@@ -44,7 +44,8 @@ export function AuditLogSection() {
           <option value="auth">Authentication</option>
           <option value="system">System</option>
         </select>
-        <Button size="sm" variant="ghost" className="ml-auto" icon={<Download size={13} />} onClick={exportCsv}>Export CSV</Button>
+        <RowSpacer />
+        <Button size="sm" variant="ghost" icon={<Download size={13} />} onClick={exportCsv}>Export CSV</Button>
       </div>
 
       <Card>

@@ -7,7 +7,7 @@ import type { CapaFilters, CapaItem, CapaStats } from '@/api/capa'
 import type { ActionPriority } from '@/api/incidents'
 import { useOrg } from '@/features/org/OrgContext'
 import { useActor, usePeople } from '@/features/incidents/lib'
-import { Alert, Badge, Button, Card, EmptyState, PageHeader, Skeleton, Tabs, type TabItem, AttentionIcon, attentionOf, attentionStripe } from '@/components/ui'
+import { Alert, Badge, Button, Card, EmptyState, PageHeader, Skeleton, Tabs, type TabItem, AttentionIcon, attentionOf, attentionStripe, RowSpacer } from '@/components/ui'
 import { NoMatches } from '@/features/org/NoMatches'
 import { ApiError } from '@/api/types'
 import { cn } from '@/lib/cn'
@@ -225,7 +225,8 @@ export function ActionsPage() {
             </button>
           </Badge>
         )}
-        <div className="ml-auto min-w-0">
+        <RowSpacer />
+        <div className="min-w-0">
           <Tabs
             items={viewTabs}
             value={view}

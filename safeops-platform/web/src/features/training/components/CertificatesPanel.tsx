@@ -3,7 +3,7 @@ import { BadgeCheck, Download, Printer, QrCode, Search, ShieldCheck, ShieldX } f
 import { api } from '@/api/client'
 import type { CertificateView, CertVerification } from '@/api/training'
 import { useOrg } from '@/features/org/OrgContext'
-import { Avatar, Badge, Button, Card, Dialog, EmptyState, Input, Skeleton, StatusPill } from '@/components/ui'
+import { Avatar, Badge, Button, Card, Dialog, EmptyState, Input, Skeleton, StatusPill, RowSpacer } from '@/components/ui'
 import { certStatusKind, exportCertsCsv, printCertificate } from '../lib'
 import { cn } from '@/lib/cn'
 import { NoMatches } from '@/features/org/NoMatches'
@@ -71,7 +71,8 @@ export function CertificatesPanel({
             {f}
           </button>
         ))}
-        <div className="ml-auto flex items-center gap-2">
+        <RowSpacer />
+        <div className="flex items-center gap-2">
           <Button size="sm" variant="secondary" icon={<QrCode size={13} />} onClick={() => { setVerifyResult(null); setVerifyCode(''); setVerifyOpen(true) }}>
             Verify
           </Button>

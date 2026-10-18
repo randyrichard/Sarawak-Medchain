@@ -71,6 +71,19 @@ describe('mobile layout', () => {
     expect(read('index.html')).not.toMatch(/maximum-scale|user-scalable\s*=\s*no/)
   })
 
+  it('fits date fields in their box on an iPhone, with the date on the left', () => {
+    /*
+     * iOS gives a natively drawn date field a minimum width as wide as the longest date and
+     * content-box sizing, so in two columns it ran into its neighbour (Due date over
+     * Priority; From over To on Home). Chromium, which the mobile audit runs, does not, so
+     * only this rule stands between an iPhone and the overlap.
+     */
+    const css = read('src/styles/index.css')
+    const ios = css.slice(css.indexOf('@supports (-webkit-touch-callout: none)'))
+    expect(ios).toMatch(/^@supports \(-webkit-touch-callout: none\) \{\s*input\[type='date'\],[^{]*\{\s*-webkit-appearance: none;\s*appearance: none;/)
+    expect(css).toMatch(/input::-webkit-date-and-time-value \{\s*text-align: left;/)
+  })
+
   it('makes every close button a touch-sized target on a touch screen', () => {
     // Drawer and dialog close buttons were 24-28px: the control people reach for most on a
     // phone, in a corner, where a miss lands on the page behind. `touch` is 40px.

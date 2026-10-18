@@ -101,7 +101,6 @@ export function EmployeeForm({
           label="Department"
           value={value.department}
           onChange={(v) => set('department', v)}
-          placeholder="Select a department…"
           addLabel="Add a new department…"
         />
       </div>

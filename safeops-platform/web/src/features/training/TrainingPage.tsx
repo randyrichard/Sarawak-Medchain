@@ -5,7 +5,7 @@ import { api } from '@/api/client'
 import type { CertificateView, CourseView, SessionView, TrainingMatrix, TrainingStats } from '@/api/training'
 import { useOrg } from '@/features/org/OrgContext'
 import { useActor } from '@/features/incidents/lib'
-import { Alert, Button, Card, PageHeader, Skeleton, Tabs, type TabItem, AttentionIcon, attentionOf, attentionStripe } from '@/components/ui'
+import { Alert, Button, Card, PageHeader, Skeleton, Tabs, type TabItem, AttentionIcon, attentionOf, attentionStripe, RowSpacer } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { canManageTraining, canRunSessions } from './lib'
 import { TrainingOverview } from './components/TrainingOverview'
@@ -134,7 +134,8 @@ export function TrainingPage() {
       )}
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <div className="ml-auto min-w-0">
+        <RowSpacer />
+        <div className="min-w-0">
           <Tabs items={viewTabs} value={view} onChange={switchView} className={cn('border-b-0')} />
         </div>
       </div>

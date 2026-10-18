@@ -145,7 +145,6 @@ export function NewPermitDialog({
             label="Department"
             value={department}
             onChange={setDepartment}
-            placeholder="Select a department…"
             addLabel="Add a new department…"
           />
           <Input label="Exact location" required value={location} onChange={(e) => setLocation(e.target.value)}
