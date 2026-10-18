@@ -4,7 +4,7 @@ window.__probe = () => {
   const vis = (el) => { const r = el.getBoundingClientRect(); const cs = getComputedStyle(el); return r.width > 0 && r.height > 0 && cs.visibility !== 'hidden' && cs.display !== 'none' && +cs.opacity !== 0 }
   const desc = (el) => { const t = el.tagName.toLowerCase(); const id = el.id ? '#' + el.id : ''; const lab = (el.getAttribute('aria-label') || el.innerText || el.value || el.placeholder || '').trim().replace(/\s+/g, ' ').slice(0, 40); return `${t}${id}${lab ? ` "${lab}"` : ''}` }
   const scrollsX = (el) => { for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) { const o = getComputedStyle(p).overflowX; if (o === 'auto' || o === 'scroll' || o === 'hidden' || o === 'clip') return true } return false }
-  const out = { zoomOut: innerWidth > screen.width + 1 ? `layout ${innerWidth}px on a ${screen.width}px screen` : '', W: Math.min(W, screen.width), H, docW: document.documentElement.scrollWidth, bodyW: document.body.scrollWidth, wide: [], clipped: [], spill: [], overlap: [], smallInputs: [], tallFixed: [] }
+  const out = { zoomOut: innerWidth > screen.width + 1 ? `layout ${innerWidth}px on a ${screen.width}px screen` : '', W: Math.min(W, screen.width), H, docW: document.documentElement.scrollWidth, bodyW: document.body.scrollWidth, wide: [], clipped: [], spill: [], overlap: [], smallInputs: [], tallFixed: [], pushed: [] }
   const all = [...document.querySelectorAll('body *')].filter(vis)
   // 1. Elements past the right/left edge that are not inside a scroll/clip container.
   for (const el of all) {
@@ -76,7 +76,28 @@ window.__probe = () => {
     if (parseFloat(getComputedStyle(el).fontSize) < 16) out.smallInputs.push(`${desc(el)} ${getComputedStyle(el).fontSize}`)
   // 6. Fixed/sticky boxes taller than the screen (cannot be scrolled to the end).
   for (const el of all) { const cs = getComputedStyle(el); if (cs.position === 'fixed' && el.getBoundingClientRect().height > H + 1 && cs.overflowY === 'visible') out.tallFixed.push(desc(el)) }
+  // 7. A wrapped row whose line starts right of the left edge: something pushed right (an auto
+  //    left margin, justify-end) that wrapped onto a line of its own, as the view tabs did.
+  //    Items share a line when their boxes overlap vertically, as centred items of different
+  //    heights do.
+  for (const box of all) {
+    const cs = getComputedStyle(box)
+    if (!cs.display.includes('flex') || cs.flexDirection !== 'row' || cs.flexWrap !== 'wrap') continue
+    const kids = [...box.children].filter((k) => vis(k) && getComputedStyle(k).position !== 'absolute')
+    if (kids.length < 2) continue
+    const start = box.getBoundingClientRect().left + parseFloat(cs.paddingLeft) + parseFloat(cs.borderLeftWidth)
+    const lines = []
+    for (const k of kids) {
+      const r = k.getBoundingClientRect()
+      const line = lines.find((l) => Math.min(l.bottom, r.bottom) - Math.max(l.top, r.top) > Math.min(r.height, l.bottom - l.top) / 2)
+      if (!line) { lines.push({ top: r.top, bottom: r.bottom, left: r.left, first: k }); continue }
+      line.top = Math.min(line.top, r.top); line.bottom = Math.max(line.bottom, r.bottom)
+      if (r.left < line.left) { line.left = r.left; line.first = k }
+    }
+    if (lines.length < 2) continue
+    for (const l of lines) if (l.left - start > 24) out.pushed.push(`${desc(l.first)} starts ${Math.round(l.left - start)}px in`)
+  }
   const uniq = (a) => [...new Set(a)]
-  for (const k of ['wide', 'clipped', 'spill', 'overlap', 'smallInputs', 'tallFixed']) out[k] = uniq(out[k]).slice(0, 12)
+  for (const k of ['wide', 'clipped', 'spill', 'overlap', 'smallInputs', 'tallFixed', 'pushed']) out[k] = uniq(out[k]).slice(0, 12)
   return out
 }

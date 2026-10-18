@@ -32,6 +32,7 @@ organization, administration, notifications and account.
 | Navigation clashing | The top-bar items don't overlap, all stay on screen and are at least the touch size (40px, read from `tailwind.config.js`). The menu drawer scrolls to its last item. Tab rows scroll rather than cut off. |
 | Keyboard | The screen is shrunk by the keyboard's height, then each form field is focused. The field must be in view and not covered. Fields are checked on near miss, new incident, the incidents search box and four dialogs. |
 | iOS zoom | No text field is under 16px, because an iPhone zooms into those on focus. |
+| Lines that start on the right | No row that wraps onto a line of its own starts away from the left edge (`pushed`). An item pushed right with an auto margin stayed at the right edge after its toolbar wrapped. |
 
 ### What it does not cover
 
@@ -46,6 +47,10 @@ real-phone checklist is in `GO_LIVE.md`, section 3):
   it is what Firefox and Samsung Internet do on Android.
 - The notch and home bar. The app does not opt into drawing under them (there is no
   `viewport-fit=cover`), so Safari keeps content clear of them by itself.
+- Date fields. Safari draws them as a native control with a minimum width as wide as the
+  longest date, and adds their padding on top of their width. Chromium does neither, so the
+  audit cannot see the overlap this caused. The iOS rule in `index.css` turns the native look
+  off, and `mobileLayout.test.ts` holds it.
 
 ## What was found, and fixed
 
@@ -78,7 +83,11 @@ Its first line, where the typing happens, is.
 - page-header actions wrap;
 - dialogs scroll as one on short screens;
 - the near-miss bar unpins while typing;
-- touch screens get 16px fields, and zoom is never disabled in the viewport meta.
+- touch screens get 16px fields, and zoom is never disabled in the viewport meta;
+- date fields fit their box on an iPhone, with the date on the left.
+
+`alignment.test.ts` lists the few rows that may push something right with an auto margin,
+because they never wrap. A row that can wrap uses `RowSpacer` instead.
 
 For the layout itself, which only a browser can measure, run the audit:
 
@@ -214,3 +223,26 @@ Measured on an iPhone 13 profile across nine pages:
 
 `fittsLaw.test.ts` fails any touch size written as a number instead of a token. To make the
 whole app larger or smaller on touch, change the three tokens.
+
+## On a real iPhone, October 2026
+
+Three problems were reported from an iPhone, all on screens the Chromium audit had passed.
+
+| # | Problem | Where | Cause | Fix |
+|---|---|---|---|---|
+| 1 | **Two dates side by side ran into each other**, and the page grew wider than the screen. | Home (From and To), New Corrective Action (Due date over Priority), and any two-column form with a date | Safari on iOS draws a date field as a native control. Unless its width is a fixed number of pixels, Safari gives it a minimum width as wide as the longest date, and content-box sizing, so its padding goes on top of `width: 100%` (WebKit, `RenderThemeIOS::adjustInputElementButtonStyle`). It also centres the date. | `index.css` turns the native look off on iOS only (`@supports (-webkit-touch-callout: none)`), so date fields are sized like every other field, and the date starts on the left. All 37 date and time fields are covered, as is any added later. |
+| 2 | **The dates on Home took three rows**: the labels, the fields, then Apply. | Home | Layout. | From, To and Apply share one row, 36px tall like the chips above them. "Not applied yet" and any error go on the line below. On a 320px phone Apply wraps to the start of the next line. |
+| 3 | **Board / List / Calendar / Analytics sat alone at the right edge.** | Corrective Actions. The same applied to the view tabs on Training, Assets and Audits, New Session, Verify and Export, Export CSV, the user list's buttons, a finding's status, and Delete in three drawers. | An auto left margin pushed each one right. When the toolbar wrapped on a phone, it went on pushing on a line of its own. | `RowSpacer` takes the free space instead. While the row is one line, what follows still sits at its right end. Once the row wraps, what follows starts on the left. |
+
+Measured on every page and view in Chromium at 390, 360 and 320px. Before, three rows started
+at the right on their own line: the Corrective Actions view tabs, New Session, and Verify and
+Export. After, none do at any of the three widths. The audit now checks for this (`pushed`),
+so a row that drifts right again fails it.
+
+Two smaller fixes came out of the same pass:
+- Department dropdowns in six forms said "Select a department…", which was cut off in a
+  half-width column. They now say "Select…", like the Site and Owner fields beside them.
+- HSE Performance's tile figures now scale with their length as well as their tile. The demo
+  data reached "10,016,729" man-hours, ten characters, and at 13% of the tile's width that
+  ran 5px past the edge of a two-up tile on a 320px phone.
+

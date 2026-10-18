@@ -94,7 +94,6 @@ export function NewActionDialog({ open, onClose, onCreated }: { open: boolean; o
               required
               value={department}
               onChange={setDepartment}
-              placeholder="Select a department…"
               addLabel="Add a new department…"
               error={form.errorFor('department')}
             />

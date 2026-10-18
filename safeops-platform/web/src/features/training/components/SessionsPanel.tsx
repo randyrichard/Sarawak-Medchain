@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { CalendarClock, PlayCircle, Plus } from 'lucide-react'
 import type { SessionView } from '@/api/training'
 import type { Actor } from '@/api/incidents'
-import { Avatar, Badge, Button, Card, EmptyState, Skeleton, StatusPill } from '@/components/ui'
+import { Avatar, Badge, Button, Card, EmptyState, Skeleton, StatusPill, RowSpacer } from '@/components/ui'
 import { AttendanceRunner } from './AttendanceRunner'
 import { cn } from '@/lib/cn'
 
@@ -41,7 +41,12 @@ export function SessionsPanel({
             {f}
           </button>
         ))}
-        {runner && <Button size="sm" className="ml-auto" icon={<Plus size={13} />} onClick={onOpenNew}>New Session</Button>}
+        {runner && (
+          <>
+            <RowSpacer />
+            <Button size="sm" icon={<Plus size={13} />} onClick={onOpenNew}>New Session</Button>
+          </>
+        )}
       </div>
 
       <Card>

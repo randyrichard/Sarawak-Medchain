@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Download, Users } from 'lucide-react'
 import type { EmployeeCompetency, TrainingMatrix } from '@/api/training'
-import { Avatar, Button, Card, EmptyState, Skeleton } from '@/components/ui'
+import { Avatar, Button, Card, EmptyState, Skeleton, RowSpacer } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { COMPETENCY_META, exportMatrixCsv, LEVEL_META } from '../lib'
 import { useSiteLabel } from '@/features/org/useSiteLabel'
@@ -52,7 +52,8 @@ export function CompetencyMatrix({
         >
           Gaps &amp; Expiring Only
         </button>
-        <div className="ml-auto flex items-center gap-3">
+        <RowSpacer />
+        <div className="flex items-center gap-3">
           <span className="hidden items-center gap-3 text-2xs text-muted sm:flex">
             {(['competent', 'expiring', 'missing'] as const).map((s) => (
               <span key={s} className="inline-flex items-center gap-1">

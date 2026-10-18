@@ -6,7 +6,7 @@ import type { AssetFilters, AssetStats, AssetView, InspectionView } from '@/api/
 import { ASSET_CATEGORIES, CATEGORY_LABEL, type AssetCategory } from '@/api/assets'
 import { useOrg } from '@/features/org/OrgContext'
 import { useActor } from '@/features/incidents/lib'
-import { Badge, Button, Card, EmptyState, PageHeader, Skeleton, StatusPill, Tabs, type TabItem, AttentionIcon, attentionOf, attentionStripe } from '@/components/ui'
+import { Badge, Button, Card, EmptyState, PageHeader, Skeleton, StatusPill, Tabs, type TabItem, AttentionIcon, attentionOf, attentionStripe, RowSpacer } from '@/components/ui'
 import { NoMatches } from '@/features/org/NoMatches'
 import { cn } from '@/lib/cn'
 import { assetStatusFromParam } from '@/lib/links'
@@ -177,7 +177,8 @@ export function AssetsPage() {
             )}
           </>
         )}
-        <div className="ml-auto min-w-0">
+        <RowSpacer />
+        <div className="min-w-0">
           <Tabs items={viewTabs} value={view} onChange={switchView} className="border-b-0" />
         </div>
       </div>

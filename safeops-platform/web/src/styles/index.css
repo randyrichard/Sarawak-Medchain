@@ -204,6 +204,34 @@ select optgroup {
   color: var(--ink);
 }
 
+/*
+ * Date and time fields fit their box on an iPhone.
+ *
+ * Safari on iOS draws them as a native control and then, unless the width is a fixed number
+ * of pixels, gives them a minimum width as wide as the longest date it can show, and switches
+ * them to content-box sizing so their padding goes on top of `width: 100%` (WebKit,
+ * RenderThemeIOS::adjustInputElementButtonStyle). In a two-column form or a row of two dates
+ * each one spilled into its neighbour: Due date over Priority, From over To, and the page
+ * grew wider than the screen. Without the native look they are sized like every other field.
+ * Scoped to iOS, the only engine with `-webkit-touch-callout`, so the desk and Android keep
+ * their own calendar buttons.
+ */
+@supports (-webkit-touch-callout: none) {
+  input[type='date'],
+  input[type='datetime-local'],
+  input[type='time'],
+  input[type='month'],
+  input[type='week'] {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+}
+
+/* And their value starts on the left, as every other field's does. iOS centres it. */
+input::-webkit-date-and-time-value {
+  text-align: left;
+}
+
 /* Focus visibility — accessibility is part of the design language */
 :focus-visible {
   outline: none;

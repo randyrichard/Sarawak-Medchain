@@ -8,7 +8,7 @@ import type { AuditFindingView, AuditTemplate, AuditView } from '@/api/audits'
 import { AUDIT_TYPE_LABEL } from '@/api/audits'
 import type { Actor } from '@/api/incidents'
 import type { Site } from '@/api/types'
-import { Alert, Avatar, Badge, Button, Skeleton, StatusPill } from '@/components/ui'
+import { Alert, Avatar, Badge, Button, Skeleton, StatusPill, RowSpacer } from '@/components/ui'
 import { fmtDateTime } from '@/features/incidents/lib'
 import { AUDIT_STATUS_META, FINDING_STATUS_META, printAuditReport, scoreColor, SEVERITY_META } from '../lib'
 import { AuditRunner } from './AuditRunner'
@@ -168,7 +168,8 @@ export function AuditDrawer({
                           <span className="font-mono text-2xs text-muted">{f.code}</span>
                           <StatusPill kind={SEVERITY_META[f.severity].kind} label={f.severity} />
                           <span className="text-2xs text-muted">{f.category}</span>
-                          <span className="ml-auto"><StatusPill kind={FINDING_STATUS_META[f.status].kind} label={f.status} /></span>
+                          <RowSpacer />
+                          <StatusPill kind={FINDING_STATUS_META[f.status].kind} label={f.status} />
                         </div>
                         <p className="mt-1.5 text-sm leading-relaxed text-ink">{f.description}</p>
                         <div className="mt-1.5 flex flex-wrap items-center gap-2 text-2xs text-muted">

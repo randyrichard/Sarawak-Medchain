@@ -7,7 +7,7 @@ import type {
 } from '@/api/audits'
 import { useOrg } from '@/features/org/OrgContext'
 import { useActor } from '@/features/incidents/lib'
-import { Badge, Button, Card, EmptyState, PageHeader, Skeleton, StatusPill, Tabs, type TabItem, AttentionIcon, attentionOf, attentionStripe } from '@/components/ui'
+import { Badge, Button, Card, EmptyState, PageHeader, Skeleton, StatusPill, Tabs, type TabItem, AttentionIcon, attentionOf, attentionStripe, RowSpacer } from '@/components/ui'
 import { NoMatches } from '@/features/org/NoMatches'
 import { cn } from '@/lib/cn'
 import { isComplianceManager, scoreColor, AUDIT_STATUS_META } from './lib'
@@ -114,7 +114,8 @@ export function AuditsPage() {
             />
           </label>
         )}
-        <div className="ml-auto min-w-0">
+        <RowSpacer />
+        <div className="min-w-0">
           <Tabs items={viewTabs} value={view} onChange={switchView} className="border-b-0" />
         </div>
       </div>

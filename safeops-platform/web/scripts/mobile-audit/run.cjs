@@ -18,6 +18,7 @@
  * - spill:     text running out of its own box
  * - clipped:   text cut off by a fixed-height box that does not scroll
  * - overlap:   text or controls drawn on top of each other
+ * - pushed:    a row that wrapped onto a line of its own and starts right of the left edge
  * - iosZoom:   a text field under 16px, which an iPhone zooms into on focus
  * - target:    a control under 24px (WCAG 2.5.8), measured through its label where it has one
  * - no name:   a control a screen reader cannot name
@@ -88,7 +89,7 @@ function layoutFindings(r) {
   const f = []
   if (r.zoomOut) f.push(`zoom-out: ${r.zoomOut}`)
   if (r.docW > r.W) f.push(`sideways: page ${r.docW}px on a ${r.W}px screen`)
-  for (const k of ['wide', 'clipped', 'spill', 'overlap', 'tallFixed']) if (r[k].length) f.push(`${k}: ${r[k].join(' | ')}`)
+  for (const k of ['wide', 'clipped', 'spill', 'overlap', 'tallFixed', 'pushed']) if (r[k].length) f.push(`${k}: ${r[k].join(' | ')}`)
   if (r.smallInputs.length) f.push(`iosZoom: ${r.smallInputs.join(' | ')}`)
   return f
 }

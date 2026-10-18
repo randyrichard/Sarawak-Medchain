@@ -8,7 +8,7 @@ import type { AdminUser, LoginEvent, RoleDef, UserDevice } from '@/api/admin'
 import { useOrg } from '@/features/org/OrgContext'
 import {
   Alert, Avatar, Badge, Button, Card, Dialog, Dropdown, DropdownItem, DropdownSeparator, EmptyState,
-  ErrorState, Input, Select, Skeleton, StatusPill, Switch,
+  ErrorState, Input, Select, Skeleton, StatusPill, Switch, RowSpacer,
 } from '@/components/ui'
 import { timeAgo } from '@/lib/time'
 import { fmtDateTime } from '@/features/incidents/lib'
@@ -120,7 +120,8 @@ export function UsersSection() {
           <option value="deactivated">Deactivated</option>
           <option value="locked">Locked</option>
         </select>
-        <div className="ml-auto flex items-center gap-2">
+        <RowSpacer />
+        <div className="flex items-center gap-2">
           <Button size="sm" variant="ghost" icon={<Download size={13} />} onClick={exportCsv}>Export</Button>
           <Button size="sm" variant="secondary" icon={<Upload size={13} />} onClick={() => setImportOpen(true)}>Import CSV</Button>
           <Button size="sm" icon={<UserPlus size={14} />} onClick={() => setNewOpen(true)}>Create User</Button>

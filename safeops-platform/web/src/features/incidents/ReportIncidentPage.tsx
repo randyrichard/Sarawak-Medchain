@@ -464,7 +464,6 @@ export function ReportIncidentPage() {
                 options={departments}
                 label="Department"
                 required
-                placeholder="Select a department…"
                 addLabel="Add a new department…"
                 value={draft.department}
                 onChange={(v) => patch({ department: v })}
