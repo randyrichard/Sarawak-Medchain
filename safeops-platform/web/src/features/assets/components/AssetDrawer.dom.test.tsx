@@ -39,7 +39,22 @@ describe('an asset in the offline demo', () => {
         <AssetDrawer assetId="ast-1010" manage onClose={() => {}} onRun={() => {}} onChanged={() => {}} />
       </MemoryRouter>,
     )
-    expect(await screen.findByText(/Not in this demo: who has it, its photos and files, calibration/)).toBeTruthy()
+    /*
+     * An explicit wait, because testing-library's default is one second and this drawer
+     * renders skeletons until the demo store has built itself.
+     *
+     * That second was enough until the suite grew: adding the offline-permit and
+     * field-outbox files put enough work through the pool in parallel that the build
+     * crossed it, and this failed in a full run while passing on its own. The component was
+     * never the problem — excluding the new files made it pass again with every source
+     * change still in place — so the fix belongs here, in a budget that does not depend on
+     * how many other files happen to be running.
+     */
+    expect(await screen.findByText(
+      /Not in this demo: who has it, its photos and files, calibration/,
+      {},
+      { timeout: 5000 },
+    )).toBeTruthy()
     expect(screen.queryByRole('alert')).toBeNull()
     expect(screen.queryByText(/needs the SafeChain server/)).toBeNull()
     expect(request).not.toHaveBeenCalled()

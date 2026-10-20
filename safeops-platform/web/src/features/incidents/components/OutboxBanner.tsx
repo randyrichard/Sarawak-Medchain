@@ -1,5 +1,6 @@
 import { CloudOff, Loader2, RefreshCw, TriangleAlert } from 'lucide-react'
 import { Button } from '@/components/ui'
+import { isPersistent } from '../outbox'
 import { useOutbox } from '../useOutbox'
 
 /*
@@ -33,7 +34,13 @@ export function OutboxBanner() {
             {waiting} {plural(waiting)} waiting to send
           </span>
           <span>
-            {draining ? 'Sending now…' : 'Held on this device. It will send by itself when there is a connection.'}
+            {draining
+              ? 'Sending now…'
+              : isPersistent()
+                ? 'Held on this device. It will send by itself when there is a connection.'
+                // No IndexedDB (private window, locked-down device): the queue is in memory,
+                // so saying it is held on the device would not be true.
+                : 'Held in this tab only — this browser will not store it. Keep SafeChain open until it sends.'}
           </span>
           {!draining && (
             <Button size="sm" variant="ghost" onClick={() => void flush()} icon={<RefreshCw size={12} />}>

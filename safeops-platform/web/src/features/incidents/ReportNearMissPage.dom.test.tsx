@@ -20,7 +20,14 @@ vi.mock('@/api/client', () => ({
     addIncidentAttachment: (...a: unknown[]) => addIncidentAttachment(...a),
   },
 }))
-vi.mock('./outbox', async (orig) => ({ ...(await orig<object>()), enqueue: (...a: unknown[]) => enqueue(...a) }))
+// jsdom has no IndexedDB, so the real one reports the queue as memory-only. The page says
+// so, correctly — but these tests are about the report, so they stand in a browser with it.
+let persistent = true
+vi.mock('./outbox', async (orig) => ({
+  ...(await orig<object>()),
+  enqueue: (...a: unknown[]) => enqueue(...a),
+  isPersistent: () => persistent,
+}))
 vi.mock('@/features/auth/AuthContext', () => ({ useAuth: () => ({ user: { id: 'u1', name: 'Melissa Bong' } }) }))
 vi.mock('@/features/org/OrgContext', () => ({
   useOrg: () => ({ company: { id: 'big' }, site: null, sites: [{ id: 'kch', name: 'Kuching Assembly Plant' }], role: 'employee', membership: null }),
@@ -28,7 +35,14 @@ vi.mock('@/features/org/OrgContext', () => ({
 
 const { ReportNearMissPage } = await import('./ReportNearMissPage')
 
-afterEach(() => { cleanup(); createIncident.mockReset(); addIncidentAttachment.mockReset(); enqueue.mockReset(); localStorage.clear() })
+afterEach(() => {
+  cleanup()
+  createIncident.mockReset()
+  addIncidentAttachment.mockReset()
+  enqueue.mockReset()
+  persistent = true
+  localStorage.clear()
+})
 
 async function fillAndSubmit(files: File[] = []) {
   render(<MemoryRouter><ReportNearMissPage /></MemoryRouter>)
@@ -50,17 +64,45 @@ describe('ReportNearMissPage', () => {
     expect(addIncidentAttachment.mock.calls[0][3]).toBe(photo)
   })
 
-  it('keeps a report made with no signal, under its key, and says the photos were not kept', async () => {
+  it('keeps a report made with no signal, under its key, and keeps the photo with it', async () => {
+    /*
+     * The photo used to be dropped here: the queue was localStorage, which holds strings, so
+     * the screen told the reporter to come back and photograph the plank again. The bytes go
+     * into the queue now (see ./outbox.ts), which on a scaffold is the difference between
+     * evidence and a memory of it.
+     */
     createIncident.mockRejectedValue(new ApiError('network', 'Could not reach the server.'))
     const photo = new File([new Uint8Array(1024)], 'plank.jpg', { type: 'image/jpeg' })
     await fillAndSubmit([photo])
     await screen.findByText('Saved on this phone')
     expect(enqueue).toHaveBeenCalledTimes(1)
-    const [userId, input, key] = enqueue.mock.calls[0]
+    const [userId, input, key, files] = enqueue.mock.calls[0]
     expect(userId).toBe('u1')
     expect(input.type).toBe('near_miss')
     expect(key).toBe(createIncident.mock.calls[0][0].clientRef)
-    expect(screen.getByText(/could not be kept with it/)).toBeTruthy()
+    expect(files).toHaveLength(1)
+    expect(files[0]).toMatchObject({ name: 'plank.jpg', type: 'image/jpeg' })
+    expect(files[0].blob).toBe(photo)
+    expect(screen.getByText(/kept with it and goes/)).toBeTruthy()
+    expect(screen.queryByText(/could not be kept/)).toBeNull()
+  })
+
+  it('does not say it was saved when the phone would not store it', async () => {
+    createIncident.mockRejectedValue(new ApiError('network', 'Could not reach the server.'))
+    enqueue.mockRejectedValue(new Error('QuotaExceededError'))
+    await fillAndSubmit()
+
+    await screen.findByText(/would not store the report/)
+    expect(screen.queryByText('Saved on this phone')).toBeNull()
+  })
+
+  it('tells a browser with no storage that the report only lives in this tab', async () => {
+    persistent = false
+    createIncident.mockRejectedValue(new ApiError('network', 'Could not reach the server.'))
+    await fillAndSubmit()
+
+    await screen.findByText('Saved on this phone')
+    expect(screen.getByText(/only held while this tab stays open/)).toBeTruthy()
   })
 
   it('still refuses, rather than queues, what the server turned down', async () => {

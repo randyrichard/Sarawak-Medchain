@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from '@/api/client'
 import type { NewIncidentInput } from '@/api/incidents'
 import { useAuth } from '@/features/auth/AuthContext'
+import { uploadOneEvidence } from './evidence'
 import { useActor } from './lib'
 import { drain, needsAttention, pending, readOutbox, type QueuedReport } from './outbox'
 
@@ -60,19 +61,39 @@ export function useOutbox(): OutboxState {
       setQueue((prev) => (prev.length === 0 ? prev : []))
       return
     }
-    const next = readOutbox(userId)
-    setQueue((prev) => (sameQueue(prev, next) ? prev : next))
+    /*
+     * Reading the store is asynchronous now that the queue is IndexedDB, so the result can
+     * arrive after the component has moved on to another user. Comparing before setting
+     * keeps that from both a stale render and the render loop above: every read produces
+     * fresh objects, so `prev !== next` is always true and using it as the test would
+     * reinstate the loop.
+     */
+    void readOutbox(userId)
+      .then((next) => setQueue((prev) => (sameQueue(prev, next) ? prev : next)))
+      .catch(() => undefined)
   }, [userId])
 
   const flush = useCallback(async () => {
-    if (!userId || readOutbox(userId).length === 0) return
+    if (!userId) return
+    /*
+     * Nothing queued, which is almost always. Checked before anything else because this runs
+     * on a timer: announcing a drain for an empty queue would flip `draining` twice a minute
+     * and re-render everything watching it.
+     */
+    if ((await readOutbox(userId).catch(() => [])).length === 0) return
 
     setDraining(true)
     try {
-      await drain(userId, (input: NewIncidentInput, clientRef: string) =>
+      await drain(userId, {
         // The key travels with the payload rather than being regenerated, which is what
         // lets the server recognise a replay instead of filing the injury twice.
-        api.createIncident({ ...input, clientRef }, actorRef.current))
+        create: (input: NewIncidentInput, clientRef: string) =>
+          api.createIncident({ ...input, clientRef }, actorRef.current),
+        // The photographs the phone kept while it had no signal, now that there is an
+        // incident to attach them to.
+        upload: (incidentId: string, file: File) =>
+          uploadOneEvidence(incidentId, file, actorRef.current),
+      })
     } finally {
       setDraining(false)
       refresh()
@@ -106,18 +127,19 @@ export function useOutbox(): OutboxState {
     void attempt()
 
     const onOnline = () => void attempt()
-    // Another tab may have sent them; this keeps the count honest rather than showing a
-    // queue that is already empty.
-    const onStorage = () => refresh()
 
     window.addEventListener('online', onOnline)
-    window.addEventListener('storage', onStorage)
+    /*
+     * No cross-tab listener any more. localStorage fired a `storage` event when another tab
+     * sent the queue, and that kept this count honest; IndexedDB has no equivalent. The
+     * interval covers it instead — a count that is two minutes stale is a smaller problem
+     * than the one the move to IndexedDB solved, which was photographs being dropped.
+     */
     const timer = window.setInterval(() => void attempt(), RETRY_INTERVAL_MS)
 
     return () => {
       cancelled = true
       window.removeEventListener('online', onOnline)
-      window.removeEventListener('storage', onStorage)
       window.clearInterval(timer)
     }
   }, [userId, refresh])
@@ -135,8 +157,8 @@ export function useOutbox(): OutboxState {
  * Would re-rendering with this queue tell the user anything new?
  *
  * Compares the fields the UI actually reads. Identity is not usable here: every read of the
- * queue parses fresh objects out of storage, so `prev !== next` is always true and using it
- * would reinstate the render loop this exists to prevent.
+ * queue produces fresh objects, so `prev !== next` is always true and using it would
+ * reinstate the render loop this exists to prevent.
  */
 function sameQueue(a: QueuedReport[], b: QueuedReport[]): boolean {
   if (a.length !== b.length) return false

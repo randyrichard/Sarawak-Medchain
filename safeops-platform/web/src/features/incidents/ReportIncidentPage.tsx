@@ -12,8 +12,8 @@ import { useDepartments } from '@/features/org/departments'
 import { Alert, Badge, Breadcrumbs, Button, Card, Checkbox, Input, SuggestSelect, LinkButton, Select, Textarea } from '@/components/ui'
 import { usePageTitle } from '@/app/pageTitle'
 import { fmtDateTime, INCIDENT_TYPE_GROUPS, severityKind, SITE_COORDS, useActor } from './lib'
-import { enqueue, shouldRetry } from './outbox'
-import { EVIDENCE_ACCEPT, EVIDENCE_HINT, screenEvidence, uploadEvidence } from './evidence'
+import { enqueue, isPersistent, shouldRetry } from './outbox'
+import { EVIDENCE_ACCEPT, EVIDENCE_HINT, queueableEvidence, screenEvidence, uploadEvidence } from './evidence'
 import { StatusPill } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { uuid } from '@/lib/uuid'
@@ -105,7 +105,9 @@ export function ReportIncidentPage() {
   // file cannot be written into it. See ./evidence.ts.
   const [files, setFiles] = useState<File[]>([])
   const [refused, setRefused] = useState<string[]>([])
-  const [queuedWithFiles, setQueuedWithFiles] = useState(0)
+  // How many photos or documents went into the outbox with the report. Their bytes are kept
+  // now, not only their names, so this is something to confirm rather than warn about.
+  const [queuedFiles, setQueuedFiles] = useState(0)
   // Pristine forms never autosave — otherwise a reload would overwrite a real
   // stored draft with an empty one before the user can click "Resume".
   const dirty = useRef(false)
@@ -230,11 +232,25 @@ export function ReportIncidentPage() {
        * The key is generated here, once, and travels with the report for every attempt. That
        * is what stops a replay filing the same injury twice; the server enforces it with a
        * unique index on (companyId, clientRef).
+       *
+       * The photographs go with it, as bytes. They used to be dropped, and the screen said
+       * so — see ./outbox.ts for why they are not any more.
        */
       if (shouldRetry(code)) {
-        enqueue(user?.id ?? 'anonymous', input, clientRef.current)
+        try {
+          await enqueue(user?.id ?? 'anonymous', input, clientRef.current, queueableEvidence(files))
+        } catch {
+          /*
+           * The device would not keep it. Said as a failure, because it is one: the draft is
+           * still here and the report has not been filed anywhere, and a confirmation would
+           * be the worst possible lie to tell about an injury report.
+           */
+          setError('There is no connection, and this device would not store the report. Your draft is safe here — try again when you have a signal.')
+          setSubmitting(false)
+          return
+        }
         localStorage.removeItem(draftKey)
-        setQueuedWithFiles(files.length)
+        setQueuedFiles(files.length)
         setQueued(true)
         setSubmitting(false)
         return
@@ -271,16 +287,29 @@ export function ReportIncidentPage() {
           submitted automatically as soon as you are back online. You do not need to fill it
           in again.
         </p>
-        {queuedWithFiles > 0 && (
+        {queuedFiles > 0 && (
+          <p className="mt-3 text-sm text-ink-2">
+            {queuedFiles === 1 ? 'The photo or file you attached is' : `All ${queuedFiles} photos or files you attached are`}{' '}
+            held with it and {queuedFiles === 1 ? 'goes' : 'go'} up with the report. You do not need to
+            photograph anything again.
+          </p>
+        )}
+        {isPersistent() ? (
+          <p className="mt-3 rounded-lg border bg-sunken px-3 py-2.5 text-xs text-ink-2">
+            It is safe to close the app. Keep the phone signed in — the report is held for this
+            account and sends on its own next time SafeChain is open with a connection.
+          </p>
+        ) : (
+          /*
+           * No IndexedDB: a private window, or a device with storage locked down. The report
+           * is held in memory, so it goes when the tab does — and "safe to close the app"
+           * would then be false, which is the one thing this screen must never say.
+           */
           <Alert tone="warning" className="mt-3">
-            The {queuedWithFiles === 1 ? 'photo or file' : `${queuedWithFiles} photos or files`} could not be kept
-            on this device. Once the report has gone, open it and add them under Evidence.
+            This browser will not store the report, so it is only held while this tab stays
+            open. Keep SafeChain open until it has sent, or tell your HSE administrator now.
           </Alert>
         )}
-        <p className="mt-3 rounded-lg border bg-sunken px-3 py-2.5 text-xs text-ink-2">
-          It is safe to close the app. Keep the phone signed in — the report is held for this
-          account and sends on its own next time SafeChain is open with a connection.
-        </p>
         <div className="mt-6 flex flex-wrap gap-2">
           <LinkButton to="/incidents" size="lg">Back to Incidents</LinkButton>
           <LinkButton to="/incidents/new" variant="secondary" size="lg" onClick={() => setQueued(false)}>

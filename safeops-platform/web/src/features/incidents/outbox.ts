@@ -1,4 +1,9 @@
 import type { NewIncidentInput } from '@/api/incidents'
+import {
+  drain as drainQueue, enqueue as enqueueOp, type DrainResult, type OutboxStore,
+  type QueuedFile, type QueuedOp,
+} from '@/lib/fieldOutbox/queue'
+import { defaultStore, queueFor } from '@/lib/fieldOutbox/store'
 
 /*
  * Reports that were filed but have not reached the server yet.
@@ -12,163 +17,248 @@ import type { NewIncidentInput } from '@/api/incidents'
  *
  * So the report is accepted, kept, and sent when the network comes back.
  *
- * Storage is localStorage rather than IndexedDB deliberately. The whole payload is JSON —
- * attachments in the create call are metadata only (name, kind, size), never file bytes — so
- * a queued report is a couple of kilobytes, and localStorage is synchronous, which means a
- * queued item cannot be lost to a tab closing mid-write.
+ * This file is now an adapter over src/lib/fieldOutbox, which holds the storage and the
+ * retry rules the permit queue also uses. The queue was localStorage, and the reason it is
+ * not any more is photographs: localStorage holds strings, so a report queued offline kept
+ * its text and dropped its evidence, and the screen said the photos were saved when only
+ * their filenames were. IndexedDB stores Blobs — and the 5 MB origin quota, which one 4 MB
+ * site photo would have exhausted while taking the queued reports down with it, stops being
+ * the limit.
+ *
+ * What stays here is what is specific to an incident: how a report is replayed against the
+ * API, and the move of any queue an older build left behind in localStorage.
  */
 
-/** Key is per user, so signing out on a shared site phone cannot expose someone else's queue. */
-const KEY_PREFIX = 'safeops.outbox.incidents.'
+export type {
+  DrainResult, OutboxStore, QueuedFile, QueuedOp,
+} from '@/lib/fieldOutbox/queue'
+export {
+  isStale, needsAttention, pending, recordFailure, remove, shouldRetry,
+  STALE_AFTER_MS, unblock,
+} from '@/lib/fieldOutbox/queue'
+/** False when the queue only survives while the tab is open, which the reporter is told. */
+export { isPersistent } from '@/lib/fieldOutbox/store'
+
+/** The only `kind` this queue holds: a report, with its photographs. */
+export const INCIDENT_KIND = 'incident'
 
 /**
- * Older than this and we stop retrying on our own and ask a human.
+ * The store, seen as only this queue.
  *
- * A report that has been failing for two days is not waiting for signal, it is waiting for
- * somebody to look at it — the session expired, the site was deleted, the payload is refused.
- * Retrying it silently forever would let the reporter believe it was filed.
+ * One store holds everything a user queued, permit records included, and this queue must see
+ * none of it: a gas test handed to `create` is not a report, and — the serious direction —
+ * `sendPermitOp` has no case for a report, so an unscoped permit drain would take one as
+ * delivered and delete it. Each feature sees the kinds it owns.
  */
-export const STALE_AFTER_MS = 48 * 60 * 60 * 1000
+const ownQueue = (store: OutboxStore) => queueFor([INCIDENT_KIND], store)
 
-export interface QueuedReport {
-  /** Idempotency key. Generated once and reused for every attempt — that is the point. */
-  clientRef: string
-  input: NewIncidentInput
-  /** When the reporter pressed Submit, not when it was sent. */
-  queuedAt: string
-  attempts: number
-  lastError?: string
+/** A filed report waiting for a network. */
+export type QueuedReport = QueuedOp<NewIncidentInput>
+
+/**
+ * What a drain needs in order to replay a report. Injected so the rules can be tested
+ * without an API, and so this module does not pull in the client.
+ */
+export interface IncidentSender {
   /**
-   * The server looked at this report and refused it, so no amount of signal will help.
-   *
-   * Kept in the queue rather than deleted - it is still a report somebody filed, and
-   * throwing it away silently is the one outcome worse than not sending it - but skipped by
-   * the automatic drain, so a rejected payload is not re-sent every time the network
-   * flickers. The UI shows these as needing a person.
+   * Files the report. A replay under the same clientRef returns the report already filed
+   * rather than filing a second one — the server enforces that with a unique index on
+   * (companyId, clientRef).
    */
-  blocked?: boolean
+  create: (input: NewIncidentInput, clientRef: string) => Promise<{ id: string }>
+  /** Uploads one photograph or document to a report that now exists. */
+  upload: (incidentId: string, file: File) => Promise<unknown>
 }
-
-const keyFor = (userId: string) => `${KEY_PREFIX}${userId}`
-
-export function readOutbox(userId: string): QueuedReport[] {
-  try {
-    const raw = localStorage.getItem(keyFor(userId))
-    if (!raw) return []
-    const parsed: unknown = JSON.parse(raw)
-    if (!Array.isArray(parsed)) return []
-    // Anything malformed is dropped rather than thrown: a corrupt entry must not take the
-    // whole queue — or the sign-in that reads it — down with it.
-    return parsed.filter((r): r is QueuedReport =>
-      !!r && typeof r === 'object'
-      && typeof (r as QueuedReport).clientRef === 'string'
-      && !!(r as QueuedReport).input)
-  } catch {
-    return []
-  }
-}
-
-function write(userId: string, items: QueuedReport[]) {
-  try {
-    localStorage.setItem(keyFor(userId), JSON.stringify(items))
-  } catch {
-    // Quota exhausted or storage blocked (private mode, a locked-down device). Nothing
-    // useful to do here, and throwing would lose the report the caller is holding.
-  }
-}
-
-/** Adds a report to the queue. Returns the key the caller must reuse on every retry. */
-export function enqueue(userId: string, input: NewIncidentInput, clientRef: string): QueuedReport {
-  const item: QueuedReport = { clientRef, input, queuedAt: new Date().toISOString(), attempts: 0 }
-  write(userId, [...readOutbox(userId), item])
-  return item
-}
-
-export function remove(userId: string, clientRef: string) {
-  write(userId, readOutbox(userId).filter((r) => r.clientRef !== clientRef))
-}
-
-export function recordFailure(userId: string, clientRef: string, message: string, blocked = false) {
-  write(userId, readOutbox(userId).map((r) =>
-    r.clientRef === clientRef
-      ? { ...r, attempts: r.attempts + 1, lastError: message, blocked: blocked || r.blocked }
-      : r))
-}
-
-/** Clears the blocked flag so a report can be tried again after somebody has looked at it. */
-export function unblock(userId: string, clientRef: string) {
-  write(userId, readOutbox(userId).map((r) =>
-    r.clientRef === clientRef ? { ...r, blocked: false } : r))
-}
-
-/** Reports still waiting on the network, as opposed to waiting on a person. */
-export const pending = (items: QueuedReport[], now = Date.now()) =>
-  items.filter((r) => !r.blocked && !isStale(r, now))
-
-/** Reports that will not move without somebody looking at them. */
-export const needsAttention = (items: QueuedReport[], now = Date.now()) =>
-  items.filter((r) => r.blocked || isStale(r, now))
-
-export const isStale = (r: QueuedReport, now = Date.now()) =>
-  now - new Date(r.queuedAt).getTime() > STALE_AFTER_MS
 
 /**
- * Is this failure worth retrying?
+ * Adds a report, with the bytes of its evidence, to the queue.
  *
- * Only transport failures are. A 400 means the server looked at the report and refused it,
- * and it will refuse it identically in an hour — retrying that on a timer just hides a
- * report that needs a person. A 401 is the interesting middle case: it is kept, because the
- * session can come back, and the reporter should not lose a filed report to an expired
- * token.
+ * The clientRef is the caller's: it was generated before the first attempt and travels with
+ * the report on every attempt after it, which is what stops a replay filing the same injury
+ * twice.
+ *
+ * Can reject — a device with no storage at all, or a full one. The caller must then not tell
+ * the reporter the report was saved, because it was not.
  */
-export function shouldRetry(code: string | undefined): boolean {
-  return code === 'network' || code === 'unauthenticated' || code === 'request_failed'
+export async function enqueue(
+  userId: string,
+  input: NewIncidentInput,
+  clientRef: string,
+  files: QueuedFile[] = [],
+  store: OutboxStore = defaultStore,
+): Promise<QueuedReport> {
+  await migrateLegacyQueue(userId, store)
+  return enqueueOp<NewIncidentInput>({
+    userId,
+    kind: INCIDENT_KIND,
+    label: input.title,
+    payload: input,
+    files,
+    clientRef,
+  }, store)
 }
 
-export interface DrainResult {
-  sent: number
-  failed: number
-  remaining: number
+/** Every report this user has queued, oldest first. Permit records are not reports. */
+export async function readOutbox(
+  userId: string,
+  store: OutboxStore = defaultStore,
+): Promise<QueuedReport[]> {
+  await migrateLegacyQueue(userId, store)
+  return (await ownQueue(store).all(userId)) as QueuedReport[]
 }
 
 /**
  * Attempts every queued report once, oldest first.
  *
- * `send` is injected rather than imported so this is testable without a browser or an API,
- * which is the only way the retry rules above get tested at all.
- *
- * Sequential on purpose. These are writes, the queue is short, and a phone that has just
- * regained signal is the worst moment to open six connections at once.
+ * `independent` is the one place this queue and the permit queue differ, and it is
+ * deliberate. A permit's records are a sequence — the server refuses an acknowledgement for
+ * a toolbox talk it has not been told about yet — so that drain stops at the first dead
+ * network. Reports are separate events, often by separate people: one failing is no reason
+ * to leave the next injury unsent.
  */
 export async function drain(
   userId: string,
-  send: (input: NewIncidentInput, clientRef: string) => Promise<unknown>,
+  io: IncidentSender,
+  store: OutboxStore = defaultStore,
   now = Date.now(),
 ): Promise<DrainResult> {
-  const queue = readOutbox(userId)
-  let sent = 0
-  let failed = 0
+  await migrateLegacyQueue(userId, store)
+  const queue = ownQueue(store)
+  return drainQueue(userId, (op) => sendReport(op as QueuedReport, io, queue), queue, now, {
+    independent: true,
+    scope: INCIDENT_KIND,
+  })
+}
 
-  for (const item of queue) {
-    // Already refused, or old enough that retrying is no longer an honest answer. Left
-    // alone; both are surfaced to the user rather than retried behind their back.
-    if (item.blocked || isStale(item, now)) {
-      failed += 1
-      continue
-    }
-    try {
-      await send(item.input, item.clientRef)
-      remove(userId, item.clientRef)
-      sent += 1
-    } catch (e) {
-      const code = (e as { code?: string }).code
-      const message = e instanceof Error ? e.message : 'Unknown error'
-      // A transport failure keeps its place in the queue and will be tried again. A refusal
-      // is marked blocked, so the drain stops re-sending a payload the server rejected.
-      recordFailure(userId, item.clientRef, message, !shouldRetry(code))
-      failed += 1
-    }
+/**
+ * Replays one report: the text, then the photographs it was queued with.
+ *
+ * The report lands first because evidence belongs to an incident and there is nothing to
+ * attach it to until then. If the upload half fails, the entry stays in the queue and the
+ * whole thing is tried again — and a second `create` under the same key returns the report
+ * already filed, so that retry costs a round trip rather than a duplicate injury.
+ *
+ * A photo is dropped from the entry as soon as it lands, not only when a later one fails. An
+ * upload has no idempotency key of its own — `create` has one, and the server answers a
+ * replay with the report already filed, but nothing recognises the same photograph twice —
+ * so the queue is what has to remember. Without this, a report with three photos that lost
+ * signal on the third would attach the first two again on every attempt, and a tab closed
+ * mid-drain would attach everything again on the next one.
+ */
+async function sendReport(op: QueuedReport, io: IncidentSender, store: OutboxStore) {
+  const incident = await io.create({ ...op.payload, clientRef: op.clientRef }, op.clientRef)
+
+  /*
+   * An upload that fails is not caught here. It goes up with its code intact so the queue's
+   * own rules decide what happens next: a dead network keeps the entry and tries again
+   * later, and a file the server refuses outright — a photo whose bytes do not match its
+   * type, say — blocks the entry and puts it in front of a person. The report itself is
+   * filed either way, which is the part that matters most; a refused photograph nobody is
+   * told about would not be.
+   */
+  const queued = op.files ?? []
+  for (let i = 0; i < queued.length; i += 1) {
+    const f = queued[i]
+    await io.upload(incident.id, new File([f.blob], f.name, { type: f.type }))
+    await store.put({ ...op, files: queued.slice(i + 1) })
   }
+  return incident
+}
 
-  return { sent, failed, remaining: readOutbox(userId).length }
+/*
+ * A queue left behind by the localStorage build.
+ *
+ * Somebody may have an injury report sitting in `safeops.outbox.incidents.<userId>` right
+ * now. Upgrading the app must not be the thing that loses it, so the old key is read once
+ * per user, its entries are moved into the store, and only then is it cleared. Nothing is
+ * deleted that has not been written somewhere else first.
+ *
+ * Idempotent on purpose: an entry keeps its own clientRef, which is the store's key, so a
+ * migration interrupted halfway and run again overwrites rather than duplicates.
+ */
+const LEGACY_KEY_PREFIX = 'safeops.outbox.incidents.'
+
+/** Per store, so the browser migrates once a session and each test starts clean. */
+const migrated = new WeakMap<OutboxStore, Map<string, Promise<void>>>()
+
+export function migrateLegacyQueue(
+  userId: string,
+  store: OutboxStore = defaultStore,
+): Promise<void> {
+  let perUser = migrated.get(store)
+  if (!perUser) migrated.set(store, (perUser = new Map()))
+  const running = perUser.get(userId)
+  if (running) return running
+  // Swallowed rather than rethrown: a migration that cannot run must not stop the report
+  // the caller is holding from being queued now. The old key is left for the next attempt.
+  const job = moveLegacyQueue(userId, store).catch(() => undefined)
+  perUser.set(userId, job)
+  return job
+}
+
+async function moveLegacyQueue(userId: string, store: OutboxStore): Promise<void> {
+  const key = `${LEGACY_KEY_PREFIX}${userId}`
+  let raw: string | null = null
+  try {
+    raw = localStorage.getItem(key)
+  } catch {
+    // Storage blocked altogether (private mode, a locked-down device). Nothing to move.
+    return
+  }
+  if (!raw) return
+
+  // Copy first. If the store will not take them the old key is left exactly as it was, so
+  // the next load tries again — losing a report to a failed write is the one outcome worse
+  // than leaving it in the wrong place.
+  for (const op of parseLegacy(userId, raw)) await store.put(op)
+
+  try {
+    localStorage.removeItem(key)
+  } catch { /* nothing useful to do; the entries are in the store either way */ }
+}
+
+interface LegacyReport {
+  clientRef: string
+  input: NewIncidentInput
+  queuedAt?: string
+  attempts?: number
+  lastError?: string
+  blocked?: boolean
+}
+
+/**
+ * Reads the old array, tolerantly.
+ *
+ * This runs during start-up, and the old reader was deliberately forgiving for the same
+ * reason: a corrupt entry must not take the whole queue — or the sign-in that reads it —
+ * down with it. A malformed row is dropped and the rows around it are still moved.
+ */
+function parseLegacy(userId: string, raw: string): QueuedOp[] {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    return []
+  }
+  if (!Array.isArray(parsed)) return []
+
+  return parsed
+    .filter((r): r is LegacyReport =>
+      !!r && typeof r === 'object'
+      && typeof (r as LegacyReport).clientRef === 'string'
+      && !!(r as LegacyReport).input)
+    .map((r) => ({
+      clientRef: r.clientRef,
+      userId,
+      kind: INCIDENT_KIND,
+      // The old entries carried no label; the title is what the reporter would recognise.
+      label: r.input.title ?? 'Incident report',
+      payload: r.input,
+      // A localStorage entry never had files. That was the hole.
+      files: [],
+      queuedAt: r.queuedAt ?? new Date().toISOString(),
+      attempts: r.attempts ?? 0,
+      lastError: r.lastError,
+      blocked: r.blocked,
+    }))
 }

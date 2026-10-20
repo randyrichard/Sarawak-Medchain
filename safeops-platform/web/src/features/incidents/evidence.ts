@@ -1,5 +1,6 @@
 import { api } from '@/api/client'
 import type { Actor, AttachmentKind } from '@/api/incidents'
+import type { QueuedFile } from '@/lib/fieldOutbox/queue'
 
 /**
  * Evidence chosen on a report form, and getting it to the server.
@@ -12,6 +13,9 @@ import type { Actor, AttachmentKind } from '@/api/incidents'
  * The files are uploaded once the report exists, because evidence belongs to an incident.
  * What the server refuses is screened out here first, in the same terms, so a file is
  * never listed as attached when it is bound to be rejected.
+ *
+ * With no signal the bytes go into the outbox and are uploaded when the report lands
+ * (`queueableEvidence`, and `./outbox.ts` for the replay).
  */
 
 /** What the server accepts (api/src/lib/uploadSafety.ts). */
@@ -34,20 +38,48 @@ export function screenEvidence(files: File[]): { ok: File[]; refused: string[] }
   return { ok, refused }
 }
 
-/** Uploads each file to the incident. Returns how many did not arrive. */
+/**
+ * Uploads one file to the incident.
+ *
+ * Throws, with the API's error code intact. That matters on the offline path: the outbox
+ * decides between "retry when there is signal" and "show a person" from that code, and a
+ * failure flattened into a count would lose the distinction.
+ */
+export function uploadOneEvidence(incidentId: string, file: File, actor: Actor): Promise<unknown> {
+  return api.addIncidentAttachment(
+    incidentId,
+    { name: file.name, kind: evidenceKind(file), sizeKb: Math.max(1, Math.round(file.size / 1024)) },
+    actor,
+    file,
+  )
+}
+
+/**
+ * Uploads each file to the incident. Returns how many did not arrive.
+ *
+ * For the online path, where the report has just been filed and the screen can say which
+ * photos did not make it. The offline drain uses `uploadOneEvidence` directly, because it
+ * needs the failure rather than a tally.
+ */
 export async function uploadEvidence(incidentId: string, files: File[], actor: Actor): Promise<number> {
   let failed = 0
   for (const f of files) {
     try {
-      await api.addIncidentAttachment(
-        incidentId,
-        { name: f.name, kind: evidenceKind(f), sizeKb: Math.max(1, Math.round(f.size / 1024)) },
-        actor,
-        f,
-      )
+      await uploadOneEvidence(incidentId, f, actor)
     } catch {
       failed++
     }
   }
   return failed
 }
+
+/**
+ * Turns a selection into something the outbox can keep.
+ *
+ * A File is already a Blob, so this is the bytes themselves rather than a reference to
+ * them — which is the point. The name and type are carried alongside because IndexedDB
+ * stores the Blob, and a File rebuilt on the way out needs both to be uploaded as what it
+ * is (see fieldOutbox/store.ts).
+ */
+export const queueableEvidence = (files: File[]): QueuedFile[] =>
+  files.map((f) => ({ name: f.name, type: f.type, blob: f }))

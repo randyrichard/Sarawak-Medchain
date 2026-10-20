@@ -16,13 +16,21 @@ import { ApiError } from '@/api/types'
 const createIncident = vi.fn()
 const addIncidentAttachment = vi.fn()
 const enqueue = vi.fn()
+// jsdom has no IndexedDB, so the real one reports the queue as memory-only. The page then
+// says so, correctly — but that is not what these tests are about, so they stand in a
+// browser that does have it.
+let persistent = true
 vi.mock('@/api/client', () => ({
   api: {
     createIncident: (...a: unknown[]) => createIncident(...a),
     addIncidentAttachment: (...a: unknown[]) => addIncidentAttachment(...a),
   },
 }))
-vi.mock('./outbox', async (orig) => ({ ...(await orig<object>()), enqueue: (...a: unknown[]) => enqueue(...a) }))
+vi.mock('./outbox', async (orig) => ({
+  ...(await orig<object>()),
+  enqueue: (...a: unknown[]) => enqueue(...a),
+  isPersistent: () => persistent,
+}))
 vi.mock('@/features/auth/AuthContext', () => ({ useAuth: () => ({ user: { id: 'u1', name: 'Melissa Bong' } }) }))
 vi.mock('@/features/org/OrgContext', () => ({
   useOrg: () => ({ company: { id: 'big' }, sites: [{ id: 'kch', name: 'Kuching Assembly Plant' }], role: 'employee', membership: null }),
@@ -32,7 +40,14 @@ vi.mock('@/app/pageTitle', () => ({ usePageTitle: () => {} }))
 
 const { ReportIncidentPage } = await import('./ReportIncidentPage')
 
-afterEach(() => { cleanup(); createIncident.mockReset(); addIncidentAttachment.mockReset(); enqueue.mockReset(); localStorage.clear() })
+afterEach(() => {
+  cleanup()
+  createIncident.mockReset()
+  addIncidentAttachment.mockReset()
+  enqueue.mockReset()
+  persistent = true
+  localStorage.clear()
+})
 
 async function fillAndSubmit(files: File[] = []) {
   render(<MemoryRouter><ReportIncidentPage /></MemoryRouter>)
@@ -83,6 +98,47 @@ describe('ReportIncidentPage submission', () => {
     expect(sentKey).toBeTruthy()
     expect(queuedKey).toBe(sentKey)
     expect(queuedInput.clientRef).toBe(sentKey)
+  })
+
+  it('queues the photo’s bytes with a report that had no signal, and says they were kept', async () => {
+    /*
+     * The hole this closes. The queue was localStorage, which holds strings, so a report
+     * saved in a yard kept its text and dropped its evidence — and the screen told the
+     * reporter the photos could not be kept, which at least was honest, but meant going back
+     * to photograph the scene again. It no longer does either.
+     */
+    createIncident.mockRejectedValue(new ApiError('network', 'Could not reach the server.'))
+    const photo = new File([new Uint8Array(2048)], 'scene.jpg', { type: 'image/jpeg' })
+    await fillAndSubmit([photo])
+
+    await screen.findByRole('heading', { name: 'Report saved' })
+    const [, , , files] = enqueue.mock.calls[0]
+    expect(files).toHaveLength(1)
+    expect(files[0]).toMatchObject({ name: 'scene.jpg', type: 'image/jpeg' })
+    // The bytes themselves, not a name and a size.
+    expect(files[0].blob).toBe(photo)
+    expect(screen.getByText(/goes up with the report/)).toBeTruthy()
+    expect(screen.queryByText(/could not be kept/)).toBeNull()
+  })
+
+  it('does not say a report is saved when the device would not store it', async () => {
+    // A confirmation here would be the worst possible lie to tell about an injury report.
+    createIncident.mockRejectedValue(new ApiError('network', 'Could not reach the server.'))
+    enqueue.mockRejectedValue(new Error('QuotaExceededError'))
+    await fillAndSubmit()
+
+    await screen.findByText(/would not store the report/)
+    expect(screen.queryByRole('heading', { name: 'Report saved' })).toBeNull()
+  })
+
+  it('tells a browser with no storage that the report only lives in this tab', async () => {
+    persistent = false
+    createIncident.mockRejectedValue(new ApiError('network', 'Could not reach the server.'))
+    await fillAndSubmit()
+
+    await screen.findByRole('heading', { name: 'Report saved' })
+    expect(screen.getByText(/only held while this tab stays open/)).toBeTruthy()
+    expect(screen.queryByText(/safe to close the app/)).toBeNull()
   })
 
   it('uploads the photos to the new incident, rather than only listing their names', async () => {

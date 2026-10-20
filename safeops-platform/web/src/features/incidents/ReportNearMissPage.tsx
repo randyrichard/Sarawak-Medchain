@@ -6,9 +6,9 @@ import { ApiError } from '@/api/types'
 import type { NewIncidentInput } from '@/api/incidents'
 import { useOrg } from '@/features/org/OrgContext'
 import { useAuth } from '@/features/auth/AuthContext'
-import { enqueue, shouldRetry } from './outbox'
+import { enqueue, isPersistent, shouldRetry } from './outbox'
 import { useActor, SITE_COORDS } from './lib'
-import { EVIDENCE_ACCEPT, screenEvidence, uploadEvidence } from './evidence'
+import { EVIDENCE_ACCEPT, queueableEvidence, screenEvidence, uploadEvidence } from './evidence'
 import { Alert, Button, Card, LinkButton, fieldA11y } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { useFormCheck } from '@/lib/useFormCheck'
@@ -143,10 +143,18 @@ export function ReportNearMissPage() {
        * No signal, rather than the server saying no: kept and sent later, as the full
        * incident form does. A near miss is the report most often made on a phone out on
        * site, and "try again" asks someone to remember to come back and retype it.
+       *
+       * The photos go into the queue as bytes. They used to be dropped — see ./outbox.ts.
        */
       if (input && shouldRetry(e instanceof ApiError ? e.code : undefined)) {
-        enqueue(user?.id ?? 'anonymous', input, clientRef.current)
-        setQueued(photos.length)
+        try {
+          await enqueue(user?.id ?? 'anonymous', input, clientRef.current, queueableEvidence(photos))
+          setQueued(photos.length)
+        } catch {
+          // The device would not keep it, so nothing has been saved anywhere. Said plainly;
+          // a confirmation here would be a lie about a report nobody holds.
+          setError('There is no connection, and this device would not store the report. What you have typed is still here — try again when you have a signal.')
+        }
         return
       }
       setError(e instanceof ApiError ? e.message : 'Could not submit. Your text is still here — try again.')
@@ -168,9 +176,19 @@ export function ReportNearMissPage() {
             SafeChain is open with a signal. Keep the phone signed in.
           </p>
           {queued > 0 && (
+            <p className="mt-2 text-sm leading-relaxed text-ink-2">
+              {queued === 1 ? 'The photo is kept with it and goes' : `All ${queued} photos are kept with it and go`} up
+              with the report. No need to take {queued === 1 ? 'it' : 'them'} again.
+            </p>
+          )}
+          {!isPersistent() && (
+            /*
+             * No IndexedDB — a private window, or storage locked down. The report is held in
+             * memory only, so "keep the phone signed in" is not enough to be true.
+             */
             <Alert tone="warning" className="mt-3 text-left">
-              {queued === 1 ? 'The photo' : `The ${queued} photos`} could not be kept with it. Once it has gone,
-              open the report and add {queued === 1 ? 'it' : 'them'} under Evidence.
+              This browser will not store the report, so it is only held while this tab stays open.
+              Keep SafeChain open until it has sent.
             </Alert>
           )}
           <Button className="mt-5" onClick={() => { clientRef.current = uuid(); setQueued(null); setWhat(''); setWhere(''); setTags([]); setPhotos([]) }}>
