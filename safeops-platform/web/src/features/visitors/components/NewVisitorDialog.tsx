@@ -3,7 +3,7 @@ import { visitorsApi } from '@/api/visitorsApi'
 import { listEquipmentHolders, type EquipmentHolderOption } from '@/api/equipmentHolders'
 import { ApiError } from '@/api/types'
 import { useOrg, useSiteScope } from '@/features/org/OrgContext'
-import { Button, Dialog, FormSection, FormSections, Input, Select, Textarea, personRegisterHint } from '@/components/ui'
+import { Alert, Button, Dialog, FormSection, FormSections, Input, Select, Textarea, personRegisterHint } from '@/components/ui'
 import { useFormCheck } from '@/lib/useFormCheck'
 
 /**
@@ -41,12 +41,15 @@ export function NewVisitorDialog({
 
   const siteScope = useSiteScope()
   const [hosts, setHosts] = useState<EquipmentHolderOption[]>([])
+  /** Why Host may be short of people: the workforce register could not be loaded. */
+  const [hostsProblem, setHostsProblem] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open || !company) return
     setError(null)
+    setHostsProblem(null)
 
     // Defaults that match what reception actually does: somebody standing at the desk now,
     // leaving at the end of the working day.
@@ -63,14 +66,15 @@ export function NewVisitorDialog({
         setHosts(people.filter((r) => r.kind === 'employee'))
         /*
          * Only the workforce half matters here - a host is an employee - so an unreadable
-         * contractor register is not worth alarming somebody about on this form.
+         * contractor register is not worth alarming somebody about on this form. The
+         * workforce one is said under Host, the one field it affects: as the form's error,
+         * pinned red above the buttons, it read as though registering the visit had failed.
          */
-        const workforce = unavailable.find((u) => /workforce/i.test(u))
-        setError(workforce ?? null)
+        setHostsProblem(unavailable.find((u) => /workforce/i.test(u)) ?? null)
       })
       .catch((e) => {
         setHosts([])
-        setError(e instanceof ApiError ? e.message : 'Could not load the list of people.')
+        setHostsProblem(e instanceof ApiError ? e.message : 'Could not load the list of people.')
       })
   }, [open, company, sites])
 
@@ -182,6 +186,7 @@ export function NewVisitorDialog({
                 ))}
               </Select>
             </div>
+          {hostsProblem && <Alert tone="warning">{hostsProblem}</Alert>}
           <Input label="Purpose of visit" value={purpose} onChange={(e) => setPurpose(e.target.value)}
             placeholder="e.g. Vendor meeting, pump commissioning" />
             <div className="grid gap-x-3 gap-y-5 sm:grid-cols-2">

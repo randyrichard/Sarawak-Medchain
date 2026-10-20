@@ -1,6 +1,7 @@
 import { drainRows } from './paging'
 import { employeesApi } from './employeesApi'
 import { contractorsApi } from './contractorsApi'
+import { isUnavailableHere } from '@/lib/useAsync'
 
 /** Somebody equipment can be issued to. Equipment is held by exactly one person. */
 export interface EquipmentHolderOption {
@@ -28,6 +29,12 @@ export interface HolderList {
    * which is the failure this module has now produced twice.
    */
   unavailable: string[]
+  /**
+   * The registers are not part of this build at all - the online demo has no server - so
+   * nothing failed. Said as a note beside the picker, not as an error: shown red, it read
+   * on the demo as the form being broken, and pinned above the buttons it covered the form.
+   */
+  notHere: boolean
 }
 
 /**
@@ -56,6 +63,7 @@ export async function listEquipmentHolders(companyId: string): Promise<HolderLis
 
   const people: EquipmentHolderOption[] = []
   const unavailable: string[] = []
+  const notHere = [employees, workers].some((r) => r.status === 'rejected' && isUnavailableHere(r.reason))
 
   if (employees.status === 'fulfilled') {
     people.push(...employees.value
@@ -64,7 +72,7 @@ export async function listEquipmentHolders(companyId: string): Promise<HolderLis
         kind: 'employee', id: e.id, name: e.name, reference: e.employeeNo,
         detail: [e.position, e.department].filter(Boolean).join(' · '),
       })))
-  } else {
+  } else if (!isUnavailableHere(employees.reason)) {
     unavailable.push('The workforce register could not be loaded, so employees are not listed.')
   }
 
@@ -73,9 +81,9 @@ export async function listEquipmentHolders(companyId: string): Promise<HolderLis
       kind: 'contractor', id: w.id, name: w.name, reference: w.workerNo,
       detail: [w.contractorName, w.position].filter(Boolean).join(' · '),
     })))
-  } else {
+  } else if (!isUnavailableHere(workers.reason)) {
     unavailable.push('The contractor register could not be loaded, so contractor workers are not listed.')
   }
 
-  return { people: people.sort((a, b) => a.name.localeCompare(b.name)), unavailable }
+  return { people: people.sort((a, b) => a.name.localeCompare(b.name)), unavailable, notHere }
 }

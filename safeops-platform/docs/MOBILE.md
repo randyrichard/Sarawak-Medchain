@@ -18,7 +18,7 @@ browser, measuring the real layout rather than guessing from the code.
 | iPhone SE, landscape | 568 × 320 | 200 |
 
 **Pages:** 22 in all. They are login, the dashboard, near miss, the incidents list and new
-incident form, the incident board, an incident's detail page, actions, assets, permits,
+incident form, the incident board, an incident's detail page, actions (Board and List), assets, permits,
 visitors, toolbox, HSE Performance, reports, audits, training, workforce, contractors,
 organization, administration, notifications and account.
 
@@ -246,3 +246,24 @@ Two smaller fixes came out of the same pass:
   data reached "10,016,729" man-hours, ten characters, and at 13% of the tile's width that
   ran 5px past the edge of a two-up tile on a 320px phone.
 
+## A false alarm and a sideways list, October 2026
+
+Two more problems were reported from an iPhone.
+
+| # | Problem | Where | Cause | Fix |
+|---|---|---|---|---|
+| 1 | **Register Asset showed a red error**: "The workforce register could not be loaded… The contractor register could not be loaded…". It was pinned above Cancel and Register & Schedule, and covered "Where It Is and Who Owns It". | Register Asset in the online demo | The online demo has no server, so it has no workforce or contractor register. The form reported that as its own error, which read as though registering had failed. Nothing had failed. | In the demo, the field says so calmly: "The online demo has no workforce or contractor register, so new equipment goes to the pool." With a server, a register that really could not be loaded is still named, beside the one field it affects, as a warning. The form's own error is kept for a save that fails. Registering a visit now does the same for its Host field. |
+| 2 | **The Corrective Actions list scrolled sideways.** Titles were cut off at the card's edge. Status, priority, owner, due date and progress were out of sight. | Corrective Actions, List | The table had a minimum width of 980px for its eight columns, inside a box that scrolls. The audit allows content to scroll inside a scroll box, so it passed. | On a phone each action is a card, with all of it in view. From a tablet up (768px) the table shows, without the fixed width. Priority sits beside the code until its column joins at 1024px. Site and Progress join at 1280px. |
+
+Measured on an iPhone 13 profile: all 22 demo actions as cards, grouped or not, and no sideways
+scroll. The table fits its box at 768, 1024, 1280 and 1440px. The audit now visits the List
+view too (`/actions?view=list`), so the cards are measured on all five devices. Its first run
+caught a one-line title on a Pixel 7: the title's button was 19px tall, under the 24px a target
+needs. Padding with a matching negative margin makes it 27px without moving anything.
+`ActionsTable.dom.test.tsx`, `registerNotes.dom.test.tsx` and `NewVisitorDialog.dom.test.tsx`
+hold the fixes.
+
+**Still scrolling sideways on a phone:** tables with a fixed minimum width inside a scroll box.
+These are Home's Site comparison (720px), the Asset register (900px), the Audits Compliance
+register and Documents (860px), and Training's Certificates (840px). The competency matrix,
+the role permissions grid, Home's Needs Attention chips and the Admin section bar scroll by design.

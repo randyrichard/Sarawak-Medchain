@@ -88,9 +88,23 @@ describe('listEquipmentHolders', () => {
     employeesList.mockRejectedValue(new Error('down'))
     listWorkers.mockRejectedValue(new Error('down'))
 
-    const { people, unavailable } = await holders.listEquipmentHolders('acme')
+    const { people, unavailable, notHere } = await holders.listEquipmentHolders('acme')
     expect(people).toEqual([])
     expect(unavailable).toHaveLength(2)
+    expect(notHere).toBe(false)
+  })
+
+  it('says the demo has no registers, rather than reporting two failures', async () => {
+    // The online demo has no server. Reported as "could not be loaded", in red and pinned
+    // above the buttons, it read as the Register Asset form being broken.
+    const notInDemo = () => Object.assign(new Error('needs the server'), { unavailableHere: true })
+    employeesList.mockRejectedValue(notInDemo())
+    listWorkers.mockRejectedValue(notInDemo())
+
+    const { people, unavailable, notHere } = await holders.listEquipmentHolders('acme')
+    expect(people).toEqual([])
+    expect(unavailable).toEqual([])
+    expect(notHere).toBe(true)
   })
 
   it('walks past the first page of a large workforce', async () => {

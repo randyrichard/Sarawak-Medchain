@@ -5,7 +5,7 @@ import { ASSET_CATEGORIES, CATEGORY_LABEL, type AssetCategory, type AssetView, t
 import { useOrg, useSiteScope } from '@/features/org/OrgContext'
 import { useDepartments } from '@/features/org/departments'
 import { usePeople, useActor } from '@/features/incidents/lib'
-import { Button, Dialog, FormSection, FormSections, Input, SuggestSelect, PersonRegisterOptions, Select, Textarea } from '@/components/ui'
+import { Alert, Button, Dialog, FormSection, FormSections, Input, SuggestSelect, PersonRegisterOptions, Select, Textarea } from '@/components/ui'
 import { listEquipmentHolders, type EquipmentHolderOption } from '@/api/equipmentHolders'
 import { PeopleOptions } from '@/features/org/PeopleOptions'
 import { useFormCheck } from '@/lib/useFormCheck'
@@ -41,21 +41,25 @@ export function NewAssetDialog({ open, onClose, onCreated }: { open: boolean; on
   /** "employee:<id>" or "contractor:<id>". One holder, so one control. */
   const [holder, setHolder] = useState('')
   const [holders, setHolders] = useState<EquipmentHolderOption[]>([])
+  /** Why "Assign to" may be short of people: registers that failed, or a demo without them. */
+  const [holdersNote, setHoldersNote] = useState<{ notHere: boolean; problems: string[] }>({ notHere: false, problems: [] })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open || !company) return
+    setError(null)
     listEquipmentHolders(company.id)
-      .then(({ people, unavailable }) => {
-        // Whatever arrived is offered; whatever did not is named. The two registers are
-        // read independently, so one being unreachable no longer hides the other.
+      .then(({ people, unavailable, notHere }) => {
+        // Whatever arrived is offered; whatever did not is named, beside the one field it
+        // affects. It used to be the form's own error, pinned red above the buttons: it
+        // covered the section being filled in and read as though registering had failed.
         setHolders(people)
-        setError(unavailable.length ? unavailable.join(' ') : null)
+        setHoldersNote({ notHere, problems: unavailable })
       })
       .catch((e) => {
         setHolders([])
-        setError(e instanceof ApiError ? e.message : 'Could not load the list of people.')
+        setHoldersNote({ notHere: false, problems: [e instanceof ApiError ? e.message : 'Could not load the list of people.'] })
       })
   }, [open, company])
 
@@ -190,11 +194,15 @@ export function NewAssetDialog({ open, onClose, onCreated }: { open: boolean; on
             label="Assign to"
             value={holder}
             onChange={(e) => setHolder(e.target.value)}
-            hint="Leave blank for pool equipment."
+            hint={holdersNote.notHere
+              ? 'The online demo has no workforce or contractor register, so new equipment goes to the pool.'
+              : 'Leave blank for pool equipment.'}
           >
             <option value="">Nobody yet (pool)</option>
-            <PersonRegisterOptions people={holders} siteScope={siteScope} />
+            <PersonRegisterOptions people={holders} siteScope={siteScope}
+              emptyHint={holdersNote.notHere ? '— Not in this demo —' : undefined} />
           </Select>
+          {holdersNote.problems.length > 0 && <Alert tone="warning">{holdersNote.problems.join(' ')}</Alert>}
         </FormSection>
         <FormSection title="Safety">
           <label className="flex items-start gap-2 text-2xs text-ink">
