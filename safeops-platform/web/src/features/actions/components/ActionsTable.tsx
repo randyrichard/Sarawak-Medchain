@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { ArrowDown, ArrowUp, Download, ListChecks, Play, UserRound } from 'lucide-react'
 import { api } from '@/api/client'
 import { ApiError } from '@/api/types'
@@ -153,8 +153,29 @@ export function ActionsTable({
       </div>
 
       <Card>
-        <div className="relative overflow-x-auto">
-          <table className="w-full min-w-[980px] text-left">
+        {/*
+          A list of cards on a phone, the table from a tablet up.
+
+          The table needed 980px for its eight columns, so on a 390px phone it scrolled
+          sideways: titles were cut off at the card's edge, and status, owner, due date and
+          progress sat out of sight behind a scroll nobody could see was there. On a phone
+          each action is one card with all of it in view. From a tablet up the table no
+          longer insists on 980px either: Priority folds into the title's line until there
+          is room for its column, and Site and Progress join at the widest screens.
+        */}
+        <ActionCards
+          groups={groups}
+          readOnly={readOnly}
+          actor={actor}
+          selected={selected}
+          toggle={toggle}
+          onOpen={onOpen}
+          canSelectAll={!readOnly && selectable.length > 0}
+          allSelected={allSelected}
+          onSelectAll={() => setSelected(allSelected ? new Set() : new Set(selectable.map((i) => i.id)))}
+        />
+        <div className="relative hidden overflow-x-auto md:block">
+          <table className="w-full text-left">
             <thead>
               <tr className="border-b text-2xs uppercase tracking-wide text-muted">
                 <th className="w-10 px-4 py-2.5">
@@ -170,11 +191,11 @@ export function ActionsTable({
                 </th>
                 <th className="px-3 py-2.5 font-semibold uppercase tracking-wide">Action</th>
                 <SortHeader label="Status" k="status" />
-                <SortHeader label="Priority" k="priority" />
+                <SortHeader label="Priority" k="priority" className="hidden lg:table-cell" />
                 <SortHeader label="Owner" k="owner" />
-                <SortHeader label="Site" k="site" className="hidden lg:table-cell" />
+                <SortHeader label="Site" k="site" className="hidden xl:table-cell" />
                 <SortHeader label="Due" k="due" />
-                <th className="w-36 px-4 py-2.5 font-semibold uppercase tracking-wide">Progress</th>
+                <th className="hidden w-36 px-4 py-2.5 font-semibold uppercase tracking-wide xl:table-cell">Progress</th>
               </tr>
             </thead>
             <tbody>
@@ -270,27 +291,29 @@ function GroupRows({
           </td>
           <td className="cursor-pointer px-3 py-3" onClick={() => onOpen(i.id)}>
             <p className="text-sm font-semibold leading-snug text-ink">{i.title}</p>
-            <p className="mt-0.5 flex items-center gap-1.5 text-2xs text-muted">
+            <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-2xs text-muted">
               <span className="font-mono">{i.code}</span>
               {i.incidentNumber && <span>{i.incidentNumber}</span>}
               {i.rootCause && <span>· {i.rootCause}</span>}
+              {/* Until there is room for the Priority column. */}
+              <span className="lg:hidden"><PriorityBadge priority={i.priority} /></span>
             </p>
           </td>
           <td className="px-3 py-3"><StatusPill kind={DERIVED_META[i.derived].kind} label={i.derived} /></td>
-          <td className="px-3 py-3">
-            <Badge tone={i.priority === 'High' ? 'critical' : i.priority === 'Medium' ? 'warning' : 'neutral'}>{i.priority}</Badge>
+          <td className="hidden px-3 py-3 lg:table-cell">
+            <PriorityBadge priority={i.priority} />
           </td>
           <td className="px-3 py-3">
             <span className="flex items-center gap-1.5 text-xs text-ink-2">
               <Avatar name={i.owner || '?'} size={18} /> {i.owner || 'Unassigned'}
             </span>
           </td>
-          <td className="hidden px-3 py-3 text-xs text-ink-2 lg:table-cell">{siteShort(i.siteId)} · {i.department}</td>
+          <td className="hidden px-3 py-3 text-xs text-ink-2 xl:table-cell">{siteShort(i.siteId)} · {i.department}</td>
           <td className={cn('px-3 py-3 text-xs font-semibold', i.overdue ? 'text-critical' : 'text-ink-2')} style={{ fontVariantNumeric: 'tabular-nums' }}>
             {i.dueDate}
             <span className="block text-2xs font-normal">{dueLabel(i)}</span>
           </td>
-          <td className="px-4 py-3">
+          <td className="hidden px-4 py-3 xl:table-cell">
             <div className="flex items-center gap-2">
               <div className="flex-1"><ProgressLine value={i.progress} overdue={i.overdue} /></div>
               <span className="w-8 text-right text-2xs text-muted" style={{ fontVariantNumeric: 'tabular-nums' }}>{i.progress}%</span>
@@ -299,5 +322,114 @@ function GroupRows({
         </tr>
       ))}
     </>
+  )
+}
+
+function PriorityBadge({ priority }: { priority: CapaItem['priority'] }) {
+  return <Badge tone={priority === 'High' ? 'critical' : priority === 'Medium' ? 'warning' : 'neutral'}>{priority}</Badge>
+}
+
+/** The list on a phone: one card per action, everything the table's columns held in view. */
+function ActionCards({
+  groups, readOnly, actor, selected, toggle, onOpen, canSelectAll, allSelected, onSelectAll,
+}: {
+  groups: { label: string | null; rows: CapaItem[] }[]
+  readOnly: boolean
+  actor: Actor
+  selected: Set<string>
+  toggle: (id: string) => void
+  onOpen: (id: string) => void
+  canSelectAll: boolean
+  allSelected: boolean
+  onSelectAll: () => void
+}) {
+  const checkCls = 'h-3.5 w-3.5 accent-[var(--accent)] coarse:h-6 coarse:w-6'
+  const empty = groups.every((g) => g.rows.length === 0)
+  return (
+    <ul aria-label="Corrective actions" className="divide-y md:hidden">
+      {canSelectAll && !empty && (
+        <li className="px-4 py-2">
+          <label className="flex items-center gap-3 text-xs font-semibold text-ink-2">
+            <input type="checkbox" checked={allSelected} onChange={onSelectAll} className={checkCls} />
+            Select All
+          </label>
+        </li>
+      )}
+      {groups.map((g) => (
+        <Fragment key={g.label ?? '_all'}>
+          {g.label && (
+            <li className="bg-sunken/70 px-4 py-1.5 text-2xs font-bold uppercase tracking-wider text-ink-2">
+              {g.label} <span className="font-normal text-muted">· {g.rows.length}</span>
+            </li>
+          )}
+          {g.rows.map((i) => (
+            <li
+              key={i.id}
+              // The whole card opens the action, as the table's row does; the title is the
+              // button a keyboard reaches.
+              onClick={() => onOpen(i.id)}
+              className={cn('flex cursor-pointer items-start gap-3 px-4 py-3', i.overdue && 'bg-critical-soft/40')}
+            >
+              {/*
+                The same gutter on every row when there is anything to select, ticked or not,
+                so every title starts on one edge.
+              */}
+              {!readOnly && (
+                <span className="flex w-6 shrink-0 pt-0.5">
+                  {canEditItem(actor, i) && (
+                    <input
+                      type="checkbox"
+                      aria-label={`Select ${i.code}`}
+                      checked={selected.has(i.id)}
+                      onChange={() => toggle(i.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className={checkCls}
+                    />
+                  )}
+                </span>
+              )}
+              <div className="min-w-0 flex-1">
+                {/*
+                  A one-line title is 19px tall, under the 24px a target needs (WCAG 2.5.8).
+                  The padding makes it 27px and the negative margin takes it back out, so the
+                  target grows and nothing on the card moves.
+                */}
+                <button type="button" className="-my-1 block w-full py-1 text-left text-sm font-semibold leading-snug text-ink" onClick={(e) => { e.stopPropagation(); onOpen(i.id) }}>
+                  {i.title}
+                </button>
+                <p className="mt-0.5 text-2xs text-muted">
+                  <span className="font-mono">{i.code}</span>
+                  {i.incidentNumber && <> {i.incidentNumber}</>}
+                  {i.rootCause && <> · {i.rootCause}</>}
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <StatusPill kind={DERIVED_META[i.derived].kind} label={i.derived} />
+                  <PriorityBadge priority={i.priority} />
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink-2">
+                  <span className="flex items-center gap-1.5">
+                    <Avatar name={i.owner || '?'} size={18} /> {i.owner || 'Unassigned'}
+                  </span>
+                  <span className={cn('font-semibold', i.overdue && 'text-critical')} style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    Due {i.dueDate} <span className="font-normal">· {dueLabel(i)}</span>
+                  </span>
+                </div>
+                <div className="mt-2 flex items-center gap-2">
+                  <ProgressLine value={i.progress} overdue={i.overdue} className="flex-1" />
+                  <span className="text-2xs text-muted" style={{ fontVariantNumeric: 'tabular-nums' }}>{i.progress}%</span>
+                </div>
+              </div>
+            </li>
+          ))}
+        </Fragment>
+      ))}
+      {empty && (
+        <li>
+          <EmptyState icon={ListChecks} title="No actions match these filters">
+            Clear the filter chips above, or raise a new corrective action.
+          </EmptyState>
+        </li>
+      )}
+    </ul>
   )
 }

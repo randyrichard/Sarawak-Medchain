@@ -62,9 +62,10 @@ const DEVICES = [
   ['Galaxy S8 (360)', devices['Galaxy S8'], 290],
   ['iPhone SE landscape', devices['iPhone SE landscape'], 200],
 ]
-const ROUTES = ['/', '/near-miss', '/incidents', '/incidents/new', '/incidents/board', ':incident', '/actions', '/assets',
-  '/permits', '/visitors', '/toolbox', '/performance', '/reports', '/audits', '/training', '/employees', '/contractors',
-  '/organization', '/admin', '/notifications', '/account', '/help']
+// The corrective action list is a view of /actions, and the one a phone shows as cards.
+const ROUTES = ['/', '/near-miss', '/incidents', '/incidents/new', '/incidents/board', ':incident', '/actions',
+  '/actions?view=list', '/assets', '/permits', '/visitors', '/toolbox', '/performance', '/reports', '/audits', '/training',
+  '/employees', '/contractors', '/organization', '/admin', '/notifications', '/account', '/help']
 // page, button that opens the form (optional), field
 const FIELDS = [
   ['/near-miss', null, '#nm-what'],
