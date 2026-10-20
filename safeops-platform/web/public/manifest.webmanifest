@@ -1,0 +1,19 @@
+{
+  "name": "SafeChain — Safety Intelligence Platform",
+  "short_name": "SafeChain",
+  "description": "Permits to work, incident reporting and competency records for industrial sites. Works at the job with no signal.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#2a78d6",
+  "background_color": "#f6f7f9",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    }
+  ]
+}

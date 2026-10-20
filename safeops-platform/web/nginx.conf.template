@@ -127,6 +127,40 @@ server {
 ';
     }
 
+    # ---------------------------------------------------------------------------------------
+    # The service worker, which is what makes the app open at a job with no signal.
+    #
+    # Must not be cached. A browser checks /sw.js for a byte-for-byte change to decide
+    # whether a new worker exists, so a cached copy pins every returning phone to the shell
+    # logic of an old deploy - and a worker is sticky in a way index.html is not: it keeps
+    # serving its own cached assets, so the usual "index.html is no-store" protection does
+    # not reach it. Browsers cap sw.js freshness at 24h regardless; no-store is the version
+    # of that answer this config can state outright.
+    # ---------------------------------------------------------------------------------------
+    location = /sw.js {
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()" always;
+        add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-BT0iGxctNSS3gHXyZrG/Hpgysy9VrpnUggJx7s45pwU='; style-src 'self' 'unsafe-inline'; style-src-elem 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ${CSP_CONNECT_SRC}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
+        add_header Cache-Control "no-store, must-revalidate" always;
+        default_type application/javascript;
+        try_files $uri =404;
+    }
+
+    # The install manifest. Short cache: it changes rarely, and a stale copy costs an icon
+    # or a title rather than correctness.
+    location = /manifest.webmanifest {
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()" always;
+        add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-BT0iGxctNSS3gHXyZrG/Hpgysy9VrpnUggJx7s45pwU='; style-src 'self' 'unsafe-inline'; style-src-elem 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ${CSP_CONNECT_SRC}; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
+        add_header Cache-Control "public, max-age=3600" always;
+        default_type application/manifest+json;
+        try_files $uri =404;
+    }
+
     # Client-side routing: /incidents/abc is a route, not a file.
     location / {
         try_files $uri $uri/ /index.html;
