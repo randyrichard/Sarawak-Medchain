@@ -1,5 +1,7 @@
 import { request } from './http'
 import { API_BASE_URL, getAccessToken } from './authApi'
+import type { FieldRecordMeta } from './permits'
+import { ApiError } from './types'
 
 /**
  * The permit workflow surfaces: the approval chain, the toolbox talk, PPE, the JSA and
@@ -31,6 +33,11 @@ export interface ReviewStatus {
 export interface JsaStep {
   id: string
   permitId: string
+  /**
+   * The name a device gave this row when it was written with no signal, if it was. Null
+   * for every row added with a connection.
+   */
+  clientId: string | null
   sequence: number
   step: string
   hazard: string
@@ -99,13 +106,17 @@ export const permitWorkflowApi = {
 
   // ── Toolbox ────────────────────────────────────────────────────────────────
 
-  recordToolbox(permitId: string, input: { heldAt?: string; supervisor?: string }): Promise<ReviewStatus> {
-    return request(`/permits/${permitId}/toolbox`, { method: 'POST', body: JSON.stringify(input) })
+  recordToolbox(
+    permitId: string, input: { heldAt?: string; supervisor?: string }, meta: FieldRecordMeta = {},
+  ): Promise<ReviewStatus> {
+    return request(`/permits/${permitId}/toolbox`, {
+      method: 'POST', body: JSON.stringify({ ...input, ...meta }),
+    })
   },
 
-  acknowledgeToolbox(attendeeId: string): Promise<ReviewStatus> {
+  acknowledgeToolbox(attendeeId: string, meta: FieldRecordMeta = {}): Promise<ReviewStatus> {
     return request(`/permits/people/${attendeeId}/toolbox-ack`, {
-      method: 'POST', body: JSON.stringify({}),
+      method: 'POST', body: JSON.stringify(meta),
     })
   },
 
@@ -115,8 +126,10 @@ export const permitWorkflowApi = {
     return request(`/permits/${permitId}/ppe`, { method: 'PUT', body: JSON.stringify({ items }) })
   },
 
-  acknowledgePpe(permitId: string): Promise<ReviewStatus> {
-    return request(`/permits/${permitId}/ppe/acknowledge`, { method: 'POST', body: JSON.stringify({}) })
+  acknowledgePpe(permitId: string, meta: FieldRecordMeta = {}): Promise<ReviewStatus> {
+    return request(`/permits/${permitId}/ppe/acknowledge`, {
+      method: 'POST', body: JSON.stringify(meta),
+    })
   },
 
   // ── JSA ────────────────────────────────────────────────────────────────────
@@ -125,12 +138,29 @@ export const permitWorkflowApi = {
     return request<{ rows: JsaStep[] }>(`/permits/${permitId}/jsa`).then((r) => r.rows)
   },
 
-  addJsa(permitId: string, input: Partial<JsaStep> & { hazard: string; control: string }): Promise<JsaStep> {
-    return request(`/permits/${permitId}/jsa`, { method: 'POST', body: JSON.stringify(input) })
+  /**
+   * Adds a row to the analysis.
+   *
+   * `clientId` is sent only for a row written in the field before the server had seen it:
+   * the device names it so the amendments made to it there have something to address, and
+   * the server keeps the name beside the id it generates. See features/permits/localJsaIds.
+   */
+  addJsa(
+    permitId: string,
+    input: Partial<JsaStep> & { hazard: string; control: string; clientId?: string },
+    meta: FieldRecordMeta = {},
+  ): Promise<JsaStep> {
+    return request(`/permits/${permitId}/jsa`, {
+      method: 'POST', body: JSON.stringify({ ...input, ...meta }),
+    })
   },
 
-  updateJsa(stepId: string, patch: Partial<JsaStep>): Promise<JsaStep> {
-    return request(`/permits/jsa/${stepId}`, { method: 'PATCH', body: JSON.stringify(patch) })
+  updateJsa(
+    stepId: string, patch: Partial<JsaStep>, meta: FieldRecordMeta = {},
+  ): Promise<JsaStep> {
+    return request(`/permits/jsa/${stepId}`, {
+      method: 'PATCH', body: JSON.stringify({ ...patch, ...meta }),
+    })
   },
 
   removeJsa(stepId: string): Promise<void> {
@@ -151,11 +181,16 @@ export const permitWorkflowApi = {
    */
   upload(
     permitId: string, files: File[], kind: AttachmentKind, onProgress?: (pct: number) => void,
+    meta: FieldRecordMeta = {},
   ): Promise<PermitAttachment[]> {
     return new Promise((resolve, reject) => {
       const form = new FormData()
       for (const f of files) form.append('files', f)
       form.append('kind', kind)
+      // Multipart, so the idempotency key is a field rather than a JSON property. Without
+      // it a photograph held offline is uploaded again on every drain.
+      if (meta.clientRef) form.append('clientRef', meta.clientRef)
+      if (meta.recordedAt) form.append('recordedAt', meta.recordedAt)
 
       const xhr = new XMLHttpRequest()
       xhr.open('POST', `${API_BASE_URL}/permits/${permitId}/attachments`)
@@ -175,7 +210,16 @@ export const permitWorkflowApi = {
           reject(new Error((body as { message?: string })?.message ?? 'Upload failed.'))
         }
       }
-      xhr.onerror = () => reject(new Error('Upload failed. Check your connection.'))
+      /*
+       * Coded, so a caller can tell a dead network from a refused file.
+       *
+       * XHR reports both as the same event, and a plain Error made them indistinguishable
+       * to anything upstream: the offline queue decides between "retry when there is
+       * signal" and "put this in front of a person" from the code, and an uncoded error
+       * counts as a refusal — so a photograph that failed because the job has no coverage
+       * would have been marked rejected by the server and never tried again.
+       */
+      xhr.onerror = () => reject(new ApiError('network', 'Upload failed. Check your connection.'))
       xhr.send(form)
     })
   },

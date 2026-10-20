@@ -11,6 +11,9 @@ import {
 import { equipmentBlockers } from './equipmentService.js'
 import { DomainError } from '../domain/errors.js'
 import { localMidnight, startOfLocalDay, startOfLocalMonth, todayDate } from '../domain/businessDay.js'
+import {
+  alreadyAccepted, claim, isReplay, recordedAtOf, type FieldRecordMeta,
+} from './fieldRecord.js'
 
 /**
  * Issuing authority: who may approve, reject, suspend, resume and close a permit.
@@ -691,9 +694,32 @@ export class PermitService {
     return this.get(caller, id)
   }
 
-  async suspend(caller: Caller, id: string, reason: string): Promise<PermitView> {
+  /**
+   * Stop work.
+   *
+   * Accepts a record made offline, and is the one transition that does. Suspension can only
+   * ever close work down, never open it up, so hearing about it four hours late is strictly
+   * better than not hearing about it — and a supervisor who sees something wrong must never
+   * be told to go and find signal first. Everything that *grants* authority is refused
+   * offline by the client and explains why (web/src/features/permits/offlineOps.ts).
+   */
+  async suspend(
+    caller: Caller, id: string, reason: string, meta?: FieldRecordMeta,
+  ): Promise<PermitView> {
     const { permit } = await this.load(caller, id)
     const m = this.requireIssuer(caller, permit.companyId)
+
+    /*
+     * Before the state checks, not after, and this ordering is the whole reason a replay
+     * works. The first copy of this record suspended the permit; by the time the second
+     * arrives the permit is no longer active, so "only an active permit can be suspended"
+     * would refuse it — and the queue would read that refusal as a payload the server will
+     * never accept, mark it blocked, and put a successful suspension in front of a human as
+     * something that failed.
+     */
+    if (await alreadyAccepted(this.db, permit.companyId, meta?.clientRef)) {
+      return this.get(caller, id)
+    }
 
     if (!reason?.trim()) {
       throw new PermitError('validation', 'State why the permit is being suspended.')
@@ -702,15 +728,31 @@ export class PermitService {
       throw new PermitError('validation', 'Only an active permit can be suspended.')
     }
 
-    await this.db.$transaction([
-      this.db.permit.update({
-        where: { id },
-        data: { status: 'suspended', suspendedReason: reason.trim(), version: { increment: 1 } },
-      }),
-      this.db.permitEvent.create({
-        data: { permitId: id, action: 'Suspended', detail: reason.trim(), actor: caller.name, actorRole: m.role },
-      }),
-    ])
+    const at = recordedAtOf(meta, new Date(), { earliest: permit.createdAt })
+
+    try {
+      await this.db.$transaction(async (tx) => {
+        await claim(tx, meta, {
+          companyId: permit.companyId, operation: 'permit.suspend', subjectId: id,
+          userId: caller.userId, recordedAt: at,
+        })
+        await tx.permit.update({
+          where: { id },
+          data: { status: 'suspended', suspendedReason: reason.trim(), version: { increment: 1 } },
+        })
+        await tx.permitEvent.create({
+          data: {
+            permitId: id, action: 'Suspended', detail: reason.trim(),
+            actor: caller.name, actorRole: m.role, at,
+          },
+        })
+      })
+    } catch (e) {
+      // Another copy of the same record committed first. Its suspension is the one that
+      // exists, and the caller asked for the permit to be suspended, which it is.
+      if (isReplay(e)) return this.get(caller, id)
+      throw e
+    }
 
     return this.get(caller, id)
   }
@@ -749,9 +791,15 @@ export class PermitService {
     caller: Caller,
     id: string,
     input: { handbackConfirmed: boolean; statement?: string },
+    meta?: FieldRecordMeta,
   ): Promise<PermitView> {
     const { permit } = await this.load(caller, id)
     const m = this.requireIssuer(caller, permit.companyId)
+
+    // Before the state checks: a replay arrives at a permit this record already closed.
+    if (await alreadyAccepted(this.db, permit.companyId, meta?.clientRef)) {
+      return this.get(caller, id)
+    }
 
     const effective = this.effectiveStatus(permit)
     if (!['active', 'suspended', 'approved', 'expired'].includes(effective)) {
@@ -770,28 +818,47 @@ export class PermitService {
 
     const text = input.statement?.trim() || 'Site handed back, area clear.'
 
-    await this.db.$transaction([
-      this.db.permit.update({
-        where: { id },
-        data: {
-          status: 'closed',
-          closedBy: caller.name,
-          closedAt: new Date(),
-          handbackConfirmed: true,
-          version: { increment: 1 },
-          signatures: { create: { role: 'closer', name: caller.name, statement: text } },
-        },
-      }),
-      this.db.permitEvent.create({
-        data: {
-          permitId: id,
-          action: 'Closed',
-          detail: input.statement?.trim() || null,
-          actor: caller.name,
-          actorRole: m.role,
-        },
-      }),
-    ])
+    /*
+     * Closing is allowed offline because handing a permit back is the end of a shift, and a
+     * shift ends at the job rather than at a desk. The time is the field's: a permit handed
+     * back at 17:40 and synced at 19:00 held the area open for eighty minutes it did not,
+     * and that gap is what a simultaneous-operations review reads to decide whether two jobs
+     * overlapped.
+     */
+    const at = recordedAtOf(meta, new Date(), { earliest: permit.createdAt })
+
+    try {
+      await this.db.$transaction(async (tx) => {
+        await claim(tx, meta, {
+          companyId: permit.companyId, operation: 'permit.close', subjectId: id,
+          userId: caller.userId, recordedAt: at,
+        })
+        await tx.permit.update({
+          where: { id },
+          data: {
+            status: 'closed',
+            closedBy: caller.name,
+            closedAt: at,
+            handbackConfirmed: true,
+            version: { increment: 1 },
+            signatures: { create: { role: 'closer', name: caller.name, statement: text, signedAt: at } },
+          },
+        })
+        await tx.permitEvent.create({
+          data: {
+            permitId: id,
+            action: 'Closed',
+            detail: input.statement?.trim() || null,
+            actor: caller.name,
+            actorRole: m.role,
+            at,
+          },
+        })
+      })
+    } catch (e) {
+      if (isReplay(e)) return this.get(caller, id)
+      throw e
+    }
 
     return this.get(caller, id)
   }
@@ -803,8 +870,12 @@ export class PermitService {
     permitId: string,
     controlId: string,
     confirmed: boolean,
+    meta?: FieldRecordMeta,
   ): Promise<PermitView> {
     const { permit } = await this.load(caller, permitId)
+    if (await alreadyAccepted(this.db, permit.companyId, meta?.clientRef)) {
+      return this.get(caller, permitId)
+    }
     if (['closed', 'rejected'].includes(permit.status)) {
       throw new PermitError('validation', 'This permit is no longer open.')
     }
@@ -814,14 +885,29 @@ export class PermitService {
     const control = permit.controls.find((c) => c.id === controlId)
     if (!control) throw new PermitError('not_found', 'Control not found.', 404)
 
-    await this.db.permitControl.update({
-      where: { id: control.id },
-      data: {
-        confirmed,
-        confirmedBy: confirmed ? caller.name : null,
-        confirmedAt: confirmed ? new Date() : null,
-      },
-    })
+    // A precaution is confirmed by walking up to it and looking. That happens at the job,
+    // so the time it was confirmed is the field's, not the moment the phone found signal.
+    const at = recordedAtOf(meta, new Date(), { earliest: permit.createdAt })
+
+    try {
+      await this.db.$transaction(async (tx) => {
+        await claim(tx, meta, {
+          companyId: permit.companyId, operation: 'permit.control-confirm', subjectId: permitId,
+          userId: caller.userId, recordedAt: at,
+        })
+        await tx.permitControl.update({
+          where: { id: control.id },
+          data: {
+            confirmed,
+            confirmedBy: confirmed ? caller.name : null,
+            confirmedAt: confirmed ? at : null,
+          },
+        })
+      })
+    } catch (e) {
+      if (isReplay(e)) return this.get(caller, permitId)
+      throw e
+    }
 
     return this.get(caller, permitId)
   }
@@ -836,6 +922,7 @@ export class PermitService {
     caller: Caller,
     permitId: string,
     reading: { oxygenPct: number; lelPct: number; h2sPpm: number; coPpm: number; note?: string },
+    meta?: FieldRecordMeta,
   ): Promise<PermitView> {
     const { permit, membership } = await this.load(caller, permitId)
     /*
@@ -850,6 +937,29 @@ export class PermitService {
       })
       if (!namedTester) requireFieldRole(membership.role, 'record a gas test unless named on the permit as its gas tester')
     }
+
+    /*
+     * A replay must not become a second reading.
+     *
+     * This is the operation where a duplicate does real damage. Gas tests are counted and
+     * their intervals checked: two identical readings minutes apart suggest the atmosphere
+     * was monitored twice as often as it was, and if the pair straddles a re-test deadline
+     * the record shows a space tested on time that was not.
+     */
+    if (await alreadyAccepted(this.db, permit.companyId, meta?.clientRef)) {
+      return this.get(caller, permitId)
+    }
+
+    /*
+     * The time on the detector, not the time on the server.
+     *
+     * The reading is only meaningful together with when it was taken — a confined space is
+     * cleared for a fixed interval from the test. Filing a 09:15 test at 14:00 would both
+     * invent a re-test and erase the unmonitored hours between, which is precisely what a
+     * confined-space audit looks for.
+     */
+    const at = recordedAtOf(meta, new Date(), { earliest: permit.createdAt })
+
     const pass = gasTestPasses(reading)
     // Plain "O2"/"H2S" rather than subscripts — this line is persisted on the audit
     // trail, and see the note in permitCatalog.ts about cluster encoding.
@@ -857,40 +967,54 @@ export class PermitService {
       `O2 ${reading.oxygenPct}% · LEL ${reading.lelPct}% · ` +
       `H2S ${reading.h2sPpm}ppm · CO ${reading.coPpm}ppm`
 
-    await this.db.$transaction(async (tx) => {
-      await tx.gasTest.create({
-        data: { permitId, ...reading, note: reading.note ?? null, testedBy: caller.name, pass },
-      })
-      await tx.permitEvent.create({
-        data: {
-          permitId,
-          action: pass ? 'Gas test passed' : 'Gas test FAILED',
-          detail,
-          actor: caller.name,
-          actorRole: membership.role,
-        },
-      })
-
-      if (!pass && permit.status === 'active') {
-        await tx.permit.update({
-          where: { id: permitId },
+    try {
+      await this.db.$transaction(async (tx) => {
+        await claim(tx, meta, {
+          companyId: permit.companyId, operation: 'permit.gas-test', subjectId: permitId,
+          userId: caller.userId, recordedAt: at,
+        })
+        await tx.gasTest.create({
           data: {
-            status: 'suspended',
-            suspendedReason: 'Gas test failed — atmosphere outside safe limits.',
-            version: { increment: 1 },
+            permitId, ...reading, note: reading.note ?? null,
+            testedBy: caller.name, pass, testedAt: at,
           },
         })
         await tx.permitEvent.create({
           data: {
             permitId,
-            action: 'Suspended',
-            detail: 'Gas test failed — atmosphere outside safe limits.',
+            action: pass ? 'Gas test passed' : 'Gas test FAILED',
+            detail,
             actor: caller.name,
             actorRole: membership.role,
+            at,
           },
         })
-      }
-    })
+
+        if (!pass && permit.status === 'active') {
+          await tx.permit.update({
+            where: { id: permitId },
+            data: {
+              status: 'suspended',
+              suspendedReason: 'Gas test failed — atmosphere outside safe limits.',
+              version: { increment: 1 },
+            },
+          })
+          await tx.permitEvent.create({
+            data: {
+              permitId,
+              action: 'Suspended',
+              detail: 'Gas test failed — atmosphere outside safe limits.',
+              actor: caller.name,
+              actorRole: membership.role,
+              at,
+            },
+          })
+        }
+      })
+    } catch (e) {
+      if (isReplay(e)) return this.get(caller, permitId)
+      throw e
+    }
 
     return this.get(caller, permitId)
   }
@@ -899,9 +1023,13 @@ export class PermitService {
     caller: Caller,
     permitId: string,
     input: { description: string; tagId: string },
+    meta?: FieldRecordMeta,
   ): Promise<PermitView> {
     const { permit, membership } = await this.load(caller, permitId)
     requireFieldRole(membership.role, 'place an isolation')
+    if (await alreadyAccepted(this.db, permit.companyId, meta?.clientRef)) {
+      return this.get(caller, permitId)
+    }
     if (['closed', 'rejected'].includes(permit.status)) {
       throw new PermitError('validation', 'This permit is no longer open.')
     }
@@ -915,48 +1043,91 @@ export class PermitService {
     const description = input.description.trim()
     const tagId = input.tagId.trim()
 
-    await this.db.$transaction([
-      this.db.isolationPoint.create({
-        data: { permitId, description, tagId, isolatedBy: caller.name, isolatedAt: new Date() },
-      }),
-      this.db.permitEvent.create({
-        data: {
-          permitId,
-          action: 'Isolation applied',
-          detail: `${tagId} — ${description}`,
-          actor: caller.name,
-          actorRole: membership.role,
-        },
-      }),
-    ])
+    // Hanging a lock on a valve happens at the valve. The time it went on is the time the
+    // energy source was secured, which is what a de-isolation check later works back from.
+    const at = recordedAtOf(meta, new Date(), { earliest: permit.createdAt })
+
+    try {
+      await this.db.$transaction(async (tx) => {
+        await claim(tx, meta, {
+          companyId: permit.companyId, operation: 'permit.isolation-add', subjectId: permitId,
+          userId: caller.userId, recordedAt: at,
+        })
+        await tx.isolationPoint.create({
+          data: { permitId, description, tagId, isolatedBy: caller.name, isolatedAt: at },
+        })
+        await tx.permitEvent.create({
+          data: {
+            permitId,
+            action: 'Isolation applied',
+            detail: `${tagId} — ${description}`,
+            actor: caller.name,
+            actorRole: membership.role,
+            at,
+          },
+        })
+      })
+    } catch (e) {
+      if (isReplay(e)) return this.get(caller, permitId)
+      throw e
+    }
 
     return this.get(caller, permitId)
   }
 
-  async releaseIsolation(caller: Caller, permitId: string, isolationId: string): Promise<PermitView> {
+  async releaseIsolation(
+    caller: Caller, permitId: string, isolationId: string, meta?: FieldRecordMeta,
+  ): Promise<PermitView> {
     const { permit, membership } = await this.load(caller, permitId)
     requireFieldRole(membership.role, 'release an isolation')
+
+    /*
+     * Before the "already released" check, which a replay would otherwise trip: the first
+     * copy of this record released it, and the second would be refused as a mistake and put
+     * in front of a human as a de-isolation that failed. It did not fail.
+     */
+    if (await alreadyAccepted(this.db, permit.companyId, meta?.clientRef)) {
+      return this.get(caller, permitId)
+    }
 
     // Scoped to the permit for the same reason as confirmControl.
     const iso = permit.isolations.find((i) => i.id === isolationId)
     if (!iso) throw new PermitError('not_found', 'Isolation point not found.', 404)
     if (iso.removedAt) throw new PermitError('validation', 'This isolation has already been released.')
 
-    await this.db.$transaction([
-      this.db.isolationPoint.update({
-        where: { id: iso.id },
-        data: { removedBy: caller.name, removedAt: new Date() },
-      }),
-      this.db.permitEvent.create({
-        data: {
-          permitId,
-          action: 'Isolation released',
-          detail: iso.tagId,
-          actor: caller.name,
-          actorRole: membership.role,
-        },
-      }),
-    ])
+    /*
+     * Recorded offline, but note what this is and is not. Taking a lock off is a physical
+     * act carried out under an authority granted earlier; this records that it happened.
+     * Granting that authority is a different thing and is refused offline — see the rule
+     * in web/src/features/permits/offlineOps.ts.
+     */
+    const at = recordedAtOf(meta, new Date(), { earliest: iso.isolatedAt ?? permit.createdAt })
+
+    try {
+      await this.db.$transaction(async (tx) => {
+        await claim(tx, meta, {
+          companyId: permit.companyId, operation: 'permit.isolation-release', subjectId: permitId,
+          userId: caller.userId, recordedAt: at,
+        })
+        await tx.isolationPoint.update({
+          where: { id: iso.id },
+          data: { removedBy: caller.name, removedAt: at },
+        })
+        await tx.permitEvent.create({
+          data: {
+            permitId,
+            action: 'Isolation released',
+            detail: iso.tagId,
+            actor: caller.name,
+            actorRole: membership.role,
+            at,
+          },
+        })
+      })
+    } catch (e) {
+      if (isReplay(e)) return this.get(caller, permitId)
+      throw e
+    }
 
     return this.get(caller, permitId)
   }

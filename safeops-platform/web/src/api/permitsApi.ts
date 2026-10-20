@@ -1,7 +1,7 @@
 import { drainRows } from './paging'
 import { request, qs } from './http'
 import type {
-  GasTest, IsolationPoint, NewPermitInput, PermitControl, PermitEvent, PermitFilters,
+  FieldRecordMeta, GasTest, IsolationPoint, NewPermitInput, PermitControl, PermitEvent, PermitFilters,
   PermitSignature, PermitStats, PermitStatus, PermitType, PermitView,
 } from './permits'
 
@@ -229,9 +229,9 @@ export const permitsApi = {
     return toPermit(await request<ServerPermit>(`/permits/${id}/activate`, { method: 'POST' }))
   },
 
-  async suspend(id: string, reason: string): Promise<PermitView> {
+  async suspend(id: string, reason: string, meta: FieldRecordMeta = {}): Promise<PermitView> {
     return toPermit(await request<ServerPermit>(`/permits/${id}/suspend`, {
-      method: 'POST', body: JSON.stringify({ reason }),
+      method: 'POST', body: JSON.stringify({ reason, ...meta }),
     }))
   },
 
@@ -239,39 +239,49 @@ export const permitsApi = {
     return toPermit(await request<ServerPermit>(`/permits/${id}/resume`, { method: 'POST' }))
   },
 
-  async close(id: string, input: { handbackConfirmed: boolean; statement: string }): Promise<PermitView> {
+  async close(
+    id: string, input: { handbackConfirmed: boolean; statement: string },
+    meta: FieldRecordMeta = {},
+  ): Promise<PermitView> {
     return toPermit(await request<ServerPermit>(`/permits/${id}/close`, {
-      method: 'POST', body: JSON.stringify(input),
+      method: 'POST', body: JSON.stringify({ ...input, ...meta }),
     }))
   },
 
-  async confirmControl(permitId: string, controlId: string, confirmed: boolean): Promise<PermitView> {
+  async confirmControl(
+    permitId: string, controlId: string, confirmed: boolean, meta: FieldRecordMeta = {},
+  ): Promise<PermitView> {
     return toPermit(await request<ServerPermit>(`/permits/${permitId}/controls/${controlId}`, {
-      method: 'PATCH', body: JSON.stringify({ confirmed }),
+      method: 'PATCH', body: JSON.stringify({ confirmed, ...meta }),
     }))
   },
 
   async addGasTest(
     permitId: string,
     reading: Omit<GasTest, 'id' | 'testedAt' | 'testedBy' | 'pass'>,
+    meta: FieldRecordMeta = {},
   ): Promise<PermitView> {
     return toPermit(await request<ServerPermit>(`/permits/${permitId}/gas-tests`, {
-      method: 'POST', body: JSON.stringify(reading),
+      method: 'POST', body: JSON.stringify({ ...reading, ...meta }),
     }))
   },
 
   async addIsolation(
     permitId: string,
     input: Pick<IsolationPoint, 'description' | 'tagId'>,
+    meta: FieldRecordMeta = {},
   ): Promise<PermitView> {
     return toPermit(await request<ServerPermit>(`/permits/${permitId}/isolations`, {
-      method: 'POST', body: JSON.stringify(input),
+      method: 'POST', body: JSON.stringify({ ...input, ...meta }),
     }))
   },
 
-  async releaseIsolation(permitId: string, isolationId: string): Promise<PermitView> {
+  async releaseIsolation(
+    permitId: string, isolationId: string, meta: FieldRecordMeta = {},
+  ): Promise<PermitView> {
     return toPermit(await request<ServerPermit>(
-      `/permits/${permitId}/isolations/${isolationId}/release`, { method: 'POST' },
+      `/permits/${permitId}/isolations/${isolationId}/release`,
+      { method: 'POST', body: JSON.stringify(meta) },
     ))
   },
 }

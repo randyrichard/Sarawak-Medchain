@@ -312,3 +312,25 @@ export function gasTestPasses(t: Pick<GasTest, 'oxygenPct' | 'lelPct' | 'h2sPpm'
     t.coPpm < GAS_LIMITS.coMax
   )
 }
+
+/**
+ * What travels with a record made in the field, alongside the record itself.
+ *
+ * Both fields exist because of work recorded with no signal
+ * (src/features/permits/offlineOps.ts) and both are optional: a write made with a
+ * connection carries neither, and behaves exactly as it did before offline capture existed.
+ *
+ * `clientRef` is an idempotency key, generated once when the record is made and reused on
+ * every attempt. It is what lets the server tell a retry from a second gas test — a phone
+ * regaining signal with the app open in two tabs will send the same record twice.
+ *
+ * `recordedAt` is when the field did the thing, not when the server heard about it. A
+ * confined-space gas test is valid for a fixed interval: one taken at 09:15 and synced at
+ * 14:00 must be filed at 09:15, or the record shows a re-test that never happened and
+ * hides the hours the space went unmonitored. The server validates it rather than trusting
+ * it — a client clock is not evidence.
+ */
+export interface FieldRecordMeta {
+  clientRef?: string
+  recordedAt?: string
+}

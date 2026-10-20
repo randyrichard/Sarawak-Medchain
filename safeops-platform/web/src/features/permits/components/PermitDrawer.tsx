@@ -13,6 +13,9 @@ import { JsaTable } from './JsaTable'
 import { PpeChecklist } from './PpeChecklist'
 import { AttachmentsPanel } from './AttachmentsPanel'
 import { PermitTimeline } from './PermitTimeline'
+import { FieldQueuePanel } from './FieldQueuePanel'
+import { useFieldQueue } from '../useFieldQueue'
+import { queuePermitOp, refusalFor, type PermitOp } from '../offlineOps'
 import { permitWorkflowApi, type ReviewStatus } from '@/api/permitWorkflowApi'
 import { permitPeopleApi, type PermitExtension } from '@/api/permitPeopleApi'
 import { Alert, Badge, Button, Checkbox, Input, NotInDemo, StatusPill, Textarea } from '@/components/ui'
@@ -20,6 +23,21 @@ import { isBackendConfigured } from '@/api/authApi'
 import { cn } from '@/lib/cn'
 import { permitStatusKind, formatRemaining, fmtTime, fmtWindow, remainingTone } from '../lib'
 import { printPermit } from '../print'
+
+/**
+ * The gas readings as numbers.
+ *
+ * Pulled out because the same values are now needed twice — once for the request and once
+ * for the record kept if that request cannot leave the device — and building them twice
+ * from the form state is how the two quietly come to disagree.
+ */
+const readingOf = (g: { oxygenPct: string; lelPct: string; h2sPpm: string; coPpm: string }) => ({
+  oxygenPct: Number(g.oxygenPct), lelPct: Number(g.lelPct),
+  h2sPpm: Number(g.h2sPpm), coPpm: Number(g.coPpm),
+})
+
+/** Same reasoning: the default has to be identical in the request and in the queued copy. */
+const suspendReason = (reason: string) => reason || 'Suspended by issuing authority.'
 
 /** The permit itself: controls, atmosphere, isolations, signatures and the audit trail. */
 export function PermitDrawer({
@@ -46,6 +64,14 @@ export function PermitDrawer({
   const [review, setReview] = useState<ReviewStatus | null>(null)
   const [extensions, setExtensions] = useState<PermitExtension[]>([])
   const [toolboxOpen, setToolboxOpen] = useState(false)
+  /*
+   * Kept apart from `error`, because it is not one. A record that could not be sent and was
+   * kept on the device is a normal outcome at a worksite, and showing it in red next to a
+   * "try again" is what made the first version of offline incident reporting read as a
+   * failure. This says what happened and what will happen next.
+   */
+  const [queuedNote, setQueuedNote] = useState<string | null>(null)
+  const fieldQueue = useFieldQueue()
 
   const load = useCallback(() => {
     if (!permitId) return
@@ -70,15 +96,51 @@ export function PermitDrawer({
 
   if (!permitId || !permit) return null
 
-  const run = async (fn: () => Promise<PermitView | void>) => {
-    setBusy(true); setError(null)
+  /*
+   * Every action in this drawer goes through here, which is why the offline rule lives here
+   * rather than in each button: a new action added later gets the right behaviour by
+   * default instead of silently getting none.
+   *
+   * `offline` says what to do when the request cannot reach the server:
+   *
+   *   a PermitOp  - this records something that already happened, so it is kept on the
+   *                 device and sent when there is signal;
+   *   a kind name - this would grant authority (approve, activate, resume), so it is
+   *                 refused with the reason, and nothing is kept. See offlineOps.ts for why
+   *                 that line is drawn where it is.
+   *   omitted     - behaves exactly as it did before: the failure is reported.
+   */
+  const run = async (
+    fn: () => Promise<PermitView | void>,
+    offline?: PermitOp | string,
+  ) => {
+    setBusy(true); setError(null); setQueuedNote(null)
     try {
       const updated = await fn()
       if (updated) setPermit(updated)
       else load()
       onChanged()
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Something went wrong.')
+      const unreachable = e instanceof ApiError && (e.code === 'network' || e.code === 'request_failed')
+
+      if (unreachable && offline && typeof offline !== 'string' && actor.userId) {
+        try {
+          await queuePermitOp(actor.userId, offline)
+          fieldQueue.refresh()
+          setQueuedNote(
+            'No connection. This is saved on this device and will be sent as soon as there is '
+            + 'signal — with the time you recorded it, not the time it sends.',
+          )
+        } catch {
+          // The device refused to store it, so the only honest thing left is to say the
+          // record was not kept. Anything softer invites somebody to walk away from it.
+          setError('No connection, and this device could not save the record. Write it down and enter it later.')
+        }
+      } else if (unreachable && typeof offline === 'string') {
+        setError(refusalFor(offline) || 'No connection. Nothing has been sent.')
+      } else {
+        setError(e instanceof ApiError ? e.message : 'Something went wrong.')
+      }
     } finally {
       setBusy(false)
     }
@@ -164,7 +226,13 @@ export function PermitDrawer({
                       type="checkbox"
                       checked={c.confirmed}
                       disabled={!open || busy}
-                      onChange={(e) => void run(() => api.confirmPermitControl(permit.id, c.id, e.target.checked, actor))}
+                      onChange={(e) => void run(
+                        () => api.confirmPermitControl(permit.id, c.id, e.target.checked, actor),
+                        {
+                          kind: 'control-confirm', permitId: permit.id, permitCode: permit.code,
+                          controlId: c.id, label: c.label, confirmed: e.target.checked,
+                        },
+                      )}
                       className="mt-0.5 h-4 w-4 shrink-0 accent-[color:var(--accent)]"
                     />
                     <span className="min-w-0 flex-1">
@@ -224,10 +292,13 @@ export function PermitDrawer({
                     Limits: O₂ {GAS_LIMITS.oxygenMin}–{GAS_LIMITS.oxygenMax}% · LEL &lt;{GAS_LIMITS.lelMax}% · H₂S &lt;{GAS_LIMITS.h2sMax}ppm · CO &lt;{GAS_LIMITS.coMax}ppm
                   </p>
                   <Button size="sm" variant="secondary" className="mt-2 w-full" loading={busy}
-                    onClick={() => void run(() => api.addPermitGasTest(permit.id, {
-                      oxygenPct: Number(gas.oxygenPct), lelPct: Number(gas.lelPct),
-                      h2sPpm: Number(gas.h2sPpm), coPpm: Number(gas.coPpm),
-                    }, actor))}>
+                    onClick={() => void run(
+                      () => api.addPermitGasTest(permit.id, readingOf(gas), actor),
+                      {
+                        kind: 'gas-test', permitId: permit.id, permitCode: permit.code,
+                        reading: readingOf(gas),
+                      },
+                    )}>
                     Record Gas Test
                   </Button>
                 </div>
@@ -293,8 +364,10 @@ export function PermitDrawer({
               {/* People named on the permit, and who is currently inside the work area. */}
               <PermitPeoplePanel
                 permitId={permit.id}
+                permitCode={permit.code}
                 permitStatus={permit.status}
                 canEdit={open && operator}
+                userId={actor.userId}
                 onChanged={onChanged}
               />
 
@@ -310,10 +383,19 @@ export function PermitDrawer({
                 onChanged={() => { load(); onChanged() }}
               />
 
-              <JsaTable permitId={permit.id} canEdit={open} onChanged={() => { load(); onChanged() }} />
+              <JsaTable
+                permitId={permit.id}
+                permitCode={permit.code}
+                canEdit={open}
+                userId={actor.userId}
+                onChanged={() => { load(); onChanged() }}
+                onQueued={fieldQueue.refresh}
+              />
 
               <PpeChecklist
                 permitId={permit.id}
+                permitCode={permit.code}
+                userId={actor.userId}
                 required={permit.requiredPpe ?? []}
                 acknowledgedAt={permit.ppeAcknowledgedAt ?? null}
                 acknowledgedBy={permit.ppeAcknowledgedBy ?? null}
@@ -347,7 +429,13 @@ export function PermitDrawer({
                     </div>
                     {!i.removedAt && open && operator && (
                       <Button size="sm" variant="ghost" icon={<Unlock size={11} />} loading={busy}
-                        onClick={() => void run(() => api.releasePermitIsolation(permit.id, i.id, actor))}>
+                        onClick={() => void run(
+                          () => api.releasePermitIsolation(permit.id, i.id, actor),
+                          {
+                            kind: 'isolation-release', permitId: permit.id, permitCode: permit.code,
+                            isolationId: i.id, tagId: i.tagId,
+                          },
+                        )}>
                         Release
                       </Button>
                     )}
@@ -369,11 +457,17 @@ export function PermitDrawer({
                     className="h-9 coarse:h-touch w-full rounded-lg border bg-surface px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-accent sm:w-28" />
                   <Button size="md" variant="secondary" loading={busy}
                     disabled={!iso.description.trim() || !iso.tagId.trim()}
-                    onClick={() => void run(async () => {
-                      const r = await api.addPermitIsolation(permit.id, iso, actor)
-                      setIso({ description: '', tagId: '' })
-                      return r
-                    })}>
+                    onClick={() => void run(
+                      async () => {
+                        const r = await api.addPermitIsolation(permit.id, iso, actor)
+                        setIso({ description: '', tagId: '' })
+                        return r
+                      },
+                      {
+                        kind: 'isolation-add', permitId: permit.id, permitCode: permit.code,
+                        input: { description: iso.description, tagId: iso.tagId },
+                      },
+                    )}>
                     Add
                   </Button>
                 </div>
@@ -404,7 +498,14 @@ export function PermitDrawer({
 
           {/* Timeline */}
           {isBackendConfigured() && (
-            <AttachmentsPanel permitId={permit.id} canEdit={open} canRemove={open && operator} onChanged={() => { load(); onChanged() }} />
+            <AttachmentsPanel
+              permitId={permit.id}
+              permitCode={permit.code}
+              canEdit={open}
+              canRemove={open && operator}
+              userId={actor.userId}
+              onChanged={() => { load(); onChanged() }}
+            />
           )}
 
           {/* Extension history — how long this job was actually authorised for, and who
@@ -449,9 +550,21 @@ export function PermitDrawer({
             pressing Start work on a permit with nobody named on it appeared to do nothing.
           */}
           {error && <Alert tone="critical" onDismiss={() => setError(null)}>{error}</Alert>}
+          {/*
+            Not an error. A record kept on the device at a worksite with no signal is the
+            feature working, and the tone says so — see setQueuedNote.
+          */}
+          {queuedNote && (
+            <Alert tone="info" onDismiss={() => setQueuedNote(null)}>{queuedNote}</Alert>
+          )}
+          <FieldQueuePanel
+            queue={fieldQueue.queue}
+            draining={fieldQueue.draining}
+            onFlush={() => void fieldQueue.flush().then(load)}
+          />
           {permit.status === 'draft' && (
             <Button className="w-full" size="lg" loading={busy}
-              onClick={() => void run(() => api.submitPermit(permit.id, actor))}>
+              onClick={() => void run(() => api.submitPermit(permit.id, actor), 'submit')}>
               Sign &amp; Submit for Approval
             </Button>
           )}
@@ -462,11 +575,15 @@ export function PermitDrawer({
                 placeholder="Controls verified on site…" />
               <div className="flex gap-2">
                 <Button className="flex-1" loading={busy} icon={<Check size={14} />}
-                  onClick={() => void run(() => api.approvePermit(permit.id, statement, actor))}>
+                  onClick={() => void run(
+                    () => api.approvePermit(permit.id, statement, actor), 'approve',
+                  )}>
                   Approve &amp; Issue
                 </Button>
                 <Button variant="danger" loading={busy}
-                  onClick={() => void run(() => api.rejectPermit(permit.id, statement || reason, actor))}>
+                  onClick={() => void run(
+                    () => api.rejectPermit(permit.id, statement || reason, actor), 'reject',
+                  )}>
                   Reject
                 </Button>
               </div>
@@ -479,7 +596,7 @@ export function PermitDrawer({
 
           {permit.status === 'approved' && (
             <Button className="w-full" size="lg" loading={busy}
-              onClick={() => void run(() => api.activatePermit(permit.id, actor))}>
+              onClick={() => void run(() => api.activatePermit(permit.id, actor), 'activate')}>
               Start Work
             </Button>
           )}
@@ -488,12 +605,18 @@ export function PermitDrawer({
             <div className="flex gap-2">
               {permit.status === 'active' ? (
                 <Button variant="danger" className="flex-1" icon={<ShieldAlert size={14} />} loading={busy}
-                  onClick={() => void run(() => api.suspendPermit(permit.id, reason || 'Suspended by issuing authority.', actor))}>
+                  onClick={() => void run(
+                    () => api.suspendPermit(permit.id, suspendReason(reason), actor),
+                    {
+                      kind: 'suspend', permitId: permit.id, permitCode: permit.code,
+                      reason: suspendReason(reason),
+                    },
+                  )}>
                   Suspend Work
                 </Button>
               ) : (
                 <Button variant="secondary" className="flex-1" loading={busy}
-                  onClick={() => void run(() => api.resumePermit(permit.id, actor))}>
+                  onClick={() => void run(() => api.resumePermit(permit.id, actor), 'resume')}>
                   Resume Work
                 </Button>
               )}
@@ -507,7 +630,13 @@ export function PermitDrawer({
               <Input className="mt-2" placeholder="Closing note (optional)" value={statement}
                 onChange={(e) => setStatement(e.target.value)} aria-label="Closing note" />
               <Button className="mt-2 w-full" variant="secondary" loading={busy} disabled={!handback}
-                onClick={() => void run(() => api.closePermit(permit.id, { handbackConfirmed: handback, statement }, actor))}>
+                onClick={() => void run(
+                  () => api.closePermit(permit.id, { handbackConfirmed: handback, statement }, actor),
+                  {
+                    kind: 'close', permitId: permit.id, permitCode: permit.code,
+                    handbackConfirmed: handback, statement,
+                  },
+                )}>
                 Close Permit
               </Button>
               {liveIsolations > 0 && (
@@ -522,6 +651,8 @@ export function PermitDrawer({
     <ToolboxDialog
       open={toolboxOpen}
       permitId={permit.id}
+      permitCode={permit.code}
+      userId={actor.userId}
       toolboxAt={permit.toolboxAt ?? null}
       toolboxBy={permit.toolboxBy ?? null}
       canManage={open}

@@ -19,6 +19,32 @@ permitsRouter.use(requireAuth)
 
 const MAX_PAGE_SIZE = 100
 
+/*
+ * What a record made offline carries in addition to its own payload.
+ *
+ * Both fields have to be declared rather than merely tolerated: a zod object strips keys it
+ * does not know, so without this the idempotency key would be parsed away and every replay
+ * would land as a fresh gas test.
+ *
+ * `recordedAt` is bounded here only as a shape (a real ISO timestamp). Whether the time is
+ * *believable* — not in the future, not a week old, not before the permit existed — is
+ * decided in the service against the permit it belongs to, which is the only place that
+ * knows. See lib/fieldRecord.ts.
+ *
+ * Which operations may carry these at all is not decided here either. The client refuses to
+ * queue anything that grants authority — approve, activate, resume — and explains why
+ * (web/src/features/permits/offlineOps.ts); the endpoints for those simply never accept the
+ * fields, so a hand-rolled request cannot route an approval through the offline path.
+ */
+const fieldMeta = {
+  clientRef: z.string().min(8).max(100).optional(),
+  recordedAt: z.string().datetime().optional(),
+}
+
+/** The two fields, separated from the payload they arrived with. */
+const metaOf = (d: { clientRef?: string; recordedAt?: string }) =>
+  ({ clientRef: d.clientRef, recordedAt: d.recordedAt })
+
 const PERMIT_TYPE = z.enum(PERMIT_TYPES)
 const STATUS_FILTER = z.enum([
   'draft', 'submitted', 'approved', 'active', 'suspended', 'closed', 'rejected',
@@ -123,12 +149,21 @@ permitsRouter.post('/:id/activate', asyncRoute(async (req, res) => {
   res.json(await svc.activate(callerOf(req), req.params.id))
 }))
 
+/*
+ * Stop work. The one transition that accepts a record made with no signal, because a
+ * suspension can only close work down and never open it up — so hearing it late is strictly
+ * better than not hearing it. Everything that grants authority is refused offline.
+ */
+const suspendBody = z.object({ reason: z.string().max(2000).optional(), ...fieldMeta })
+
 permitsRouter.post('/:id/suspend', asyncRoute(async (req, res) => {
-  const parsed = reasonBody.safeParse(req.body ?? {})
+  const parsed = suspendBody.safeParse(req.body ?? {})
   if (!parsed.success) {
     return res.status(400).json({ error: 'validation', message: 'Invalid suspension payload.' })
   }
-  res.json(await svc.suspend(callerOf(req), req.params.id, parsed.data.reason ?? ''))
+  res.json(await svc.suspend(
+    callerOf(req), req.params.id, parsed.data.reason ?? '', metaOf(parsed.data),
+  ))
 }))
 
 permitsRouter.post('/:id/resume', asyncRoute(async (req, res) => {
@@ -138,6 +173,7 @@ permitsRouter.post('/:id/resume', asyncRoute(async (req, res) => {
 const closeBody = z.object({
   handbackConfirmed: z.boolean(),
   statement: z.string().max(2000).optional(),
+  ...fieldMeta,
 })
 
 permitsRouter.post('/:id/close', asyncRoute(async (req, res) => {
@@ -148,10 +184,10 @@ permitsRouter.post('/:id/close', asyncRoute(async (req, res) => {
       message: 'Confirm the site has been handed back before closing.',
     })
   }
-  res.json(await svc.close(callerOf(req), req.params.id, parsed.data))
+  res.json(await svc.close(callerOf(req), req.params.id, parsed.data, metaOf(parsed.data)))
 }))
 
-const controlBody = z.object({ confirmed: z.boolean() })
+const controlBody = z.object({ confirmed: z.boolean(), ...fieldMeta })
 
 permitsRouter.patch('/:id/controls/:controlId', asyncRoute(async (req, res) => {
   const parsed = controlBody.safeParse(req.body)
@@ -160,6 +196,7 @@ permitsRouter.patch('/:id/controls/:controlId', asyncRoute(async (req, res) => {
   }
   res.json(await svc.confirmControl(
     callerOf(req), req.params.id, req.params.controlId, parsed.data.confirmed,
+    metaOf(parsed.data),
   ))
 }))
 
@@ -174,6 +211,7 @@ const gasBody = z.object({
   h2sPpm: z.number().min(0).max(10000),
   coPpm: z.number().min(0).max(10000),
   note: z.string().max(2000).optional(),
+  ...fieldMeta,
 })
 
 permitsRouter.post('/:id/gas-tests', asyncRoute(async (req, res) => {
@@ -184,12 +222,16 @@ permitsRouter.post('/:id/gas-tests', asyncRoute(async (req, res) => {
       message: 'Enter O₂, LEL, H₂S and CO readings as numbers.',
     })
   }
-  res.status(201).json(await svc.addGasTest(callerOf(req), req.params.id, parsed.data))
+  const { clientRef, recordedAt, ...reading } = parsed.data
+  res.status(201).json(await svc.addGasTest(
+    callerOf(req), req.params.id, reading, { clientRef, recordedAt },
+  ))
 }))
 
 const isolationBody = z.object({
   description: z.string().min(1).max(500),
   tagId: z.string().min(1).max(80),
+  ...fieldMeta,
 })
 
 permitsRouter.post('/:id/isolations', asyncRoute(async (req, res) => {
@@ -200,11 +242,19 @@ permitsRouter.post('/:id/isolations', asyncRoute(async (req, res) => {
       message: 'An isolation needs a description and a lock/tag identifier.',
     })
   }
-  res.status(201).json(await svc.addIsolation(callerOf(req), req.params.id, parsed.data))
+  res.status(201).json(await svc.addIsolation(
+    callerOf(req), req.params.id, parsed.data, metaOf(parsed.data),
+  ))
 }))
 
 permitsRouter.post('/:id/isolations/:isolationId/release', asyncRoute(async (req, res) => {
-  res.json(await svc.releaseIsolation(callerOf(req), req.params.id, req.params.isolationId))
+  const parsed = z.object(fieldMeta).safeParse(req.body ?? {})
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'Invalid release payload.' })
+  }
+  res.json(await svc.releaseIsolation(
+    callerOf(req), req.params.id, req.params.isolationId, metaOf(parsed.data),
+  ))
 }))
 
 export { PermitError }
@@ -236,11 +286,13 @@ permitsRouter.delete('/people/:attendeeId', asyncRoute(async (req, res) => {
 
 /** Sign in and out of the work area, so occupancy is a query rather than a headcount. */
 permitsRouter.post('/people/:attendeeId/entry', asyncRoute(async (req, res) => {
-  const parsed = z.object({ inside: z.boolean() }).safeParse(req.body)
+  const parsed = z.object({ inside: z.boolean(), ...fieldMeta }).safeParse(req.body)
   if (!parsed.success) {
     return res.status(400).json({ error: 'validation', message: 'inside must be true or false.' })
   }
-  res.json(await people.setInside(callerOf(req), req.params.attendeeId, parsed.data.inside))
+  res.json(await people.setInside(
+    callerOf(req), req.params.attendeeId, parsed.data.inside, metaOf(parsed.data),
+  ))
 }))
 
 /** Who may be named, and why anyone may not — drives the picker at the permit desk. */
@@ -310,15 +362,24 @@ permitsRouter.post('/:id/toolbox', asyncRoute(async (req, res) => {
   const parsed = z.object({
     heldAt: z.string().datetime().optional(),
     supervisor: z.string().max(160).optional(),
+    ...fieldMeta,
   }).safeParse(req.body ?? {})
   if (!parsed.success) {
     return res.status(400).json({ error: 'validation', message: 'Invalid toolbox payload.' })
   }
-  res.json(await review.recordToolbox(callerOf(req), req.params.id, parsed.data, ctxOf(req)))
+  res.json(await review.recordToolbox(
+    callerOf(req), req.params.id, parsed.data, ctxOf(req), metaOf(parsed.data),
+  ))
 }))
 
 permitsRouter.post('/people/:attendeeId/toolbox-ack', asyncRoute(async (req, res) => {
-  res.json(await review.acknowledgeToolbox(callerOf(req), req.params.attendeeId, ctxOf(req)))
+  const parsed = z.object(fieldMeta).safeParse(req.body ?? {})
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'Invalid acknowledgement payload.' })
+  }
+  res.json(await review.acknowledgeToolbox(
+    callerOf(req), req.params.attendeeId, ctxOf(req), metaOf(parsed.data),
+  ))
 }))
 
 // ── PPE ──────────────────────────────────────────────────────────────────────
@@ -332,41 +393,67 @@ permitsRouter.put('/:id/ppe', asyncRoute(async (req, res) => {
 }))
 
 permitsRouter.post('/:id/ppe/acknowledge', asyncRoute(async (req, res) => {
-  res.json(await review.acknowledgePpe(callerOf(req), req.params.id, ctxOf(req)))
+  const parsed = z.object(fieldMeta).safeParse(req.body ?? {})
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'validation', message: 'Invalid acknowledgement payload.' })
+  }
+  res.json(await review.acknowledgePpe(
+    callerOf(req), req.params.id, ctxOf(req), metaOf(parsed.data),
+  ))
 }))
 
 // ── JSA ──────────────────────────────────────────────────────────────────────
 
-const jsaBody = z.object({
+const jsaFields = {
   step: z.string().max(300).optional(),
   hazard: z.string().min(1).max(500),
   risk: z.string().max(200).optional(),
   control: z.string().min(1).max(1000),
   responsible: z.string().max(160).optional(),
   residualRisk: z.string().max(200).optional(),
+}
+
+/**
+ * Creating a row accepts one field an amendment does not: `clientId`, the name a device
+ * gave the row before the server had ever seen it (see PermitReviewService.addJsaStep).
+ *
+ * Only on the create. An amendment addresses a row that exists, by the id the server gave
+ * it, and a name accepted on that path would be a second way to say which row is meant —
+ * which is how two addressing schemes end up disagreeing.
+ */
+const jsaCreateBody = z.object({
+  ...jsaFields,
+  clientId: z.string().min(8).max(100).optional(),
+  ...fieldMeta,
 })
+
+const jsaPatchBody = z.object({ ...jsaFields, ...fieldMeta }).partial()
 
 permitsRouter.get('/:id/jsa', asyncRoute(async (req, res) => {
   res.json({ rows: await review.listJsa(callerOf(req), req.params.id) })
 }))
 
 permitsRouter.post('/:id/jsa', asyncRoute(async (req, res) => {
-  const parsed = jsaBody.safeParse(req.body)
+  const parsed = jsaCreateBody.safeParse(req.body)
   if (!parsed.success) {
     return res.status(400).json({
       error: 'validation',
       message: parsed.error.issues[0]?.message ?? 'A hazard and a control are required.',
     })
   }
-  res.status(201).json(await review.addJsaStep(callerOf(req), req.params.id, parsed.data, ctxOf(req)))
+  res.status(201).json(await review.addJsaStep(
+    callerOf(req), req.params.id, parsed.data, ctxOf(req), metaOf(parsed.data),
+  ))
 }))
 
 permitsRouter.patch('/jsa/:stepId', asyncRoute(async (req, res) => {
-  const parsed = jsaBody.partial().safeParse(req.body)
+  const parsed = jsaPatchBody.safeParse(req.body)
   if (!parsed.success) {
     return res.status(400).json({ error: 'validation', message: 'Invalid JSA payload.' })
   }
-  res.json(await review.updateJsaStep(callerOf(req), req.params.stepId, parsed.data, ctxOf(req)))
+  res.json(await review.updateJsaStep(
+    callerOf(req), req.params.stepId, parsed.data, ctxOf(req), metaOf(parsed.data),
+  ))
 }))
 
 permitsRouter.delete('/jsa/:stepId', asyncRoute(async (req, res) => {

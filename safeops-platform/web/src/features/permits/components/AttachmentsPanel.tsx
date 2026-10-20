@@ -4,6 +4,7 @@ import {
   permitWorkflowApi, ATTACHMENT_KIND_LABEL, type AttachmentKind, type PermitAttachment,
 } from '@/api/permitWorkflowApi'
 import { ApiError } from '@/api/types'
+import { queuePermitOp } from '../offlineOps'
 import { Alert, Button, Dialog, Select, Skeleton } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { saveBlob } from '@/lib/saveBlob'
@@ -28,12 +29,16 @@ const prettySize = (b: number) =>
   b < 1024 ? `${b} B` : b < 1024 * 1024 ? `${(b / 1024).toFixed(0)} KB` : `${(b / 1024 / 1024).toFixed(1)} MB`
 
 export function AttachmentsPanel({
-  permitId, canEdit, canRemove, onChanged,
+  permitId, permitCode, canEdit, canRemove, userId, onChanged,
 }: {
   permitId: string
+  /** Names the permit on a record waiting to sync. */
+  permitCode: string
   canEdit: boolean
   /** Removing a document is a safety step (see canOperatePermits); adding one is not. */
   canRemove: boolean
+  /** The signed-in account a queued upload is filed under. Absent in the offline demo. */
+  userId?: string
   onChanged?: () => void
 }) {
   const [rows, setRows] = useState<PermitAttachment[] | null>(null)
@@ -41,6 +46,8 @@ export function AttachmentsPanel({
   const [kind, setKind] = useState<AttachmentKind>('method_statement')
   const [progress, setProgress] = useState<number | null>(null)
   const [dragging, setDragging] = useState(false)
+  /** Files held on the device because there was no signal. Not an error. */
+  const [queuedNote, setQueuedNote] = useState<string | null>(null)
   const [preview, setPreview] = useState<{ att: PermitAttachment; url: string } | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -68,12 +75,47 @@ export function AttachmentsPanel({
     }
 
     setError(null)
+    setQueuedNote(null)
     setProgress(0)
     try {
       await permitWorkflowApi.upload(permitId, files, kind, setProgress)
       load()
       onChanged?.()
     } catch (e) {
+      /*
+       * The bytes are kept, not just the filenames.
+       *
+       * This is the hole docs/MOBILE.md records for incident reporting: a worker
+       * photographed a scene, the report was saved offline, and only the names of the files
+       * went with it — so the app said the photos were on record when they were not. The
+       * field outbox stores Blobs in IndexedDB precisely so that cannot happen again, and a
+       * photograph of a gas detector or an isolation tag is the evidence an auditor asks
+       * for months later.
+       */
+      const unreachable = e instanceof ApiError && (e.code === 'network' || e.code === 'request_failed')
+      if (unreachable && userId) {
+        try {
+          await queuePermitOp(
+            userId,
+            { kind: 'attachment', permitId, permitCode, attachmentKind: kind },
+            await Promise.all(files.map(async (f) => ({
+              name: f.name,
+              type: f.type,
+              // Copied out of the File now: a File is a handle on something the operating
+              // system may not keep, and the queue has to survive the tab closing.
+              blob: new Blob([await f.arrayBuffer()], { type: f.type }),
+            }))),
+          )
+          setQueuedNote(
+            `${files.length} file${files.length === 1 ? '' : 's'} saved on this device — `
+            + 'the files themselves, not just their names - and sent when there is signal.',
+          )
+          return
+        } catch {
+          setError('No connection, and this device could not keep the files. Try again where there is signal.')
+          return
+        }
+      }
       setError(e instanceof Error ? e.message : 'Upload failed.')
     } finally {
       setProgress(null)
@@ -121,6 +163,9 @@ export function AttachmentsPanel({
       </p>
 
       {error && <Alert tone="critical" className="mb-2" onDismiss={() => setError(null)}>{error}</Alert>}
+      {queuedNote && (
+        <Alert tone="info" className="mb-2" onDismiss={() => setQueuedNote(null)}>{queuedNote}</Alert>
+      )}
 
       {canEdit && (
         <div className="mb-2.5 space-y-2">

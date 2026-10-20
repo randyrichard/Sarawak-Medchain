@@ -21,6 +21,9 @@
 import type { PrismaClient, PermitAttendeeRole, PermitType } from '@prisma/client'
 import { PermitError, requireFieldRole } from './permitService.js'
 import type { Caller } from '../domain/caller.js'
+import {
+  alreadyAccepted, claim, recordedAtOf, type FieldRecordMeta,
+} from './fieldRecord.js'
 import { todayDate } from '../domain/businessDay.js'
 
 /** Roles on a permit that put someone in the work. Standby stays outside by definition. */
@@ -365,7 +368,9 @@ export class PermitPeopleService {
    * while the permit is genuinely live: signing into a suspended permit is precisely the
    * thing a suspension is meant to stop.
    */
-  async setInside(caller: Caller, attendeeId: string, inside: boolean): Promise<AttendeeView> {
+  async setInside(
+    caller: Caller, attendeeId: string, inside: boolean, meta?: FieldRecordMeta,
+  ): Promise<AttendeeView> {
     const row = await this.db.permitAttendee.findUnique({
       where: { id: attendeeId },
       include: { permit: { select: { id: true, companyId: true, status: true, validTo: true } } },
@@ -373,6 +378,27 @@ export class PermitPeopleService {
     if (!row) throw new PermitError('not_found', 'That person is not on this permit.', 404)
     const m = caller.roles.find((r) => r.companyId === row.permit.companyId)
     if (!m) throw new PermitError('forbidden', 'You do not have access to this workspace.', 403)
+
+    /*
+     * Before the occupancy checks, which a replay trips: the first copy signed this person
+     * in, so the second meets "that person is already signed in".
+     *
+     * Worth being clear about what is *not* being relaxed here. The checks below still run
+     * on a first arrival, and they are the reason an entry recorded offline can legitimately
+     * be refused: if the permit was suspended while the crew had no signal, this entry is
+     * rejected and goes in front of a human rather than quietly joining the occupancy log.
+     * That refusal is the system working. Only an exact replay of a record it has already
+     * accepted is waved through.
+     */
+    if (await alreadyAccepted(this.db, row.permit.companyId, meta?.clientRef)) {
+      return this.toView(await this.db.permitAttendee.findUniqueOrThrow({
+        where: { id: attendeeId },
+        include: {
+          employee: { select: { id: true, name: true, employeeNo: true } },
+          contractorWorker: { select: { id: true, name: true, workerNo: true } },
+        },
+      }))
+    }
 
     if (inside) {
       if (row.permit.status !== 'active') {
@@ -391,12 +417,28 @@ export class PermitPeopleService {
       throw new PermitError('validation', 'That person is not signed in.')
     }
 
+    /*
+     * The time somebody entered or left, not the time the phone found signal.
+     *
+     * This is the record that answers "who is in there right now" during an emergency, and
+     * afterwards "how long was he inside". A man who entered at 10:05 and whose entry synced
+     * at 15:00 was in the vessel for five hours; filed at 15:00 the log says he had just
+     * stepped in. Of everything recorded offline, this is the one where a wrong timestamp
+     * would mislead a rescue.
+     */
+    const at = recordedAtOf(meta, new Date(), { earliest: row.enteredAt ?? undefined })
+
     const updated = await this.db.$transaction(async (tx) => {
+      await claim(tx, meta, {
+        companyId: row.permit.companyId,
+        operation: inside ? 'permit.person-entry' : 'permit.person-exit',
+        subjectId: row.permit.id, userId: caller.userId, recordedAt: at,
+      })
       const r = await tx.permitAttendee.update({
         where: { id: attendeeId },
         // Signing back in after an exit starts a fresh entry rather than reopening the
         // old one, so the timestamps always describe the current occupancy.
-        data: inside ? { enteredAt: new Date(), exitedAt: null } : { exitedAt: new Date() },
+        data: inside ? { enteredAt: at, exitedAt: null } : { exitedAt: at },
         include: {
           employee: { select: { id: true, name: true, employeeNo: true } },
           contractorWorker: { select: { id: true, name: true, workerNo: true } },
@@ -408,6 +450,7 @@ export class PermitPeopleService {
           action: inside ? 'Signed in to work area' : 'Signed out of work area',
           actor: caller.name,
           detail: r.nameAtAssignment,
+          at,
         },
       })
       return r

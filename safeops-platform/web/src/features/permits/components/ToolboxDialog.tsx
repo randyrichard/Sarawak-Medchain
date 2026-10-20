@@ -3,6 +3,7 @@ import { Check } from 'lucide-react'
 import { permitWorkflowApi } from '@/api/permitWorkflowApi'
 import { permitPeopleApi, ATTENDEE_ROLE_LABEL, type PermitAttendee } from '@/api/permitPeopleApi'
 import { ApiError } from '@/api/types'
+import { queuePermitOp, type PermitOp } from '../offlineOps'
 import { Alert, Badge, Button, Dialog, Input, Skeleton } from '@/components/ui'
 import { cn } from '@/lib/cn'
 
@@ -17,13 +18,17 @@ import { cn } from '@/lib/cn'
  * is the dangerous one: a permit that looks briefed but has two people who never signed.
  */
 export function ToolboxDialog({
-  open, permitId, toolboxAt, toolboxBy, canManage, onClose, onChanged,
+  open, permitId, permitCode, toolboxAt, toolboxBy, canManage, userId, onClose, onChanged,
 }: {
   open: boolean
   permitId: string
+  /** Names the permit on a record waiting to sync. */
+  permitCode: string
   toolboxAt: string | null
   toolboxBy: string | null
   canManage: boolean
+  /** The signed-in account a queued record is filed under. Absent in the offline demo. */
+  userId?: string
   onClose: () => void
   onChanged: () => void
 }) {
@@ -32,6 +37,8 @@ export function ToolboxDialog({
   const [leader, setLeader] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  /** A record kept on the device. Not an error, so not shown as one. */
+  const [queuedNote, setQueuedNote] = useState<string | null>(null)
 
   const load = () => {
     permitPeopleApi.list(permitId)
@@ -49,14 +56,30 @@ export function ToolboxDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, permitId, toolboxAt, toolboxBy])
 
-  const run = async (key: string, fn: () => Promise<unknown>) => {
+
+  /*
+   * The same rule as the rest of the permit: a record of something that happened is kept on
+   * the device and sent later; anything that grants authority is not. Everything in here is
+   * the former — a talk was held, a person confirmed they were at it — so each call supplies
+   * its record. See features/permits/offlineOps.ts.
+   */
+  const run = async (key: string, fn: () => Promise<unknown>, offline?: PermitOp) => {
     setBusy(key)
     setError(null)
+    setQueuedNote(null)
     try {
       await fn()
       load()
       onChanged()
     } catch (e) {
+      const unreachable = e instanceof ApiError && (e.code === 'network' || e.code === 'request_failed')
+      if (unreachable && offline && userId) {
+        try {
+          await queuePermitOp(userId, offline)
+          setQueuedNote('No connection. Saved on this device and sent when there is signal.')
+          return
+        } catch { /* storage refused it; fall through */ }
+      }
       setError(e instanceof ApiError ? e.message : 'That did not work.')
     } finally {
       setBusy(null)
@@ -81,6 +104,10 @@ export function ToolboxDialog({
         </Button>
       }
     >
+
+      {queuedNote && (
+        <Alert tone="info" className="mb-3" onDismiss={() => setQueuedNote(null)}>{queuedNote}</Alert>
+      )}
 
       <div className="space-y-4">
         {/* Meeting record */}
@@ -108,10 +135,14 @@ export function ToolboxDialog({
               </div>
               <Button
                 size="sm" loading={busy === 'record'}
-                onClick={() => void run('record', () => permitWorkflowApi.recordToolbox(permitId, {
-                  heldAt: heldAt ? new Date(heldAt).toISOString() : undefined,
-                  supervisor: leader || undefined,
-                }))}
+                onClick={() => void run(
+                  'record',
+                  () => permitWorkflowApi.recordToolbox(permitId, {
+                    heldAt: heldAt ? new Date(heldAt).toISOString() : undefined,
+                    supervisor: leader || undefined,
+                  }),
+                  { kind: 'toolbox', permitId, permitCode, supervisor: leader || undefined },
+                )}
               >
                 Record the Meeting
               </Button>
@@ -185,7 +216,14 @@ export function ToolboxDialog({
                       ) : recorded ? (
                         <Button
                           size="sm" variant="secondary" loading={busy === a.id}
-                          onClick={() => void run(a.id, () => permitWorkflowApi.acknowledgeToolbox(a.id))}
+                          onClick={() => void run(
+                            a.id,
+                            () => permitWorkflowApi.acknowledgeToolbox(a.id),
+                            {
+                              kind: 'toolbox-ack', permitId, permitCode,
+                              attendeeId: a.id, person: a.name,
+                            },
+                          )}
                         >
                           Acknowledge
                         </Button>

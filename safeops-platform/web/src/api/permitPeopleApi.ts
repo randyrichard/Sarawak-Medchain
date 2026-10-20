@@ -1,4 +1,5 @@
 import { request } from './http'
+import type { FieldRecordMeta } from './permits'
 
 /**
  * The people named on a permit.
@@ -76,9 +77,11 @@ export const permitPeopleApi = {
   },
 
   /** Sign someone in or out of the work area. */
-  setInside(attendeeId: string, inside: boolean): Promise<PermitAttendee> {
+  setInside(
+    attendeeId: string, inside: boolean, meta: FieldRecordMeta = {},
+  ): Promise<PermitAttendee> {
     return request(`/permits/people/${attendeeId}/entry`, {
-      method: 'POST', body: JSON.stringify({ inside }),
+      method: 'POST', body: JSON.stringify({ inside, ...meta }),
     })
   },
 

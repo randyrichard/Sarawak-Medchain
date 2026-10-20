@@ -244,6 +244,7 @@ model Company {
   reportSchedules    ReportSchedule[]
   reportRuns         ReportRun[]
   fieldEvidence      FieldEvidence[]
+  fieldRecords       FieldRecord[]
 
   // Created by an earlier migration and missing here, so `prisma migrate dev` would have
   // generated a migration dropping it. Declared so the schema describes the database.
@@ -1714,6 +1715,18 @@ model PermitJsaStep {
   permitId String
   permit   Permit @relation(fields: [permitId], references: [id], onDelete: Cascade)
 
+  /// The id a device gave this row when it was written with no signal, if it was.
+  ///
+  /// A hazard found at the job is added on the phone, filled in there, and sent later. The
+  /// row has to be addressable before the server has ever seen it, so the device names it
+  /// and the server keeps that name alongside its own id. Null for every row added with a
+  /// connection, which is most of them.
+  ///
+  /// Unique per permit, and that is what makes a replay exact: the same queued row arriving
+  /// twice is recognised by name rather than guessed at from its hazard text, which two
+  /// genuinely different rows are free to share.
+  clientId String?
+
   /// Display order. The sequence of the job, not a priority.
   sequence Int @default(0)
 
@@ -1729,6 +1742,7 @@ model PermitJsaStep {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([permitId, clientId])
   @@index([permitId])
 }
 
@@ -3261,6 +3275,51 @@ model PerformanceTarget {
 /// photo can neither be orphaned nor claimed by two records. Each parent is a real foreign
 /// key that cascades, unlike a polymorphic id-and-type pair. companyId is denormalised
 /// from the parent so row-level security covers the table directly.
+/// One record made in the field, claimed by its idempotency key.
+///
+/// This is the table that lets a permit be worked offline. A phone with no signal queues
+/// what the crew did — a gas test, a toolbox talk, a man into a vessel — and sends it when
+/// signal comes back (web/src/lib/fieldOutbox). The send is not reliably once: a phone that
+/// regains coverage with the app open in two tabs will send the same record twice, a drain
+/// interrupted mid-request leaves the client unsure whether the write landed, and a retry
+/// after a 502 is indistinguishable from a new reading.
+///
+/// Incidents solved this with a `clientRef` column on Incident itself, because an incident
+/// is a row that either exists or does not. A permit record is not: most of these are state
+/// transitions and appends on an existing permit — a second "suspend" is harmless, a second
+/// gas test is a reading that never happened, and a second entry record puts a man in a
+/// confined space twice in the log that is supposed to say who is in there. So the key is
+/// claimed in a table of its own, in the same transaction as the work, and a replay is
+/// answered with the permit as it stands rather than by doing the work again.
+///
+/// `recordedAt` is kept beside it for the audit trail: the gap between when the field did
+/// something and when the server was told is exactly the thing an auditor asks about, and
+/// deriving it later from two timestamps on different tables is guesswork.
+model FieldRecord {
+  id String @id @default(cuid())
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  /// The key the device generated and reuses on every attempt.
+  clientRef String
+  /// Which operation was replayed, for the audit trail and for support questions.
+  operation String
+  /// The permit the record landed on. Null only if the subject was deleted since.
+  subjectId String?
+  /// Who recorded it, by user id — a site phone is shared, so the session matters.
+  userId String
+
+  /// When the field did it, as the device reported. Validated on arrival, never trusted.
+  recordedAt DateTime? @db.Timestamptz(3)
+  /// When the server was actually told.
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@unique([companyId, clientRef])
+  @@index([companyId, createdAt])
+  @@index([subjectId])
+}
+
 model FieldEvidence {
   id        String  @id @default(cuid())
   companyId String

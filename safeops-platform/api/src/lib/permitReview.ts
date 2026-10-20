@@ -21,6 +21,9 @@ import { PermitError, WINDOW_PASSED } from './permitService.js'
 import { activationBlockers } from './permitCatalog.js'
 import { equipmentBlockers } from './equipmentService.js'
 import { membershipOf, type Caller } from '../domain/caller.js'
+import {
+  alreadyAccepted, claim, isNamedRowClash, isReplay, recordedAtOf, type FieldRecordMeta,
+} from './fieldRecord.js'
 
 /**
  * Who may sign each stage.
@@ -93,6 +96,9 @@ export class PermitReviewService {
         id: true, companyId: true, code: true, status: true, type: true,
         validFrom: true, validTo: true, toolboxAt: true, requiredPpe: true,
         ppeAcknowledgedAt: true,
+        // The floor under a time reported by a device: nothing recorded in the field can
+        // predate the permit it is recorded against (see fieldRecord.recordedAtOf).
+        createdAt: true,
       },
     })
     if (!permit) throw new PermitError('not_found', 'Permit not found.', 404)
@@ -263,52 +269,97 @@ export class PermitReviewService {
   async recordToolbox(
     caller: Caller, id: string, input: { heldAt?: string; supervisor?: string },
     ctx: { ip?: string; device?: string } = {},
+    meta?: FieldRecordMeta,
   ) {
     const { permit, role } = await this.load(caller, id)
+    if (await alreadyAccepted(this.db, permit.companyId, meta?.clientRef)) {
+      return this.status(caller, id)
+    }
     if (['closed', 'archived', 'rejected'].includes(permit.status)) {
       throw new PermitError('validation', 'This permit is closed.')
     }
 
-    const heldAt = input.heldAt ? new Date(input.heldAt) : new Date()
+    /*
+     * A toolbox talk is held at the job, standing in front of the work, and it is the one
+     * thing on a permit that already had a field time of its own: `heldAt`. A record made
+     * offline says nothing different, so recordedAt is the fallback rather than a second
+     * mechanism — whichever the device supplied, the talk is filed when it happened.
+     */
+    const heldAt = input.heldAt
+      ? new Date(input.heldAt)
+      : recordedAtOf(meta, new Date(), { earliest: permit.createdAt })
     if (Number.isNaN(heldAt.getTime())) throw new PermitError('validation', 'That is not a valid time.')
     if (heldAt.getTime() > Date.now() + 60_000) {
       throw new PermitError('validation', 'A toolbox talk cannot be recorded before it has happened.')
     }
 
-    await this.db.$transaction(async (tx) => {
-      await tx.permit.update({
-        where: { id },
-        data: { toolboxAt: heldAt, toolboxBy: input.supervisor?.trim() || caller.name, version: { increment: 1 } },
+    try {
+      await this.db.$transaction(async (tx) => {
+        await claim(tx, meta, {
+          companyId: permit.companyId, operation: 'permit.toolbox', subjectId: id,
+          userId: caller.userId, recordedAt: heldAt,
+        })
+        await tx.permit.update({
+          where: { id },
+          data: { toolboxAt: heldAt, toolboxBy: input.supervisor?.trim() || caller.name, version: { increment: 1 } },
+        })
+        await this.record(
+          tx, permit, caller, role, 'Toolbox talk recorded',
+          `held ${heldAt.toISOString().slice(0, 16).replace('T', ' ')} by ${input.supervisor?.trim() || caller.name}`,
+          ctx,
+        )
       })
-      await this.record(
-        tx, permit, caller, role, 'Toolbox talk recorded',
-        `held ${heldAt.toISOString().slice(0, 16).replace('T', ' ')} by ${input.supervisor?.trim() || caller.name}`,
-        ctx,
-      )
-    })
+    } catch (e) {
+      if (isReplay(e)) return this.status(caller, id)
+      throw e
+    }
 
     return this.status(caller, id)
   }
 
   /** One person acknowledging they were at the briefing and understood it. */
-  async acknowledgeToolbox(caller: Caller, attendeeId: string, ctx: { ip?: string; device?: string } = {}) {
+  async acknowledgeToolbox(
+    caller: Caller, attendeeId: string, ctx: { ip?: string; device?: string } = {},
+    meta?: FieldRecordMeta,
+  ) {
     const row = await this.db.permitAttendee.findUnique({
       where: { id: attendeeId },
       include: { permit: { select: { id: true, companyId: true, code: true, toolboxAt: true } } },
     })
     if (!row) throw new PermitError('not_found', 'That person is not on this permit.', 404)
     const m = this.membership(caller, row.permit.companyId)
+
+    /*
+     * Before "Already acknowledged", which a replay trips by definition: the first copy of
+     * this record is what acknowledged it. Refused, the queue would read a 400 as a payload
+     * the server will never take, mark it blocked, and show a worker's acknowledgement as
+     * something that failed to send.
+     */
+    if (await alreadyAccepted(this.db, row.permit.companyId, meta?.clientRef)) {
+      return this.status(caller, row.permit.id)
+    }
     if (!row.permit.toolboxAt) {
       throw new PermitError('validation', 'Record the toolbox talk before anyone acknowledges it.')
     }
     if (row.toolboxAckAt) throw new PermitError('validation', 'Already acknowledged.')
 
-    await this.db.$transaction(async (tx) => {
-      await tx.permitAttendee.update({ where: { id: attendeeId }, data: { toolboxAckAt: new Date() } })
-      await this.record(
-        tx, row.permit, caller, m.role, 'Toolbox acknowledged', row.nameAtAssignment, ctx,
-      )
-    })
+    const at = recordedAtOf(meta, new Date(), { earliest: row.permit.toolboxAt })
+
+    try {
+      await this.db.$transaction(async (tx) => {
+        await claim(tx, meta, {
+          companyId: row.permit.companyId, operation: 'permit.toolbox-ack', subjectId: row.permit.id,
+          userId: caller.userId, recordedAt: at,
+        })
+        await tx.permitAttendee.update({ where: { id: attendeeId }, data: { toolboxAckAt: at } })
+        await this.record(
+          tx, row.permit, caller, m.role, 'Toolbox acknowledged', row.nameAtAssignment, ctx,
+        )
+      })
+    } catch (e) {
+      if (isReplay(e)) return this.status(caller, row.permit.id)
+      throw e
+    }
 
     return this.status(caller, row.permit.id)
   }
@@ -343,22 +394,40 @@ export class PermitReviewService {
     return this.status(caller, id)
   }
 
-  async acknowledgePpe(caller: Caller, id: string, ctx: { ip?: string; device?: string } = {}) {
+  async acknowledgePpe(
+    caller: Caller, id: string, ctx: { ip?: string; device?: string } = {},
+    meta?: FieldRecordMeta,
+  ) {
     const { permit, role } = await this.load(caller, id)
+    // Before "already acknowledged", for the same reason as the toolbox acknowledgement.
+    if (await alreadyAccepted(this.db, permit.companyId, meta?.clientRef)) {
+      return this.status(caller, id)
+    }
     if (permit.requiredPpe.length === 0) {
       throw new PermitError('validation', 'No PPE has been specified for this permit.')
     }
     if (permit.ppeAcknowledgedAt) throw new PermitError('validation', 'PPE has already been acknowledged.')
 
-    await this.db.$transaction(async (tx) => {
-      await tx.permit.update({
-        where: { id },
-        data: { ppeAcknowledgedAt: new Date(), ppeAcknowledgedBy: caller.name, version: { increment: 1 } },
+    const at = recordedAtOf(meta, new Date(), { earliest: permit.createdAt })
+
+    try {
+      await this.db.$transaction(async (tx) => {
+        await claim(tx, meta, {
+          companyId: permit.companyId, operation: 'permit.ppe-ack', subjectId: id,
+          userId: caller.userId, recordedAt: at,
+        })
+        await tx.permit.update({
+          where: { id },
+          data: { ppeAcknowledgedAt: at, ppeAcknowledgedBy: caller.name, version: { increment: 1 } },
+        })
+        await this.record(
+          tx, permit, caller, role, 'PPE checked and acknowledged', permit.requiredPpe.join(', '), ctx,
+        )
       })
-      await this.record(
-        tx, permit, caller, role, 'PPE checked and acknowledged', permit.requiredPpe.join(', '), ctx,
-      )
-    })
+    } catch (e) {
+      if (isReplay(e)) return this.status(caller, id)
+      throw e
+    }
 
     return this.status(caller, id)
   }
@@ -370,53 +439,143 @@ export class PermitReviewService {
     return this.db.permitJsaStep.findMany({ where: { permitId: id }, orderBy: { sequence: 'asc' } })
   }
 
+  /**
+   * Adds a row to the analysis — at the permit desk, or at the job with no signal.
+   *
+   * `clientId` is the name a device gave the row before the server had ever heard of it.
+   * It is kept beside the row's own id rather than used as the id: a device naming a
+   * primary key would be reaching into an id space shared by every tenant, and all that is
+   * needed here is that the device can recognise its own row when it comes back.
+   */
   async addJsaStep(caller: Caller, id: string, input: {
     step?: string; hazard: string; risk?: string; control: string
-    responsible?: string; residualRisk?: string
-  }, ctx: { ip?: string; device?: string } = {}) {
+    responsible?: string; residualRisk?: string; clientId?: string
+  }, ctx: { ip?: string; device?: string } = {}, meta?: FieldRecordMeta) {
     const { permit, role } = await this.load(caller, id)
+    const clientId = input.clientId?.trim() || null
+
+    /*
+     * A replay must not add the hazard twice.
+     *
+     * A JSA with the same step listed twice is not merely untidy: the analysis is what the
+     * approver signed, and a duplicated hazard reads as two separate exposures with two
+     * separate controls.
+     *
+     * A row the device named answers this exactly: the same name is the same row, whatever
+     * its text says now. That matters more than it looks for a row created offline, because
+     * such a row is usually edited after it was created — so by the time a replay arrives,
+     * the hazard on the server may no longer be the hazard in the queued copy.
+     */
+    if (clientId) {
+      const already = await this.db.permitJsaStep.findFirst({ where: { permitId: id, clientId } })
+      if (already) return already
+    } else if (await alreadyAccepted(this.db, permit.companyId, meta?.clientRef)) {
+      /*
+       * Nothing named it, so the idempotency key is all there is, and the row it created
+       * has to be guessed at from its hazard text — which two genuinely different steps are
+       * free to share. A stopgap, kept only for records queued by a device that predates
+       * clientId; those drain within a day or two and then stop existing.
+       */
+      const already = await this.db.permitJsaStep.findFirst({
+        where: { permitId: id, hazard: input.hazard?.trim() ?? '' },
+        orderBy: { sequence: 'desc' },
+      })
+      if (already) return already
+    }
     if (['closed', 'archived', 'rejected'].includes(permit.status)) {
       throw new PermitError('validation', 'This permit is closed.')
     }
     if (!input.hazard?.trim()) throw new PermitError('validation', 'Name the hazard.')
     if (!input.control?.trim()) throw new PermitError('validation', 'A hazard without a control is not an analysis.')
 
-    const last = await this.db.permitJsaStep.findFirst({
-      where: { permitId: id }, orderBy: { sequence: 'desc' }, select: { sequence: true },
-    })
+    const at = recordedAtOf(meta, new Date(), { earliest: permit.createdAt })
 
-    return this.db.$transaction(async (tx) => {
-      const created = await tx.permitJsaStep.create({
-        data: {
-          permitId: id,
-          sequence: (last?.sequence ?? 0) + 1,
-          step: input.step?.trim() ?? '',
-          hazard: input.hazard.trim(),
-          risk: input.risk?.trim() ?? '',
-          control: input.control.trim(),
-          responsible: input.responsible?.trim() ?? '',
-          residualRisk: input.residualRisk?.trim() ?? '',
-          createdBy: caller.name,
-        },
+    try {
+      return await this.db.$transaction(async (tx) => {
+        await claim(tx, meta, {
+          companyId: permit.companyId, operation: 'permit.jsa-add', subjectId: id,
+          userId: caller.userId, recordedAt: at,
+        })
+        /*
+         * Bumping the permit version is what makes the JSA versioned: an approver who
+         * signed version 3 did not sign version 4. A row written on a phone hours earlier
+         * bumps it exactly as one typed at the desk does — a late row is allowed to land on
+         * an approved permit only because its landing is visible.
+         *
+         * First in the transaction rather than last, and that is a lock rather than
+         * housekeeping: it takes the permit row, so a second add on the same permit waits
+         * here instead of racing the sequence read below.
+         */
+        await tx.permit.update({ where: { id }, data: { version: { increment: 1 } } })
+
+        /*
+         * The next position.
+         *
+         * Two rows arriving together would otherwise both read the same last sequence and
+         * both take it — which a phone draining its queue while the permit desk adds a row
+         * on a laptop makes ordinary rather than exotic. Reading inside the transaction is
+         * not enough on its own: under read-committed both snapshots predate either commit,
+         * which is what the lock above is for. The JSA is the sequence of the job, and two
+         * steps sharing a position sort arbitrarily — putting a control under the wrong
+         * step on the document somebody signs.
+         *
+         * A row recorded in the field lands at the end rather than where the device showed
+         * it. That is the honest position: of the steps the permit has, it is the one added
+         * last.
+         */
+        const last = await tx.permitJsaStep.findFirst({
+          where: { permitId: id }, orderBy: { sequence: 'desc' }, select: { sequence: true },
+        })
+        const created = await tx.permitJsaStep.create({
+          data: {
+            permitId: id,
+            clientId,
+            sequence: (last?.sequence ?? 0) + 1,
+            step: input.step?.trim() ?? '',
+            hazard: input.hazard.trim(),
+            risk: input.risk?.trim() ?? '',
+            control: input.control.trim(),
+            responsible: input.responsible?.trim() ?? '',
+            residualRisk: input.residualRisk?.trim() ?? '',
+            createdBy: caller.name,
+          },
+        })
+        await this.record(tx, permit, caller, role, 'JSA step added', created.hazard, ctx)
+        return created
       })
-      // Bumping the permit version is what makes the JSA versioned: an approver who
-      // signed version 3 did not sign version 4.
-      await tx.permit.update({ where: { id }, data: { version: { increment: 1 } } })
-      await this.record(tx, permit, caller, role, 'JSA step added', created.hazard, ctx)
-      return created
-    })
+    } catch (e) {
+      /*
+       * Two copies of the same record in flight together, which the checks above are too
+       * early to see: one of them lost a race, on its idempotency key or on the row's name,
+       * and the row the winner wrote is the answer. Returning it rather than the error is
+       * what keeps the queue from marking a hazard that *is* on the analysis as refused.
+       */
+      if (isReplay(e) || (clientId && isNamedRowClash(e))) {
+        const already = await this.db.permitJsaStep.findFirst({
+          where: { permitId: id, ...(clientId ? { clientId } : { hazard: input.hazard.trim() }) },
+          orderBy: { sequence: 'desc' },
+        })
+        if (already) return already
+      }
+      throw e
+    }
   }
 
   async updateJsaStep(caller: Caller, stepId: string, patch: {
     step?: string; hazard?: string; risk?: string; control?: string
     responsible?: string; residualRisk?: string
-  }, ctx: { ip?: string; device?: string } = {}) {
+  }, ctx: { ip?: string; device?: string } = {}, meta?: FieldRecordMeta) {
     const existing = await this.db.permitJsaStep.findUnique({
       where: { id: stepId },
       include: { permit: { select: { id: true, companyId: true, code: true, status: true } } },
     })
     if (!existing) throw new PermitError('not_found', 'JSA step not found.', 404)
     const m = this.membership(caller, existing.permit.companyId)
+    // An edit is idempotent in its effect, but replaying it writes a second "JSA step
+    // edited" line to the trail, which reads as the analysis being changed twice.
+    if (await alreadyAccepted(this.db, existing.permit.companyId, meta?.clientRef)) {
+      return existing
+    }
     if (['closed', 'archived', 'rejected'].includes(existing.permit.status)) {
       throw new PermitError('validation', 'This permit is closed.')
     }
@@ -428,6 +587,11 @@ export class PermitReviewService {
     }
 
     return this.db.$transaction(async (tx) => {
+      await claim(tx, meta, {
+        companyId: existing.permit.companyId, operation: 'permit.jsa-update',
+        subjectId: existing.permit.id, userId: caller.userId,
+        recordedAt: recordedAtOf(meta, new Date()),
+      })
       const updated = await tx.permitJsaStep.update({
         where: { id: stepId },
         data: {

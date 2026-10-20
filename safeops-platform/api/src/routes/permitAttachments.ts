@@ -11,6 +11,9 @@ import { existsSync, mkdirSync, accessSync, constants, unlink } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { env } from '../env.js'
 import { prisma } from '../lib/prisma.js'
+import {
+  alreadyAccepted, claim, isReplay, recordedAtOf,
+} from '../lib/fieldRecord.js'
 import { PermitError, requireFieldRole } from '../lib/permitService.js'
 import type { Caller } from '../domain/caller.js'
 import { requireAuth } from '../http/requireAuth.js'
@@ -26,6 +29,20 @@ import { asyncRoute } from '../http/asyncRoute.js'
  * MIME allow-list is narrow because anything scriptable served back in-origin is a
  * stored-XSS vector, and downloads are forced rather than rendered inline.
  */
+/**
+ * Internal marker: this upload was already accepted under the same key.
+ *
+ * Not a DomainError, because it is not a refusal — it never reaches the client as an error.
+ * It exists only to unwind out of the handler to the one place that cleans up the bytes
+ * multer wrote, so the "already done" reply and the real failures share that cleanup rather
+ * than each remembering to do it.
+ */
+class AlreadyUploaded extends Error {
+  constructor(public permitId: string) {
+    super('already uploaded')
+  }
+}
+
 export const permitAttachmentsRouter = Router()
 
 permitAttachmentsRouter.use(requireAuth)
@@ -68,7 +85,9 @@ const KINDS = ['method_statement', 'jsa', 'gas_test_sheet', 'isolation_certifica
 async function permitFor(caller: Caller, permitId: string) {
   const permit = await prisma.permit.findUnique({
     where: { id: permitId },
-    select: { id: true, companyId: true, code: true, status: true },
+    // createdAt is the floor under a time a device reported for a photograph: evidence
+    // cannot predate the permit it is evidence for (see lib/fieldRecord.ts).
+    select: { id: true, companyId: true, code: true, status: true, createdAt: true },
   })
   if (!permit) throw new PermitError('not_found', 'Permit not found.', 404)
   if (!caller.roles.some((r) => r.companyId === permit.companyId)) {
@@ -104,6 +123,33 @@ permitAttachmentsRouter.post('/:id/attachments', (req, res, next) => {
       }
 
       const kind = z.enum(KINDS).catch('other').parse(req.body?.kind)
+
+      /*
+       * The same photographs, sent twice.
+       *
+       * This is the upload a phone makes after walking back into coverage, and it is the
+       * most expensive thing in the queue to repeat: a 4 MB photograph of a flange re-sent
+       * on every drain, and the attachment list growing a duplicate each time, which an
+       * auditor reads as two separate pieces of evidence.
+       *
+       * The key arrives as a form field rather than a JSON property because the body is
+       * multipart. It is bounded like any other input: a client is not allowed to make the
+       * server index an arbitrary string.
+       */
+      const meta = z.object({
+        clientRef: z.string().min(8).max(100).optional(),
+        recordedAt: z.string().datetime().optional(),
+      }).catch({}).parse({
+        clientRef: req.body?.clientRef || undefined,
+        recordedAt: req.body?.recordedAt || undefined,
+      })
+
+      if (await alreadyAccepted(prisma, permit.companyId, meta.clientRef)) {
+        // The bytes on disk from this attempt are not the ones the rows point at, so they
+        // are cleaned up by the handler below as they would be for any other early exit.
+        throw new AlreadyUploaded(permit.id)
+      }
+
       const files = (req.files ?? []) as Express.Multer.File[]
       if (files.length === 0) throw new PermitError('validation', 'Choose at least one file.')
       const mismatch = await settleUploadTypes(UPLOAD_DIR, files)
@@ -121,7 +167,23 @@ permitAttachmentsRouter.post('/:id/attachments', (req, res, next) => {
       const digests = new Map(await Promise.all(files.map(async (f) =>
         [f.filename, await sha256File(join(UPLOAD_DIR, f.filename))] as const)))
 
+      /*
+       * When the field took the photograph, as opposed to when it reached us.
+       *
+       * It goes on the timeline entry, which is where the permit is read as a sequence: a
+       * photo of a gas detector logged four hours after the reading it shows is evidence of
+       * nothing. The attachment row's own createdAt stays the server's clock, because that
+       * column means "when this file was stored" and the list is ordered by it — there is
+       * no capture-time column to put this in, and quietly redefining that one would
+       * misreport storage time to anybody auditing the upload itself.
+       */
+      const at = recordedAtOf(meta, new Date(), { earliest: permit.createdAt })
+
       const saved = await prisma.$transaction(async (tx) => {
+        await claim(tx, meta, {
+          companyId: permit.companyId, operation: 'permit.attachment', subjectId: permit.id,
+          userId: caller.userId, recordedAt: at,
+        })
         const rows = await Promise.all(files.map((f) =>
           tx.permitAttachment.create({
             data: {
@@ -142,6 +204,7 @@ permitAttachmentsRouter.post('/:id/attachments', (req, res, next) => {
             action: 'Document attached',
             detail: rows.map((r) => r.originalName).join(', '),
             actor: caller.name,
+            at,
           },
         })
         return rows
@@ -152,6 +215,19 @@ permitAttachmentsRouter.post('/:id/attachments', (req, res, next) => {
       // Nothing points at these yet: the rows are written in one transaction, so either
       // they all exist or none do.
       await discardUploads(UPLOAD_DIR, written)
+
+      /*
+       * These two are the same answer: this upload has already been accepted. One is found
+       * before the work, the other is a second copy that raced it into the transaction.
+       * Both reply with what the permit holds now, and a 200 rather than an error — the
+       * queue has to be able to tell "already done" from "refused", or it marks a
+       * photograph that is safely stored as something needing a person.
+       */
+      if (e instanceof AlreadyUploaded || isReplay(e)) {
+        return res.json({ rows: await prisma.permitAttachment.findMany({
+          where: { permitId: req.params.id }, orderBy: { createdAt: 'desc' },
+        }) })
+      }
       next(e)
     }
   }))

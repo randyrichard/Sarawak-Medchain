@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import { permitWorkflowApi, PPE_OPTIONS, type PpeItem } from '@/api/permitWorkflowApi'
 import { ApiError } from '@/api/types'
+import { queuePermitOp } from '../offlineOps'
 import { Alert, Button } from '@/components/ui'
 import { cn } from '@/lib/cn'
 
@@ -35,19 +36,26 @@ const ICON: Record<PpeItem, typeof HardHat> = {
 }
 
 export function PpeChecklist({
-  permitId, required, acknowledgedAt, acknowledgedBy, canEdit, canAcknowledge, onChanged,
+  permitId, permitCode, required, acknowledgedAt, acknowledgedBy, canEdit, canAcknowledge,
+  userId, onChanged,
 }: {
   permitId: string
+  /** Names the permit on a record waiting to sync. */
+  permitCode: string
   required: string[]
   acknowledgedAt: string | null
   acknowledgedBy: string | null
   canEdit: boolean
   canAcknowledge: boolean
+  /** The signed-in account a queued acknowledgement is filed under. */
+  userId?: string
   onChanged: () => void
 }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [justAcked, setJustAcked] = useState(false)
+  /** An acknowledgement kept on the device. Not an error. */
+  const [queuedNote, setQueuedNote] = useState<string | null>(null)
 
   const selected = new Set(required)
   const acknowledged = !!acknowledgedAt
@@ -73,12 +81,27 @@ export function PpeChecklist({
   const acknowledge = async () => {
     setBusy(true)
     setError(null)
+    setQueuedNote(null)
     try {
       await permitWorkflowApi.acknowledgePpe(permitId)
       setJustAcked(true)
       setTimeout(() => setJustAcked(false), 2200)
       onChanged()
     } catch (e) {
+      /*
+       * A person confirming what they are wearing, which happens at the job. Kept and sent
+       * later; the list of *required* PPE is not, because changing what a permit demands is
+       * a decision about the job rather than a record of it, and it belongs with the people
+       * who can see the whole job.
+       */
+      const unreachable = e instanceof ApiError && (e.code === 'network' || e.code === 'request_failed')
+      if (unreachable && userId) {
+        try {
+          await queuePermitOp(userId, { kind: 'ppe-ack', permitId, permitCode })
+          setQueuedNote('No connection. Saved on this device and sent when there is signal.')
+          return
+        } catch { /* storage refused it; fall through */ }
+      }
       setError(e instanceof ApiError ? e.message : 'Could not acknowledge the PPE.')
     } finally {
       setBusy(false)
@@ -104,6 +127,9 @@ export function PpeChecklist({
       </div>
 
       {error && <Alert tone="critical" className="mb-2" onDismiss={() => setError(null)}>{error}</Alert>}
+      {queuedNote && (
+        <Alert tone="info" className="mb-2" onDismiss={() => setQueuedNote(null)}>{queuedNote}</Alert>
+      )}
 
       <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
         {PPE_OPTIONS.map((item) => {

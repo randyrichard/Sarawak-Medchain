@@ -7,6 +7,7 @@ import {
 import { ApiError } from '@/api/types'
 import { Alert, Badge, Button, Dialog, Select, Skeleton } from '@/components/ui'
 import { cn } from '@/lib/cn'
+import { queuePermitOp, type PermitOp } from '../offlineOps'
 
 /**
  * Who is on this permit, and who is currently inside the work area.
@@ -17,17 +18,27 @@ import { cn } from '@/lib/cn'
  * entrants and five names on a page.
  */
 export function PermitPeoplePanel({
-  permitId, permitStatus, canEdit, onChanged,
+  permitId, permitCode, permitStatus, canEdit, userId, onChanged,
 }: {
   permitId: string
+  /** For the label on a record waiting to sync, which has to name the permit. */
+  permitCode: string
   permitStatus: string
   canEdit: boolean
+  /**
+   * The signed-in account, which is what a queued record is filed under. Absent in the
+   * offline demo, where there is no server to sync to in the first place; signing in and
+   * out then behaves as it did before, failing visibly.
+   */
+  userId?: string
   onChanged?: () => void
 }) {
   const [rows, setRows] = useState<PermitAttendee[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
+  /** Said separately from an error: a record kept on the device is not a failure. */
+  const [queuedNote, setQueuedNote] = useState<string | null>(null)
 
   const settled = ['closed', 'archived', 'rejected'].includes(permitStatus)
   const live = permitStatus === 'active'
@@ -43,15 +54,41 @@ export function PermitPeoplePanel({
 
   useEffect(() => { load() }, [load])
 
-  const run = async (key: string, fn: () => Promise<unknown>) => {
+  /*
+   * `offline` is supplied for signing in and out of the work area, and not for naming or
+   * removing people.
+   *
+   * The difference is which way each one points. Signing in records something that already
+   * happened — a man walked into the vessel, and the register has to say so whether or not
+   * there is signal; this is the record an emergency response reads. Adding someone to a
+   * permit is the opposite: the server checks their medical and their competency before
+   * allowing it, and queuing that offline would let somebody be named onto a confined-space
+   * job whose fitness-to-work expired last week, with the refusal arriving hours after they
+   * had already gone in.
+   */
+  const run = async (key: string, fn: () => Promise<unknown>, offline?: PermitOp) => {
     setBusy(key)
     setError(null)
+    setQueuedNote(null)
     try {
       await fn()
       load()
       onChanged?.()
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'That did not work.')
+      const unreachable = e instanceof ApiError && (e.code === 'network' || e.code === 'request_failed')
+      if (unreachable && offline && userId) {
+        try {
+          await queuePermitOp(userId, offline)
+          setQueuedNote(
+            'No connection. This is saved on this device with the time you recorded it, and '
+            + 'will be sent when there is signal.',
+          )
+        } catch {
+          setError('No connection, and this device could not save it. Keep the paper register until signal returns.')
+        }
+      } else {
+        setError(e instanceof ApiError ? e.message : 'That did not work.')
+      }
     } finally {
       setBusy(null)
     }
@@ -69,6 +106,9 @@ export function PermitPeoplePanel({
       </p>
 
       {error && <Alert tone="critical" className="mb-2" onDismiss={() => setError(null)}>{error}</Alert>}
+      {queuedNote && (
+        <Alert tone="info" className="mb-2" onDismiss={() => setQueuedNote(null)}>{queuedNote}</Alert>
+      )}
 
       {rows === null ? (
         <div className="space-y-1.5">
@@ -99,13 +139,27 @@ export function PermitPeoplePanel({
                   r.inside ? (
                     <Button size="sm" variant="secondary" icon={<LogOut size={11} />}
                       loading={busy === r.id}
-                      onClick={() => void run(r.id, () => permitPeopleApi.setInside(r.id, false))}>
+                      onClick={() => void run(
+                        r.id,
+                        () => permitPeopleApi.setInside(r.id, false),
+                        {
+                          kind: 'person-entry', permitId, permitCode,
+                          attendeeId: r.id, person: r.name, inside: false,
+                        },
+                      )}>
                       Sign Out
                     </Button>
                   ) : r.role !== 'standby' ? (
                     <Button size="sm" variant="ghost" icon={<LogIn size={11} />}
                       loading={busy === r.id}
-                      onClick={() => void run(r.id, () => permitPeopleApi.setInside(r.id, true))}>
+                      onClick={() => void run(
+                        r.id,
+                        () => permitPeopleApi.setInside(r.id, true),
+                        {
+                          kind: 'person-entry', permitId, permitCode,
+                          attendeeId: r.id, person: r.name, inside: true,
+                        },
+                      )}>
                       Sign In
                     </Button>
                   ) : null
