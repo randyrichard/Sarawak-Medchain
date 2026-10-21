@@ -18,9 +18,14 @@ name: safeops-platform-ci
 
 on:
   push:
-    # feature/permit-to-work is where SafeChain releases are cut from; main is kept for when
-    # it moves there. The release workflow listens for this one finishing green.
-    branches: [main, feature/permit-to-work]
+    # safechain-production is what Cloudflare builds and what the release workflow deploys
+    # from; feature/permit-to-work is where the work lands before it is promoted there, and
+    # is tested too so nothing reaches the production branch untested.
+    #
+    # `main` is deliberately absent. It belongs to MedChain now, and SafeChain is shipped
+    # from its own branch - a SafeChain pipeline watching main would only ever report on a
+    # directory main is no longer meant to carry.
+    branches: [safechain-production, feature/permit-to-work]
     paths: ['safeops-platform/**', '.github/workflows/safeops-platform-ci.yml']
   pull_request:
     paths: ['safeops-platform/**', '.github/workflows/safeops-platform-ci.yml']

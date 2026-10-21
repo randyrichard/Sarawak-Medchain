@@ -176,7 +176,7 @@ check is for customer builds, and the demo is the one build meant to contain the
    | Setting | Value |
    |---|---|
    | Project name | `safechain` (must match `web/wrangler.jsonc`) |
-   | Production branch | `feature/permit-to-work` (where SafeChain lives) |
+   | Production branch | `safechain-production` (SafeChain ships from its own branch; `main` is MedChain) |
    | Root directory | `safeops-platform/web` |
    | Build command | `npm run build:demo` |
    | Deploy command | `npx wrangler deploy` |
@@ -188,12 +188,17 @@ check is for customer builds, and the demo is the one build meant to contain the
    needs the `previews` block in `web/wrangler.jsonc`, which is why it is there.
 
    **Check the branch, root directory and build command after creating it.** The import
-   builds the repository's default branch, `main`, which holds an older SafeChain without
-   this configuration, and it left the root at `/` with no build command the first time.
-   That build "succeeds" and publishes the wrong thing. Fix them under the Worker's
-   **Settings → Build**: Branch control (production branch), and Build configuration.
+   builds the repository's default branch, `main` - which is MedChain, not SafeChain at all -
+   and it left the root at `/` with no build command the first time. That build "succeeds"
+   and publishes the wrong thing. Fix them under the Worker's **Settings → Build**: Branch
+   control (production branch), and Build configuration.
+
+   **This is a dashboard setting and lives nowhere in this repository.** Changing the
+   branch here changes what CI tests and what the release workflow deploys; it does not
+   change what Cloudflare builds. Both have to be set, and they are set in different
+   places.
 3. Deploy. **Retry build** re-runs the same commit, so it will not pick up a changed branch;
-   the next commit on `feature/permit-to-work` starts the right build. The address is
+   the next commit on `safechain-production` starts the right build. The address is
    `https://safechain.<your-subdomain>.workers.dev` — the Worker's name is the address.
 
    **The subdomain is the account's, and Cloudflare starts it from the email address you

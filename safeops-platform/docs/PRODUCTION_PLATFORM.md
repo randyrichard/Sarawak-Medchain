@@ -163,7 +163,7 @@ verified end to end in §7.
 
 | Workflow | Trigger | Jobs | Blocks on |
 |---|---|---|---|
-| `safeops-platform-ci.yml` | PRs touching `safeops-platform/`; pushes to `main` and `feature/permit-to-work` | `api`, `web`, `docker` (build, boot, smoke) | Any test failure, a credential in the bundle, a high npm advisory, an image that doesn't boot or fails the smoke test, an image running as root |
+| `safeops-platform-ci.yml` | PRs touching `safeops-platform/`; pushes to `safechain-production` and `feature/permit-to-work` | `api`, `web`, `docker` (build, boot, smoke) | Any test failure, a credential in the bundle, a high npm advisory, an image that doesn't boot or fails the smoke test, an image running as root |
 | `safeops-platform-release.yml` | `safeops-platform-ci` succeeding on a push; manual | `publish` (GHCR, provenance, SBOM, Trivy report), `deploy` (optional, approval-gated) | Publish failures. The vulnerability scan reports and does not block. |
 | Dependabot (`.github/dependabot.yml`) | Weekly | npm (api, web: minor/patch grouped), Docker base images, Compose images, GitHub Actions | — |
 

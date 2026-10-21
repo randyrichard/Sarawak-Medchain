@@ -29,7 +29,10 @@ on:
   workflow_run:
     workflows: [safeops-platform-ci]
     types: [completed]
-    branches: [feature/permit-to-work, main]
+    # Only the production branch. A release is the thing that gets deployed, and cutting
+    # one from the branch work lands on would publish whatever happened to be merged that
+    # afternoon. Promote to safechain-production when it is meant to ship.
+    branches: [safechain-production]
   workflow_dispatch:
 
 permissions:
