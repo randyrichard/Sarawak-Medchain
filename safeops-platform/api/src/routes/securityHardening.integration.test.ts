@@ -198,6 +198,90 @@ d('security hardening — integration (real Postgres, real HTTP)', () => {
     })
   })
 
+  /*
+   * Reading another tenant's file by its id.
+   *
+   * The upload block above proves a stranger cannot *attach* to a record they do not own.
+   * This is the other half, and it was the gap: once a file exists, its id is the only
+   * thing standing between it and anyone who guesses or is given one. Stored names are
+   * random, but an id travels - in a link somebody pastes, a screenshot, a support ticket,
+   * a log - and "you need the id" is not an access control.
+   *
+   * What makes it a tenant question rather than a permissions one: every route here is
+   * behind requireAuth, so the attacker is a perfectly legitimate user. They are an admin -
+   * the highest role there is - of a company that simply is not this one.
+   */
+  describe('files belonging to another workspace', () => {
+    it('refuses a download to an admin of another company, on every attachment route', async () => {
+      // Files that genuinely exist, owned by company A.
+      const incident = await upload(`/incidents/${incidentId}/attachments`, 'admin', { bytes: PDF, type: 'application/pdf', name: 'report.pdf' })
+      const permit = await upload(`/permits/${permitId}/attachments`, 'admin', { bytes: PDF, type: 'application/pdf', name: 'method.pdf' })
+      const asset = await upload(`/assets/${assetId}/documents`, 'admin', { bytes: PDF, type: 'application/pdf', name: 'cert.pdf' })
+      expect([incident.status, permit.status, asset.status]).toEqual([201, 201, 201])
+
+      const incidentFile = ((await incident.json()) as { attachments: { id: string }[] }).attachments[0].id
+      const permitFile = ((await permit.json()) as { rows: { id: string }[] }).rows[0].id
+      const assetBody = (await asset.json()) as { rows?: { id: string }[]; documents?: { id: string }[] }
+      const assetFile = (assetBody.rows ?? assetBody.documents ?? [])[0]?.id
+      // Asserted rather than skipped-if-absent. The first version of this test tolerated a
+      // missing id and silently covered two routes instead of three, which is how a gap
+      // hides inside a passing test.
+      expect(assetFile, 'asset document id').toBeTruthy()
+
+      const routes = [
+        `/incidents/attachments/${incidentFile}`,
+        `/permits/attachments/${permitFile}`,
+        `/assets/documents/${assetFile}`,
+      ]
+
+      for (const route of routes) {
+        const res = await fetch(`${base}${route}`, {
+          headers: { Authorization: `Bearer ${tokens.outsider}` },
+        })
+        // 403 or 404 both acceptable - what matters is that no bytes come back.
+        /*
+         * 404, and deliberately asserted rather than a loose >= 400.
+         *
+         * It is 404 because row-level security hides the row before the route's own
+         * membership check is reached - the query returns nothing, so the handler takes
+         * its "attachment not found" branch. Measured, not assumed: disabling the
+         * membership check in permitAttachments.ts changes nothing here, because the
+         * database had already refused.
+         *
+         * That is the defence working in the right order, and 404 also leaks less than
+         * 403 - it does not confirm the file exists. Pinning the code means a future
+         * change that loses RLS announces itself here as a 403 instead of passing
+         * quietly on a >= 400 that both layers satisfy.
+         *
+         * Known limit: because the database answers first, this test cannot by itself
+         * prove the application-layer check still works. That needs a service-level test
+         * running under system scope.
+         */
+        expect(res.status, `outsider GET ${route}`).toBe(404)
+        const body = Buffer.from(await res.arrayBuffer())
+        expect(body.includes(Buffer.from('%PDF')), `bytes leaked from ${route}`).toBe(false)
+      }
+
+      // The control: the same ids, for somebody who is entitled to them. A test that only
+      // proves a refusal would still pass if the route were broken for everybody.
+      for (const route of routes) {
+        const res = await fetch(`${base}${route}`, {
+          headers: { Authorization: `Bearer ${tokens.admin}` },
+        })
+        expect(res.status, `admin GET ${route}`).toBe(200)
+      }
+    })
+
+    it('refuses a download with no session at all', async () => {
+      const res = await upload(`/incidents/${incidentId}/attachments`, 'admin', { bytes: PDF, type: 'application/pdf', name: 'anon.pdf' })
+      const id = ((await res.json()) as { attachments: { id: string }[] }).attachments[0].id
+
+      const anon = await fetch(`${base}/incidents/attachments/${id}`)
+      expect(anon.status).toBe(401)
+      expect(Buffer.from(await anon.arrayBuffer()).includes(Buffer.from('%PDF'))).toBe(false)
+    })
+  })
+
   describe('suspended workspace', () => {
     it('stops its people signing in, and lets them back when lifted', async () => {
       const email = `${PREFIX}-employee-${tag}@itest.local`

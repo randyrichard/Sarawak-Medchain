@@ -186,12 +186,34 @@ assetDocumentsRouter.post('/:assetId/documents', (req, res, next) => {
 
 /** Download. Authorisation is re-checked, so a stored name alone grants nothing. */
 assetDocumentsRouter.get('/documents/:documentId', asyncRoute(async (req, res) => {
+  /*
+   * The parent is fetched separately, not with `include`.
+   *
+   * AssetDocument carries no companyId, so row-level security does not filter it - but
+   * Asset does, and the relation is declared required. Including it for a row
+   * belonging to another tenant therefore made Prisma throw inside the query itself
+   * ("Field asset is required to return data, got `null` instead"), and the request
+   * came back 500 instead of a refusal. No bytes ever leaked, but an unhandled error on
+   * an authorisation path is the wrong failure: it pages somebody, it buries real faults,
+   * and a 500 is a worse answer than a 404 to give an attacker probing ids.
+   *
+   * Two queries instead. The second is itself subject to row-level security, so another
+   * tenant's asset simply is not there, and the answer is a clean 404 - which also
+   * declines to confirm the file exists. The membership check below then still runs for
+   * the case the database cannot see: it is the backstop if RLS is ever lost.
+   */
   const doc = await prisma.assetDocument.findUnique({
     where: { id: req.params.documentId },
-    include: { asset: { select: { companyId: true } } },
   })
   if (!doc) throw new EquipmentError('not_found', 'Document not found.', 404)
-  if (!callerOf(req).roles.some((r) => r.companyId === doc.asset.companyId)) {
+
+  const parent = await prisma.asset.findFirst({
+    where: { id: doc.assetId },
+    select: { companyId: true },
+  })
+  if (!parent) throw new EquipmentError('not_found', 'Document not found.', 404)
+
+  if (!callerOf(req).roles.some((r) => r.companyId === parent.companyId)) {
     throw new EquipmentError('forbidden', 'You do not have access to this workspace.', 403)
   }
   if (!doc.storedName) {
