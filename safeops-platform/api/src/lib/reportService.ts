@@ -79,8 +79,15 @@ export interface ReportColumn { key: string; label: string; width: number }
 
 /** What a built report contains, before it becomes a PDF. */
 export interface ReportData {
-  /** A scheduled report type, or the one-incident summary, which is never scheduled. */
-  type: ReportType | 'incident_summary'
+  /**
+   * A scheduled report type, or one of the documents that are only ever produced on demand.
+   *
+   * `incident_summary` and `audit_pack` are not ReportType values because they are not
+   * schedulable: one is about a single incident, the other is an evidence pack somebody
+   * exports for an audit that is happening. Keeping them out of the Prisma enum is what
+   * stops them appearing in the schedule picker.
+   */
+  type: ReportType | 'incident_summary' | 'audit_pack'
   title: string
   companyName: string
   siteName: string | null

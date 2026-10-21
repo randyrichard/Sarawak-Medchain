@@ -4,6 +4,7 @@ import { join, resolve } from 'node:path'
 import { prisma } from '../lib/prisma.js'
 import { env } from '../env.js'
 import { ReportError, ReportService, REPORT_TYPE_LABEL } from '../lib/reportService.js'
+import { AuditPackService } from '../lib/auditPack.js'
 import { renderReportPdf } from '../lib/reportPdf.js'
 import { requireAuth } from '../http/requireAuth.js'
 import { emailConfiguration } from '../lib/email/index.js'
@@ -18,6 +19,7 @@ import { asyncRoute } from '../http/asyncRoute.js'
  * happens to read "schedules".
  */
 const svc = new ReportService(prisma)
+const auditPack = new AuditPackService(prisma)
 export const reportsRouter = Router()
 
 reportsRouter.use(requireAuth)
@@ -88,6 +90,77 @@ reportsRouter.get('/preview.pdf', asyncRoute(async (req, res) => {
   const { companyId, type, ...opts } = parsed.data
   const data = await svc.preview(callerOf(req), companyId, type, opts)
   const pdf = await renderReportPdf(data)
+
+  res.setHeader('Content-Type', 'application/pdf')
+  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(pdf.fileName)}"`)
+  res.setHeader('X-Content-Type-Options', 'nosniff')
+  res.send(pdf.bytes)
+}))
+
+// ── Contractor HSE evidence pack ─────────────────────────────────────────────
+//
+// An audit pack is an on-demand document, not a schedulable report: somebody exports it
+// because an audit is happening this week. So it sits beside the preview routes rather than
+// in the schedule machinery, and its type never reaches the Prisma ReportType enum.
+
+const auditPackQuery = z.object({
+  companyId: z.string().min(1),
+  siteId: z.string().max(120).optional(),
+  /*
+   * Both ends required, and no default.
+   *
+   * A pack silently covering "the last 30 days" would be a document whose period depends on
+   * the day it was exported - which is the one property an audit record must not have. The
+   * caller states the period, and the period is printed on the cover.
+   */
+  from: z.string().datetime(),
+  to: z.string().datetime(),
+})
+
+/** The pack's figures, for the screen that offers the export. */
+reportsRouter.get('/audit-pack', asyncRoute(async (req, res) => {
+  const parsed = auditPackQuery.safeParse(req.query)
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'validation',
+      message: 'An audit pack needs a workspace and a period (from and to).',
+    })
+  }
+  const { companyId, siteId, from, to } = parsed.data
+  const data = await auditPack.build(callerOf(req), companyId, {
+    siteId: siteId ?? null, from: new Date(from), to: new Date(to),
+  })
+  res.json({
+    ...data,
+    generatedAt: data.generatedAt.toISOString(),
+    periodStart: data.periodStart?.toISOString() ?? null,
+    periodEnd: data.periodEnd.toISOString(),
+  })
+}))
+
+/** The pack itself. Rendered on demand and streamed; nothing is kept on the server. */
+reportsRouter.get('/audit-pack.pdf', asyncRoute(async (req, res) => {
+  const parsed = auditPackQuery.safeParse(req.query)
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: 'validation',
+      message: 'An audit pack needs a workspace and a period (from and to).',
+    })
+  }
+  const { companyId, siteId, from, to } = parsed.data
+  const data = await auditPack.build(callerOf(req), companyId, {
+    siteId: siteId ?? null, from: new Date(from), to: new Date(to),
+  })
+  const pdf = await renderReportPdf(data)
+
+  /*
+   * Logged, which the on-screen previews are not.
+   *
+   * This document carries named people's medical expiry and the company's own compliance
+   * record, and it is built to be sent outside the company. Who exported it, and for which
+   * period, is the kind of question that gets asked months later.
+   */
+  await auditPack.logExport(callerOf(req), companyId, data.periodLabel ?? '', ctxOf(req))
 
   res.setHeader('Content-Type', 'application/pdf')
   res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(pdf.fileName)}"`)

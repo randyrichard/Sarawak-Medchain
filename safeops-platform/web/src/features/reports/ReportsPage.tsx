@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Download, Play, Plus, Pencil, Trash2, Mail, MailWarning, Printer } from 'lucide-react'
+import { Download, FileDown, Mail, MailWarning, Pencil, Play, Plus, Printer, Trash2 } from 'lucide-react'
 import {
   reportsApi,
   type ReportData, type ReportRun, type ReportSchedule, type ReportScope,
@@ -7,6 +7,7 @@ import {
 } from '@/api/reportsApi'
 import { ApiError } from '@/api/types'
 import { useOrg } from '@/features/org/OrgContext'
+import { AuditPackDialog, canExportAuditPack } from './components/AuditPackDialog'
 import { fmtDateTime } from '@/features/incidents/lib'
 import {
   Alert, Badge, Button, Card, CardBody, ErrorAlert, PageHeader, Select, Skeleton, Tabs, type TabItem,
@@ -68,6 +69,8 @@ const REPORT_CARDS: { type: ReportType; title: string; blurb: string }[] = [
 
 export function ReportsPage() {
   const { company, role, project, projects, site, sites } = useOrg()
+  // The evidence pack an auditor asks for, as opposed to the summaries this page schedules.
+  const [packOpen, setPackOpen] = useState(false)
   const [view, setView] = useUrlState<View>('tab', 'reports', VIEWS)
 
   const [preview, setPreview] = useState<ReportData | null>(null)
@@ -235,12 +238,26 @@ export function ReportsPage() {
         subtitle={mailConfigured === false
           ? 'Summaries of what is open and overdue. Make one now; once email is set up, you can also have them sent on a schedule.'
           : 'Summaries of what is open and overdue. Make one now, or have them emailed on a schedule.'}
-        right={manage && view === 'schedules'
-          ? <Button icon={<Plus size={15} />} onClick={() => setDialog({ open: true, editing: null })}>
-              New Schedule
-            </Button>
-          : undefined}
+        right={(
+          <div className="flex flex-wrap items-center gap-2">
+            {canExportAuditPack(role) && (
+              <Button
+                variant="secondary" icon={<FileDown size={15} />}
+                onClick={() => setPackOpen(true)}
+              >
+                Export Audit Pack
+              </Button>
+            )}
+            {manage && view === 'schedules' && (
+              <Button icon={<Plus size={15} />} onClick={() => setDialog({ open: true, editing: null })}>
+                New Schedule
+              </Button>
+            )}
+          </div>
+        )}
       />
+
+      <AuditPackDialog open={packOpen} onClose={() => setPackOpen(false)} />
 
       <ErrorAlert error={error} className="mb-3" onDismiss={() => setError(null)} />
       {flash && <Alert tone="success" className="mb-3" onDismiss={() => setFlash(null)}>{flash}</Alert>}

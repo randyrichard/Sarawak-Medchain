@@ -148,6 +148,19 @@ export const reportsApi = {
     return blob(`/reports/preview.pdf?${qs({ companyId, type, ...scope })}`)
   },
 
+  /**
+   * The contractor HSE evidence pack, as a PDF.
+   *
+   * Both ends of the period are required and there is no default: a pack silently covering
+   * "the last 30 days" would be a document whose period depends on the day somebody clicked
+   * Export, which is the one property an audit record must not have.
+   */
+  auditPackPdf(
+    companyId: string, period: { from: string; to: string; siteId?: string },
+  ): Promise<Blob> {
+    return blob(`/reports/audit-pack.pdf?${qs({ companyId, ...period })}`)
+  },
+
   recipients(companyId: string): Promise<ReportRecipient[]> {
     return request<{ rows: ReportRecipient[] }>(`/reports/recipients?${qs({ companyId })}`)
       .then((r) => r.rows)

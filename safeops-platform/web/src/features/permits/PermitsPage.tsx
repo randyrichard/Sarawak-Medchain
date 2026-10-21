@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { HardHat, Plus, Search } from 'lucide-react'
+import { FileDown, HardHat, Plus, Search } from 'lucide-react'
 import { api } from '@/api/client'
 import { PERMIT_TYPES, PERMIT_TYPE_LABEL, type PermitFilters, type PermitStats, type PermitType, type PermitView } from '@/api/permits'
 import { useOrg } from '@/features/org/OrgContext'
+import { AuditPackDialog, canExportAuditPack } from '@/features/reports/components/AuditPackDialog'
 import { useActor } from '@/features/incidents/lib'
 import { Button, Card, EmptyState, PageHeader, Skeleton, AttentionIcon, attentionOf, attentionStripe } from '@/components/ui'
 import { cn } from '@/lib/cn'
@@ -127,13 +128,34 @@ export function PermitsPage() {
 
   const urgent = rows?.filter((r) => r.expiringSoon || r.status === 'expired' || r.status === 'suspended') ?? []
 
+  /*
+   * The export lives here as well as on Reports because this is the screen somebody is
+   * looking at when a client's auditor asks for the permits - and the pack is scoped to
+   * whichever site this board is already filtered to.
+   */
+  const [packOpen, setPackOpen] = useState(false)
+
   return (
     <>
       <PageHeader
         title="Permits to Work"
         subtitle="Written permission for high-risk work such as hot work or entering a confined space. A permit must be approved before work starts, and closed when the area is handed back."
-        right={<Button icon={<Plus size={15} />} onClick={() => setNewOpen(true)}>Request Permit</Button>}
+        right={(
+          <div className="flex flex-wrap items-center gap-2">
+            {canExportAuditPack(role) && (
+              <Button
+                variant="secondary" icon={<FileDown size={15} />}
+                onClick={() => setPackOpen(true)}
+              >
+                Export Audit Pack
+              </Button>
+            )}
+            <Button icon={<Plus size={15} />} onClick={() => setNewOpen(true)}>Request Permit</Button>
+          </div>
+        )}
       />
+
+      <AuditPackDialog open={packOpen} onClose={() => setPackOpen(false)} />
 
       {/* Widget row — 2 up on phones, 4 across on desktop */}
       <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-4">
