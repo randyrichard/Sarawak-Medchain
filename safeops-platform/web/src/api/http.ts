@@ -203,11 +203,35 @@ export function upload<T>(
  * builds its own object URL, which also keeps a crafted file out of the app origin.
  */
 export async function blob(path: string): Promise<Blob> {
+  /*
+   * The demo has no server, so there is no file to fetch - the same guard `request` has,
+   * and it was missing here.
+   *
+   * Without it the fetch went to the static host, which answers any unknown path with
+   * index.html and a 200. `res.ok` was true, the HTML came back as a Blob, and the browser
+   * saved it under the name the caller chose: a visitor clicking "Export PDF" on the public
+   * demo was handed a file called ...pdf containing a web page, and told nothing was wrong.
+   * Every download shares this path - the tenant export, asset documents, field evidence,
+   * report PDFs - so it is fixed here rather than at one button.
+   */
+  if (offlineDemoBuild() && !isBackendConfigured()) throw notApiError()
+
   const token = getAccessToken()
   const res = await fetch(`${API_BASE_URL}${path}`, {
     credentials: 'include',
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   })
   if (!res.ok) throw new Error('Could not download that file.')
+
+  /*
+   * A 200 that is a web page is not a file, whoever sent it.
+   *
+   * The same reasoning as the JSON check in `request`: this is what a misconfigured
+   * VITE_API_BASE_URL looks like - pointed at the web app instead of the API - and saving
+   * it would produce a corrupt download rather than an error somebody can act on. No
+   * download this API serves is HTML.
+   */
+  if ((res.headers.get('content-type') ?? '').includes('text/html')) throw notApiError()
+
   return res.blob()
 }
