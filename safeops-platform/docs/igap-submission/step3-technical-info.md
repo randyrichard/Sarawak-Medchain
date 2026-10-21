@@ -193,18 +193,18 @@ a higher plan and are not functional.
 to a phone's home screen and runs without a connection once it has been opened with one.
 
 **Offline capture is limited to recording, not authorising.** With no signal the application
-records what has happened under a permit already issued: gas tests, precautions confirmed,
-isolations applied and released, toolbox talks and their acknowledgements, PPE
-acknowledgements, people signing in and out of the work area, amendments to an existing job
-safety analysis, photographs, suspension of work, and handback. Each is filed under the time
-the field recorded it, not the time it reaches the server.
+records what has happened under a permit already issued: gas test readings, precautions
+confirmed, isolations applied and released, toolbox talks and their acknowledgements, PPE
+acknowledgements, people signing in and out of the work area, job safety analysis steps
+added and amended, photographs and documents, suspension of work, and handback. Each is
+filed under the time the field recorded it, not the time it reaches the server, and each is
+sent once however many times the device retries.
 
 Issuing authority is not available offline, by design. A permit cannot be submitted,
 approved, rejected, activated, resumed or extended without a connection, because the device
 cannot verify that the permit is still live, that no conflicting work has been raised on the
 same equipment, or that the named people's certificates remain valid. The application refuses
-those steps and states the reason rather than queuing them. Adding a new row to a job safety
-analysis also requires a connection. See `docs/OFFLINE.md`.
+those steps and states the reason rather than queuing them. See `docs/OFFLINE.md`.
 
 **No predictive analytics, artificial intelligence, machine learning or equipment telemetry.**
 The platform records and organises what people enter; it does not forecast.
