@@ -79,8 +79,14 @@ function ProfilePanel({ companyId }: { companyId: string }) {
             <Select label="Timezone" value={s.timezone} onChange={(e) => set({ timezone: e.target.value })}>
               {['Asia/Kuching', 'Asia/Kuala_Lumpur', 'Asia/Singapore', 'Asia/Jakarta', 'UTC'].map((t) => <option key={t}>{t}</option>)}
             </Select>
-            <Select label="Language" value={s.language} onChange={(e) => set({ language: e.target.value })}>
-              {['English', 'Bahasa Malaysia', 'Chinese (Simplified)'].map((l) => <option key={l}>{l}</option>)}
+            {/*
+              English, and only English, because that is what every screen is in. This offered
+              Bahasa Malaysia and Chinese and saved the choice, but nothing ever read it: a
+              manager who picked Bahasa Malaysia for a site crew was told it was saved, and the
+              crew still got English. It comes back as a choice when there is a translation.
+            */}
+            <Select label="Language" value="English" disabled hint="SafeChain is in English only for now.">
+              <option>English</option>
             </Select>
           </div>
           <Button icon={<Save size={14} />} loading={busy} onClick={() => void save()}>Save Changes</Button>
