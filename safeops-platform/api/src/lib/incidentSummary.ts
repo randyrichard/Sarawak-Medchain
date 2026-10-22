@@ -15,7 +15,7 @@
 import type { PrismaClient } from '@prisma/client'
 import { IncidentService } from './incidentService.js'
 import { type Caller } from '../domain/caller.js'
-import { PERSON_ROLE_LABEL } from './incidentInvestigation.js'
+import { PERSON_ROLE_LABEL, leadOf } from './incidentInvestigation.js'
 import { docDate, humanize, severityName, stageLabel, typeName } from './incidentCatalog.js'
 import type { ReportData } from './reportService.js'
 import { dateOf, todayDate } from '../domain/businessDay.js'
@@ -170,7 +170,7 @@ export class IncidentSummaryService {
             { key: 'v', label: 'Recorded', width: 405 },
           ],
           rows: [
-            { k: 'Lead investigator', v: inc.leadInvestigator || 'Not yet assigned' },
+            { k: 'Lead investigator', v: leadOf(inc) || 'Not yet assigned' },
             { k: 'Team', v: text(inc.investigationTeam) },
             { k: 'Direct cause', v: text(inc.directCause) },
             { k: 'Root cause', v: text(inc.rootCause) },
