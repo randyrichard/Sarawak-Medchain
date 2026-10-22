@@ -11,6 +11,7 @@ import { usePeople, useActor } from '../lib'
 import { ListChecks } from 'lucide-react'
 import { PeopleOptions } from '@/features/org/PeopleOptions'
 import { KEEPS_ACTION_EXTRAS } from '@/features/actions/lib'
+import { EvidenceFileField } from '@/features/actions/components/EvidenceFileField'
 import { useFormCheck } from '@/lib/useFormCheck'
 
 const statusKind = (s: IncidentAction['status']) =>
@@ -225,7 +226,15 @@ export function ActionsPanel({ incident, onUpdate }: { incident: Incident; onUpd
             placeholder="What proves this is done? Reference photos, records, sign-offs…"
           />
           {completeFor?.evidenceRequired && (
-            <p className="text-2xs text-muted">An HSE Manager verifies this evidence before the incident can close.</p>
+            <>
+              {/*
+                Asked for when the action was raised, and the server will not complete it
+                without a file. This dialog had only the note, so every investigation action
+                that wanted evidence - the default - was refused here with nowhere to add it.
+              */}
+              <EvidenceFileField actionId={completeFor.id} incidentId={incident.id} onError={setError} />
+              <p className="text-2xs text-muted">An HSE Manager verifies this evidence before the incident can close.</p>
+            </>
           )}
         </div>
       </Dialog>

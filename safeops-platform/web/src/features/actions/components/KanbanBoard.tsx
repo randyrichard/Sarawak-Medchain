@@ -6,6 +6,7 @@ import { COLUMN_OF, type CapaItem, type KanbanColumn } from '@/api/capa'
 import type { Actor } from '@/api/incidents'
 import { Alert, Avatar, Badge, Button, Dialog, Skeleton, Textarea } from '@/components/ui'
 import { ProgressLine } from './ProgressLine'
+import { EvidenceFileField } from './EvidenceFileField'
 import { canEditItem, canVerifyItem, dueLabel } from '../lib'
 import { cn } from '@/lib/cn'
 
@@ -196,6 +197,10 @@ export function KanbanBoard({
             onChange={(e) => setEvidence(e.target.value)}
             placeholder="What proves this is done? Photos, records, sign-offs…"
           />
+          {/* Dropping an evidence-required card here was refused, with nowhere to add the file. */}
+          {completeFor?.evidenceRequired && (
+            <EvidenceFileField actionId={completeFor.id} incidentId={completeFor.incidentId} onError={setError} />
+          )}
           <p className="text-2xs text-muted">The action moves to Verification — the reviewer signs off before it can close.</p>
         </div>
       </Dialog>
