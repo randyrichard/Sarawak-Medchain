@@ -976,7 +976,18 @@ export class IncidentService {
       })
     }
     if (reassigned) await enqueueEvent(this.db, saved.companyId, 'action.assigned', actionPayload(saved))
-    return saved
+    /*
+     * Answered in the register's shape: the row and the incident it belongs to. The screens
+     * put this reply in place of the row they had, and the bare row carries no incident
+     * number, so an action started from Corrective Actions lost its incident there and its
+     * evidence was sent where an incident's action may not keep it.
+     */
+    const incident = saved.incidentId
+      ? await this.db.incident.findUnique({
+        where: { id: saved.incidentId }, select: { number: true, title: true, department: true },
+      })
+      : null
+    return withIncidentRef({ ...saved, incident })
   }
 
 
