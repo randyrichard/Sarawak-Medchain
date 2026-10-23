@@ -237,6 +237,19 @@ d('Field evidence (real HTTP, real Postgres)', () => {
     expect((await res.json() as { message: string }).message).toMatch(/on the incident/)
   })
 
+  it('answers an update to an incident\'s action with its incident, so the screen still knows where its evidence goes', async () => {
+    // Corrective Actions puts this reply in place of the row it had. The bare row carried no
+    // incident number, the drawer took the action for a standalone one, and the evidence
+    // for it went to field evidence, which the test above refuses.
+    const res = await api(`/incidents/actions/${linkedActionId}`, {
+      method: 'PATCH',
+      headers: { ...as('officer'), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'in_progress' }),
+    })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toMatchObject({ id: linkedActionId, incidentId: expect.any(String), incidentNumber: 'INC-FE1' })
+  })
+
   it('is in the tenant export, files included', async () => {
     const ex = await collectTenantExport(db, CO)
     const t = ex.tables.find((x) => x.name === 'field-evidence')

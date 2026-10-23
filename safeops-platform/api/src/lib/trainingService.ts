@@ -25,6 +25,11 @@ const DAY = 86400_000
  * Reserved Counter key for sequences that must be unique across the whole deployment
  * rather than within a tenant. Not a real company id, and no company can collide with it
  * because company ids are slugs.
+ *
+ * The Counter row-level policy lets the restricted login reach exactly this id with the
+ * kind 'certificate', and nothing else under it (migration
+ * 20261022090000_global_certificate_sequence). A new global sequence, or a renamed key,
+ * needs that policy changed too, or every attempt to use it is refused in production.
  */
 const GLOBAL_SEQUENCE = '__global__'
 

@@ -324,6 +324,35 @@ d('Incident investigation — integration (real Postgres)', () => {
     expect(after.investigationStartedAt).not.toBeNull()
   })
 
+  it('takes its lead, and its start, from the move into investigation', async () => {
+    // The dialog that moves a case into investigation asks for the lead investigator. The
+    // Investigation tab kept a lead of its own, so it went on saying none had been named.
+    const i = await newIncident()
+    await incidents.advance(admin, i.id, { to: 'assessment' })
+    await incidents.advance(admin, i.id, { to: 'investigation', investigator: 'Grace Lim' })
+
+    const after = await inv.getInvestigation(admin, i.id)
+    expect(after.leadInvestigator).toBe('Grace Lim')
+    expect(after.investigationStartedAt).not.toBeNull()
+    expect(after.blockers).not.toContain('No lead investigator has been named.')
+    expect(after.blockers).not.toContain('The investigation has not been started.')
+
+    await inv.saveInvestigation(admin, i.id, { directCause: 'Guard removed.', rootCause: 'No lock-off for jams.' })
+    expect((await inv.completeInvestigation(hse, i.id)).investigationCompletedAt).not.toBeNull()
+  })
+
+  it('keeps a lead the Investigation tab already named', async () => {
+    const i = await newIncident()
+    await inv.saveInvestigation(admin, i.id, { leadInvestigator: 'Amirul Hassan' })
+    const started = (await inv.getInvestigation(admin, i.id)).investigationStartedAt
+    await incidents.advance(admin, i.id, { to: 'assessment' })
+    await incidents.advance(admin, i.id, { to: 'investigation', investigator: 'Grace Lim' })
+
+    const after = await inv.getInvestigation(admin, i.id)
+    expect(after.leadInvestigator).toBe('Amirul Hassan')
+    expect(after.investigationStartedAt).toBe(started)
+  })
+
   it('lists what is outstanding before sign-off', async () => {
     const i = await newIncident()
     const before = await inv.getInvestigation(admin, i.id)

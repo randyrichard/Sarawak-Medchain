@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
-import { AlertOctagon, AtSign, Ban, CheckCheck, PenLine, Play, Send, ShieldCheck, Undo2, X, Paperclip } from 'lucide-react'
+import { AlertOctagon, AtSign, Ban, CheckCheck, PenLine, Play, Send, ShieldCheck, Undo2, X } from 'lucide-react'
 import { api } from '@/api/client'
-import { upload } from '@/api/http'
 import { ApiError } from '@/api/types'
 import type { CapaItem } from '@/api/capa'
 import type { Actor, ActionPriority } from '@/api/incidents'
@@ -20,6 +19,7 @@ import { PeopleOptions } from '@/features/org/PeopleOptions'
 import { useOrg } from '@/features/org/OrgContext'
 import { FieldPhotos } from '@/features/evidence/FieldPhotos'
 import { AddFieldPhotos } from '@/features/evidence/AddFieldPhotos'
+import { EvidenceFileField } from './EvidenceFileField'
 
 export function ActionDrawer({
   item, actor, readOnly, onClose, onChanged,
@@ -39,9 +39,6 @@ export function ActionDrawer({
   const [cancelOpen, setCancelOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [evidence, setEvidence] = useState('')
-  /** Files attached against this action during this completion. */
-  const [uploaded, setUploaded] = useState<string[]>([])
-  const [uploadPct, setUploadPct] = useState<number | null>(null)
   const [photoKey, setPhotoKey] = useState(0)
   const [reason, setReason] = useState('')
   const [comment, setComment] = useState('')
@@ -96,35 +93,6 @@ export function ActionDrawer({
     if (ok) {
       setComment('')
       setMentions([])
-    }
-  }
-
-  /**
-   * Attach a file as evidence for this action.
-   *
-   * Posts to the incident's own attachment route with the action id, so there is one
-   * upload contract in the codebase rather than a second one for corrective actions.
-   */
-  const sendEvidence = async (file: File) => {
-    setError(null)
-    setUploadPct(0)
-    try {
-      const form = new FormData()
-      form.append('files', file)
-      // An incident's action keeps its files with the incident; any other action keeps them
-      // as field evidence. This used to stop here for an action with no incident, so one
-      // marked "evidence required" could never be completed.
-      if (item.incidentId) form.append('actionId', item.id)
-      await upload<unknown>(
-        item.incidentId ? `/incidents/${item.incidentId}/attachments` : `/evidence/actions/${item.id}`,
-        form, setUploadPct,
-      )
-      setPhotoKey((k) => k + 1)
-      setUploaded((u) => [...u, file.name])
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Upload failed.')
-    } finally {
-      setUploadPct(null)
     }
   }
 
@@ -385,55 +353,10 @@ export function ActionDrawer({
             placeholder="What proves this is done? Photos, records, sign-offs…"
           />
 
-          {/*
-            A file, not just a note, where evidence was demanded when the action was raised.
-            The server refuses the completion without one, so the operator has to be able to
-            supply it here - a rule that can only be satisfied through the API is a dead end
-            at the desk. Same upload route, allow-list and progress as incident evidence.
-          */}
+          {/* A file, not just a note, where evidence was demanded when the action was raised. */}
           {item.evidenceRequired && (
-            <div>
-              <p className="mb-1 text-xs font-medium text-ink">
-                Evidence file <span className="text-critical">*</span>
-              </p>
-              {uploaded.length > 0 ? (
-                <ul className="mb-1.5 space-y-1">
-                  {uploaded.map((f) => (
-                    <li key={f} className="flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-2xs text-ink">
-                      <Paperclip size={11} className="text-muted" /> {f}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-
-              {uploadPct === null ? (
-                <label className="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-dashed px-3 py-3 text-2xs text-muted hover:border-accent hover:bg-accent-soft/30">
-                  <Paperclip size={12} />
-                  {uploaded.length > 0 ? 'Attach another file' : 'Attach a photo or document'}
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept="image/jpeg,image/png,image/webp,image/heic,application/pdf"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (file) void sendEvidence(file)
-                      e.target.value = ''
-                    }}
-                  />
-                </label>
-              ) : (
-                <div className="space-y-1">
-                  <p className="text-2xs text-ink">Uploading… {uploadPct}%</p>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-accent-soft">
-                    <div className="h-full bg-accent transition-all" style={{ width: `${uploadPct}%` }} />
-                  </div>
-                </div>
-              )}
-              <p className="mt-1 text-2xs text-muted">
-                JPEG, PNG, WebP, HEIC or PDF, up to 10 MB. The server will not accept the
-                completion until a file is attached.
-              </p>
-            </div>
+            <EvidenceFileField actionId={item.id} incidentId={item.incidentId} onError={setError}
+              onUploaded={() => setPhotoKey((k) => k + 1)} />
           )}
         </div>
       </Dialog>

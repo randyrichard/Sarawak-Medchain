@@ -90,6 +90,16 @@ export function completionBlockers(f: InvestigationFacts): string[] {
   return out
 }
 
+/**
+ * Who leads the investigation: the lead named on the Investigation tab, else the
+ * investigator assigned when the case moved into investigation - the dialog that assigns
+ * them calls them the lead. The reports already read it this way. A case that moved into
+ * investigation before that move filled in the lead as well has only the investigator,
+ * and is not told it has no lead.
+ */
+export const leadOf = (inc: { leadInvestigator: string | null; investigator: string | null }) =>
+  inc.leadInvestigator || inc.investigator
+
 export class InvestigationService {
   constructor(private db: PrismaClient) {}
 
@@ -537,7 +547,7 @@ export class InvestigationService {
     ])
 
     return {
-      leadInvestigator: inc.leadInvestigator,
+      leadInvestigator: leadOf(inc),
       investigationTeam: inc.investigationTeam,
       investigationStartedAt: inc.investigationStartedAt?.toISOString() ?? null,
       investigationCompletedAt: inc.investigationCompletedAt?.toISOString() ?? null,
@@ -551,7 +561,7 @@ export class InvestigationService {
       mandatory: MANDATORY_INVESTIGATION.includes(inc.severity),
       blockers: completionBlockers({
         severity: inc.severity,
-        leadInvestigator: inc.leadInvestigator,
+        leadInvestigator: leadOf(inc),
         investigationStartedAt: inc.investigationStartedAt,
         directCause: inc.directCause,
         rootCause: inc.rootCause,
@@ -634,7 +644,7 @@ export class InvestigationService {
     ])
     const blockers = completionBlockers({
       severity: inc.severity,
-      leadInvestigator: inc.leadInvestigator,
+      leadInvestigator: leadOf(inc),
       investigationStartedAt: inc.investigationStartedAt,
       directCause: inc.directCause,
       rootCause: inc.rootCause,

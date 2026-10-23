@@ -84,7 +84,7 @@ interface ServerAction {
   version: number
   createdAt: string
   notes?: { id: string; body: string; author: string; mentions: string[]; createdAt: string }[]
-  /** On register rows only: the parent incident, when there is one. */
+  /** On register rows and an update's reply: the parent incident, when there is one. */
   incidentNumber?: string | null
   incidentTitle?: string | null
   department?: string
@@ -129,6 +129,25 @@ function toAction(a: ServerAction): IncidentAction {
     notes: (a.notes ?? []).map((n) => ({
       id: n.id, author: n.author, at: n.createdAt, text: n.body, mentions: n.mentions,
     })),
+  }
+}
+
+/**
+ * An action as the company-wide register shows it. The register is not inside an incident,
+ * so each action carries where it belongs; `toAction`, the incident-scoped shape, has no room
+ * for that. Without it every row would land with no site, and the site filter would match
+ * nothing.
+ */
+function toRegisterAction(r: ServerAction) {
+  return {
+    ...toAction(r),
+    companyId: r.companyId,
+    siteId: r.siteId,
+    incidentId: r.incidentId,
+    incidentNumber: r.incidentNumber ?? undefined,
+    incidentTitle: r.incidentTitle ?? undefined,
+    department: r.department ?? '',
+    source: r.source,
   }
 }
 
@@ -319,11 +338,17 @@ export const incidentsApi = {
     }))
   },
 
+  /**
+   * In the register's shape, as `listActions` gives it. Corrective Actions puts this reply in
+   * place of the row it had; as the bare incident-scoped shape it lost the incident, so the
+   * drawer took an investigation's action for a standalone one the moment it was started and
+   * sent its evidence where the server refuses it.
+   */
   async updateAction(actionId: string, patch: {
     status?: IncidentAction['status']; evidenceNote?: string; dueDate?: string; expectedVersion?: number
     owner?: string; priority?: IncidentAction['priority']; detail?: string
-  }): Promise<IncidentAction> {
-    return toAction(await request<ServerAction>(`/incidents/actions/${actionId}`, {
+  }) {
+    return toRegisterAction(await request<ServerAction>(`/incidents/actions/${actionId}`, {
       method: 'PATCH',
       body: JSON.stringify({
         ...patch,
@@ -347,22 +372,7 @@ export const incidentsApi = {
     overdue?: boolean; source?: string
   } = {}) {
     const data = await request<Page<ServerAction>>(`/incidents/actions/list?${qs({ companyId, ...opts })}`)
-    // The register is company-wide, so an action has to carry where it belongs. `toAction`
-    // returns the incident-scoped shape, which has no room for it — every row would land
-    // in the list with no site, and the site filter would match nothing.
-    return {
-      ...data,
-      rows: data.rows.map((r) => ({
-        ...toAction(r),
-        companyId: r.companyId,
-        siteId: r.siteId,
-        incidentId: r.incidentId,
-        incidentNumber: r.incidentNumber ?? undefined,
-        incidentTitle: r.incidentTitle ?? undefined,
-        department: r.department ?? '',
-        source: r.source,
-      })),
-    }
+    return { ...data, rows: data.rows.map(toRegisterAction) }
   },
 
   async actionAnalytics(companyId: string) {

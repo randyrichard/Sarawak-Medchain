@@ -601,6 +601,19 @@ export class IncidentService {
           stage: payload.to as never,
           version: { increment: 1 },
           ...(payload.investigator ? { investigator: payload.investigator } : {}),
+          /*
+           * The person this move assigns is the lead investigator - the dialog asks for
+           * exactly that - so the investigation is told too, and its clock starts now. It
+           * kept a lead of its own that nothing filled in: the case header named the lead
+           * while its Investigation tab said no lead had been named, and refused the
+           * sign-off for it. A lead already named there is kept.
+           */
+          ...(payload.to === 'investigation'
+            ? {
+                ...(current.leadInvestigator ? {} : { leadInvestigator: payload.investigator ?? current.investigator }),
+                ...(current.investigationStartedAt ? {} : { investigationStartedAt: new Date() }),
+              }
+            : {}),
           ...(payload.findings ? { findings: payload.findings } : {}),
           ...(payload.riskRating ? { riskRating: payload.riskRating } : {}),
           ...(payload.potentialSeverity
@@ -976,7 +989,18 @@ export class IncidentService {
       })
     }
     if (reassigned) await enqueueEvent(this.db, saved.companyId, 'action.assigned', actionPayload(saved))
-    return saved
+    /*
+     * Answered in the register's shape: the row and the incident it belongs to. The screens
+     * put this reply in place of the row they had, and the bare row carries no incident
+     * number, so an action started from Corrective Actions lost its incident there and its
+     * evidence was sent where an incident's action may not keep it.
+     */
+    const incident = saved.incidentId
+      ? await this.db.incident.findUnique({
+        where: { id: saved.incidentId }, select: { number: true, title: true, department: true },
+      })
+      : null
+    return withIncidentRef({ ...saved, incident })
   }
 
 
