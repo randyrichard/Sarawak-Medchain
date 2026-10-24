@@ -118,8 +118,10 @@ const createBody = z.object({
    *
    * Optional: reports sent straight from the form carry none, and nothing about the existing
    * path changes.
+   *
+   * `guid` keeps the shape zod 3's `uuid` accepted (see the same field in routes/v1.ts).
    */
-  clientRef: z.string().uuid().optional(),
+  clientRef: z.guid().optional(),
 })
 
 incidentsRouter.post('/', asyncRoute(async (req, res) => {

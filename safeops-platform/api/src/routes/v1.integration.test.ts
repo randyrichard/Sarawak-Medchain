@@ -183,6 +183,21 @@ d('The /v1 integration API (real Postgres, real HTTP)', () => {
     expect(created.reporter).toContain('API key')
   })
 
+  it('still accepts the retry keys it accepted before the move to zod 4', async () => {
+    // zod 4's uuid() also demands the RFC version and variant bits, which zod 3's never
+    // checked. This key has neither, and a caller retrying with it must not be refused now.
+    const key = await issueKey(CO, ['create'])
+    const accepted = await call('/v1/incidents', key.secret, {
+      method: 'POST', body: JSON.stringify({ ...NEW_INCIDENT, clientRef: '11111111-2222-3333-4444-555555555555' }),
+    })
+    expect(accepted.status).toBe(201)
+
+    const malformed = await call('/v1/incidents', key.secret, {
+      method: 'POST', body: JSON.stringify({ ...NEW_INCIDENT, clientRef: 'not-a-key' }),
+    })
+    expect(malformed.status).toBe(400)
+  })
+
   // ── Tenancy ────────────────────────────────────────────────────────────────
 
   it('will not be pointed at another workspace by a query parameter', async () => {
