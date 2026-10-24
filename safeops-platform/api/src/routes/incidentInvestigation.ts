@@ -174,7 +174,7 @@ const investigationBody = z.object({
   rootCause: z.string().max(4000).optional(),
   contributingFactors: z.string().max(4000).optional(),
   recommendations: z.string().max(4000).optional(),
-  fishbone: z.record(z.array(z.string().max(500))).optional(),
+  fishbone: z.record(z.string(), z.array(z.string().max(500))).optional(),
 })
 
 incidentInvestigationRouter.put('/:id/investigation', asyncRoute(async (req, res) => {

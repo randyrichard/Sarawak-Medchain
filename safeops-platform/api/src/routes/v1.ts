@@ -132,8 +132,11 @@ const incidentCreateBody = z.object({
    * The same idempotency key the offline browser queue uses, and for the same reason: a
    * system that retries a failed POST must be able to say "this is that one again". A UUID
    * because it becomes half of a unique index and arrives from a caller.
+   *
+   * `guid`, not `uuid`: zod 4's `uuid` also demands the RFC version and variant bits, which
+   * zod 3 never checked. A caller's key that was accepted before must still be accepted.
    */
-  clientRef: z.string().uuid().optional(),
+  clientRef: z.guid().optional(),
 })
 
 v1Router.post('/incidents', asyncRoute(async (req, res) => {
