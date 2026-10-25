@@ -310,6 +310,11 @@ export class EmployeeService {
   async create(caller: Caller, companyId: string, input: {
     name: string
     siteId: string
+    /**
+     * The company's own staff number, when the person arrives from an existing register
+     * (the CSV import). Kept so a re-import recognises them. Absent, one is issued: EMP-####.
+     */
+    employeeNo?: string
     position?: string
     department?: string
     email?: string
@@ -337,18 +342,30 @@ export class EmployeeService {
       }
     }
 
+    const ownNo = input.employeeNo?.trim()
+    if (ownNo !== undefined && ownNo !== '') {
+      if (ownNo.length > 40) throw new EmployeeError('validation', 'An employee number is at most 40 characters.')
+      // EMP-#### is the series SafeChain issues from its counter; one taken by hand would be
+      // issued again to the next person added, and refused by the database then.
+      if (/^emp-\d+$/i.test(ownNo)) {
+        throw new EmployeeError('validation', `${ownNo} is a SafeChain-issued number. Leave Employee No empty to have one issued, or use your own numbering.`)
+      }
+      const taken = await this.db.employee.findFirst({ where: { companyId, employeeNo: ownNo }, select: { name: true } })
+      if (taken) throw new EmployeeError('validation', `Employee number ${ownNo} already belongs to ${taken.name}.`)
+    }
+
     const created = await this.db.$transaction(async (tx) => {
-      const counter = await tx.counter.upsert({
+      const employeeNo = ownNo || `EMP-${(await tx.counter.upsert({
         where: { companyId_kind: { companyId, kind: 'employee' } },
         update: { next: { increment: 1 } },
         create: { companyId, kind: 'employee', next: 1001 },
         select: { next: true },
-      })
+      })).next}`
       return tx.employee.create({
         data: {
           companyId,
           siteId: input.siteId,
-          employeeNo: `EMP-${counter.next}`,
+          employeeNo,
           name,
           position: input.position?.trim() ?? '',
           department: input.department?.trim() ?? '',

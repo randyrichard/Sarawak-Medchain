@@ -83,6 +83,7 @@ export const NAV: NavItem[] = [
   { to: '/contractors', label: 'Contractors', capability: 'workforce:view', group: 'People' },
   { to: '/organization', label: 'Organisation', capability: 'org:view', group: 'Workspace' },
   { to: '/admin', label: 'Administration', capability: 'settings:manage', group: 'Workspace' },
+  { to: '/import', label: 'Import Data', capability: 'registers:import', group: 'Workspace' },
 ]
 
 /**

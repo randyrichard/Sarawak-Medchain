@@ -40,6 +40,7 @@ export type Capability =
   | 'org:manage'              // edit companies/sites/departments/users
   | 'audit-log:view'          // security & change history
   | 'settings:manage'         // tenant configuration
+  | 'registers:import'        // loading the employee, contractor and equipment registers from CSV
 
 /**
  * What each role is shown, kept deliberately close to what the API will actually let it
@@ -64,7 +65,7 @@ const MATRIX: Record<Role, Capability[]> = {
     'incidents:view', 'permits:view', 'equipment:view', 'visitors:view', 'toolbox:view',
     'training:view', 'workforce:view', 'reports:view',
     'incidents:manage', 'actions:view', 'actions:manage', 'analytics:view', 'compliance:manage',
-    'org:view', 'org:manage', 'audit-log:view', 'settings:manage',
+    'org:view', 'org:manage', 'audit-log:view', 'settings:manage', 'registers:import',
   ],
 
   hse_manager: [
@@ -73,6 +74,9 @@ const MATRIX: Record<Role, Capability[]> = {
     'training:view', 'workforce:view', 'reports:view',
     'incidents:manage', 'actions:view', 'actions:manage', 'analytics:view', 'compliance:manage',
     'org:view', 'audit-log:view',
+    // The registers are theirs to keep (the server's WRITE_ROLES for employees and contractors),
+    // so loading them from the company's spreadsheets is too.
+    'registers:import',
   ],
 
   /*
@@ -167,4 +171,5 @@ export const CAPABILITY_LABEL: Record<Capability, string> = {
   'org:manage': 'Manage organisation',
   'audit-log:view': 'View audit log',
   'settings:manage': 'Manage settings',
+  'registers:import': 'Import registers from a spreadsheet',
 }

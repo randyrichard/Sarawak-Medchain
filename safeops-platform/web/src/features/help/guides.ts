@@ -72,6 +72,7 @@ export const ROLE_GUIDE: Record<Role, RoleGuide> = {
     tasks: [
       { title: 'Add Your Sites', detail: 'Plants, yards and offices. Everything else is filed against a site.', to: '/admin?s=sites', capability: 'settings:manage' },
       { title: 'Invite Your Team', detail: 'Give each person the role that matches their job. Their menu follows from it.', to: '/admin?s=invitations', capability: 'settings:manage' },
+      { title: 'Import Your Registers', detail: 'Employees, contractors and equipment, from the spreadsheets you already keep.', to: '/import', capability: 'registers:import' },
       { title: 'Check the Security Settings', detail: 'Password rules, two-step sign-in and how long a session lasts.', to: '/admin?s=security', capability: 'settings:manage' },
       { title: 'Start Each Day on Home', detail: 'What needs attention, most urgent first.', to: '/', capability: 'dashboard:view' },
     ],

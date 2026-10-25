@@ -124,6 +124,12 @@ const PAIRS: { capability: Capability; file: string; constant: string; what: str
     constant: 'VIEW_ROLES',
     what: 'reading the daily toolbox meeting register',
   },
+  {
+    capability: 'registers:import',
+    file: 'dataImport',
+    constant: 'IMPORT_ROLES',
+    what: 'importing registers from a CSV file',
+  },
 ]
 
 d('the navigation and the API agree about roles', () => {
