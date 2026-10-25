@@ -10,6 +10,7 @@ import { blob, request, qs } from './http'
 
 export type ReportType =
   | 'overdue_actions' | 'open_investigations' | 'monthly_summary' | 'weekly_actions' | 'site_activity'
+  | 'dosh_annual'
 export type ReportFrequency = 'daily' | 'weekly' | 'monthly'
 
 export interface ReportColumn { key: string; label: string; width: number }
@@ -54,7 +55,10 @@ export interface ReportSection {
 export interface ReportScope {
   siteId?: string
   projectId?: string
-  /** 1-12 with its year. Both or neither; absent means the last complete month. */
+  /**
+   * 1-12 with its year. Both or neither; absent means the last complete month. The DOSH annual
+   * summary takes the year alone, and without one covers this year so far.
+   */
   month?: number
   year?: number
   /** site_activity: today, or the last seven days. */

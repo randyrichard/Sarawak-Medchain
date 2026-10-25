@@ -5,6 +5,7 @@ import { docDate, humanize, isInjury, isLostTime, isNearMiss, severityName, stag
 import { PERMIT_TYPE_LABEL } from './permitCatalog.js'
 import { renderReportPdf, readStoredReport, storeReportPdf } from './reportPdf.js'
 import { buildSiteActivity, buildWeeklyActions, type ActivityPeriod } from './reportSummaries.js'
+import { buildDoshAnnual } from './reportDoshAnnual.js'
 import {
   deliverReport, mailProviderConfigured, sendDeliveryPayload,
   type DeliveryPayload, type DeliveryResult,
@@ -51,6 +52,7 @@ export const REPORT_TYPE_LABEL: Record<ReportType, string> = {
   monthly_summary: 'Monthly safety summary',
   weekly_actions: 'Weekly corrective actions',
   site_activity: 'Site activity summary',
+  dosh_annual: 'DOSH annual summary (JKKP 8 figures)',
 }
 
 /**
@@ -293,6 +295,8 @@ export class ReportService {
       case 'site_activity':
         return buildSiteActivity(this.db, scope, opts.period ?? 'week',
           await this.periodTimezone(companyId, siteId))
+      case 'dosh_annual':
+        return buildDoshAnnual(this.db, scope, await this.periodTimezone(companyId, siteId))
       default:
         return this.buildOpenInvestigations(companyId, companyName, siteId, siteName)
     }

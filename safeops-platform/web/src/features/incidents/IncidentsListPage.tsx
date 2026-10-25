@@ -14,6 +14,7 @@ import { daysOpen, INCIDENT_TYPE_GROUPS, severityKind, severityWeight, STAGE_COL
 import { cn } from '@/lib/cn'
 import { useUrlState } from '@/lib/useUrlState'
 import { NoMatches } from '@/features/org/NoMatches'
+import { DoshOutstandingBanner } from './components/DoshOutstandingBanner'
 
 /*
  * Status filters, split by how often they are wanted - Hick's law.
@@ -199,6 +200,8 @@ export function IncidentsListPage() {
           </LinkButton>
         }
       />
+
+      {company && <DoshOutstandingBanner companyId={company.id} />}
 
       {/* Search + dimension filters */}
       <div className="mb-3 flex flex-wrap items-center gap-2">

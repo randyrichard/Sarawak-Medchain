@@ -440,6 +440,20 @@ enum IncidentType {
 /// and rewriting history to fit a new scale would be a lie. The appended values are the
 /// classification an HSE department actually reports on, because "lost time injury" is a
 /// regulatory category and "Serious" is an opinion.
+/// Why an incident is, or is not, notifiable to DOSH (NADOPOD Regulations 2004).
+enum DoshCategory {
+  death
+  /// First Schedule: a fracture, an amputation, loss of sight or hearing, loss of consciousness.
+  serious_bodily_injury
+  /// Kept from their normal work for more than four calendar days.
+  over_four_days
+  /// Second Schedule. Notifiable even when nobody is hurt.
+  dangerous_occurrence
+  occupational_poisoning
+  occupational_disease
+  not_notifiable
+}
+
 enum IncidentSeverity {
   Minor
   Moderate
@@ -593,6 +607,27 @@ model Incident {
   rcaApprovedBy String?
   rcaApprovedAt DateTime?
 
+  /// Whether DOSH must be told, under the NADOPOD Regulations 2004 - a person's decision,
+  /// recorded with who made it. Null until somebody decides. See domain/doshNotification.ts.
+  doshCategory          DoshCategory?
+  /// Which item it was: the First Schedule injury, or the Second Schedule occurrence.
+  doshDetail            String?
+  /// Why DOSH need not be told, when that was the decision.
+  doshNotRequiredReason String?
+  doshDecidedBy         String?
+  doshDecidedAt         DateTime?
+  /// The day the seven days count from, when it is not the day of the event: the date the
+  /// employer learned of an occupational poisoning or disease diagnosis.
+  doshClockFrom         DateTime?
+  /// The immediate notice, by the quickest means, for a death, serious bodily injury or
+  /// dangerous occurrence.
+  doshInformedAt        DateTime?
+  doshInformedHow       String?
+  doshOffice            String?
+  /// The written report (JKKP 6 or JKKP 7) and DOSH's reference for it.
+  doshSubmittedAt       DateTime?
+  doshReference         String?
+
   occurredAt DateTime
   reportedAt DateTime  @default(now())
   closedAt   DateTime?
@@ -621,6 +656,7 @@ model Incident {
   @@index([companyId, severityRank])
   @@index([companyId, occurredAt])
   @@index([companyId, type])
+  @@index([companyId, doshCategory])
   @@index([reportedAt])
 }
 
@@ -2985,6 +3021,9 @@ enum ReportType {
   weekly_actions
   /// What happened on site in the last day or week: incidents, briefings, permits, actions.
   site_activity
+  /// A calendar year's DOSH figures: notifiable events by category, days lost, man-hours -
+  /// what the annual JKKP 8 summary is filled in from.
+  dosh_annual
 }
 
 enum ReportFrequency {

@@ -20,6 +20,7 @@ import { fieldEvidenceRouter } from './routes/fieldEvidence.js'
 import { visitorsRouter } from './routes/visitors.js'
 import { reportsRouter } from './routes/reports.js'
 import { incidentInvestigationRouter } from './routes/incidentInvestigation.js'
+import { doshNotificationRouter } from './routes/doshNotification.js'
 import { auditsRouter } from './routes/audits.js'
 import { trainingRouter } from './routes/training.js'
 import { adminRouter } from './routes/admin.js'
@@ -264,6 +265,7 @@ export function createApp() {
   app.use('/auth', authRouter)
   // Mounted first: its literal paths would otherwise be captured by /incidents/:id
   app.use('/incidents', incidentInvestigationRouter)
+  app.use('/incidents', doshNotificationRouter)
   app.use('/incidents', incidentExtrasRouter)
   app.use('/incidents', incidentsRouter)
   app.use('/permits', permitAttachmentsRouter)

@@ -15,6 +15,7 @@ import { fmtDate, fmtDateTime, severityKind, STAGE_COLOR, useActor } from './lib
 import { canRecordInvestigation } from './permissions'
 import { StageStepper } from './components/StageStepper'
 import { NextStepCard } from './components/NextStepCard'
+import { DoshCard } from './components/DoshCard'
 import { RcaPanel } from './components/RcaPanel'
 import { ActionsPanel } from './components/ActionsPanel'
 import { CommentsPanel } from './components/CommentsPanel'
@@ -329,6 +330,7 @@ export function IncidentDetailPage() {
         */}
         <div className="space-y-4 xl:sticky xl:top-4">
           <NextStepCard incident={incident} onUpdate={setIncident} />
+          <DoshCard incidentId={incident.id} onChanged={() => void api.getIncident(incident.id).then(setIncident).catch(() => {})} />
 
           <Card>
             <CardHeader title="Case" />

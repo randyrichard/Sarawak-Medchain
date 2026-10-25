@@ -60,6 +60,13 @@ const REPORT_CARDS: { type: ReportType; title: string; blurb: string }[] = [
       + 'permits, inspections and actions — for a manager or a shift handover.',
   },
   {
+    type: 'dosh_annual',
+    title: 'DOSH Annual Summary (JKKP 8)',
+    blurb: 'A calendar year of notifiable incidents by category, the days lost and the recorded man-hours: '
+      + 'the figures the annual JKKP 8 is filled in from. Counted from the DOSH decision on each incident, '
+      + 'and incidents nobody has decided on are listed by name.',
+  },
+  {
     type: 'monthly_summary',
     title: 'Monthly Safety Summary',
     blurb: 'The month just finished: what was reported, what it cost, and how many actions closed. '
@@ -84,6 +91,8 @@ export function ReportsPage() {
    */
   const [scope, setScope] = useState<ReportScope>({})
   const [activityPeriod, setActivityPeriod] = useState<'day' | 'week'>('day')
+  /** The DOSH annual summary's year: this one, so far, until somebody picks last year's. */
+  const [doshYear, setDoshYear] = useState(() => new Date().getFullYear())
 
   /*
    * Seeded from the header pickers, once.
@@ -148,6 +157,7 @@ export function ReportsPage() {
     type === 'monthly_summary' ? scope
       : type === 'weekly_actions' ? { siteId: scope.siteId, projectId: scope.projectId }
         : type === 'site_activity' ? { siteId: scope.siteId, projectId: scope.projectId, period: activityPeriod }
+          : type === 'dosh_annual' ? { siteId: scope.siteId, projectId: scope.projectId, year: doshYear }
           : {}
 
   const openPreview = async (type: ReportType) => {
@@ -309,6 +319,15 @@ export function ReportsPage() {
                           {p === 'day' ? 'Today' : 'Last 7 Days'}
                         </button>
                       ))}
+                    </div>
+                  )}
+                  {c.type === 'dosh_annual' && (
+                    <div className="mt-3 max-w-[10rem]">
+                      <Select label="Year" value={String(doshYear)} onChange={(e) => setDoshYear(Number(e.target.value))}>
+                        {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                          <option key={y} value={y}>{y === new Date().getFullYear() ? `${y} (so far)` : y}</option>
+                        ))}
+                      </Select>
                     </div>
                   )}
                   {c.type === 'monthly_summary' && (
