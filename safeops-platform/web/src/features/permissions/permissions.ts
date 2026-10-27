@@ -41,6 +41,8 @@ export type Capability =
   | 'audit-log:view'          // security & change history
   | 'settings:manage'         // tenant configuration
   | 'registers:import'        // loading the employee, contractor and equipment registers from CSV
+  | 'risk:view'               // the HIRARC register
+  | 'risk:manage'             // assessing hazards and raising their controls
 
 /**
  * What each role is shown, kept deliberately close to what the API will actually let it
@@ -58,6 +60,7 @@ const MATRIX: Record<Role, Capability[]> = {
   ceo: [
     'dashboard:view', 'reports:submit',
     'incidents:view', 'permits:view', 'reports:view', 'toolbox:view', 'analytics:view', 'org:view',
+    'risk:view',
   ],
 
   admin: [
@@ -66,6 +69,7 @@ const MATRIX: Record<Role, Capability[]> = {
     'training:view', 'workforce:view', 'reports:view',
     'incidents:manage', 'actions:view', 'actions:manage', 'analytics:view', 'compliance:manage',
     'org:view', 'org:manage', 'audit-log:view', 'settings:manage', 'registers:import',
+    'risk:view', 'risk:manage',
   ],
 
   hse_manager: [
@@ -77,6 +81,7 @@ const MATRIX: Record<Role, Capability[]> = {
     // The registers are theirs to keep (the server's WRITE_ROLES for employees and contractors),
     // so loading them from the company's spreadsheets is too.
     'registers:import',
+    'risk:view', 'risk:manage',
   ],
 
   /*
@@ -100,6 +105,8 @@ const MATRIX: Record<Role, Capability[]> = {
      * capability only decides whether the nav entry appears.
      */
     'incidents:manage', 'actions:view', 'actions:manage', 'analytics:view', 'compliance:manage',
+    // Conducting HIRARC is the safety function's job, and the server's EDIT_ROLES say so.
+    'risk:view', 'risk:manage',
   ],
 
   /*
@@ -111,6 +118,8 @@ const MATRIX: Record<Role, Capability[]> = {
     'dashboard:view', 'reports:submit',
     'incidents:view', 'permits:view', 'visitors:view', 'equipment:view', 'toolbox:view',
     'actions:view', 'actions:manage',
+    // Reads the hazards of the work they supervise; the assessment is the safety function's.
+    'risk:view',
   ],
 
   /*
@@ -172,4 +181,6 @@ export const CAPABILITY_LABEL: Record<Capability, string> = {
   'audit-log:view': 'View audit log',
   'settings:manage': 'Manage settings',
   'registers:import': 'Import registers from a spreadsheet',
+  'risk:view': 'See the HIRARC register',
+  'risk:manage': 'Assess hazards and raise their controls',
 }

@@ -1,5 +1,5 @@
 /**
- * Reading a CSV file the way the files people actually have are written.
+ * Reading - and writing - a CSV file the way the files people actually have are written.
  *
  * The files an import receives come out of Excel, so: a byte-order mark at the start, CRLF
  * line ends, commas inside quoted cells ("Lim, Grace"), doubled quotes for a quote, and -
@@ -111,3 +111,40 @@ export function parseYesNo(raw: string): boolean | null | undefined {
   if (['no', 'n', 'false', '0', 'tidak'].includes(s)) return false
   return null
 }
+
+/**
+ * Cells Excel could execute.
+ *
+ * A description field is free text typed by whoever reported the incident — which in this
+ * product includes every employee. `=cmd|'/c calc'!A1` in that field becomes a live formula
+ * the moment an administrator opens the export, so the export would turn the lowest-privilege
+ * user in the system into code running on the highest-privilege user's machine.
+ *
+ * Prefixing with an apostrophe is the standard mitigation: Excel and LibreOffice both treat
+ * the rest as literal text and do not display the apostrophe itself. The import strips it
+ * again (see `unguardCell`), so an exported register reads back as it was.
+ */
+const RISKY_LEAD = /^[=+\-@\t\r]/
+
+/** One value as a CSV cell: guarded against formulas, and quoted where it has to be. */
+export function csvCell(value: unknown): string {
+  if (value === null || value === undefined) return ''
+
+  let text: string
+  if (value instanceof Date) text = value.toISOString()
+  else if (Array.isArray(value)) text = value.map((v) => (v === null ? '' : String(v))).join('; ')
+  else if (typeof value === 'object') text = JSON.stringify(value)
+  else text = String(value)
+
+  if (RISKY_LEAD.test(text)) text = `'${text}`
+
+  // Quote when the value contains a delimiter, a quote, a newline, or edge whitespace that
+  // a reader would otherwise silently trim.
+  if (/[",\r\n]/.test(text) || text !== text.trim()) {
+    return `"${text.replace(/"/g, '""')}"`
+  }
+  return text
+}
+
+/** A cell as written before `csvCell` guarded it: "'-5 C" reads back as "-5 C". */
+export const unguardCell = (text: string) => (/^'[=+\-@]/.test(text) ? text.slice(1) : text)

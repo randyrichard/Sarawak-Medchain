@@ -8,7 +8,7 @@ import { request, qs } from './http'
  * people fill in cannot drift apart.
  */
 
-export type ImportKind = 'employees' | 'contractors' | 'contractor_workers' | 'assets'
+export type ImportKind = 'employees' | 'contractors' | 'contractor_workers' | 'assets' | 'risk_assessments'
 
 export interface ImportColumn {
   key: string
@@ -21,7 +21,8 @@ export interface ImportColumn {
 
 export interface ImportCatalog {
   maxRows: number
-  kinds: { kind: ImportKind; label: string; columns: ImportColumn[] }[]
+  /** `noun`: the rows in a sentence, "12 added to the HIRARC register". */
+  kinds: { kind: ImportKind; label: string; noun: string; columns: ImportColumn[] }[]
 }
 
 export type RowAction = 'add' | 'skip' | 'fix'

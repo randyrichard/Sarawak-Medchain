@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client'
 import type { PrismaClient } from '@prisma/client'
+import { csvCell as cell } from './csvParse.js'
 
 /**
  * Everything one customer owns, in a form they can read without us.
@@ -26,38 +27,8 @@ import type { PrismaClient } from '@prisma/client'
  */
 
 // ─── CSV ─────────────────────────────────────────────────────────────────────
-
-/**
- * Cells Excel could execute.
- *
- * A description field is free text typed by whoever reported the incident — which in this
- * product includes every employee. `=cmd|'/c calc'!A1` in that field becomes a live formula
- * the moment an administrator opens the export, so the export would turn the lowest-privilege
- * user in the system into code running on the highest-privilege user's machine.
- *
- * Prefixing with an apostrophe is the standard mitigation: Excel and LibreOffice both treat
- * the rest as literal text and do not display the apostrophe itself.
- */
-const RISKY_LEAD = /^[=+\-@\t\r]/
-
-function cell(value: unknown): string {
-  if (value === null || value === undefined) return ''
-
-  let text: string
-  if (value instanceof Date) text = value.toISOString()
-  else if (Array.isArray(value)) text = value.map((v) => (v === null ? '' : String(v))).join('; ')
-  else if (typeof value === 'object') text = JSON.stringify(value)
-  else text = String(value)
-
-  if (RISKY_LEAD.test(text)) text = `'${text}`
-
-  // Quote when the value contains a delimiter, a quote, a newline, or edge whitespace that
-  // a reader would otherwise silently trim.
-  if (/[",\r\n]/.test(text) || text !== text.trim()) {
-    return `"${text.replace(/"/g, '""')}"`
-  }
-  return text
-}
+// Every value goes through csvCell (csvParse.ts), which stops free text typed by any member
+// from running as a formula when an administrator opens the export in Excel.
 
 /**
  * Rows to CSV, with a UTF-8 BOM.

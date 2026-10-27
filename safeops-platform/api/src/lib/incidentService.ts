@@ -1019,6 +1019,8 @@ export class IncidentService {
     priority?: string
     source?: string
     evidenceRequired?: boolean
+    /** The HIRARC row whose recommended controls this action puts in place. */
+    riskAssessmentId?: string
   }) {
     this.requireRole(caller, input.companyId, MANAGE_ROLES)
     if (!input.title?.trim()) throw new IncidentError('validation', 'An action title is required.')
@@ -1033,6 +1035,12 @@ export class IncidentService {
       select: { id: true },
     })
     if (!site) throw new IncidentError('validation', 'Unknown site for this workspace.')
+    if (input.riskAssessmentId) {
+      const row = await this.db.riskAssessment.findFirst({
+        where: { id: input.riskAssessmentId, companyId: input.companyId, siteId: input.siteId }, select: { id: true },
+      })
+      if (!row) throw new IncidentError('validation', 'That risk assessment is not at this site.')
+    }
 
     const raised = await this.db.$transaction(async (tx) => {
       const counter = await tx.counter.upsert({
@@ -1055,6 +1063,7 @@ export class IncidentService {
           dueDate: due,
           priority: (input.priority ?? 'Medium') as never,
           evidenceRequired: input.evidenceRequired ?? false,
+          riskAssessmentId: input.riskAssessmentId ?? null,
           createdBy: caller.name,
         },
       })

@@ -5,11 +5,14 @@ import { EmployeeService } from './employeeService.js'
 import { ContractorService } from './contractorService.js'
 import { InspectionService } from './inspectionService.js'
 import { ASSET_CATEGORIES, CATEGORY_LABEL } from './inspectionCatalog.js'
-import { headerKey, MAX_IMPORT_ROWS, parseCsv, parseDay, parseYesNo } from './csvParse.js'
+import { RiskAssessmentService, type RiskInput } from './riskAssessmentService.js'
+import { addMonths, DEFAULT_REVIEW_MONTHS, hirarcProblem, LIKELIHOOD, SEVERITY, type RatingStep } from '../domain/hirarc.js'
+import { todayDate } from '../domain/businessDay.js'
+import { headerKey, MAX_IMPORT_ROWS, parseCsv, parseDay, parseYesNo, unguardCell } from './csvParse.js'
 
 /**
  * Loading a company's existing registers from a spreadsheet: employees, contractors and
- * their workers, and equipment.
+ * their workers, equipment, and the HIRARC register.
  *
  * A workspace starts empty, and the company already has these lists - in Excel, in a payroll
  * export, in a contractor's induction sheet. Typed in one at a time, three hundred workers
@@ -33,7 +36,7 @@ export class ImportError extends DomainError {
   }
 }
 
-export const IMPORT_KINDS = ['employees', 'contractors', 'contractor_workers', 'assets'] as const
+export const IMPORT_KINDS = ['employees', 'contractors', 'contractor_workers', 'assets', 'risk_assessments'] as const
 export type ImportKind = (typeof IMPORT_KINDS)[number]
 
 /** Who may import: creating employees and contractors already needs one of these. */
@@ -54,6 +57,25 @@ export const IMPORT_LABEL: Record<ImportKind, string> = {
   contractors: 'Contractors',
   contractor_workers: 'Contractor Workers',
   assets: 'Equipment',
+  risk_assessments: 'HIRARC Register',
+}
+
+/** The rows in a sentence: "12 added to the HIRARC register". */
+export const IMPORT_NOUN: Record<ImportKind, string> = {
+  employees: 'employees',
+  contractors: 'contractors',
+  contractor_workers: 'contractor workers',
+  assets: 'equipment',
+  risk_assessments: 'the HIRARC register',
+}
+
+/**
+ * Headers a file may carry that are worked out rather than read: SafeChain's own export
+ * has them, and a HIRARC spreadsheet always has a Risk column. Recognised, so they are not
+ * reported as unused, and recalculated from the ratings rather than trusted.
+ */
+const RECOMPUTED: Partial<Record<ImportKind, string[]>> = {
+  risk_assessments: ['Risk', 'Risk Level', 'Residual Risk', 'Risk Rating', 'Relative Risk'],
 }
 
 const DATE_HELP = 'DD/MM/YYYY or YYYY-MM-DD.'
@@ -109,6 +131,24 @@ export const IMPORT_COLUMNS: Record<ImportKind, ImportColumn[]> = {
     { key: 'requiresCalibration', header: 'Needs Calibration', required: false, help: 'Yes for instruments that must be calibrated.', example: 'No', aliases: ['Calibration'] },
     { key: 'notes', header: 'Notes', required: false, help: '', example: '' },
   ],
+  risk_assessments: [
+    { key: 'code', header: 'No', required: false, help: 'SafeChain\'s reference (HZ-####), in a file exported from here. Recognises the row if the file is imported again.', example: '', aliases: ['Ref', 'Reference', 'HZ No'] },
+    { key: 'site', header: 'Site', required: true, help: 'The site name or short code, as in SafeChain.', example: 'Bintulu' },
+    { key: 'activity', header: 'Work Activity', required: true, help: 'The activity or process.', example: 'Loading at Bay 4', aliases: ['Activity', 'Process', 'Work Activity/Process', 'Task'] },
+    { key: 'hazard', header: 'Hazard', required: true, help: '', example: 'Reversing forklift' },
+    { key: 'effect', header: 'Which Can Cause', required: true, help: 'The harm if the hazard is realised.', example: 'Struck-by injury, crushing', aliases: ['Effect', 'Consequence', 'Which Can Cause/Effect', 'Effects'] },
+    { key: 'existingControls', header: 'Existing Controls', required: false, help: '', example: 'Reversing alarm', aliases: ['Existing Risk Control', 'Existing Control', 'Current Controls'] },
+    { key: 'likelihood', header: 'Likelihood', required: true, help: '1 to 5, or its name: Inconceivable, Remote, Conceivable, Possible, Most Likely.', example: '4', aliases: ['L'] },
+    { key: 'severity', header: 'Severity', required: true, help: '1 to 5, or its name: Negligible, Minor, Serious, Fatal, Catastrophic.', example: '4', aliases: ['S'] },
+    { key: 'additionalControls', header: 'Recommended Controls', required: false, help: 'Further controls to bring the risk down.', example: 'Banksman; exclusion zone', aliases: ['Recommended Control Measures', 'Additional Controls', 'Control Measures', 'Additional Control Measures'] },
+    { key: 'owner', header: 'PIC', required: false, help: 'The person in charge of the recommended controls.', example: 'Ali Hassan', aliases: ['Person in Charge', 'Owner', 'Action By'] },
+    { key: 'controlsDue', header: 'Due Date', required: false, help: `The date for completion of the recommended controls. ${DATE_HELP}`, example: '30/11/2026', aliases: ['Date for Completion', 'Target Date'] },
+    { key: 'residualLikelihood', header: 'Residual Likelihood', required: false, help: 'Once the recommended controls are in place, 1 to 5.', example: '2' },
+    { key: 'residualSeverity', header: 'Residual Severity', required: false, help: 'Once the recommended controls are in place, 1 to 5.', example: '4' },
+    { key: 'assessedBy', header: 'Assessed By', required: false, help: 'Who carried out the assessment. You, if empty.', example: 'Grace Lim', aliases: ['Conducted By', 'Assessor'] },
+    { key: 'assessedOn', header: 'Assessed On', required: false, help: `Today, if empty. ${DATE_HELP}`, example: '20/10/2026', aliases: ['Assessment Date', 'Date of Assessment', 'Date Assessed'] },
+    { key: 'reviewDue', header: 'Next Review', required: false, help: `A year after the assessment, if empty. ${DATE_HELP}`, example: '20/10/2027', aliases: ['Review Date', 'Next Review Date'] },
+  ],
 }
 
 export type RowAction = 'add' | 'skip' | 'fix'
@@ -146,11 +186,13 @@ export class DataImportService {
   private employees: EmployeeService
   private contractors: ContractorService
   private inspections: InspectionService
+  private risks: RiskAssessmentService
 
   constructor(private db: PrismaClient) {
     this.employees = new EmployeeService(db)
     this.contractors = new ContractorService(db)
     this.inspections = new InspectionService(db)
+    this.risks = new RiskAssessmentService(db)
   }
 
   private require(caller: Caller, companyId: string) {
@@ -179,10 +221,11 @@ export class DataImportService {
       throw new ImportError('validation',
         `The file has no ${missing.map((c) => `"${c.header}"`).join(', ')} column. Download the template to see the columns.`)
     }
-    const ignoredColumns = header.filter((h, i) => h && keys[i] === null)
+    const recomputed = new Set((RECOMPUTED[kind] ?? []).map(headerKey))
+    const ignoredColumns = header.filter((h, i) => h && keys[i] === null && !recomputed.has(headerKey(h)))
     const rows = table.slice(1).map((cells, i) => {
       const row: Cells = {}
-      keys.forEach((k, j) => { if (k && cells[j] !== undefined && row[k] === undefined) row[k] = cells[j] })
+      keys.forEach((k, j) => { if (k && cells[j] !== undefined && row[k] === undefined) row[k] = unguardCell(cells[j]) })
       return { line: i + 2, cells: row }
     })
     return { rows, ignoredColumns }
@@ -414,12 +457,76 @@ export class DataImportService {
     })
   }
 
+  private async prepareRisks(companyId: string, rows: { line: number; cells: Cells }[]) {
+    const sites = await this.siteLookup(companyId)
+    const existing = await this.db.riskAssessment.findMany({
+      where: { companyId, archivedAt: null }, select: { code: true, siteId: true, activity: true, hazard: true },
+    })
+    const words = (s: string) => s.trim().replace(/\s+/g, ' ').toLowerCase()
+    const keyOf = (siteId: string, activity: string, hazard: string) => `${siteId}:${words(activity)}:${words(hazard)}`
+    const byCode = new Map(existing.map((r) => [r.code.toLowerCase(), r]))
+    const byKey = new Map(existing.map((r) => [keyOf(r.siteId, r.activity, r.hazard), r]))
+    const today = todayDate().toISOString().slice(0, 10)
+    const seen = new Map<string, number>()
+
+    return rows.map(({ line, cells }) => {
+      const hazard = cells.hazard?.trim() ?? ''
+      const activity = cells.activity?.trim() ?? ''
+      const plan = (p: Omit<ImportRow, 'line' | 'label'>) => ({ line, label: [activity, hazard].filter(Boolean).join(': ') || `Row ${line}`, ...p })
+      const site = sites.find(cells.site ?? '')
+      if (!site) return plan({ action: 'fix', message: `No site called "${cells.site ?? ''}". Sites: ${sites.names}.` })
+      const key = keyOf(site.id, activity, hazard)
+      const first = seen.get(key)
+      if (activity && hazard && first) return plan({ action: 'fix', message: `Repeats line ${first} of this file.` })
+      seen.set(key, line)
+      const match = (cells.code?.trim() && byCode.get(cells.code.trim().toLowerCase())) || (activity && hazard ? byKey.get(key) : undefined)
+      if (match) return plan({ action: 'skip', message: `Already in the register as ${match.code}.` })
+
+      const ratings: Record<string, number | null> = {}
+      for (const [k, steps, header] of [
+        ['likelihood', LIKELIHOOD, 'Likelihood'], ['severity', SEVERITY, 'Severity'],
+        ['residualLikelihood', LIKELIHOOD, 'Residual Likelihood'], ['residualSeverity', SEVERITY, 'Residual Severity'],
+      ] as const) {
+        const raw = cells[k]?.trim() ?? ''
+        const v = ratingOf(raw, steps)
+        if (v === undefined) return plan({ action: 'fix', message: `${header} "${raw}" should be 1 to 5, or one of: ${steps.map((s) => s.label).join(', ')}.` })
+        ratings[k] = v
+      }
+      if (ratings.likelihood === null) return plan({ action: 'fix', message: 'No Likelihood.' })
+      if (ratings.severity === null) return plan({ action: 'fix', message: 'No Severity.' })
+      const extra: Record<string, string | undefined> = {}
+      const bad = this.dates(cells, ['controlsDue', 'assessedOn', 'reviewDue'], extra)
+      if (bad) return plan({ action: 'fix', message: bad })
+
+      const input: RiskInput = {
+        siteId: site.id, activity, hazard, effect: cells.effect?.trim() ?? '', existingControls: cells.existingControls,
+        likelihood: ratings.likelihood, severity: ratings.severity, additionalControls: cells.additionalControls, owner: cells.owner,
+        controlsDue: extra.controlsDue ?? null, residualLikelihood: ratings.residualLikelihood, residualSeverity: ratings.residualSeverity,
+        assessedBy: cells.assessedBy, assessedOn: extra.assessedOn, reviewDue: extra.reviewDue,
+      }
+      // The register's own rules, said in the preview rather than at import, on the row as
+      // create() will fill it in: today, the importer as assessor, a review a year out.
+      const assessedOn = extra.assessedOn ?? today
+      const problem = hirarcProblem({
+        activity, hazard, effect: input.effect, existingControls: cells.existingControls?.trim() ?? '',
+        likelihood: ratings.likelihood, severity: ratings.severity, additionalControls: cells.additionalControls?.trim() ?? '',
+        owner: cells.owner?.trim() ?? '', controlsDue: input.controlsDue ?? null,
+        residualLikelihood: ratings.residualLikelihood, residualSeverity: ratings.residualSeverity,
+        assessedBy: cells.assessedBy?.trim() || 'importer', assessedOn,
+        reviewDue: extra.reviewDue ?? addMonths(assessedOn, DEFAULT_REVIEW_MONTHS),
+      }, today)
+      if (problem) return plan({ action: 'fix', message: problem })
+      return { ...plan({ action: 'add', message: null }), input }
+    })
+  }
+
   private prepare(companyId: string, kind: ImportKind, rows: { line: number; cells: Cells }[]) {
     switch (kind) {
       case 'employees': return this.prepareEmployees(companyId, rows)
       case 'contractors': return this.prepareContractors(companyId, rows)
       case 'contractor_workers': return this.prepareWorkers(companyId, rows)
       case 'assets': return this.prepareAssets(companyId, rows)
+      case 'risk_assessments': return this.prepareRisks(companyId, rows)
     }
   }
 
@@ -471,7 +578,7 @@ export class DataImportService {
     const plan = this.summarise(kind, results, ignoredColumns)
     await this.db.adminAuditEntry.create({
       data: {
-        companyId, actor: caller.name, actorRole: m.role, action: `Imported ${IMPORT_LABEL[kind].toLowerCase()}`,
+        companyId, actor: caller.name, actorRole: m.role, action: `Imported ${IMPORT_NOUN[kind].replace(/^the /, '')}`,
         module: 'admin', target: `${plan.add} added, ${plan.skip} already there, ${plan.fix} left to fix`,
         ip: ctx.ip ?? '', device: ctx.device ?? '',
       },
@@ -490,8 +597,27 @@ export class DataImportService {
       case 'assets': {
         return (await this.inspections.createAsset(caller, input as Parameters<InspectionService['createAsset']>[1])).code
       }
+      case 'risk_assessments':
+        return (await this.risks.create(caller, companyId, input as RiskInput, ctx)).code
     }
   }
+}
+
+/**
+ * A rating as HIRARC spreadsheets write it: "4", "4 Possible", "4 - Possible" or "Possible".
+ * Null when the cell is empty; undefined when it is not a rating, or names two ("4 Remote").
+ */
+export function ratingOf(raw: string, steps: RatingStep[]): number | null | undefined {
+  const s = raw.trim()
+  if (!s) return null
+  const m = /^([1-5])(?:\s*[-–(:.]?\s*([A-Za-z ]+?)\)?)?$/.exec(s)
+  const byName = (name: string) => steps.find((st) => headerKey(st.label) === headerKey(name))?.value
+  if (m) {
+    const n = Number(m[1])
+    if (m[2] && byName(m[2]) !== n) return undefined
+    return n
+  }
+  return byName(s)
 }
 
 /** The empty file to fill in: the headers, and one example row a person can overwrite. */

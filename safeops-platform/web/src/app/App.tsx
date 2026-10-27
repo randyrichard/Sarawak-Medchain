@@ -34,6 +34,7 @@ const ToolboxPage = lazy(() => import('@/features/toolbox/ToolboxPage').then((m)
 const VisitorsPage = lazy(() => import('@/features/visitors/VisitorsPage').then((m) => ({ default: m.VisitorsPage })))
 const AdminPage = lazy(() => import('@/features/admin/AdminPage').then((m) => ({ default: m.AdminPage })))
 const DataImportPage = lazy(() => import('@/features/import/DataImportPage').then((m) => ({ default: m.DataImportPage })))
+const RiskRegisterPage = lazy(() => import('@/features/risk/RiskRegisterPage').then((m) => ({ default: m.RiskRegisterPage })))
 const NotificationsPage = lazy(() => import('@/features/notifications/NotificationsPage').then((m) => ({ default: m.NotificationsPage })))
 const EmployeesPage = lazy(() => import('@/features/employees/EmployeesPage').then((m) => ({ default: m.EmployeesPage })))
 const ContractorsPage = lazy(() => import('@/features/contractors/ContractorsPage').then((m) => ({ default: m.ContractorsPage })))
@@ -249,6 +250,14 @@ export default function App() {
                     element={
                       <RequireCapability capability="settings:manage">
                         <AdminPage />
+                      </RequireCapability>
+                    }
+                  />
+                  <Route
+                    path="/risk"
+                    element={
+                      <RequireCapability capability="risk:view">
+                        <RiskRegisterPage />
                       </RequireCapability>
                     }
                   />

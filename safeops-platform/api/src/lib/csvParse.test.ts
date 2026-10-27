@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { headerKey, parseCsv, parseDay, parseYesNo } from './csvParse.js'
+import { csvCell, headerKey, parseCsv, parseDay, parseYesNo, unguardCell } from './csvParse.js'
 
 describe('reading a CSV as Excel writes it', () => {
   it('keeps a comma inside quotes in its cell', () => {
@@ -48,5 +48,20 @@ describe('yes and no', () => {
     expect(parseYesNo('tidak')).toBe(false)
     expect(parseYesNo('')).toBeUndefined()
     expect(parseYesNo('maybe')).toBeNull()
+  })
+})
+
+describe('writing a cell Excel will open', () => {
+  it('keeps a formula from running, and reads back as it was written', () => {
+    expect(csvCell('=SUM(A1:A9)')).toBe("'=SUM(A1:A9)")
+    expect(csvCell('-5 C in the cold store')).toBe("'-5 C in the cold store")
+    expect(unguardCell("'-5 C in the cold store")).toBe('-5 C in the cold store')
+    expect(unguardCell("'Tis the season")).toBe("'Tis the season")
+  })
+
+  it('quotes what would otherwise break the row', () => {
+    expect(csvCell('Struck-by injury, crushing')).toBe('"Struck-by injury, crushing"')
+    expect(csvCell('Says "keep out"')).toBe('"Says ""keep out"""')
+    expect(csvCell(null)).toBe('')
   })
 })

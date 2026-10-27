@@ -26,7 +26,7 @@ export function DataImportPage() {
     <>
       <PageHeader
         title="Import Data"
-        subtitle="Load the registers you already keep in Excel: employees, contractors and their workers, and equipment"
+        subtitle="Load the registers you already keep in Excel: employees, contractors and their workers, equipment, and HIRARC"
       />
       {isBackendConfigured() ? <LiveImport /> : (
         <Card>
@@ -130,7 +130,7 @@ function LiveImport() {
   if (catalogError) return <ErrorAlert error={catalogError} />
   if (!catalog || !entry) return <Skeleton className="h-64" />
 
-  const label = entry.label.toLowerCase()
+  const label = entry.noun
   const badge = done ? DONE : PLANNED
 
   const rowColumns: Column<ImportRow>[] = [
@@ -167,6 +167,13 @@ function LiveImport() {
           {kind === 'contractor_workers' && (
             <p className="text-xs text-ink-2">Import the contractors first: each worker names their contractor, which must already be in SafeChain.</p>
           )}
+          <p className="text-sm text-ink">
+            <span className="font-semibold">Required:</span> {entry.columns.filter((c) => c.required).map((c) => c.header).join(', ')}.
+            {' '}<span className="text-ink-2">Columns in any order; a header written differently is still recognised.</span>
+          </p>
+          <details className="group rounded-lg border">
+            <summary className="cursor-pointer px-3 py-2 text-sm font-medium text-ink">Every Column, and What to Put In</summary>
+            <div className="border-t px-1 pb-1">
           <DataTable
             caption={`${entry.label} columns`}
             columns={[
@@ -186,6 +193,8 @@ function LiveImport() {
             rows={entry.columns}
             rowKey={(c) => c.key}
           />
+            </div>
+          </details>
         </CardBody>
       </Card>
 

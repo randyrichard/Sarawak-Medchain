@@ -43,6 +43,7 @@ const actions = (plan: { rows: { line: number; action: string }[] }) => plan.row
 
 async function purge() {
   for (const companyId of [CO, OTHER]) {
+    await db.riskAssessment.deleteMany({ where: { companyId } })
     await db.assetEvent.deleteMany({ where: { asset: { companyId } } })
     await db.inspection.deleteMany({ where: { companyId } })
     await db.asset.deleteMany({ where: { companyId } })
@@ -81,7 +82,7 @@ d('CSV import (real HTTP, real Postgres)', () => {
   it('lists every column, and hands out a template Excel opens as UTF-8', async () => {
     const auth = { Authorization: `Bearer ${tokenFor('hse_manager')}` }
     const catalog = await json(await fetch(`${base}/imports/catalog`, { headers: auth }))
-    expect(catalog.kinds.map((k: { kind: string }) => k.kind)).toEqual(['employees', 'contractors', 'contractor_workers', 'assets'])
+    expect(catalog.kinds.map((k: { kind: string }) => k.kind)).toEqual(['employees', 'contractors', 'contractor_workers', 'assets', 'risk_assessments'])
     expect(catalog.maxRows).toBe(2000)
 
     const res = await fetch(`${base}/imports/assets/template.csv`, { headers: auth })
@@ -193,6 +194,35 @@ d('CSV import (real HTTP, real Postgres)', () => {
     expect(tower).toMatchObject({ category: 'custom', customCategory: 'Lighting Tower', frequency: 'annual' })
 
     expect((await json(await run('assets', assets))).skip).toBe(3)
+  })
+
+  it('reads a HIRARC spreadsheet\'s ratings as people write them, and recognises its own export', async () => {
+    const hirarc = [
+      'No,Site,Work Activity,Hazard,Which Can Cause,Existing Controls,Likelihood,Severity,Risk,Recommended Controls,PIC,Due Date,Residual Likelihood,Residual Severity',
+      '1,BTU,Loading at Bay 4,Reversing forklift,"Struck-by injury, crushing",Reversing alarm,4 Possible,Fatal,16,Banksman; exclusion zone,Ali Hassan,31/12/2030,2,4',
+      '2,BTU,Loading at Bay 4,Pallet collapse,Crushing,,4 Remote,4,16,,,,,',
+      '3,BTU,Welding,Arc flash,,,3,3,9,,,,,',
+      '4,MRI,Grinding,Flying particles,Eye injury,Goggles,2,2,4,Face shield,Rosli,,3,3',
+      '5,Miri Base,Office,Trailing cable,"Trip, bruise",,remote,minor,4,,,,,',
+      '6,Bintulu Yard,loading at bay 4,Reversing  forklift,Crushing,,4,4,16,,,,,',
+    ].join('\n')
+    const plan = await json(await run('risk_assessments', hirarc))
+    expect(actions(plan)).toEqual(['2:add', '3:fix', '4:fix', '5:fix', '6:add', '7:fix'])
+    expect(plan.ignoredColumns).toEqual([])
+    expect(plan.rows[1].message).toBe('Likelihood "4 Remote" should be 1 to 5, or one of: Most Likely, Possible, Conceivable, Remote, Inconceivable.')
+    expect(plan.rows[2].message).toBe('Say what the hazard can cause.')
+    expect(plan.rows[3].message).toBe('The risk once the recommended controls are in place cannot be higher than the risk now.')
+    expect(plan.rows[5].message).toBe('Repeats line 2 of this file.')
+
+    const forklift = await db.riskAssessment.findFirstOrThrow({ where: { companyId: CO, hazard: 'Reversing forklift' } })
+    expect(forklift).toMatchObject({ likelihood: 4, severity: 4, riskScore: 16, residualScore: 8, owner: 'Ali Hassan', assessedBy: 'Import hse_manager' })
+    expect(forklift.controlsDue?.toISOString().slice(0, 10)).toBe('2030-12-31')
+    expect((await db.riskAssessment.findFirstOrThrow({ where: { companyId: CO, hazard: 'Trailing cable' } })).riskScore).toBe(4)
+
+    // Exported, then imported again: every row is recognised by its HZ number.
+    const exported = await (await fetch(`${base}/risk-assessments/export.csv?companyId=${CO}`, { headers: { Authorization: `Bearer ${tokenFor('hse_manager')}` } })).text()
+    const again = await json(await run('risk_assessments', exported))
+    expect(again).toMatchObject({ add: 0, skip: 2, fix: 0, ignoredColumns: [] })
   })
 
   it('names a missing column, and refuses a file that is not CSV text', async () => {

@@ -1,7 +1,7 @@
 import express, { Router } from 'express'
 import { prisma } from '../lib/prisma.js'
 import {
-  DataImportService, IMPORT_COLUMNS, IMPORT_KINDS, IMPORT_LABEL, templateCsv, type ImportKind,
+  DataImportService, IMPORT_COLUMNS, IMPORT_KINDS, IMPORT_LABEL, IMPORT_NOUN, templateCsv, type ImportKind,
 } from '../lib/dataImport.js'
 import { MAX_IMPORT_ROWS } from '../lib/csvParse.js'
 import { requireAuth } from '../http/requireAuth.js'
@@ -32,7 +32,7 @@ const kindOf = (raw: string): ImportKind | null => (IMPORT_KINDS as readonly str
 dataImportRouter.get('/catalog', (_req, res) => {
   res.json({
     maxRows: MAX_IMPORT_ROWS,
-    kinds: IMPORT_KINDS.map((kind) => ({ kind, label: IMPORT_LABEL[kind], columns: IMPORT_COLUMNS[kind] })),
+    kinds: IMPORT_KINDS.map((kind) => ({ kind, label: IMPORT_LABEL[kind], noun: IMPORT_NOUN[kind], columns: IMPORT_COLUMNS[kind] })),
   })
 })
 

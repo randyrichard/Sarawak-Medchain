@@ -95,6 +95,13 @@ They land on a **Getting started** checklist that ticks itself off as they go:
 The checklist disappears once all four are done. Nothing is pre-filled: an empty workspace
 is honest, and inventing incidents in a safety system would be indefensible.
 
+**Their existing registers go in through Import Data** (Admin or HSE Manager): employees,
+contractors and their workers, equipment, and the HIRARC register, from the spreadsheets they
+already keep. Ask for those files before the first-day session. Save each from Excel as
+*CSV UTF-8*; the screen previews every row (to add, already there, to fix, and why) before
+anything is written, and a corrected file can be imported again without duplicating what went
+in the first time. Import contractors before their workers.
+
 Sit with them for this if you can. Watching the first twenty minutes teaches you more than
 any survey.
 
@@ -113,6 +120,10 @@ Ask them to do these, in this order:
       corrective action, verification
 - [ ] Raise a permit for a real job and have the right person approve it
 - [ ] Open the dashboard each morning and see whether it told them anything they didn't know
+- [ ] Record the DOSH decision on every incident the register asks about (the seven-day
+      JKKP 6 / JKKP 7 clock runs from the day it happened), and file on myKKP as before
+- [ ] Put one work activity's hazards in the HIRARC register, and raise its recommended
+      controls as corrective actions
 - [ ] Generate one report
 
 That last one matters most commercially. "Did the dashboard tell you something you did not

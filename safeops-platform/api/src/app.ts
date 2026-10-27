@@ -32,6 +32,7 @@ import { searchRouter } from './routes/search.js'
 import { employeesRouter } from './routes/employees.js'
 import { contractorsRouter } from './routes/contractors.js'
 import { dataImportRouter } from './routes/dataImport.js'
+import { riskAssessmentsRouter } from './routes/riskAssessments.js'
 import { dashboardRouter } from './routes/dashboard.js'
 import { performanceRouter } from './routes/performance.js'
 import { orgAdminRouter, inviteRouter } from './routes/orgAdmin.js'
@@ -297,6 +298,7 @@ export function createApp() {
   app.use('/employees', employeesRouter)
   app.use('/contractors', contractorsRouter)
   app.use('/imports', dataImportRouter)
+  app.use('/risk-assessments', riskAssessmentsRouter)
   app.use('/dashboard', dashboardRouter)
   app.use('/performance', performanceRouter)
 

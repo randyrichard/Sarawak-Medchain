@@ -36,14 +36,14 @@ const CATALOG: ImportCatalog = {
   maxRows: 2000,
   kinds: [
     {
-      kind: 'employees', label: 'Employees',
+      kind: 'employees', label: 'Employees', noun: 'employees',
       columns: [
         { key: 'name', header: 'Name', required: true, help: 'Full name.', example: 'Grace Lim', aliases: ['Full Name'] },
         { key: 'site', header: 'Site', required: true, help: 'The site name.', example: 'Bintulu' },
         { key: 'employeeNo', header: 'Employee No', required: false, help: 'Your own staff number.', example: 'P10234' },
       ],
     },
-    { kind: 'contractor_workers', label: 'Contractor Workers', columns: [{ key: 'name', header: 'Name', required: true, help: '', example: 'Rashid Karim' }] },
+    { kind: 'contractor_workers', label: 'Contractor Workers', noun: 'contractor workers', columns: [{ key: 'name', header: 'Name', required: true, help: '', example: 'Rashid Karim' }] },
   ],
 }
 
@@ -59,7 +59,7 @@ const PLAN: ImportPlan = {
 /** A chosen file. jsdom's File has no arrayBuffer(), which every browser the app supports does. */
 function fileOf(content: string | Uint8Array, name = 'staff.csv') {
   const bytes = typeof content === 'string' ? new TextEncoder().encode(content) : content
-  const file = new File([bytes], name, { type: 'text/csv' })
+  const file = new File([bytes as BlobPart], name, { type: 'text/csv' })
   Object.defineProperty(file, 'arrayBuffer', { value: async () => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) })
   return file
 }
