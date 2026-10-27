@@ -124,6 +124,24 @@ const PAIRS: { capability: Capability; file: string; constant: string; what: str
     constant: 'VIEW_ROLES',
     what: 'reading the daily toolbox meeting register',
   },
+  {
+    capability: 'registers:import',
+    file: 'dataImport',
+    constant: 'IMPORT_ROLES',
+    what: 'importing registers from a CSV file',
+  },
+  {
+    capability: 'risk:view',
+    file: 'riskAssessmentService',
+    constant: 'VIEW_ROLES',
+    what: 'reading the HIRARC register',
+  },
+  {
+    capability: 'risk:manage',
+    file: 'riskAssessmentService',
+    constant: 'EDIT_ROLES',
+    what: 'assessing hazards in the HIRARC register',
+  },
 ]
 
 d('the navigation and the API agree about roles', () => {

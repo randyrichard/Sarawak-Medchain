@@ -20,6 +20,7 @@ import { fieldEvidenceRouter } from './routes/fieldEvidence.js'
 import { visitorsRouter } from './routes/visitors.js'
 import { reportsRouter } from './routes/reports.js'
 import { incidentInvestigationRouter } from './routes/incidentInvestigation.js'
+import { doshNotificationRouter } from './routes/doshNotification.js'
 import { auditsRouter } from './routes/audits.js'
 import { trainingRouter } from './routes/training.js'
 import { adminRouter } from './routes/admin.js'
@@ -30,6 +31,8 @@ import { accountRouter } from './routes/account.js'
 import { searchRouter } from './routes/search.js'
 import { employeesRouter } from './routes/employees.js'
 import { contractorsRouter } from './routes/contractors.js'
+import { dataImportRouter } from './routes/dataImport.js'
+import { riskAssessmentsRouter } from './routes/riskAssessments.js'
 import { dashboardRouter } from './routes/dashboard.js'
 import { performanceRouter } from './routes/performance.js'
 import { orgAdminRouter, inviteRouter } from './routes/orgAdmin.js'
@@ -264,6 +267,7 @@ export function createApp() {
   app.use('/auth', authRouter)
   // Mounted first: its literal paths would otherwise be captured by /incidents/:id
   app.use('/incidents', incidentInvestigationRouter)
+  app.use('/incidents', doshNotificationRouter)
   app.use('/incidents', incidentExtrasRouter)
   app.use('/incidents', incidentsRouter)
   app.use('/permits', permitAttachmentsRouter)
@@ -293,6 +297,8 @@ export function createApp() {
   app.use('/search', searchRouter)
   app.use('/employees', employeesRouter)
   app.use('/contractors', contractorsRouter)
+  app.use('/imports', dataImportRouter)
+  app.use('/risk-assessments', riskAssessmentsRouter)
   app.use('/dashboard', dashboardRouter)
   app.use('/performance', performanceRouter)
 

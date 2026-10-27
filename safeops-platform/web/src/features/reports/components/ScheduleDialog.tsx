@@ -150,6 +150,7 @@ export function ScheduleDialog({
           <option value="monthly_summary">Monthly safety summary</option>
           <option value="weekly_actions">Weekly corrective actions (by department)</option>
           <option value="site_activity">Site activity summary (daily schedule = the day, otherwise the week)</option>
+          <option value="dosh_annual">DOSH annual summary, JKKP 8 figures (this year so far)</option>
         </Select>
 
         <div className="grid gap-x-3 gap-y-5 sm:grid-cols-3">

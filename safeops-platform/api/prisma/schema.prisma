@@ -245,6 +245,7 @@ model Company {
   reportRuns         ReportRun[]
   fieldEvidence      FieldEvidence[]
   fieldRecords       FieldRecord[]
+  riskAssessments    RiskAssessment[]
 
   // Created by an earlier migration and missing here, so `prisma migrate dev` would have
   // generated a migration dropping it. Declared so the schema describes the database.
@@ -364,6 +365,7 @@ model Site {
   visitors          Visitor[]
   toolboxMeetings   ToolboxMeeting[]
   manHours          SiteManHours[]
+  riskAssessments   RiskAssessment[]
 
   @@index([companyId])
   @@index([projectId])
@@ -440,6 +442,20 @@ enum IncidentType {
 /// and rewriting history to fit a new scale would be a lie. The appended values are the
 /// classification an HSE department actually reports on, because "lost time injury" is a
 /// regulatory category and "Serious" is an opinion.
+/// Why an incident is, or is not, notifiable to DOSH (NADOPOD Regulations 2004).
+enum DoshCategory {
+  death
+  /// First Schedule: a fracture, an amputation, loss of sight or hearing, loss of consciousness.
+  serious_bodily_injury
+  /// Kept from their normal work for more than four calendar days.
+  over_four_days
+  /// Second Schedule. Notifiable even when nobody is hurt.
+  dangerous_occurrence
+  occupational_poisoning
+  occupational_disease
+  not_notifiable
+}
+
 enum IncidentSeverity {
   Minor
   Moderate
@@ -593,6 +609,27 @@ model Incident {
   rcaApprovedBy String?
   rcaApprovedAt DateTime?
 
+  /// Whether DOSH must be told, under the NADOPOD Regulations 2004 - a person's decision,
+  /// recorded with who made it. Null until somebody decides. See domain/doshNotification.ts.
+  doshCategory          DoshCategory?
+  /// Which item it was: the First Schedule injury, or the Second Schedule occurrence.
+  doshDetail            String?
+  /// Why DOSH need not be told, when that was the decision.
+  doshNotRequiredReason String?
+  doshDecidedBy         String?
+  doshDecidedAt         DateTime?
+  /// The day the seven days count from, when it is not the day of the event: the date the
+  /// employer learned of an occupational poisoning or disease diagnosis.
+  doshClockFrom         DateTime?
+  /// The immediate notice, by the quickest means, for a death, serious bodily injury or
+  /// dangerous occurrence.
+  doshInformedAt        DateTime?
+  doshInformedHow       String?
+  doshOffice            String?
+  /// The written report (JKKP 6 or JKKP 7) and DOSH's reference for it.
+  doshSubmittedAt       DateTime?
+  doshReference         String?
+
   occurredAt DateTime
   reportedAt DateTime  @default(now())
   closedAt   DateTime?
@@ -621,6 +658,7 @@ model Incident {
   @@index([companyId, severityRank])
   @@index([companyId, occurredAt])
   @@index([companyId, type])
+  @@index([companyId, doshCategory])
   @@index([reportedAt])
 }
 
@@ -722,6 +760,8 @@ enum CapaSource {
   inspection
   manual
   training
+  /// Raised from a row of the HIRARC register, to put its recommended controls in place.
+  risk_assessment
 }
 
 enum CapaStatus {
@@ -795,6 +835,11 @@ model CorrectiveAction {
   /// to CorrectiveAction and every existing action is unaffected.
   finding AuditFinding?
 
+  /// Set when the action puts a HIRARC row's recommended controls in place. Nullable and
+  /// additive, like assetId: every existing action keeps null.
+  riskAssessmentId String?
+  riskAssessment   RiskAssessment? @relation(fields: [riskAssessmentId], references: [id], onDelete: SetNull)
+
   notes CapaNote[]
 
   version       Int                  @default(1)
@@ -817,6 +862,72 @@ model CorrectiveAction {
   @@index([companyId, ownerId])
   @@index([assetId])
   @@index([inspectionId])
+  @@index([riskAssessmentId])
+}
+
+// ─── HIRARC ──────────────────────────────────────────────────────────────────
+// Hazard identification, risk assessment and risk control, as the DOSH Guidelines for
+// HIRARC (2008) set it out: for each work activity, the hazards, what they can cause, the
+// controls already in place, and the risk - likelihood times severity, each 1 to 5. Medium
+// and high risks need further controls with a date for completion; those are corrective
+// actions, so they are tracked to verification like any other.
+
+/// One row of the register: one hazard of one work activity at one site.
+model RiskAssessment {
+  id        String  @id @default(cuid())
+  /// HZ-#### — per tenant.
+  code      String
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  siteId    String
+  site      Site    @relation(fields: [siteId], references: [id], onDelete: Restrict)
+
+  /// The work activity or process, as the site names it ("Loading at Bay 4").
+  activity         String
+  hazard           String
+  /// "Which can cause" on the DOSH form: the harm if the hazard is realised.
+  effect           String
+  existingControls String @default("")
+
+  /// 1 (inconceivable) to 5 (most likely), and 1 (negligible) to 5 (catastrophic).
+  likelihood Int
+  severity   Int
+  /// likelihood × severity, kept so the register can be filtered and sorted by it in SQL.
+  riskScore  Int
+
+  /// The further controls recommended, and the person in charge of them (PIC on the form).
+  additionalControls String    @default("")
+  owner              String    @default("")
+  /// The date for completion of the recommended controls. Date-only.
+  controlsDue        DateTime?
+
+  /// The risk expected once the recommended controls are in place. All three or none.
+  residualLikelihood Int?
+  residualSeverity   Int?
+  residualScore      Int?
+
+  assessedBy String
+  /// Date-only, as are reviewDue and controlsDue (domain/businessDay.ts).
+  assessedOn DateTime
+  reviewDue  DateTime
+
+  /// Archived rather than deleted when the activity stops: it is still the record of what
+  /// was assessed, and an action raised from it still points here.
+  archivedAt     DateTime?
+  archivedBy     String?
+  archivedReason String?
+
+  actions CorrectiveAction[]
+
+  version   Int      @default(1)
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([companyId, code])
+  @@index([companyId, siteId])
+  @@index([companyId, riskScore])
+  @@index([companyId, reviewDue])
 }
 
 // ─── Permit to Work ──────────────────────────────────────────────────────────
@@ -2985,6 +3096,9 @@ enum ReportType {
   weekly_actions
   /// What happened on site in the last day or week: incidents, briefings, permits, actions.
   site_activity
+  /// A calendar year's DOSH figures: notifiable events by category, days lost, man-hours -
+  /// what the annual JKKP 8 summary is filled in from.
+  dosh_annual
 }
 
 enum ReportFrequency {

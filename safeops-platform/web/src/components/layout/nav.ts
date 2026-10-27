@@ -78,11 +78,13 @@ export const NAV: NavItem[] = [
   { to: '/performance', label: 'HSE Performance', capability: 'analytics:view', group: 'Assurance' },
   { to: '/reports', label: 'Reports', capability: 'reports:view', group: 'Assurance', count: 'report' },
   { to: '/audits', label: 'Audits & Compliance', capability: 'compliance:manage', group: 'Assurance' },
+  { to: '/risk', label: 'HIRARC Register', capability: 'risk:view', group: 'Assurance' },
   { to: '/training', label: 'Training & Competency', capability: 'training:view', group: 'People' },
   { to: '/employees', label: 'Employees', capability: 'workforce:view', group: 'People' },
   { to: '/contractors', label: 'Contractors', capability: 'workforce:view', group: 'People' },
   { to: '/organization', label: 'Organisation', capability: 'org:view', group: 'Workspace' },
   { to: '/admin', label: 'Administration', capability: 'settings:manage', group: 'Workspace' },
+  { to: '/import', label: 'Import Data', capability: 'registers:import', group: 'Workspace' },
 ]
 
 /**
